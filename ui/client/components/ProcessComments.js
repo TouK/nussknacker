@@ -32,7 +32,7 @@ class ProcessComments extends React.Component {
       this.props.actions.deleteComment(this.props.processId, comment.id).then((response) => {
         this.setState(this.initState)
       })
-    })
+    }, "DELETE", "NO")
   }
 
   onInputChange = (e) => {

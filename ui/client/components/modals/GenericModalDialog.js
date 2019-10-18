@@ -60,8 +60,8 @@ class GenericModalDialog extends React.Component {
         </div>) : null }
         <div className="modalContentDark">
           {this.props.children}
-          <div className="confirmationButtons">
-            <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel</button>
+          <div className="confirmationButtons" >
+            <button type="button" title="CANCEL" className='modalButton' onClick={this.closeDialog}>CANCEL</button>
             { this.props.confirm ? this.renderOkBtn() : null }
           </div>
         </div>

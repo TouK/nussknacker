@@ -43,8 +43,9 @@ export class ProcessHistory_ extends Component {
       this.doShowProcess(process)
     } else {
       this.props.actions.toggleConfirmDialog(true, DialogMessages.unsavedProcessChanges(), () => {
+        console.log("Inside Toggle")
         this.doShowProcess(process)
-      })
+      }, "DISCARD", "NO")
     }
   }
 

@@ -14,6 +14,7 @@ import NodeUtils from '../components/graph/NodeUtils';
 import * as VisualizationUrl from '../common/VisualizationUrl'
 import SpinnerWrapper from "../components/SpinnerWrapper";
 import * as JsonUtils from "../common/JsonUtils";
+import RouteLeavingGuard from "../components/RouteLeavingGuard";
 
 class Visualization extends React.Component {
 
@@ -236,9 +237,9 @@ class Visualization extends React.Component {
 
     return (
       <div className="Page">
-        <Prompt
+        <RouteLeavingGuard
           when={!this.props.nothingToSave}
-          message={(location, action) => action === 'PUSH' ? DialogMessages.unsavedProcessChanges() : true}
+          navigate={path => this.props.history.push(path)}
         />
 
         <UserLeftPanel

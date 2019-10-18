@@ -2,7 +2,7 @@ export default class InlinedSvgs {}
 
 //TODO put all svg's in one place, in code or in assets
 
-InlinedSvgs.buttonAlign = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs>  <g> <path class="a" d="M5.5,5.23h21V8.54H5.5ZM7.16,23.46H24.84v3.32H7.16ZM11,17.38H21V20.7H11ZM8.82,11.3H23.18v3.31H8.82Z"/> <rect class="b" width="32" height="32"/> </g> </svg>`
+InlinedSvgs.buttonLayout = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs>  <g> <path class="a" d="M5.5,5.23h21V8.54H5.5ZM7.16,23.46H24.84v3.32H7.16ZM11,17.38H21V20.7H11ZM8.82,11.3H23.18v3.31H8.82Z"/> <rect class="b" width="32" height="32"/> </g> </svg>`
 
 InlinedSvgs.buttonDeploy = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs>  <g> <path class="a" d="M9.31,5.71l13.38,10v.77L9.31,26.29Z"/> <rect class="b" width="32" height="32"/> </g> </svg>`
 
