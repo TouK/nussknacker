@@ -5,10 +5,9 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import Permission._
 import org.scalatest.prop.{TableFor3, TableFor4}
 
-class PermissionSyntaxTest extends FunSuite with Matchers {
-  import PermissionSyntax._
+class LoggedUserTest extends FunSuite with Matchers {
 
-  test("Admin permission grands other permissions") {
+  test("Admin permission grants other permissions") {
     def admin(cp: Map[String, Set[Permission]]) = LoggedUser("admin", cp, true)
 
     val perms: TableFor3[LoggedUser, Permission, String] = Table(
