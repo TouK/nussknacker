@@ -7,16 +7,17 @@ import cats.data._
 import cats.instances.string._
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
@@ -25,10 +26,11 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
+import pl.touk.nussknacker.engine.spel.ast.SpelAst.PositionRange
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.engine.types.TypesInformationExtractor
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
+import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
@@ -96,6 +98,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.variablesInNodes shouldBe Map(
+      ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
       "id1" -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
       "filter1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
       "filter2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
@@ -746,6 +749,96 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     validate(process, baseDefinition).result should matchPattern {
       case Valid(_) =>
     }
+  }
+
+  test("extract expression typing info") {
+    val process =
+      EspProcessBuilder
+        .id("process")
+        .exceptionHandler()
+        .source("source", "source")
+        .filter("filter", "true")
+        .emptySink("sink", "sink")
+
+    val compilationResult = validate(process, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+
+    compilationResult.expressionsInNodes shouldEqual Map(
+      ExceptionHandlerNodeId -> Map.empty,
+      "source" -> Map.empty,
+      "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed[Boolean]))),
+      "sink" -> Map.empty
+    )
+  }
+
+  test("extract expression typing info from source parameters") {
+    val process =
+      EspProcessBuilder
+        .id("process")
+        .exceptionHandler()
+        .source("source", "sourceWithParam", "param" -> "123")
+        .emptySink("sink", "sink")
+
+    val compilationResult = validate(process, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+
+    compilationResult.expressionsInNodes shouldEqual Map(
+      ExceptionHandlerNodeId -> Map.empty,
+      "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed[java.lang.Integer]))),
+      "sink" -> Map.empty
+    )
+  }
+
+  test("extract expression typing info from sink parameters") {
+    val process =
+      EspProcessBuilder
+        .id("process")
+        .exceptionHandler()
+        .source("source", "source")
+        .sink("sink", "'123'" , "sinkWithLazyParam", ("lazyString" -> "'123'"))
+
+    val compilationResult = validate(process, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+
+    compilationResult.expressionsInNodes shouldEqual Map(
+      ExceptionHandlerNodeId -> Map.empty,
+      "source" -> Map.empty,
+      "sink" -> Map(
+        DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String])),
+        "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String])))
+    )
+  }
+
+  test("extract expression typing info from custom node parameters") {
+    val process =
+      EspProcessBuilder
+        .id("process")
+        .exceptionHandler()
+        .source("source", "source")
+        .customNode("customNode", "out", "withParamsTransformer", "par1" -> "'123'")
+        .emptySink("sink", "sink")
+
+    val compilationResult = validate(process, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+
+    compilationResult.expressionsInNodes shouldEqual Map(
+      ExceptionHandlerNodeId -> Map.empty,
+      "source" -> Map.empty,
+      "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]))),
+      "sink" -> Map.empty
+    )
   }
 
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {

@@ -35,6 +35,8 @@ case class ValueWithLazyContext[T](value: T, lazyContext: LazyContext)
 
 sealed trait TypedValue
 
-case class TypedExpression(expression: Expression, returnType: TypingResult) extends TypedValue
+case class TypedExpression(expression: Expression, returnType: TypingResult, typingInfo: ExpressionTypingInfo) extends TypedValue
 
 case class TypedExpressionMap(valueByKey: Map[String, TypedExpression]) extends TypedValue
+
+trait ExpressionTypingInfo

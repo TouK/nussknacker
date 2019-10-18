@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, Stream
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -105,6 +106,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         List.empty,
         List.empty,
         Map(
+          ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(meta)),
           "s" -> Map("meta" -> MetaVariables.typingResult(meta)),
           "v" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
           "e" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]))

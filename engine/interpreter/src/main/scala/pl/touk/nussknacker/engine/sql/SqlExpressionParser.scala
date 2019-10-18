@@ -6,7 +6,7 @@ import cats.data.Validated._
 import cats.data._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
+import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, ExpressionParser, ExpressionTypingInfo, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, typing}
@@ -47,7 +47,7 @@ object SqlExpressionParser extends ExpressionParser {
 
     val expression = new SqlExpression(original = original, columnModels = colModel)
     val listResult = TypedClass(classOf[List[_]], List(typingResult))
-    TypedExpression(expression, listResult)
+    TypedExpression(expression, listResult, SqlExpressionTypingInfo)
   }
 
   private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
@@ -116,6 +116,8 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
 
 }
 
+// empty for now
+case object SqlExpressionTypingInfo extends ExpressionTypingInfo
 
 case class Table(model: ColumnModel, rows: List[List[Any]])
 

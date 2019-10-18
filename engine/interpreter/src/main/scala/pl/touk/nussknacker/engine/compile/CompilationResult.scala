@@ -2,17 +2,17 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
-import cats.kernel.Semigroup
 import cats.instances.map._
+import cats.kernel.Semigroup
 import cats.{Applicative, Traverse}
-import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor}
 
 import scala.language.{higherKinds, reflectiveCalls}
 
-case class CompilationResult[+Result](private [compile] val typing: Map[String, ValidationContext],
+case class CompilationResult[+Result](private [compile] val typing: Map[String, NodeTypingInfo],
                                      result: ValidatedNel[ProcessCompilationError, Result]) {
 
   import CompilationResult._
@@ -30,7 +30,11 @@ case class CompilationResult[+Result](private [compile] val typing: Map[String, 
   def distinctErrors: CompilationResult[Result] = copy(result =
     result.leftMap(_.toList.distinct).leftMap(NonEmptyList.fromListUnsafe))
 
-  def variablesInNodes: Map[String, Map[String, TypingResult]] = typing.mapValues(_.variables)
+  // node -> variable -> TypingResult
+  def variablesInNodes: Map[String, Map[String, TypingResult]] = typing.mapValues(_.inputValidationContext.variables)
+
+  // node -> expressionId -> ExpressionTypingInfo
+  def expressionsInNodes: Map[String, Map[String, ExpressionTypingInfo]] = typing.mapValues(_.expressionsTypingInfo)
 
 }
 
@@ -59,16 +63,26 @@ object CompilationResult extends Applicative[CompilationResult] {
     }
   }
 
-  implicit def takingLastNodeTypingInfoSemigroup: Semigroup[ValidationContext] = new Semigroup[ValidationContext] with LazyLogging {
-    override def combine(x: ValidationContext, y: ValidationContext): ValidationContext = {
-      logger.whenWarnEnabled {
-        if (x != y) {
-          logger.warn(s"Merging different ValidationContext for the same nodes: $x != $y. This can be a bug in code or duplicated node ids with different node typing info")
-        }
-      }
+  implicit def mergingTypingInfoSemigroup: Semigroup[NodeTypingInfo] = new Semigroup[NodeTypingInfo] {
+    override def combine(x: NodeTypingInfo, y: NodeTypingInfo): NodeTypingInfo = {
       // we should be lax here because we want to detect duplicate nodes and context can be different then
-      y
+      // also process of collecting of expressionsTypingInfo is splitted for some nodes e.g. expressionsTypingInfo for
+      // sink parameters is collected in ProcessCompiler but for final expression is in PartSubGraphCompiler
+      NodeTypingInfo(y.inputValidationContext, x.expressionsTypingInfo ++ y.expressionsTypingInfo)
     }
   }
+
+}
+
+case class NodeTypingInfo(inputValidationContext: ValidationContext, expressionsTypingInfo: Map[String, ExpressionTypingInfo])
+
+object NodeTypingInfo {
+
+  val ExceptionHandlerNodeId = "$exceptionHandler"
+
+  val DefaultExpressionId = "$expression"
+
+  def branchParameterExpressionId(paramName: String, branch: String): String =
+    paramName + "-" + branch
 
 }
