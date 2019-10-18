@@ -82,6 +82,7 @@ class SubProcesses extends BaseProcesses {
           isSubprocess={true}
           isOpen={this.state.showAddProcess}
           visualizationPath={SubProcesses.path}
+          message="Create new subprocess"
         />
 
         <LoaderSpinner show={this.state.showLoader}/>

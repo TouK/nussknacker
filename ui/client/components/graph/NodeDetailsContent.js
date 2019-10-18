@@ -153,7 +153,7 @@ export class NodeDetailsContent extends React.Component {
         //FIXME: currently there is no way to add new parameters or display them correctly
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", true )}
 
             <div className="node-row">
               {this.renderFieldLabel("Parameters")}
@@ -173,7 +173,7 @@ export class NodeDetailsContent extends React.Component {
       case 'SubprocessOutputDefinition':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", true)}
             {this.createField("input", "Output name", "outputName")}
             {this.descriptionField()}
           </div>
@@ -181,7 +181,7 @@ export class NodeDetailsContent extends React.Component {
       case 'Filter':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", true)}
             {this.createExpressionField("expression", "Expression", "expression")}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             {this.descriptionField()}
@@ -191,7 +191,7 @@ export class NodeDetailsContent extends React.Component {
       case 'Processor':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", true)}
             {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
@@ -208,7 +208,7 @@ export class NodeDetailsContent extends React.Component {
       case 'SubprocessInput':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", true)}
             {this.createReadonlyField("input", "Subprocess Id", "ref.id")}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
@@ -232,10 +232,10 @@ export class NodeDetailsContent extends React.Component {
       case 'CustomNode':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", true)}
 
             {
-              this.showOutputVar && this.createField("input", "Output", "outputVar", "outputVar", false, null)
+              this.showOutputVar && this.createField("input", "Output", "outputVar", false, "outputVar", false, null)
             }
             {this.createReadonlyField("input", "Node type", "nodeType")}
             {NodeUtils.nodeType(this.props.node) === 'Join' &&
@@ -275,7 +275,7 @@ export class NodeDetailsContent extends React.Component {
       case 'Switch':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", true)}
             {this.createExpressionField("expression", "Expression", "expression")}
             {this.createField("input", "exprVal", "exprVal")}
             {this.descriptionField()}
@@ -284,7 +284,7 @@ export class NodeDetailsContent extends React.Component {
       case 'Split':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", true)}
             {this.descriptionField()}
           </div>
         )
@@ -293,11 +293,11 @@ export class NodeDetailsContent extends React.Component {
         const commonFields = this.subprocessVersionFields()
         //fixme move this configuration to some better place?
         const fields = type == "StreamMetaData" ? [
-          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism", null, null, 'parallelism'),
-          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds", null, null, 'interval-seconds'),
-          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk", false, false, 'split-state-disk'),
-          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation", false, false, 'use-async')
-        ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path", null, null, 'query-path')]
+          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", true,"parallelism", null, null, 'parallelism'),
+          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", false,"checkpointIntervalInSeconds", null, null, 'interval-seconds'),
+          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", false,"splitStateToDisk", false, false, 'split-state-disk'),
+          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", false, "useAsyncInterpretation", false, false, 'use-async')
+        ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", false,"path", null, null, 'query-path')]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
           ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig, fieldName)
         );
@@ -354,7 +354,7 @@ export class NodeDetailsContent extends React.Component {
         else return "input";
       };
 
-      return this.createField(fieldType(), fieldConfig.label, `additionalFields.properties.${fieldName}`, fieldName, null, null, key)
+      return this.createField(fieldType(), fieldConfig.label, `additionalFields.properties.${fieldName}`, false, fieldName, null, null, key)
     }
   }
 
@@ -376,7 +376,7 @@ export class NodeDetailsContent extends React.Component {
   sourceSinkCommon(toAppend) {
     return (
       <div className="node-table-body">
-        {this.createField("input", "Id", "id")}
+        {this.createField("input", "Id", "id", true)}
         {this.createReadonlyField("input", "Ref Type", "ref.typ")}
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
@@ -392,10 +392,10 @@ export class NodeDetailsContent extends React.Component {
   }
 
   createReadonlyField = (fieldType, fieldLabel, fieldProperty) => {
-    return this.createField(fieldType, fieldLabel, fieldProperty, null, true)
+    return this.createField(fieldType, fieldLabel, fieldProperty, false, null, true)
   }
 
-  createField = (fieldType, fieldLabel, fieldProperty, fieldName, readonly, defaultValue, key) => {
+  createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, fieldName, readonly, defaultValue, key) => {
     return this.doCreateField(
         fieldType,
         fieldLabel,
@@ -404,7 +404,8 @@ export class NodeDetailsContent extends React.Component {
         ((newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)),
         readonly,
         this.isMarked(fieldProperty),
-        key
+        key,
+        autofocus
     )
   }
 
@@ -467,7 +468,7 @@ export class NodeDetailsContent extends React.Component {
     this.setState({testResultsToHide: newTestResultsToHide})
   }
 
-  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked, key) => {
+  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked, key, autofocus = false) => {
     const readOnly = !this.props.isEditMode || forceReadonly;
     const nodeValueClass = this.nodeValueClass(isMarked);
 
@@ -477,13 +478,17 @@ export class NodeDetailsContent extends React.Component {
           <div className="node-row" key={key}>
             {this.renderFieldLabel(fieldLabel)}
             <div className={nodeValueClass}>
-              <input
-                  type="text"
-                  className="node-input"
-                  value={fieldValue || ""}
-                  onChange={(e) => handleChange(e.target.value)}
-                  readOnly={readOnly}
-              />
+              {
+                readOnly ?
+                  <div className="node-read-only-input" title={fieldValue}>{fieldValue}</div> :
+                  <input
+                    autoFocus={autofocus}
+                    type="text"
+                    className="node-input"
+                    value={fieldValue || ""}
+                    onChange={(e) => handleChange(e.target.value)}
+                  />
+              }
             </div>
           </div>
         )
@@ -493,6 +498,7 @@ export class NodeDetailsContent extends React.Component {
             {this.renderFieldLabel(fieldLabel)}
             <div className={nodeValueClass}>
               <input
+                  autoFocus={autofocus}
                   type="checkbox"
                   checked={fieldValue || false}
                   onChange={(e) => handleChange(e.target.checked)}
@@ -508,6 +514,7 @@ export class NodeDetailsContent extends React.Component {
             {this.renderFieldLabel(fieldLabel)}
             <div className={nodeValueClass}>
               <Textarea
+                  autoFocus={autofocus}
                   rows={1}
                   cols={50}
                   className="node-input"
