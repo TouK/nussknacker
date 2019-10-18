@@ -18,11 +18,10 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationExce
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.deployment.RunningState.Value
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 
@@ -68,10 +67,8 @@ final case class ParsedSpelExpression(original: String, parser: () => Validated[
 
 class SpelExpression(parsed: ParsedSpelExpression,
                      expectedReturnType: TypingResult,
-                     expressionFunctions: Map[String, Method],
-                     expressionImports: List[String],
-                     propertyAccessors: Seq[PropertyAccessor],
-                     classLoader: ClassLoader, flavour: Flavour) extends api.expression.Expression with LazyLogging {
+                     flavour: Flavour,
+                     prepareEvaluationContext: Context => EvaluationContext) extends api.expression.Expression with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
@@ -94,36 +91,14 @@ class SpelExpression(parsed: ParsedSpelExpression,
       return Future.successful(ValueWithLazyContext(SpelExpressionRepr(parsed.parsed, ctx, original).asInstanceOf[T], ctx.lazyContext))
     }
 
-    val simpleContext = new StandardEvaluationContext()
-    val locator = new StandardTypeLocator(classLoader)
-    expressionImports.foreach(locator.registerImport)
-    simpleContext.setTypeLocator(locator)
-    propertyAccessors.foreach(simpleContext.addPropertyAccessor)
+    val evaluationContext = prepareEvaluationContext(ctx)
+    evaluationContext.setVariable(LazyValuesProviderVariableName, lazyValuesProvider)
+    evaluationContext.setVariable(LazyContextVariableName, ctx.lazyContext)
 
-    simpleContext.setMethodResolvers(optimizedMethodResolvers())
-
-    ctx.variables.foreach {
-      case (k, v) => simpleContext.setVariable(k, v)
-    }
-    simpleContext.setVariable(LazyValuesProviderVariableName, lazyValuesProvider)
-    simpleContext.setVariable(LazyContextVariableName, ctx.lazyContext)
-    expressionFunctions.foreach {
-      case (k, v) => simpleContext.registerFunction(k, v)
-    }
     //TODO: async evaluation of lazy vals...
-    val value = parsed.getValue[T](simpleContext, expectedClass)
-    val modifiedLazyContext = simpleContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
+    val value = parsed.getValue[T](evaluationContext, expectedClass)
+    val modifiedLazyContext = evaluationContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
     Future.successful(ValueWithLazyContext(value, modifiedLazyContext))
-  }
-
-  private def optimizedMethodResolvers() : java.util.List[MethodResolver] = {
-    val mr = new ReflectiveMethodResolver {
-      override def resolve(context: EvaluationContext, targetObject: scala.Any, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
-        val methodExecutor = super.resolve(context, targetObject, name, argumentTypes).asInstanceOf[ReflectiveMethodExecutor]
-        new OmitAnnotationsMethodExecutor(methodExecutor)
-      }
-    }
-    Collections.singletonList(mr)
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {
@@ -140,43 +115,19 @@ class SpelExpression(parsed: ParsedSpelExpression,
   }
 }
 
-class SpelExpressionParser(expressionFunctions: Map[String, Method],
-                           expressionImports: List[String],
-                           classLoader: ClassLoader,
-                           lazyValuesTimeout: Duration,
+class SpelExpressionParser(parser: org.springframework.expression.spel.standard.SpelExpressionParser,
+                           validator: SpelExpressionValidator,
                            enableSpelForceCompile: Boolean,
-                           flavour: Flavour) extends ExpressionParser {
+                           flavour: Flavour,
+                           prepareEvaluationContext: Context => EvaluationContext) extends ExpressionParser {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
   override final val languageId: String = flavour.languageId
 
-  private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
-    //we have to pass classloader, because default contextClassLoader can be sth different than we expect...
-    new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
-  )
-
-  private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor(lazyValuesTimeout)
-  private val scalaPropertyAccessor = ScalaPropertyAccessor
-  private val scalaOptionOrNullPropertyAccessor = ScalaOptionOrNullPropertyAccessor
-  private val staticPropertyAccessor = StaticPropertyAccessor
-
-  private val propertyAccessors = Seq(
-    scalaLazyPropertyAccessor, // must be before scalaPropertyAccessor
-    scalaOptionOrNullPropertyAccessor, // // must be before scalaPropertyAccessor
-    scalaPropertyAccessor,
-    staticPropertyAccessor,
-    MapPropertyAccessor,
-    TypedMapPropertyAccessor,
-    // it can add performance overhead so it will be better to keep it on the bottom
-    MapLikePropertyAccessor
-  )
-
-  private val validator = new SpelExpressionValidator()(classLoader)
-
-  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
+  override def parseWithoutContextValidation(original: String): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
     baseParse(original).map { parsed =>
-      expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType)
+      expression(ParsedSpelExpression(original, () => baseParse(original), parsed), Unknown)
     }
   }
 
@@ -196,7 +147,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method],
     if (enableSpelForceCompile) {
       forceCompile(expression.parsed)
     }
-    new SpelExpression(expression, expectedType, expressionFunctions, expressionImports, propertyAccessors, classLoader, flavour)
+    new SpelExpression(expression, expectedType, flavour, prepareEvaluationContext)
   }
 
 }
@@ -237,14 +188,66 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(loader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String], flavour: Flavour): SpelExpressionParser = new SpelExpressionParser(Map(
-    "today" -> classOf[LocalDate].getDeclaredMethod("now"),
-    "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
-    "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
-    "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
-  ), //FIXME: configurable timeout...
-    imports, loader, 1 minute, enableSpelForceCompile, flavour)
+  def default(classLoader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String], flavour: Flavour): SpelExpressionParser = {
+    val functions = Map(
+      "today" -> classOf[LocalDate].getDeclaredMethod("now"),
+      "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
+      "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[util.Collection[_]]),
+      "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[util.Collection[_]])
+    )
+    //FIXME: configurable timeout...
+    val lazyValuesTimeout = 1 minute
+    val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
+      //we have to pass classloader, because default contextClassLoader can be sth different than we expect...
+      new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
+    )
+    val propertyAccessors = Seq(
+      new ScalaLazyPropertyAccessor(lazyValuesTimeout), // must be before scalaPropertyAccessor
+      ScalaOptionOrNullPropertyAccessor, // // must be before scalaPropertyAccessor
+      ScalaPropertyAccessor,
+      StaticPropertyAccessor,
+      MapPropertyAccessor,
+      TypedMapPropertyAccessor,
+      // it can add performance overhead so it will be better to keep it on the bottom
+      MapLikePropertyAccessor
+    )
 
+    val validator = new SpelExpressionValidator(new Typer(classLoader))
+    new SpelExpressionParser(parser, validator, enableSpelForceCompile, flavour,
+      prepareEvaluationContext(classLoader, imports, propertyAccessors, functions))
+  }
+
+  private def prepareEvaluationContext[T](classLoader: ClassLoader,
+                                          expressionImports: List[String],
+                                          propertyAccessors: Seq[PropertyAccessor],
+                                          expressionFunctions: Map[String, Method])
+                                         (ctx: Context): EvaluationContext = {
+    val evaluationContext = new StandardEvaluationContext()
+    val locator = new StandardTypeLocator(classLoader)
+    expressionImports.foreach(locator.registerImport)
+    evaluationContext.setTypeLocator(locator)
+    propertyAccessors.foreach(evaluationContext.addPropertyAccessor)
+
+    evaluationContext.setMethodResolvers(optimizedMethodResolvers())
+
+    ctx.variables.foreach {
+      case (k, v) => evaluationContext.setVariable(k, v)
+    }
+    expressionFunctions.foreach {
+      case (k, v) => evaluationContext.registerFunction(k, v)
+    }
+    evaluationContext
+  }
+
+  private def optimizedMethodResolvers() : java.util.List[MethodResolver] = {
+    val mr = new ReflectiveMethodResolver {
+      override def resolve(context: EvaluationContext, targetObject: scala.Any, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
+        val methodExecutor = super.resolve(context, targetObject, name, argumentTypes).asInstanceOf[ReflectiveMethodExecutor]
+        new OmitAnnotationsMethodExecutor(methodExecutor)
+      }
+    }
+    Collections.singletonList(mr)
+  }
 
   object ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 

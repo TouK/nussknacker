@@ -62,7 +62,7 @@ object SqlExpressionParser extends ExpressionParser {
     }
   }
 
-  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], Expression] =
+  override def parseWithoutContextValidation(original: String): Validated[NonEmptyList[ExpressionParseError], Expression] =
     throw new IllegalStateException("shouldn't be used")
 
 }

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.expression
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
@@ -22,9 +22,9 @@ trait ExpressionParser {
   def languageId: String
 
   def parse(original: String, ctx: ValidationContext, expectedType: TypingResult):
-  Validated[NonEmptyList[ExpressionParseError], TypedExpression]
+  ValidatedNel[ExpressionParseError, TypedExpression]
 
-  def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], Expression]
+  def parseWithoutContextValidation(original: String): ValidatedNel[ExpressionParseError, Expression]
 
 }
 

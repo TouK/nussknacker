@@ -80,9 +80,10 @@ object ProcessTestData {
   val validDisplayableProcess : ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
   val validProcessDetails: ValidatedProcessDetails = toDetails(validDisplayableProcess)
 
-  def toValidatedDisplayable(espProcess: EspProcess) : ValidatedDisplayableProcess =
-    validation.toValidated(ProcessConverter
-     .toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming))
+  def toValidatedDisplayable(espProcess: EspProcess) : ValidatedDisplayableProcess = {
+    val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
+    new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
+  }
 
   def toDetails(displayable: DisplayableProcess) : ProcessDetails =
     BaseProcessDetails[DisplayableProcess](
