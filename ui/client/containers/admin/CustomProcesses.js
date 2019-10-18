@@ -93,7 +93,7 @@ class CustomProcesses extends BaseProcesses {
                 <Tr className="row-hover" key={index}>
                   <Td column="name">{process.name}</Td>
                   <Td column="category">{process.processCategory}</Td>
-                  <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
+                  <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column">{DateUtils.formatRelatively(process.modificationDate)}</Td>
                   <Td column="status" className="status-column">
                     <div
                       className={this.processStatusClass(process)}
