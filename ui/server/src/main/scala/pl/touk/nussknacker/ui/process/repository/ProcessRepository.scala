@@ -15,7 +15,6 @@ import scala.language.higherKinds
 trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
   import api._
-  import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
   protected def processTableFilteredByUser(implicit loggedUser: LoggedUser): Query[ProcessEntityFactory#ProcessEntity, ProcessEntityData, Seq] = {
     loggedUser match {
       case user: CommonUser => processesTable.filter(_.processCategory inSet user.categories(Permission.Read))

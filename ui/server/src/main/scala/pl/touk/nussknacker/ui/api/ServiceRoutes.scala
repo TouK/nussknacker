@@ -14,7 +14,6 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json, ObjectEncoder}
 import io.circe.generic.JsonCodec

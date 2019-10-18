@@ -4,7 +4,7 @@ import pl.touk.nussknacker.ui.security.api.Permission.Permission
 
 sealed trait LoggedUser {
   val id: String
-  def hasPermission(category: String, permission: Permission): Boolean
+  def can(category: String, permission: Permission): Boolean
   val isAdmin: Boolean
 }
 
@@ -25,7 +25,7 @@ case class CommonUser(id: String,
     case (category, permissions) if permissions contains permission => category
   }.toSet
 
-  override def hasPermission(category: String, permission: Permission): Boolean = {
+  override def can(category: String, permission: Permission): Boolean = {
     categoryPermissions.get(category).exists(_ contains permission)
   }
 
@@ -33,6 +33,6 @@ case class CommonUser(id: String,
 }
 
 case class AdminUser(id: String) extends LoggedUser {
-  override def hasPermission(category: String, permission: Permission): Boolean = true
+  override def can(category: String, permission: Permission): Boolean = true
   override val isAdmin: Boolean = true
 }
