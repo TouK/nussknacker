@@ -10,7 +10,6 @@ import EspModalStyles from "../common/EspModalStyles";
 import "../stylesheets/visualization.styl";
 import HttpService from "../http/HttpService";
 import * as VisualizationUrl from '../common/VisualizationUrl'
-import Processes from "../containers/Processes";
 
 //TODO: Consider integrating with GenericModalDialog 
 class AddProcessDialog extends React.Component {
@@ -20,7 +19,8 @@ class AddProcessDialog extends React.Component {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     isSubprocess: PropTypes.bool,
-    visualizationPath: PropTypes.string.isRequired
+    visualizationPath: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired
   }
 
   initialState(props) {
@@ -50,14 +50,14 @@ class AddProcessDialog extends React.Component {
     return (
       <Modal isOpen={this.props.isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeDialog}>
         <div className="modalHeader" style={headerStyles}>
-          <span>Create new process</span>
+          <span>{this.props.message}</span>
         </div>
         <div className="modalContentDark">
           <div className="node-table">
             <div className="node-table-body">
               <div className="node-row">
                 <div className="node-label">Id</div>
-                <div className="node-value"><input type="text" id="newProcessId" className="node-input" value={this.state.processId}
+                <div className="node-value"><input autoFocus={true} type="text" id="newProcessId" className="node-input" value={this.state.processId}
                                                    onChange={(e) => this.setState({processId: e.target.value})}/></div>
               </div>
               <div className="node-row">

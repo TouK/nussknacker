@@ -5,23 +5,9 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import Permission._
 import org.scalatest.prop.{TableFor3, TableFor4}
 
-class PermissionSyntaxTest extends FunSuite with Matchers {
-  import PermissionSyntax._
+class LoggedUserTest extends FunSuite with Matchers {
 
-  test("filter categories by permission") {
-    def u(m: Map[String, Set[Permission]]) = LoggedUser("", categoryPermissions = m)
-
-    val perms: TableFor3[LoggedUser, Permission, Set[String]] = Table(
-      ("categoryPermissions", "permission", "categories"),
-      (u(Map("c1"->Set(Read))), Read, Set("c1")),
-      (u(Map("c2"->Set(Write))), Read, Set.empty)
-    )
-    forAll(perms) { (u: LoggedUser, p: Permission, c: Set[String]) =>
-      u.can(p) shouldEqual c
-    }
-  }
-
-  test("Admin permission grands other permissions") {
+  test("Admin permission grants other permissions") {
     def admin(cp: Map[String, Set[Permission]]) = LoggedUser("admin", cp, true)
 
     val perms: TableFor3[LoggedUser, Permission, String] = Table(

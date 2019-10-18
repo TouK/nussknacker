@@ -34,7 +34,6 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
 
 class ProcessesResources(val processRepository: FetchingProcessRepository,
                          writeRepository: WriteProcessRepository,

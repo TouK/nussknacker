@@ -18,10 +18,10 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.ParameterEvaluatorExtractor
 import pl.touk.nussknacker.ui.security.api.Permission._
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, PermissionSyntax}
-import PermissionSyntax._
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 
 import scala.runtime.BoxedUnit
 
@@ -34,10 +34,11 @@ object DefinitionPreparer {
                         subprocessInputs: Map[String, ObjectDefinition],
                         extractorFactory: ParameterDefaultValueExtractorStrategy,
                         nodesConfig: Map[String, SingleNodeConfig],
-                        nodeCategoryMapping: Map[String, String]
+                        nodeCategoryMapping: Map[String, String],
+                        typesForCategories: ProcessTypesForCategories
                        ): List[NodeGroup] = {
     val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
-    val readCategories = user.can(Read).toList
+    val readCategories = typesForCategories.getAllCategories.filter(user.can(_, Read))
 
     def filterCategories(objectDefinition: ObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 

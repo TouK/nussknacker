@@ -4,7 +4,6 @@ import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
 
 import scala.concurrent.{ExecutionContext, Future}
 

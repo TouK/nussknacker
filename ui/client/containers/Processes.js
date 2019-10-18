@@ -137,6 +137,7 @@ class Processes extends BaseProcesses {
           isOpen={this.state.showAddProcess}
           isSubprocess={false}
           visualizationPath={Processes.path}
+          message="Create new process"
         />
 
         <LoaderSpinner show={this.state.showLoader}/>

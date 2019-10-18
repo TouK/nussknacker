@@ -6,7 +6,7 @@ import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry, ProcessHis
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
@@ -15,10 +15,11 @@ import scala.language.higherKinds
 trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
   import api._
-  import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
   protected def processTableFilteredByUser(implicit loggedUser: LoggedUser): Query[ProcessEntityFactory#ProcessEntity, ProcessEntityData, Seq] = {
-    val readCategories = loggedUser.can(Permission.Read)
-    if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet readCategories)
+    loggedUser match {
+      case user: CommonUser => processesTable.filter(_.processCategory inSet user.categories(Permission.Read))
+      case _: AdminUser => processesTable
+    }
   }
 
   protected def latestProcessVersions(processId: ProcessId)
