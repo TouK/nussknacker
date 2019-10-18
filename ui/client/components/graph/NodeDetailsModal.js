@@ -159,7 +159,7 @@ class NodeDetailsModal extends React.Component {
     const docsUrl = this.props.nodeSetting.docsUrl
     return docsUrl ?
       <a className="docsIcon" target="_blank" href={docsUrl} title="Documentation">
-        <SvgDiv svgFile={'book.svg'}/>
+        <SvgDiv svgFile={'documentation.svg'}/>
       </a> : null
   }
 
@@ -169,7 +169,7 @@ class NodeDetailsModal extends React.Component {
 
   render() {
     const isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
-    const headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
+    const titleStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
     const testResults = (id) => TestResultUtils.resultsForNode(this.props.testResults, id)
     const variableLanguage = this.variableLanguage(this.props.nodeToDisplay)
     const modelHeader = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + this.nodeAttributes().name
@@ -177,8 +177,10 @@ class NodeDetailsModal extends React.Component {
     return (
       <div className="objectModal">
         <Modal shouldCloseOnOverlayClick={false} isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
-          <div className="modalHeader" style={headerStyles}>
-            <span>{modelHeader}</span>
+          <div className="modalHeader">
+            <div className="modal-title" style={titleStyles}>
+              <span>{modelHeader}</span>
+            </div>
             {this.renderDocumentationIcon()}
           </div>
           <div className="modalContentDark">

@@ -12,9 +12,11 @@ __webpack_public_path__ = `${nkPath}/static/`
 
 let API_URL = `${nkPath}/api`
 const dateFormat = "YYYY-MM-DD HH:mm:ss"
+const displayDateFormat = 'YYYY-MM-DD|HH:mm';
 
 export {
   API_URL,
   dateFormat,
+  displayDateFormat,
   nkPath
 }

@@ -78,10 +78,10 @@ export class ProcessHistory_ extends Component {
                   null
                 }
                 <br/>
-                <small><i>{DateUtils.format(historyEntry.createDate)}</i></small>
+                <small><i title={DateUtils.formatAbsolutely(historyEntry.createDate)}>{DateUtils.formatRelatively(historyEntry.createDate)}</i></small>
                 <br/>
                 {historyEntry.deployments.map((deployment, index) =>
-                  <small key={index}><i>{DateUtils.format(deployment.deployedAt)}</i> <span className="label label-info">{deployment.environment}</span></small>
+                  <small key={index}><i title={DateUtils.formatAbsolutely(deployment.deployedAt)}>{DateUtils.formatRelatively(deployment.deployedAt)}</i> <span className="label label-info">{deployment.environment}</span></small>
                 )}
               </li>
             )

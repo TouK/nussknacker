@@ -112,7 +112,7 @@ class Archive extends BaseProcesses {
                   <Td column="subprocess" className="centered-column">
                     <Glyphicon glyph={process.isSubprocess ? 'ok' : 'remove'}/>
                   </Td>
-                  <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
+                  <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column">{DateUtils.formatRelatively(process.modificationDate)}</Td>
                   <Td column="view" className="edit-column">
                     <Glyphicon
                       glyph="eye-open"

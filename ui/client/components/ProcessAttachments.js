@@ -50,7 +50,7 @@ export class ProcessAttachments_ extends React.Component {
                 </div>
                 <div className="header">
                   <span className="label label-info">{attachment.user}</span>
-                  <span className="date">{DateUtils.format(attachment.createDate)}</span>
+                  <span title={DateUtils.formatAbsolutely(attachment.createDate)} className="date">{DateUtils.formatRelatively(attachment.createDate)}</span>
                   <p>{ProcessUtils.processDisplayName(attachment.processId, attachment.processVersionId)}</p>
                 </div>
                 <p> {attachment.fileName} </p>
