@@ -87,9 +87,8 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     val imports = List(SampleValue.getClass.getPackage.getName)
-    new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true, flavour)
+    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, imports, flavour)
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 

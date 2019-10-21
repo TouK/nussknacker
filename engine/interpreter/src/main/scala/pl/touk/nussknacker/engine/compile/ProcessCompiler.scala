@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MissingOutputVariableException
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -40,7 +40,9 @@ import scala.util.control.NonFatal
 
 class ProcessCompiler(protected val classLoader: ClassLoader,
                       protected val sub: PartSubGraphCompiler,
-                      protected val definitions: ProcessDefinition[ObjectWithMethodDef]
+                      protected val definitions: ProcessDefinition[ObjectWithMethodDef],
+                      // compiler for object (source, sink, custom transformer) parameters
+                      protected val objectParametersExpressionCompiler: ExpressionCompiler
                      ) extends ProcessCompilerBase with ProcessValidator {
 
   //FIXME: should it be here?
@@ -94,7 +96,7 @@ protected trait ProcessCompilerBase {
 
   protected def classLoader: ClassLoader
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, expressionConfig)
+  protected def objectParametersExpressionCompiler: ExpressionCompiler
 
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext = {
     val globalTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType)
@@ -180,7 +182,7 @@ protected trait ProcessCompilerBase {
       CompilationResult.map3(
         validatedSource,
         compileParts(part.nextParts, typesForParts),
-        CompilationResult(compiledSource)) { (_, nextParts, obj) =>
+        CompilationResult(Map(node.id -> contextWithOnlyGlobalVariables), compiledSource)) { (_, nextParts, obj) =>
         compiledgraph.part.SourcePart(obj,
           splittednode.SourceNode(sourceData, node.next), initialCtx, nextParts, part.ends)
       }
@@ -252,12 +254,13 @@ protected trait ProcessCompilerBase {
                               ctx: ValidationContext)
                              (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
       val (compiledNode, nextCtx) = compileCustomNodeObject(data, ctx)
-      val nextPartsValidation = sub.validate(node, nextCtx.fold(_ => ctx, identity))
+      val nextPartsValidation = sub.validate(node, nextCtx.valueOr(_ => ctx))
+      val typesForParts = nextPartsValidation.typing
 
       CompilationResult.map4(
         f0 = CompilationResult(compiledNode),
         f1 = nextPartsValidation,
-        f2 = compileParts(part.nextParts, nextPartsValidation.typing),
+        f2 = compileParts(part.nextParts, typesForParts),
         f3 = CompilationResult(nextCtx)
       ) { (nodeInvoker, _, nextPartsCompiled, validatedNextCtx) =>
         compiledgraph.part.CustomNodePart(nodeInvoker, node, validatedNextCtx, nextPartsCompiled, part.ends)
@@ -329,9 +332,9 @@ protected trait ProcessCompilerBase {
                                       ctx: ValidationContext)
                                      (implicit nodeId: NodeId,
                                       metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
-    expressionCompiler.compileObjectParameters(nodeDefinition.parameters,
+    objectParametersExpressionCompiler.compileObjectParameters(nodeDefinition.parameters,
       parameters,
-      branchParameters, Some(ctx.clearVariables), Some(ctx)).andThen { compiledParameters =>
+      branchParameters, ctx.clearVariables, ctx).andThen { compiledParameters =>
       try {
         Valid(factory.create[T](nodeDefinition, compiledParameters, outputVariableNameOpt))
       } catch {
@@ -349,15 +352,23 @@ protected trait ProcessCompilerBase {
 
 }
 
+
+object ProcessCompiler {
+
+  def apply(classLoader: ClassLoader,
+            definitions: ProcessDefinition[ObjectWithMethodDef],
+            expressionCompilerCreate: (ClassLoader, ExpressionDefinition[ObjectWithMethodDef]) => ExpressionCompiler): ProcessCompiler = {
+    val expressionCompiler = expressionCompilerCreate(classLoader, definitions.expressionConfig)
+    val sub = new PartSubGraphCompiler(classLoader, expressionCompiler, definitions.expressionConfig, definitions.services)
+    new ProcessCompiler(classLoader, sub, definitions, expressionCompiler)
+  }
+
+}
+
 object ProcessValidator {
 
   def default(definitions: ProcessDefinition[ObjectWithMethodDef], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(loader, definitions.expressionConfig)
-
-    val sub = new PartSubGraphCompiler(
-      loader, expressionCompiler, definitions.expressionConfig, definitions.services)
-
-    new ProcessCompiler(loader, sub, definitions)
+    ProcessCompiler(loader, definitions, ExpressionCompiler.withoutOptimization)
   }
 
 }

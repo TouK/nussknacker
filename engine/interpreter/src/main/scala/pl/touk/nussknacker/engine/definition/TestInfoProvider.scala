@@ -6,9 +6,11 @@ import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator,
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.variables.MetaVariables
 import shapeless.syntax.typeable._
 
 trait TestInfoProvider {
@@ -59,9 +61,16 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     } yield sourceObj
   }
 
+  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext = {
+    val globalTypes = modelData.processDefinition.expressionConfig.globalVariables.mapValues(_.returnType)
+    val typesWithMeta = MetaVariables.withType(globalTypes)
+    ValidationContext(Map.empty, typesWithMeta)
+  }
+
   private def prepareSourceParams(definition: ObjectWithMethodDef, source: Source)
                                  (implicit processMetaData: MetaData, nodeId: NodeId) = {
     val parametersToCompile = source.ref.parameters
-    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, None, None).toOption
+    val ctx = contextWithOnlyGlobalVariables
+    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, ctx.clearVariables, ctx).toOption
   }
 }

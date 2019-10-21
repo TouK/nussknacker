@@ -25,9 +25,11 @@ object CompiledProcess {
     val servicesDefs = definitions.services
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, definitions.expressionConfig)
+    // TODO: rethink if optimization for object's parameters is still a problem here because maybe we can use just ProcessCompiler.apply
+    val objectParametersExpressionCompiler = ExpressionCompiler.withoutOptimization(userCodeClassLoader, definitions.expressionConfig)
     //for testing environment it's important to take classloader from user jar
     val subCompiler = new PartSubGraphCompiler(userCodeClassLoader, expressionCompiler, definitions.expressionConfig, servicesDefs)
-    val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions)
+    val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions, objectParametersExpressionCompiler)
 
     processCompiler.compile(process).result.map { compiledProcess =>
       val globalVariables = definitions.expressionConfig.globalVariables.mapValues(_.obj)

@@ -56,16 +56,19 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
   def compile(n: SplittedNode[_], ctx: ValidationContext) : CompilationResult[compiledgraph.node.Node] = {
     implicit val nodeId: NodeId = NodeId(n.id)
 
-    val nodeResult : CompilationResult[compiledgraph.node.Node] = n match {
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T]) =
+      CompilationResult(Map(n.id -> ctx), validated)
+
+    n match {
       case splittednode.SourceNode(nodeData, next) => handleSourceNode(nodeData, ctx, next)
       case splittednode.OneOutputSubsequentNode(data, next) => compileSubsequent(ctx, data, next)
 
       case splittednode.SplitNode(bareNode, nexts) =>
         val compiledNexts = nexts.map(n => compile(n, ctx)).sequence
-        compiledNexts.map(nx => compiledgraph.node.SplitNode(bareNode.id, nx))
+        compiledNexts.andThen(nx => toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx))))
 
       case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
-        CompilationResult.map3(CompilationResult(compile(expression, None, ctx, Typed[Boolean])._2), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
+        CompilationResult.map3(toCompilationResult(compile(expression, None, ctx, Typed[Boolean])._2), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
           (expr, next, nextFalse) =>
             compiledgraph.node.Filter(id = id,
             expression = expr,
@@ -75,17 +78,17 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
       case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
         val (newCtx, compiledExpression) = withVariable(exprVal, ctx, compile(expression, None, ctx, Unknown))
-        CompilationResult.map3(CompilationResult(compiledExpression), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
+        CompilationResult.map3(toCompilationResult(compiledExpression), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
           (realCompiledExpression, cases, next) => {
             compiledgraph.node.Switch(id, realCompiledExpression, exprVal, cases, next)
           })
-      case splittednode.EndingNode(data) => CompilationResult(compileEndingNode(ctx, data))
+      case splittednode.EndingNode(data) => toCompilationResult(compileEndingNode(ctx, data))
 
     }
-    nodeResult.copy(typing = nodeResult.typing + (n.id -> ctx))
   }
 
   private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: splittednode.Next): CompilationResult[node.Source] = {
+    // just like in a custom node we can't add input context here because it contains output variable context (not input)
     nodeData match {
       case graph.node.Source(id, _, _) =>
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
@@ -117,73 +120,78 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     case BranchEndData(id, joinId) => Valid(compiledgraph.node.BranchEnd(id, joinId.joinId))
   }
 
-  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = data match {
-    case graph.node.Variable(id, varName, expression, _) =>
-      val (newCtx, compiledExpression) = withVariable(varName, ctx, compile(expression, None, ctx, Unknown))
+  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = {
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T]) =
+      CompilationResult(Map(data.id -> ctx), validated)
 
-      CompilationResult.map2(CompilationResult(compiledExpression), compile(next, newCtx)) { (compiled, compiledNext) =>
-        compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
-      }
-    case graph.node.VariableBuilder(id, varName, fields, _) =>
-      val fieldsCompiled = fields.map(f => compile(f, ctx)).unzip
-      val fieldsTyped = (TypedObjectTypingResult(fieldsCompiled._1.toMap), fieldsCompiled._2.sequence)
+    data match {
+      case graph.node.Variable(id, varName, expression, _) =>
+        val (newCtx, compiledExpression) = withVariable(varName, ctx, compile(expression, None, ctx, Unknown))
 
-      val (newCtx, compiledVariable) = withVariable(varName, ctx, fieldsTyped)
+        CompilationResult.map2(toCompilationResult(compiledExpression), compile(next, newCtx)) { (compiled, compiledNext) =>
+          compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
+        }
+      case graph.node.VariableBuilder(id, varName, fields, _) =>
+        val fieldsCompiled = fields.map(f => compile(f, ctx)).unzip
+        val fieldsTyped = (TypedObjectTypingResult(fieldsCompiled._1.toMap), fieldsCompiled._2.sequence)
 
-      CompilationResult.map2(CompilationResult(compiledVariable), compile(next, newCtx)) { (compiledFields, compiledNext) =>
-        compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields), compiledNext)
-      }
+        val (newCtx, compiledVariable) = withVariable(varName, ctx, fieldsTyped)
 
-    case graph.node.Processor(id, ref, isDisabled, _) =>
-      CompilationResult.map2(CompilationResult(compile(ref, ctx)), compile(next, ctx))((ref, next) =>
-        compiledgraph.node.Processor(id, ref._1, next, isDisabled.contains(true)))
+        CompilationResult.map2(toCompilationResult(compiledVariable), compile(next, newCtx)) { (compiledFields, compiledNext) =>
+          compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields), compiledNext)
+        }
 
-    case graph.node.Enricher(id, ref, outName, _) =>
-      val compiledRef = compile(ref, ctx)
+      case graph.node.Processor(id, ref, isDisabled, _) =>
+        CompilationResult.map2(toCompilationResult(compile(ref, ctx)), compile(next, ctx))((ref, next) =>
+          compiledgraph.node.Processor(id, ref._1, next, isDisabled.contains(true)))
 
-      val newCtx = compiledRef.andThen { case (_, returnTypeFromRef) =>
-        val returnType = returnTypeFromRef.orElse(services.get(ref.id).map(_.returnType)).getOrElse(Unknown)
-        ctx.withVariable(outName, returnType)
-      }
-      CompilationResult.map3(CompilationResult(newCtx), CompilationResult(compile(ref, ctx)), compile(next, newCtx.getOrElse(ctx)))((_, ref, next) =>
-                         compiledgraph.node.Enricher(id, ref._1, outName, next))
+      case graph.node.Enricher(id, ref, outName, _) =>
+        val compiledRef = compile(ref, ctx)
 
-    //here we don't do anything, in subgraphcompiler it's just pass through
-    case graph.node.CustomNode(id, _, _, _, _) =>
-      CompilationResult.map(
-        fa = compile(next, ctx))(
-        f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
+        val newCtx = compiledRef.andThen { case (_, returnTypeFromRef) =>
+          val returnType = returnTypeFromRef.orElse(services.get(ref.id).map(_.returnType)).getOrElse(Unknown)
+          ctx.withVariable(outName, returnType)
+        }
+        CompilationResult.map3(CompilationResult(newCtx), toCompilationResult(compile(ref, ctx)), compile(next, newCtx.getOrElse(ctx)))((_, ref, next) =>
+                           compiledgraph.node.Enricher(id, ref._1, outName, next))
 
-    case subprocessInput@SubprocessInput(id, ref, _, _, _) =>
-      import cats.implicits.toTraverseOps
+      //here we don't do anything, in subgraphcompiler it's just pass through, we can't add input context here because it contains output variable context (not input)
+      case graph.node.CustomNode(id, _, _, _, _) =>
+        CompilationResult.map(
+          fa = compile(next, ctx))(
+          f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
 
-      val childCtx = ctx.pushNewContext()
-      val newCtx = ref.parameters.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx))
-                    { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
+      case subprocessInput@SubprocessInput(id, ref, _, _, _) =>
+        import cats.implicits.toTraverseOps
 
-      val validParamDefs =
-        ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
+        val childCtx = ctx.pushNewContext()
+        val newCtx = ref.parameters.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx))
+                      { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
 
-      val validParams = validParamDefs.andThen { paramDefs =>
-        expressionCompiler.compileObjectParameters(paramDefs, ref.parameters, toOption(ctx))
-      }
+        val validParamDefs =
+          ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
 
-      CompilationResult.map3(
-        f0 = CompilationResult(validParams),
-        f1 = compile(next, newCtx.getOrElse(childCtx)),
-        f2 = CompilationResult(newCtx))((params, next, _) => compiledgraph.node.SubprocessStart(id, params, next))
+        val validParams = validParamDefs.andThen { paramDefs =>
+          expressionCompiler.compileObjectParameters(paramDefs, ref.parameters, ctx)
+        }
 
-    case SubprocessOutput(id, _, _) =>
-      //this popContext *really* has to work to be able to extract variable types :|
-      ctx.popContext.fold(error => CompilationResult(Invalid(error)), popContext =>
-        compile(next, popContext).map(SubprocessEnd(id, _))
-      )
+        CompilationResult.map3(
+          f0 = toCompilationResult(validParams),
+          f1 = compile(next, newCtx.getOrElse(childCtx)),
+          f2 = CompilationResult(newCtx))((params, next, _) => compiledgraph.node.SubprocessStart(id, params, next))
+
+      case SubprocessOutput(id, _, _) =>
+        //this popContext *really* has to work to be able to extract variable types :|
+        ctx.popContext.map(popContext =>
+          compile(next, popContext).andThen(next => toCompilationResult(Valid(SubprocessEnd(id, next))))).valueOr(error => CompilationResult(Invalid(error)))
+    }
   }
 
   private def compile(next: splittednode.Next, ctx: ValidationContext): CompilationResult[compiledgraph.node.Next] = {
     next match {
       case splittednode.NextNode(n) => compile(n, ctx).map(cn => compiledgraph.node.NextNode(cn))
-      case splittednode.PartRef(ref) => CompilationResult(Map(ref -> ctx), Valid(compiledgraph.node.PartRef(ref)))
+      case splittednode.PartRef(ref) =>
+        CompilationResult(Map(ref -> ctx), Valid(compiledgraph.node.PartRef(ref)))
     }
   }
 
@@ -192,7 +200,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     val service = services.get(n.id).map(Valid(_)).getOrElse(invalid(MissingService(n.id))).toValidatedNel
 
     service.andThen { objWithMethod =>
-      expressionCompiler.compileObjectParameters(objWithMethod.parameters, n.parameters, toOption(ctx)).map { params =>
+      expressionCompiler.compileObjectParameters(objWithMethod.parameters, n.parameters, ctx).map { params =>
           val invoker = createServiceInvoker(objWithMethod)
           (compiledgraph.service.ServiceRef(n.id, invoker, params), computeReturnType(objWithMethod.obj, params))
       }
@@ -223,11 +231,10 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
                       ctx: ValidationContext,
                       expectedType: TypingResult)
                      (implicit nodeId: NodeId): (TypingResult, ValidatedNel[ProcessCompilationError, api.expression.Expression]) = {
-    expressionCompiler.compile(n, fieldName, toOption(ctx), expectedType)
-      .fold(err => (Unknown, Invalid(err)), res => (res.returnType, Valid(res.expression)))
+    expressionCompiler.compile(n, fieldName, ctx, expectedType)
+      .map(res => (res.returnType, Valid(res.expression)))
+      .valueOr(err => (Unknown, Invalid(err)))
   }
-
-  private def toOption(ctx: ValidationContext) = Some(ctx)
 
   //this method tries to compute constant parameters if service is ServiceReturningType
   //TODO: is it right way to do this? Maybe we just need to analyze Expression?

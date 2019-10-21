@@ -11,7 +11,7 @@ import cats.data.{EitherT, Validated}
 import cats.syntax.either._
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
@@ -304,7 +304,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
     processRepository.fetchLatestProcessDetailsForProcessIdEither[Unit](processId.id).map { detailsXor =>
       val validatedProcess = detailsXor
         .map(details => ProcessConverter.toDisplayable(process, details.processingType))
-        .map(processValidation.toValidated)
+        .map(process => new ValidatedDisplayableProcess(process, processValidation.validate(process)))
       toResponseXor(validatedProcess)
     }
   }
@@ -322,12 +322,13 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
   private def saveProcess(processToSave: ProcessToSave, processId: ProcessId)
                          (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
     val displayableProcess = processToSave.process
-    val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-    val json = ProcessMarshaller.toJson(canonical).spaces2
-    val deploymentData = GraphProcess(json)
-
     (for {
       validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processValidation.validate(displayableProcess)))
+      deploymentData = {
+        val canonical = ProcessConverter.fromDisplayable(displayableProcess)
+        val json = ProcessMarshaller.toJson(canonical).spaces2
+        GraphProcess(json)
+      }
       result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
     } yield validation).value
   }
@@ -369,7 +370,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
   }
 
   private def validate(processDetails: ProcessDetails) : Future[ValidatedProcessDetails] = {
-    Future.successful(processDetails.mapProcess(processValidation.toValidated))
+    Future.successful(processDetails.mapProcess(process => new ValidatedDisplayableProcess(process, processValidation.validate(process))))
   }
 
   private def validateAll(processDetails: Future[List[ProcessDetails]]) : Future[List[ValidatedProcessDetails]] = {
