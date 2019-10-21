@@ -5,6 +5,7 @@ const User = function User(data) {
   this.categoryPermissions = data.categoryPermissions
   this.categories = data.categories
   this.isAdmin = data.isAdmin
+  this.globalPermissions = data.globalPermissions
   this.id = data.id
 }
 

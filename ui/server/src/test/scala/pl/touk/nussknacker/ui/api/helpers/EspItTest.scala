@@ -73,6 +73,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val featureTogglesConfig = FeatureTogglesConfig.create(config)
   val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig)
+  val usersRoute = new UserResources(typesForCategories)
 
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
   val definitionResources = new DefinitionResources(
@@ -182,6 +183,10 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
 
   def getSettings = {
     Get(s"/settings") ~> settingsRouteWithAllPermissions
+  }
+
+  def getUser(isAdmin: Boolean) = {
+    Get("/user") ~> (if (isAdmin) withAdminPermissions(usersRoute) else withAllPermissions(usersRoute))
   }
 
   def getProcessDefinitionData(processingType: String, subprocessVersions: Json) = {

@@ -73,7 +73,7 @@ object TestFactory extends TestPermissions{
   //FIXME: update
   def user(userName: String = "userId", testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(userName, testPermissions)
 
-  def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, true)
+  def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, Nil, isAdmin = true)
 
   class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
 
