@@ -18,7 +18,7 @@ class RawField extends React.Component {
       <div className="node-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
-          <input className="node-input" type="text" value={field.name} placeholder="Field name"
+          <input className="node-input" type="text" value={field.name} placeholder="Name"
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
         </div>
         <div className={"node-value field" + markedClass}>
