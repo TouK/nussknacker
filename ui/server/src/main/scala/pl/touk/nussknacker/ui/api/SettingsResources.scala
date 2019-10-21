@@ -35,7 +35,7 @@ class SettingsResources(config: FeatureTogglesConfig,
 
           val authenticationSettings = AuthenticationSettings(
             authenticationConfig.getBackend().toString,
-            authenticationConfig.getAuthenticationRedirectUrl().map(_.toString)
+            authenticationConfig.getAuthorizeUri().map(_.toString)
           )
 
           UISettings(toggleOptions, authenticationSettings)

@@ -3,13 +3,16 @@ package pl.touk.nussknacker.ui.security.oauth2
 import java.net.URI
 
 import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration}
+import sttp.model.Uri
+
+case class OAuth2BasicAuthConfiguration(user: String, password: String)
 
 case class OAuth2Configuration(backend: AuthenticationBackend.Value,
-                               authenticationUrl: URI,
+                               authorizeUri: URI,
                                clientSecret: String,
                                clientId: String,
                                profileUri: URI,
-                               tokenUri: URI,
+                               accessTokenUri: URI,
                                redirectUri: URI,
                                accessTokenParams: Map[String, String] = Map.empty,
                                authorizeParams: Map[String, String] = Map.empty,
@@ -17,12 +20,18 @@ case class OAuth2Configuration(backend: AuthenticationBackend.Value,
 
   override def getBackend(): AuthenticationBackend.Value = backend
 
-  override def getAuthenticationRedirectUrl(): Option[URI] = Option.apply({
-    new URI(dispatch.url(authenticationUrl.toString)
+  override def getAuthorizeUri(): Option[URI] = Option.apply({
+    new URI(dispatch.url(authorizeUri.toString)
       .setQueryParameters((Map(
         "client_id" -> clientId,
-        "redirect_uri" -> redirectUri.toString
+        "redirect_uri" -> getRedirectUrl()
       ) ++ authorizeParams).mapValues(v => Seq(v)))
       .url)
   })
+
+  def getAccessTokenSttpUri = Uri(accessTokenUri)
+
+  def getRedirectSttpUri() = Uri(redirectUri)
+
+  def getRedirectUrl() = redirectUri.toString
 }

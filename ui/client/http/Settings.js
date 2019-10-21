@@ -14,7 +14,7 @@ export default {
         const settings = settingsResponse.data
 
         if (error.response.status === UNAUTHORIZED_CODE && _.has(settings, "authentication.backend") && _.get(settings, "authentication.backend") === OAUTH2_BACKEND) {
-          window.location.replace(_.get(settings, "authentication.url"));
+          window.location.replace(_.get(settings, "authentication.url"))
         }
 
         return Promise.reject(error)
