@@ -41,7 +41,8 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
    val canonical = ProcessConverter.fromDisplayable(process)
-   validation.toValidated(ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming))
+    val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming)
+    new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
   }
 
   test("be able to convert empty process") {
@@ -104,7 +105,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         List.empty,
         List.empty,
         Map(
-          "s" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
+          "s" -> Map("meta" -> MetaVariables.typingResult(meta)),
           "v" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
           "e" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]))
       )

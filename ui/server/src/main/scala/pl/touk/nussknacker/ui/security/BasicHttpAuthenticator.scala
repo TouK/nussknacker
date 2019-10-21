@@ -12,6 +12,7 @@ import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import BasicHttpAuthenticator._
 import org.mindrot.jbcrypt.BCrypt
+import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -52,7 +53,7 @@ class BasicHttpAuthenticator(usersList: List[ConfiguredUser]) extends SecurityDi
         case (Some(_), Some(_)) => throw new IllegalStateException("Specified both password and encrypted password for user: " + u.id)
         case (None, None) => throw new IllegalStateException("Neither specified password nor encrypted password for user: " + u.id)
       }
-      u.id -> UserWithPassword(u.id, password, u.categoryPermissions, u.isAdmin)
+      u.id -> UserWithPassword(u.id, password, u.categoryPermissions, u.globalPermissions, u.isAdmin)
     }.toMap
   }
 
@@ -71,6 +72,7 @@ object BasicHttpAuthenticator {
                                               password: Option[String],
                                               encryptedPassword: Option[String],
                                               categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+                                              globalPermissions: List[GlobalPermission] = Nil,
                                               isAdmin: Boolean = false)
 
   private sealed trait Password {
@@ -81,8 +83,8 @@ object BasicHttpAuthenticator {
 
   private case class EncryptedPassword(value: String) extends Password
 
-  private case class UserWithPassword(id: String, password: Password, categoryPermissions: Map[String, Set[Permission]], isAdmin: Boolean) {
-    def toLoggedUser = LoggedUser(id, categoryPermissions, isAdmin)
+  private case class UserWithPassword(id: String, password: Password, categoryPermissions: Map[String, Set[Permission]], globalPermissions: List[GlobalPermission], isAdmin: Boolean) {
+    def toLoggedUser = LoggedUser(id, categoryPermissions, globalPermissions, isAdmin)
   }
 
 }

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
+import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
@@ -61,6 +62,10 @@ object TestFactory extends TestPermissions{
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
+  def asAdmin(route: RouteWithUser): Route = {
+    route.route(adminUser())
+  }
+
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission) =
     route.route(user("userId", permissions))
 
@@ -73,7 +78,7 @@ object TestFactory extends TestPermissions{
   //FIXME: update
   def user(userName: String = "userId", testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(userName, testPermissions)
 
-  def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, true)
+  def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, Nil, isAdmin = true)
 
   class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
 
