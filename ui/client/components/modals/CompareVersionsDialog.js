@@ -68,7 +68,7 @@ class CompareVersionsDialog extends React.Component {
 
   render() {
     return (
-      <GenericModalDialog init={() => this.setState(this.initState)} header="Compare versions"
+      <GenericModalDialog init={() => this.setState(this.initState)} header="compare versions"
                           type={Dialogs.types.compareVersions} style="compareModal">
 
         <div className="esp-form-row">
