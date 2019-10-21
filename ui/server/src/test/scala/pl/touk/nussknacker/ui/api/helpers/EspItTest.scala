@@ -185,8 +185,8 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     Get(s"/settings") ~> settingsRouteWithAllPermissions
   }
 
-  def getUser = {
-    Get("/user") ~> withAllPermissions(usersRoute)
+  def getUser(isAdmin: Boolean) = {
+    Get("/user") ~> (if (isAdmin) withAdminPermissions(usersRoute) else withAllPermissions(usersRoute))
   }
 
   def getProcessDefinitionData(processingType: String, subprocessVersions: Json) = {

@@ -35,7 +35,7 @@ object GlobalPermissions {
 @JsonCodec case class DisplayableUser private(id: String,
                                               isAdmin: Boolean,
                                               categories: List[String],
-                                              categoryPermissions: Map[String, Set[String]],
+                                              categoryPermissions: Map[String, List[String]],
                                               globalPermissions: GlobalPermissions)
 
 object DisplayableUser {
@@ -45,15 +45,15 @@ object DisplayableUser {
     case CommonUser(id, categoryPermissions, globalPermissions) => new DisplayableUser(
       id = id,
       isAdmin = false,
-      categories = allCategories,
-      categoryPermissions = categoryPermissions.mapValuesNow(_.map(_.toString)),
+      categories = allCategories.sorted,
+      categoryPermissions = categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted),
       globalPermissions = GlobalPermissions(globalPermissions)
     )
     case AdminUser(id) => new DisplayableUser(
       id = id,
       isAdmin = true,
-      categories = allCategories,
-      categoryPermissions = allCategories.map(category => category -> Permission.ALL_PERMISSIONS.map(_.toString)).toMap,
+      categories = allCategories.sorted,
+      categoryPermissions = allCategories.map(category => category -> Permission.ALL_PERMISSIONS.map(_.toString).toList.sorted).toMap,
       globalPermissions = GlobalPermissions.ALL
     )
   }
