@@ -43,8 +43,7 @@ trait ProcessConfigCreator extends Serializable {
 ```
 
 ##Making your model jar discoverable
-Nussknacker uses [ServiceLoader](https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html) to register your model. When you package the jar please add the file `META-INF/services/pl.touk.nussknacker.engine.api.process.ProcessConfigCreator` containing FQN of class implementing`ProcessConfigCreator` interface.
-Exactly one implementation have to be provided. Any other case will result throws exception.
+Nussknacker uses [ServiceLoader](https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html) to register your model. When you package the jar please add the file `META-INF/services/pl.touk.nussknacker.engine.api.process.ProcessConfigCreator` containing FQN of class implementing`ProcessConfigCreator` interface. Exactly one implementation have to be provided. Any other case will result in throwing an exception.
 
 ##Categories
 Each process is assigned to exactly one category. Each node can be accessible in many categories. Category defines if a node is accessible in process. 
