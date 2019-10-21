@@ -63,5 +63,7 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     case Right(_) => HttpResponse(status = okStatus)
   }
 
+  def toResponseReject(message: String): ToResponseMarshallable =
+    HttpResponse(status = StatusCodes.BadRequest, entity = message)
 }
 

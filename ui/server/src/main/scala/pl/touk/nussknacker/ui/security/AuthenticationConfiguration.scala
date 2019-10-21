@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
 import scala.util.{Failure, Success, Try}
 
 trait AuthenticationConfiguration {
-  def getAuthenticationRedirectUrl(): Option[URI] = Option.empty
+  def getAuthorizeUri(): Option[URI] = Option.empty
   def getBackend(): AuthenticationBackend.Value
 }
 

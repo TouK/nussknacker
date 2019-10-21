@@ -616,6 +616,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV,
+        "com.softwaremill.sttp.client" %% "akka-http-backend" % sttpV,
         "com.softwaremill.sttp.client" %% "circe" % sttpV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )

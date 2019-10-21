@@ -22,14 +22,14 @@ class AuthenticatorProviderSpec extends FlatSpec with Matchers with TableDrivenP
   it should "choose authenticator from implementations" in {
     val table: TableFor2[List[AuthenticatorFactory], Try[AuthenticatorFactory]] = Table(
       ("authenticator factories", "chosen factory"),
-      (Nil, Success(BasicAuthenticatorFactory())),
+      (Nil, Success(BasicAuthenticatorFactory.create())),
       (DummyAuthenticatorFactory() :: Nil, Success(DummyAuthenticatorFactory())),
       (DummyAuthenticatorFactory2() :: Nil, Success(DummyAuthenticatorFactory2())),
       (DummyAuthenticatorFactory() :: DummyAuthenticatorFactory2() :: Nil, Failure(new IllegalArgumentException))
     )
     forAll(table) {
       (factories: List[AuthenticatorFactory], chosen: Try[AuthenticatorFactory]) => {
-        val result = AuthenticatorProvider.chooseAuthenticator(new BasicAuthenticatorFactory, factories)
+        val result = AuthenticatorProvider.chooseAuthenticator(BasicAuthenticatorFactory(), factories)
         (chosen, result) match {
           case (_: Failure[_], _: Failure[_]) => succeed
           case (s1: Success[_], s2: Success[_]) => s1 shouldBe s2
