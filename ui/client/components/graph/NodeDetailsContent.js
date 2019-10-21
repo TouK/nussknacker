@@ -334,6 +334,7 @@ export class NodeDetailsContent extends React.Component {
   };
 
   createAdditionalField(fieldName, fieldConfig, key) {
+    const readOnly = !this.props.isEditMode;
     if (fieldConfig.type === "select") {
       const values = _.map(fieldConfig.values, v => ({expression: v, label: v}));
       const current = _.get(this.state.editedNode, `additionalFields.properties.${fieldName}`);
@@ -345,7 +346,7 @@ export class NodeDetailsContent extends React.Component {
         obj={obj}
         renderFieldLabel={this.renderFieldLabel}
         values={values}
-        readOnly={false}
+        readOnly={readOnly}
         key={key}
       />;
     } else {
@@ -430,6 +431,7 @@ export class NodeDetailsContent extends React.Component {
     this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`);
 
   doCreateExpressionField = (fieldName, fieldLabel, exprPath) => {
+    const readOnly = !this.props.isEditMode;
     const exprTextPath = `${exprPath}.expression`;
     const expressionObj = _.get(this.state.editedNode, exprPath);
     const isMarked = this.isMarked(exprTextPath);
@@ -443,7 +445,7 @@ export class NodeDetailsContent extends React.Component {
         obj={expressionObj}
         renderFieldLabel={this.renderFieldLabel}
         values={restriction.values}
-        readOnly={false}
+        readOnly={readOnly}
       />;
 
     return TestRenderUtils.wrapWithTestResult(fieldName, this.state.testResultsToShow, this.state.testResultsToHide, this.toggleTestResult, (
@@ -452,7 +454,7 @@ export class NodeDetailsContent extends React.Component {
         <div className={nodeValueClass}>
           <ExpressionSuggest fieldName={fieldName} inputProps={{
             rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
-            onValueChange: ((newValue) => this.setNodeDataAt(exprTextPath, newValue)), readOnly: false}}/>
+            onValueChange: ((newValue) => this.setNodeDataAt(exprTextPath, newValue)), readOnly: readOnly}}/>
         </div>
       </div>)
     )
