@@ -1,7 +1,6 @@
 # Quickstart
 
-If you want to try out Nussknacker and see all the bells and whistles - please checkout [Quickstart](Quickstart.md) section 
-for self-contained Docker demo.
+If you want to try out Nussknacker and see all the bells and whistles - please checkout [Quickstart](Quickstart.md) section for self-contained Docker demo.
 
 # Step by step install
 

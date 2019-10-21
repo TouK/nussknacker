@@ -35,7 +35,7 @@ Nussknacker versions
 - upgrade to scala 2.11.12
 - [ITDEVESP-513] Make sinks disableable
 
-0.0.7 
+0.0.7 (22 Dec 2017)
 ---------
 - global imports in expressions
 - [ITDEVESP-298] - deployment standalone on multiple nodes
@@ -56,7 +56,7 @@ Nussknacker versions
 - nussknacker java api
 - spring version bump because of SPR-9194
 
-0.0.6
+0.0.6 (9 Aug 2017)
 ---------
 First open source version :)
 
@@ -66,10 +66,14 @@ Compatibility matrix
 
 Table below contains versions of libraries/apps that can be used with Nussknacker 
 
-|Nussknacker| Flink | Kafka | InfluxDB | Grafana |
-|-----------|-------|-------|----------|---------|
+|Nussknacker| Flink | Kafka  | InfluxDB | Grafana |
+|-----------|-------|--------|----------|---------|
+| master    |**1.7.2**|0.11.0.2| ?    | ?   |
+| 0.0.11    |1.6.1  |0.11.0.2| ?    | ?   |
+| 0.0.10    |**1.6.1**  |0.11.0.2| ?    | ?   |
+| 0.0.9     |1.4.2  |0.11.0.2| ?        | ?       |
 | 0.0.8     |1.4.2  |0.11.0.2| 1.2.0    | 4.0.1   |
-| 0.0.7     |1.3.1  |0.9.0.1| 1.2.0    | 4.0.1   |
-| 0.0.6     |1.3.1  |0.9.0.1| 1.2.0    | 4.0.1   |
+| 0.0.7     |1.3.1  |0.9.0.1 | 1.2.0    | 4.0.1   |
+| 0.0.6     |1.3.1  |0.9.0.1 | 1.2.0    | 4.0.1   |
 
 
