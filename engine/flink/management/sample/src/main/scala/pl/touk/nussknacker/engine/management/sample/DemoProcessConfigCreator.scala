@@ -20,9 +20,48 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFac
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
+import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator.{Notification, PageVisit, Transaction}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
+
+object DemoProcessConfigCreator {
+
+  case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends WithFields {
+    override def fields = List(msisdn, notificationType, finalCharge, tariffId, timestamp)
+
+    override def asJson: Json = Json.obj(
+      "msisdn" -> Json.fromString(msisdn),
+      "notificationType" -> Json.fromLong(notificationType),
+      "finalCharge" -> Json.fromBigDecimal(finalCharge),
+      "tariffId" -> Json.fromLong(tariffId),
+      "timestamp" -> Json.fromLong(timestamp)
+    )
+  }
+
+  case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends WithFields {
+    override def fields = List(clientId, date, amount, `type`)
+    override def asJson: Json = Json.obj(
+      "clientId" -> Json.fromString(clientId),
+      "date" -> Json.fromString(date.toString),
+      "amount" -> Json.fromInt(amount),
+      "type" -> Json.fromString(`type`)
+    )
+  }
+
+  case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends WithFields {
+    override def fields = List(clientId, date, path, ip)
+    override def asJson: Json = Json.obj(
+      "clientId" -> Json.fromString(clientId),
+      "date" -> Json.fromString(date.toString),
+      "path" -> Json.fromString(path),
+      "ip" -> Json.fromString(ip)
+    )
+  }
+
+  case class Client(clientId: String, age: Long, isVip: Boolean, country: String)
+
+}
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 
@@ -93,40 +132,6 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     def create(@ParamName("topic") topic: String, metaData: MetaData) = VerboselyLoggingExceptionHandler(metaData)
 
   }
-
-  case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends WithFields {
-    override def fields = List(msisdn, notificationType, finalCharge, tariffId, timestamp)
-
-    override def asJson: Json = Json.obj(
-      "msisdn" -> Json.fromString(msisdn),
-      "notificationType" -> Json.fromLong(notificationType),
-      "finalCharge" -> Json.fromBigDecimal(finalCharge),
-      "tariffId" -> Json.fromLong(tariffId),
-      "timestamp" -> Json.fromLong(timestamp)
-    )
-  }
-
-  case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends WithFields {
-    override def fields = List(clientId, date, amount, `type`)
-    override def asJson: Json = Json.obj(
-      "clientId" -> Json.fromString(clientId),
-      "date" -> Json.fromString(date.toString),
-      "amount" -> Json.fromInt(amount),
-      "type" -> Json.fromString(`type`)
-    )
-  }
-
-  case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends WithFields {
-    override def fields = List(clientId, date, path, ip)
-    override def asJson: Json = Json.obj(
-      "clientId" -> Json.fromString(clientId),
-      "date" -> Json.fromString(date.toString),
-      "path" -> Json.fromString(path),
-      "ip" -> Json.fromString(ip)
-    )
-  }
-
-  case class Client(clientId: String, age: Long, isVip: Boolean, country: String)
 
   class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T] {
 

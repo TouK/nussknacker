@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
-import java.util
+import java.{lang, util}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.Config
@@ -17,7 +17,6 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
@@ -33,6 +32,8 @@ import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.functions.TimestampAssigner
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -56,12 +57,10 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "sendSms" -> WithCategories(SinkFactory.noParam(sendSmsSink), "Category1"),
       "monitor" -> WithCategories(SinkFactory.noParam(monitorSink), "Category1", "Category2"),
       "kafka-string" -> WithCategories(new KafkaSinkFactory(kConfig,
-        new KeyedSerializationSchema[Any] {
-          override def serializeValue(element: Any) = element.toString.getBytes(StandardCharsets.UTF_8)
-
-          override def serializeKey(element: Any) = null
-
-          override def getTargetTopic(element: Any) = null
+        topic => new KafkaSerializationSchema[Any] {
+          override def serialize(element: Any, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+            new ProducerRecord[Array[Byte], Array[Byte]](topic, element.toString.getBytes(StandardCharsets.UTF_8))
+          }
         }), "Category1", "Category2")
     )
   }

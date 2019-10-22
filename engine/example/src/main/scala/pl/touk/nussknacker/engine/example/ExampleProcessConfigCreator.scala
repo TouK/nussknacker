@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.example
 
+import java.lang
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
@@ -26,6 +27,8 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSou
 import pl.touk.nussknacker.engine.util.LoggingListener
 import CirceUtil.decodeJsonUnsafe
 import io.circe.Json
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class ExampleProcessConfigCreator extends ProcessConfigCreator {
@@ -82,22 +85,25 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     val encoder = BestEffortJsonEncoder(failOnUnkown = false)
-    val stringOrJsonSink = kafkaSink(kafkaConfig, new KeyedSerializationSchema[Any] {
-      override def serializeKey(element: Any): Array[Byte] = UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8)
-      override def serializeValue(element: Any): Array[Byte] = element match {
-        case a:DisplayJson => a.asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
-        case a:Json => a.noSpaces.getBytes(StandardCharsets.UTF_8)
-        case a:String => a.getBytes(StandardCharsets.UTF_8)
-        case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
+    val stringOrJsonSink = kafkaSink(kafkaConfig, topic => new KafkaSerializationSchema[Any] {
+
+
+      override def serialize(element: Any, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+        val value = element match {
+          case a:DisplayJson => a.asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
+          case a:Json => a.noSpaces.getBytes(StandardCharsets.UTF_8)
+          case a:String => a.getBytes(StandardCharsets.UTF_8)
+          case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
+        }
+        new ProducerRecord[Array[Byte], Array[Byte]](topic, UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8), value)
       }
-      override def getTargetTopic(element: Any): String = null
     })
     Map(
       "kafka-stringSink" -> all(stringOrJsonSink)
     )
   }
 
-  private def kafkaSink(kafkaConfig: KafkaConfig, serializationSchema: KeyedSerializationSchema[Any]) : SinkFactory = {
+  private def kafkaSink(kafkaConfig: KafkaConfig, serializationSchema: String => KafkaSerializationSchema[Any]) : SinkFactory = {
     new KafkaSinkFactory(kafkaConfig, serializationSchema)
   }
 

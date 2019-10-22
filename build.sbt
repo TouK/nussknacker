@@ -83,7 +83,8 @@ val commonSettings =
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       scalaVersion  := scalaV,
       resolvers ++= Seq(
-        "confluent" at "https://packages.confluent.io/maven"
+        "confluent" at "https://packages.confluent.io/maven",
+        "flink" at "https://repository.apache.org/content/repositories/orgapacheflink-1272"
       ),
       testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
       testOptions in IntegrationTest += scalaTestReports,
@@ -108,10 +109,9 @@ val commonSettings =
       coverageFailOnMinimum := false
     )
 
-val akkaV = "2.4.20" //same version as in Flink
-val flinkV = "1.7.2"
-val kafkaMajorV = "0.11"
-val kafkaV = s"$kafkaMajorV.0.2"
+val akkaV = "2.5.21" //same version as in Flink
+val flinkV = "1.9.1"
+val kafkaV = "2.2.0"
 val springV = "5.1.4.RELEASE"
 val scalaTestV = "3.0.3"
 val logbackV = "1.1.3"
@@ -130,7 +130,7 @@ val configV = "1.3.0"
 val commonsLangV = "3.3.2"
 val dropWizardV = "3.1.5"
 
-val akkaHttpV = "10.0.10"
+val akkaHttpV = "10.1.10"
 val akkaHttpCirceV = "1.27.0"
 val slickV = "3.2.3"
 val hsqldbV = "2.3.4"
@@ -313,6 +313,7 @@ lazy val example = (project in engine("example")).
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
       )
     },
@@ -417,7 +418,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
         ),
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
-        "org.apache.flink" %% s"flink-connector-kafka-$kafkaMajorV" % flinkV % "test",
+        "org.apache.flink" %% s"flink-connector-kafka" % flinkV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -430,7 +431,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
     name := "nussknacker-kafka-flink-util",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% s"flink-connector-kafka-$kafkaMajorV" % flinkV,
+        "org.apache.flink" %% s"flink-connector-kafka" % flinkV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )

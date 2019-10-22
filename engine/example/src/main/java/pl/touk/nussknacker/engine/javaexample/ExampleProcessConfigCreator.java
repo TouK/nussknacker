@@ -14,7 +14,8 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema;
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
@@ -31,8 +32,11 @@ import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 import pl.touk.nussknacker.engine.kafka.KafkaConfig;
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
+import scala.Function1;
 import scala.Option;
 import scala.collection.JavaConverters;
+
+import static scala.compat.java8.JFunction.func;
 
 public class ExampleProcessConfigCreator implements ProcessConfigCreator {
 
@@ -97,24 +101,16 @@ public class ExampleProcessConfigCreator implements ProcessConfigCreator {
     @Override
     public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config) {
         KafkaConfig kafkaConfig = getKafkaConfig(config);
-        KeyedSerializationSchema<Object> schema = new KeyedSerializationSchema<Object>() {
-            @Override
-            public byte[] serializeKey(Object element) {
-                return UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
+        Function1<String, KafkaSerializationSchema<Object>> schema = func(topic -> (KafkaSerializationSchema<Object>) (element, timestamp) -> {
+            if (element instanceof String) {
+                byte[] value = ((String) element).getBytes(StandardCharsets.UTF_8);
+                return new ProducerRecord<>(
+                    topic, UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8), value
+                );
+            } else {
+                throw new RuntimeException("Sorry, only strings");
             }
-            @Override
-            public byte[] serializeValue(Object element) {
-                if (element instanceof String) {
-                    return ((String) element).getBytes(StandardCharsets.UTF_8);
-                } else {
-                    throw new RuntimeException("Sorry, only strings");
-                }
-            }
-            @Override
-            public String getTargetTopic(Object element) {
-                return null;
-            }
-        };
+        });
         KafkaSinkFactory factory = new KafkaSinkFactory(kafkaConfig, schema);
         Map<String, WithCategories<SinkFactory>> m = new HashMap<>();
         m.put("kafka-stringSink", all(factory));

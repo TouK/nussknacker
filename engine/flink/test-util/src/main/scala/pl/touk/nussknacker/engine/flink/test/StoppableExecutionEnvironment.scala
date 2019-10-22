@@ -8,12 +8,14 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID, JobSubmissionResu
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.jobgraph.JobGraph
-import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
+import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.test.util.TestBaseUtils
 import org.apache.flink.util.OptionalFailure
 import org.junit.Assert
+
+import scala.collection.JavaConverters._
 
 object StoppableExecutionEnvironment {
 
@@ -30,21 +32,18 @@ object StoppableExecutionEnvironment {
 class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
                                     singleActorSystem: Boolean = true) extends StreamExecutionEnvironment with LazyLogging {
 
-  protected var localFlinkMiniCluster: LocalFlinkMiniCluster = _
+  protected var localFlinkMiniCluster: MiniCluster = _
 
-  def getJobManagerActorSystem() = {
-    localFlinkMiniCluster.jobManagerActorSystems.get.head
-  }
 
   def queryableClient(proxyPort: Int) : QueryableStateClient= {
     new QueryableStateClient("localhost", proxyPort)
   }
 
   def runningJobs(): Iterable[JobID] = {
-    localFlinkMiniCluster.currentlyRunningJobs
+    localFlinkMiniCluster.listJobs().get().asScala.map(_.getJobId)
   }
 
-  def execute(jobName: String): JobExecutionResult = {
+  override def execute(jobName: String): JobExecutionResult = {
     // transform the streaming program into a JobGraph
     val streamGraph: StreamGraph = getStreamGraph
     streamGraph.setJobName(jobName)
@@ -53,18 +52,27 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
 
     userFlinkClusterConfig.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, false)
     userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
+
+    userFlinkClusterConfig.setInteger(JobManagerOptions.PORT, 0)
+    userFlinkClusterConfig.setString(RestOptions.BIND_PORT, "0")
+
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
 
-    localFlinkMiniCluster = new LocalFlinkMiniCluster(jobGraph.getJobConfiguration, singleActorSystem)
+    localFlinkMiniCluster = new MiniCluster(new MiniClusterConfiguration.Builder()
+      .setConfiguration(jobGraph.getJobConfiguration).build())
+
     localFlinkMiniCluster.start()
 
-    val submissionRes: JobSubmissionResult = localFlinkMiniCluster.submitJobDetached(jobGraph)
+    //FIXME!!!!
+    val submissionRes: JobSubmissionResult = localFlinkMiniCluster.submitJob(jobGraph).get()
     new JobExecutionResult(submissionRes.getJobID, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
   }
 
+  override def execute(streamGraph: StreamGraph): JobExecutionResult = ???
+
   def stop(): Unit = {
     if (localFlinkMiniCluster != null) {
-      localFlinkMiniCluster.stop()
+      localFlinkMiniCluster.close()
     }
   }
 
