@@ -189,7 +189,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
           expressionCompiler.compileObjectParameters(paramDefs, ref.parameters, ctx)
         }
 
-        val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(Map.empty)
+        val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
 
         val combinedValidParams = ProcessCompilationError.ValidatedNelApplicative.map2(combinedValidation, validParams)((_, p) => p)
 
