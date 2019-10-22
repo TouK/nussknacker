@@ -59,12 +59,10 @@ class AuthenticatorProviderSpec extends FlatSpec with Matchers with TableDrivenP
 
     class DummyAuthenticator2 extends LoggedUserAuth {
       override def tapply(f: (Tuple1[LoggedUser]) => Route): Route = f(u)
-
     }
 
     case class DummyAuthenticatorFactory2() extends AuthenticatorFactory {
       override def createAuthenticator(config: Config) = new DummyAuthenticator2
     }
   }
-
 }

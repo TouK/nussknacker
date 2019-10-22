@@ -19,11 +19,14 @@ trait AccessTokenResponse {
   override def getAccessToken(): String = access_token
 }
 
-class OAuth2Service(configuration: OAuth2Configuration) extends LazyLogging {
+trait ServiceOAuth2 {
+  def accessTokenRequest(authorizeToken: String): Future[AccessTokenResponse]
+}
+
+class OAuth2Service(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging with ServiceOAuth2 {
   val requestContentType = "application/json"
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-  private implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
 
   def accessTokenRequest(authorizeToken: String): Future[AccessTokenResponse] = {
     val payload: Map[String, String] = Map(
@@ -42,4 +45,9 @@ class OAuth2Service(configuration: OAuth2Configuration) extends LazyLogging {
       .send()
       .flatMap(SttpJson.failureToFuture)
   }
+}
+
+object OAuth2Service {
+  private implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+  def apply(configuration: OAuth2Configuration): OAuth2Service = new OAuth2Service(configuration)
 }

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.security.oauth2.{OAuth2Configuration, OAuth2Servic
 
 import scala.concurrent.ExecutionContext
 
-class AuthenticationResources(authenticationConfig: AuthenticationConfiguration)(implicit ec: ExecutionContext)
+class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser with LazyLogging {
 
   def route(): Route = pathPrefix("authentication") {
@@ -20,10 +20,7 @@ class AuthenticationResources(authenticationConfig: AuthenticationConfiguration)
         extractUri { uri =>
           get {
             complete {
-              authenticationConfig match {
-                case oauth2Configuration: OAuth2Configuration => oAuth2Authenticate(oauth2Configuration, uri, authorizeToken)
-                case _ => EspErrorToHttp.toResponseReject("Unsupported backend authentication type. Required backend: OAuth2.")
-              }
+              oAuth2Authenticate(uri, authorizeToken)
             }
           }
         }
@@ -31,8 +28,7 @@ class AuthenticationResources(authenticationConfig: AuthenticationConfiguration)
     }
   }
 
-  private def oAuth2Authenticate(oauth2Configuration: OAuth2Configuration, uri: Uri, authorizeToken: String)= {
-    val service = new OAuth2Service(oauth2Configuration)
+  private def oAuth2Authenticate(uri: Uri, authorizeToken: String)= {
     service.accessTokenRequest(authorizeToken).map { response =>
       handleOAuth2Authentication(uri, response.getAccessToken())
     }.recover {
