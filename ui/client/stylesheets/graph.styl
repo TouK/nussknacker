@@ -17,17 +17,16 @@
   svg
     width: 100%
     height 100%
-    padding: svgGraphPaddingTop svgGraphPaddingLeft
 
 #esp-graph
   @extend .baseEspGraph;
+  svg
+    padding: svgGraphPaddingTop svgGraphPaddingLeft
 
 #esp-graph-subprocess
   @extend .baseEspGraph;
-  margin 40
   #svg-pan-zoom-controls
     transform: translate(0, 0px) scale(0.5)
-
 
 node-highlight(strokeColor, backgroundFill)
   .body

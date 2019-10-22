@@ -181,7 +181,7 @@ class NodeDetailsModal extends React.Component {
             <span>{modelHeader}</span>
             {this.renderDocumentationIcon()}
           </div>
-          <div className="modalContentDark">
+          <div className="modalContentDark" id="modal-content">
             <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
               {
                 this.isGroup() ? this.renderGroup(testResults)

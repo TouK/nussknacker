@@ -41,6 +41,7 @@ class Graph extends React.Component {
     this.nodesMoving();
 
     this.espGraphRef = React.createRef()
+    this.parent = document.getElementById(this.props.parent)
 
     this.windowListeners = {
       resize: this.updateDimensions.bind(this)
@@ -65,10 +66,9 @@ class Graph extends React.Component {
   }
 
   updateDimensions() {
-    let area = document.getElementById('working-area')
     this.processGraphPaper.fitToContent()
-    this.svgDimensions(area.offsetWidth, area.offsetHeight)
-    this.processGraphPaper.setDimensions(area.offsetWidth, area.offsetHeight)
+    this.svgDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
   }
 
   canAddNode(node) {
@@ -159,8 +159,8 @@ class Graph extends React.Component {
     return new joint.dia.Paper({
       el: this.getEspGraphRef(),
       gridSize: 1,
-      height: this.getEspGraphRef().offsetHeight,
-      width: this.getEspGraphRef().offsetWidth,
+      height: this.parent.clientHeight,
+      width: this.parent.clientWidth - 2 * this.props.padding,
       model: this.graph,
       snapLinks: {radius: 75},
       interactive: function (cellView) {
@@ -558,7 +558,7 @@ class Graph extends React.Component {
 
   render() {
     const toRender = (
-      <div id="graphContainer">
+      <div id="graphContainer" style={{padding: this.props.padding}}>
         {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
         <div ref={this.espGraphRef} id={this.props.divId}></div>
@@ -580,6 +580,8 @@ const spec = {
 function mapState(state, props) {
   return {
     divId: "esp-graph",
+    parent: "working-area",
+    padding: 0,
     readonly: state.graphReducer.businessView,
     singleClickNodeDetailsEnabled: true,
     nodeIdPrefixForSubprocessTests: "",
@@ -598,6 +600,8 @@ function mapState(state, props) {
 function mapSubprocessState(state, props) {
   return {
     divId: "esp-graph-subprocess",
+    parent: "modal-content",
+    padding: 40,
     readonly: true,
     singleClickNodeDetailsEnabled: false,
     nodeIdPrefixForSubprocessTests: state.graphReducer.nodeToDisplay.id + "-", //TODO where should it be?
