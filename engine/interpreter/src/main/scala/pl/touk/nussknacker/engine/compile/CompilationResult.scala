@@ -5,6 +5,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.map._
 import cats.kernel.Semigroup
 import cats.{Applicative, Traverse}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -63,8 +64,20 @@ object CompilationResult extends Applicative[CompilationResult] {
     }
   }
 
-  implicit def mergingTypingInfoSemigroup: Semigroup[NodeTypingInfo] = new Semigroup[NodeTypingInfo] {
+  implicit def mergingTypingInfoSemigroup: Semigroup[NodeTypingInfo] = new Semigroup[NodeTypingInfo] with LazyLogging {
     override def combine(x: NodeTypingInfo, y: NodeTypingInfo): NodeTypingInfo = {
+      logger.whenWarnEnabled {
+        if (x.inputValidationContext != y.inputValidationContext) {
+          logger.warn(s"Merging different input validation context for the same node ids: ${x.inputValidationContext} != ${y.inputValidationContext}. " +
+            s"This can be a bug in code or duplicated node ids with different input validation contexts")
+        }
+        val expressionsIntersection = x.expressionsTypingInfo.keySet.intersect(y.expressionsTypingInfo.keySet)
+        if (expressionsIntersection.nonEmpty) {
+          logger.warn(s"Merging expression typing info for the same node ids, overlapping expression ids: ${expressionsIntersection.mkString(", ")}. " +
+            s"This can be a bug in code or duplicated node ids with same expression ids")
+        }
+      }
+
       // we should be lax here because we want to detect duplicate nodes and context can be different then
       // also process of collecting of expressionsTypingInfo is splitted for some nodes e.g. expressionsTypingInfo for
       // sink parameters is collected in ProcessCompiler but for final expression is in PartSubGraphCompiler

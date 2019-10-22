@@ -353,7 +353,7 @@ protected trait ProcessCompilerBase {
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(nodeDefinition.parameters,
       parameters,
       branchParameters, ctx.clearVariables, ctx).andThen { compiledParameters =>
-        createObject(nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
+        createObject[T](nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
           val typingInfo = compiledParameters.flatMap {
             case TypedParameter(name, TypedExpression(_, _, typingInfo)) =>
               List(name -> typingInfo)
