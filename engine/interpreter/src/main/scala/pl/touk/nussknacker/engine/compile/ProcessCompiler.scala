@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.{AbstractContextTransformation, AbstractContextTransformationDef, ContextTransformationDef, JoinContextTransformationDef, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process._
@@ -353,29 +353,36 @@ protected trait ProcessCompilerBase {
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(nodeDefinition.parameters,
       parameters,
       branchParameters, ctx.clearVariables, ctx).andThen { compiledParameters =>
-      try {
-        val obj = factory.create[T](nodeDefinition, compiledParameters, outputVariableNameOpt)
-        val typingInfo = compiledParameters.flatMap {
-          case TypedParameter(name, TypedExpression(_, _, typingInfo)) =>
-            List(name -> typingInfo)
-          case TypedParameter(paramName, TypedExpressionMap(valueByBranch)) =>
-            valueByBranch.map {
-              case (branch, TypedExpression(_, _, typingInfo)) =>
-                val expressionId = NodeTypingInfo.branchParameterExpressionId(paramName, branch)
-                expressionId -> typingInfo
-            }
-        }.toMap
-        Valid((typingInfo, obj))
-      } catch {
-        // TODO: using Validated in nested invocations
-        case _: MissingOutputVariableException =>
-          Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"), nodeId.id)))
-        case NonFatal(e) =>
-          //TODO: better message?
-          Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))
-      }
+        createObject(nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
+          val typingInfo = compiledParameters.flatMap {
+            case TypedParameter(name, TypedExpression(_, _, typingInfo)) =>
+              List(name -> typingInfo)
+            case TypedParameter(paramName, TypedExpressionMap(valueByBranch)) =>
+              valueByBranch.map {
+                case (branch, TypedExpression(_, _, typingInfo)) =>
+                  val expressionId = NodeTypingInfo.branchParameterExpressionId(paramName, branch)
+                  expressionId -> typingInfo
+              }
+          }.toMap
+          (typingInfo, obj)
+        }
     }
     (compiledObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), compiledObjectWithTypingInfo.map(_._2))
+  }
+
+
+  private def createObject[T](nodeDefinition: ObjectWithMethodDef, outputVariableNameOpt: Option[String], compiledParameters: List[TypedParameter])
+                             (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
+    try {
+      Valid(factory.create[T](nodeDefinition, compiledParameters, outputVariableNameOpt))
+    } catch {
+      // TODO: using Validated in nested invocations
+      case _: MissingOutputVariableException =>
+        Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"), nodeId.id)))
+      case NonFatal(e) =>
+        //TODO: better message?
+        Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))
+    }
   }
 
   protected def factory: ProcessObjectFactory

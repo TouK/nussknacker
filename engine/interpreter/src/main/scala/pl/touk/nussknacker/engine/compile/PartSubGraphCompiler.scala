@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.Applicative
 import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
-import cats.kernel.Semigroup
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -27,7 +25,7 @@ import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
 import scala.util.{Failure, Success, Try}
-
+import PartSubGraphCompiler._
 
 class PartSubGraphCompiler(protected val classLoader: ClassLoader,
                            protected val expressionCompiler: ExpressionCompiler,
@@ -298,20 +296,24 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
   }
 }
 
-case class ExpressionTypingResult(typingResult: TypingResult, typingInfo: Option[ExpressionTypingInfo]) {
+object PartSubGraphCompiler {
 
-  def toDefaultExpressionTypingInfoEntry: Option[(String, ExpressionTypingInfo)] =
-    typingInfo.map(NodeTypingInfo.DefaultExpressionId -> _)
+  private case class ExpressionTypingResult(typingResult: TypingResult, typingInfo: Option[ExpressionTypingInfo]) {
+
+    def toDefaultExpressionTypingInfoEntry: Option[(String, ExpressionTypingInfo)] =
+      typingInfo.map(NodeTypingInfo.DefaultExpressionId -> _)
+
+  }
+
+  private case class FieldExpressionTypingResult(fieldName: String, private val exprTypingResult: ExpressionTypingResult) {
+
+    def typingResult: TypingResult = exprTypingResult.typingResult
+
+    def toExpressionTypingInfoEntry: Option[(String, ExpressionTypingInfo)] =
+      exprTypingResult.typingInfo.map(fieldName -> _)
+
+  }
+
+  private case class ServiceTypingResult(returnType: TypingResult, expressionsTypingInfo: Map[String, ExpressionTypingInfo])
 
 }
-
-case class FieldExpressionTypingResult(fieldName: String, private val exprTypingResult: ExpressionTypingResult) {
-
-  def typingResult: TypingResult = exprTypingResult.typingResult
-
-  def toExpressionTypingInfoEntry: Option[(String, ExpressionTypingInfo)] =
-    exprTypingResult.typingInfo.map(fieldName -> _)
-
-}
-
-case class ServiceTypingResult(returnType: TypingResult, expressionsTypingInfo: Map[String, ExpressionTypingInfo])

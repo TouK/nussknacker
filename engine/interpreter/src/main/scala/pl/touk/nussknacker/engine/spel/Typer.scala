@@ -302,15 +302,47 @@ object Typer {
     }
   }
 
+
+  /**
+    * It contains stack of types for recognition of nested node type.
+    * intermediateResults are all results that we can collect for intermediate nodes
+    */
+  private case class TypingContext(stack: List[TypingResult], intermediateResults: Map[SpelNodeId, TypingResult]) {
+
+    def pushOnStack(typingResult: TypingResult): TypingContext = copy(stack = typingResult :: stack)
+
+    def pushOnStack(typingResult: CollectedTypingResult): TypingContext =
+      TypingContext(typingResult.finalResult :: stack, intermediateResults ++ typingResult.intermediateResults)
+
+    def popStack: TypingContext = copy(stack = stack.tail)
+
+    def stackHead: Option[TypingResult] = stack.headOption
+
+    def stackTail: List[TypingResult] = stack.tail
+
+    def withoutIntermediateResults: TypingContext = copy(intermediateResults = Map.empty)
+
+    def toResult(finalNode: TypedNode): CollectedTypingResult =
+      CollectedTypingResult(intermediateResults + (finalNode.nodeId -> finalNode.typ), finalNode.typ)
+
+  }
+
 }
 
-case class CollectedTypingResult(intermediateResults: Map[SpelNodeId, TypingResult], finalResult: TypingResult) {
-  def typingInfo = SpelExpressionTypingInfo(intermediateResults)
+private[spel] case class TypedNode(nodeId: SpelNodeId, typ: TypingResult)
+
+private[spel] object TypedNode {
+
+  def apply(node: SpelNode, typ: TypingResult): TypedNode =
+    TypedNode(SpelNodeId(node), typ)
+
 }
 
-case class SpelExpressionTypingInfo(intermediateResults: Map[SpelNodeId, TypingResult]) extends ExpressionTypingInfo
+private[spel] case class CollectedTypingResult(intermediateResults: Map[SpelNodeId, TypingResult], finalResult: TypingResult) {
+  def typingInfo: SpelExpressionTypingInfo = SpelExpressionTypingInfo(intermediateResults)
+}
 
-object CollectedTypingResult {
+private[spel] object CollectedTypingResult {
 
   def withEmptyIntermediateResults(finalResult: TypingResult): CollectedTypingResult =
     CollectedTypingResult(Map.empty, finalResult)
@@ -321,33 +353,4 @@ object CollectedTypingResult {
 
 }
 
-// It contains stack of types for recognition of nested node type
-// intermediateResults are all results that we can collect for intermediate nodes
-case class TypingContext(stack: List[TypingResult], intermediateResults: Map[SpelNodeId, TypingResult]) {
-
-  def pushOnStack(typingResult: TypingResult): TypingContext = copy(stack = typingResult :: stack)
-
-  def pushOnStack(typingResult: CollectedTypingResult): TypingContext =
-    TypingContext(typingResult.finalResult :: stack, intermediateResults ++ typingResult.intermediateResults)
-
-  def popStack: TypingContext = copy(stack = stack.tail)
-
-  def stackHead: Option[TypingResult] = stack.headOption
-
-  def stackTail: List[TypingResult] = stack.tail
-
-  def withoutIntermediateResults: TypingContext = copy(intermediateResults = Map.empty)
-
-  def toResult(finalNode: TypedNode): CollectedTypingResult =
-    CollectedTypingResult(intermediateResults + (finalNode.nodeId -> finalNode.typ), finalNode.typ)
-
-}
-
-case class TypedNode(nodeId: SpelNodeId, typ: TypingResult)
-
-object TypedNode {
-
-  def apply(node: SpelNode, typ: TypingResult): TypedNode =
-    TypedNode(SpelNodeId(node), typ)
-
-}
+case class SpelExpressionTypingInfo(intermediateResults: Map[SpelNodeId, TypingResult]) extends ExpressionTypingInfo

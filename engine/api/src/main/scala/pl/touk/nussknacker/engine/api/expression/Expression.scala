@@ -39,4 +39,8 @@ case class TypedExpression(expression: Expression, returnType: TypingResult, typ
 
 case class TypedExpressionMap(valueByKey: Map[String, TypedExpression]) extends TypedValue
 
+/**
+  * It contains information about intermediate result of typing of expression. Can be used for further processing of expression
+  * like some substitutions base on type...
+  */
 trait ExpressionTypingInfo
