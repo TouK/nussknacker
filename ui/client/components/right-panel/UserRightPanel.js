@@ -133,8 +133,8 @@ class UserRightPanel extends Component {
         {name: "migrate", visible: this.props.capabilities.deploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !conf.deployPossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
         {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
         {name: "import", visible: this.props.capabilities.write, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
-        {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
-        {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
+        {name: "JSON", disabled: !this.props.canExport, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
+        {name: "PDF", disabled: !this.props.canExport, onClick: this.exportProcessToPdf, icon: InlinedSvgs.pdf},
         {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
         {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
         {name: "archive", onClick: this.archiveProcess, icon: 'archive.svg', visible: this.props.capabilities.write}
@@ -143,15 +143,16 @@ class UserRightPanel extends Component {
       {
         panelName: "Edit",
         buttons: [
-          {
-            name: "undo",
+          {name: "undo",
             visible: this.props.capabilities.write,
+            disabled: this.props.history.past.length === 0,
             onClick: this.undo,
             icon: InlinedSvgs.buttonUndo
           },
           {
             name: "redo",
             visible: this.props.capabilities.write,
+            disabled: this.props.history.future.length === 0,
             onClick: this.redo,
             icon: InlinedSvgs.buttonRedo
           },
@@ -414,6 +415,7 @@ function mapState(state) {
 
     loggedUser: state.settings.loggedUser,
     nothingToSave: ProcessUtils.nothingToSave(state),
+    canExport: ProcessUtils.canExport(state),
     showRunProcessDetails: !_.isEmpty(state.graphReducer.testResults) || !_.isEmpty(state.graphReducer.processCounts),
     keyActionsAvailable: state.ui.allModalsClosed,
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
@@ -423,7 +425,8 @@ function mapState(state) {
     featuresSettings: state.settings.featuresSettings,
     isSubprocess: _.get(state.graphReducer.processToDisplay, "properties.isSubprocess", false),
     businessView: state.graphReducer.businessView,
-    clipboard: state.graphReducer.clipboard
+    clipboard: state.graphReducer.clipboard,
+    history: state.graphReducer.history
   };
 }
 

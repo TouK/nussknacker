@@ -51,7 +51,7 @@ class ProcessComments extends React.Component {
             return (
               <div key={idx}>
                 <div className="header">
-                  <span className="date">{DateUtils.format(comment.createDate)}</span>
+                  <span title={DateUtils.formatAbsolutely(comment.createDate)} className="date">{DateUtils.formatRelatively(comment.createDate)}</span>
                   <span className="comment-header">v{comment.processVersionId} ({comment.user})</span>
                   {comment.user == this.props.loggedUser.id ?
                     <span className="remove glyphicon glyphicon-remove" onClick={this.deleteComment.bind(this, comment)}/>

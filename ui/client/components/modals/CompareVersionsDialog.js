@@ -9,9 +9,8 @@ import HttpService from "../../http/HttpService";
 import * as JsonUtils from "../../common/JsonUtils";
 import NodeDetailsContent from "../graph/NodeDetailsContent";
 import EdgeDetailsContent from "../graph/EdgeDetailsContent";
-import Moment from "moment";
-import {dateFormat} from "../../config";
 import Scrollbars from "react-custom-scrollbars";
+import DateUtils from "../../common/DateUtils";
 
 //TODO: handle displaying groups
 //TODO: handle different textarea heights
@@ -64,7 +63,7 @@ class CompareVersionsDialog extends React.Component {
     const versionId = (versionPrefix || '') + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
-        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp;on {Moment(version.createDate).format(dateFormat)}</option>)
+        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {DateUtils.formatAbsolutely(version.createDate)}</option>)
   }
 
   render() {
