@@ -23,13 +23,16 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.{AuthenticationConfiguration, AuthenticatorProvider}
+import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration, AuthenticatorProvider}
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
+import pl.touk.nussknacker.ui.security.oauth2.{OAuth2Configuration, OAuth2Service}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
+
+import scala.collection.mutable
 
 object NussknackerApp extends App with Directives with LazyLogging {
 
@@ -165,13 +168,15 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
-    val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = {
-      val routes = List(
-        new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig),
-        new AuthenticationResources(authenticationConfig)
-      )
+    val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = List(
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
+    )
 
-      routes
+    authenticationConfig match {
+      case oauth2Configuration: OAuth2Configuration =>
+        apiResourcesWithoutAuthentication ++ List(
+          new AuthenticationOAuth2Resources(OAuth2Service(oauth2Configuration))
+        )
     }
 
     val webResources = new WebResources(config.getString("http.publicPath"))

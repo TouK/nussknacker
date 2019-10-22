@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import java.net.URI
-
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -18,18 +16,17 @@ import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
-import pl.touk.nussknacker.ui.api.{AuthenticationResources, _}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process
+import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
+import pl.touk.nussknacker.ui.security.AuthenticationConfiguration
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
@@ -77,7 +74,6 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val featureTogglesConfig = FeatureTogglesConfig.create(config)
   val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
   val authenticationConfig = AuthenticationConfiguration(config)
-  val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig)
   val usersRoute = new UserResources(typesForCategories)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
 
@@ -87,7 +83,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 
-  val settingsRouteWithAllPermissions = withoutPermissions(settingsRoute)
+  val settingsRouteWithoutPermissions = withoutPermissions(settingsRoute)
 
   def deployRoute(requireComment: Boolean = false) = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.sampleSubprocessRepository),
@@ -162,7 +158,6 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     }
   }
 
-
   def deployProcess(id: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
     Post(s"/processManagement/deploy/$id",
       HttpEntity(ContentTypes.`text/plain(UTF-8)`, comment.getOrElse(""))
@@ -188,7 +183,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   }
 
   def getSettings = {
-    Get(s"/settings") ~> settingsRouteWithAllPermissions
+    Get(s"/settings") ~> settingsRouteWithoutPermissions
   }
 
   def getUser(isAdmin: Boolean) = {
