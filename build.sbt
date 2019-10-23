@@ -473,7 +473,7 @@ lazy val util = (project in engine("util")).
       Seq(
         "com.iheart" %% "ficus" % ficusV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "io.circe" %% "circe-java8" % "0.11.1"
+        "io.circe" %% "circe-java8" % circeV
       )
     }
   ).dependsOn(api)
@@ -600,6 +600,9 @@ lazy val httpUtils = (project in engine("httpUtils")).
     libraryDependencies ++= {
       val sttpV = "2.0.0-M6"
       Seq(
+        //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
+        "io.circe" %% "circe-core" % circeV force(),
+        "io.circe" %% "circe-parser" % circeV force(),
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
         "org.asynchttpclient" % "async-http-client" % "2.10.4",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
