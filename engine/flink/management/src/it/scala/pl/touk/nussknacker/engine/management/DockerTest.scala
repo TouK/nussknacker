@@ -18,11 +18,13 @@ import org.scalatest.time.{Millis, Seconds, Span}
 
 import scala.concurrent.duration._
 
-trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
+trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with ScalaVersionHack {
   self: Suite =>
-  private val flinkEsp = "flinkesp:1.7.2-scala_2.12"
+
+  private val flinkEsp = s"flinkesp:1.7.2-scala_$scalaBinaryVersion"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
+
 
   override implicit val patienceConfig = PatienceConfig(
     timeout = Span(90, Seconds),
@@ -88,10 +90,12 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
       logger.info(s"taskmanager: $s")
     }))
 
-  def config : Config = ConfigFactory.load()
-    .withValue("processConfig.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
-    .withValue("processConfig.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
-    .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${ipOfContainer(jobManagerContainer)}:$FlinkJobManagerRestPort"))
+  def config : Config = {
+    ConfigFactory.load()
+      .withValue("processConfig.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
+      .withValue("processConfig.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
+      .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${ipOfContainer(jobManagerContainer)}:$FlinkJobManagerRestPort"))
+  }
 
   private def ipOfContainer(container: DockerContainer) = container.getIpAddresses().futureValue.head
 

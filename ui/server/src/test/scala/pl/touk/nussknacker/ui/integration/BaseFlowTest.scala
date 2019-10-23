@@ -24,11 +24,11 @@ import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.util.MultipartUtils
+import pl.touk.nussknacker.ui.util.{MultipartUtils, ScalaVersionHack}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
+  with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with ScalaVersionHack {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -37,6 +37,9 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
   test("saves, updates and retrieves sample process") {
+    val scalaBinaryVersion: String = util.Properties.versionNumberString.replaceAll("(\\d+\\.\\d+)\\..*$", "$1")
+    System.setProperty("scala.binary.version", scalaBinaryVersion)
+
     val processId = UUID.randomUUID().toString
     val endpoint = s"/api/processes/$processId"
 

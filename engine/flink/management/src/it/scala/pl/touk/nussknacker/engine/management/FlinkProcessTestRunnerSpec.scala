@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.Await
 
-class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
+class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually with ScalaVersionHack {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = Span(10, Seconds),

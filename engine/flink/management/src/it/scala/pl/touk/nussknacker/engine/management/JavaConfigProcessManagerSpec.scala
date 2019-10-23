@@ -20,7 +20,7 @@ class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
   override def config: Config = {
     super.config
       .withValue("flinkConfig.classpath",
-        ConfigValueFactory.fromIterable(Collections.singletonList("./engine/flink/management/java_sample/target/scala-2.12/managementJavaSample.jar")))
+        ConfigValueFactory.fromIterable(Collections.singletonList(s"./engine/flink/management/java_sample/target/scala-$scalaBinaryVersion/managementJavaSample.jar")))
   }
 
   test("deploy java process in running flink") {

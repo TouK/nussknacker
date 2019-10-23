@@ -26,8 +26,9 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.util.ScalaVersionHack
 
-trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
+trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions  with ScalaVersionHack { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()

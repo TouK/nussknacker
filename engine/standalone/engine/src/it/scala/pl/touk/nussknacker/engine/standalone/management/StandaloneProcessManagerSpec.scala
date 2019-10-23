@@ -21,6 +21,9 @@ class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Match
 
   test("it should parse test data and test standalone process") {
 
+    val scalaBinaryVersion: String = util.Properties.versionNumberString.replaceAll("(\\d+\\.\\d+)\\..*$", "$1")
+    System.setProperty("scala.binary.version", scalaBinaryVersion)
+
     val modelData = StandaloneProcessManagerProvider.defaultTypeConfig(ConfigFactory.load()).toModelData
 
     val manager = new StandaloneProcessManager(modelData, null)
