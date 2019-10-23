@@ -16,7 +16,7 @@ private[columnmodel] object TypedMapColumnModel {
     val toClasRef: TypingResult => Option[ClazzRef] = {
       case typedClass: TypedClass =>
         Some(ClazzRef(typedClass.klass))
-      case _: TypedObjectTypingResult | _: TypedUnion | Unknown | _:TypedDict =>
+      case _: TypedObjectTypingResult | _: TypedUnion | Unknown | _:TypedDict | _:TypedTaggedValue =>
         None
     }
     for {

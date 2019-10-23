@@ -8,7 +8,7 @@ import cats.data.Validated.Valid
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.{FilterFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.TimestampAssigner
@@ -30,7 +30,6 @@ import pl.touk.nussknacker.engine.flink.util.exception._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.SimpleEnum
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
 
 import scala.concurrent.{ExecutionContext, Future}

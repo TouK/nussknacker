@@ -67,4 +67,12 @@ class TypingResultSpec extends FunSuite with Matchers {
     Typed.fromDetailedType[Set[String]].canBeSubclassOf(Typed.fromDetailedType[Set[BigDecimal]]) shouldBe false
   }
 
+  test("determine if can be subclass for tagged value") {
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[String], "tag1")) shouldBe true
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[String], "tag2")) shouldBe false
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[Integer], "tag1")) shouldBe false
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(TypedClass[String]) shouldBe true
+    TypedClass[String].canBeSubclassOf(Typed.tagged(TypedClass[String], "tag1")) shouldBe false
+  }
+
 }

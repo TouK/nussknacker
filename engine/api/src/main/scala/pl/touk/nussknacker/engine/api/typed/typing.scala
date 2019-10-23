@@ -57,17 +57,19 @@ object typing {
 
     override def canHasAnyPropertyOrField: Boolean = false
 
-    def valueType: TypedDictValue = TypedDictValue(dictId, objType)
+    def valueType: TypingResult = Typed.tagged(objType, dictId)
 
     override def display: String = labelById.map { case (k, v) => s"$k -> $v" }.mkString(s"dict with id: $dictId and labels: ", ", ", "")
 
   }
 
-  case class TypedDictValue(dictId: String, objType: TypedClass) extends SingleTypingResult {
+  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends SingleTypingResult {
 
-    override def canHasAnyPropertyOrField: Boolean = false
+    override def canHasAnyPropertyOrField: Boolean = underlying.canHasAnyPropertyOrField
 
-    override def display: String = s"dict value for dict: $dictId"
+    override def objType: TypedClass = underlying.objType
+
+    override def display: String = s"tagged: ${underlying.display} by tag: $tag"
 
   }
 
@@ -153,14 +155,14 @@ object typing {
       case _ =>
         true
     }
-    def dictValueRestriction: Boolean = (first, sec) match {
-      case (firstDictValue: TypedDictValue, secDictValue: TypedDictValue) =>
-        firstDictValue.dictId == secDictValue.dictId
-      case (_: TypedDictValue, _) => false
-      case (_, _: TypedDictValue) => false
+    def taggedValueRestriction: Boolean = (first, sec) match {
+      case (firstTaggedValue: TypedTaggedValue, secTaggedValue: TypedTaggedValue) =>
+        firstTaggedValue.tag == secTaggedValue.tag
+      case (_: TypedTaggedValue, _) => true
+      case (_, _: TypedTaggedValue) => false
       case _ => true
     }
-    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions && dictValueRestriction
+    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions && taggedValueRestriction
   }
 
   private def klassCanBeSubclassOf(first: TypedClass, sec: TypedClass): Boolean = {
@@ -181,7 +183,7 @@ object typing {
     def fromDetailedType[T: TypeTag]: TypingResult = {
       val (classRef, runtimeClass) = ClazzRef.fromDetailedTypeWithRuntimeClass[T]
       apply(runtimeClass) match {
-        case dictValue: TypedDictValue => dictValue
+        case dictValue: TypedTaggedValue => dictValue
         // TODO: handle nested, dict types
         case _ => apply(classRef)
       }
@@ -189,9 +191,9 @@ object typing {
 
     def apply(klass: Class[_]): TypingResult = {
       if (klass.isEnum) {
-        TypedDictValue(klass.getName, TypedClass(ClazzRef(klass)))
+        TypedTaggedValue(TypedClass(ClazzRef(klass)), klass.getName)
       } else if (classOf[Enumeration#Value].isAssignableFrom(klass)) {
-        TypedDictValue(klass.getName, TypedClass(ClazzRef(klass)))
+        TypedTaggedValue(TypedClass(ClazzRef(klass)), klass.getName)
       } else {
         apply(ClazzRef(klass))
       }
@@ -205,6 +207,8 @@ object typing {
         TypedClass(klass)
       }
     }
+
+    def tagged(typ: SingleTypingResult, tag: String) = TypedTaggedValue(typ, tag)
 
     def fromInstance(obj: Any): TypingResult = {
       obj match {

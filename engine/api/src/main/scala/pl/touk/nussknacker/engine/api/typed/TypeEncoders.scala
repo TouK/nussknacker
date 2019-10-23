@@ -20,7 +20,7 @@ object TypeEncoders {
       val objTypeEncoded = encodeTypedClass(objType).asObject.getOrElse(JsonObject.empty)
       val fieldsEncoded = "fields" -> fromFields(fields.mapValues(encodeTypingResult).toList)
       fromJsonObject(objTypeEncoded.+:(fieldsEncoded))
-    case _: TypedDict => ??? // FIXME: handle
+    case _: TypedDict | _:TypedTaggedValue => ??? // FIXME: handle
     case cl: TypedClass => encodeTypedClass(cl)
   }
 
