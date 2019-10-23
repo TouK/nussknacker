@@ -472,6 +472,45 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[String]("#dicts.bar.value", withObjVar) shouldBe 'invalid
   }
 
+  test("adding invalid type to number") {
+    val floatAddExpr = "12.1 + #obj"
+    parse[Float](floatAddExpr, ctx) shouldBe 'invalid
+  }
+
+  test("different types in equality") {
+    parse[Boolean]("'123' == 234", ctx) shouldBe 'invalid
+    parse[Boolean]("'123' == '234'", ctx) shouldBe 'valid
+    parse[Boolean]("'123' == null", ctx) shouldBe 'valid
+
+    parse[Boolean]("'123' != 234", ctx) shouldBe 'invalid
+    parse[Boolean]("'123' != '234'", ctx) shouldBe 'valid
+    parse[Boolean]("'123' != null", ctx) shouldBe 'valid
+
+    parse[Boolean]("123 == 123123123123L", ctx) shouldBe 'valid
+  }
+
+  test("precise type parsing in two operand operators") {
+    val floatAddExpr = "12.1 + 23.4"
+    parse[Int](floatAddExpr, ctx) shouldBe 'invalid
+    parse[Float](floatAddExpr, ctx) shouldBe 'valid
+    parse[java.lang.Float](floatAddExpr, ctx) shouldBe 'valid
+    parse[Double](floatAddExpr, ctx) shouldBe 'valid
+
+    val floatMultiplyExpr = "12.1 * 23.4"
+    parse[Int](floatMultiplyExpr, ctx) shouldBe 'invalid
+    parse[Float](floatMultiplyExpr, ctx) shouldBe 'valid
+    parse[java.lang.Float](floatMultiplyExpr, ctx) shouldBe 'valid
+    parse[Double](floatMultiplyExpr, ctx) shouldBe 'valid
+  }
+
+  test("precise type parsing in single operand operators") {
+    val floatAddExpr = "12.1++"
+    parse[Int](floatAddExpr, ctx) shouldBe 'invalid
+    parse[Float](floatAddExpr, ctx) shouldBe 'valid
+    parse[java.lang.Float](floatAddExpr, ctx) shouldBe 'valid
+    parse[Double](floatAddExpr, ctx) shouldBe 'valid
+  }
+
 }
 
 case class SampleObject(list: List[SampleValue])

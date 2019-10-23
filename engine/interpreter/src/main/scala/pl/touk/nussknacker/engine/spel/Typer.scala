@@ -81,7 +81,6 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
 
       case e: Assign => invalid("Value modifications are not supported")
       case e: BeanReference => invalid("Bean reference is not supported")
-      case e: BooleanLiteral => valid(Typed[Boolean])
       case e: CompoundExpression => e.children match {
         case first :: rest =>
           val validatedLastType = rest.foldLeft(typeNode(validationContext, first, current)) {
@@ -99,7 +98,6 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
       case e: ConstructorReference => fixed(Unknown)
 
       case e: Elvis => withTypedChildren(l => Valid(Typed(l.toSet)))
-      case e: FloatLiteral => valid(Typed[java.lang.Float])
       //TODO: what should be here?
       case e: FunctionReference => valid(Unknown)
 
@@ -112,6 +110,16 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
           case TypedClass(clazz, keyParam :: valueParam :: Nil):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
           case _ => valid(Unknown)
         }
+
+      case e: BooleanLiteral => valid(Typed[Boolean])
+      case e: IntLiteral => valid(Typed[java.lang.Integer])
+      case e: LongLiteral => valid(Typed[java.lang.Long])
+      case e: RealLiteral => valid(Typed(Typed[java.lang.Float], Typed[java.lang.Double])) // type can be also Float here
+      case e: FloatLiteral => valid(Typed[java.lang.Float])
+      case e: StringLiteral => valid(Typed[String])
+      case e: NullLiteral => valid(Unknown)
+
+
       case e: InlineList => withTypedChildren { children =>
         val childrenTypes = children.toSet
         val genericType = if (childrenTypes.contains(Unknown) || childrenTypes.size != 1) Unknown else childrenTypes.head
@@ -138,9 +146,6 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
             }
           }
         }
-      case e: IntLiteral => valid(Typed[java.lang.Integer])
-      //case e:Literal => Valid(classOf[Any])
-      case e: LongLiteral => valid(Typed[java.lang.Long])
 
       case e: MethodReference =>
         TypeMethodReference(e, current.stack) match {
@@ -148,28 +153,30 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
           case Left(errorMsg) => invalid(errorMsg)
         }
 
-      case e: NullLiteral => valid(Unknown)
+      case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
+      case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
 
       case e: OpAnd => withChildrenOfType[Boolean](Typed[Boolean])
-      case e: OpDec => withChildrenOfType[Number](commonNumberReference)
-      //case e:Operator => Valid(classOf[Any])
-      case e: OpDivide => withChildrenOfType[Number](commonNumberReference)
-      case e: OpEQ => fixed(Typed[Boolean])
+      case e: OpOr => withChildrenOfType[Boolean](Typed[Boolean])
       case e: OpGE => withChildrenOfType[Number](Typed[Boolean])
       case e: OpGT => withChildrenOfType[Number](Typed[Boolean])
-      case e: OpInc => withChildrenOfType[Number](commonNumberReference)
       case e: OpLE => withChildrenOfType[Number](Typed[Boolean])
       case e: OpLT => withChildrenOfType[Number](Typed[Boolean])
-      case e: OpMinus => withChildrenOfType[Number](commonNumberReference)
-      case e: OpModulus => withChildrenOfType[Number](commonNumberReference)
-      case e: OpMultiply => withChildrenOfType[Number](commonNumberReference)
-      case e: OpNE => fixed(Typed[Boolean])
-      case e: OpOr => withChildrenOfType[Boolean](Typed[Boolean])
+
+      case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)
+      case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)
+
+      case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)
+      case e: OpMinus => checkTwoOperandsArithmeticOperation(validationContext, e, current)
+      case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)
+      case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)
+      case e: OperatorPower => checkTwoOperandsArithmeticOperation(validationContext, e, current)
 
       case e: OpPlus => withTypedChildren {
-        case left :: right :: Nil if left == Unknown || right == Unknown => Valid(Unknown)
-        case left :: right :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
-        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(commonNumberReference)
+        case right :: left :: Nil if left == Unknown || right == Unknown => Valid(Unknown)
+        case right :: left :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
+        case right :: left :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(Typed.commonSupertype(left, right))
+        case right :: left :: Nil => invalid(s"Invalid operands: $left ${e.getOperatorName} $right")
         case left :: Nil => Valid(left)
         case Nil => invalid("Empty plus")
       }
@@ -177,7 +184,6 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
       case e: OperatorInstanceof => fixed(Typed[Boolean])
       case e: OperatorMatches => withChildrenOfType[String](Typed[Boolean])
       case e: OperatorNot => withChildrenOfType[Boolean](Typed[Boolean])
-      case e: OperatorPower => withChildrenOfType[Number](commonNumberReference)
 
       case e: Projection => current.stackHead match {
         case None => invalid("Cannot do projection here")
@@ -197,7 +203,6 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
       //TODO: what should be here?
       case e: QualifiedIdentifier => fixed(Unknown)
 
-      case e: RealLiteral => valid(Typed[java.lang.Double])
       case e: Selection => current.stackHead match {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
@@ -206,8 +211,6 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
             case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
           }
       }
-
-      case e: StringLiteral => valid(Typed[String])
 
       case e: Ternary => withTypedChildren {
         case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(Typed(onTrue, onFalse))
@@ -223,6 +226,30 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
           case Some(result) => valid(result)
           case None => invalid(s"Unresolved reference $name")
         }
+    }
+  }
+
+  private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+    typeChildren(validationContext, node, current) {
+      case right :: left :: Nil if Typed.commonSupertype(right, left) != Typed.empty => Valid(Typed[Boolean])
+      case right :: left :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
+      case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
+    }
+  }
+
+  private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+    typeChildren(validationContext, node, current) {
+      case right :: left :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(Typed.commonSupertype(left, right))
+      case right :: left :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
+      case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
+    }
+  }
+
+  private def checkSingleOperandArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+    typeChildren(validationContext, node, current) {
+      case left :: Nil if left.canBeSubclassOf(Typed[Number]) => Valid(left)
+      case left :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName}")
+      case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
     }
   }
 
@@ -283,10 +310,6 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
 
   private def invalid[T](message: String): ValidatedNel[ExpressionParseError, T] =
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
-
-  private def commonNumberReference: TypingResult =
-    Typed(
-      Typed[Double], Typed[Int], Typed[Long], Typed[Float], Typed[Byte], Typed[Short], Typed[BigDecimal], Typed[BigInteger])
 
 }
 

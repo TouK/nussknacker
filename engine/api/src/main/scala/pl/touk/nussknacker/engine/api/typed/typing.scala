@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.typed
 import java.util
 
 import io.circe.Encoder
-import org.apache.commons.lang3.ClassUtils
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -19,7 +18,7 @@ object typing {
     def canHasAnyPropertyOrField: Boolean
 
     final def canBeSubclassOf(typingResult: TypingResult): Boolean =
-      typing.canBeSubclassOf(this, typingResult)
+      CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult)
 
     def display: String
 
@@ -62,7 +61,7 @@ object typing {
   }
 
   // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
-  case class TypedUnion private[typing](private[typing] val possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
+  case class TypedUnion private[typing](private[typed] val possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
 
     assert(possibleTypes.size != 1, "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
 
@@ -81,7 +80,7 @@ object typing {
   case class TypedClass(klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
     override def canHasAnyPropertyOrField: Boolean =
-      typing.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
+      CanBeSubclassDeterminer.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
 
     private def hasGetFieldByNameMethod =
       klass.getMethods.exists(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
@@ -106,44 +105,6 @@ object typing {
     def apply(klass: ClazzRef) : TypedClass =
       TypedClass(klass.clazz, klass.params.map(Typed.apply))
 
-  }
-
-  private def canBeSubclassOf(first: TypingResult, sec: TypingResult): Boolean =
-    (first, sec) match {
-      case (_, Unknown) => true
-      case (Unknown, _) => true
-      case (f: SingleTypingResult, s: TypedUnion) => canBeSubclassOf(Set(f), s.possibleTypes)
-      case (f: TypedUnion, s: SingleTypingResult) => canBeSubclassOf(f.possibleTypes, Set(s))
-      case (f: SingleTypingResult, s: SingleTypingResult) => singleCanBeSubclassOf(f, s)
-      case (f: TypedUnion, s: TypedUnion) => canBeSubclassOf(f.possibleTypes, s.possibleTypes)
-    }
-
-  private def canBeSubclassOf(firstSet: Set[SingleTypingResult], secSet: Set[SingleTypingResult]): Boolean =
-    firstSet.exists(f => secSet.exists(singleCanBeSubclassOf(f, _)))
-
-  private def singleCanBeSubclassOf(first: SingleTypingResult, sec: SingleTypingResult): Boolean = {
-    def typedObjectRestrictions = sec match {
-      case s: TypedObjectTypingResult =>
-        val firstFields = first match {
-          case f: TypedObjectTypingResult => f.fields
-          case _ => Map.empty[String, TypingResult]
-        }
-        s.fields.forall {
-          case (name, typ) => firstFields.get(name).exists(canBeSubclassOf(_, typ))
-        }
-      case _ =>
-        true
-    }
-    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions
-  }
-
-  private def klassCanBeSubclassOf(first: TypedClass, sec: TypedClass): Boolean = {
-    def hasSameTypeParams =
-      //we are lax here - the generic type may be co- or contra-variant - and we don't want to
-      //throw validation errors in this case. It's better to accept to much than too little
-      sec.params.zip(first.params).forall(t => canBeSubclassOf(t._1, t._2) || canBeSubclassOf(t._2, t._1))
-
-    first == sec || ClassUtils.isAssignable(first.klass, sec.klass) && hasSameTypeParams
   }
 
   object Typed {
@@ -205,6 +166,12 @@ object typing {
       case other: SingleTypingResult => List(other)
     }
 
+    /**
+      * Search for lower common supertype, if the lowest is java.lang.Object then it returns Typed.empty
+      */
+    def commonSupertype(first: TypingResult, sec: TypingResult): TypingResult = {
+      CommonSupertypeFinder.findCommonSupertype(first, sec)
+    }
   }
 
 }
