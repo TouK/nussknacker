@@ -294,7 +294,7 @@ object Typer {
 
   // This Semigroup is used in combining `intermediateResults: Map[SpelNodeId, TypingResult]` in TYper.
   // If there is no bug in Typer, collisions shouldn't happen
-  private implicit def notAcceptingMergingSemigroup: Semigroup[TypingResult] = new Semigroup[TypingResult] with LazyLogging {
+  implicit def notAcceptingMergingSemigroup: Semigroup[TypingResult] = new Semigroup[TypingResult] with LazyLogging {
     override def combine(x: TypingResult, y: TypingResult): TypingResult = {
       assert(x == y, s"Types not matching during combination of types for spel nodes: $x != $y")
       // merging the same types is not bad but it is a warning that sth went wrong e.g. typer typed something more than one time
