@@ -106,7 +106,7 @@ object UIProcessObjects {
                                signalsWithTransformers: Map[String, UIObjectDefinition],
                                exceptionHandlerFactory: UIObjectDefinition,
                                globalVariables: Map[String, UIObjectDefinition],
-                               typesInformation: List[ClazzDefinition],
+                               typesInformation: Set[ClazzDefinition],
                                subprocessInputs: Map[String, UIObjectDefinition]) {
   // skipping exceptionHandlerFactory
   val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++

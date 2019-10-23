@@ -46,8 +46,8 @@ object TypesInformationExtractor {
   )
 
   def clazzAndItsChildrenDefinition(clazzes: Iterable[TypingResult])
-                                   (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
-    (clazzes.flatMap(clazzRefsFromTypingResult) ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition(_, Set())).toList
+                                   (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+    (clazzes.flatMap(clazzRefsFromTypingResult) ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition(_, Set())).toSet
   }
 
   private def clazzRefsFromTypingResult(typingResult: TypingResult): Set[ClazzRef] = typingResult match {

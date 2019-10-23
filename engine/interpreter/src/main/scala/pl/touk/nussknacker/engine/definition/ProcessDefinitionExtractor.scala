@@ -113,7 +113,7 @@ object ProcessDefinitionExtractor {
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
                                                     expressionConfig: ExpressionDefinition[T],
-                                                    typesInformation: List[ClazzDefinition]) {
+                                                    typesInformation: Set[ClazzDefinition]) {
     def componentIds: List[String] = {
       val ids = services.keys ++
         sourceFactories.keys ++

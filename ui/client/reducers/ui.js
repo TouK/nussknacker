@@ -60,6 +60,8 @@ export function reducer(state = emptyUiState, action) {
         confirmDialog: {
           isOpen: action.isOpen,
           text: action.text,
+          confirmText: action.confirmText,
+          denyText: action.denyText,
           onConfirmCallback: action.onConfirmCallback
         }
       })

@@ -1,14 +1,11 @@
 #Intro
-
 Before designing processes you have to define the model. The model is made of:
- 
 - data structures
 - services used to access external systems
 - event sources and sinks
 
 #Defining and discovering model
-
-Classes of your model should be packed in a jar together with an implementation of `ProcessConfigCreator`. This trait defines nodes which would be used to build processes. Nussknacker accesses your model using your implementation of `ProcessConfigCreator`.
+Classes of your model should be packed in a jar together with an implementation of [`ProcessConfigCreator`](https://github.com/TouK/nussknacker/blob/master/engine/api/src/main/scala/pl/touk/nussknacker/engine/api/process/ProcessConfigCreator.scala). This trait defines nodes which would be used to build processes. Nussknacker accesses your model using your implementation of `ProcessConfigCreator`.
 
 ```scala
 package pl.touk.nussknacker.engine.api.process
@@ -158,10 +155,6 @@ After that you'll able to access `client` in expression like this `#input.client
 
 #Exception handlers
 
-#Common caveats
-
-Advanced subjects
-
 #Expression Config
 
 #Signals
@@ -173,5 +166,3 @@ Advanced subjects
 #Custom processes
 
 #Defining model classes
-
-TODO

@@ -54,7 +54,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
                              (implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
     compileObjectParameters(parameterDefinitions, parameters, List.empty, ctx, ctx).map(_.map {
-      case TypedParameter(name, expr: TypedExpression) => compiledgraph.evaluatedparam.Parameter(name, expr.expression, expr.returnType)
+      case TypedParameter(name, expr: TypedExpression) => compiledgraph.evaluatedparam.Parameter(name, expr.expression, expr.returnType, expr.typingInfo)
     })
   }
 
@@ -86,7 +86,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.map {
         case (paramName, branchIdAndExpressions) =>
           //TODO: handle context for branch parameters correctly...
-          compileParam(branchIdAndExpressions, ctxForLazyParameters, paramDefMap(paramName))
+          compileBranchParam(branchIdAndExpressions, ctxForLazyParameters, paramDefMap(paramName))
       }
       (compiledParams ++ compiledBranchParams).sequence
     }
@@ -102,10 +102,10 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }
   }
 
-  private def compileParam(branchIdAndExpressions: List[(String, expression.Expression)],
-                           ctx: ValidationContext,
-                           definition: Parameter)
-                          (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
+  private def compileBranchParam(branchIdAndExpressions: List[(String, expression.Expression)],
+                                 ctx: ValidationContext,
+                                 definition: Parameter)
+                                (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     enrichContext(ctx, definition).andThen { finalCtx =>
       branchIdAndExpressions.map {
         case (branchId, expression) =>
