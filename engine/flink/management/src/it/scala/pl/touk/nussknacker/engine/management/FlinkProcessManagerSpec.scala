@@ -4,14 +4,15 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-import argonaut.PrettyParams
 import com.typesafe.config.ConfigValueFactory
+import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest._
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -22,8 +23,6 @@ import scala.concurrent.duration._
 class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
 
   import pl.touk.nussknacker.engine.kafka.KafkaUtils._
-
-  val ProcessMarshaller = new ProcessMarshaller
 
   test("deploy process in running flink") {
     val processId = "runningFlink"
@@ -81,14 +80,14 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
     val consumer = kafkaClient.createConsumer()
     val messages1 = consumer.consume(outTopic)
-    new String(messages1.take(1).toIterable.head.message(), StandardCharsets.UTF_8) shouldBe "1"
+    new String(messages1.take(1).head.message(), StandardCharsets.UTF_8) shouldBe "1"
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2"))
 
     val messages2 = kafkaClient.createConsumer().consume(outTopic)
-    new String(messages2.take(2).toIterable.last.message(), StandardCharsets.UTF_8) shouldBe "2"
+    new String(messages2.take(2).last.message(), StandardCharsets.UTF_8) shouldBe "2"
 
     assert(processManager.cancel(ProcessName(kafkaProcess.id)).isReadyWithin(10 seconds))
   }
@@ -105,13 +104,14 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
-    Thread.sleep(2000)
+    //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
+    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("List(One element)")
+
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
 
-    val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
+    val messages = messagesFromTopic(outTopic, kafkaClient, 2)
 
-    val message = messages.last.message()
-    new String(message, StandardCharsets.UTF_8) shouldBe "List(One element, One element)"
+    messages shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
   }
@@ -128,7 +128,8 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
-    Thread.sleep(3000)
+    //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
+    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("List(One element)")
 
     val dir = new File("/tmp").toURI.toString
     val savepointPath = processManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), dir)
@@ -138,34 +139,29 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
 
-    val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
+    val messages = messagesFromTopic(outTopic, kafkaClient, 2)
 
-    val message = messages.last.message()
-    new String(message, StandardCharsets.UTF_8) shouldBe "List(One element, One element)"
+    messages shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
 
   }
 
-  private def createKafkaClient = {
-    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      config.getString("processConfig.kafka.zkAddress"))
-    kafkaClient
-  }
-
   test("fail to redeploy if old is incompatible") {
     val processId = "redeployFail"
+    val outTopic = s"output-$processId"
 
     val process = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
 
     val kafkaClient: KafkaClient = createKafkaClient
-    kafkaClient.createTopic(s"output-$processId", 1)
+    kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
-    Thread.sleep(2000)
+    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("")
+
     logger.info("Starting to redeploy")
 
-    val newMarshalled = ProcessMarshaller.toJson(StatefulSampleProcess.prepareProcessWithLongState(processId), PrettyParams.spaces2)
+    val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
     val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
@@ -208,14 +204,28 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
     val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
-    val signalJson = argonaut.Parse.parse(readSignals(0)).right.get
-    signalJson.field("processId").get.nospaces shouldBe "\"test-process\""
-    signalJson.field("action").get.field("type").get.nospaces shouldBe "\"RemoveLock\""
-    signalJson.field("action").get.field("lockId").get.nospaces shouldBe "\"test-lockId\""
+    val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
+    signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
+    signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
+    signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
+  }
+
+
+  private def messagesFromTopic(outTopic: String, kafkaClient: KafkaClient, count: Int): List[String] = {
+    kafkaClient.createConsumer()
+      .consume(outTopic)
+      .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
+      .take(count).toList
+  }
+
+  private def createKafkaClient: KafkaClient = {
+    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
+      config.getString("processConfig.kafka.zkAddress"))
+    kafkaClient
   }
 
   private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {
-    val marshaled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
+    val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
     assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
     Thread.sleep(1000)
     val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue

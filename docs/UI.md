@@ -2,46 +2,60 @@
 
 This section describes basic functionalities of user interface.
 
-#Processes tab
+#Processes
 Features
-- list of editable and custom non-editable processes and subprocesses
-- deploy/stop process
-- search by process id or category
-- check process status - if it's running on Flink cluster there will be green status indicator, 
+- list of editable and custom non-editable processes
+- search 
+- filter by category
+- process status indication - if it's running processes have green status indicator, 
 if process crashed there will be red status indicator
+- edit action
+- link to process' metric dashboard 
 
-#Process visualization
+#Subprocesses
+- list of editable and custom non-editable subprocesses
+- search 
+- filter by category
+- edit action
+
+#Process editing
 ##Left panel
-- toolbox - creator panel with all nodes available for process category. Just drag & drop it to create process 
-- history - every version of process is persisted
+- creator panel - with all nodes available for chosen process category. Just drag & drop it to create process 
+- versions - every saved version of process is persisted
 - comments
 - attachments
 
-##User right panel buttons
+##Right panel
 - business view - enable to view simpler version of process without variable and enricher nodes
+
 ###Deployment
-- deploy - deploy process to Flink cluster
-- stop - stop Flink's process
+- deploy - deploy process to runtime engine (e.g. Flink, Standalone)
+- cancel - cancel the process (e.g. Flink cancel)
 - metrics - see metrics in Grafana
+
 ###Process
-- save - save process, add optional comment with change summary
+- save - save the process, add optional comment with change summary
 - migrate - migrate process between environments
-- compare - compare two version of processes - see what nodes were added/deleted or see how node changed
+- compare - compare two versions of the process - see which nodes were added/deleted or see how node's properties changed
 - import - import process from json file
-- export - export process to json file
-- exportPDF - export process graph to PDF with all process details
+- JSON - export process to json file
+- PDF - export process graph to PDF with all process details
 - zoomIn/zoomOut
+- archive
+
 ###Edit
 - undo/redo - undo/redo graph process actions
-- align - automatically center process
-- properties - edit global process properties
+- align - automatically layout the process
+- properties - edit properties of the process
 - duplicate - duplicate node 
-- delete - delete node
+- copy/cut/delete/paste - editing operations, they can work on sets of nodes
+
 ###Test
 - from file - test process from file input
 - hide - hide test results
-- generate - fetch test data from process source and save to file
+- generate - fetch test data from process source and save to a file
 - counts - see how many events went through each node during given time period
+
 ###Group
 - start - start grouping and mark nodes to group
 - finish - finish grouping

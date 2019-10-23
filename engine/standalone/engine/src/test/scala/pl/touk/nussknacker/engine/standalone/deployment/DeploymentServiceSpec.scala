@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.standalone.deployment
 
 import java.nio.file.Files
 
-import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -96,6 +95,6 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
         .exceptionHandler()
         .source("start", "request1-post-source")
         .sink("endNodeIID", "''", "response-sink"))
-    DeploymentData(new ProcessMarshaller().toJson(canonical).spaces2, 0, ProcessVersion.empty.copy(processName = processName))
+    DeploymentData(ProcessMarshaller.toJson(canonical).spaces2, 0, ProcessVersion.empty.copy(processName = processName))
   }
 }

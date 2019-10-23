@@ -9,9 +9,8 @@ import HttpService from "../../http/HttpService";
 import * as JsonUtils from "../../common/JsonUtils";
 import NodeDetailsContent from "../graph/NodeDetailsContent";
 import EdgeDetailsContent from "../graph/EdgeDetailsContent";
-import Moment from "moment";
-import {dateFormat} from "../../config";
 import Scrollbars from "react-custom-scrollbars";
+import DateUtils from "../../common/DateUtils";
 
 //TODO: handle displaying groups
 //TODO: handle different textarea heights
@@ -64,7 +63,7 @@ class CompareVersionsDialog extends React.Component {
     const versionId = (versionPrefix || '') + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
-        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp;on {Moment(version.createDate).format(dateFormat)}</option>)
+        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {DateUtils.formatAbsolutely(version.createDate)}</option>)
   }
 
   render() {
@@ -74,7 +73,7 @@ class CompareVersionsDialog extends React.Component {
 
         <div className="esp-form-row">
           <p>Version to compare</p>
-          <select id="otherVersion" className="node-input" value={this.state.otherVersion || ''}
+          <select autoFocus={true} id="otherVersion" className="node-input" value={this.state.otherVersion || ''}
                   onChange={(e) => this.loadVersion(e.target.value)}>
             <option key="" value=""/>
             {this.props.versions.filter(version => this.props.version !== version.processVersionId).map((version, index) => this.createVersionElement(version))}
@@ -120,6 +119,8 @@ class CompareVersionsDialog extends React.Component {
       case "EdgeNotPresentInOther":
       case "EdgeDifferent":
         return this.renderDiff(diff.currentEdge, diff.otherEdge, this.printEdge);
+      case "PropertiesDifferent":
+        return this.renderDiff(diff.currentProperties, diff.otherProperties, this.printProperties);
       default:
         console.error(`Difference type ${diff.type} is not supported`)
     }
@@ -151,7 +152,7 @@ class CompareVersionsDialog extends React.Component {
     return node ? (<NodeDetailsContent isEditMode={false}
                                        node={node}
                                        pathsToMark={pathsToMark}
-                                       onChange={() => {}}/>) :
+                                       onChange={() => {}} />) :
       (<div className="notPresent">Node not present</div>)
   }
 
@@ -162,6 +163,14 @@ class CompareVersionsDialog extends React.Component {
                                        updateEdgeProp={() => {}}
                                        pathsToMark={pathsToMark} />) :
       (<div className="notPresent">Edge not present</div>)
+  }
+
+  printProperties(property, pathsToMark) {
+    return property ? (<NodeDetailsContent isEditMode={false}
+                                           node={property}
+                                           pathsToMark={pathsToMark}
+                                           onChange={() => {}} />) :
+      (<div className="notPresent">Properties not present</div>)
   }
 }
 

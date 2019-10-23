@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.{Processor, asProcessor}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestPermissions, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.Typeable._
@@ -23,7 +23,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Sca
   val processId = "fooProcess"
 
 
-  private implicit val user = LoggedUser("test1", testPermissionAdmin)
+  private implicit val user = TestFactory.adminUser("test1")
 
   it should "migrate processes to new versions when not migrated" in {
 

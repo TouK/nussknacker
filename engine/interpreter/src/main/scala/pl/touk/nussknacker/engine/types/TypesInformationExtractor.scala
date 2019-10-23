@@ -41,13 +41,13 @@ object TypesInformationExtractor {
   private val blacklistedClazzPackagePrefix = Set(
     "scala.collection", "scala.Function", "scala.xml",
     "javax.xml", "java.util",
-    "cats", "argonaut", "dispatch",
+    "cats", "argonaut", "dispatch", "io.circe",
     "org.apache.flink.api.common.typeinfo.TypeInformation"
   )
 
   def clazzAndItsChildrenDefinition(clazzes: Iterable[TypingResult])
-                                   (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
-    (clazzes.flatMap(clazzRefsFromTypingResult) ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition(_, Set())).toList
+                                   (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+    (clazzes.flatMap(clazzRefsFromTypingResult) ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition(_, Set())).toSet
   }
 
   private def clazzRefsFromTypingResult(typingResult: TypingResult): Set[ClazzRef] = typingResult match {

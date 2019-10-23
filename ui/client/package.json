@@ -1,12 +1,13 @@
 {
-  "name": "esp-ui-client",
+  "name": "nussknacker-ui",
   "version": "0.0.0",
   "description": "ESP UI - client",
   "main": "server.js",
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "start": "webpack-dev-server",
+    "start": "PROXY_API_DOMAIN=http://localhost:8081/api webpack-dev-server",
+    "start-backend-demo": "PROXY_API_DOMAIN=https://demo.nussknacker.io/api webpack-dev-server",
     "build": "NODE_ENV=production webpack -p --progress && cp -R assets/icons/license dist",
     "test": "NODE_ENV=production ./node_modules/karma/bin/karma start --single-run"
   },
@@ -29,7 +30,7 @@
     "prop-types": "~15.7.2",
     "query-string": "~6.8.1",
     "react": "~16.8.6",
-    "react-ace": "~7.0.2",
+    "react-ace": "~7.0.4",
     "react-addons-pure-render-mixin": "^15.6.2",
     "react-bootstrap": "~0.32.4",
     "react-custom-scrollbars": "~4.2.1",

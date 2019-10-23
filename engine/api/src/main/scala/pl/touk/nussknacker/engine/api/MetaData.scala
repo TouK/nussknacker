@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.api
 
 import java.util.concurrent.TimeUnit
 
-import argonaut.Argonaut.jdecode3L
-import argonaut.{DecodeJson, EncodeJson}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import CirceUtil._
 import io.circe.{Decoder, Encoder}
@@ -17,18 +15,6 @@ case class ProcessAdditionalFields(description: Option[String],
                                    properties: Map[String, String])
 
 object ProcessAdditionalFields {
-  import argonaut.ArgonautShapeless._
-
-  implicit val decoder: DecodeJson[ProcessAdditionalFields] = {
-    // this is needed for parsing json that does not have groups or properties fields
-    jdecode3L((description: Option[String], groups: Option[Set[Group]], properties: Option[Map[String, String]]) =>
-      ProcessAdditionalFields(description, groups.getOrElse(Set.empty), properties.getOrElse(Map.empty))
-    )("description", "groups", "properties").map(identity[ProcessAdditionalFields])
-  }
-
-  implicit val encoder: EncodeJson[ProcessAdditionalFields] = {
-    EncodeJson.derive[ProcessAdditionalFields]
-  }
 
   //TODO: is this currently needed?
   private case class OptionalProcessAdditionalFields(description: Option[String],
@@ -44,7 +30,7 @@ object ProcessAdditionalFields {
 @JsonCodec case class Group(id: String, nodes: Set[String])
 
 // todo: MetaData should hold ProcessName as id
-case class MetaData(id: String,
+@ConfiguredJsonCodec case class MetaData(id: String,
                     typeSpecificData: TypeSpecificData,
                     isSubprocess: Boolean = false,
                     additionalFields: Option[ProcessAdditionalFields] = None,

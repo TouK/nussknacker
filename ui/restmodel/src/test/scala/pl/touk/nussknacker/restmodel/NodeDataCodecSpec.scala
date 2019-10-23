@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, NodeAdditionalFields}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 
 class NodeDataCodecSpec extends FunSuite with Matchers {
@@ -22,7 +22,7 @@ class NodeDataCodecSpec extends FunSuite with Matchers {
     ), List(
       SubprocessInputDefinition("proc1", List(SubprocessParameter("param1", SubprocessClazzRef[String]))),
       CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression("spel", "11"))),
-        Some(NodeAdditionalFields(Some("desc"))))
+        Some(UserDefinedAdditionalNodeFields(Some("desc"))))
     ), List(
       Edge("from1", "to1", None)
     ), "")

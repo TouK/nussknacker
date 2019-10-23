@@ -5,9 +5,10 @@ import java.lang.reflect.{InvocationHandler, Method, Proxy}
 import java.sql.Connection
 import java.util.logging.Logger
 
+import io.circe.Json
 import javax.sql.DataSource
-import argonaut.{Json, Parse}
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.ui.db.EspTables
 import slick.jdbc.JdbcProfile
 
@@ -45,9 +46,9 @@ trait ProcessJsonMigration extends SlickMigration with EspTables {
     .map(_.json).update(json.map(prepareAndUpdateJson))
 
   private def prepareAndUpdateJson(json: String): String = {
-    val jsonProcess = Parse.parse(json).right.get
+    val jsonProcess = CirceUtil.decodeJsonUnsafe[Json](json, "invalid process")
     val updated = updateProcessJson(jsonProcess)
-    updated.getOrElse(jsonProcess).nospaces
+    updated.getOrElse(jsonProcess).noSpaces
   }
 
   def updateProcessJson(json: Json): Option[Json]

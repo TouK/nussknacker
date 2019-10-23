@@ -113,7 +113,7 @@ class ExpressionSuggest extends React.Component {
             setOptions={{
               indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
               enableBasicAutocompletion: [this.customAceEditorCompleter],
-              enableLiveAutocompletion: false,
+              enableLiveAutocompletion: true,
               enableSnippets: false,
               showLineNumbers: false,
               fontSize: 16,

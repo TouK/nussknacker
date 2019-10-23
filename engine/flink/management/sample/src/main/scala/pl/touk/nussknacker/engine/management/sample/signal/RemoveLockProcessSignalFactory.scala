@@ -3,10 +3,9 @@ package pl.touk.nussknacker.engine.management.sample.signal
 import java.lang
 import java.nio.charset.StandardCharsets
 
-import argonaut.Argonaut._
-import argonaut.ArgonautShapeless._
-import argonaut.{Argonaut, Json}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.{Encoder, Json}
+import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator, TwoInputStreamOperator}
@@ -28,8 +27,7 @@ class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTo
   @MethodToInvoke
   def sendSignal(@ParamName("lockId") lockId: String)(processId: String): Unit = {
     val signal = SampleProcessSignal(processId, System.currentTimeMillis(), RemoveLock(lockId))
-    val json = ProcessSignalCodecs.processSignalCodec.Encoder(signal).nospaces
-    KafkaEspUtils.sendToKafkaWithTempProducer(signalsTopic, Array.empty, json.getBytes(StandardCharsets.UTF_8))(kafkaConfig)
+    KafkaEspUtils.sendToKafkaWithTempProducer(signalsTopic, Array.empty, Encoder[SampleProcessSignal].apply(signal).noSpaces.getBytes(StandardCharsets.UTF_8))(kafkaConfig)
   }
 
 }
@@ -64,9 +62,9 @@ object SampleSignalHandlingTransformer {
           .transform("lockStreamTransform", new LockStreamFunction(context.metaData))
         ds
           .keyBy(_ => QueryableState.defaultKey)
-          .transform("queryableStateTransform", new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](lockQueryName, lockOutput => Argonaut.jObjectFields(
-            "lockEnabled" -> jBool(lockOutput.lockEnabled)
-          )){}.asInstanceOf[OneInputStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]], ValueWithContext[Any]]])
+          .transform("queryableStateTransform", new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](lockQueryName, lockOutput => Json.fromFields(List(
+            "lockEnabled" -> Json.fromBoolean(lockOutput.lockEnabled)
+          ))){}.asInstanceOf[OneInputStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]], ValueWithContext[Any]]])
       })
   }
 
@@ -125,7 +123,7 @@ object SampleSignalHandlingTransformer {
   abstract class MakeStateQueryableTransformer[A <: ChangedState, B](queryName: String, mapToJson: A => Json) extends
     AbstractStreamOperator[ValueWithContext[B]] with OneInputStreamOperator[Either[A, ValueWithContext[B]], ValueWithContext[B]] with LazyLogging {
 
-    case class QueriedState(key: String, jsonValue: Json, changeTimestamp: Long)
+    @JsonCodec case class QueriedState(key: String, jsonValue: Json, changeTimestamp: Long)
 
     var queriedStates: ValueState[String] = _
 
@@ -140,10 +138,10 @@ object SampleSignalHandlingTransformer {
       setInitialStateIfNoSet()
       element.getValue match {
         case Left(changedValue) =>
-          val stateListJson = queriedStates.value().decodeOption[List[QueriedState]].get
+          val stateListJson = CirceUtil.decodeJsonUnsafe[List[QueriedState]](queriedStates.value(), "invalid queried state")
           val newValue = QueriedState(key = changedValue.key, jsonValue = mapToJson(changedValue), changeTimestamp = changedValue.changedTimestamp)
           val newState = stateListJson.filter(_.key != changedValue.key) ++ List(newValue)
-          queriedStates.update(newState.asJson.nospaces)
+          queriedStates.update(Encoder[List[QueriedState]].apply(newState).noSpaces)
         case Right(value) =>
           output.collect(new StreamRecord(value, element.getTimestamp))
       }
@@ -151,7 +149,7 @@ object SampleSignalHandlingTransformer {
 
     private def setInitialStateIfNoSet() = {
       if (queriedStates.value() == null) {
-        queriedStates.update(List.empty[QueriedState].asJson.nospaces)
+        queriedStates.update(Encoder[List[QueriedState]].apply(List.empty).noSpaces)
       }
     }
   }

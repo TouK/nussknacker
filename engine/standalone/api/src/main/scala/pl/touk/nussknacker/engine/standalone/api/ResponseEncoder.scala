@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.standalone.api
 
-import argonaut._
+import io.circe.Json
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
 
 

@@ -2,65 +2,31 @@ package pl.touk.nussknacker.engine.management
 
 import java.io.File
 
-import argonaut.Argonaut._
-import argonaut._
-import ArgonautShapeless._
-import org.asynchttpclient.{AsyncCompletionHandler, Request, RequestBuilder}
-import org.asynchttpclient.{AsyncCompletionHandler, Request, RequestBuilder}
-import com.typesafe.config.Config
+import sttp.client._
 import com.typesafe.scalalogging.LazyLogging
-import dispatch._
+import io.circe.Decoder
 import org.apache.flink.runtime.jobgraph.JobStatus
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
-import org.asynchttpclient.request.body.multipart.FilePart
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobConfig, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
-
-import scala.concurrent.{ExecutionContext, Future}
-
-
-private[management] trait HttpSender {
-  def send[T](pair: (Request, FunctionHandler[T]))
-             (implicit executor: ExecutionContext): Future[T]
-}
-
-private[management] object DefaultHttpSender extends HttpSender {
-
-  private val httpClient = LoggingDispatchClient(classOf[FlinkRestManager].getSimpleName, Http.default)
-
-  //We handle redirections manually, as dispatch/asynchttpclient has some problems (connection leaking with it in our use cases)
-  override def send[T](pair: (Request, FunctionHandler[T]))
-                      (implicit executor: ExecutionContext): Future[T] = {
-    httpClient(pair._1, new AsyncCompletionHandler[Future[T]]() {
-
-      override def onCompleted(response: Res): Future[T] = {
-        if (response.getStatusCode / 100 == 3) {
-          val newLocation = response.getHeader("LOCATION")
-          val newRequest = new RequestBuilder(pair._1).setUrl(newLocation).build()
-          httpClient(newRequest, pair._2)
-        } else if (response.getStatusCode / 100 != 2) {
-          Future.failed(new Exception(s"HTTP request failed with status code ${response.getStatusCode} and message: ${response.getStatusText}"))
-        } else {
-          Future.successful(pair._2.onCompleted(response))
-        }
-      }
-    }).flatten
-  }
-
-}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.sttp.SttpJson
+import sttp.client.circe._
+import io.circe.generic.JsonCodec
+import sttp.model.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSender = DefaultHttpSender) extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
 
-  private val flinkUrl = dispatch.url(config.restUrl)
+class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backend: SttpBackend[Future, Nothing, NothingT])
+    extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
+
+  private val flinkUrl = Uri.parse(config.restUrl).get
 
   // after job manager restart old resources are not available anymore and we have to upload jar once again
   private var jarUploadedBeforeLastRestart: Option[Future[String]] = None
@@ -80,29 +46,34 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
   }
 
   private def checkIfJarExists(jarId: String): Future[String] = {
-    sender.send {
-      (flinkUrl / "jars").GET OK utils.asJson[Json]
-    }.flatMap { json =>
-      val isJarUploaded = json
-        .fieldOrEmptyArray("files").arrayOrEmpty
-        .exists(_.fieldOrEmptyString("id").stringOrEmpty == jarId)
 
-      if (isJarUploaded) {
-        Future.successful(jarId)
-      } else {
-        Future.failed(new Exception(s"Jar with id '$jarId' does not exist"))
-      }
+    basicRequest
+      .get(flinkUrl.path("jars"))
+      .response(asJson[JarsResponse])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+      .flatMap { jars =>
+        val isJarUploaded = jars.files.toList.flatten.exists(_.id == jarId)
+        if (isJarUploaded) {
+          Future.successful(jarId)
+        } else {
+          Future.failed(new Exception(s"Jar with id '$jarId' does not exist"))
+        }
     }
   }
 
   private def uploadCurrentJar(): Future[String] = {
     logger.debug("Uploading new jar")
-    val filePart = new FilePart("jarfile", jarFile, "application/x-java-archive")
-    val uploadedJar = sender.send {
-      (flinkUrl / "jars" / "upload").POST.addBodyPart(filePart) OK utils.asJson[Json]
-    } map { json =>
-      logger.info(s"Uploaded jar to $json")
-      new File(json.fieldOrEmptyString("filename").stringOrEmpty).getName
+
+    val uploadedJar = basicRequest
+      .post(flinkUrl.path("jars", "upload"))
+      .multipartBody( multipartFile("jarfile", jarFile).contentType("application/x-java-archive"))
+      .response(asJson[UploadJarResponse])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+      .map { file =>
+        logger.info(s"Uploaded jar to $file")
+        new File(file.filename).getName
     }
     jarUploadedBeforeLastRestart = Some(uploadedJar)
     uploadedJar
@@ -110,9 +81,12 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
 
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
-    sender.send {
-      (flinkUrl / "jobs" / "overview").GET OK utils.asJson[JobsResponse]
-    } flatMap { jobs =>
+    basicRequest
+      .get(flinkUrl.path("jobs", "overview"))
+      .response(asJson[JobsResponse])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+      .flatMap { jobs =>
       val jobsForName = jobs.jobs
         .filter(_.name == name.value)
         .sortBy(_.`last-modification`).reverse
@@ -146,14 +120,18 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
 
   //TODO: cache by jobId?
   private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
-    sender.send {
-      (flinkUrl / "jobs" / jobId / "config").GET OK utils.asJson[JobConfig]
-    }.map { config =>
+
+    basicRequest
+      .get(flinkUrl.path("jobs", jobId, "config"))
+      .response(asJson[JobConfig])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+      .map { config =>
       val userConfig = config.`execution-config`.`user-config`
       for {
-        version <- userConfig.get("versionId").flatMap(_.string).map(_.toLong)
-        user <- userConfig.get("user").map(_.stringOrEmpty)
-        modelVersion = userConfig.get("modelVersion").flatMap(_.string).map(_.toInt)
+        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong)
+        user <- userConfig.get("user").map(_.asString.getOrElse(""))
+        modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
       } yield ProcessVersion(version, name, user, modelVersion)
 
     }
@@ -166,9 +144,12 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
-    sender.send {
-      (flinkUrl / "jobs"/ jobId.value / "savepoints" / savepointId).GET OK utils.asJson[GetSavepointStatusResponse]
-    }.flatMap { resp =>
+    basicRequest
+      .get(flinkUrl.path("jobs", jobId.value, "savepoints", savepointId))
+      .response(asJson[GetSavepointStatusResponse])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+      .flatMap { resp =>
       logger.debug(s"Waiting for savepoint $savepointId of $jobId, got response: $resp")
       if (resp.isCompletedSuccessfully) {
         //getOrElse is not really needed since isCompletedSuccessfully returns true only if it's defined
@@ -185,17 +166,22 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
   }
 
   override protected def cancel(job: ProcessState): Future[Unit] = {
-    sender.send {
-      (flinkUrl / "jobs" / job.id.value).PATCH OK (_ => ())
-    }
+    basicRequest
+      .patch(flinkUrl.path("jobs", job.id.value))
+      .send()
+      .flatMap(handleUnitResponse)
   }
 
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
-    sender.send {
-      (flinkUrl / "jobs" / job.id.value / "savepoints").POST.setBody("""{"cancel-job": false}""") OK utils.asJson[SavepointTriggerResponse]
-    }.flatMap { response =>
-      waitForSavepoint(job.id, response.`request-id`)
-    }
+    basicRequest
+      .post(flinkUrl.path("jobs", job.id.value, "savepoints"))
+      .body("""{"cancel-job": false}""")
+      .response(asJson[SavepointTriggerResponse])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+      .flatMap { response =>
+        waitForSavepoint(job.id, response.`request-id`)
+      }
   }
 
 
@@ -210,23 +196,30 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
     logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
     uploadedJarId().flatMap { jarId =>
       logger.debug(s"Deploying $processName with $savepointPath and jarId: $jarId")
-      sender.send {
-        (flinkUrl / "jars" / jarId / "run").POST.setBody(program.asJson.spaces2) OK (_ => ())
-     }
+      basicRequest
+        .post(flinkUrl.path("jars", jarId, "run"))
+        .body(program)
+        .send()
+        .flatMap(handleUnitResponse)
     }
+  }
+
+  private def handleUnitResponse(response: Response[Either[String, String]]): Future[Unit] = response.body match {
+    case Right(_) => Future.successful(())
+    case Left(error) => Future.failed(new RuntimeException(s"Request failed: $error, code: ${response.code}"))
   }
 
 }
 
 object flinkRestModel {
 
-  implicit val jobStatusDecoder: DecodeJson[JobStatus] = DecodeJson.of[String].map(JobStatus.valueOf)
+  implicit val jobStatusDecoder: Decoder[JobStatus] = Decoder.decodeString.map(JobStatus.valueOf)
 
-  case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
+  @JsonCodec(encodeOnly = true) case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
 
-  case class SavepointTriggerResponse(`request-id`: String)
+  @JsonCodec(decodeOnly = true) case class SavepointTriggerResponse(`request-id`: String)
 
-  case class GetSavepointStatusResponse(status: SavepointStatus, operation: Option[SavepointOperation]) {
+  @JsonCodec(decodeOnly = true) case class GetSavepointStatusResponse(status: SavepointStatus, operation: Option[SavepointOperation]) {
 
     def isCompletedSuccessfully: Boolean = status.isCompleted && operation.flatMap(_.location).isDefined
 
@@ -234,19 +227,29 @@ object flinkRestModel {
 
   }
 
-  case class SavepointOperation(location: Option[String], `failure-cause`: Option[FailureCause])
+  @JsonCodec(decodeOnly = true) case class SavepointOperation(location: Option[String], `failure-cause`: Option[FailureCause])
 
-  case class FailureCause(`class`: Option[String], `stack-trace`: Option[String], `serialized-throwable`: Option[String])
+  @JsonCodec(decodeOnly = true) case class FailureCause(`class`: Option[String], `stack-trace`: Option[String], `serialized-throwable`: Option[String])
 
-  case class SavepointStatus(id: String) {
+  @JsonCodec(decodeOnly = true) case class SavepointStatus(id: String) {
     def isCompleted: Boolean = id == "COMPLETED"
   }
 
-  case class JobsResponse(jobs: List[JobOverview])
+  @JsonCodec(decodeOnly = true) case class JobsResponse(jobs: List[JobOverview])
 
-  case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: JobStatus)
+  @JsonCodec(decodeOnly = true) case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: JobStatus)
 
-  case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
+  @JsonCodec(decodeOnly = true) case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
 
-  case class ExecutionConfig(`user-config`: Map[String, Json])
+  @JsonCodec(decodeOnly = true) case class ExecutionConfig(`user-config`: Map[String, io.circe.Json])
+
+  @JsonCodec(decodeOnly = true) case class JarsResponse(files: Option[List[JarFile]])
+
+  @JsonCodec(decodeOnly = true) case class UploadJarResponse(filename: String)
+
+  @JsonCodec(decodeOnly = true) case class JarFile(id: String)
+
+
 }
+
+

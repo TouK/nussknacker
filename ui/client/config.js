@@ -10,16 +10,13 @@ let nkPath = __DEV__ ? '' : window.nkPath
 //https://webpack.js.org/guides/public-path/#on-the-fly
 __webpack_public_path__ = `${nkPath}/static/`
 
-
 let API_URL = `${nkPath}/api`
 const dateFormat = "YYYY-MM-DD HH:mm:ss"
-
-if (__DEV__) {
-  API_URL = 'http://localhost:8081/api'
-}
+const displayDateFormat = 'YYYY-MM-DD|HH:mm';
 
 export {
   API_URL,
   dateFormat,
+  displayDateFormat,
   nkPath
 }

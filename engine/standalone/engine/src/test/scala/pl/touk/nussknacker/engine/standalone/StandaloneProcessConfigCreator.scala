@@ -2,13 +2,10 @@ package pl.touk.nussknacker.engine.standalone
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import argonaut._
-import Argonaut._
-import ArgonautShapeless._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.{Context => NKContext}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
@@ -49,8 +46,6 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     "processorService" -> WithCategories(processorService)
   )
 
-  implicit val decoder = DecodeJson.derive[Request1]
-
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1])
   )
@@ -73,7 +68,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   override def buildInfo(): Map[String, String] = Map.empty
 }
 
-case class Request1(field1: String, field2: String) {
+@JsonCodec case class Request1(field1: String, field2: String) {
   import scala.collection.JavaConverters._
   
   def toList: java.util.List[String] = List(field1, field2).asJava
@@ -81,7 +76,7 @@ case class Request1(field1: String, field2: String) {
 case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)
 
-case class Response(field1: String) extends DisplayableAsJson[Response]
+@JsonCodec case class Response(field1: String) extends DisplayJsonWithEncoder[Response]
 
 class EnricherService extends Service {
   @MethodToInvoke

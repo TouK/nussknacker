@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.definition
 
-import com.typesafe.config.ConfigRenderOptions
-import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -16,33 +14,29 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
-import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
-import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, definition}
+import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.definition.ParameterTypeMapper
+import pl.touk.nussknacker.engine.definition.{ParameterTypeMapper, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 
 object UIProcessObjects {
-
-  private implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
-    val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-    CirceUtil.decodeJson[ParameterRestriction](json).right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
-  })
-
+  
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
-                              isSubprocess: Boolean): UIProcessObjects = {
+                              isSubprocess: Boolean,
+                              typesForCategories: ProcessTypesForCategories): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition = modelDataForType.processDefinition
-    val fixedNodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+    val fixedNodesConfig = ProcessDefinitionExtractor.extractNodesConfig(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
@@ -66,7 +60,8 @@ object UIProcessObjects {
         subprocessInputs = subprocessInputs,
         extractorFactory = defaultParametersFactory,
         nodesConfig = nodesConfig,
-        nodeCategoryMapping = nodeCategoryMapping
+        nodeCategoryMapping = nodeCategoryMapping,
+        typesForCategories = typesForCategories
       ),
       processDefinition = uiProcessDefinition,
       nodesConfig = nodesConfig,
@@ -111,7 +106,7 @@ object UIProcessObjects {
                                signalsWithTransformers: Map[String, UIObjectDefinition],
                                exceptionHandlerFactory: UIObjectDefinition,
                                globalVariables: Map[String, UIObjectDefinition],
-                               typesInformation: List[ClazzDefinition],
+                               typesInformation: Set[ClazzDefinition],
                                subprocessInputs: Map[String, UIObjectDefinition]) {
   // skipping exceptionHandlerFactory
   val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
@@ -176,7 +171,7 @@ object UIProcessDefinition {
 
 @JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
-import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataEncoder
+import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 @JsonCodec(encodeOnly = true) case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
 object SortedNodeGroup {

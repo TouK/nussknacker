@@ -171,7 +171,7 @@ trait ExampleItTest { self: KafkaSpec =>
   }
 
   def sendTransaction(t: Transaction) = {
-    kafkaClient.sendMessage("topic.transaction", t.display.nospaces)
+    kafkaClient.sendMessage("topic.transaction", t.asJson.noSpaces)
   }
 
   def toEpoch(d: LocalDateTime): Long = {

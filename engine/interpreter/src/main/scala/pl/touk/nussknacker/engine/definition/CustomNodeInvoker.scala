@@ -23,8 +23,8 @@ private[definition] case class ExpressionLazyParameter[T](nodeId: NodeId,
                                                           returnType: TypingResult) extends CompilerLazyParameter[T] {
   override def prepareEvaluator(compilerInterpreter: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = {
     val compiledExpression = compilerInterpreter.deps.expressionCompiler
-              .compile(parameter.expression, Some(parameter.name), None, Unknown)(nodeId)
-              .getOrElse(throw new IllegalArgumentException(s"Cannot compile ${parameter.name}")).expression
+              .compileWithoutContextValidation(parameter.expression, parameter.name)(nodeId)
+              .valueOr(err => throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}"))
     val evaluator = compilerInterpreter.deps.expressionEvaluator
     context: Context => evaluator.evaluate[T](compiledExpression, parameter.name, nodeId.id, context)(ec, compilerInterpreter.metaData).map(_.value)(ec)
   }

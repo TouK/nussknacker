@@ -396,11 +396,13 @@ export function disableToolTipsHighlight() {
   }
 }
 
-export function toggleConfirmDialog(isOpen, text, action) {
+export function toggleConfirmDialog(isOpen, text, action, confirmText="Yes", denyText="No") {
   return {
     type: "TOGGLE_CONFIRM_DIALOG",
     isOpen: isOpen,
     text: text,
+    confirmText: confirmText,
+    denyText: denyText,
     onConfirmCallback: action
   }
 }
@@ -517,5 +519,12 @@ export function handleHTTPError(error) {
   return {
     type: "HANDLE_HTTP_ERROR",
     error: error
+  }
+}
+
+export function copySelection(selection) {
+  return {
+    type: "COPY_SELECTION",
+    selection: selection
   }
 }

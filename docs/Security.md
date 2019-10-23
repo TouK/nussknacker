@@ -9,6 +9,13 @@ Each user has id and set of permissions for every process category. There are fo
 * Write - user can modify/add new processes in category
 * Deploy - user can deploy or cancel processes in given category
 
+## Global permissions
+In addition to permission system oriented around processes' categories we provide additional set of permissions.
+This feature is designed to control access to components that have no category attached or it doesn't make sense for them to have one.
+
+Currently supported permissions:
+* AdminTab - shows Admin tab in the UI (right now there are some useful things kept there including search components functionality).
+
 ##Default security module
 
 Default security provider uses users file in following format:
@@ -21,6 +28,7 @@ users: [
       "Category1": ["Read", "Deploy"]
       "Category2": ["Read", "Write"]
     }
+    globalPermissions: ["AdminTab"]
   },
   {
     id: "user2"

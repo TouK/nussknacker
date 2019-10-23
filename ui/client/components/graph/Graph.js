@@ -17,8 +17,6 @@ import cssVariables from "../../stylesheets/_variables.styl"
 import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import PropTypes from 'prop-types'
-import * as JsonUtils from "../../common/JsonUtils"
-import ClipboardUtils from "../../common/ClipboardUtils"
 
 class Graph extends React.Component {
 
@@ -43,12 +41,10 @@ class Graph extends React.Component {
     this.nodesMoving();
 
     this.espGraphRef = React.createRef()
+    this.parent = document.getElementById(this.props.parent)
 
     this.windowListeners = {
-      resize: this.updateDimensions.bind(this),
-      copy: this.copySelection.bind(this),
-      paste: this.pasteSelection.bind(this),
-      cut: this.cutSelection.bind(this)
+      resize: this.updateDimensions.bind(this)
     }
   }
 
@@ -70,10 +66,9 @@ class Graph extends React.Component {
   }
 
   updateDimensions() {
-    let area = document.getElementById('working-area')
     this.processGraphPaper.fitToContent()
-    this.svgDimensions(area.offsetWidth, area.offsetHeight)
-    this.processGraphPaper.setDimensions(area.offsetWidth, area.offsetHeight)
+    this.svgDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
   }
 
   canAddNode(node) {
@@ -89,62 +84,9 @@ class Graph extends React.Component {
     }
   }
 
-  canCopySelection() {
-    return this.props.allModalsClosed &&
-      !_.isEmpty(this.props.selectionState) &&
-      NodeUtils.containsOnlyPlainNodesWithoutGroups(this.props.selectionState, this.props.processToDisplay)
-  }
-
-  canCutSelection() {
-    return this.canCopySelection() && this.props.capabilities.write
-  }
-
-  copySelection(event) {
-    const copyNodeElementId = 'copy-node'
-    if (event.target && event.target.id !== copyNodeElementId && this.canCopySelection()) {
-      const selectedNodes = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
-      const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(this.props.selectionState, this.props.processToDisplay)
-      const selection = {
-        nodes: selectedNodes,
-        edges: edgesForNodes
-      }
-      ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
-      this.props.notificationActions.success(`Copied ${selectedNodes.length} elements`)
+    componentWillUnmount() {
+        _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
     }
-  }
-
-  pasteSelection(event) {
-    if (!this.props.allModalsClosed) {
-      return
-    }
-    const clipboardText = ClipboardUtils.readText(event);
-    const selection = JsonUtils.tryParseOrNull(clipboardText)
-    const canPasteSelection = _.has(selection, 'nodes') && _.has(selection, 'edges') && selection.nodes.every(node => this.canAddNode(node))
-    if (!canPasteSelection) {
-      this.props.notificationActions.error("Cannot paste invalid nodes")
-      return
-    }
-
-    const positions = selection.nodes.map((node, ix) => {
-      return {x: 300, y: ix * 100}
-    })
-    const nodesWithPositions = _.zipWith(selection.nodes, positions, (node, position) => {
-      return {node, position}
-    })
-    this.props.actions.nodesWithEdgesAdded(nodesWithPositions, selection.edges)
-  }
-
-  cutSelection(event) {
-    if (this.canCutSelection() ) {
-      this.copySelection(event)
-      const nodeIds = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay).map(node => node.id)
-      this.props.actions.deleteNodes(nodeIds)
-    }
-  }
-
-  componentWillUnmount() {
-    _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
-  }
 
   componentWillUpdate(nextProps, nextState) {
     const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
@@ -217,8 +159,8 @@ class Graph extends React.Component {
     return new joint.dia.Paper({
       el: this.getEspGraphRef(),
       gridSize: 1,
-      height: this.getEspGraphRef().offsetHeight,
-      width: this.getEspGraphRef().offsetWidth,
+      height: this.parent.clientHeight,
+      width: this.parent.clientWidth - 2 * this.props.padding,
       model: this.graph,
       snapLinks: {radius: 75},
       interactive: function (cellView) {
@@ -616,7 +558,7 @@ class Graph extends React.Component {
 
   render() {
     const toRender = (
-      <div id="graphContainer">
+      <div id="graphContainer" style={{padding: this.props.padding}}>
         {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
         <div ref={this.espGraphRef} id={this.props.divId}></div>
@@ -638,6 +580,8 @@ const spec = {
 function mapState(state, props) {
   return {
     divId: "esp-graph",
+    parent: "working-area",
+    padding: 0,
     readonly: state.graphReducer.businessView,
     singleClickNodeDetailsEnabled: true,
     nodeIdPrefixForSubprocessTests: "",
@@ -656,6 +600,8 @@ function mapState(state, props) {
 function mapSubprocessState(state, props) {
   return {
     divId: "esp-graph-subprocess",
+    parent: "modal-content",
+    padding: 40,
     readonly: true,
     singleClickNodeDetailsEnabled: false,
     nodeIdPrefixForSubprocessTests: state.graphReducer.nodeToDisplay.id + "-", //TODO where should it be?
@@ -671,7 +617,6 @@ function commonState(state) {
     loggedUser: state.settings.loggedUser,
     processDefinitionData: state.settings.processDefinitionData || {},
     selectionState: state.graphReducer.selectionState,
-    allModalsClosed: state.ui.allModalsClosed
   }
 }
 

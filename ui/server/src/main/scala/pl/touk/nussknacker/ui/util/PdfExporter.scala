@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.NodeAdditionalFields
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 
@@ -194,7 +193,6 @@ object PdfExporter extends LazyLogging {
       case _ => List()
     }
     val data = node.additionalFields
-      .map(_.asInstanceOf[NodeAdditionalFields])
       .flatMap(_.description)
       .map(naf => ("Description", naf)).toList ++ nodeData
     if (data.isEmpty) {
@@ -278,7 +276,7 @@ object PdfExporter extends LazyLogging {
               </table-cell>
               <table-cell border="1pt solid black" padding-left="1pt">
                 <block>
-                  {node.additionalFields.map(_.asInstanceOf[NodeAdditionalFields]).flatMap(_.description).getOrElse("")}
+                  {node.additionalFields.flatMap(_.description).getOrElse("")}
                 </block>
               </table-cell>
             </table-row>

@@ -3,9 +3,6 @@ package pl.touk.nussknacker.engine.example
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-import argonaut._
-import Argonaut._
-import ArgonautShapeless._
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -16,7 +13,7 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
@@ -27,6 +24,9 @@ import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
+import CirceUtil.decodeJsonUnsafe
+import io.circe.Json
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
@@ -64,17 +64,11 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
     val transactionTimestampExtractor = new BoundedOutOfOrdernessTimestampExtractor[Transaction](Time.minutes(10)) {
       override def extractTimestamp(element: Transaction): Long = element.eventDate
     }
-    kafkaSource[Transaction](kafkaConfig, jsonBytes => {
-      val decoder = implicitly[DecodeJson[Transaction]]
-      new String(jsonBytes, StandardCharsets.UTF_8).decodeOption(decoder).get
-    }, Some(transactionTimestampExtractor), TestParsingUtils.newLineSplit)
+    kafkaSource[Transaction](kafkaConfig, decodeJsonUnsafe[Transaction](_), Some(transactionTimestampExtractor), TestParsingUtils.newLineSplit)
   }
 
   private def createClientSource(kafkaConfig: KafkaConfig) = {
-    kafkaSource[Client](kafkaConfig, jsonBytes => {
-      val decoder = implicitly[DecodeJson[Client]]
-      new String(jsonBytes, StandardCharsets.UTF_8).decodeOption(decoder).get
-    }, None, TestParsingUtils.newLineSplit)
+    kafkaSource[Client](kafkaConfig, decodeJsonUnsafe[Client](_), None, TestParsingUtils.newLineSplit)
   }
 
   private def kafkaSource[T: TypeInformation](config: KafkaConfig,
@@ -87,11 +81,12 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
+    val encoder = BestEffortJsonEncoder(failOnUnkown = false)
     val stringOrJsonSink = kafkaSink(kafkaConfig, new KeyedSerializationSchema[Any] {
       override def serializeKey(element: Any): Array[Byte] = UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8)
       override def serializeValue(element: Any): Array[Byte] = element match {
-        case a:Displayable => a.display.nospaces.getBytes(StandardCharsets.UTF_8)
-        case a:Json => a.nospaces.getBytes(StandardCharsets.UTF_8)
+        case a:DisplayJson => a.asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
+        case a:Json => a.noSpaces.getBytes(StandardCharsets.UTF_8)
         case a:String => a.getBytes(StandardCharsets.UTF_8)
         case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
       }
@@ -114,7 +109,7 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
     new LoggingExceptionHandlerFactory(config)
   }
 
-  override def expressionConfig(config: Config) = {
+  override def expressionConfig(config: Config): ExpressionConfig = {
     val globalProcessVariables = Map(
       "UTIL" -> all(UtilProcessHelper),
       "TYPES" -> all(DataTypes)
@@ -137,7 +132,7 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
 class LoggingExceptionHandlerFactory(config: Config) extends ExceptionHandlerFactory {
 
   @MethodToInvoke
-  def create(metaData: MetaData, @ParamName("sampleParam") sampleParam: String) = {
+  def create(metaData: MetaData, @ParamName("sampleParam") sampleParam: String): EspExceptionHandler = {
     VerboselyLoggingRestartingExceptionHandler(metaData, config, params = Map("sampleParam" -> sampleParam))
   }
 

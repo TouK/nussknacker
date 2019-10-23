@@ -4,10 +4,10 @@ import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
-import cats.kernel.Semigroup
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.ServiceReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
 import scala.util.{Failure, Success, Try}
-
+import PartSubGraphCompiler._
 
 class PartSubGraphCompiler(protected val classLoader: ClassLoader,
                            protected val expressionCompiler: ExpressionCompiler,
@@ -51,21 +51,23 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   protected def createServiceInvoker(obj: ObjectWithMethodDef) = ServiceInvoker(obj)
 
-  private val globalVariableTypes = expressionConfig.globalVariables.mapValues(_.returnType)
-
   def compile(n: SplittedNode[_], ctx: ValidationContext) : CompilationResult[compiledgraph.node.Node] = {
     implicit val nodeId: NodeId = NodeId(n.id)
 
-    val nodeResult : CompilationResult[compiledgraph.node.Node] = n match {
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
+      CompilationResult(Map(n.id -> NodeTypingInfo(ctx, expressionsTypingInfo)), validated)
+
+    n match {
       case splittednode.SourceNode(nodeData, next) => handleSourceNode(nodeData, ctx, next)
       case splittednode.OneOutputSubsequentNode(data, next) => compileSubsequent(ctx, data, next)
 
       case splittednode.SplitNode(bareNode, nexts) =>
         val compiledNexts = nexts.map(n => compile(n, ctx)).sequence
-        compiledNexts.map(nx => compiledgraph.node.SplitNode(bareNode.id, nx))
+        compiledNexts.andThen(nx => toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx)), Map.empty))
 
       case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
-        CompilationResult.map3(CompilationResult(compile(expression, None, ctx, Typed[Boolean])._2), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
+        val (expressionTyping, validatedExpression) = compile(expression, None, ctx, Typed[Boolean])
+        CompilationResult.map3(toCompilationResult(validatedExpression, expressionTyping.toDefaultExpressionTypingInfoEntry.toMap), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
           (expr, next, nextFalse) =>
             compiledgraph.node.Filter(id = id,
             expression = expr,
@@ -74,18 +76,19 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
             isDisabled = f.isDisabled.contains(true)))
 
       case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
-        val (newCtx, compiledExpression) = withVariable(exprVal, ctx, compile(expression, None, ctx, Unknown))
-        CompilationResult.map3(CompilationResult(compiledExpression), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
+        val (expressionTyping, validatedExpression) = compile(expression, None, ctx, Unknown)
+        val (newCtx, combinedValidatedExpression) = withVariableCombined(ctx, exprVal, expressionTyping.typingResult, validatedExpression)
+        CompilationResult.map3(toCompilationResult(combinedValidatedExpression, expressionTyping.toDefaultExpressionTypingInfoEntry.toMap), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
           (realCompiledExpression, cases, next) => {
             compiledgraph.node.Switch(id, realCompiledExpression, exprVal, cases, next)
           })
-      case splittednode.EndingNode(data) => CompilationResult(compileEndingNode(ctx, data))
+      case splittednode.EndingNode(data) => compileEndingNode(ctx, data)
 
     }
-    nodeResult.copy(typing = nodeResult.typing + (n.id -> ctx))
   }
 
   private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: splittednode.Next): CompilationResult[node.Source] = {
+    // just like in a custom node we can't add input context here because it contains output variable context (not input)
     nodeData match {
       case graph.node.Source(id, _, _) =>
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
@@ -97,149 +100,175 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     }
   }
 
-  private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Node] = data match {
-    case graph.node.Processor(id, ref, disabled, _) =>
-      compile(ref, ctx).map(cn => compiledgraph.node.EndingProcessor(id, cn._1, disabled.contains(true)))
-    case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
-      optionalExpression.map { oe =>
-        val compiled = compile(oe, None, ctx, Unknown)
-        compiled._2.map((_, compiled._1))
-      }.sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed, disabled.contains(true)))
-    //probably this shouldn't occur - otherwise we'd have empty subprocess?
-    case SubprocessInput(id, _, _, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
-    case SubprocessOutputDefinition(id, name, _) =>
-      //TODO: should we validate it's process?
-      //TODO: does it make sense to validate SubprocessOutput?
-      Valid(compiledgraph.node.Sink(id, name, None, isDisabled = false))
+  private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId): CompilationResult[compiledgraph.node.Node] = {
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
+      CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo)), validated)
 
-    //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
-    //accepts this join, maybe we should also validate the graph is connected?
-    case BranchEndData(id, joinId) => Valid(compiledgraph.node.BranchEnd(id, joinId.joinId))
+    data match {
+      case graph.node.Processor(id, ref, disabled, _) =>
+        val (typingResult, validatedServiceRef) = compile(ref, ctx)
+        toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingResult.expressionsTypingInfo)
+      case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
+        val (expressionTypingInfoEntry, validatedOptionalExpression) = optionalExpression.map { oe =>
+          val (expressionTyping, validatedExpression) = compile(oe, None, ctx, Unknown)
+          (expressionTyping.toDefaultExpressionTypingInfoEntry, validatedExpression.map(expr => Some((expr, expressionTyping.typingResult))))
+        }.getOrElse {
+          (None, Valid(None))
+        }
+
+        toCompilationResult(validatedOptionalExpression.map(compiledgraph.node.Sink(id, ref.typ, _, disabled.contains(true))), expressionTypingInfoEntry.toMap)
+      //probably this shouldn't occur - otherwise we'd have empty subprocess?
+      case SubprocessInput(id, _, _, _, _) => toCompilationResult(Invalid(NonEmptyList.of(UnresolvedSubprocess(id))), Map.empty)
+      case SubprocessOutputDefinition(id, name, _) =>
+        //TODO: should we validate it's process?
+        //TODO: does it make sense to validate SubprocessOutput?
+        toCompilationResult(Valid(compiledgraph.node.Sink(id, name, None, isDisabled = false)), Map.empty)
+
+      //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
+      //accepts this join, maybe we should also validate the graph is connected?
+      case BranchEndData(id, joinId) => toCompilationResult(Valid(compiledgraph.node.BranchEnd(id, joinId.joinId)), Map.empty)
+    }
   }
 
-  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = data match {
-    case graph.node.Variable(id, varName, expression, _) =>
-      val (newCtx, compiledExpression) = withVariable(varName, ctx, compile(expression, None, ctx, Unknown))
+  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = {
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
+      CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo)), validated)
 
-      CompilationResult.map2(CompilationResult(compiledExpression), compile(next, newCtx)) { (compiled, compiledNext) =>
-        compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
-      }
-    case graph.node.VariableBuilder(id, varName, fields, _) =>
-      val fieldsCompiled = fields.map(f => compile(f, ctx)).unzip
-      val fieldsTyped = (TypedObjectTypingResult(fieldsCompiled._1.toMap), fieldsCompiled._2.sequence)
+    data match {
+      case graph.node.Variable(id, varName, expression, _) =>
+        val (expressionTypingResult, validatedExpression) = compile(expression, None, ctx, Unknown)
+        val (newCtx, combinedValidatedExpression) = withVariableCombined(ctx, varName, expressionTypingResult.typingResult, validatedExpression)
 
-      val (newCtx, compiledVariable) = withVariable(varName, ctx, fieldsTyped)
+        CompilationResult.map2(toCompilationResult(combinedValidatedExpression, expressionTypingResult.toDefaultExpressionTypingInfoEntry.toMap), compile(next, newCtx)) { (compiled, compiledNext) =>
+          compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
+        }
+      case graph.node.VariableBuilder(id, varName, fields, _) =>
+        val (fieldsTyping, compiledFields) = fields.map(f => compile(f, ctx)).unzip
+        val typingResult = TypedObjectTypingResult(fieldsTyping.map(f => f.fieldName -> f.typingResult).toMap)
+        val (newCtx, combinedCompiledFields) = withVariableCombined(ctx, varName, typingResult, compiledFields.sequence)
 
-      CompilationResult.map2(CompilationResult(compiledVariable), compile(next, newCtx)) { (compiledFields, compiledNext) =>
-        compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields), compiledNext)
-      }
+        val expressionsTypingInfo = fieldsTyping.flatMap(_.toExpressionTypingInfoEntry).toMap
 
-    case graph.node.Processor(id, ref, isDisabled, _) =>
-      CompilationResult.map2(CompilationResult(compile(ref, ctx)), compile(next, ctx))((ref, next) =>
-        compiledgraph.node.Processor(id, ref._1, next, isDisabled.contains(true)))
+        CompilationResult.map2(toCompilationResult(combinedCompiledFields, expressionsTypingInfo), compile(next, newCtx)) { (compiledFields, compiledNext) =>
+          compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields), compiledNext)
+        }
 
-    case graph.node.Enricher(id, ref, outName, _) =>
-      val compiledRef = compile(ref, ctx)
+      case graph.node.Processor(id, ref, isDisabled, _) =>
+        val (typingResult, validatedServiceRef) = compile(ref, ctx)
+        CompilationResult.map2(toCompilationResult(validatedServiceRef, typingResult.expressionsTypingInfo), compile(next, ctx))((ref, next) =>
+          compiledgraph.node.Processor(id, ref, next, isDisabled.contains(true)))
 
-      val newCtx = compiledRef.andThen { case (_, returnTypeFromRef) =>
-        val returnType = returnTypeFromRef.orElse(services.get(ref.id).map(_.returnType)).getOrElse(Unknown)
-        ctx.withVariable(outName, returnType)
-      }
-      CompilationResult.map3(CompilationResult(newCtx), CompilationResult(compile(ref, ctx)), compile(next, newCtx.getOrElse(ctx)))((_, ref, next) =>
-                         compiledgraph.node.Enricher(id, ref._1, outName, next))
+      case graph.node.Enricher(id, ref, outName, _) =>
+        val (typingResult, validatedServiceRef) = compile(ref, ctx)
 
-    //here we don't do anything, in subgraphcompiler it's just pass through
-    case graph.node.CustomNode(id, _, _, _, _) =>
-      CompilationResult.map(
-        fa = compile(next, ctx))(
-        f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
+        val (newCtx, combinedValidatedServiceRef) = withVariableCombined(ctx, outName, typingResult.returnType, validatedServiceRef)
+        CompilationResult.map2(toCompilationResult(combinedValidatedServiceRef, typingResult.expressionsTypingInfo), compile(next, newCtx))((ref, next) =>
+                           compiledgraph.node.Enricher(id, ref, outName, next))
 
-    case subprocessInput@SubprocessInput(id, ref, _, _, _) =>
-      import cats.implicits.toTraverseOps
+      //here we don't do anything, in subgraphcompiler it's just pass through, we can't add input context here because it contains output variable context (not input)
+      case graph.node.CustomNode(id, _, _, _, _) =>
+        CompilationResult.map(
+          fa = compile(next, ctx))(
+          f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
 
-      val childCtx = ctx.pushNewContext()
-      val newCtx = ref.parameters.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx))
-                    { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
+      case subprocessInput@SubprocessInput(id, ref, _, _, _) =>
+        import cats.implicits.toTraverseOps
 
-      val validParamDefs =
-        ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
+        val childCtx = ctx.pushNewContext()
+        val (newCtx, combinedValidation) = ref.parameters.foldLeft[(ValidationContext, ValidatedNel[ProcessCompilationError, _])]((childCtx, Valid(Unit))) {
+          case ((accCtx, validation), param) =>
+            withVariableCombined(accCtx, param.name, Unknown, validation)
+        }
 
-      val validParams = validParamDefs.andThen { paramDefs =>
-        expressionCompiler.compileObjectParameters(paramDefs, ref.parameters, toOption(ctx))
-      }
+        val validParamDefs =
+          ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
 
-      CompilationResult.map3(
-        f0 = CompilationResult(validParams),
-        f1 = compile(next, newCtx.getOrElse(childCtx)),
-        f2 = CompilationResult(newCtx))((params, next, _) => compiledgraph.node.SubprocessStart(id, params, next))
+        val validParams = validParamDefs.andThen { paramDefs =>
+          expressionCompiler.compileObjectParameters(paramDefs, ref.parameters, ctx)
+        }
 
-    case SubprocessOutput(id, _, _) =>
-      //this popContext *really* has to work to be able to extract variable types :|
-      ctx.popContext.fold(error => CompilationResult(Invalid(error)), popContext =>
-        compile(next, popContext).map(SubprocessEnd(id, _))
-      )
+        val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
+
+        val combinedValidParams = ProcessCompilationError.ValidatedNelApplicative.map2(combinedValidation, validParams)((_, p) => p)
+
+        CompilationResult.map2(toCompilationResult(combinedValidParams, expressionTypingInfo), compile(next, newCtx))((params, next) =>
+          compiledgraph.node.SubprocessStart(id, params, next))
+
+      case SubprocessOutput(id, _, _) =>
+        //this popContext *really* has to work to be able to extract variable types :|
+        ctx.popContext
+          .map(popContext => compile(next, popContext).andThen(next => toCompilationResult(Valid(SubprocessEnd(id, next)), Map.empty)))
+          .valueOr(error => CompilationResult(Invalid(error)))
+    }
   }
 
   private def compile(next: splittednode.Next, ctx: ValidationContext): CompilationResult[compiledgraph.node.Next] = {
     next match {
       case splittednode.NextNode(n) => compile(n, ctx).map(cn => compiledgraph.node.NextNode(cn))
-      case splittednode.PartRef(ref) => CompilationResult(Map(ref -> ctx), Valid(compiledgraph.node.PartRef(ref)))
+      case splittednode.PartRef(ref) =>
+        CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty)), Valid(compiledgraph.node.PartRef(ref)))
     }
   }
 
   private def compile(n: graph.service.ServiceRef, ctx: ValidationContext)
-                     (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, (compiledgraph.service.ServiceRef, Option[TypingResult])] = {
+                     (implicit nodeId: NodeId): (ServiceTypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.service.ServiceRef]) = {
     val service = services.get(n.id).map(Valid(_)).getOrElse(invalid(MissingService(n.id))).toValidatedNel
 
-    service.andThen { objWithMethod =>
-      expressionCompiler.compileObjectParameters(objWithMethod.parameters, n.parameters, toOption(ctx)).map { params =>
-          val invoker = createServiceInvoker(objWithMethod)
-          (compiledgraph.service.ServiceRef(n.id, invoker, params), computeReturnType(objWithMethod.obj, params))
+    val validatedServiceWithTypingResult = service.andThen { objWithMethod =>
+      expressionCompiler.compileObjectParameters(objWithMethod.parameters, n.parameters, ctx).map { params =>
+        val invoker = createServiceInvoker(objWithMethod)
+        val returnType = computeReturnType(objWithMethod, params)
+        val typingResult = ServiceTypingResult(returnType, params.map(p => p.name -> p.typingInfo).toMap)
+        (compiledgraph.service.ServiceRef(n.id, invoker, params), typingResult)
       }
+    }
+    validatedServiceWithTypingResult match {
+      case Valid((serviceRef, typingResult)) =>
+        (typingResult, Valid(serviceRef))
+      case invalid@Invalid(_) =>
+        (ServiceTypingResult(Unknown, Map.empty), invalid)
     }
   }
 
-  private def withVariable[R](name: String, validationContext: ValidationContext, typingResult: (TypingResult, ValidatedNel[ProcessCompilationError, R]))(implicit nodeId: NodeId)
+  private def withVariableCombined[R](validationContext: ValidationContext, variableName: String, typingResult: TypingResult,
+                                      validatedResult: ValidatedNel[ProcessCompilationError, R])(implicit nodeId: NodeId)
     : (ValidationContext, ValidatedNel[ProcessCompilationError, R]) = {
-    implicit val firstSemi = new Semigroup[R] { override def combine(x: R, y: R): R = x }
-    validationContext.withVariable(name, typingResult._1) match {
-      case Valid(newCtx) => (newCtx, typingResult._2)
-      case in@Invalid(_) => (validationContext, in.combine(typingResult._2))
-    }
+    val combinedValidationWithNewCtx = ProcessCompilationError.ValidatedNelApplicative.product(validationContext.withVariable(variableName, typingResult), validatedResult)
+    (combinedValidationWithNewCtx.map(_._1).valueOr(_ => validationContext), combinedValidationWithNewCtx.map(_._2))
   }
 
   private def compile(n: splittednode.Case, ctx: ValidationContext)
                      (implicit nodeId: NodeId): CompilationResult[compiledgraph.node.Case] =
     CompilationResult.map2(CompilationResult(compile(n.expression, None, ctx, Typed[Boolean])._2), compile(n.node, ctx))((expr, next) => compiledgraph.node.Case(expr, next))
 
-  private def compile(n: graph.variable.Field, ctx: ValidationContext)
-                     (implicit nodeId: NodeId): ((String, TypingResult), ValidatedNel[ProcessCompilationError, compiledgraph.variable.Field]) = {
-    val compiled = compile(n.expression, Some(n.name), ctx, Unknown)
-    ((n.name, compiled._1), compiled._2.map(compiledgraph.variable.Field(n.name, _)))
+  private def compile(field: graph.variable.Field, ctx: ValidationContext)
+                     (implicit nodeId: NodeId): (FieldExpressionTypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.variable.Field]) = {
+    val (expressionTyping, validatedExpression) = compile(field.expression, Some(field.name), ctx, Unknown)
+    (FieldExpressionTypingResult(field.name, expressionTyping), validatedExpression.map(compiledgraph.variable.Field(field.name, _)))
   }
 
   private def compile(n: graph.expression.Expression,
                       fieldName: Option[String],
                       ctx: ValidationContext,
                       expectedType: TypingResult)
-                     (implicit nodeId: NodeId): (TypingResult, ValidatedNel[ProcessCompilationError, api.expression.Expression]) = {
-    expressionCompiler.compile(n, fieldName, toOption(ctx), expectedType)
-      .fold(err => (Unknown, Invalid(err)), res => (res.returnType, Valid(res.expression)))
+                     (implicit nodeId: NodeId): (ExpressionTypingResult, ValidatedNel[ProcessCompilationError, api.expression.Expression]) = {
+    expressionCompiler.compile(n, fieldName, ctx, expectedType)
+      .map(res => (ExpressionTypingResult(res.returnType, Some(res.typingInfo)), Valid(res.expression)))
+      .valueOr(err => (ExpressionTypingResult(Unknown, None), Invalid(err)))
   }
-
-  private def toOption(ctx: ValidationContext) = Some(ctx)
 
   //this method tries to compute constant parameters if service is ServiceReturningType
   //TODO: is it right way to do this? Maybe we just need to analyze Expression?
-  private def computeReturnType(service: Any,
-                                parameters: List[compiledgraph.evaluatedparam.Parameter]): Option[TypingResult] = service match {
+  private def computeReturnType(objWithMethod: ObjectWithMethodDef,
+                                parameters: List[compiledgraph.evaluatedparam.Parameter]): TypingResult = objWithMethod.obj match {
     case srt: ServiceReturningType =>
 
       val data = parameters.map { param =>
         param.name -> (param.returnType, tryToEvaluateParam(param))
       }.toMap
-      Some(srt.returnType(data))
-    case _ => None
+      srt.returnType(data)
+    case _ =>
+      objWithMethod.returnType
   }
 
   /*
@@ -265,4 +294,26 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         ).toValidatedNel
     }
   }
+}
+
+object PartSubGraphCompiler {
+
+  private case class ExpressionTypingResult(typingResult: TypingResult, typingInfo: Option[ExpressionTypingInfo]) {
+
+    def toDefaultExpressionTypingInfoEntry: Option[(String, ExpressionTypingInfo)] =
+      typingInfo.map(NodeTypingInfo.DefaultExpressionId -> _)
+
+  }
+
+  private case class FieldExpressionTypingResult(fieldName: String, private val exprTypingResult: ExpressionTypingResult) {
+
+    def typingResult: TypingResult = exprTypingResult.typingResult
+
+    def toExpressionTypingInfoEntry: Option[(String, ExpressionTypingInfo)] =
+      exprTypingResult.typingInfo.map(fieldName -> _)
+
+  }
+
+  private case class ServiceTypingResult(returnType: TypingResult, expressionsTypingInfo: Map[String, ExpressionTypingInfo])
+
 }

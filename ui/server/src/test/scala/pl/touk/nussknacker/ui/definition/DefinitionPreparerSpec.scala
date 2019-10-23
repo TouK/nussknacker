@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcess
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
+import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions{
 
@@ -33,7 +33,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   test("return edge types for subprocess, filters and switches") {
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
     val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
-      user = LoggedUser("aa", testPermissionAdmin),
+      user = TestFactory.adminUser("aa"),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessesDetails = subprocessesDetails)
@@ -99,13 +99,14 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     val subprocessInputs = Map[String, ObjectDefinition]()
 
     val groups = DefinitionPreparer.prepareNodesToAdd(
-      user = LoggedUser("aa", testPermissionAdmin),
+      user = TestFactory.adminUser("aa"),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessInputs = subprocessInputs,
       extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = nodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))),
-      nodeCategoryMapping = nodeCategoryMapping
+      nodeCategoryMapping = nodeCategoryMapping,
+      typesForCategories = ProcessTypesForCategories()
     )
     groups
   }
@@ -114,13 +115,14 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   private def prepareGroupsOfNodes(services: List[String]): List[NodeGroup] = {
 
     val groups = DefinitionPreparer.prepareNodesToAdd(
-      user = LoggedUser("aa", testPermissionAdmin),
+      user = TestFactory.adminUser("aa"),
       processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s)),
       isSubprocess = false,
       subprocessInputs = Map(),
       extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = Map(),
-      nodeCategoryMapping =  Map()
+      nodeCategoryMapping =  Map(),
+      typesForCategories = ProcessTypesForCategories()
     )
     groups
   }

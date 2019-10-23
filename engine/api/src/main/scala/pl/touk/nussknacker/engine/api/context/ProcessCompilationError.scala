@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.api.context
 
+import cats.Applicative
+import cats.data.ValidatedNel
+
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
 }
@@ -9,6 +12,11 @@ sealed trait ProcessUncanonizationError extends ProcessCompilationError
 sealed trait PartSubGraphCompilationError extends ProcessCompilationError
 
 object ProcessCompilationError {
+
+  type ValidatedNelCompilationError[T] = ValidatedNel[ProcessCompilationError, T]
+
+  val ValidatedNelApplicative: Applicative[ValidatedNelCompilationError] =
+    Applicative[ValidatedNelCompilationError]
 
   final val ProcessNodeId = "$process"
 

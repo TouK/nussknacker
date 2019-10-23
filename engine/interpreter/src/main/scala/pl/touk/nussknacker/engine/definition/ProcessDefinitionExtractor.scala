@@ -81,7 +81,7 @@ object ProcessDefinitionExtractor {
 
     implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
       val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-      CirceUtil.decodeJson[ParameterRestriction](json).right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
+      CirceUtil.decodeJsonUnsafe[ParameterRestriction](json, "invalid process config")
     })
     processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
   }
@@ -113,7 +113,7 @@ object ProcessDefinitionExtractor {
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
                                                     expressionConfig: ExpressionDefinition[T],
-                                                    typesInformation: List[ClazzDefinition]) {
+                                                    typesInformation: Set[ClazzDefinition]) {
     def componentIds: List[String] = {
       val ids = services.keys ++
         sourceFactories.keys ++
@@ -122,7 +122,6 @@ object ProcessDefinitionExtractor {
         signalsWithTransformers.keys
       ids.toList
     }
-
   }
 
   def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] = {

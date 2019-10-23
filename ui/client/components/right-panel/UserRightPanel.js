@@ -33,7 +33,10 @@ class UserRightPanel extends Component {
     zoomIn: PropTypes.func.isRequired,
     zoomOut: PropTypes.func.isRequired,
     featuresSettings: PropTypes.object.isRequired,
-    isReady: PropTypes.bool.isRequired
+    isReady: PropTypes.bool.isRequired,
+    copySelection: PropTypes.func.isRequired,
+    pasteSelection: PropTypes.func.isRequired,
+    cutSelection: PropTypes.func.isRequired
   };
 
   render() {
@@ -119,7 +122,7 @@ class UserRightPanel extends Component {
         panelName: "Deployment",
         buttons:[
           {name: "deploy", visible: this.props.capabilities.deploy, disabled: !conf.deployPossible, icon: InlinedSvgs.buttonDeploy, btnTitle: conf.deployToolTip, onClick: this.deploy, onMouseOver: conf.deployMouseOver, onMouseOut: conf.deployMouseOut},
-          {name: "stop", visible: this.props.capabilities.deploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
+          {name: "cancel", visible: this.props.capabilities.deploy, disabled: !this.isRunning(), onClick: this.cancel, icon: InlinedSvgs.buttonCancel},
           {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
         ]
       }),
@@ -130,29 +133,78 @@ class UserRightPanel extends Component {
         {name: "migrate", visible: this.props.capabilities.deploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !conf.deployPossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
         {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
         {name: "import", visible: this.props.capabilities.write, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
-        {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
-        {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
+        {name: "JSON", disabled: !this.props.canExport, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
+        {name: "PDF", disabled: !this.props.canExport, onClick: this.exportProcessToPdf, icon: InlinedSvgs.pdf},
         {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
         {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
-        {name: "archive", onClick: this.archiveProcess, icon: 'archive.svg', visible: this.props.capabilities.write}
-
+        {name: "archive", onClick: this.archiveProcess, disabled: this.isRunning(), icon: 'archive.svg', visible: this.props.capabilities.write}
       ]
     },
       {
         panelName: "Edit",
         buttons: [
-          {name: "undo", visible: this.props.capabilities.write, onClick: this.undo, icon: InlinedSvgs.buttonUndo},
-          {name: "redo", visible: this.props.capabilities.write, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
-          {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.capabilities.write},
-          {name: "properties", className: conf.propertiesBtnClass, onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
-          {name: "duplicate", onClick: this.duplicateSelection, icon: 'duplicate.svg',
+          {name: "undo",
+            visible: this.props.capabilities.write,
+            disabled: this.props.history.past.length === 0,
+            onClick: this.undo,
+            icon: InlinedSvgs.buttonUndo
+          },
+          {
+            name: "redo",
+            visible: this.props.capabilities.write,
+            disabled: this.props.history.future.length === 0,
+            onClick: this.redo,
+            icon: InlinedSvgs.buttonRedo
+          },
+          {
+            name: "layout",
+            onClick: this.props.graphLayoutFunction,
+            icon: InlinedSvgs.buttonLayout,
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "properties",
+            className: conf.propertiesBtnClass,
+            onClick: this.showProperties,
+            icon: InlinedSvgs.buttonSettings,
+            visible: !this.props.isSubprocess
+          },
+          {
+            name: "duplicate",
+            onClick: this.duplicateSelection,
+            icon: 'duplicate.svg',
             //cloning groups can be tricky...
             disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
-            visible: this.props.capabilities.write},
-          {name: "delete", onClick: this.deleteSelection, icon: 'delete.svg',
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "copy",
+            onClick: (event) =>  this.props.copySelection(event, true),
+            icon: 'copy.svg',
             visible: this.props.capabilities.write,
-            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)}
-
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
+          },
+          {
+            name: "cut",
+            onClick: (event) =>  this.props.cutSelection(event),
+            icon: 'cut.svg',
+            visible: this.props.capabilities.write,
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
+          },
+          {
+            name: "delete",
+            onClick: this.deleteSelection,
+            icon: 'delete.svg',
+            visible: this.props.capabilities.write,
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
+          },
+          {
+            name: "paste",
+            onClick: (event) =>  this.props.pasteSelection(event),
+            icon: 'paste.svg',
+            visible: this.props.capabilities.write,
+            disabled: !this.props.clipboard
+          }
         ]
       },
       //TODO: testing subprocesses should work, but currently we don't know how to pass parameters in sane way...
@@ -244,8 +296,8 @@ class UserRightPanel extends Component {
     this.props.actions.toggleProcessActionDialog("Deploy process", (p, c) => HttpService.deploy(p, c), true)
   }
 
-  stop = () => {
-    this.props.actions.toggleProcessActionDialog("Stop process", (p, c) => HttpService.stop(p, c), false)
+  cancel = () => {
+    this.props.actions.toggleProcessActionDialog("Cancel process", (p, c) => HttpService.cancel(p, c), false)
   }
 
   clearHistory = () => {
@@ -276,9 +328,7 @@ class UserRightPanel extends Component {
   }
 
   archiveProcess = () => {
-    if(this.isRunning()){
-      this.props.actions.toggleInfoModal(Dialogs.types.infoModal,DialogMessages.cantArchiveRunningProcess())
-    }else{
+    if(!this.isRunning()){
       this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
           return HttpService.archiveProcess(this.processId()).then((response) => history.push(Archive.path))
       })
@@ -363,6 +413,7 @@ function mapState(state) {
 
     loggedUser: state.settings.loggedUser,
     nothingToSave: ProcessUtils.nothingToSave(state),
+    canExport: ProcessUtils.canExport(state),
     showRunProcessDetails: !_.isEmpty(state.graphReducer.testResults) || !_.isEmpty(state.graphReducer.processCounts),
     keyActionsAvailable: state.ui.allModalsClosed,
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
@@ -371,7 +422,9 @@ function mapState(state) {
     selectionState: state.graphReducer.selectionState,
     featuresSettings: state.settings.featuresSettings,
     isSubprocess: _.get(state.graphReducer.processToDisplay, "properties.isSubprocess", false),
-    businessView: state.graphReducer.businessView
+    businessView: state.graphReducer.businessView,
+    clipboard: state.graphReducer.clipboard,
+    history: state.graphReducer.history
   };
 }
 

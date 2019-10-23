@@ -2,10 +2,10 @@ package pl.touk.nussknacker.processCounts.influxdb
 
 import java.time.LocalDateTime
 
-import argonaut.Argonaut._
-import argonaut.ArgonautShapeless._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.CirceUtil
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -105,6 +105,6 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with ScalaFutures {
     |      ]
   """.stripMargin
 
-  val sampleInfluxOutput: List[InfluxSerie] = sampleInfluxOutputRaw.decodeOption[List[InfluxSerie]].get
+  val sampleInfluxOutput: List[InfluxSerie] = CirceUtil.decodeJsonUnsafe[List[InfluxSerie]](sampleInfluxOutputRaw, "failed to decode series")
 
 }

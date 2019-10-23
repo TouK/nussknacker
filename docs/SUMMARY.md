@@ -1,16 +1,22 @@
-* [What is Nussknacker and what it's good for](WhyNussknacker.md)
+* [Why Nussknacker](Why.md)
+
+
 * [Quickstart](Quickstart.md)
-* [Architecture](Architecture.md)
-* [How to install](Install.md)
-* [UI](UI.md)
+* [UI Manual](UI.md)
 * [Designing processes](DesigningProcesses.md)
-* [API](API.md)
-* [Flink integration](FlinkIntegration.md)
-* [Monitoring](Metrics.md)
 * [Configuration](Configuration.md)
 * [Security](Security.md)
-* [Roadmap](Roadmap.md)
-* [Changelog/Versions](Changelog.md)
+
+
+* [Architecture](Architecture.md)
+* [Engines](Engines.md)
+* [API](API.md)
+
+
+* [Monitoring](Metrics.md)
+* [How to install](Install.md)
+* [Resources](Resources.md)
 * [Powered by Nussknacker](PoweredBy.md)
-* [Get involved](GetInvolved.md)
+* [Roadmap](Roadmap.md)
+* [Changelog](Changelog.md)
 * [Glossary](GLOSSARY.md)

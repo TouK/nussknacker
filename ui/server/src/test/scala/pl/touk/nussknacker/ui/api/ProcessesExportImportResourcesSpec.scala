@@ -1,18 +1,20 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.api.{ArgonautCirce, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
@@ -27,6 +29,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
   import akka.http.scaladsl.server.RouteConcatenation._
   private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
+  private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
   private implicit val loggedUser: LoggedUser = LoggedUser("lu", testPermissionEmpty)
 
   test("export process from displayable") {
@@ -35,36 +38,42 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
     Post(s"/processesExport", processToExport) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val exported = responseAs[String]
-      val processDetails = UiProcessMarshaller.fromJson(exported).toOption.get
+      val processDetails = ProcessMarshaller.fromJson(exported).toOption.get
       
       processDetails shouldBe ProcessConverter.fromDisplayable(processToExport)
     }
 
   }
 
-  test("export process and import it") {
+  test("export process and import it (as common user)") {
+    runImportExportTest(routeWithAllPermissions)
+  }
+
+  test("export process and import it (as admin)") {
+    runImportExportTest(adminRoute)
+  }
+
+  private def runImportExportTest(route: Route): Unit = {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
+    Get(s"/processesExport/${processToSave.id}/2") ~> route ~> check {
       val response = responseAs[String]
-      val processDetails = UiProcessMarshaller.fromJson(response).toOption.get
+      val processDetails = ProcessMarshaller.fromJson(response).toOption.get
       assertProcessPrettyPrinted(response, processDetails)
 
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
       val multipartForm =
-        MultipartUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified).spaces2, "process")
-      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
+        MultipartUtils.prepareMultiPart(ProcessMarshaller.toJson(modified).spaces2, "process")
+      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val imported = responseAs[DisplayableProcess]
         imported.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(987)
         imported.id shouldBe processToSave.id
         imported.nodes shouldBe processToSave.nodes
       }
-
-
     }
   }
 
@@ -105,11 +114,11 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
     }
 
     Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
-      val processDetails = UiProcessMarshaller.fromJson(responseAs[String]).toOption.get
+      val processDetails = ProcessMarshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
 
       val multipartForm =
-        FileUploadUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified).spaces2, "process")
+        FileUploadUtils.prepareMultiPart(ProcessMarshaller.toJson(modified).spaces2, "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.BadRequest
@@ -138,8 +147,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   }
 
   private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
-    //we convert to circe here, since there are some minor formatting differences between argonaut & circe
-    val expected = ArgonautCirce.toCirce(UiProcessMarshaller.toJson(process)).spaces2
+    val expected = ProcessMarshaller.toJson(process).spaces2
     response shouldBe expected
   }
 

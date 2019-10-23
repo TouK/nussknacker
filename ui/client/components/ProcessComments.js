@@ -3,7 +3,6 @@ import {connect} from "react-redux";
 import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
 import DateUtils from '../common/DateUtils'
-import ProcessUtils from '../common/ProcessUtils'
 import DialogMessages from '../common/DialogMessages'
 import CommentContent from "./CommentContent";
 import CommentInput from "./CommentInput";
@@ -33,11 +32,15 @@ class ProcessComments extends React.Component {
       this.props.actions.deleteComment(this.props.processId, comment.id).then((response) => {
         this.setState(this.initState)
       })
-    })
+    }, "DELETE", "NO")
   }
 
   onInputChange = (e) => {
     this.setState({comment: e.target.value})
+  }
+
+  lastComment = (idx) => {
+    return idx + 1 === this.props.comments.length;
   }
 
   render() {
@@ -48,14 +51,14 @@ class ProcessComments extends React.Component {
             return (
               <div key={idx}>
                 <div className="header">
-                  <span className="label label-info">{comment.user}</span>
-                  <span className="date">{DateUtils.format(comment.createDate)}</span>
+                  <span title={DateUtils.formatAbsolutely(comment.createDate)} className="date">{DateUtils.formatRelatively(comment.createDate)}</span>
+                  <span className="comment-header">v{comment.processVersionId} ({comment.user})</span>
                   {comment.user == this.props.loggedUser.id ?
                     <span className="remove glyphicon glyphicon-remove" onClick={this.deleteComment.bind(this, comment)}/>
                     : null}
-                  <p>{ProcessUtils.processDisplayName(comment.processId, comment.processVersionId)}</p>
                 </div>
                 <CommentContent content={comment.content} commentSettings={this.props.commentSettings}/>
+                {this.lastComment(idx) ? null : <hr className='comment-under-line'/>}
               </div>
             )
           })}

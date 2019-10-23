@@ -36,7 +36,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   componentWillReceiveProps(props) {
-    const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
+    const isChromium = !!window.chrome;
 
     const newState = {
       editedNode: props.nodeToDisplay,
@@ -46,13 +46,13 @@ class NodeDetailsModal extends React.Component {
 
     //TODO more smooth subprocess loading in UI
     if (props.nodeToDisplay && props.showNodeDetailsModal && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
-      if (isChrome) { //Subprocesses work only on chrome, there is problem with jonint and SVG
+      if (isChromium) { //Subprocesses work only in Chromium, there is problem with jonint and SVG
         const subprocessVersion = props.subprocessVersions[props.nodeToDisplay.ref.id]
         HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, subprocessVersion, this.props.businessView).then((response) =>
           this.setState({...newState, subprocessContent: response.data.json})
         )
       } else {
-        console.warn("Displaying subprocesses is available only at Chrome.")
+        console.warn("Displaying subprocesses is available only in Chromium based browser.")
       }
     } else {
       this.setState(newState)
@@ -159,7 +159,7 @@ class NodeDetailsModal extends React.Component {
     const docsUrl = this.props.nodeSetting.docsUrl
     return docsUrl ?
       <a className="docsIcon" target="_blank" href={docsUrl} title="Documentation">
-        <SvgDiv svgFile={'book.svg'}/>
+        <SvgDiv svgFile={'documentation.svg'}/>
       </a> : null
   }
 
@@ -169,7 +169,7 @@ class NodeDetailsModal extends React.Component {
 
   render() {
     const isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
-    const headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
+    const titleStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
     const testResults = (id) => TestResultUtils.resultsForNode(this.props.testResults, id)
     const variableLanguage = this.variableLanguage(this.props.nodeToDisplay)
     const modelHeader = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + this.nodeAttributes().name
@@ -177,11 +177,13 @@ class NodeDetailsModal extends React.Component {
     return (
       <div className="objectModal">
         <Modal shouldCloseOnOverlayClick={false} isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
-          <div className="modalHeader" style={headerStyles}>
-            <span>{modelHeader}</span>
+          <div className="modalHeader">
+            <div className="modal-title" style={titleStyles}>
+              <span>{modelHeader}</span>
+            </div>
             {this.renderDocumentationIcon()}
           </div>
-          <div className="modalContentDark">
+          <div className="modalContentDark" id="modal-content">
             <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
               {
                 this.isGroup() ? this.renderGroup(testResults)

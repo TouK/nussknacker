@@ -16,15 +16,16 @@ import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
-import pl.touk.nussknacker.engine.api.{ArgonautCirce, Displayable}
+import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
-import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -72,9 +73,9 @@ object ManagementResources {
   }
 
   val testResultsVariableEncoder : Any => io.circe.Json = {
-    case displayable: Displayable =>
+    case displayable: DisplayJson =>
       def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
-      val displayableJson = ArgonautCirce.toCirce(displayable.display)
+      val displayableJson = displayable.asJson
       displayable.originalDisplay match {
         case None => Json.obj("pretty" -> displayableJson)
         case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> displayableJson)
@@ -197,7 +198,7 @@ class ManagementResources(processCounter: ProcessCounter,
     parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
-        val canonicalJson = ArgonautCirce.toCirce(UiProcessMarshaller.toJson(canonical)).spaces2
+        val canonicalJson = ProcessMarshaller.toJson(canonical).spaces2
         (managementActor ? Test(id, canonicalJson, TestData(testData), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>

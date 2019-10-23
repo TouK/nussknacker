@@ -9,11 +9,10 @@ import org.scalatest.FlatSpec
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.Filter
+import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestProcessingTypes}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.NodeAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessHistoryEntry}
@@ -26,7 +25,7 @@ class PdfExporterSpec extends FlatSpec {
 
     val process: DisplayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process), TestProcessingTypes.Streaming)
     val displayable = process.copy(nodes = process.nodes.map {
-        case a:Filter => a.copy(additionalFields = Some(NodeAdditionalFields(Some("mój wnikliwy komętaż"))))
+        case a:Filter => a.copy(additionalFields = Some(UserDefinedAdditionalNodeFields(Some("mój wnikliwy komętaż"))))
         case a => a
     })
     val details = BaseProcessDetails("My process", "My process", 11, true,

@@ -2,9 +2,12 @@ package pl.touk.nussknacker.engine.management
 
 import java.io.File
 
-import argonaut.PrettyParams
+import sttp.client.{NothingT, SttpBackend}
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Encoder
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData, TypeSpecificData}
@@ -14,16 +17,14 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.queryablestate.QueryableClient
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean) extends ProcessManager with LazyLogging {
-
-  import argonaut.Argonaut._
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
 
   protected lazy val buildInfoJson: String = {
-    modelData.configCreator.buildInfo().asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
+    Encoder[Map[String, String]].apply(modelData.configCreator.buildInfo()).spaces2
   }
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
@@ -114,8 +115,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
   private def toJsonString(processVersion: ProcessVersion): String = {
-    import argonaut.ArgonautShapeless._
-    processVersion.asJson.spaces2
+    Encoder[ProcessVersion].apply(processVersion).spaces2
   }
 
   private def prepareProgramMainClass(processDeploymentData: ProcessDeploymentData) : String = {
@@ -141,6 +141,8 @@ class FlinkProcessManagerProvider extends ProcessManagerProvider {
 
 
   override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = {
+    implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+
     //FIXME: how to do it easier??
     val flinkConfig = asFlinkConfig(config)
     new FlinkRestManager(flinkConfig, modelData)

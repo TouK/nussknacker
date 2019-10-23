@@ -117,9 +117,8 @@ class Processes extends BaseProcesses {
               theme={this.customSelectTheme}
             />
           </div>
-
           {
-            this.props.loggedUser.isWriter ? (
+            this.props.loggedUser.isWriter() ? (
               <div
                 id="process-add-button"
                 className="big-blue-button input-group "
@@ -138,6 +137,7 @@ class Processes extends BaseProcesses {
           isOpen={this.state.showAddProcess}
           isSubprocess={false}
           visualizationPath={Processes.path}
+          message="Create new process"
         />
 
         <LoaderSpinner show={this.state.showLoader}/>
@@ -159,7 +159,7 @@ class Processes extends BaseProcesses {
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
-            {key: 'name', label: 'Process name'},
+            {key: 'name', label: 'Name'},
             {key: 'category', label: 'Category'},
             {key: 'modifyDate', label: 'Last modification'},
             {key: 'status', label: 'Status'},
@@ -170,7 +170,7 @@ class Processes extends BaseProcesses {
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="name" value={process.name}>
+                <Td column="name" className="name-column" value={process.name}>
                   <input
                     value={process.editedName != null ? process.editedName : process.name}
                     className="transparent"
@@ -180,7 +180,7 @@ class Processes extends BaseProcesses {
                   />
                 </Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column" value={process.modificationDate}>{DateUtils.formatRelatively(process.modificationDate)}</Td>
                 <Td column="status" className="status-column">
                   <div
                     className={this.processStatusClass(process)}

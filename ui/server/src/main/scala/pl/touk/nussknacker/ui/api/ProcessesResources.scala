@@ -7,12 +7,12 @@ import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
-import cats.data.EitherT
+import cats.data.{EitherT, Validated}
 import cats.syntax.either._
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
-import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
@@ -24,6 +24,8 @@ import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidatio
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
@@ -33,7 +35,6 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
 
 class ProcessesResources(val processRepository: FetchingProcessRepository,
                          writeRepository: WriteProcessRepository,
@@ -144,6 +145,21 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               } yield statuses
             }
           }
+        } ~ path("processes" / "import" / Segment) { processName =>
+          processId(processName) { processId =>
+            (canWrite(processId) & post) {
+              fileUpload("process") { case (_, byteSource) =>
+                complete {
+                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
+                    validateJsonForImport(processId, json) match {
+                      case Valid(process) => importProcess(processId, process)
+                      case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
+                    }
+                  }
+                }
+              }
+            }
+          }
         } ~ path("processes" / Segment / "deployments") { processName =>
           processId(processName) { processId =>
             complete {
@@ -251,8 +267,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
           (post & processId(processName)) { processId =>
-            canWrite(processId) {
+            hasAdminPermission(user) {
               complete {
+                // TODO: Validate that category exists at categories list
                 writeRepository.updateCategory(processId = processId.id, category = category).map(toResponse(StatusCodes.OK))
               }
             }
@@ -269,35 +286,29 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               }
             }
           }
-        } ~ path("processes" / "import" / Segment) { processName =>
-          processId(processName) { processId =>
-            (canWrite(processId) & post) {
-              fileUpload("process") { case (metadata, byteSource) =>
-                complete {
-                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
-                    (UiProcessMarshaller.fromJson(json) match {
-                      case Valid(process) if process.metaData.id != processId.name.value => Invalid(WrongProcessId(processId.name.value, process.metaData.id))
-                      case Valid(process) => Valid(process)
-                      case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
-                    }) match {
-                      case Valid(process) =>
-                        processRepository.fetchLatestProcessDetailsForProcessIdEither[Unit](processId.id).map { detailsXor =>
-                          val validatedProcess = detailsXor
-                            .map(details => ProcessConverter.toDisplayable(process, details.processingType))
-                            .map(processValidation.toValidated)
-                          toResponseXor(validatedProcess)
-                        }
-
-                      case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
-                    }
-                  }
-                }
-              }
-            }
-          }
         }
       }
   }
+
+  private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
+    ProcessMarshaller.fromJson(json) match {
+      case Valid(process) if process.metaData.id != processId.name.value =>
+    Invalid(WrongProcessId(processId.name.value, process.metaData.id))
+      case Valid(process) => Valid(process)
+      case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
+    }
+  }
+
+  private def importProcess(processId: ProcessIdWithName, process: CanonicalProcess)
+                           (implicit user: LoggedUser): Future[ToResponseMarshallable] = {
+    processRepository.fetchLatestProcessDetailsForProcessIdEither[Unit](processId.id).map { detailsXor =>
+      val validatedProcess = detailsXor
+        .map(details => ProcessConverter.toDisplayable(process, details.processingType))
+        .map(process => new ValidatedDisplayableProcess(process, processValidation.validate(process)))
+      toResponseXor(validatedProcess)
+    }
+  }
+
   private def writeArchive(processId: ProcessId, isArchived: Boolean) = {
     writeRepository.archive(processId = processId, isArchived = isArchived)
       .map(toResponse(StatusCodes.OK))
@@ -311,12 +322,13 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
   private def saveProcess(processToSave: ProcessToSave, processId: ProcessId)
                          (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
     val displayableProcess = processToSave.process
-    val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-    val json = UiProcessMarshaller.toJson(canonical).spaces2
-    val deploymentData = GraphProcess(json)
-
     (for {
       validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processValidation.validate(displayableProcess)))
+      deploymentData = {
+        val canonical = ProcessConverter.fromDisplayable(displayableProcess)
+        val json = ProcessMarshaller.toJson(canonical).spaces2
+        GraphProcess(json)
+      }
       result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
     } yield validation).value
   }
@@ -341,7 +353,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical).spaces2)
+    GraphProcess(ProcessMarshaller.toJson(emptyCanonical).spaces2)
   }
 
   private def withJson(processId: ProcessId, version: Long, businessView: Boolean)
@@ -358,7 +370,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
   }
 
   private def validate(processDetails: ProcessDetails) : Future[ValidatedProcessDetails] = {
-    Future.successful(processDetails.mapProcess(processValidation.toValidated))
+    Future.successful(processDetails.mapProcess(process => new ValidatedDisplayableProcess(process, processValidation.validate(process))))
   }
 
   private def validateAll(processDetails: Future[List[ProcessDetails]]) : Future[List[ValidatedProcessDetails]] = {

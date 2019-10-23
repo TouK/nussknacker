@@ -1,10 +1,14 @@
 package pl.touk.nussknacker.engine.graph
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.Configuration
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -13,7 +17,6 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.util.Try
-
 import scala.reflect.runtime.universe._
 
 object node {
@@ -52,10 +55,7 @@ object node {
 
   case class BranchEnd(data: BranchEndData) extends SubsequentNode
 
-  // TODO: remove this trait and duplicated NodeAdditionalFields in restmodel module.
-  trait UserDefinedAdditionalNodeFields
-
-  case class NodeAdditionalFields(description: Option[String]) extends UserDefinedAdditionalNodeFields
+  @JsonCodec case class UserDefinedAdditionalNodeFields(description: Option[String])
 
   sealed trait NodeData {
     def id: String
@@ -199,6 +199,19 @@ object node {
   def asSubprocessInput(nodeData: NodeData): Option[SubprocessInput] = nodeData.cast[SubprocessInput]
 
   def asProcessor(nodeData: NodeData): Option[Processor] = nodeData.cast[Processor]
+
+
+}
+
+// we don't do this is in NodeData because: https://circe.github.io/circe/codecs/known-issues.html#knowndirectsubclasses-error
+// seems our hierarchy is too complex for scala :)
+object NodeDataCodec {
+
+  import io.circe.generic.extras.semiauto._
+  private implicit val config: Configuration = CirceUtil.configuration
+
+  implicit val nodeDataEncoder: Encoder[NodeData] = deriveEncoder
+  implicit val nodeDataDecoder: Decoder[NodeData] = deriveDecoder
 
 
 }

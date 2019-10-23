@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.management
 
-import argonaut.Json
-import argonaut.Argonaut._
+import sttp.client.Response
+import sttp.client.testing.SttpBackendStub
 import com.typesafe.config.ConfigFactory
-import dispatch.FunctionHandler
+import io.circe.Json
+import io.circe.Json.fromString
 import org.apache.flink.runtime.jobgraph.JobStatus
-import org.asynchttpclient.Request
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -15,32 +15,27 @@ import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, Jo
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
 
   private val config = FlinkConfig(10 minute, None, None, None, "http://test.pl", None)
 
-  private val manager = new FlinkRestManager(config, LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), new HttpSender {
-    override def send[T](pair: (Request, FunctionHandler[T]))(implicit executor: ExecutionContext): Future[T] = {
-      val jobConfig = "/jobs/(.*)/config".r
-      val res = pair._1.getUrl.replace(config.restUrl, "") match {
-        case "/jobs/overview" =>
-          JobsResponse(statuses)
-        case "/jars/upload" =>
-          Json.jObjectFields("filename" -> Json.jString("file"))
-        case "/jars/file/run" =>
-          ()
-        case jobConfig(jobId) => JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
-
-      }
-      Future.successful(res).asInstanceOf[Future[T]]
-    }
-  })
-
   private var statuses: List[JobOverview] = List()
 
   private var configs: Map[String, Map[String, Json]] = Map()
+
+  private val manager = new FlinkRestManager(config, LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()))(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
+    val toReturn = req.uri.path match {
+      case List("jobs", "overview") =>
+        JobsResponse(statuses)
+      case List("jars", "upload") =>
+        Json.obj("filename" -> fromString("file"))
+      case List("jobs", jobId, "config") =>
+        JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
+
+    }
+    Response.ok(Right(toReturn))
+  })
 
   test("refuse to deploy if process is failing") {
 
@@ -75,7 +70,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
     statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED),
       JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED))
     //Flink seems to be using strings also for Configuration.setLong
-    configs = Map(jid -> Map("versionId" -> jString(version.toString), "user" -> jString(user)))
+    configs = Map(jid -> Map("versionId" -> fromString(version.toString), "user" -> fromString(user)))
 
     manager.findJobStatus(processName).futureValue shouldBe Some(ProcessState(DeploymentId("2343"), RunningState.Finished,
       "FINISHED", 10L, Some(ProcessVersion(version, processName, user, None))))

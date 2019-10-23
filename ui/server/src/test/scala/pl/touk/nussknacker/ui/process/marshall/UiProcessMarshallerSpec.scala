@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.process.marshall
 
+import io.circe.Printer
 import io.circe.parser.parse
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.NodeAdditionalFields
+import pl.touk.nussknacker.engine.graph.node.UserDefinedAdditionalNodeFields
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
@@ -28,7 +30,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
   val processWithFullAdditionalFields =
     s"""
        |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}, "additionalFields": { "description": "$someProcessDescription", "groups": [], "properties": {}} },
+       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}, "isSubprocess": false, "subprocessVersions": {}, "additionalFields": { "description": "$someProcessDescription", "groups": [], "properties": {}} },
        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
        |    "nodes" : [
        |        {
@@ -61,7 +63,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithPartialAdditionalFields, TestProcessingTypes.Streaming)
 
     val processDescription = displayableProcess.properties.additionalFields.flatMap(_.description)
-    val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.asInstanceOf[NodeAdditionalFields].description)
+    val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.description)
     processDescription shouldBe Some(someProcessDescription)
     nodeDescription shouldBe Some(someNodeDescription)
   }
@@ -71,7 +73,8 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess, TestProcessingTypes.Streaming)
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
-    val processAfterMarshallAndUnmarshall = UiProcessMarshaller.toJson(canonical).nospaces
+    //TODO: set dropNullKeys as default (some util?)
+    val processAfterMarshallAndUnmarshall = Printer.noSpaces.copy(dropNullValues = true).pretty(ProcessMarshaller.toJson(canonical))
 
     parse(processAfterMarshallAndUnmarshall) shouldBe parse(baseProcess)
   }

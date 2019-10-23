@@ -1,5 +1,5 @@
 {
-    "plugins": ["alerts"],
+    "plugins": [],
     "variables": {
         "nussknackerVersion": "0.0.3",
         "flinkMajorVersion": "1.3"

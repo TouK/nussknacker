@@ -150,12 +150,12 @@ export default {
     return api.post(`/service/${processingType}/${serviceName}`, parameters)
   },
 
-  stop(processId, comment) {
+  cancel(processId, comment) {
     const init = {method: 'POST', body: comment, credentials: 'include'}
 
     return fetch(API_URL + '/processManagement/cancel/' + processId, init)
-      .then(() => this.addInfo(`Process ${processId} was stopped`))
-      .catch(error => this.addError(`Failed to stop ${processId}`, error, true))
+      .then(() => this.addInfo(`Process ${processId} was canceled`))
+      .catch(error => this.addError(`Failed to cancel ${processId}`, error, true))
   },
 
   fetchProcessActivity(processId) {

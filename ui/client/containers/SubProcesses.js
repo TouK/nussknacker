@@ -63,7 +63,7 @@ class SubProcesses extends BaseProcesses {
           </div>
           
           {
-            this.props.loggedUser.isWriter ? (
+            this.props.loggedUser.isWriter() ? (
               <div
                 id="process-add-button"
                 className="big-blue-button input-group"
@@ -82,6 +82,7 @@ class SubProcesses extends BaseProcesses {
           isSubprocess={true}
           isOpen={this.state.showAddProcess}
           visualizationPath={SubProcesses.path}
+          message="Create new subprocess"
         />
 
         <LoaderSpinner show={this.state.showLoader}/>
@@ -114,7 +115,7 @@ class SubProcesses extends BaseProcesses {
               <Tr className="row-hover" key={index}>
                 <Td column="name">{process.name}</Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column">{DateUtils.formatRelatively(process.modificationDate)}</Td>
                 <Td column="edit" className="edit-column">
                   <Glyphicon glyph="edit" title="Edit subprocess" onClick={this.showProcess.bind(this, process)} />
                 </Td>

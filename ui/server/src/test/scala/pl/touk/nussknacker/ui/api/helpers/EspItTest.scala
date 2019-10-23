@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -40,7 +40,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
-  val typesForCategories = new ProcessTypesForCategories(ConfigFactory.load())
+  val typesForCategories = ProcessTypesForCategories()
 
   val existingProcessingType = "streaming"
 
@@ -56,10 +56,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     Map("streaming" -> Map.empty)
   )
 
-  private implicit val user: LoggedUser = LoggedUser("user", Map(
-    testCategoryName -> Set(Permission.Admin),
-    secondTestCategoryName -> Set(Permission.Admin)
-  ))
+  private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
   val processesRoute = new ProcessesResources(
     processRepository = processRepository,
@@ -76,10 +73,11 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val featureTogglesConfig = FeatureTogglesConfig.create(config)
   val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig)
+  val usersRoute = new UserResources(typesForCategories)
 
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
   val definitionResources = new DefinitionResources(
-    Map(existingProcessingType ->  FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())), subprocessRepository)
+    Map(existingProcessingType ->  FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())), subprocessRepository, typesForCategories)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 
@@ -187,6 +185,10 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     Get(s"/settings") ~> settingsRouteWithAllPermissions
   }
 
+  def getUser(isAdmin: Boolean) = {
+    Get("/user") ~> (if (isAdmin) withAdminPermissions(usersRoute) else withAllPermissions(usersRoute))
+  }
+
   def getProcessDefinitionData(processingType: String, subprocessVersions: Json) = {
     Post(s"/processDefinitionData/$processingType?isSubprocess=false", toEntity(subprocessVersions)) ~> withPermissions(definitionResources, testPermissionRead)
   }
@@ -202,7 +204,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical).spaces2)
+    GraphProcess(ProcessMarshaller.toJson(emptyCanonical).spaces2)
   }
 
   private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean) = {

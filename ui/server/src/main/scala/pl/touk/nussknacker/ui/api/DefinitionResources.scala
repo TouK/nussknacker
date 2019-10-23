@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.definition
-import pl.touk.nussknacker.ui.definition.{UIObjectDefinition, UIProcessObjects}
-import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
+import pl.touk.nussknacker.ui.definition.UIProcessObjects
+import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.EspPathMatchers
@@ -16,7 +15,8 @@ import pl.touk.nussknacker.ui.util.EspPathMatchers
 import scala.concurrent.ExecutionContext
 
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
-                          subprocessRepository: SubprocessRepository)
+                          subprocessRepository: SubprocessRepository,
+                          typesForCategories: ProcessTypesForCategories)
                          (implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with EspPathMatchers with RouteWithUser {
 
@@ -29,7 +29,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
               modelData.get(processingType).map { modelDataForType =>
                 val subprocesses = subprocessRepository.loadSubprocesses(subprocessVersions)
                 complete {
-                  UIProcessObjects.prepareUIProcessObjects(modelDataForType, user, subprocesses, isSubprocess)
+                  UIProcessObjects.prepareUIProcessObjects(modelDataForType, user, subprocesses, isSubprocess, typesForCategories)
                 }
               }.getOrElse {
                 complete {

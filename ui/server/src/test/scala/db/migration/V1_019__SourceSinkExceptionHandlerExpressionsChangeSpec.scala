@@ -1,8 +1,9 @@
 package db.migration
 
-import argonaut.{Json, Parse}
 import cats.data.Validated.{Invalid, Valid}
+import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec with Matchers {
 
@@ -47,18 +48,17 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       |          }
       |       }"""
 
-  private implicit val marshaller = UiProcessMarshaller
 
   it should "convert exceptionHandlerRef" in {
 
     val oldJson =
-      Parse.parse(
+      CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
           |"exceptionHandlerRef": {"parameters":[{"name": "param1", "value": "string1"}]},
           |"nodes":[
           |]}
-          |""".stripMargin).right.get
+          |""".stripMargin, "invalid process")
 
     val converted = migrateAndConvert(oldJson)
     val handler = converted.exceptionHandlerRef
@@ -68,7 +68,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
   it should "convert source" in {
 
     val oldJson =
-      Parse.parse(
+      CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
           |"exceptionHandlerRef": {"parameters":[]},
@@ -76,7 +76,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |    $sourceToConvert
           |  ]
           |}
-          |""".stripMargin).right.get
+          |""".stripMargin, "invalid process")
 
     val migrated = migrationFunc(oldJson).get
 
@@ -89,7 +89,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
   it should "convert sink in filter false" in {
 
     val oldJson =
-      Parse.parse(
+      CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
           |"exceptionHandlerRef": {"parameters":[]},
@@ -109,7 +109,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |  ${sinkToConvert("sink2")}
           |  ]
           |}
-          |""".stripMargin).right.get
+          |""".stripMargin, "invalid process")
 
     val converted = migrateAndConvert(oldJson)
 
@@ -123,7 +123,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
   it should "convert sink in split" in {
 
     val oldJson =
-      Parse.parse(
+      CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
           |"exceptionHandlerRef": {"parameters":[]},
@@ -140,7 +140,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |  }
           |  ]
           |}
-          |""".stripMargin).right.get
+          |""".stripMargin, "invalid process")
 
     val converted = migrateAndConvert(oldJson)
 
@@ -154,7 +154,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
   it should "convert sink in switch" in {
 
     val oldJson =
-      Parse.parse(
+      CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
           |"exceptionHandlerRef": {"parameters":[]},
@@ -185,7 +185,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |  }
           |  ]
           |}
-          |""".stripMargin).right.get
+          |""".stripMargin, "invalid process")
 
     val converted = migrateAndConvert(oldJson)
 
@@ -203,7 +203,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
   it should "convert sink in subprocess" in {
 
     val oldJson =
-      Parse.parse(
+      CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
           |"exceptionHandlerRef": {"parameters":[]},
@@ -222,7 +222,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |  }
           |  ]
           |}
-          |""".stripMargin).right.get
+          |""".stripMargin, "invalid process")
 
     val converted = migrateAndConvert(oldJson)
     
@@ -239,7 +239,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
   private def migrateAndConvert(oldJson: Json) : CanonicalProcess = {
     val migrated = migrationFunc(oldJson).get
     
-    marshaller.fromJson(migrated.nospaces) match {
+    ProcessMarshaller.fromJson(migrated.noSpaces) match {
       case Invalid(errors) => throw new AssertionError(errors)
       case Valid(converted) => converted
     }
