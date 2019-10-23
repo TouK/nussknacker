@@ -14,7 +14,8 @@ case class OAuth2Configuration(backend: AuthenticationBackend.Value,
                                redirectUri: URI,
                                accessTokenParams: Map[String, String] = Map.empty,
                                authorizeParams: Map[String, String] = Map.empty,
-                               headers: Map[String, String] = Map.empty) extends AuthenticationConfiguration {
+                               headers: Map[String, String] = Map.empty,
+                               authorizationHeader: String = "Authorization") extends AuthenticationConfiguration {
 
   override def getBackend(): AuthenticationBackend.Value = backend
 
@@ -27,9 +28,11 @@ case class OAuth2Configuration(backend: AuthenticationBackend.Value,
       .url)
   })
 
-  def getAccessTokenSttpUri = Uri(accessTokenUri)
+  def getAccessTokenSttpUri() = Uri(accessTokenUri)
 
   def getRedirectSttpUri() = Uri(redirectUri)
+
+  def getProfileSttpUri() = Uri(profileUri)
 
   def getRedirectUrl() = redirectUri.toString
 }
