@@ -16,7 +16,6 @@ case class BasicAuthenticatorFactory() extends AuthenticatorFactory with Directi
   } else provide(LoggedUser("Anonymous", Map("Default" -> Permission.values)))
 }
 
-
 object BasicAuthenticatorFactory {
   def create(): BasicAuthenticatorFactory = BasicAuthenticatorFactory()
 }

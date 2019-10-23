@@ -5,8 +5,6 @@ import java.net.URI
 import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration}
 import sttp.model.Uri
 
-case class OAuth2BasicAuthConfiguration(user: String, password: String)
-
 case class OAuth2Configuration(backend: AuthenticationBackend.Value,
                                authorizeUri: URI,
                                clientSecret: String,
@@ -35,3 +33,5 @@ case class OAuth2Configuration(backend: AuthenticationBackend.Value,
 
   def getRedirectUrl() = redirectUri.toString
 }
+
+

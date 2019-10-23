@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration, AuthenticatorProvider}
+import pl.touk.nussknacker.ui.security.{AuthenticationConfiguration, AuthenticatorProvider}
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
@@ -32,7 +32,6 @@ import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.security.oauth2.{OAuth2Configuration, OAuth2Service}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
-import scala.collection.mutable
 
 object NussknackerApp extends App with Directives with LazyLogging {
 
@@ -168,15 +167,14 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
-    val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
-    )
-
-    authenticationConfig match {
-      case oauth2Configuration: OAuth2Configuration =>
-        apiResourcesWithoutAuthentication ++ List(
-          new AuthenticationOAuth2Resources(OAuth2Service(oauth2Configuration))
-        )
+    val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = authenticationConfig match {
+      case oauth2Configuration: OAuth2Configuration => List(
+        new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig),
+        new AuthenticationOAuth2Resources(OAuth2Service(oauth2Configuration))
+      )
+      case _ => List(
+        new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
+      )
     }
 
     val webResources = new WebResources(config.getString("http.publicPath"))

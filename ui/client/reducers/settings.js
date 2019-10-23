@@ -1,6 +1,7 @@
 const initialState = {
   loggedUser: {},
   featuresSettings: {},
+  authenticationSettings: {}
 };
 
 export function reducer(state = initialState, action) {
@@ -14,7 +15,8 @@ export function reducer(state = initialState, action) {
     case "UI_SETTINGS": {
       return {
         ...state,
-        featuresSettings: action.settings.features
+        featuresSettings: action.settings.features,
+        authenticationSettings: action.settings.authentication
       }
     }
     case "PROCESS_DEFINITION_DATA": {

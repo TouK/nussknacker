@@ -54,12 +54,16 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with ScalatestRouteTest 
   it("should return 400 for wrong authorize token") {
     authenticationOauth2(badAuthenticationResources,  "B5FwrdqF9cLxwdhL") ~> check {
       status shouldBe StatusCodes.BadRequest
+      responseAs[Map[String, String]].toString should include("Retrieving access token error. Please contact with system administrators.")
     }
   }
 
   it("should redirect for good authorize token") {
     authenticationOauth2(authenticationResources, "B5FwrdqF9cLxwdhL") ~> check {
-      status shouldBe StatusCodes.PermanentRedirect
+      status shouldBe StatusCodes.OK
+      val response = responseAs[Oauth2AuthenticationResponse]
+      response.accessToken shouldEqual "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm"
+      response.tokenType shouldEqual "Bearer"
     }
   }
 }

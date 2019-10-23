@@ -13,10 +13,12 @@ import scala.util.parsing.json.JSONObject
 
 trait AccessTokenResponse {
   def getAccessToken(): String
+  def getTokenType(): String
 }
 
 @JsonCodec case class BaseAccessTokenResponse(access_token: String, token_type: String, refresh_token: String) extends AccessTokenResponse {
   override def getAccessToken(): String = access_token
+  override def getTokenType(): String = token_type
 }
 
 trait ServiceOAuth2 {
