@@ -29,7 +29,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
   val validation: ProcessValidation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam,
-      ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false), List())
+      ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false), Set.empty)
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
     new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator), Map(TestProcessingTypes.Streaming -> Map()), sampleResolver, Map.empty)
   }
