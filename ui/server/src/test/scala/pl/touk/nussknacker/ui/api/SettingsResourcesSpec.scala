@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.util.ScalatestRouteTestWithVersion
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 
-class SettingsResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
+class SettingsResourcesSpec extends FunSpec with ScalatestRouteTestWithVersion with FailFastCirceSupport
   with Matchers with ScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))

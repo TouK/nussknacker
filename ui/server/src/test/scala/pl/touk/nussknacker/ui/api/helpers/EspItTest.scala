@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ScalatestRouteTestWithVersion}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.ConfigFactory
@@ -26,9 +27,15 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import pl.touk.nussknacker.ui.util.ScalaVersionHack
 
-trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions  with ScalaVersionHack { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
+trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
+
+  val scalaBinaryVersion: String = util.Properties.versionNumberString.replaceAll("(\\d+\\.\\d+)\\..*$", "$1")
+
+  override def testConfigSource: String = {
+    System.setProperty("scala.binary.version", util.Properties.versionNumberString.replaceAll("(\\d+\\.\\d+)\\..*$", "$1"))
+    s"""{scala.binary.version = $scalaBinaryVersion}"""
+  }
 
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
@@ -70,7 +77,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     processAuthorizer = processAuthorizer
   )
 
-  private val config = system.settings.config.withFallback(ConfigFactory.load())
+  private val config = system.settings.config.withFallback(ConfigWithScalaVersion.config)
   val featureTogglesConfig = FeatureTogglesConfig.create(config)
   val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig)
@@ -78,7 +85,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
 
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
   val definitionResources = new DefinitionResources(
-    Map(existingProcessingType ->  FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())), subprocessRepository, typesForCategories)
+    Map(existingProcessingType ->  FlinkProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config)), subprocessRepository, typesForCategories)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 

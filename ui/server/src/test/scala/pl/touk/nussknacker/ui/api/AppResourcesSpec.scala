@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import java.util.Collections
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.util.ScalatestRouteTestWithVersion
 import akka.testkit.TestProbe
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
@@ -23,7 +23,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 
 import scala.collection.JavaConverters._
 
-class AppResourcesSpec extends FunSuite with ScalatestRouteTest
+class AppResourcesSpec extends FunSuite with ScalatestRouteTestWithVersion
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(20, Millis)))

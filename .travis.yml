@@ -51,13 +51,13 @@ cache:
 
 # We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
 stages:
-  - tests
+  - test
   - name: releases
     if: fork = false AND type != cron
 
 jobs:
   include:
-    - stage: tests
+    - stage: test
       name: "Backend tests"
       script: ./ciBackendTest.sh $TRAVIS_SCALA_VERSION
       after_success: if [ "$COVERAGE" = true ]; then sbt ++$TRAVIS_SCALA_VERSION coveralls; else echo "Skipping coveralls"; fi

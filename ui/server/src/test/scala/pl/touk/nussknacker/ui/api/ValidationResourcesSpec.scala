@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.util.ScalatestRouteTestWithVersion
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
@@ -19,7 +19,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
-class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport {
+class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTestWithVersion with Matchers with Inside with FailFastCirceSupport {
 
   val route = withPermissions(new ValidationResources(processValidation), testPermissionRead)
 
