@@ -35,8 +35,8 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
     val (lazyInterpreterParameters, paramsToEvaluate) = withDefs.partition(p => p._2.isLazyParameter || p._2.branchParam)
 
     val evaluatedParameters = paramsToEvaluate.map {
-      case (TypedParameter(name, TypedExpression(expr, returnType)), paramDef) =>
-        evaluatedparam.Parameter(name, expr, returnType)
+      case (TypedParameter(name, TypedExpression(expr, returnType, typingInfo)), paramDef) =>
+        evaluatedparam.Parameter(name, expr, returnType, typingInfo)
     }
 
     //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter
@@ -47,7 +47,7 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
       case (param, definition) =>
         val value = if (definition.branchParam) {
           param.typedValue.asInstanceOf[TypedExpressionMap].valueByKey.mapValuesNow {
-            case TypedExpression(expr, returnType) =>
+            case TypedExpression(expr, returnType, typingInfo) =>
               ExpressionLazyParameter(nodeId, Parameter(
                 param.name,
                 graph.expression.Expression(expr.language, expr.original)), returnType)

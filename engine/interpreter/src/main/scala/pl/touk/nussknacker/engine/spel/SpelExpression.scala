@@ -134,8 +134,8 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
     baseParse(original).andThen { parsed =>
       validator.validate(parsed, ctx, expectedType).map((_, parsed))
-    }.map { case (typingResult, parsed) =>
-      TypedExpression(expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType), typingResult)
+    }.map { case (combinedResult, parsed) =>
+      TypedExpression(expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType), combinedResult.finalResult, combinedResult.typingInfo)
     }
   }
 
@@ -248,6 +248,7 @@ object SpelExpressionParser extends LazyLogging {
     }
     Collections.singletonList(mr)
   }
+
 
   object ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
