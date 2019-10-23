@@ -14,7 +14,7 @@ class OAuth2Authenticator extends SecurityDirectives.AsyncAuthenticator[LoggedUs
   private[security] def authorize(credentials: Credentials): Option[LoggedUser] = {
     logger.debug(s"Trying authorize.. $credentials")
     credentials match {
-      case c @ Provided(token) => Option.apply(LoggedUser(token, Map("Default" -> Permission.values)))
+      case c @ Provided(token) => Option.apply(LoggedUser(token, Map("Default" -> Permission.values), isAdmin = true))
       case _ => None
     }
   }

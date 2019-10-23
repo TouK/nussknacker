@@ -69,6 +69,6 @@ class SettingsResources(config: FeatureTogglesConfig,
                                  attachments: Boolean,
                                  signals: Boolean)
 
-@JsonCodec case class AuthenticationSettings(backend: String, url: Option[String])
+@JsonCodec case class AuthenticationSettings(backend: String, authenticationUri: Option[String])
 
 @JsonCodec case class UISettings(features: ToggleFeaturesOptions, authentication: AuthenticationSettings)

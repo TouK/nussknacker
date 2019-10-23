@@ -11,6 +11,12 @@ export function reducer(state = initialState, action) {
         error: action.error
       }
     }
+    case "HANDLE_OUATHERROR": {
+      return {
+        ...state,
+        error: action.error
+      }
+    }
     default:
       return state
   }

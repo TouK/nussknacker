@@ -1,17 +1,20 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.{HttpResponse, StatusCode, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.ExceptionHandler
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
 import pl.touk.nussknacker.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
+import scala.util.parsing.json.JSONObject
+
 
 object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
@@ -63,7 +66,9 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     case Right(_) => HttpResponse(status = okStatus)
   }
 
-  def toResponseReject(message: String): ToResponseMarshallable =
-    HttpResponse(status = StatusCodes.BadRequest, entity = message)
+  def toResponseReject(message: String): ToResponseMarshallable = {
+    val entity = JSONObject(Map("message" -> message)).toString().stripMargin
+    HttpResponse(status = StatusCodes.BadRequest, entity = HttpEntity(ContentTypes.`application/json`, entity))
+  }
 }
 

@@ -1,15 +1,14 @@
 import {API_URL} from "./config"
 import axios from 'axios'
-
-let accessToken = localStorage.getItem("accessToken")
+import SystemUtils from "./common/SystemUtils";
 
 let headers = {}
-if (accessToken) {
-  headers["Authorization"] = "Bearer " + accessToken
+if (SystemUtils.hasAccessToken()) {
+  headers["Authorization"] = SystemUtils.authorizationToken()
 }
 
 const configuration = {
-  withCredentials: accessToken == null,
+  withCredentials: !!SystemUtils.hasAccessToken(),
   baseURL: API_URL,
   headers: headers
 }
