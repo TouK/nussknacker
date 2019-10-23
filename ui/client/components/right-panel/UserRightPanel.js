@@ -137,7 +137,7 @@ class UserRightPanel extends Component {
         {name: "PDF", disabled: !this.props.canExport, onClick: this.exportProcessToPdf, icon: InlinedSvgs.pdf},
         {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
         {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
-        {name: "archive", onClick: this.archiveProcess, icon: 'archive.svg', visible: this.props.capabilities.write}
+        {name: "archive", onClick: this.archiveProcess, disabled: this.isRunning(), icon: 'archive.svg', visible: this.props.capabilities.write}
       ]
     },
       {
@@ -157,9 +157,9 @@ class UserRightPanel extends Component {
             icon: InlinedSvgs.buttonRedo
           },
           {
-            name: "align",
+            name: "layout",
             onClick: this.props.graphLayoutFunction,
-            icon: InlinedSvgs.buttonAlign,
+            icon: InlinedSvgs.buttonLayout,
             visible: this.props.capabilities.write
           },
           {
@@ -328,9 +328,7 @@ class UserRightPanel extends Component {
   }
 
   archiveProcess = () => {
-    if(this.isRunning()){
-      this.props.actions.toggleInfoModal(Dialogs.types.infoModal,DialogMessages.cantArchiveRunningProcess())
-    }else{
+    if(!this.isRunning()){
       this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
           return HttpService.archiveProcess(this.processId()).then((response) => history.push(Archive.path))
       })
