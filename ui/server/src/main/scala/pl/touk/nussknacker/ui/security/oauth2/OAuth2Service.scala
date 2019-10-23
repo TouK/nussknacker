@@ -16,6 +16,12 @@ trait AccessTokenResponse {
   def getTokenType(): String
 }
 
+
+trait ProfileResponse {
+  def getEmail(): String
+  def getRoles(): String
+}
+
 @JsonCodec case class BaseAccessTokenResponse(access_token: String, token_type: String, refresh_token: String) extends AccessTokenResponse {
   override def getAccessToken(): String = access_token
   override def getTokenType(): String = token_type
@@ -23,6 +29,7 @@ trait AccessTokenResponse {
 
 trait ServiceOAuth2 {
   def accessTokenRequest(authorizeToken: String): Future[AccessTokenResponse]
+  def profileRequest(authorizeToken: String): Future[AccessTokenResponse]
 }
 
 class OAuth2Service(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging with ServiceOAuth2 {
@@ -44,6 +51,18 @@ class OAuth2Service(configuration: OAuth2Configuration)(implicit backend: SttpBa
       .response(asJson[BaseAccessTokenResponse])
       .post(configuration.getAccessTokenSttpUri)
       .headers(configuration.headers)
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+  }
+
+  def profileRequest(accessToken: String) = {
+    val headers = configuration.headers ++ Map(configuration.authorizationHeader -> s"Bearer $accessToken")
+
+    basicRequest
+      .contentType(requestContentType)
+      .response(asJson[BaseAccessTokenResponse])
+      .get(configuration.getProfileSttpUri())
+      .headers(headers)
       .send()
       .flatMap(SttpJson.failureToFuture)
   }

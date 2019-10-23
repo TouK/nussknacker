@@ -55,7 +55,7 @@ class NussknackerInitializer extends React.Component {
     //It looks like callback hell.. Can we do it better?
     HttpService.fetchSettings().then(settingsResponse => {
       this.props.actions.assignSettings(settingsResponse.data)
-      this.prepareAuthenticationStrategy(settingsResponse.data.authentication).then(response => {
+      this.authenticationStrategy(settingsResponse.data.authentication).then(response => {
         HttpService.fetchLoggedUser().then(userResponse => {
           this.props.actions.assignUser(userResponse.data)
           this.setState({initialized: true})
@@ -70,7 +70,7 @@ class NussknackerInitializer extends React.Component {
     })
   }
 
-  prepareAuthenticationStrategy = (settings) => {
+  authenticationStrategy = (settings) => {
     // Automatically redirect user when he is not authenticated and backend is OAUTH2
     api.interceptors.response.use(response => response, (error) => {
       if (error.response.status === HTTP_UNAUTHORIZED_CODE && settings.backend === OAUTH2_BACKEND) {
@@ -99,7 +99,14 @@ class NussknackerInitializer extends React.Component {
       })
     }
 
-    SystemUtils.removeAccessToken()
+    if (settings.backend !== OAUTH2_BACKEND) {
+      SystemUtils.removeAccessToken()
+
+      api.interceptors.request.use(function (config) {
+        delete config['headers']['Authorization']
+        return config;
+      });
+    }
 
     return Promise.resolve()
   }
