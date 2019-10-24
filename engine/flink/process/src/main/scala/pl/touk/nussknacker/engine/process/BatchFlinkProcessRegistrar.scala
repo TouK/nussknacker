@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.BatchFlinkProcessRegistrar._
+import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar.EndId
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, UserClassLoader}
 import pl.touk.nussknacker.engine.splittedgraph.end.End
@@ -84,16 +85,19 @@ class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
         .map(InitContextFunction(metaData.id, part.node.id))
         .flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, part.node, part.validationContext))
         .name(s"${metaData.id}-${part.node.id}-interpretation")
+        .map(new TagInterpretationResultFunction)
 
       registerParts(start, part.nextParts, part.ends)
     }
 
-    def registerParts(start: DataSet[InterpretationResult],
+    def registerParts(start: DataSet[TaggedInterpretationResult],
                       nextParts: Seq[SubsequentPart],
                       ends: Seq[End]): Unit = {
-      // TODO: all parts
       // TODO: endmeter sink
-      registerSubsequentPart(start, nextParts.head)
+      nextParts.foreach { nextPart =>
+        val subsequentStart = start.filter(_.tagName == nextPart.id).map(_.interpretationResult)
+        registerSubsequentPart(subsequentStart, nextPart)
+      }
     }
 
     def registerSubsequentPart[T](start: DataSet[InterpretationResult],
@@ -111,7 +115,7 @@ class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
                 startAfterSinkEvaluated
                   .map(_.output)
                   .output(sink.toFlink)
-              case Some(runId) =>
+              case Some(_) =>
                 throw new NotImplementedError("Test run is not implemented")
             }
 
@@ -128,6 +132,8 @@ object BatchFlinkProcessRegistrar {
 
   import net.ceedubs.ficus.Ficus._
 
+  private final val EndId = "$end"
+
   def apply(compiler: FlinkProcessCompiler, config: Config): BatchFlinkProcessRegistrar = {
 
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
@@ -141,6 +147,8 @@ object BatchFlinkProcessRegistrar {
       enableObjectReuse = enableObjectReuse
     )
   }
+
+  case class TaggedInterpretationResult(tagName: String, interpretationResult: InterpretationResult)
 
   class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps,
                                    node: SplittedNode[_], validationContext: ValidationContext)
@@ -162,7 +170,17 @@ object BatchFlinkProcessRegistrar {
           exceptionHandler.handle(info)
       }
     }
+  }
 
+  class TagInterpretationResultFunction extends MapFunction[InterpretationResult, TaggedInterpretationResult] {
+    override def map(interpretationResult: InterpretationResult): TaggedInterpretationResult = {
+      val tagName = interpretationResult.reference match {
+        case NextPartReference(id) => id
+        case JoinReference(id, _) => id
+        case _: EndingReference => EndId
+      }
+      TaggedInterpretationResult(tagName, interpretationResult)
+    }
   }
 
   class RateMeterFunction[T](groupId: String) extends RichMapFunction[T, T] {
@@ -187,6 +205,5 @@ object BatchFlinkProcessRegistrar {
     }
 
     override def map(input: Any): Context = newContext.withVariable(Interpreter.InputParamName, input)
-
   }
 }
