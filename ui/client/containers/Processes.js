@@ -24,6 +24,8 @@ class Processes extends BaseProcesses {
     isArchived: false
   }
 
+  page = 'processes'
+
   searchItems = ['categories', 'isDeployed']
   shouldReloadStatuses = true
 
@@ -138,6 +140,8 @@ class Processes extends BaseProcesses {
           isSubprocess={false}
           visualizationPath={Processes.path}
           message="Create new process"
+          processes={this.state.processes}
+          subProcesses={this.state.subProcesses}
         />
 
         <LoaderSpinner show={this.state.showLoader}/>

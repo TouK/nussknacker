@@ -13,6 +13,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   shouldReloadStatuses = false
   intervalTime = 15000
   queries = {}
+  page = ''
 
   customSelectStyles = {
     control: styles => ({
@@ -44,15 +45,16 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     }
   }
 
+
   prepareState(withoutCategories) {
     const query = queryString.parse(this.props.history.location.search, {
       arrayFormat: 'comma',
       parseNumbers: true,
       parseBooleans: true
     })
-
     let state = {
       processes: [],
+      subProcesses: [],
       showLoader: true,
       showAddProcess: false,
       search: query.search || "",
@@ -65,12 +67,21 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
         selectedCategories: this.retrieveSelectedCategories(query.categories)
       })
     }
-
     return state
   }
 
   onMount() {
-    this.reloadProcesses()
+    switch (this.page) {
+      case ('processes'): {
+        this.reloadProcesses()
+        this.reloadSubProcesses(false)
+        break;
+      }
+      case ('subProcesses'): {
+        this.reloadProcesses(false)
+        this.reloadSubProcesses()
+      }
+    }
 
     if (this.shouldReloadStatuses) {
       this.reloadStatuses()
@@ -79,6 +90,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   reload() {
     this.reloadProcesses(false)
+    this.reloadSubProcesses(false)
 
     if (this.shouldReloadStatuses) {
       this.reloadStatuses()
@@ -88,6 +100,10 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   reloadProcesses(showLoader, search) {
     this.setState({showLoader: showLoader == null ? true : showLoader})
 
+    this.queries = {
+      ...this.queries,
+      isSubprocess: false
+    }
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
     const data = Object.assign(query, search, this.queries || {})
 
@@ -97,6 +113,24 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
       }
     }).catch(() => this.setState({showLoader: false}))
   }
+
+  reloadSubProcesses(showLoader, search) {
+    this.setState({showLoader: showLoader == null ? true : showLoader})
+
+    this.queries = {
+      ...this.queries,
+      isSubprocess: true
+    }
+    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
+    const data = Object.assign(query, search, this.queries || {})
+
+    HttpService.fetchProcesses(data).then(response => {
+      if (!this.state.showAddProcess) {
+        this.setState({subProcesses: response.data, showLoader: false})
+      }
+    }).catch(() => this.setState({showLoader: false}))
+  }
+
 
   reloadStatuses() {
     HttpService.fetchProcessesStatus().then(response => {

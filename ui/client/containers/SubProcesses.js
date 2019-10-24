@@ -22,6 +22,8 @@ class SubProcesses extends BaseProcesses {
     isArchived: false
   }
 
+  page = 'subProcesses'
+
   constructor(props) {
     super(props)
     this.state = this.prepareState()
@@ -83,6 +85,8 @@ class SubProcesses extends BaseProcesses {
           isOpen={this.state.showAddProcess}
           visualizationPath={SubProcesses.path}
           message="Create new subprocess"
+          processes={this.state.processes}
+          subProcesses={this.state.subProcesses}
         />
 
         <LoaderSpinner show={this.state.showLoader}/>
@@ -110,7 +114,7 @@ class SubProcesses extends BaseProcesses {
             {key: 'edit', label: 'Edit'}
           ]}
         >
-          {this.state.processes.map((process, index) => {
+          {this.state.subProcesses.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
                 <Td column="name">{process.name}</Td>
