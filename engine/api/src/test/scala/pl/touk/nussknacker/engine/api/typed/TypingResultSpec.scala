@@ -73,7 +73,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
     Typed.commonSupertype(Typed[Int], Typed[Double]) shouldEqual Typed[java.lang.Double]
     Typed.commonSupertype(Typed[Int], Typed[Long]) shouldEqual Typed[java.lang.Long]
     Typed.commonSupertype(Typed[Float], Typed[Long]) shouldEqual Typed[java.lang.Float]
-    Typed.commonSupertype(Unknown, Typed[Long]) shouldEqual Typed[java.lang.Long]
+    Typed.commonSupertype(Unknown, Typed[Long]) shouldEqual Typed[Long]
     Typed.commonSupertype(Unknown, Unknown) shouldEqual Unknown
     Typed.commonSupertype(
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
@@ -86,16 +86,16 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
     Typed.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
   }
 
-  trait Animal
+  class Animal
 
-  trait Pet extends Animal
+  class Pet extends Animal
 
   class Dog extends Pet
 
   class Cat extends Pet
 
-  trait Plant
+  class Plant
 
-  trait Cactus extends Plant
+  class Cactus extends Plant
 
 }

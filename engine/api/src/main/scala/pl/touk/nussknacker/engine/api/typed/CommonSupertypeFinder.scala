@@ -75,8 +75,8 @@ private[typed] object CommonSupertypeFinder {
       case p if p == classOf[Double]  => classOf[java.lang.Double]
       case _ => clazz.klass
     }
-    Stream.iterate[Class[_]](boxedClass)(_.getSuperclass)
-      .takeWhile(_ != classOf[Object]).toList.reverse
+    Stream.iterate[Option[Class[_]]](Some(boxedClass))(_.flatMap(cl => Option[Class[_]](cl.getSuperclass)))
+      .takeWhile(_.exists(_ != classOf[Object])).map(_.get).toList.reverse
   }
 
 }
