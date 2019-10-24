@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2Configuration, OAuth2Service}
+import pl.touk.nussknacker.ui.security.oauth2.{DefaultAccessTokenResponse, DefaultProfileResponse, OAuth2Configuration, OAuth2ClientApi}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 
@@ -170,7 +170,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = authenticationConfig match {
       case oauth2Configuration: OAuth2Configuration => List(
         new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig),
-        new AuthenticationOAuth2Resources(OAuth2Service(oauth2Configuration))
+        new AuthenticationOAuth2Resources(OAuth2ClientApi[DefaultProfileResponse, DefaultAccessTokenResponse](oauth2Configuration))
       )
       case _ => List(
         new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)

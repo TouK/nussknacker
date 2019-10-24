@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory
 import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.LoggedUserAuth
 
-case class OAuth2AuthenticatorFactory() extends AuthenticatorFactory with LazyLogging {
+class OAuth2AuthenticatorFactory extends AuthenticatorFactory with LazyLogging {
 
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
@@ -24,5 +24,5 @@ case class OAuth2AuthenticatorFactory() extends AuthenticatorFactory with LazyLo
 }
 
 object OAuth2AuthenticatorFactory {
-  def create(): OAuth2AuthenticatorFactory = OAuth2AuthenticatorFactory()
+  def apply(): OAuth2AuthenticatorFactory = new OAuth2AuthenticatorFactory()
 }

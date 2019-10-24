@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class BasicHttpAuthenticator[](usersList: List[ConfiguredUser]) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
+class BasicHttpAuthenticator(usersList: List[ConfiguredUser]) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
 
   //TODO: config reload
   private val users = prepareUsers()
