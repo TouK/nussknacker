@@ -20,14 +20,8 @@ class Visualization extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {timeoutId: null, intervalId: null, status: {}, isArchived: null, dataResolved: false};
+    this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false};
     this.graphRef = React.createRef();
-
-    const {loggedUser, processCategory} = this.props;
-    this.capabilities = {
-      write: loggedUser.canWrite(processCategory) && !this.state.isArchived,
-      deploy: loggedUser.canDeploy(processCategory) && !this.state.isArchived,
-    };
     this.bindShortCuts();
   }
 
@@ -49,7 +43,7 @@ class Visualization extends React.Component {
         _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
         this.props.subprocessVersions
       ).then(() => {
-        this.setState({isArchived: _.get(details, "fetchedProcessDetails.isArchived"), dataResolved: true})
+        this.setState({dataResolved: true})
         this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json);
         this.showCountsIfNeeded(details.fetchedProcessDetails.json);
       })
@@ -192,7 +186,7 @@ class Visualization extends React.Component {
   }
 
   canCutSelection() {
-    return this.canCopySelection() && this.capabilities.write
+    return this.canCopySelection() && this.props.capabilities.write
   }
 
   pasteSelection = (event) => {
@@ -217,7 +211,7 @@ class Visualization extends React.Component {
   }
 
   canAddNode(node) {
-    return this.capabilities.write &&
+    return this.props.capabilities.write &&
         NodeUtils.isNode(node) &&
         !NodeUtils.nodeIsGroup(node) &&
         NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
@@ -246,7 +240,7 @@ class Visualization extends React.Component {
           isOpened={leftPanelIsOpened}
           onToggle={actions.toggleLeftPanel}
           loggedUser={loggedUser}
-          capabilities={this.capabilities}
+          capabilities={this.props.capabilities}
           isReady={this.state.dataResolved}
         />
 
@@ -255,7 +249,7 @@ class Visualization extends React.Component {
           exportGraph={exportGraphFun}
           zoomIn={zoomInFun}
           zoomOut={zoomOutFun}
-          capabilities={this.capabilities}
+          capabilities={this.props.capabilities}
           isReady={this.state.dataResolved}
           copySelection={(event) => this.copySelection(event, true)}
           cutSelection={(event) => this.cutSelection(event)}
@@ -263,7 +257,7 @@ class Visualization extends React.Component {
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          <Graph ref={this.graphRef} capabilities={this.capabilities}/>
+          <Graph ref={this.graphRef} capabilities={this.props.capabilities}/>
         </SpinnerWrapper>
       </div>
     );
@@ -278,6 +272,8 @@ function mapState(state) {
   const canDelete = state.ui.allModalsClosed
     && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
     && state.settings.loggedUser.canWrite(processCategory);
+  const loggedUser = state.settings.loggedUser;
+  const isArchived = _.get(state, 'graphReducer.fetchedProcessDetails.isArchived')
   return {
     processCategory: processCategory,
     selectionState: state.graphReducer.selectionState,
@@ -292,8 +288,12 @@ function mapState(state) {
     undoRedoAvailable: state.ui.allModalsClosed,
     allModalsClosed: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    loggedUser: state.settings.loggedUser,
-    clipboard: state.graphReducer.clipboard
+    loggedUser: loggedUser,
+    clipboard: state.graphReducer.clipboard,
+    capabilities: {
+      write: loggedUser.canWrite(processCategory) && !isArchived,
+      deploy: loggedUser.canDeploy(processCategory) && !isArchived,
+    }
   };
 }
 
