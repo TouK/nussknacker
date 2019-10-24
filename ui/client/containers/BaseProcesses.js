@@ -45,13 +45,13 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     }
   }
 
-
   prepareState(withoutCategories) {
     const query = queryString.parse(this.props.history.location.search, {
       arrayFormat: 'comma',
       parseNumbers: true,
       parseBooleans: true
     })
+
     let state = {
       processes: [],
       subProcesses: [],
@@ -67,6 +67,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
         selectedCategories: this.retrieveSelectedCategories(query.categories)
       })
     }
+
     return state
   }
 

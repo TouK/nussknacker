@@ -11,7 +11,7 @@ import "../stylesheets/visualization.styl";
 import HttpService from "../http/HttpService";
 import * as VisualizationUrl from '../common/VisualizationUrl';
 import Draggable from 'react-draggable';
-import {preventFromDraggableMoveSelectors} from "./modals/GenericModalDialog";
+import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
 
 //TODO: Consider integrating with GenericModalDialog 
 class AddProcessDialog extends React.Component {
@@ -59,7 +59,7 @@ class AddProcessDialog extends React.Component {
                shouldCloseOnOverlayClick={false}
                onRequestClose={this.closeDialog}>
           <div className="draggable-container">
-            <Draggable bounds="parent" cancel={preventFromDraggableMoveSelectors}>
+            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
               <div className="espModal">
                 <div className="modalHeader">
                   <div className="modal-title" style={titleStyles}>

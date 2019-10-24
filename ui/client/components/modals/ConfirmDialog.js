@@ -6,7 +6,7 @@ import ProcessUtils from '../../common/ProcessUtils';
 import "../../stylesheets/visualization.styl";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 import Draggable from "react-draggable";
-import {preventFromDraggableMoveSelectors} from "./GenericModalDialog";
+import {preventFromMoveSelectors} from "./GenericModalDialog";
 
 //TODO: consider extending GenericModalDialog
 class ConfirmDialog extends React.Component {
@@ -36,7 +36,7 @@ class ConfirmDialog extends React.Component {
              shouldCloseOnOverlayClick={false}
              onRequestClose={this.closeDialog}>
         <div className="draggable-container">
-          <Draggable bounds="parent" cancel={preventFromDraggableMoveSelectors}>
+          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
             <div className="espModal confirmationModal modalContentDark">
               <p>{confirmDialog.text}</p>
               <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings}/>

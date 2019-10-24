@@ -17,7 +17,7 @@ const MapVariable = (props) => {
     return (
         <div className="node-table-body node-variable-builder-body">
             <Input label="Id" value={node.id} path="id" onChange={onChange} isMarked={isMarked("id")} readOnly={readOnly} />
-            <Input label="Variable Name" placeholder="value" value={node.varName} path="varName" onChange={onChange} isMarked={isMarked("varName")} readOnly={readOnly} />
+            <Input label="Variable Name" value={node.varName} path="varName" onChange={onChange} isMarked={isMarked("varName")} readOnly={readOnly} />
             <Fields
                 label="Fields"
                 onChange={onChange}

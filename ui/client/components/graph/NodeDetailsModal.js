@@ -18,7 +18,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import PropTypes from 'prop-types';
 import nodeAttributes from "../../assets/json/nodeAttributes"
 import Draggable from "react-draggable";
-import {preventFromDraggableMoveSelectors} from "../modals/GenericModalDialog";
+import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
 
 class NodeDetailsModal extends React.Component {
 
@@ -194,7 +194,7 @@ class NodeDetailsModal extends React.Component {
                isOpen={isOpen}
                onRequestClose={this.closeModal}>
           <div className="draggable-container">
-            <Draggable bounds="parent" cancel={preventFromDraggableMoveSelectors}>
+            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
               <div className="espModal">
                 <div className="modalHeader">
                   <div className="modal-title" style={titleStyles}>
