@@ -8,8 +8,11 @@ import cats.data.Validated.Valid
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.{FilterFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.FilterFunction
+import org.apache.flink.api.common.io.OutputFormat
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.api.java.io.{DiscardingOutputFormat, LocalCollectionOutputFormat}
+import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
@@ -24,12 +27,13 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkOutputFormat, NoParamInputFormatFactory}
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, FlinkCollectionInputFormat}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.{BatchStandardFlinkProcessCompiler, StandardFlinkProcessCompiler}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -59,6 +63,19 @@ object ProcessTestHelpers {
 
     }
 
+    def invokeBatch(process: EspProcess, data: List[SimpleRecord],
+                    processVersion: ProcessVersion = ProcessVersion.empty): Unit = {
+      val env = ExecutionEnvironment.createLocalEnvironment()
+      val creator = prepareCreator(env.getConfig, data)
+      env.getConfig.disableSysoutLogging
+
+      new BatchStandardFlinkProcessCompiler(creator, ConfigFactory.load())
+        .createBatchFlinkProcessRegistrar()
+        .register(env, process, processVersion)
+
+      env.execute(process.id)
+    }
+
     def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]) = new ProcessConfigCreator {
 
       override def services(config: Config) = Map(
@@ -74,13 +91,15 @@ object ProcessTestHelpers {
             override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
           }), Typed[SimpleRecord]
         ))),
-        "intInputWithParam" -> WithCategories(new IntParamSourceFactory(exConfig))
+        "intInputWithParam" -> WithCategories(new IntParamSourceFactory(exConfig)),
+        "batchInput" -> WithCategories(new NoParamInputFormatFactory(new FlinkCollectionInputFormat[SimpleRecord](exConfig, data)))
       )
 
       override def sinkFactories(config: Config) = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
-        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings))
+        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
+        "batchSinkForStrings" -> WithCategories(SinkFactory.noParam(BatchSinkForStrings))
       )
 
       override def customStreamTransformers(config: Config) = Map(
@@ -333,6 +352,16 @@ object ProcessTestHelpers {
       }
     }
     override def testDataOutput : Option[Any => String] = None
+  }
+
+  case object BatchSinkForStrings extends FlinkOutputFormat with Serializable with WithDataList[String] {
+    override def toFlink: OutputFormat[Any] = new DiscardingOutputFormat[Any] {
+      override def writeRecord(record: Any): Unit = {
+        add(record.toString)
+      }
+    }
+
+    override def testDataOutput: Option[Any => String] = None
   }
 
 

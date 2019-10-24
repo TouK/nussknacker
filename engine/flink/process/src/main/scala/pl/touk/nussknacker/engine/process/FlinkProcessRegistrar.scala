@@ -38,7 +38,6 @@ import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, 
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
-import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar._
@@ -67,7 +66,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
-    Serializers.registerSerializers(env)
+    Serializers.registerSerializers(env.getConfig)
     if (enableObjectReuse) {
       env.getConfig.enableObjectReuse()
       logger.info("Object reuse enabled")
