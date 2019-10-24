@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import java.lang
+
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -15,6 +17,10 @@ private[typed] object CommonSupertypeFinder {
   private val DecimalNumbers: Seq[Class[_]] = IndexedSeq(
     classOf[java.lang.Byte], classOf[java.lang.Short], classOf[java.lang.Integer], classOf[java.lang.Long],
     classOf[java.math.BigInteger]).reverse
+
+  private val Numbers = FloatingNumbers ++ DecimalNumbers
+
+  private val SimpleTypes = Set(classOf[java.lang.Boolean], classOf[String]) ++ Numbers
 
   def findCommonSupertype(first: TypingResult, sec: TypingResult): TypingResult =
     (first, sec) match {
@@ -34,7 +40,7 @@ private[typed] object CommonSupertypeFinder {
   private def singleCommonSupertype(first: SingleTypingResult, sec: SingleTypingResult): TypingResult =
     (first, sec) match {
       case (f: TypedObjectTypingResult, s: TypedObjectTypingResult) =>
-        klassCommonSupertype(f.objType, s.objType).map { commonSupertype =>
+        klassCommonSupertypeReturningTypedClass(f.objType, s.objType).map { commonSupertype =>
           val fields = for {
             firstField <- f.fields
             (name, firstFieldType) = firstField
@@ -42,41 +48,89 @@ private[typed] object CommonSupertypeFinder {
             fieldCommonSuperType = findCommonSupertype(firstFieldType, secFieldType)
             if fieldCommonSuperType != Typed.empty
           } yield name -> fieldCommonSuperType
-          TypedObjectTypingResult(fields, commonSupertype)
+          if (fields.isEmpty)
+            Typed.empty // no matching field - looks like we have totally different objects
+          else
+            TypedObjectTypingResult(fields, commonSupertype)
         }.getOrElse(Typed.empty)
       case (_: TypedObjectTypingResult, _) => Typed.empty
       case (_, _: TypedObjectTypingResult) => Typed.empty
-      case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s).getOrElse(Typed.empty)
+      case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
 
-  private def klassCommonSupertype(first: TypedClass, sec: TypedClass): Option[TypedClass] = {
-    inheritancePath(first).zip(inheritancePath(sec)).map {
-      case (f, s) if f == s => Some(f)
-      case (f, s) if List(f, s).forall(FloatingNumbers.contains) =>
-        List(f, s).map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).headOption
-      case (f, s) if List(f, s).forall(DecimalNumbers.contains) =>
-        List(f, s).map(n => DecimalNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).headOption
-      case (f, s) if List(f, s).exists(DecimalNumbers.contains) && List(f, s).exists(FloatingNumbers.contains)  =>
-        List(f, s).find(FloatingNumbers.contains)
-      case _ => None
-    }.takeWhile(_.isDefined).lastOption.map(t => TypedClass(ClazzRef(t.get)))
+  // This implementation is because TypedObjectTypingResult has underlying TypedClass instead of TypingResult
+  private def klassCommonSupertypeReturningTypedClass(first: TypedClass, sec: TypedClass): Option[TypedClass] = {
+    val boxedFirstClass = boxClass(first.klass)
+    val boxedSecClass = boxClass(sec.klass)
+    if (List(boxedFirstClass, boxedSecClass).forall(SimpleTypes.contains)) {
+      commonSuperTypeForSimpleTypes(boxedFirstClass, boxedSecClass)
+    } else {
+      val forComplexTypes = commonSuperTypeForComplexTypes(boxedFirstClass, boxedSecClass)
+      forComplexTypes match {
+        case tc: TypedClass => Some(tc)
+        case _ => None // empty, union and so on
+      }
+    }
   }
 
-  private def inheritancePath(clazz: TypedClass) = {
-    // for simple types (like int), getSuperclass returns null
-    val boxedClass = clazz.klass match {
-      case p if p == classOf[Boolean]  => classOf[java.lang.Boolean]
-      case p if p == classOf[Byte]  => classOf[java.lang.Byte]
-      case p if p == classOf[Character]  => classOf[java.lang.Character]
-      case p if p == classOf[Short]  => classOf[java.lang.Short]
-      case p if p == classOf[Int]  => classOf[java.lang.Integer]
-      case p if p == classOf[Long]  => classOf[java.lang.Long]
-      case p if p == classOf[Float]  => classOf[java.lang.Float]
-      case p if p == classOf[Double]  => classOf[java.lang.Double]
-      case _ => clazz.klass
+  private def klassCommonSupertype(first: TypedClass, sec: TypedClass): TypingResult = {
+    val boxedFirstClass = boxClass(first.klass)
+    val boxedSecClass = boxClass(sec.klass)
+    if (List(boxedFirstClass, boxedSecClass).forall(SimpleTypes.contains)) {
+      commonSuperTypeForSimpleTypes(boxedFirstClass, boxedSecClass).getOrElse(Typed.empty)
+    } else {
+      commonSuperTypeForComplexTypes(boxedFirstClass, boxedSecClass)
     }
-    Stream.iterate[Option[Class[_]]](Some(boxedClass))(_.flatMap(cl => Option[Class[_]](cl.getSuperclass)))
-      .takeWhile(_.exists(_ != classOf[Object])).map(_.get).toList.reverse
+  }
+
+  private def boxClass(clazz: Class[_]) =
+    clazz match {
+      case p if p == classOf[Boolean] => classOf[lang.Boolean]
+      case p if p == classOf[Byte] => classOf[lang.Byte]
+      case p if p == classOf[Character] => classOf[Character]
+      case p if p == classOf[Short] => classOf[lang.Short]
+      case p if p == classOf[Int] => classOf[Integer]
+      case p if p == classOf[Long] => classOf[lang.Long]
+      case p if p == classOf[Float] => classOf[lang.Float]
+      case p if p == classOf[Double] => classOf[lang.Double]
+      case _ => clazz
+    }
+
+  private def commonSuperTypeForSimpleTypes(first: Class[_], sec: Class[_]): Option[TypedClass] = {
+    if (Numbers.contains(first) && Numbers.contains(sec))
+      Some(promotedNumberType(first, sec))
+    else if (first == sec)
+      Some(TypedClass(ClazzRef(first)))
+    else
+      None
+  }
+
+  private def promotedNumberType(first: Class[_], sec: Class[_]): TypedClass = {
+    val both = List(first, sec)
+    if (both.forall(FloatingNumbers.contains)) {
+      TypedClass(ClazzRef(both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head))
+    } else if (both.forall(DecimalNumbers.contains)) {
+      TypedClass(ClazzRef(both.map(n => DecimalNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head))
+    } else {
+      assert(both.exists(DecimalNumbers.contains) && both.exists(FloatingNumbers.contains), s"Promoting unknown number type pair: $first, $sec") // shouldn't happen
+      TypedClass(ClazzRef(both.find(FloatingNumbers.contains).get))
+    }
+  }
+
+  private def commonSuperTypeForComplexTypes(first: Class[_], sec: Class[_]) = {
+    if (first.isAssignableFrom(sec)) {
+      Typed(first)
+    } else if (sec.isAssignableFrom(first)) {
+      Typed(sec)
+    } else {
+      // until here things are rather simple
+      Typed(commonSuperTypeForTypesInNotSameInheritanceLine(first, sec).map(Typed(_)))
+    }
+  }
+
+  private def commonSuperTypeForTypesInNotSameInheritanceLine(first: Class[_], sec: Class[_]): Set[Class[_]] = {
+    // TODO: feature flag
+    TypeHierarchyCommonSupertypeFinder.findCommonSupertypes(first, sec)
   }
 
 }

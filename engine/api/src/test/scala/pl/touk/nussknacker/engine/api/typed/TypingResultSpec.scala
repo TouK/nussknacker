@@ -67,35 +67,104 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
     Typed.fromDetailedType[Set[String]].canBeSubclassOf(Typed.fromDetailedType[Set[BigDecimal]]) shouldBe false
   }
 
-  test("find common supertype") {
+  test("find common supertype for simple types") {
     Typed.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
     Typed.commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
     Typed.commonSupertype(Typed[Int], Typed[Double]) shouldEqual Typed[java.lang.Double]
     Typed.commonSupertype(Typed[Int], Typed[Long]) shouldEqual Typed[java.lang.Long]
     Typed.commonSupertype(Typed[Float], Typed[Long]) shouldEqual Typed[java.lang.Float]
+  }
+
+  test("find special types") {
     Typed.commonSupertype(Unknown, Typed[Long]) shouldEqual Typed[Long]
     Typed.commonSupertype(Unknown, Unknown) shouldEqual Unknown
+
     Typed.commonSupertype(
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))) shouldEqual
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long]))
 
+    Typed.commonSupertype(
+      TypedObjectTypingResult(Map("foo" -> Typed[String])), TypedObjectTypingResult(Map("bar" -> Typed[Long]))) shouldEqual Typed.empty
+  }
+
+  test("find common supertype for complex types with inheritance in classes hierarchy") {
+    import ClassHierarchy._
+    Typed.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
     Typed.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
     Typed.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
 
     Typed.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
   }
 
-  class Animal
+  test("find common supertype for complex types with inheritance in interfaces hierarchy") {
+    import InterfaceHierarchy._
+    Typed.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
+    Typed.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
+    Typed.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
 
-  class Pet extends Animal
+    Typed.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
+  }
 
-  class Dog extends Pet
+  test("find common supertype for complex types with inheritance in mixins hierarchy") {
+    import HierarchyInMixins._
+    Typed.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
+    Typed.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
+    Typed.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
 
-  class Cat extends Pet
+    Typed.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
+  }
 
-  class Plant
+  object ClassHierarchy {
 
-  class Cactus extends Plant
+    class Animal extends Serializable
+
+    class Pet extends Animal
+
+    class Dog extends Pet
+
+    class Cat extends Pet
+
+    class Plant extends Serializable
+
+    class Cactus extends Plant
+
+  }
+
+  object InterfaceHierarchy {
+
+    trait Animal extends Serializable
+
+    trait Pet extends Animal
+
+    trait Dog extends Pet
+
+    trait Cat extends Pet
+
+    trait Plant extends Serializable
+
+    trait Cactus extends Plant
+
+  }
+
+  object HierarchyInMixins {
+
+    trait Animal extends Serializable
+
+    trait Pet extends Animal
+
+    class BaseDog
+
+    class Dog extends BaseDog with Pet
+
+    class BaseCat
+
+    class Cat extends BaseCat with Pet
+
+    trait Plant extends Serializable
+
+    class Cactus extends Plant
+
+  }
 
 }
