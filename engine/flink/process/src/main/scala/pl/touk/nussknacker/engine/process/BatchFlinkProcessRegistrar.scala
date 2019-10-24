@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.BatchFlinkProcessRegistrar._
-import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar.EndId
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, UserClassLoader}
 import pl.touk.nussknacker.engine.splittedgraph.end.End
@@ -31,13 +30,10 @@ import pl.touk.nussknacker.engine.util.metrics.RateMeter
 import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils}
 
 import scala.concurrent.{Await, ExecutionContext}
-import scala.concurrent.duration._
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
 class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
-                                 eventTimeMetricDuration: FiniteDuration,
-                                 checkpointInterval: FiniteDuration,
                                  enableObjectReuse: Boolean
                                 ) extends LazyLogging {
 
@@ -69,9 +65,9 @@ class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
     val processWithDeps = compiledProcessWithDeps(UserClassLoader.get("root"))
     val metaData = processWithDeps.metaData
 
-    val streamMetaData = MetaDataExtractor.extractStreamMetaDataOrFail(metaData)
+    val batchMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[BatchMetaData](metaData)
     env.setRestartStrategy(processWithDeps.exceptionHandler.restartStrategy)
-    streamMetaData.parallelism.foreach(env.setParallelism)
+    batchMetaData.parallelism.foreach(env.setParallelism)
 
     registerSourcePart(processWithDeps.sources.head.asInstanceOf[SourcePart])
 
@@ -137,13 +133,9 @@ object BatchFlinkProcessRegistrar {
   def apply(compiler: FlinkProcessCompiler, config: Config): BatchFlinkProcessRegistrar = {
 
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
-    val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
-    val checkpointInterval = config.as[FiniteDuration]("checkpointInterval")
 
     new BatchFlinkProcessRegistrar(
       compileProcess = compiler.compileProcess,
-      eventTimeMetricDuration = eventTimeMetricDuration,
-      checkpointInterval = checkpointInterval,
       enableObjectReuse = enableObjectReuse
     )
   }

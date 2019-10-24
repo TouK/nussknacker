@@ -23,8 +23,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backend: SttpBackend[Future, Nothing, NothingT])
-    extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
+class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName: String = "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain")
+                      (implicit backend: SttpBackend[Future, Nothing, NothingT])
+    extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true), mainClassName) with LazyLogging {
 
   private val flinkUrl = Uri.parse(config.restUrl).get
 

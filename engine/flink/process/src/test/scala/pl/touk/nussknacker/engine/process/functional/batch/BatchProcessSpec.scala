@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.process.functional.batch
 
 import java.util.Date
 
-import org.scalatest.{BeforeAndAfter, FunSuite, Matchers, _}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.build.{BatchProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{BatchSinkForStrings, SimpleRecord}
@@ -23,7 +23,7 @@ class BatchProcessSpec extends FunSuite with Matchers with BeforeAndAfter {
   }
 
   test("should forward input to output") {
-    val process = EspProcessBuilder.id("inputToOutput")
+    val process = BatchProcessBuilder.id("inputToOutput")
       .exceptionHandler()
       .source("input", "batchInput")
       .sink("sink", "#input", "batchSinkForStrings")
@@ -35,7 +35,7 @@ class BatchProcessSpec extends FunSuite with Matchers with BeforeAndAfter {
   }
 
   test("should extract single field") {
-    val process = EspProcessBuilder.id("extractSingleField")
+    val process = BatchProcessBuilder.id("extractSingleField")
       .exceptionHandler()
       .source("input", "batchInput")
       .sink("sink", "#input.value2", "batchSinkForStrings")
@@ -47,7 +47,7 @@ class BatchProcessSpec extends FunSuite with Matchers with BeforeAndAfter {
   }
 
   test("should filter records") {
-    val process = EspProcessBuilder.id("filterTest")
+    val process = BatchProcessBuilder.id("filterTest")
       .exceptionHandler()
       .source("input", "batchInput")
       .filter("value greater than 10", "#input.value1 > 10")
@@ -60,7 +60,7 @@ class BatchProcessSpec extends FunSuite with Matchers with BeforeAndAfter {
   }
 
   test("should switch records") {
-    val process = EspProcessBuilder.id("filterTest")
+    val process = BatchProcessBuilder.id("filterTest")
       .exceptionHandler()
       .source("input", "batchInput")
       .switch("id value", "#input.id", "id",

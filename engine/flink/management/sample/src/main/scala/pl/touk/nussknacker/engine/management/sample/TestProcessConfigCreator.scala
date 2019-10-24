@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.util
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
@@ -32,11 +33,16 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.io.{InputFormat, OutputFormat}
+import org.apache.flink.api.java.io.{CollectionInputFormat, TextInputFormat, TextOutputFormat}
+import org.apache.flink.api.scala.ExecutionEnvironment
+import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkInputFormat, FlinkInputFormatFactory, FlinkOutputFormat}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
@@ -62,7 +68,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
           override def serializeKey(element: Any) = null
 
           override def getTargetTopic(element: Any) = null
-        }), "Category1", "Category2")
+        }), "Category1", "Category2"),
+      "batch-file-sink" -> WithCategories(BatchFileSink, "Category1", "Category2"))
     )
   }
 
@@ -121,7 +128,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
         override def timestampAssigner = None
 
-      }), "Category1", "Category2")
+      }), "Category1", "Category2"),
+      "batch-elements-source" -> WithCategories(BatchElementsSource, "Category1", "Category2")
     )
 
   }
@@ -229,6 +237,30 @@ object BoundedSource extends FlinkSourceFactory[Any] {
     new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements.asScala.toList, None, Unknown)
 
   override def timestampAssigner: Option[TimestampAssigner[Any]] = None
+}
+
+object BatchElementsSource extends FlinkInputFormatFactory[Any] {
+
+  @MethodToInvoke
+  def create(@ParamName("elements") elements: java.util.List[Any]): Source[Any] = {
+    new FlinkInputFormat[Any] {
+      override def toFlink: InputFormat[Any, _] = {
+        new CollectionInputFormat[Any](elements, typeInformation.createSerializer(ExecutionEnvironment.getExecutionEnvironment.getConfig))
+      }
+    }
+  }
+}
+
+object BatchFileSink extends SinkFactory {
+
+  @MethodToInvoke
+  def create(@ParamName("path") path: String): Sink = {
+    new FlinkOutputFormat {
+      override def toFlink: OutputFormat[Any] = new TextOutputFormat[Any](new Path(path))
+
+      override def testDataOutput: Option[Any => String] = None
+    }
+  }
 }
 
 case object StatefulTransformer extends CustomStreamTransformer with LazyLogging {

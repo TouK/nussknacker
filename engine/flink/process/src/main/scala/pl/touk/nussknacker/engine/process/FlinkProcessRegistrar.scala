@@ -105,7 +105,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
     val processWithDeps = compiledProcessWithDeps(UserClassLoader.get("root"))
     val metaData = processWithDeps.metaData
 
-    val streamMetaData = MetaDataExtractor.extractStreamMetaDataOrFail(metaData)
+    val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
     env.setRestartStrategy(processWithDeps.exceptionHandler.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 

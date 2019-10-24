@@ -2,24 +2,17 @@ package pl.touk.nussknacker.engine.management
 
 import java.io.File
 
-import sttp.client.{NothingT, SttpBackend}
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
-import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeConfig}
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
-import pl.touk.nussknacker.engine.queryablestate.QueryableClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean) extends ProcessManager with LazyLogging {
+abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String) extends ProcessManager with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
 
@@ -120,7 +113,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   private def prepareProgramMainClass(processDeploymentData: ProcessDeploymentData) : String = {
     processDeploymentData match {
-      case GraphProcess(_) => "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain"
+      case GraphProcess(_) => mainClassName
       case CustomProcess(mainClass) => mainClass
     }
   }
@@ -131,59 +124,5 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit]
 
-
-}
-
-class FlinkProcessManagerProvider extends ProcessManagerProvider {
-
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.Ficus._
-
-
-  override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = {
-    implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-
-    //FIXME: how to do it easier??
-    val flinkConfig = asFlinkConfig(config)
-    new FlinkRestManager(flinkConfig, modelData)
-  }
-
-  override def createQueryableClient(config: Config): Option[QueryableClient] = {
-    val flinkConfig = asFlinkConfig(config)
-    flinkConfig.queryableStateProxyUrl.map(FlinkQueryableClient(_))
-  }
-
-  override def name: String = "flinkStreaming"
-
-  override def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData
-    = StreamMetaData(parallelism = if (isSubprocess) None else Some(1))
-
-  override def supportsSignals: Boolean = true
-
-  private def asFlinkConfig(config: Config): FlinkConfig = {
-    //FIXME: how to do it easier??
-    ConfigFactory.empty().withValue("root", config.root()).as[FlinkConfig]("root")
-  }
-}
-
-object FlinkProcessManagerProvider {
-
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
-
-  def defaultTypeConfig(config: Config): ProcessingTypeConfig = {
-    ProcessingTypeConfig("flinkStreaming",
-      config.as[ClasspathConfig]("flinkConfig").urls,
-      config.getConfig("flinkConfig"),
-      config.getConfig("processConfig"))
-  }
-
-  def defaultModelData(config: Config): ModelData = defaultTypeConfig(config).toModelData
-
-  def defaultProcessManager(config: Config): ProcessManager = {
-    val typeConfig = defaultTypeConfig(config)
-    new FlinkProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
-  }
 
 }
