@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.security.oauth2
 import java.net.URI
 
 import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration}
-import sttp.model.Uri
 
 case class OAuth2Configuration(backend: AuthenticationBackend.Value,
                                authorizeUri: URI,
@@ -23,18 +22,12 @@ case class OAuth2Configuration(backend: AuthenticationBackend.Value,
     new URI(dispatch.url(authorizeUri.toString)
       .setQueryParameters((Map(
         "client_id" -> clientId,
-        "redirect_uri" -> getRedirectUrl()
+        "redirect_uri" -> redirectUrl
       ) ++ authorizeParams).mapValues(v => Seq(v)))
       .url)
   })
 
-  def getAccessTokenSttpUri() = Uri(accessTokenUri)
-
-  def getRedirectSttpUri() = Uri(redirectUri)
-
-  def getProfileSttpUri() = Uri(profileUri)
-
-  def getRedirectUrl() = redirectUri.toString
+  def redirectUrl: String = redirectUri.toString
 }
 
 

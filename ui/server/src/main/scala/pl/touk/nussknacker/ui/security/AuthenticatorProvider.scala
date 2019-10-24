@@ -32,7 +32,7 @@ object AuthenticatorProvider extends LazyLogging {
 
   private [security] def getDefaultAuthenticatorFactory(backend: AuthenticationBackend.Value): AuthenticatorFactory = {
     backend match {
-      case AuthenticationBackend.BasicAuth => new BasicAuthenticatorFactory()
+      case AuthenticationBackend.BasicAuth => BasicAuthenticatorFactory()
       case AuthenticationBackend.OAuth2 => OAuth2AuthenticatorFactory()
     }
   }
