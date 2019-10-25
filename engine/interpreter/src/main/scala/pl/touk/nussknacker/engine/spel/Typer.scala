@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.engine.spel
 
-import java.math.BigInteger
-
 import cats.data.NonEmptyList._
 import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
-import Typer._
 import cats.instances.map._
 import cats.kernel.{Monoid, Semigroup}
 import cats.syntax.traverse._
+import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.Expression
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast._
@@ -17,16 +15,17 @@ import org.springframework.expression.spel.{SpelNode, standard}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.typed.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.spel.Typer._
+import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
+import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.runtime._
-import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
-import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 
-private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
+private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -114,7 +113,7 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
       case e: BooleanLiteral => valid(Typed[Boolean])
       case e: IntLiteral => valid(Typed[java.lang.Integer])
       case e: LongLiteral => valid(Typed[java.lang.Long])
-      case e: RealLiteral => valid(Typed(Typed[java.lang.Float], Typed[java.lang.Double])) // type can be also Float here
+      case e: RealLiteral => valid(Typed(Typed[java.lang.Float]))
       case e: FloatLiteral => valid(Typed[java.lang.Float])
       case e: StringLiteral => valid(Typed[String])
       case e: NullLiteral => valid(Unknown)
@@ -173,10 +172,10 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
       case e: OperatorPower => checkTwoOperandsArithmeticOperation(validationContext, e, current)
 
       case e: OpPlus => withTypedChildren {
-        case right :: left :: Nil if left == Unknown || right == Unknown => Valid(Unknown)
-        case right :: left :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
-        case right :: left :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(Typed.commonSupertype(left, right))
-        case right :: left :: Nil => invalid(s"Invalid operands: $left ${e.getOperatorName} $right")
+        case left :: right :: Nil if left == Unknown || right == Unknown => Valid(Unknown)
+        case left :: right :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
+        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right))
+        case left :: right :: Nil => invalid(s"Invalid operands: $left ${e.getOperatorName} $right")
         case left :: Nil => Valid(left)
         case Nil => invalid("Empty plus")
       }
@@ -213,8 +212,14 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
       }
 
       case e: Ternary => withTypedChildren {
-        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(Typed(onTrue, onFalse))
-        case _ => invalid("Invalid ternary operator")
+        case condition :: onTrue :: onFalse :: Nil =>
+          val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)
+          if (condition.canBeSubclassOf(Typed[Boolean]) && superType != Typed.empty) {
+            Valid(superType)
+          } else {
+            invalid(s"Invalid operands: $condition ? $onTrue : $onFalse")
+          }
+        case _ => invalid("Invalid ternary operator") // shouldn't happen
       }
       //TODO: what should be here?
       case e: TypeReference => fixed(Unknown)
@@ -231,16 +236,16 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
 
   private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
-      case right :: left :: Nil if Typed.commonSupertype(right, left) != Typed.empty => Valid(Typed[Boolean])
-      case right :: left :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
+      case left :: right :: Nil if commonSupertypeFinder.commonSupertype(right, left) != Typed.empty => Valid(Typed[Boolean])
+      case left :: right :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
       case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
     }
   }
 
   private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
-      case right :: left :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(Typed.commonSupertype(left, right))
-      case right :: left :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
+      case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right))
+      case left :: right :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
       case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
     }
   }

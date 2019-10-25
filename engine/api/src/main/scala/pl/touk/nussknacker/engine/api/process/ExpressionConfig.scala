@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[AnyRef]],
                             globalImports: List[WithCategories[String]],
                             languages: LanguageConfiguration = LanguageConfiguration.default,
-                            optimizeCompilation: Boolean = true)
+                            optimizeCompilation: Boolean = true,
+                            strictTypeChecking: Boolean = true)
 
 object LanguageConfiguration {
   val default = LanguageConfiguration(List.empty)

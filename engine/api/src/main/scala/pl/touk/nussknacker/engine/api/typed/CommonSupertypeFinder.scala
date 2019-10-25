@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
   * It has very similar logic to CanBeSubclassDeterminer
   */
-private[typed] object CommonSupertypeFinder {
+class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStrategy) {
 
   private val FloatingNumbers: Seq[Class[_]] = IndexedSeq(classOf[java.lang.Float], classOf[java.lang.Double],
     classOf[java.math.BigDecimal]).reverse
@@ -22,41 +22,51 @@ private[typed] object CommonSupertypeFinder {
 
   private val SimpleTypes = Set(classOf[java.lang.Boolean], classOf[String]) ++ Numbers
 
-  def findCommonSupertype(first: TypingResult, sec: TypingResult): TypingResult =
+  def commonSupertype(first: TypingResult, sec: TypingResult): TypingResult =
     (first, sec) match {
-      case (Unknown, Unknown) => Unknown
-      case (other, Unknown) => other
-      case (Unknown, other) => other
-      case (f: SingleTypingResult, s: TypedUnion) => Typed(findCommonSupertype(Set(f), s.possibleTypes))
-      case (f: TypedUnion, s: SingleTypingResult) => Typed(findCommonSupertype(f.possibleTypes, Set(s)))
+      case (Unknown, _) => Unknown // can't be sure intention of user - union is more secure than intersection
+      case (_, Unknown) => Unknown
+      case (f: SingleTypingResult, s: TypedUnion) => Typed(commonSupertype(Set(f), s.possibleTypes))
+      case (f: TypedUnion, s: SingleTypingResult) => Typed(commonSupertype(f.possibleTypes, Set(s)))
       case (f: SingleTypingResult, s: SingleTypingResult) => singleCommonSupertype(f, s)
-      case (f: TypedUnion, s: TypedUnion) => Typed(findCommonSupertype(f.possibleTypes, s.possibleTypes))
+      case (f: TypedUnion, s: TypedUnion) => Typed(commonSupertype(f.possibleTypes, s.possibleTypes))
     }
 
-  private def findCommonSupertype(firstSet: Set[SingleTypingResult], secSet: Set[SingleTypingResult]): Set[TypingResult] =
+  private def commonSupertype(firstSet: Set[SingleTypingResult], secSet: Set[SingleTypingResult]): Set[TypingResult] =
     firstSet.flatMap(f => secSet.map(singleCommonSupertype(f, _)))
 
 
   private def singleCommonSupertype(first: SingleTypingResult, sec: SingleTypingResult): TypingResult =
     (first, sec) match {
       case (f: TypedObjectTypingResult, s: TypedObjectTypingResult) =>
-        klassCommonSupertypeReturningTypedClass(f.objType, s.objType).map { commonSupertype =>
-          val fields = for {
-            firstField <- f.fields
-            (name, firstFieldType) = firstField
-            secFieldType <- s.fields.get(name)
-            fieldCommonSuperType = findCommonSupertype(firstFieldType, secFieldType)
-            if fieldCommonSuperType != Typed.empty
-          } yield name -> fieldCommonSuperType
-          if (fields.isEmpty)
-            Typed.empty // no matching field - looks like we have totally different objects
-          else
+        if (f == s) {
+          f
+        } else {
+          klassCommonSupertypeReturningTypedClass(f.objType, s.objType).map { commonSupertype =>
+            // can't be sure intention of user - union of fields is more secure than intersection
+            val fields = unionOfFields(f, s)
             TypedObjectTypingResult(fields, commonSupertype)
-        }.getOrElse(Typed.empty)
+          }.getOrElse(Typed.empty)
+        }
       case (_: TypedObjectTypingResult, _) => Typed.empty
       case (_, _: TypedObjectTypingResult) => Typed.empty
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
+
+  private def unionOfFields(f: TypedObjectTypingResult, s: TypedObjectTypingResult) = {
+    (f.fields.toList ++ s.fields.toList).groupBy(_._1).mapValues(_.map(_._2)).flatMap {
+      case (fieldName, firstType :: secType :: Nil) =>
+        val common = commonSupertype(firstType, secType)
+        if (common == Typed.empty)
+          None // fields type collision - skipping this field
+        else
+          Some(fieldName -> common)
+      case (fieldName, singleType :: Nil) =>
+        Some(fieldName -> singleType)
+      case (_, longerList) =>
+        throw new IllegalArgumentException("Computing union of more than two fields: " + longerList) // shouldn't happen
+    }
+  }
 
   // This implementation is because TypedObjectTypingResult has underlying TypedClass instead of TypingResult
   private def klassCommonSupertypeReturningTypedClass(first: TypedClass, sec: TypedClass): Option[TypedClass] = {
@@ -124,13 +134,25 @@ private[typed] object CommonSupertypeFinder {
       Typed(sec)
     } else {
       // until here things are rather simple
-      Typed(commonSuperTypeForTypesInNotSameInheritanceLine(first, sec).map(Typed(_)))
+      Typed(commonSuperTypeForClassesNotInSameInheritanceLine(first, sec).map(Typed(_)))
     }
   }
 
-  private def commonSuperTypeForTypesInNotSameInheritanceLine(first: Class[_], sec: Class[_]): Set[Class[_]] = {
-    // TODO: feature flag
-    TypeHierarchyCommonSupertypeFinder.findCommonSupertypes(first, sec)
+  private def commonSuperTypeForClassesNotInSameInheritanceLine(first: Class[_], sec: Class[_]): Set[Class[_]] = {
+    classResolutionStrategy match {
+      case SupertypeClassResolutionStrategy.Intersection => ClsssHierarchyCommonSupertypeFinder.findCommonSupertypes(first, sec)
+      case SupertypeClassResolutionStrategy.Union => Set(first, sec)
+    }
   }
+
+}
+
+sealed trait SupertypeClassResolutionStrategy
+
+object SupertypeClassResolutionStrategy {
+
+  case object Intersection extends SupertypeClassResolutionStrategy
+
+  case object Union extends SupertypeClassResolutionStrategy
 
 }

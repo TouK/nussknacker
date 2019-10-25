@@ -5,6 +5,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
 
 class TypingResultSpec extends FunSuite with Matchers with OptionValues {
 
+  private val commonSuperTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection)
+  
   private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
 
   private def list(arg: TypingResult) =TypedClass(classOf[java.util.List[_]], List(arg))
@@ -68,51 +70,58 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
   }
 
   test("find common supertype for simple types") {
-    Typed.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
-    Typed.commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
-    Typed.commonSupertype(Typed[Int], Typed[Double]) shouldEqual Typed[java.lang.Double]
-    Typed.commonSupertype(Typed[Int], Typed[Long]) shouldEqual Typed[java.lang.Long]
-    Typed.commonSupertype(Typed[Float], Typed[Long]) shouldEqual Typed[java.lang.Float]
+    commonSuperTypeFinder.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
+    commonSuperTypeFinder.commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
+    commonSuperTypeFinder.commonSupertype(Typed[Int], Typed[Double]) shouldEqual Typed[java.lang.Double]
+    commonSuperTypeFinder.commonSupertype(Typed[Int], Typed[Long]) shouldEqual Typed[java.lang.Long]
+    commonSuperTypeFinder.commonSupertype(Typed[Float], Typed[Long]) shouldEqual Typed[java.lang.Float]
   }
 
   test("find special types") {
-    Typed.commonSupertype(Unknown, Typed[Long]) shouldEqual Typed[Long]
-    Typed.commonSupertype(Unknown, Unknown) shouldEqual Unknown
+    commonSuperTypeFinder.commonSupertype(Unknown, Unknown) shouldEqual Unknown
+    commonSuperTypeFinder.commonSupertype(Unknown, Typed[Long]) shouldEqual Unknown
 
-    Typed.commonSupertype(
+    commonSuperTypeFinder.commonSupertype(
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))) shouldEqual
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long]))
+      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String]))
 
-    Typed.commonSupertype(
-      TypedObjectTypingResult(Map("foo" -> Typed[String])), TypedObjectTypingResult(Map("bar" -> Typed[Long]))) shouldEqual Typed.empty
+    commonSuperTypeFinder.commonSupertype(
+      TypedObjectTypingResult(Map("foo" -> Typed[String])), TypedObjectTypingResult(Map("foo" -> Typed[Long]))) shouldEqual
+      TypedObjectTypingResult(Map.empty[String, TypingResult])
   }
 
   test("find common supertype for complex types with inheritance in classes hierarchy") {
     import ClassHierarchy._
-    Typed.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
-    Typed.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
-    Typed.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
 
-    Typed.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
   }
 
   test("find common supertype for complex types with inheritance in interfaces hierarchy") {
     import InterfaceHierarchy._
-    Typed.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
-    Typed.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
-    Typed.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
 
-    Typed.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
   }
 
   test("find common supertype for complex types with inheritance in mixins hierarchy") {
     import HierarchyInMixins._
-    Typed.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
-    Typed.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
-    Typed.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
 
-    Typed.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
+    commonSuperTypeFinder.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
+  }
+
+  test("common supertype with union of not matching classes strategy") {
+    import ClassHierarchy._
+    val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union)
+    unionFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed(Typed[Dog], Typed[Cactus])
   }
 
   object ClassHierarchy {

@@ -5,7 +5,7 @@ import scala.collection.mutable
 /**
   * It looks for common super type using algorithm described here: See https://stackoverflow.com/a/9797689
   */
-object TypeHierarchyCommonSupertypeFinder {
+object ClsssHierarchyCommonSupertypeFinder {
 
   private val IgnoredCommonInterfaces = Set[Class[_]](
     classOf[Serializable],

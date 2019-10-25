@@ -88,7 +88,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, imports, flavour)
+    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, strictTypeChecking = true, imports, flavour)
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
@@ -306,6 +306,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be 'valid
     parse[Long]("1 > 2 ? 12 : 23", ctx) shouldBe 'valid
     parse[String]("1 > 2 ? 'ss' : 'dd'", ctx) shouldBe 'valid
+    parse[Any]("1 > 2 ? '123' : 123", ctx) shouldBe 'invalid
   }
 
   test("validate selection for inline list") {

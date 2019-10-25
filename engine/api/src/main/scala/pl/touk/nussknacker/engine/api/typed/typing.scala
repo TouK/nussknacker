@@ -166,12 +166,6 @@ object typing {
       case other: SingleTypingResult => List(other)
     }
 
-    /**
-      * Search for lower common supertype, if the lowest is java.lang.Object then it returns Typed.empty
-      */
-    def commonSupertype(first: TypingResult, sec: TypingResult): TypingResult = {
-      CommonSupertypeFinder.findCommonSupertype(first, sec)
-    }
   }
 
 }

@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
-import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.{CommonSupertypeFinder, SupertypeClassResolutionStrategy, TypedMap}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -188,7 +188,7 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(classLoader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String], flavour: Flavour): SpelExpressionParser = {
+  def default(classLoader: ClassLoader, enableSpelForceCompile: Boolean, strictTypeChecking: Boolean, imports: List[String], flavour: Flavour): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
       "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
@@ -212,7 +212,8 @@ object SpelExpressionParser extends LazyLogging {
       MapLikePropertyAccessor
     )
 
-    val validator = new SpelExpressionValidator(new Typer(classLoader))
+    val commonSupertypeFinder = new CommonSupertypeFinder(if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union)
+    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder))
     new SpelExpressionParser(parser, validator, enableSpelForceCompile, flavour,
       prepareEvaluationContext(classLoader, imports, propertyAccessors, functions))
   }
