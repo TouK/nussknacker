@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import React from "react";
 
 const ExpressionInput = (props) => {
-    const {label, name, path, value, onChange, isMarked, readOnly, rows, cols} = props;
+    const {label, name, path, placeholder, value, onChange, isMarked, readOnly, rows, cols} = props;
 
     return (
         <div className="node-row">
@@ -11,6 +11,7 @@ const ExpressionInput = (props) => {
             <div className={"node-value" + (isMarked ? " marked" : "")}>
                 <ExpressionSuggest
                     fieldName={name}
+                    placeholder={placeholder}
                     inputProps={{
                         className: "node-input",
                         value: value.expression,

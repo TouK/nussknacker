@@ -55,60 +55,62 @@ class AddProcessDialog extends React.Component {
   render() {
     const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
-        <Modal isOpen={this.props.isOpen}
-               shouldCloseOnOverlayClick={false}
-               onRequestClose={this.closeDialog}>
-          <div className="draggable-container">
-            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
-              <div className="espModal">
-                <div className="modalHeader">
-                  <div className="modal-title" style={titleStyles}>
-                    <span>{this.props.message}</span>
-                  </div>
+      <Modal isOpen={this.props.isOpen}
+             shouldCloseOnOverlayClick={false}
+             onRequestClose={this.closeDialog}>
+        <div className="draggable-container">
+          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+            <div className="espModal">
+              <div className="modalHeader">
+                <div className="modal-title" style={titleStyles}>
+                  <span>{this.props.message}</span>
                 </div>
+              </div>
 
-                <div className="modalContentDark">
-                  <div className="node-table">
-                    <div className="node-table-body">
-                      <div className="node-row">
-                        <div className="node-label">Id</div>
-                        <div className="node-value">
-                          <input autoFocus={true} type="text" id="newProcessId" className="node-input"
-                                 value={this.state.processId}
-                                 onChange={(e) => this.setState({processId: e.target.value})}/>
-                          <label className='validation-label'
-                                 style={this.canConfirm() ? {display: 'none'} : {display: 'inline'}}>
-                            {"Process or subprocess with given name already exists"}
-                          </label>
-                        </div>
+              <div className="modalContentDark">
+                <div className="node-table">
+                  <div className="node-table-body">
+                    <div className="node-row">
+                      <div className="node-label">Id</div>
+                      <div className="node-value">
+                        <input autoFocus={true} type="text" id="newProcessId" className="node-input"
+                               value={this.state.processId}
+                               onChange={(e) => this.setState({processId: e.target.value})}/>
+                        {
+                          !this.canConfirm() ?
+                            <label className='validation-label'>{"Process or subprocess with given name already exists"}</label>
+                            :
+                            null
+                        }
                       </div>
-                      <div className="node-row">
-                        <div className="node-label">Category</div>
-                        <div className="node-value">
-                          <select id="processCategory" className="node-input"
-                                  onChange={(e) => this.setState({processCategory: e.target.value})}>
-                            {this.props.categories.map((cat, index) => (
-                                <option key={index} value={cat}>{cat}</option>))}
-                          </select>
-                        </div>
+                    </div>
+                    <div className="node-row">
+                      <div className="node-label">Category</div>
+                      <div className="node-value">
+                        <select id="processCategory" className="node-input"
+                                onChange={(e) => this.setState({processCategory: e.target.value})}>
+                          {this.props.categories.map((cat, index) => (
+                              <option key={index} value={cat}>{cat}</option>))}
+                        </select>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="modalFooter">
-                  <div className="footerButtons">
-                    <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel
-                    </button>
-                    <button type="button" title="Create" className='modalButton' disabled={!this.canConfirm()}
-                            onClick={this.confirm}>Create
-                    </button>
-                  </div>
+              <div className="modalFooter">
+                <div className="footerButtons">
+                  <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel
+                  </button>
+                  <button type="button" title="Create" className='modalButton' disabled={!this.canConfirm()}
+                          onClick={this.confirm}>Create
+                  </button>
                 </div>
               </div>
-            </Draggable>
-          </div>
-        </Modal>
+            </div>
+          </Draggable>
+        </div>
+      </Modal>
     );
   }
 }

@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{Process
 import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -14,14 +15,12 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
+import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.ParameterEvaluatorExtractor
-import pl.touk.nussknacker.ui.security.api.Permission._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
+import pl.touk.nussknacker.ui.security.api.Permission._
 
 import scala.runtime.BoxedUnit
 
@@ -55,12 +54,12 @@ object DefinitionPreparer {
 
     //TODO: make it possible to configure other defaults here.
     val base = NodeGroup("base", List(
-      NodeToAdd("filter", "filter", Filter("", Expression("spel", "true")), readCategories),
+      NodeToAdd("filter", "filter", Filter("", Expression("spel", "")), readCategories),
       NodeToAdd("split", "split", Split(""), readCategories),
-      NodeToAdd("switch", "switch", Switch("", Expression("spel", "true"), "output"), readCategories),
-      NodeToAdd("variable", "variable", Variable("", "varName", Expression("spel", "'value'")), readCategories),
-      NodeToAdd("mapVariable", "mapVariable", VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), readCategories),
-      NodeToAdd("sqlVariable", "sqlVariable", Variable("", "varName", Expression("sql", "SELECT * FROM input")), readCategories)
+      NodeToAdd("switch", "switch", Switch("", Expression("spel", ""), ""), readCategories),
+      NodeToAdd("variable", "variable", Variable("", "", Expression("spel", "")), readCategories),
+      NodeToAdd("mapVariable", "mapVariable", VariableBuilder("", "", List.empty), readCategories),
+      NodeToAdd("sqlVariable", "sqlVariable", Variable("", "", Expression("sql", "")), readCategories)
     ))
     val services = NodeGroup("services",
       processDefinition.services.filter(returnsUnit).map {
@@ -72,7 +71,7 @@ object DefinitionPreparer {
     val enrichers = NodeGroup("enrichers",
       processDefinition.services.filterNot(returnsUnit).map {
         case (id, objDefinition) => NodeToAdd("enricher", id,
-          Enricher("", serviceRef(id, objDefinition), "output"), filterCategories(objDefinition))
+          Enricher("", serviceRef(id, objDefinition), ""), filterCategories(objDefinition))
       }.toList
     )
 
@@ -95,7 +94,7 @@ object DefinitionPreparer {
       processDefinition.sinkFactories.map {
         case (id, (objDefinition, SinkAdditionalData(requiresOutput))) => NodeToAdd("sink", id,
           Sink("", SinkRef(id, objDefParams(id, objDefinition)),
-            if (requiresOutput) Some(Expression("spel", "#input")) else None), filterCategories(objDefinition)
+            if (requiresOutput) Some(Expression("spel", "")) else None), filterCategories(objDefinition)
         )
       }.toList)
 
@@ -119,7 +118,7 @@ object DefinitionPreparer {
       List(
       NodeGroup("subprocessDefinition", List(
         NodeToAdd("input", "input", SubprocessInputDefinition("", List()), readCategories),
-        NodeToAdd("output", "output", SubprocessOutputDefinition("", "output"), readCategories)
+        NodeToAdd("output", "output", SubprocessOutputDefinition("", ""), readCategories)
       )))
     }
 

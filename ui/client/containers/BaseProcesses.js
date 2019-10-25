@@ -81,6 +81,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
       case ('subProcesses'): {
         this.reloadProcesses(false)
         this.reloadSubProcesses()
+        break;
       }
     }
 
@@ -99,14 +100,9 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   reloadProcesses(showLoader, search) {
-    this.setState({showLoader: showLoader == null ? true : showLoader})
+    this.showLoader(showLoader);
 
-    this.queries = {
-      ...this.queries,
-      isSubprocess: false
-    }
-    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
-    const data = Object.assign(query, search, this.queries || {})
+    const data = this.prepareSearchParams(search, false);
 
     HttpService.fetchProcesses(data).then(response => {
       if (!this.state.showAddProcess) {
@@ -116,14 +112,9 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   reloadSubProcesses(showLoader, search) {
-    this.setState({showLoader: showLoader == null ? true : showLoader})
+    this.showLoader(showLoader);
 
-    this.queries = {
-      ...this.queries,
-      isSubprocess: true
-    }
-    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
-    const data = Object.assign(query, search, this.queries || {})
+    const data = this.prepareSearchParams(search, true);
 
     HttpService.fetchProcesses(data).then(response => {
       if (!this.state.showAddProcess) {
@@ -132,6 +123,19 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     }).catch(() => this.setState({showLoader: false}))
   }
 
+  showLoader(showLoader) {
+    this.setState({showLoader: showLoader == null ? true : showLoader})
+  }
+
+  prepareSearchParams(search, isSubprocess) {
+    this.queries = {
+      ...this.queries,
+      isSubprocess: isSubprocess
+    }
+    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
+    const data = Object.assign(query, search, this.queries || {})
+    return data;
+  }
 
   reloadStatuses() {
     HttpService.fetchProcessesStatus().then(response => {

@@ -89,10 +89,11 @@ class NodeDetailsModal extends React.Component {
     const nodeIds = this.props.processToDisplay.nodes.map(node => node.id);
     const displayedNodeId = this.props.nodeToDisplay.id;
     const editedNode = this.state.editedNode;
+    const nodeIsProperties = NodeUtils.nodeIsProperties(editedNode);
     if (_.isEmpty(this.state.editedNode)) {
       return true
     }
-    return ((!nodeIds.includes(editedNode.id) && displayedNodeId !== editedNode.id)
+    return nodeIsProperties || ((!nodeIds.includes(editedNode.id) && displayedNodeId !== editedNode.id)
         || (nodeIds.includes(editedNode.id) && displayedNodeId === editedNode.id))
   }
 

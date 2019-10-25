@@ -27,7 +27,7 @@ const Fields = (props) => {
                                             className="node-input"
                                             type="text"
                                             value={field.name}
-                                            placeholder="Field name"
+                                            placeholder="key"
                                             onChange={((e) => onChange(`${paths}.name`, e.target.value))}
                                             readOnly={readOnly}
                                         />
@@ -41,6 +41,7 @@ const Fields = (props) => {
                                                 language: expression.language,
                                                 readOnly
                                             }}
+                                            placeholder="'value'"
                                         />
                                     </div>
                                     <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>

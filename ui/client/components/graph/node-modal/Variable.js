@@ -7,13 +7,13 @@ import _ from "lodash";
 
 const Variable = (props) => {
 
-    const {node, onChange, isMarked, readOnly} = props;
+    const {node, onChange, isMarked, readOnly, placeholder} = props;
 
     return (
         <div className="node-table-body node-variable-builder-body">
             <Input label="Id" value={node.id} path="id" onChange={onChange} isMarked={isMarked("id")} readOnly={readOnly} />
-            <Input label="Variable Name" value={node.varName} path="varName" onChange={onChange} isMarked={isMarked("varName")} readOnly={readOnly} />
-            <ExpressionInput name="expression" label="Expression" value={node.value} path="value.expression" onChange={onChange} readOnly={readOnly} />
+            <Input label="Variable name" value={node.varName} path="varName" onChange={onChange} isMarked={isMarked("varName")} readOnly={readOnly} />
+            <ExpressionInput name="expression" label="Expression" placeholder={placeholder} value={node.value} path="value.expression" onChange={onChange} readOnly={readOnly} />
             <Textarea
                 label="Description"
                 value={_.get(node, "additionalFields.description", "")}

@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import React from "react";
 
 const Input = (props) => {
-    const {label, path, value, onChange, isMarked, readOnly} = props;
+    const {label, path, placeholder, value, onChange, isMarked, readOnly} = props;
 
     return (
         <div className="node-row">
@@ -12,6 +12,7 @@ const Input = (props) => {
                     type="text"
                     className="node-input"
                     value={value}
+                    placeholder={placeholder}
                     onChange={(event) => onChange(path, event.target.value)}
                     readOnly={readOnly}
                 />

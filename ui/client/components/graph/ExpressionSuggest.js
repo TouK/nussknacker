@@ -100,6 +100,7 @@ class ExpressionSuggest extends React.Component {
             maxLines={50}
             theme={'nussknacker'}
             onChange={this.onChange}
+            placeholder={this.props.placeholder}
             value={this.state.value}
             showPrintMargin={false}
             cursorStart={-1} //line start
