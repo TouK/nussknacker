@@ -81,9 +81,11 @@ espCheckbox(checkboxWidth)
 
 .espModal
   max-height fit-content
+  max-height -moz-max-content
+  height -moz-max-content
+  height -webkit-max-content
   max-width modalMaxWidth
   width modalMaxWidth
-  height -moz-max-content
   position relative
   background modalBkgColor
   background-color modalBkgColor
@@ -190,7 +192,6 @@ common-node-input(padding)
 
 modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
-  max-height modalContentMaxHeight
   background-color: modalBkgColor
   labelWidth = 20%
   .warning
