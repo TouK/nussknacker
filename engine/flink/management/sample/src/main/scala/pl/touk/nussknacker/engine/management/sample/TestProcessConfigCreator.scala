@@ -1,54 +1,53 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.util
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.Config
-import io.circe.{Encoder, Json}
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
+import io.circe.{Encoder, Json}
 import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.io.{InputFormat, OutputFormat}
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.io.{CollectionInputFormat, TextOutputFormat}
+import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.core.fs.Path
+import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
-import org.apache.flink.api.common.serialization.SimpleStringSchema
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
-import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
-import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
-
-import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.io.{InputFormat, OutputFormat}
-import org.apache.flink.api.java.io.{CollectionInputFormat, TextInputFormat, TextOutputFormat}
-import org.apache.flink.api.scala.ExecutionEnvironment
-import org.apache.flink.core.fs.Path
-import org.apache.flink.streaming.api.functions.TimestampAssigner
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
+import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkInputFormat, FlinkInputFormatFactory, FlinkOutputFormat}
+import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.sample.JavaSampleEnum
+
+import scala.collection.JavaConverters._
+import scala.concurrent.{ExecutionContext, Future}
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
@@ -69,7 +68,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
           override def getTargetTopic(element: Any) = null
         }), "Category1", "Category2"),
-      "batch-file-sink" -> WithCategories(BatchFileSink, "Category1", "Category2")
+      "batch-file-sink" -> WithCategories(BatchFileSinkFactory, "Category1", "Category2")
     )
   }
 
@@ -129,7 +128,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
         override def timestampAssigner = None
 
       }), "Category1", "Category2"),
-      "batch-elements-source" -> WithCategories(BatchElementsSource, "Category1", "Category2")
+      "batch-elements-source" -> WithCategories(BatchElementsSourceFactory, "Category1", "Category2")
     )
 
   }
@@ -239,27 +238,33 @@ object BoundedSource extends FlinkSourceFactory[Any] {
   override def timestampAssigner: Option[TimestampAssigner[Any]] = None
 }
 
-object BatchElementsSource extends FlinkInputFormatFactory[Any] {
+object BatchElementsSourceFactory extends FlinkInputFormatFactory[Any] {
 
   @MethodToInvoke
   def create(@ParamName("elements") elements: java.util.List[Any]): Source[Any] = {
-    new FlinkInputFormat[Any] {
-      override def toFlink: InputFormat[Any, _] = {
-        new CollectionInputFormat[Any](elements, typeInformation.createSerializer(ExecutionEnvironment.getExecutionEnvironment.getConfig))
-      }
+    new BatchElementsSource(elements)
+  }
+
+  class BatchElementsSource(elements: java.util.List[Any]) extends FlinkInputFormat[Any] {
+
+    override def toFlink: InputFormat[Any, _] = {
+      new CollectionInputFormat[Any](elements, typeInformation.createSerializer(ExecutionEnvironment.getExecutionEnvironment.getConfig))
     }
   }
 }
 
-object BatchFileSink extends SinkFactory {
+object BatchFileSinkFactory extends SinkFactory {
 
   @MethodToInvoke
   def create(@ParamName("path") path: String): Sink = {
-    new FlinkOutputFormat {
-      override def toFlink: OutputFormat[Any] = new TextOutputFormat[Any](new Path(path))
+    new BatchFileSink(path)
+  }
 
-      override def testDataOutput: Option[Any => String] = None
-    }
+  class BatchFileSink(path: String) extends FlinkOutputFormat with Serializable {
+
+    override def toFlink: OutputFormat[Any] = new TextOutputFormat[Any](new Path(path))
+
+    override def testDataOutput: Option[Any => String] = None
   }
 }
 
