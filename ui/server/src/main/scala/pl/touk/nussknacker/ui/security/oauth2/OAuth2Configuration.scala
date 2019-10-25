@@ -16,9 +16,7 @@ case class OAuth2Configuration(backend: AuthenticationBackend.Value,
                                headers: Map[String, String] = Map.empty,
                                authorizationHeader: String = "Authorization") extends AuthenticationConfiguration {
 
-  override def getBackend(): AuthenticationBackend.Value = backend
-
-  override def getAuthorizeUri(): Option[URI] = Option.apply({
+  override def authorizeUrl: Option[URI] = Option.apply({
     new URI(dispatch.url(authorizeUri.toString)
       .setQueryParameters((Map(
         "client_id" -> clientId,
