@@ -15,7 +15,7 @@ import org.springframework.expression.spel.{SpelNode, standard}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.CommonSupertypeFinder
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
@@ -165,16 +165,16 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)
       case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)
 
-      case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)
-      case e: OpMinus => checkTwoOperandsArithmeticOperation(validationContext, e, current)
-      case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)
-      case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)
-      case e: OperatorPower => checkTwoOperandsArithmeticOperation(validationContext, e, current)
+      case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
+      case e: OpMinus => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
+      case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
+      case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
+      case e: OperatorPower => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForPowerOperation)
 
       case e: OpPlus => withTypedChildren {
         case left :: right :: Nil if left == Unknown || right == Unknown => Valid(Unknown)
         case left :: right :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
-        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right))
+        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToCommonWidestType))
         case left :: right :: Nil => invalid(s"Invalid operands: $left ${e.getOperatorName} $right")
         case left :: Nil => Valid(left)
         case Nil => invalid("Empty plus")
@@ -213,7 +213,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: Ternary => withTypedChildren {
         case condition :: onTrue :: onFalse :: Nil =>
-          val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)
+          val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)(NumberTypesPromotionStrategy.ToGenericNumber)
           if (condition.canBeSubclassOf(Typed[Boolean]) && superType != Typed.empty) {
             Valid(superType)
           } else {
@@ -236,13 +236,14 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
-      case left :: right :: Nil if commonSupertypeFinder.commonSupertype(right, left) != Typed.empty => Valid(Typed[Boolean])
+      case left :: right :: Nil if commonSupertypeFinder.commonSupertype(right, left)(NumberTypesPromotionStrategy.ToGenericNumber) != Typed.empty => Valid(Typed[Boolean])
       case left :: right :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
       case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
     }
   }
 
-  private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext)
+                                                 (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right))
       case left :: right :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")

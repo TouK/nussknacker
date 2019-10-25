@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.{FunSuite, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 
 class TypingResultSpec extends FunSuite with Matchers with OptionValues {
 
   private val commonSuperTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection)
-  
+
+  implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToCommonWidestType
+
   private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
 
   private def list(arg: TypingResult) =TypedClass(classOf[java.util.List[_]], List(arg))

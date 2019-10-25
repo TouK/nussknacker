@@ -61,7 +61,7 @@ object typing {
   }
 
   // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
-  case class TypedUnion private[typing](private[typed] val possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
+  case class TypedUnion private[typing](possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
 
     assert(possibleTypes.size != 1, "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
 

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api.typed
+package pl.touk.nussknacker.engine.api.typed.supertype
 
 import scala.collection.mutable
 
