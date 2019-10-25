@@ -1,28 +1,19 @@
 ![architecture](img/architecture_details.svg)
 
 Nussknacker consists of three parts:
-* engine
-* ui
-* integrations
 
-*Engine* is a **library** which transforms json representation of graph with Nussknacker process into Flink job.
+**engines** - are **libraries** which transforms internal json process representation (process graph) into jobs. For example Flink engine generates Flink specific code, compiles and packages all needed components into JAR file for execution.
 
-*UI* is a standalone **application** which allows user to design process diagrams and to deploy them into Flink cluster
+**ui** - is a standalone **application** which allows users to design process diagrams and to deploy them into runtime environments.
 
-*Integrations* is your application specific classes like your model, http services, or custom stateful components.
+**integrations** - are your application specific classes like your model, http services, or custom stateful components.
+
 
 ##Engine
-Engine consists of various modules that enable creation of processes building blocks and interpretation of process diagrams
-
-The most important modules are:
-* api
-* interpreter
-* process
+Engine consists of various modules that enable creation of processes building blocks in UI and interpretation of process diagrams. Engines implement `ProcessManagerProvider`.
 
 ##UI
-The UI application is a simple Scala application written using Akka Http and Slick. Processes, their history, comments and 
- other metadata are persisted in relational database (by default it's simple embedded H2). UI communicates with Apache Flink cluster
- using embedded Flink client. 
+The **ui** application is a simple application written using Scala, Akka Http and Slick on the backend side and ReactJS on the front. Processes, their history, comments and other metadata are persisted in relational database (by default it's simple embedded H2). UI communicates with Apache Flink cluster using embedded Flink client. 
  
 ##Integrations
-Integrations module implements `ProcessConfigCreator` interface which is an entry point of Nussknacker.
+Integrations module implements `ProcessConfigCreator` interface which is an entry point of Nussknacker. See [API](API.md) for more datails.
