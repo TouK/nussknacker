@@ -3,6 +3,7 @@ import Modal from "react-modal";
 import DialogMessages from "../../common/DialogMessages";
 import PropTypes from 'prop-types';
 import Draggable from "react-draggable";
+import {preventFromMoveSelectors} from "./GenericModalDialog";
 
 class PreventExitDialog extends React.Component {
 
@@ -27,7 +28,7 @@ class PreventExitDialog extends React.Component {
              shouldCloseOnOverlayClick={false}
              onRequestClose={this.closeDialog}>
         <div className="draggable-container">
-          <Draggable bounds="parent">
+          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
             <div className="espModal confirmationModal modalContentDark">
               <p>{DialogMessages.unsavedProcessChanges()}</p>
               <div className="confirmationButtons">

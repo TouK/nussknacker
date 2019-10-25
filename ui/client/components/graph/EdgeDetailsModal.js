@@ -10,6 +10,7 @@ import NodeUtils from './NodeUtils';
 import EspModalStyles from '../../common/EspModalStyles'
 import EdgeDetailsContent from "./EdgeDetailsContent";
 import Draggable from "react-draggable";
+import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
 
 //TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {
@@ -103,7 +104,7 @@ class EdgeDetailsModal extends React.Component {
                shouldCloseOnOverlayClick={false}
                onRequestClose={this.closeModal}>
           <div className="draggable-container">
-            <Draggable bounds="parent">
+            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
               <div className="espModal">
                 <div className="modalHeader" style={headerStyles}>
                   <div className="modal-title">

@@ -18,6 +18,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import PropTypes from 'prop-types';
 import nodeAttributes from "../../assets/json/nodeAttributes"
 import Draggable from "react-draggable";
+import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
 
 class NodeDetailsModal extends React.Component {
 
@@ -88,10 +89,11 @@ class NodeDetailsModal extends React.Component {
     const nodeIds = this.props.processToDisplay.nodes.map(node => node.id);
     const displayedNodeId = this.props.nodeToDisplay.id;
     const editedNode = this.state.editedNode;
+    const nodeIsProperties = NodeUtils.nodeIsProperties(editedNode);
     if (_.isEmpty(this.state.editedNode)) {
       return true
     }
-    return ((!nodeIds.includes(editedNode.id) && displayedNodeId !== editedNode.id)
+    return nodeIsProperties || ((!nodeIds.includes(editedNode.id) && displayedNodeId !== editedNode.id)
         || (nodeIds.includes(editedNode.id) && displayedNodeId === editedNode.id))
   }
 
@@ -193,7 +195,7 @@ class NodeDetailsModal extends React.Component {
                isOpen={isOpen}
                onRequestClose={this.closeModal}>
           <div className="draggable-container">
-            <Draggable bounds="parent" cancel=".fieldsControl">
+            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
               <div className="espModal">
                 <div className="modalHeader">
                   <div className="modal-title" style={titleStyles}>
