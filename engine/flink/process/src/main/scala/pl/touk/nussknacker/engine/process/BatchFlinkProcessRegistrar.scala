@@ -96,8 +96,8 @@ class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
       }
     }
 
-    def registerSubsequentPart[T](start: DataSet[InterpretationResult],
-                                  processPart: SubsequentPart): Unit = {
+    def registerSubsequentPart(start: DataSet[InterpretationResult],
+                               processPart: SubsequentPart): Unit = {
       processPart match {
         case part@SinkPart(sink: FlinkOutputFormat, _, validationContext) =>
           val startAfterSinkEvaluated = start
