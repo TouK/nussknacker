@@ -69,7 +69,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
           override def getTargetTopic(element: Any) = null
         }), "Category1", "Category2"),
-      "batch-file-sink" -> WithCategories(BatchFileSink, "Category1", "Category2"))
+      "batch-file-sink" -> WithCategories(BatchFileSink, "Category1", "Category2")
     )
   }
 
