@@ -5,11 +5,11 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.security.oauth2.{AccessTokenResponseDefinition, OAuth2ClientApi}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Service
 
 import scala.concurrent.ExecutionContext
 
-class AuthenticationOAuth2Resources(apiClient: OAuth2ClientApi[_, _ <: AccessTokenResponseDefinition])(implicit ec: ExecutionContext)
+class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser with LazyLogging {
 
   def route(): Route = pathPrefix("authentication") {
@@ -25,8 +25,8 @@ class AuthenticationOAuth2Resources(apiClient: OAuth2ClientApi[_, _ <: AccessTok
   }
 
   private def oAuth2Authenticate(authorizeToken: String) = {
-    apiClient.doAccessTokenRequest(authorizeToken).map { response =>
-      ToResponseMarshallable(Oauth2AuthenticationResponse(response.getAccessToken(), response.getTokenType()))
+    service.clientApi.doAccessTokenRequest(authorizeToken).map { response =>
+      ToResponseMarshallable(Oauth2AuthenticationResponse(response.accessToken, response.tokenType))
     }.recover {
       case ex =>
         logger.warn("Error at retrieving access token:", ex)

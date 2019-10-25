@@ -23,13 +23,13 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.{AuthenticationConfiguration, AuthenticatorProvider}
+import pl.touk.nussknacker.ui.security.{AuthenticationConfigurationFactory, AuthenticatorProvider}
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
-import pl.touk.nussknacker.ui.security.oauth2.{DefaultAccessTokenResponse, DefaultProfileResponse, OAuth2Configuration, OAuth2ClientApi}
+import pl.touk.nussknacker.ui.security.oauth2.{OAuth2Configuration, OAuth2ServiceFactory}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 
@@ -91,7 +91,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val db = initDb(config)
 
     val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
-    val authenticationConfig = AuthenticationConfiguration(config)
 
     val modelData = typeToConfig.mapValues(_.modelData)
 
@@ -111,7 +110,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
-    val authenticator = AuthenticatorProvider(config, authenticationConfig, getClass.getClassLoader)
+
+    val authenticationConfig = AuthenticationConfigurationFactory(config)
+    val authenticator = AuthenticatorProvider(config, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
 
@@ -170,7 +171,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = authenticationConfig match {
       case oauth2Configuration: OAuth2Configuration => List(
         new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig),
-        new AuthenticationOAuth2Resources(OAuth2ClientApi[DefaultProfileResponse, DefaultAccessTokenResponse](oauth2Configuration))
+        new AuthenticationOAuth2Resources(OAuth2ServiceFactory(oauth2Configuration, getClass.getClassLoader))
       )
       case _ => List(
         new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)

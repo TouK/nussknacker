@@ -11,11 +11,12 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withoutPermissions
 import pl.touk.nussknacker.ui.security.AuthenticationBackend
-import pl.touk.nussknacker.ui.security.oauth2.{AccessTokenResponseDefinition, OAuth2Configuration, OAuth2ClientApi}
-import sttp.client.HttpError
+import pl.touk.nussknacker.ui.security.oauth2.{AccessTokenResponseDefinition, OAuth2ClientApi, OAuth2Configuration, OAuth2ServiceFactory}
+import sttp.client.{HttpError, NothingT, SttpBackend}
 import sttp.client.testing.SttpBackendStub
 import sttp.model.Uri
 
+import scala.concurrent.Future
 import scala.language.higherKinds
 
 class AuthenticationOAuth2ResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
@@ -34,9 +35,12 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with ScalatestRouteTest 
   @JsonCodec case class TestProfileResponse(email: String, uid: String)
 
   @JsonCodec case class TestAccessTokenResponse(access_token: String, token_type: String) extends AccessTokenResponseDefinition {
-    override def getAccessToken(): String = access_token
-    override def getTokenType(): String = token_type
+    override def accessToken: String = access_token
+    override def tokenType: String = token_type
   }
+
+  def getTestClient()(implicit backend: SttpBackend[Future, Nothing, NothingT]): OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse]
+    = new OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse](oAuth2configuration)
 
   protected lazy val badAuthenticationResources = {
     implicit val testingBackend = SttpBackendStub
@@ -44,7 +48,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with ScalatestRouteTest 
       .whenRequestMatches(_.uri.equals(Uri(oAuth2configuration.accessTokenUri)))
       .thenRespond(throw HttpError("Bad authorize token or data"))
 
-    new AuthenticationOAuth2Resources(new OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse](oAuth2configuration))
+    new AuthenticationOAuth2Resources(OAuth2ServiceFactory(oAuth2configuration, getTestClient()))
   }
 
   protected lazy val authenticationResources = {
@@ -53,7 +57,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with ScalatestRouteTest 
       .whenRequestMatches(_.uri.equals(Uri(oAuth2configuration.accessTokenUri)))
       .thenRespond(""" {"access_token": "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm", "token_type": "Bearer", "refresh_token": "yFLU8w5VZtqjYrdpD5K9s27JZdJuCRrL"} """)
 
-    new AuthenticationOAuth2Resources(new OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse](oAuth2configuration))
+    new AuthenticationOAuth2Resources(OAuth2ServiceFactory(oAuth2configuration, getTestClient()))
   }
 
   def authenticationOauth2(resource: AuthenticationOAuth2Resources, authorizeToken: String) = {

@@ -14,25 +14,20 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.parsing.json.JSONObject
 
 trait AccessTokenResponseDefinition {
-  def getAccessToken(): String
-  def getTokenType(): String
+  def accessToken: String
+  def tokenType: String
 }
 
 @JsonCodec case class DefaultAccessTokenResponse(access_token: String, token_type: String, refresh_token: Option[String]) extends AccessTokenResponseDefinition {
-  override def getAccessToken(): String = access_token
-  override def getTokenType(): String = token_type
+  override def accessToken: String = access_token
+  override def tokenType: String = token_type
 }
 
 @JsonCodec case class DefaultProfileResponse(id: String, email: String)
 
-trait ServiceOAuth2[ProfileResponse, AccessTokenResponse <: AccessTokenResponseDefinition] {
-  def doAccessTokenRequest(authorizeToken: String): Future[AccessTokenResponse]
-  def doProfileRequest(authorizeToken: String): Future[ProfileResponse]
-}
 
 class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse <: AccessTokenResponseDefinition: Decoder]
-(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT])
-  extends LazyLogging with ServiceOAuth2[ProfileResponse, AccessTokenResponse] {
+(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
 
   val requestContentType = "application/json"
 

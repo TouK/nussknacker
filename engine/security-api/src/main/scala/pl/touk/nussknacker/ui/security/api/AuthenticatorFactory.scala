@@ -4,10 +4,10 @@ import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 
 trait AuthenticatorFactory {
-
+  val realm = "nussknacker"
   import AuthenticatorFactory._
 
-  def createAuthenticator(config: Config): LoggedUserAuth
+  def createAuthenticator(config: Config, classLoader: ClassLoader): LoggedUserAuth
 }
 
 object AuthenticatorFactory {
