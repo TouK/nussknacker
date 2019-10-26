@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 
@@ -11,7 +12,7 @@ import com.typesafe.scalalogging.LazyLogging
 import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver, VolumeMapping}
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -39,7 +40,9 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with S
     val dirFile = dir.toFile
 
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "docker-entrypoint.sh").foreach { file =>
-      FileUtils.copyInputStreamToFile(getClass.getResourceAsStream(s"/docker/$file"), new File(dirFile, file))
+      val withVersionReplaced =
+        IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file")).replace("${scala.binary.version}", scalaBinaryVersion)
+      FileUtils.writeStringToFile(new File(dirFile, file), withVersionReplaced)
     }
 
     client.build(dir, flinkEsp)

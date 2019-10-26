@@ -1,4 +1,4 @@
-FROM flink:1.7.2-scala_2.12
+FROM flink:1.7.2-scala_${scala.binary.version}
 
 COPY entrypointWithIP.sh /
 COPY docker-entrypoint.sh /
@@ -16,7 +16,7 @@ RUN chmod +x /docker-entrypoint.sh
 
 USER flink
 RUN mkdir -p /tmp/storage
-RUN mkdir -p /tmp/storage/1.4/blob/cache
+RUN mkdir -p /tmp/storage/1.7/blob/cache
 
 USER root
 ENTRYPOINT ["/entrypointWithIP.sh"]
