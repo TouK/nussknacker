@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
-import pl.touk.nussknacker.ui.util.ScalatestRouteTestWithVersion
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
@@ -11,7 +11,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 
-class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTestWithVersion with FailFastCirceSupport
+class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

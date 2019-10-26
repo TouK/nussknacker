@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.server
-import pl.touk.nussknacker.ui.util.ScalatestRouteTestWithVersion
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import io.circe.syntax._
 
-class ManagementResourcesSpec extends FunSuite with ScalatestRouteTestWithVersion with FailFastCirceSupport
+class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))

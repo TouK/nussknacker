@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils, ScalatestRouteTestWithVersion}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
@@ -26,7 +26,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
-class BaseFlowTest extends FunSuite with ScalatestRouteTestWithVersion with FailFastCirceSupport
+class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
-import pl.touk.nussknacker.ui.util.ScalatestRouteTestWithVersion
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
 import scala.language.higherKinds
 
-class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTestWithVersion with Matchers with Inside with FailFastCirceSupport
+class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))

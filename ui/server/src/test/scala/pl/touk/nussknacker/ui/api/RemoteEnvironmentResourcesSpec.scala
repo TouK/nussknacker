@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
-import pl.touk.nussknacker.ui.util.ScalatestRouteTestWithVersion
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 
-class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTestWithVersion with ScalaFutures with Matchers with FailFastCirceSupport
+class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers with FailFastCirceSupport
   with BeforeAndAfterEach with Inside with EspItTest {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))

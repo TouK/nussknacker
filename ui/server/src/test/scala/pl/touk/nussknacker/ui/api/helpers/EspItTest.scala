@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ScalatestRouteTestWithVersion}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ScalatestRouteTest}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.ConfigFactory

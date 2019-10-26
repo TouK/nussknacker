@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
-import pl.touk.nussknacker.ui.util.ScalatestRouteTestWithVersion
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.apache.commons.io.FileUtils
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.util.{DateUtils, MultipartUtils}
 
 import scala.language.higherKinds
 
-class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTestWithVersion with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
+class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 

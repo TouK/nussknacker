@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, MediaTypes, StatusCodes}
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ScalatestRouteTestWithVersion}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ScalatestRouteTest}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, DisplayableAsJson}
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.util.service.query.ExpressionServiceQuery.Para
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions
 
-class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTestWithVersion with FailFastCirceSupport with TestPermissions{
+class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
 
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 
