@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.RemoteEnvironment
 import org.apache.flink.api.scala.{ExecutionEnvironment, _}
 import org.apache.flink.configuration.Configuration
@@ -31,6 +32,7 @@ import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
@@ -75,7 +77,7 @@ class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
       val inputFormat = part.obj.asInstanceOf[FlinkInputFormat[Any]]
 
       val start = env
-        .createInput(inputFormat.toFlink)
+        .createInput[Any](inputFormat.toFlink)(inputFormat.classTag, inputFormat.typeInformation)
         .name(s"${metaData.id}-source")
         .map(new RateMeterFunction[Any]("source"))
         .map(InitContextFunction(metaData.id, part.node.id))

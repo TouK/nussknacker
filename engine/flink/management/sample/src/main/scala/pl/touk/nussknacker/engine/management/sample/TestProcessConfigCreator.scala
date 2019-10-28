@@ -48,6 +48,7 @@ import pl.touk.sample.JavaSampleEnum
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
@@ -250,6 +251,10 @@ object BatchElementsSourceFactory extends FlinkInputFormatFactory[Any] {
     override def toFlink: InputFormat[Any, _] = {
       new CollectionInputFormat[Any](elements, typeInformation.createSerializer(ExecutionEnvironment.getExecutionEnvironment.getConfig))
     }
+
+    override def typeInformation: TypeInformation[Any] = implicitly[TypeInformation[Any]]
+
+    override def classTag: ClassTag[Any] = implicitly[ClassTag[Any]]
   }
 }
 

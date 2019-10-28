@@ -5,9 +5,15 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 
+import scala.reflect.ClassTag
+
 trait FlinkInputFormat[T] extends Source[T] {
 
   def toFlink: InputFormat[T, _]
+
+  def typeInformation: TypeInformation[T]
+
+  def classTag: ClassTag[T]
 }
 
 abstract class FlinkInputFormatFactory[T: TypeInformation] extends SourceFactory[T] with Serializable {

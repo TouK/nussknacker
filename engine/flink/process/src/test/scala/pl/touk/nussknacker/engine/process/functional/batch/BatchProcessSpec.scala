@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.functional.batch
 
+import java.nio.file.{Files, Paths}
 import java.util.Date
 
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
@@ -32,6 +33,22 @@ class BatchProcessSpec extends FunSuite with Matchers with BeforeAndAfter {
 
     BatchSinkForStrings.data should have size 2
     BatchSinkForStrings.data shouldBe data.map(_.toString)
+  }
+
+
+  test("should forward file input to output") {
+    import scala.collection.JavaConverters._
+    val inputFile = Files.createTempFile("inputToOutput", ".txt")
+    val outputFile = inputFile.toString + ".output"
+    Files.write(inputFile, (1 to 10).map(_.toString).asJava)
+    val process = BatchProcessBuilder.id("inputToOutput")
+      .exceptionHandler()
+      .source("source", "batchTextLineSource", "path" -> s"'$inputFile'")
+      .sink("sink", "#input", "batchTextLineSink", "path" -> s"'$outputFile'")
+
+    ProcessTestHelpers.processInvoker.invokeBatch(process, data)
+
+    Files.readAllLines(Paths.get(outputFile)).asScala shouldBe (1 to 10).map(_.toString)
   }
 
   test("should extract single field") {

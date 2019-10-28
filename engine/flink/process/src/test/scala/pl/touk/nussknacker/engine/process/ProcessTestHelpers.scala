@@ -9,11 +9,13 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.FilterFunction
-import org.apache.flink.api.common.io.OutputFormat
+import org.apache.flink.api.common.io.{InputFormat, OutputFormat}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.java.io.{DiscardingOutputFormat, LocalCollectionOutputFormat}
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.io.{DiscardingOutputFormat, LocalCollectionOutputFormat, TextInputFormat, TextOutputFormat}
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -27,7 +29,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkOutputFormat, NoParamInputFormatFactory}
+import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkInputFormat, FlinkInputFormatFactory, FlinkOutputFormat, NoParamInputFormatFactory}
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -36,6 +38,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.{BatchStandardFlinkProcessCompiler, StandardFlinkProcessCompiler}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 object ProcessTestHelpers {
 
@@ -64,8 +67,9 @@ object ProcessTestHelpers {
     }
 
     def invokeBatch(process: EspProcess, data: List[SimpleRecord],
-                    processVersion: ProcessVersion = ProcessVersion.empty): Unit = {
-      val env = ExecutionEnvironment.createLocalEnvironment()
+                    processVersion: ProcessVersion = ProcessVersion.empty,
+                    parallelism: Int = 1): Unit = {
+      val env = ExecutionEnvironment.createLocalEnvironment(parallelism)
       val creator = prepareCreator(env.getConfig, data)
       env.getConfig.disableSysoutLogging
 
@@ -92,14 +96,16 @@ object ProcessTestHelpers {
           }), Typed[SimpleRecord]
         ))),
         "intInputWithParam" -> WithCategories(new IntParamSourceFactory(exConfig)),
-        "batchInput" -> WithCategories(new NoParamInputFormatFactory(new FlinkCollectionInputFormat[SimpleRecord](exConfig, data)))
+        "batchInput" -> WithCategories(new NoParamInputFormatFactory(new FlinkCollectionInputFormat[SimpleRecord](exConfig, data))),
+        "batchTextLineSource" -> WithCategories(BatchTextLineSourceFactory)
       )
 
       override def sinkFactories(config: Config) = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
         "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
-        "batchSinkForStrings" -> WithCategories(SinkFactory.noParam(BatchSinkForStrings))
+        "batchSinkForStrings" -> WithCategories(SinkFactory.noParam(BatchSinkForStrings)),
+        "batchTextLineSink" -> WithCategories(BatchTextLineSinkFactory)
       )
 
       override def customStreamTransformers(config: Config) = Map(
@@ -147,6 +153,25 @@ object ProcessTestHelpers {
 
     override def timestampAssigner: Option[TimestampAssigner[Int]] = None
 
+  }
+
+  object BatchTextLineSourceFactory extends FlinkInputFormatFactory[String] {
+
+    @MethodToInvoke
+    def create(@ParamName("path") path: String): FlinkInputFormat[String] = {
+      new TextLineSource(path)
+    }
+
+    class TextLineSource(path: String) extends FlinkInputFormat[String] {
+
+      override def toFlink: InputFormat[String, _] = {
+        new TextInputFormat(new Path(path))
+      }
+
+      override def typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
+
+      override def classTag: ClassTag[String] = implicitly[ClassTag[String]]
+    }
   }
 
   object RecordingExceptionHandler extends WithDataList[EspExceptionInfo[_ <: Throwable]]
@@ -354,7 +379,7 @@ object ProcessTestHelpers {
     override def testDataOutput : Option[Any => String] = None
   }
 
-  case object BatchSinkForStrings extends FlinkOutputFormat with Serializable with WithDataList[String] {
+  object BatchSinkForStrings extends FlinkOutputFormat with Serializable with WithDataList[String] {
     override def toFlink: OutputFormat[Any] = new DiscardingOutputFormat[Any] {
       override def writeRecord(record: Any): Unit = {
         add(record.toString)
@@ -362,6 +387,21 @@ object ProcessTestHelpers {
     }
 
     override def testDataOutput: Option[Any => String] = None
+  }
+
+  object BatchTextLineSinkFactory extends SinkFactory {
+
+    @MethodToInvoke
+    def create(@ParamName("path") path: String): FlinkOutputFormat = {
+      new TextLineSink(path)
+    }
+
+    class TextLineSink(path: String) extends FlinkOutputFormat with Serializable {
+
+      override def toFlink: OutputFormat[Any] = new TextOutputFormat[Any](new Path(path))
+
+      override def testDataOutput: Option[Any => String] = None
+    }
   }
 
 
