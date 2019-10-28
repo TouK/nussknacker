@@ -17,10 +17,10 @@ class BasicHttpAuthenticator(configuration: BasicAuthConfiguration) extends Secu
   private val users = prepareUsers()
 
   def apply(credentials: Credentials): Future[Option[LoggedUser]] = Future {
-    authorize(credentials)
+    authenticate(credentials)
   }
 
-  private[security] def authorize(credentials: Credentials): Option[LoggedUser] = {
+  private[security] def authenticate(credentials: Credentials): Option[LoggedUser] = {
     credentials match {
       case d@Provided(id) => users
         .get(id)

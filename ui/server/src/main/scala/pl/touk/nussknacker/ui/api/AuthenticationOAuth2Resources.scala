@@ -7,7 +7,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Service
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser with LazyLogging {
@@ -24,9 +24,9 @@ class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: Executi
     }
   }
 
-  private def oAuth2Authenticate(authorizeToken: String) = {
-    service.clientApi.doAccessTokenRequest(authorizeToken).map { response =>
-      ToResponseMarshallable(Oauth2AuthenticationResponse(response.accessToken, response.tokenType))
+  private def oAuth2Authenticate(authorizeToken: String): Future[ToResponseMarshallable] = {
+    service.authenticate(authorizeToken).map { auth =>
+      ToResponseMarshallable(Oauth2AuthenticationResponse(auth.access_token, auth.token_type))
     }.recover {
       case ex =>
         logger.warn("Error at retrieving access token:", ex)

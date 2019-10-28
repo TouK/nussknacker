@@ -5,35 +5,21 @@ import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Authenticator.OAuth2TokenRejection
 import sttp.client._
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.circe._
-import sttp.model.Uri
+import sttp.model.{StatusCode, Uri}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.parsing.json.JSONObject
 
-trait AccessTokenResponseDefinition {
-  def accessToken: String
-  def tokenType: String
-}
-
-@JsonCodec case class DefaultAccessTokenResponse(access_token: String, token_type: String, refresh_token: Option[String]) extends AccessTokenResponseDefinition {
-  override def accessToken: String = access_token
-  override def tokenType: String = token_type
-}
-
-@JsonCodec case class DefaultProfileResponse(id: String, email: String)
-
-
-class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse <: AccessTokenResponseDefinition: Decoder]
-(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
-
-  val requestContentType = "application/json"
-
+class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
+(configuration: OAuth2Configuration, requestContentType: String = "application/json")
+(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  def doAccessTokenRequest(authorizeToken: String): Future[AccessTokenResponse] = {
+  def accessTokenRequest(authorizeToken: String): Future[AccessTokenResponse] = {
     val payload: Map[String, String] = Map(
       "client_id" -> configuration.clientId,
       "client_secret" -> configuration.clientSecret,
@@ -51,7 +37,7 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse <: AccessTok
       .flatMap(SttpJson.failureToFuture)
   }
 
-  def doProfileRequest(accessToken: String): Future[ProfileResponse] = {
+  def profileRequest(accessToken: String): Future[ProfileResponse] = {
     val headers = configuration.headers ++ Map(configuration.authorizationHeader -> s"Bearer $accessToken")
 
     basicRequest
@@ -60,12 +46,22 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse <: AccessTok
       .get(Uri(configuration.profileUri))
       .headers(headers)
       .send()
+      .flatMap { resp =>
+        if (resp.code.equals(StatusCode.Unauthorized)) { //We have to check is error from server is about problem with authentication
+          Future.failed(throw OAuth2TokenRejection(s"Cannot authenticate user by token: $accessToken."))
+        }
+
+        Future.successful(resp)
+      }
       .flatMap(SttpJson.failureToFuture)
   }
 }
 
 object OAuth2ClientApi {
   private implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-  def apply[ProfileResponse: Decoder, AccessTokenResponse <: AccessTokenResponseDefinition: Decoder](configuration: OAuth2Configuration): OAuth2ClientApi[ProfileResponse, AccessTokenResponse]
+  def apply[ProfileResponse: Decoder, AccessTokenResponse: Decoder](configuration: OAuth2Configuration): OAuth2ClientApi[ProfileResponse, AccessTokenResponse]
     = new OAuth2ClientApi[ProfileResponse, AccessTokenResponse](configuration)
+
+  @JsonCodec case class DefaultAccessTokenResponse(access_token: String, token_type: String, refresh_token: Option[String])
+  @JsonCodec case class DefaultProfileResponse(id: Int, email: String)
 }

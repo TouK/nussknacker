@@ -6,10 +6,10 @@ import java.net.URI
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.ui.security.AuthenticationConfigurationFactory.ConfiguredUser
+import pl.touk.nussknacker.ui.security.AuthenticationConfigurationFactory.DefaultConfigUser
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.basicauth.{BasicAuthConfiguration}
+import pl.touk.nussknacker.ui.security.basicauth.BasicAuthConfiguration
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
 
 import scala.util.{Failure, Success, Try}
@@ -24,10 +24,8 @@ case class DefaultAuthenticationConfiguration(backend: AuthenticationBackend.Val
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  val usersConfigurationPath = "users"
-
-  def loadUsers(): List[ConfiguredUser]
-    = loadUsersConfig().as[List[ConfiguredUser]](usersConfigurationPath)
+  def loadUsers(): List[DefaultConfigUser]
+    = loadUsersConfig().as[List[DefaultConfigUser]](AuthenticationConfigurationFactory.usersConfigurationPath)
 
   def loadUsersConfig(): Config
     = ConfigFactory.parseFile(new File(usersFile))
@@ -37,6 +35,9 @@ object AuthenticationConfigurationFactory extends LazyLogging {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+
+  val usersConfigurationPath = "users"
+  val rulesConfigurationPath = "rules"
 
   implicit val uriValueReader: ValueReader[URI] = new ValueReader[URI] {
     def read(config: Config, path: String): URI = new URI(config.getString(path))
@@ -79,11 +80,10 @@ object AuthenticationConfigurationFactory extends LazyLogging {
     }
   }
 
-  case class ConfiguredUser(id: String,
-                            password: Option[String],
-                            encryptedPassword: Option[String],
-                            categoryPermissions: Map[String, Set[Permission]] = Map.empty,
-                            globalPermissions: List[GlobalPermission] = Nil,
-                            isAdmin: Boolean = false)
-
+  case class DefaultConfigUser(id: String,
+                               password: Option[String],
+                               encryptedPassword: Option[String],
+                               categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+                               globalPermissions: List[GlobalPermission] = List.empty,
+                               isAdmin: Boolean = false)
 }
