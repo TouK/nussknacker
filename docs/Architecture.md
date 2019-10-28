@@ -2,7 +2,7 @@
 
 Nussknacker consists of three parts:
 
-**engines** - are **libraries** which transforms internal json process representation (process graph) into jobs. For example Flink engine generates Flink specific code, compiles and packages all needed components into JAR file for execution.
+**engines** - are **libraries** which transform internal json process representation (process graph) into jobs. For example Flink engine generates Flink specific code, compiles and packages all needed components into JAR file for execution, and then runs the job via Flink REST API.
 
 **ui** - is a standalone **application** which allows users to design process diagrams and to deploy them into runtime environments.
 
