@@ -1,10 +1,15 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
+import java.io.File
 import java.net.URI
 
-import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration}
+import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.ui.security.api.Permission.Permission
+import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration, AuthenticationConfigurationFactory}
 
-case class OAuth2Configuration(backend: AuthenticationBackend.Value,
+final case class OAuth2Configuration(backend: AuthenticationBackend.Value,
+                               usersFile: String,
                                authorizeUri: URI,
                                clientSecret: String,
                                clientId: String,
@@ -14,7 +19,20 @@ case class OAuth2Configuration(backend: AuthenticationBackend.Value,
                                accessTokenParams: Map[String, String] = Map.empty,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,
-                               authorizationHeader: String = "Authorization") extends AuthenticationConfiguration {
+                               authorizationHeader: String = "Authorization"
+                         ) extends AuthenticationConfiguration {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.EnumerationReader._
+
+  private val userConfig: Config = ConfigFactory.parseFile(new File(usersFile))
+
+  lazy val users: List[OAuth2ConfigUser]
+    = userConfig.as[List[OAuth2ConfigUser]](AuthenticationConfigurationFactory.usersConfigurationPath)
+
+  lazy val rules: List[OAuth2ConfigRule]
+    = userConfig.as[List[OAuth2ConfigRule]](AuthenticationConfigurationFactory.rulesConfigurationPath)
 
   override def authorizeUrl: Option[URI] = Option.apply({
     new URI(dispatch.url(authorizeUri.toString)
@@ -28,4 +46,10 @@ case class OAuth2Configuration(backend: AuthenticationBackend.Value,
   def redirectUrl: String = redirectUri.toString
 }
 
+final case class OAuth2ConfigUser(email: String, roles: List[String])
 
+final case class OAuth2ConfigRule(roleName: String,
+                                  isAdmin: Boolean = false,
+                                  categories: List[String] = List.empty,
+                                  permissions: List[Permission] = List.empty,
+                                  globalPermissions: List[GlobalPermission] = List.empty)
