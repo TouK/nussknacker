@@ -17,6 +17,8 @@ import SvgDiv from "../SvgDiv"
 import ProcessUtils from "../../common/ProcessUtils";
 import PropTypes from 'prop-types';
 import nodeAttributes from "../../assets/json/nodeAttributes"
+import Draggable from "react-draggable";
+import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
 
 class NodeDetailsModal extends React.Component {
 
@@ -83,6 +85,18 @@ class NodeDetailsModal extends React.Component {
     )
   }
 
+  canPerformEdit = () => {
+    const nodeIds = this.props.processToDisplay.nodes.map(node => node.id);
+    const displayedNodeId = this.props.nodeToDisplay.id;
+    const editedNode = this.state.editedNode;
+    const nodeIsProperties = NodeUtils.nodeIsProperties(editedNode);
+    if (_.isEmpty(this.state.editedNode)) {
+      return true
+    }
+    return nodeIsProperties || ((!nodeIds.includes(editedNode.id) && displayedNodeId !== editedNode.id)
+        || (nodeIds.includes(editedNode.id) && displayedNodeId === editedNode.id))
+  }
+
   nodeAttributes = () => {
     return nodeAttributes[NodeUtils.nodeType(this.props.nodeToDisplay)];
   }
@@ -102,6 +116,7 @@ class NodeDetailsModal extends React.Component {
               loading={this.state.pendingRequest}
               data-style='zoom-in'
               onClick={this.performNodeEdit}
+              disabled={!this.canPerformEdit()}
           >
             Save
           </LaddaButton>
@@ -176,30 +191,42 @@ class NodeDetailsModal extends React.Component {
 
     return (
       <div className="objectModal">
-        <Modal shouldCloseOnOverlayClick={false} isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
-          <div className="modalHeader">
-            <div className="modal-title" style={titleStyles}>
-              <span>{modelHeader}</span>
-            </div>
-            {this.renderDocumentationIcon()}
-          </div>
-          <div className="modalContentDark" id="modal-content">
-            <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
-              {
-                this.isGroup() ? this.renderGroup(testResults)
-                  : (<NodeDetailsContent isEditMode={!this.props.readOnly} node={this.state.editedNode} nodeErrors={this.props.nodeErrors}
-                                         onChange={this.updateNodeState} testResults={testResults(this.state.currentNodeId)}/>)
-              }
-              {
-                //FIXME: adjust height of modal with subprocess in some reasonable way :|
-                 this.state.subprocessContent ? this.renderSubprocess(): null
-               }
-            </Scrollbars>
-          </div>
-          <div className="modalFooter">
-            <div className="footerButtons">
-              {this.renderModalButtons()}
-            </div>
+        <Modal shouldCloseOnOverlayClick={false}
+               isOpen={isOpen}
+               onRequestClose={this.closeModal}>
+          <div className="draggable-container">
+            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+              <div className="espModal">
+                <div className="modalHeader">
+                  <div className="modal-title" style={titleStyles}>
+                    <span>{modelHeader}</span>
+                  </div>
+                  {this.renderDocumentationIcon()}
+                </div>
+                <div className="modalContentDark" id="modal-content">
+                  <Scrollbars hideTracksWhenNotNeeded={true} autoHeight
+                              autoHeightMax={cssVariables.modalContentMaxHeight}
+                              renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+                    {
+                      this.isGroup() ? this.renderGroup(testResults)
+                        : (<NodeDetailsContent isEditMode={!this.props.readOnly} node={this.state.editedNode}
+                                               nodeErrors={this.props.nodeErrors}
+                                               onChange={this.updateNodeState}
+                                               testResults={testResults(this.state.currentNodeId)}/>)
+                    }
+                    {
+                      //FIXME: adjust height of modal with subprocess in some reasonable way :|
+                      this.state.subprocessContent ? this.renderSubprocess() : null
+                    }
+                  </Scrollbars>
+                </div>
+                <div className="modalFooter">
+                  <div className="footerButtons">
+                    {this.renderModalButtons()}
+                  </div>
+                </div>
+              </div>
+            </Draggable>
           </div>
         </Modal>
       </div>

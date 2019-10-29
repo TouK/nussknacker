@@ -9,6 +9,8 @@ import ActionsUtils from '../../actions/ActionsUtils';
 import NodeUtils from './NodeUtils';
 import EspModalStyles from '../../common/EspModalStyles'
 import EdgeDetailsContent from "./EdgeDetailsContent";
+import Draggable from "react-draggable";
+import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
 
 //TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {
@@ -85,7 +87,7 @@ class EdgeDetailsModal extends React.Component {
       ...this.state.editedEdge,
       edgeType: defaultEdgeType
     }
-    this.setState( { editedEdge: newEdge})
+    this.setState({editedEdge: newEdge})
   }
 
   edgeIsEditable = () => {
@@ -98,20 +100,32 @@ class EdgeDetailsModal extends React.Component {
     const headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
       <div className="objectModal">
-        <Modal isOpen={isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeModal}>
-          <div className="modalHeader" style={headerStyles}><span>edge</span></div>
-          <div className="modalContentDark">
-            <EdgeDetailsContent
-              changeEdgeTypeValue={this.changeEdgeTypeValue}
-              updateEdgeProp={this.updateEdgeProp}
-              readOnly={false}
-              edge={this.state.editedEdge}
-            />
-          </div>
-          <div className="modalFooter">
-            <div className="footerButtons">
-              {this.renderModalButtons()}
-            </div>
+        <Modal isOpen={isOpen}
+               shouldCloseOnOverlayClick={false}
+               onRequestClose={this.closeModal}>
+          <div className="draggable-container">
+            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+              <div className="espModal">
+                <div className="modalHeader" style={headerStyles}>
+                  <div className="modal-title">
+                    <span>edge</span>
+                  </div>
+                </div>
+                <div className="modalContentDark">
+                  <EdgeDetailsContent
+                    changeEdgeTypeValue={this.changeEdgeTypeValue}
+                    updateEdgeProp={this.updateEdgeProp}
+                    readOnly={false}
+                    edge={this.state.editedEdge}
+                  />
+                </div>
+                <div className="modalFooter">
+                  <div className="footerButtons">
+                    {this.renderModalButtons()}
+                  </div>
+                </div>
+              </div>
+            </Draggable>
           </div>
         </Modal>
       </div>

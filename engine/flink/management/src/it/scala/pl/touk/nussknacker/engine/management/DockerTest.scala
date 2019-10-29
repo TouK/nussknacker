@@ -16,18 +16,32 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.engine.api.deployment.ProcessManager
+import pl.touk.nussknacker.engine.kafka.KafkaClient
 
 import scala.concurrent.duration._
 
 trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with ScalaVersionHack {
   self: Suite =>
 
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
+          config.getString("processConfig.kafka.zkAddress"))
+  }
+
+  override def afterAll(): Unit = {
+    kafkaClient.shutdown()
+    super.afterAll()
+  }
+
   private val flinkEsp = s"flinkesp:1.7.2-scala_$scalaBinaryVersion"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 
+  protected var kafkaClient: KafkaClient = _
 
-  override implicit val patienceConfig = PatienceConfig(
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = Span(90, Seconds),
     interval = Span(1, Millis)
   )
@@ -54,7 +68,6 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with S
   val ZookeeperDefaultPort = 2181
   val FlinkJobManagerRestPort = 8081
 
-
   lazy val zookeeperContainer =
     DockerContainer("wurstmeister/zookeeper:3.4.6", name = Some("zookeeper"))
 
@@ -78,7 +91,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with S
       .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
       .withVolumes(List(VolumeMapping(savepointDir, savepointDir, true)))
       .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
-        logger.info(s"jobmanager: $s")
+        logger.debug(s"jobmanager: $s")
       }))
   }
 
@@ -90,7 +103,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with S
       ContainerLink(zookeeperContainer, "zookeeper"),
       ContainerLink(jobManagerContainer, "jobmanager"))
     .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
-      logger.info(s"taskmanager: $s")
+      logger.debug(s"taskmanager: $s")
     }))
 
   def config : Config = {
@@ -112,7 +125,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with S
     tempDir.toFile.getName
   }
 
-  protected lazy val processManager = FlinkProcessManagerProvider.defaultProcessManager(config)
+  protected lazy val processManager: ProcessManager = FlinkProcessManagerProvider.defaultProcessManager(config)
 
 
 }

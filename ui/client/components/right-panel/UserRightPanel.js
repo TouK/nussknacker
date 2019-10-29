@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import {connect} from "react-redux";
-import {Panel} from "react-bootstrap";
+import {Panel, Tooltip} from "react-bootstrap";
 import {Scrollbars} from 'react-custom-scrollbars';
 import history from "../../history"
 import cn from "classnames";
@@ -50,10 +50,10 @@ class UserRightPanel extends Component {
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
             <div className="panel-properties">
               <label>
-                <input type="checkbox" defaultChecked={this.props.businessView} onChange={(e) => {
-                  this.props.actions.businessViewChanged(e.target.checked)
-                  this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
-                }}/>
+                  <input disabled={!this.props.nothingToSave} type="checkbox" defaultChecked={this.props.businessView} onChange={(e) => {
+                    this.props.actions.businessViewChanged(e.target.checked)
+                    this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
+                  }}/>
                 Business view
               </label>
             </div>

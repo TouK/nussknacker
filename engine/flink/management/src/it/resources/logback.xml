@@ -16,6 +16,8 @@
     <logger name="kafka" level="WARN"/>
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
 
+    <logger name="org.apache.flink" level="WARN"/>
+
     <root level="INFO">
         <appender-ref ref="A1"/>
     </root>
