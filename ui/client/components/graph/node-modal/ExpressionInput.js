@@ -11,6 +11,7 @@ const ExpressionInput = (props) => {
             <div className={"node-value" + (isMarked ? " marked" : "")}>
                 <ExpressionSuggest
                     fieldName={name}
+                    humanReadableFieldName={name}
                     inputProps={{
                         className: "node-input",
                         value: value.expression,

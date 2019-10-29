@@ -16,6 +16,7 @@ import 'brace/ext/searchbox';
 import '../../brace/mode/spel'
 import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
+import {capitalizeFirstLetter} from "../../common/StringUtils";
 
 //to reconsider
 // - respect categories for global variables?
@@ -26,7 +27,8 @@ class ExpressionSuggest extends React.Component {
 
   static propTypes = {
     inputProps: PropTypes.object.isRequired,
-    fieldName: PropTypes.string
+    fieldName: PropTypes.string,
+    humanReadableFieldName: PropTypes.string
   }
 
   customAceEditorCompleter = {
@@ -92,36 +94,39 @@ class ExpressionSuggest extends React.Component {
   render() {
     if (this.props.dataResolved) {
       return (
-        <div style={{paddingTop: 10, paddingBottom: 10, paddingLeft: 20 - 4, paddingRight: 20 - 4, backgroundColor: '#333', borderBottom: '1px solid #808080'}}>
-          <AceEditor
-            mode={this.props.inputProps.language}
-            width={"100%"}
-            minLines={1}
-            maxLines={50}
-            theme={'nussknacker'}
-            onChange={this.onChange}
-            value={this.state.value}
-            showPrintMargin={false}
-            cursorStart={-1} //line start
-            showGutter={false}
-            highlightActiveLine={false}
-            highlightGutterLine={false}
-            wrapEnabled={true}
-            editorProps={{
-              $blockScrolling: "Infinity"
-            }}
-            setOptions={{
-              indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
-              enableBasicAutocompletion: [this.customAceEditorCompleter],
-              enableLiveAutocompletion: true,
-              enableSnippets: false,
-              showLineNumbers: false,
-              fontSize: 16,
-              fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
-              readOnly: this.props.inputProps.readOnly
-            }}
-          />
-        </div>
+       <div>
+         <div style={{paddingTop: 10, paddingBottom: 10, paddingLeft: 20 - 4, paddingRight: 20 - 4, backgroundColor: '#333', borderBottom: '1px solid #808080'}}>
+           <AceEditor
+             mode={this.props.inputProps.language}
+             width={"100%"}
+             minLines={1}
+             maxLines={50}
+             theme={'nussknacker'}
+             onChange={this.onChange}
+             value={this.state.value}
+             showPrintMargin={false}
+             cursorStart={-1} //line start
+             showGutter={false}
+             highlightActiveLine={false}
+             highlightGutterLine={false}
+             wrapEnabled={true}
+             editorProps={{
+               $blockScrolling: "Infinity"
+             }}
+             setOptions={{
+               indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
+               enableBasicAutocompletion: [this.customAceEditorCompleter],
+               enableLiveAutocompletion: true,
+               enableSnippets: false,
+               showLineNumbers: false,
+               fontSize: 16,
+               fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
+               readOnly: this.props.inputProps.readOnly
+             }}
+           />
+         </div>
+         {!_.isEmpty(this.state.value) ? null : <label className='node-details-validation-label'>{capitalizeFirstLetter(this.props.humanReadableFieldName) + " can not be empty"}</label>}
+       </div>
         )
     } else {
       return null

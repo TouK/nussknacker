@@ -22,7 +22,9 @@ class AddProcessDialog extends React.Component {
     onClose: PropTypes.func.isRequired,
     isSubprocess: PropTypes.bool,
     visualizationPath: PropTypes.string.isRequired,
-    message: PropTypes.string.isRequired
+    message: PropTypes.string.isRequired,
+    processes: PropTypes.array,
+    subProcesses: PropTypes.array
   }
 
   initialState(props) {
@@ -47,6 +49,10 @@ class AddProcessDialog extends React.Component {
     })
   }
 
+  canConfirm = () =>
+    !nameAlreadyExists(this.props.processes, this.props.subProcesses, this.state.processId)
+      && !_.isEmpty(this.state.processId)
+
   render() {
     const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
@@ -61,14 +67,22 @@ class AddProcessDialog extends React.Component {
                   <span>{this.props.message}</span>
                 </div>
               </div>
+
               <div className="modalContentDark">
                 <div className="node-table">
                   <div className="node-table-body">
                     <div className="node-row">
                       <div className="node-label">Id</div>
-                      <div className="node-value"><input autoFocus={true} type="text" id="newProcessId"
-                                                         className="node-input" value={this.state.processId}
-                                                         onChange={(e) => this.setState({processId: e.target.value})}/>
+                      <div className="node-value">
+                        <input autoFocus={true} type="text" id="newProcessId" className="node-input"
+                               value={this.state.processId}
+                               onChange={(e) => this.setState({processId: e.target.value})}/>
+                        {
+                          validations.map(validation =>
+                              validation.isValid(this.props.processes, this.props.subProcesses, this.state.processId) ?
+                              null : <label className='validation-label'>{validation.message}</label>
+                          )
+                        }
                       </div>
                     </div>
                     <div className="node-row">
@@ -76,18 +90,21 @@ class AddProcessDialog extends React.Component {
                       <div className="node-value">
                         <select id="processCategory" className="node-input"
                                 onChange={(e) => this.setState({processCategory: e.target.value})}>
-                          {this.props.categories.map((cat, index) => (<option key={index} value={cat}>{cat}</option>))}
+                          {this.props.categories.map((cat, index) => (
+                              <option key={index} value={cat}>{cat}</option>))}
                         </select>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+
               <div className="modalFooter">
                 <div className="footerButtons">
                   <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel
                   </button>
-                  <button type="button" title="Create" className='modalButton' onClick={this.confirm}>Create</button>
+                  <button type="button" title="Create" className='modalButton' disabled={!this.canConfirm()} onClick={this.confirm}>Create
+                  </button>
                 </div>
               </div>
             </div>
@@ -104,6 +121,22 @@ function mapState(state) {
     categories: (user.categories || []).filter(c => user.canWrite(c))
   }
 }
+
+const nameAlreadyExists = (processes, subprocesses, name) => {
+  return processes.map(process => process.name).includes(name)
+    || subprocesses.map(subProcess => subProcess.name).includes(name)
+}
+
+const validations = [
+  {
+    isValid: (processes, subprocesses, name) => !_.isEmpty(name),
+    message: "Id can not be empty"
+  },
+  {
+    isValid: (processes, subprocesses, name) => !nameAlreadyExists(processes, subprocesses, name),
+    message: "Process or subprocess with given id already exists"
+  }
+];
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(AddProcessDialog);
 

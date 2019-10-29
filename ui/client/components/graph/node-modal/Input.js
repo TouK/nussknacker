@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import React from "react";
 
 const Input = (props) => {
-    const {label, path, value, onChange, isMarked, readOnly} = props;
+    const {label, path, value, onChange, isMarked, readOnly, shouldRenderValidationLabel: isValid = () => false} = props;
 
     return (
         <div className="node-row">
@@ -15,6 +15,10 @@ const Input = (props) => {
                     onChange={(event) => onChange(path, event.target.value)}
                     readOnly={readOnly}
                 />
+                {
+                    isValid(value) ?
+                        <label className='node-details-validation-label'>{label + " can not be empty"}</label> : null
+                }
             </div>
         </div>
     );

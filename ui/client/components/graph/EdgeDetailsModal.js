@@ -23,13 +23,15 @@ class EdgeDetailsModal extends React.Component {
     super(props);
     this.state = {
       pendingRequest: false,
-      editedEdge: props.edgeToDisplay
+      editedEdge: props.edgeToDisplay,
+      modalValidation: new Map()
     };
   }
 
   componentWillReceiveProps(props) {
     this.setState({
-      editedEdge: props.edgeToDisplay
+      editedEdge: props.edgeToDisplay,
+      modalValidation: new Map()
     })
   }
 
@@ -61,6 +63,7 @@ class EdgeDetailsModal extends React.Component {
           loading={this.state.pendingRequest}
           data-style='zoom-in'
           onClick={this.performEdgeEdit}
+          disabled={!this.canPerformEdit()}
         >
           Save
         </LaddaButton>,
@@ -95,6 +98,14 @@ class EdgeDetailsModal extends React.Component {
     return this.props.edgeToDisplay.edgeType != null && _.includes(editableEdges, this.props.edgeToDisplay.edgeType.type)
   }
 
+  canPerformEdit = () => {
+    return !Array.from(this.state.modalValidation.values()).includes(false)
+  }
+
+  handlePropertyValidation = (property, result) => {
+    this.setState(state => state.modalValidation.set(property, result))
+  };
+
   render() {
     const isOpen = !_.isEmpty(this.props.edgeToDisplay) && this.props.showEdgeDetailsModal && this.edgeIsEditable()
     const headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
@@ -117,6 +128,7 @@ class EdgeDetailsModal extends React.Component {
                     updateEdgeProp={this.updateEdgeProp}
                     readOnly={false}
                     edge={this.state.editedEdge}
+                    handlePropertyValidation={this.handlePropertyValidation}
                   />
                 </div>
                 <div className="modalFooter">

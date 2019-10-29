@@ -4,7 +4,7 @@ import ExpressionSuggest from "../ExpressionSuggest"
 
 const BranchParameters = (props) => {
 
-    const {node, joinDef, onChange, isMarked, readOnly} = props
+    const {node, joinDef, onChange, isMarked, readOnly, handlePropertyValidation} = props
 
     return (
         joinDef.branchParameters.map((branchParamDef, paramIndex) => {
@@ -34,8 +34,12 @@ const BranchParameters = (props) => {
                                             <div className={"node-value field" + (isMarked(path) ? " marked" : "")}>
                                                 <ExpressionSuggest
                                                     fieldName={`value-${branchParamDef.name}-${edge.from}`}
+                                                    humanReadableFieldName={"Expression"}
                                                     inputProps={{
-                                                        onValueChange: ((value) => onChange(`${path}.expression.expression`, value)),
+                                                        onValueChange: ((value) => {
+                                                          onChange(`${path}.expression.expression`, value)
+                                                          handlePropertyValidation(`${path}.expression.expression`, !_.isEmpty(value))
+                                                        }),
                                                         value: paramValue.expression.expression,
                                                         language: paramValue.expression.language,
                                                         readOnly

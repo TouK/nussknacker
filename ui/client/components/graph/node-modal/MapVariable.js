@@ -8,16 +8,38 @@ import Fields from "./Fields";
 
 const MapVariable = (props) => {
 
-    const {isMarked, node, removeElement, addElement, onChange, readOnly} = props;
+    const {isMarked, node, removeElement, addElement, onChange, readOnly, handlePropertyValidation} = props;
 
     const addField = () => {
         addElement("fields", {"name": "", "uuid": uuid4(), "expression": {"expression":"", "language": "spel"}});
     };
 
-    return (
+  return (
         <div className="node-table-body node-variable-builder-body">
-            <Input label="Id" value={node.id} path="id" onChange={onChange} isMarked={isMarked("id")} readOnly={readOnly} />
-            <Input label="Variable Name" value={node.varName} path="varName" onChange={onChange} isMarked={isMarked("varName")} readOnly={readOnly} />
+            <Input
+              label="Id"
+              value={node.id}
+              path="id"
+              onChange={(property, value) => {
+                onChange(property, value);
+                handlePropertyValidation(property, !_.isEmpty(value))
+              }}
+              isMarked={isMarked("id")}
+              readOnly={readOnly}
+              isValid={(value) => _.isEmpty(value)}
+            />
+            <Input
+              label="Variable Name"
+              value={node.varName}
+              path="varName"
+              onChange={(property, value) => {
+                onChange(property, value);
+                handlePropertyValidation(property, !_.isEmpty(value))
+              }}
+              isMarked={isMarked("varName")}
+              readOnly={readOnly}
+              isValid={(value) => _.isEmpty(value)}
+            />
             <Fields
                 label="Fields"
                 onChange={onChange}
@@ -26,6 +48,7 @@ const MapVariable = (props) => {
                 namespace="fields"
                 addField={addField}
                 isMarked={isMarked}
+                handlePropertyValidation={handlePropertyValidation}
             />
             <Textarea
                 label="Description"

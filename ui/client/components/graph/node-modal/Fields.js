@@ -1,14 +1,11 @@
 import PropTypes from "prop-types"
-import Input from "./Input"
-import Textarea from "./Textarea"
-import ExpressionInput from "./ExpressionInput"
 import React from "react"
 import _ from "lodash"
 import ExpressionSuggest from "../ExpressionSuggest"
 
 const Fields = (props) => {
 
-    const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, expressionValue} = props
+    const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, expressionValue, handlePropertyValidation} = props
 
     return (
         <div className="node-row">
@@ -28,15 +25,25 @@ const Fields = (props) => {
                                             type="text"
                                             value={field.name}
                                             placeholder="Field name"
-                                            onChange={((e) => onChange(`${paths}.name`, e.target.value))}
+                                            onChange={((e) => {
+                                                onChange(`${paths}.name`, e.target.value)
+                                                handlePropertyValidation(`${paths}.name`, !_.isEmpty(e.target.value))
+                                            })}
                                             readOnly={readOnly}
                                         />
+                                        {
+                                            _.isEmpty(field.name) ? <label className='node-details-validation-label'>{"Field name can not be empty"}</label> : null
+                                        }
                                     </div>
                                     <div className={"node-value field" + (isMarked(paths) ? " marked" : "")}>
                                         <ExpressionSuggest
                                             fieldName={`value-${field.uuid}`}
+                                            humanReadableFieldName={"Expression"}
                                             inputProps={{
-                                                onValueChange: ((value) => onChange(`${paths}.expression.expression`, value)),
+                                                onValueChange: ((value) => {
+                                                    onChange(`${paths}.expression.expression`, value);
+                                                    handlePropertyValidation(`value-${field.uuid}`, !_.isEmpty(value))
+                                                }),
                                                 value: expression.expression,
                                                 language: expression.language,
                                                 readOnly

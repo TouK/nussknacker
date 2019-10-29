@@ -43,7 +43,8 @@ class NodeDetailsModal extends React.Component {
     const newState = {
       editedNode: props.nodeToDisplay,
       currentNodeId: props.nodeToDisplay.id,
-      subprocessContent: null
+      subprocessContent: null,
+      modalValidation: new Map()
     }
 
     //TODO more smooth subprocess loading in UI
@@ -93,8 +94,10 @@ class NodeDetailsModal extends React.Component {
     if (_.isEmpty(this.state.editedNode)) {
       return true
     }
-    return nodeIsProperties || ((!nodeIds.includes(editedNode.id) && displayedNodeId !== editedNode.id)
-        || (nodeIds.includes(editedNode.id) && displayedNodeId === editedNode.id))
+    return (nodeIsProperties
+        || ((!nodeIds.includes(editedNode.id) && displayedNodeId !== editedNode.id)
+        || (nodeIds.includes(editedNode.id) && displayedNodeId === editedNode.id)))
+          && !Array.from(this.state.modalValidation.values()).includes(false)
   }
 
   nodeAttributes = () => {
@@ -128,6 +131,10 @@ class NodeDetailsModal extends React.Component {
     ] );
   }
 
+  handlePropertyValidation = (property, result) => {
+    this.setState(state => state.modalValidation.set(property, result))
+  };
+
   renderGroupUngroup() {
     const expand = () => { this.props.actions.expandGroup(id); this.closeModal() }
     const collapse = () => { this.props.actions.collapseGroup(id); this.closeModal() }
@@ -152,8 +159,13 @@ class NodeDetailsModal extends React.Component {
               </div>
             </div>
             {this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
-                                    <NodeDetailsContent isEditMode={false} node={node} nodeErrors={this.props.nodeErrors}
-                                                        onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))}
+                                    <NodeDetailsContent
+                                      isEditMode={false}
+                                      node={node}
+                                      nodeErrors={this.props.nodeErrors}
+                                      handlePropertyValidation={this.handlePropertyValidation}
+                                      onChange={() => {}}
+                                      testResults={testResults(node.id)}/><hr/></div>))}
           </div>
         </div>
       </div>
@@ -209,9 +221,11 @@ class NodeDetailsModal extends React.Component {
                               renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
                     {
                       this.isGroup() ? this.renderGroup(testResults)
-                        : (<NodeDetailsContent isEditMode={!this.props.readOnly} node={this.state.editedNode}
+                        : (<NodeDetailsContent isEditMode={!this.props.readOnly}
+                                               node={this.state.editedNode}
                                                nodeErrors={this.props.nodeErrors}
                                                onChange={this.updateNodeState}
+                                               handlePropertyValidation={this.handlePropertyValidation}
                                                testResults={testResults(this.state.currentNodeId)}/>)
                     }
                     {
