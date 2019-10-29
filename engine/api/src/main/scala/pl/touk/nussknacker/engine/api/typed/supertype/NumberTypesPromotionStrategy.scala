@@ -48,10 +48,16 @@ object NumberTypesPromotionStrategy {
 
   }
 
-  object ToGenericNumber extends NumberTypesPromotionStrategy {
+  object ToSupertype extends NumberTypesPromotionStrategy {
 
     override def promote(left: Class[_], right: Class[_]): TypedClass = {
-      TypedClass[Number]
+      if (left.isAssignableFrom(right)) {
+        TypedClass(ClazzRef(left))
+      } else if (right.isAssignableFrom(left)) {
+        TypedClass(ClazzRef(right))
+      } else {
+        TypedClass[Number]
+      }
     }
 
   }

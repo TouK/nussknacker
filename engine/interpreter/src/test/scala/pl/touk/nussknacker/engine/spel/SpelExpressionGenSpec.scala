@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks with Matchers with Inside with LazyLogging {
 
@@ -68,16 +68,19 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
     logger.debug(debugMessage)
 
     withClue(debugMessage) {
-      val evaluatedClassTry = Try(evaluate(expr, a, b))
-      evaluatedClassTry.failed.toOption shouldBe None
-      val evaluatedClass = evaluatedClassTry.get
-
-      inside(validate(expr, a, b)) {
-        case Valid(TypedExpression(_, TypedClass(typedClass, Nil), _)) =>
-          typedClass shouldEqual evaluatedClass
-        case Valid(TypedExpression(_, TypedUnion(possibleTypes), _)) =>
-          val typedClasses = possibleTypes.map(_.asInstanceOf[TypedClass].klass)
-          typedClasses should contain(evaluatedClass)
+      Try(evaluate(expr, a, b)) match {
+        case Failure(a: ArithmeticException) => // in case of overflow or similar exception, typed Type doesn't need to match
+          logger.debug(s"Ignored arithmetic exception: ${a.getMessage}")
+        case Failure(other) =>
+          fail(other) // shouldn't happen
+        case Success(evaluatedClass) =>
+          inside(validate(expr, a, b)) {
+            case Valid(TypedExpression(_, TypedClass(typedClass, Nil), _)) =>
+              typedClass shouldEqual evaluatedClass
+            case Valid(TypedExpression(_, TypedUnion(possibleTypes), _)) =>
+              val typedClasses = possibleTypes.map(_.asInstanceOf[TypedClass].klass)
+              typedClasses should contain(evaluatedClass)
+          }
       }
     }
   }

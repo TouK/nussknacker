@@ -213,7 +213,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: Ternary => withTypedChildren {
         case condition :: onTrue :: onFalse :: Nil =>
-          val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)(NumberTypesPromotionStrategy.ToGenericNumber)
+          val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)(NumberTypesPromotionStrategy.ToSupertype)
           if (condition.canBeSubclassOf(Typed[Boolean]) && superType != Typed.empty) {
             Valid(superType)
           } else {
@@ -236,7 +236,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
-      case left :: right :: Nil if commonSupertypeFinder.commonSupertype(right, left)(NumberTypesPromotionStrategy.ToGenericNumber) != Typed.empty => Valid(Typed[Boolean])
+      case left :: right :: Nil if commonSupertypeFinder.commonSupertype(right, left)(NumberTypesPromotionStrategy.ToSupertype) != Typed.empty => Valid(Typed[Boolean])
       case left :: right :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
       case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
     }

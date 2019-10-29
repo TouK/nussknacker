@@ -305,6 +305,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Long]("'d'? 3 : 4", ctx) should not be 'valid
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be 'valid
     parse[Long]("1 > 2 ? 12 : 23", ctx) shouldBe 'valid
+    parse[Number]("1 > 2 ? 12 : 23.0", ctx) shouldBe 'valid
     parse[String]("1 > 2 ? 'ss' : 'dd'", ctx) shouldBe 'valid
     parse[Any]("1 > 2 ? '123' : 123", ctx) shouldBe 'invalid
   }
