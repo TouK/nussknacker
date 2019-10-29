@@ -1,11 +1,11 @@
-package pl.touk.nussknacker.ui.util
+package pl.touk.nussknacker.engine.util.loader
 
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor3}
 import org.scalatest.{FlatSpec, Matchers}
 
-class ClassLoaderUtilsSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
+class ScalaServiceLoaderSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
 
-  behavior of "ClassLoaderUtils.loadClass"
+  behavior of "ScalaServiceLoader.chooseClass"
 
   trait DummyFactoryTrait
   case class DummyAuthenticatorFactory() extends DummyFactoryTrait
@@ -24,12 +24,10 @@ class ClassLoaderUtilsSpec extends FlatSpec with Matchers with TableDrivenProper
       (List(dummy3, dummy2), default, dummy3)
     )
 
-    val classLoaderUtils = ClassLoaderUtils[DummyFactoryTrait](this.getClass.getClassLoader)
-
     forAll(table) {
       (factories: List[DummyFactoryTrait], default: DummyFactoryTrait, chosen: DummyFactoryTrait) => {
         try {
-          classLoaderUtils.loadClass({default}, factories) match {
+          ScalaServiceLoader.chooseClass[DummyFactoryTrait]({default}, factories) match {
             case loaded: DummyFactoryTrait => chosen shouldBe loaded
           }
         } catch {

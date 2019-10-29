@@ -110,26 +110,26 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
-//  import spel.Implicits._
-//
-//  test("should test process with complexReturnObjectService") {
-//    val processId = "complexObjectProcess" + UUID.randomUUID().toString
-//    val endpoint = s"/api/processes/$processId"
-//
-//    val process = EspProcessBuilder
-//      .id(processId)
-//      .exceptionHandler("param1" -> "''")
-//      .source("source", "csv-source")
-//      .enricher("enricher", "out", "complexReturnObjectService")
-//      .sink("end", "#input", "sendSms")
-//
-//    saveProcess(endpoint, process)
-//
-//    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
-//    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> check {
-//      status shouldEqual StatusCodes.OK
-//    }
-//  }
+  import spel.Implicits._
+
+  test("should test process with complexReturnObjectService") {
+    val processId = "complexObjectProcess" + UUID.randomUUID().toString
+    val endpoint = s"/api/processes/$processId"
+
+    val process = EspProcessBuilder
+      .id(processId)
+      .exceptionHandler("param1" -> "''")
+      .source("source", "csv-source")
+      .enricher("enricher", "out", "complexReturnObjectService")
+      .sink("end", "#input", "sendSms")
+
+    saveProcess(endpoint, process)
+
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
+    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> check {
+      status shouldEqual StatusCodes.OK
+    }
+  }
 
   private def saveProcess(endpoint: String, process: EspProcess) = {
     Post(s"$endpoint/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> check {

@@ -4,7 +4,6 @@ import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Authenticator.OAuth2TokenRejection
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -31,14 +30,23 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
         )
       )
     }.recover {
-      case ex: OAuth2TokenRejection => Option.empty // Expired or non-exists token - user not authenticated
+      case OAuth2ErrorHandler(ex) => Option.empty // Expired or non-exists token - user not authenticated
     }
 }
 
 object OAuth2Authenticator extends LazyLogging {
-  case class OAuth2TokenRejection(body: String) extends Exception
-
   def apply(configuration: OAuth2Configuration, service: OAuth2Service): OAuth2Authenticator
     = new OAuth2Authenticator(configuration, service)
 }
 
+object OAuth2ErrorHandler {
+  case class OAuth2AuthenticationRejection(body: String) extends Exception
+  case class OAuth2AccessTokenRejection(body: String) extends Exception
+
+  def apply(t: Throwable): Boolean = t match {
+    case _: OAuth2AuthenticationRejection | _: OAuth2AccessTokenRejection => true
+    case _ => false
+  }
+
+  def unapply(t: Throwable): Option[Throwable] = if (apply(t)) Some(t) else None
+}

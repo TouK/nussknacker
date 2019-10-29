@@ -31,6 +31,7 @@ case class DefaultAuthenticationConfiguration(backend: AuthenticationBackend.Val
     = ConfigFactory.parseFile(new File(usersFile))
 }
 
+//TODO: Add some connections between AuthenticatorProvider and AuthenticationConfigurationFactory
 object AuthenticationConfigurationFactory extends LazyLogging {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -43,17 +44,11 @@ object AuthenticationConfigurationFactory extends LazyLogging {
     def read(config: Config, path: String): URI = new URI(config.getString(path))
   }
 
-  final val backendConfigPath = "authentication.backend"
   final val authenticationConfigPath = "authentication"
+  final val backendConfigPath = s"$authenticationConfigPath.backend"
 
-  def apply(config: Config): AuthenticationConfiguration = {
-    val backend = config.as[Option[AuthenticationBackend.Value]](s"$authenticationConfigPath.backend")
-
-    getAuthenticationConfig(backend, config) match {
-      case Success(authenticationConfig) => authenticationConfig
-      case Failure(e) => throw e
-    }
-  }
+  def apply(config: Config): AuthenticationConfiguration
+    = getAuthenticationConfig(config.as[Option[AuthenticationBackend.Value]](backendConfigPath), config)
 
   def getBackendType(config: Config): AuthenticationBackend.Value
     = config.as[AuthenticationBackend.Value]("authentication.backend")
@@ -68,15 +63,15 @@ object AuthenticationConfigurationFactory extends LazyLogging {
     config match {
       case _ : BasicAuthConfiguration => AuthenticationBackend.BasicAuth
       case _ : OAuth2Configuration => AuthenticationBackend.OAuth2
-      case _ => AuthenticationBackend.Unknown
+      case _ => AuthenticationBackend.Other
     }
 
-  private [security] def getAuthenticationConfig(backend: Option[AuthenticationBackend.Value], config: Config): Try[AuthenticationConfiguration] = {
+  private [security] def getAuthenticationConfig(backend: Option[AuthenticationBackend.Value], config: Config): AuthenticationConfiguration = {
     backend match {
-      case Some(AuthenticationBackend.BasicAuth) => Success(config.as[BasicAuthConfiguration](authenticationConfigPath))
-      case Some(AuthenticationBackend.OAuth2) => Success(config.as[OAuth2Configuration](authenticationConfigPath))
-      case None => Success(config.as[DefaultAuthenticationConfiguration](authenticationConfigPath))
-      case _ => Failure(new IllegalArgumentException(s"Unsupported authorization backend: $backend."))
+      case Some(AuthenticationBackend.BasicAuth) => config.as[BasicAuthConfiguration](authenticationConfigPath)
+      case Some(AuthenticationBackend.OAuth2) => config.as[OAuth2Configuration](authenticationConfigPath)
+      case Some(AuthenticationBackend.Other) => config.as[DefaultAuthenticationConfiguration](authenticationConfigPath)
+      case _ => throw new IllegalArgumentException(s"Unsupported authorization backend: $backend.")
     }
   }
 

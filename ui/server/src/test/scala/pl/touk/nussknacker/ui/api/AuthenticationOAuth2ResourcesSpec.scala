@@ -11,10 +11,11 @@ import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withoutPermissions
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
 import pl.touk.nussknacker.ui.security.{AuthenticationBackend, OAuth2TestServiceFactory}
-import sttp.client.HttpError
+import sttp.client.{HttpError, Response}
 import sttp.client.testing.SttpBackendStub
-import sttp.model.Uri
+import sttp.model.{StatusCode, Uri}
 
+import scala.concurrent.Future
 import scala.language.higherKinds
 
 class AuthenticationOAuth2ResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
@@ -31,11 +32,20 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with ScalatestRouteTest 
     URI.create("http://demo.nussknacker.pl/api/authentication/oauth2")
   )
 
-  protected lazy val badAuthenticationResources = {
+  protected lazy val errorAuthenticationResources = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(oAuth2configuration.accessTokenUri)))
       .thenRespond(throw HttpError("Bad authorize token or data"))
+
+    new AuthenticationOAuth2Resources(OAuth2TestServiceFactory(oAuth2configuration))
+  }
+
+  protected lazy val badAuthenticationResources = {
+    implicit val testingBackend = SttpBackendStub
+      .asynchronousFuture
+      .whenRequestMatches(_.uri.equals(Uri(oAuth2configuration.accessTokenUri)))
+      .thenRespondWrapped(Future(Response(Option.empty, StatusCode.BadRequest, "Bad Request")))
 
     new AuthenticationOAuth2Resources(OAuth2TestServiceFactory(oAuth2configuration))
   }
@@ -56,7 +66,14 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with ScalatestRouteTest 
   it("should return 400 for wrong authorize token") {
     authenticationOauth2(badAuthenticationResources,  "B5FwrdqF9cLxwdhL") ~> check {
       status shouldBe StatusCodes.BadRequest
-      responseAs[Map[String, String]].toString should include("Retrieving access token error. Please contact with system administrators.")
+      responseAs[Map[String, String]].toString should include("Retrieving access token error. Please try authenticate again.")
+    }
+  }
+
+  it("should return 500 for application error") {
+    authenticationOauth2(errorAuthenticationResources,  "B5FwrdqF9cLxwdhL") ~> check {
+      status shouldBe StatusCodes.BadRequest
+      responseAs[Map[String, String]].toString should include("ApplicationError at retrieving access token. Please contact with system administrators.")
     }
   }
 
