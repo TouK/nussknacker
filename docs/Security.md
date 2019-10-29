@@ -1,9 +1,10 @@
-#Security
+# Security
 
-Nussnkacker has pluggable security architecture. You can either use default authentication provider, based
-on Basic authentication and static user configuration or integrate with other authentication mechanisms such as corporate SSO.
+Nussnkacker has pluggable security architecture - by default we support two ways of authentication: BasicAuth and OAuth2.
+You can either use default authentication provider, based on Basic authentication and static user configuration or integrate 
+with other authentication mechanisms such as corporate SSO.
 
-##Users and permissions
+## Users and permissions
 Each user has id and set of permissions for every process category. There are following permissions:
 * Read - user can view processes in category
 * Write - user can modify/add new processes in category
@@ -16,9 +17,17 @@ This feature is designed to control access to components that have no category a
 Currently supported permissions:
 * AdminTab - shows Admin tab in the UI (right now there are some useful things kept there including search components functionality).
 
-##Default security module
+## BasicAuth security module
 
-Default security provider uses users file in following format:
+#### Configuration in following format:
+```
+authentication: {
+  backend: "BasicAuth"
+  usersFile: "conf/users.conf"
+}
+```
+
+#### Users file in following format:
 ```
 users: [
   {
@@ -38,6 +47,65 @@ users: [
     }
   }
 ]
+```
+
+## OAuth2 security module
+
+#### Configuration in following format:
+```
+authentication: {
+  backend: "OAuth2",
+  clientSecret: "{your_app_secret}"
+  clientId: "{your_client_id}"
+  authorizeUri: "https://github.com/login/oauth/authorize"
+  redirectUri: "http://localhost:3000"
+  accessTokenUri: "https://github.com/login/oauth/access_token"
+  profileUri: "https://api.github.com/user"
+  accessTokenParams: {
+    grant_type: "authorization_code"
+  }
+  headers: {
+    Accept: "application/json"
+  }
+  authorizeParams: {
+    response_type: "code"
+  }
+
+  usersFile: "./develConf/tests/users.conf"
+}
+
+```
+
+#### Users file in following format:
+```
+users: [ //Special settings by user email
+  {
+    email: "some@email.com"
+    roles: ["Admin"]
+  }
+]
+
+rules: [
+  {
+    roleName: "Admin"
+    isAdmin: true
+    permissions: ["Read", "Write", "Deploy"]
+    globalPermissions: ["AdminTab"]
+    categories: ["Defautl", "FraudDetection", "Recommendations"]
+  },
+  {
+    roleName: "User", //this is default role for all users
+    permissions: ["Read", "Write", "Deploy"]
+    categories: ["Defautl", "FraudDetection"]
+  }
+]
+```
+
+#### Implementation own OAuth2Service 
+OAuth2 backend allows to exchange engine to fetching / parsing data from your OAuth2 Authentication Server and Profile Resource. 
+By default we support Github data format. To do this, simply replace the DefaultOAuth2Service by your own implementation. 
+After that you have to register your implementation using Java's ServiceLoader mechanism by prepare `META-INFO.service` 
+resource for `pl.touk.nussknacker.ui.security.api.OAuth2Service`.
 
 ```
 You can store passwords as plaintext or (preferably) encrypted using bcrypt. To compute encrypted passiowrd you can use following python script:
@@ -47,12 +115,12 @@ print(bcrypt.hashpw("password_to_encode".encode("utf8"), bcrypt.gensalt(rounds =
 
 ```
 
-##Implementing own security provider
+## Implementing own security provider
 
 In order to implement authentication provider you have to implement trait: 
 ```java
 trait AuthenticatorFactory {
-  def createAuthenticator(config: Config): AuthenticationDirective[LoggedUser]
+  def createAuthenticator(config: Config, classLoader: ClassLoader): AuthenticationDirective[LoggedUser]
 }
 ```
 

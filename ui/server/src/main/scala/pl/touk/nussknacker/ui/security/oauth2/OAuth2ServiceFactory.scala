@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.{DefaultAccessTokenResponse, DefaultProfileResponse}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceFactory.{OAuth2AuthenticateData, OAuth2Profile}
-import pl.touk.nussknacker.ui.util.ClassLoaderUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -38,7 +38,7 @@ class DefaultOAuth2Service(clientApi: OAuth2ClientApi[DefaultProfileResponse, De
 }
 
 object OAuth2ServiceFactory {
-  def apply(configuration: OAuth2Configuration, classLoader: ClassLoader): OAuth2Service = ClassLoaderUtils[OAuth2Service](classLoader).loadClass {
+  def apply(configuration: OAuth2Configuration, classLoader: ClassLoader): OAuth2Service = ScalaServiceLoader.loadClass[OAuth2Service](classLoader) {
     val clientApi = OAuth2ClientApi[DefaultProfileResponse, DefaultAccessTokenResponse](configuration)
     new DefaultOAuth2Service(clientApi, configuration)
   }

@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Service
+import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ErrorHandler, OAuth2Service}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,9 +28,10 @@ class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: Executi
     service.authenticate(authorizeToken).map { auth =>
       ToResponseMarshallable(Oauth2AuthenticationResponse(auth.access_token, auth.token_type))
     }.recover {
-      case ex =>
-        logger.warn("Error at retrieving access token:", ex)
-        EspErrorToHttp.toResponseReject("Retrieving access token error. Please contact with system administrators.")
+      case OAuth2ErrorHandler(ex) => {
+        logger.debug("Retrieving access token error:", ex)
+        EspErrorToHttp.toResponseReject("Retrieving access token error. Please try authenticate again.")
+      }
     }
   }
 }

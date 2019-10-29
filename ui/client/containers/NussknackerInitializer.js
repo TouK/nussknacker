@@ -16,8 +16,8 @@ const HTTP_APPLICATION_CODE = 500
 const ACCESS_TOKEN_CODE = "accessToken"
 
 class NussknackerInitializer extends React.Component {
-  redirectToAuthenticationUri = () => {
-    window.location.replace(this.props.authenticationSettings.authenticationUri)
+  redirectToAuthorizeUrl = () => {
+    window.location.replace(this.props.authenticationSettings.authorizeUrl)
   }
 
   errors = {
@@ -36,7 +36,7 @@ class NussknackerInitializer extends React.Component {
     },
     "accessToken": {
       message: "Authentication Error",
-      buttonOnClick: this.redirectToAuthenticationUri,
+      buttonOnClick: this.redirectToAuthorizeUrl,
       buttonLabel: "Go to authentication page",
       description: "It seems application has some problem with authentication. Please contact with system administrators."
     }
@@ -74,7 +74,7 @@ class NussknackerInitializer extends React.Component {
     // Automatically redirect user when he is not authenticated and backend is OAUTH2
     api.interceptors.response.use(response => response, (error) => {
       if (error.response.status === HTTP_UNAUTHORIZED_CODE && settings.backend === OAUTH2_BACKEND) {
-        window.location.replace(settings.authenticationUri)
+        window.location.replace(settings.authorizeUrl)
       }
 
       return Promise.reject(error)
@@ -83,13 +83,7 @@ class NussknackerInitializer extends React.Component {
     const queryParams = queryString.parse(this.props.history.location.search)
     if (settings.backend === OAUTH2_BACKEND && queryParams.code) {
       return HttpService.fetchOAuth2AccessToken(queryParams.code).then(response => {
-        SystemUtils.saveAccessToken(response.data.accessToken)
-
-        api.interceptors.request.use(function (config) {
-          config['headers']['Authorization'] = SystemUtils.authorizationToken()
-          return config;
-        });
-
+        SystemUtils.setAuthorizationToken(response.data.accessToken)
         return Promise.resolve(response)
       }).catch(error => {
         this.setState({error: this.errors[ACCESS_TOKEN_CODE]})
@@ -99,13 +93,11 @@ class NussknackerInitializer extends React.Component {
       })
     }
 
-    if (settings.backend !== OAUTH2_BACKEND) {
-      SystemUtils.removeAccessToken()
-
-      api.interceptors.request.use(function (config) {
-        delete config['headers']['Authorization']
-        return config;
-      });
+    if (settings.backend === OAUTH2_BACKEND && !SystemUtils.hasAccessToken()) {
+      window.location.replace(settings.authorizeUrl)
+      return Promise.reject()
+    } else if (settings.backend !== OAUTH2_BACKEND && SystemUtils.hasAccessToken()) {
+      SystemUtils.clearAuthorizationToken()
     }
 
     return Promise.resolve()

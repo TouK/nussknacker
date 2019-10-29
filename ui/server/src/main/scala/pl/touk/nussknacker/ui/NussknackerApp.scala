@@ -168,6 +168,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
+    //TODO: Think about move creating AuthenticationOAuth2Resources at oauth2 module?
     val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = authenticationConfig match {
       case oauth2Configuration: OAuth2Configuration => List(
         new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig),
