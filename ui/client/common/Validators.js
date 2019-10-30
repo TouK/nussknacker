@@ -8,3 +8,17 @@ export const notEmptyValidator = {
   message: canNotBeEmpty
 }
 
+export function errorValidator(errors, fieldName) {
+  const error = errors.find(error => error.fieldName === fieldName);
+  return error ?
+    {
+      isValid: _ => false,
+      message: error.message
+    }
+    :
+    {
+      isValid: _ => true,
+      message: null
+    }
+}
+

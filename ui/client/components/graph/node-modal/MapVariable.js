@@ -5,15 +5,15 @@ import {v4 as uuid4} from "uuid";
 import React from "react";
 import _ from "lodash";
 import Fields from "./Fields";
-import {notEmptyValidator} from "../../../common/Validators";
+import {errorValidator, notEmptyValidator} from "../../../common/Validators";
 
 const MapVariable = (props) => {
 
-    const {isMarked, node, removeElement, addElement, onChange, readOnly} = props;
+  const {isMarked, node, removeElement, addElement, onChange, readOnly, errors} = props;
 
-    const addField = () => {
-        addElement("fields", {"name": "", "uuid": uuid4(), "expression": {"expression":"", "language": "spel"}});
-    };
+  const addField = () => {
+    addElement("fields", {"name": "", "uuid": uuid4(), "expression": {"expression": "", "language": "spel"}});
+  };
 
   return (
         <div className="node-table-body node-variable-builder-body">
@@ -24,7 +24,7 @@ const MapVariable = (props) => {
               onChange={onChange}
               isMarked={isMarked("id")}
               readOnly={readOnly}
-              validators={[notEmptyValidator]}
+              validators={[notEmptyValidator, errorValidator(errors, "id")]}
             />
             <Input
               label="Variable Name"
@@ -33,7 +33,7 @@ const MapVariable = (props) => {
               onChange={onChange}
               isMarked={isMarked("varName")}
               readOnly={readOnly}
-              validators={[notEmptyValidator]}
+              validators={[notEmptyValidator, errorValidator(errors, "varName")]}
             />
             <Fields
                 label="Fields"
@@ -43,6 +43,7 @@ const MapVariable = (props) => {
                 namespace="fields"
                 addField={addField}
                 isMarked={isMarked}
+                errors={errors}
             />
             <Textarea
                 label="Description"
@@ -68,5 +69,9 @@ MapVariable.propTypes = {
 MapVariable.defaultProps = {
     readOnly: false
 };
+
+MapVariable.availableFields = (node) => {
+  return ["id", "varName"]
+}
 
 export default MapVariable;

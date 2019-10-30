@@ -12,7 +12,7 @@ class ModalRenderUtils {
     return (<div className="node-tip" title={title} dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}} />);
   }
 
-  renderErrors = (errors, errorMessage) => {
+  renderOtherErrors = (errors, errorMessage) => {
     return (!_.isEmpty(errors) ?
       <div className="node-table-body">
         <div className="node-label">{this.renderWarning(errorMessage)}</div>

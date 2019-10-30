@@ -15,13 +15,18 @@ class RawField extends React.Component {
     const field = this.props.field;
     const opacity = this.props.isDragging ? 0 : 1;
 
+    const validators = [notEmptyValidator];
     return this.props.connectDropTarget(this.props.connectDragSource(
       <div className="node-row movable-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
-          <input className="node-input" type="text" value={field.name} placeholder="Name"
+          <input className={validators.some(validator => validator.isValid(field.name) === false) ?
+                  "node-input node-input-with-error" : "node-input"}
+                 type="text"
+                 value={field.name}
+                 placeholder="Name"
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
-          <ValidationLabels validators={[notEmptyValidator]} values={[field.name]}/>
+          <ValidationLabels validators={validators} values={[field.name]}/>
         </div>
         <div className={"node-value field" + markedClass}>
           {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value))}

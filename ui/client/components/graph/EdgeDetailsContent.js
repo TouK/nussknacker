@@ -24,7 +24,7 @@ export default class EdgeDetailsContent extends React.Component {
 
     return (
       <div className="node-table">
-        {ModalRenderUtils.renderErrors(edgeErrors, "Edge has errors")}
+        {ModalRenderUtils.renderOtherErrors(edgeErrors, "Edge has errors")}
         <div className="node-table-body">
           <div className="node-row">
             <div className="node-label">From</div>
