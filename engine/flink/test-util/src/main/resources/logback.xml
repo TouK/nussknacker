@@ -1,12 +1,14 @@
 <configuration>
 
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%-4relative [%thread] %-5level %logger{35} - %msg %n</pattern>
-    </encoder>
-  </appender>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
 
-  <root level="ERROR">
-    <appender-ref ref="STDOUT" />
-  </root>
+    <!-- unnecessary warnings in tests -->
+    <logger name="org.apache.flink.runtime.webmonitor.WebMonitorUtils" level="ERROR"/>
+    <root level="ERROR">
+        <appender-ref ref="STDOUT"/>
+    </root>
 </configuration>
