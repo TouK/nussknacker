@@ -25,7 +25,7 @@ trait SlickMigration extends BaseJavaMigration {
 
   override def migrate(context: Context): Unit = {
     val conn = context.getConnection
-    val database = Database.forDataSource(new AlwaysUsingSameConnectionDataSource(conn), None)
+    val database = Database.forDataSource(new AlwaysUsingSameConnectionDataSource(conn), None, AsyncExecutor.default("Slick migration", 20))
     Await.result(database.run(migrateActions), 10 minute)
   }
 }
