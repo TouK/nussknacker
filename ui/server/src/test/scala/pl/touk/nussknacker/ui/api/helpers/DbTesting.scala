@@ -10,6 +10,7 @@ import org.scalatest.time.{Second, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
+import slick.util.AsyncExecutor
 
 import scala.util.Try
 
@@ -54,7 +55,9 @@ trait WithHsqlDbTesting
     url = s"jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
     driver = "org.hsqldb.jdbc.JDBCDriver",
     user = "SA",
-    password = ""
+    password = "",
+    //we don't use default because it uses too much connections and causes warning, fixed only in: https://github.com/slick/slick/commit/318843a1b81817d800ba14c9c749b6f2045b340c
+    executor = AsyncExecutor.default("Nussknacker-test", 20)
   ), HsqldbProfile)
 }
 
@@ -80,6 +83,7 @@ trait WithPostgresDbTesting
     url = s"jdbc:postgresql://${dockerExecutor.host}:15432/",
     driver = "org.postgresql.Driver",
     user = "postgres",
-    password = "postgres"
+    password = "postgres",
+    executor = AsyncExecutor.default("Nussknacker-test", 20)
   ), PostgresProfile)
 }

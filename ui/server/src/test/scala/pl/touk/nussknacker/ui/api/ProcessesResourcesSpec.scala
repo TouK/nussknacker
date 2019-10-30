@@ -514,7 +514,6 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value)) {
         Get("/processesDetails") ~> routeWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
-          println(responseAs[String])
           responseAs[String] should include ("firstProcessName")
           responseAs[String] should include ("secondProcessName")
         }
