@@ -310,13 +310,15 @@ protected trait ProcessCompilerBase {
                                       (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
       contextTransformationDefOpt match {
         case Some(transformation: ContextTransformationDef) =>
-          transformation.transform(validationContext)
+          // copying global variables because custom transformation may override them -> todo in ValidationContext
+          transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
         case Some(transformation: JoinContextTransformationDef) =>
           // TODO JOIN: better error
           val joinNode = node.cast[Join].getOrElse(throw new IllegalArgumentException(s"Should be used join element in node ${nodeId.id}"))
           // TODO JOIN: use correct contexts for branches
           val contexts = joinNode.branchParameters.groupBy(_.branchId).mapValuesNow(_ => validationContext)
-          transformation.transform(contexts)
+          // copying global variables because custom transformation may override them -> todo in ValidationContext
+          transformation.transform(contexts).map(_.copy(globalVariables = validationContext.globalVariables))
         case None =>
           val maybeClearedContext = if (clearsContext) validationContext.clearVariables else validationContext
 
