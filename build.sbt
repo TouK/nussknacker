@@ -209,7 +209,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-app",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Debug),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Info),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))
@@ -275,7 +275,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
   settings(
     name := "nussknacker-management-sample"  ,
     assemblyJarName in assembly := "managementSample.jar",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Info),
     test in assembly := {},
     libraryDependencies ++= {
       Seq(
@@ -292,7 +292,7 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
   settings(
     name := "nussknacker-management-java-sample"  ,
     assemblyJarName in assembly := "managementJavaSample.jar",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Info),
     test in assembly := {},
     libraryDependencies ++= {
       Seq(
@@ -651,7 +651,7 @@ lazy val ui = (project in file("ui/server"))
       runNpm("run build", "Client build failed")
     },
     parallelExecution in ThisBuild := false,
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Info),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))
