@@ -12,14 +12,13 @@ import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthConfiguration
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
 
-import scala.util.{Failure, Success, Try}
-
 trait AuthenticationConfiguration {
   def authorizeUrl: Option[URI] = Option.empty
   def backend: AuthenticationBackend.Value
 }
 
-case class DefaultAuthenticationConfiguration(backend: AuthenticationBackend.Value, usersFile: String) extends AuthenticationConfiguration with LazyLogging {
+case class DefaultAuthenticationConfiguration(backend: AuthenticationBackend.Value = AuthenticationBackend.Other, usersFile: String)
+  extends AuthenticationConfiguration with LazyLogging {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
@@ -59,6 +58,9 @@ object AuthenticationConfigurationFactory extends LazyLogging {
   def basicAuthConfig(config: Config): BasicAuthConfiguration
     = config.as[BasicAuthConfiguration](authenticationConfigPath)
 
+  def defaultConfig(config: Config): DefaultAuthenticationConfiguration
+  = config.as[DefaultAuthenticationConfiguration](authenticationConfigPath)
+
   def getBackendType(config: AuthenticationConfiguration): AuthenticationBackend.Value =
     config match {
       case _ : BasicAuthConfiguration => AuthenticationBackend.BasicAuth
@@ -68,10 +70,9 @@ object AuthenticationConfigurationFactory extends LazyLogging {
 
   private [security] def getAuthenticationConfig(backend: Option[AuthenticationBackend.Value], config: Config): AuthenticationConfiguration = {
     backend match {
-      case Some(AuthenticationBackend.BasicAuth) => config.as[BasicAuthConfiguration](authenticationConfigPath)
-      case Some(AuthenticationBackend.OAuth2) => config.as[OAuth2Configuration](authenticationConfigPath)
-      case Some(AuthenticationBackend.Other) => config.as[DefaultAuthenticationConfiguration](authenticationConfigPath)
-      case _ => throw new IllegalArgumentException(s"Unsupported authorization backend: $backend.")
+      case Some(AuthenticationBackend.BasicAuth) => basicAuthConfig(config)
+      case Some(AuthenticationBackend.OAuth2) => oAuth2Config(config)
+      case _ => defaultConfig(config)
     }
   }
 

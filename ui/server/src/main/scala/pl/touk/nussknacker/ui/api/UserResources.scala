@@ -49,7 +49,7 @@ object DisplayableUser {
       categoryPermissions = categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted),
       globalPermissions = GlobalPermissions(globalPermissions)
     )
-    case AdminUser(id) => new DisplayableUser(
+    case AdminUser(id, _, _) => new DisplayableUser(
       id = id,
       isAdmin = true,
       categories = allCategories.sorted,
