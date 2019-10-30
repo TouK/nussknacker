@@ -20,17 +20,8 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
   }
 
   private[security] def authenticate(token: String): Future[Option[LoggedUser]] =
-    service.profile(token).map { profile =>
-      Option.apply(
-        LoggedUser(
-          id = profile.id,
-          isAdmin = OAuth2AuthenticatorFactory.isAdmin(profile.roles, configuration.rules),
-          categoryPermissions = OAuth2AuthenticatorFactory.getPermissions(profile.roles, configuration.rules),
-          globalPermissions = OAuth2AuthenticatorFactory.getGlobalPermissions(profile.roles, configuration.rules)
-        )
-      )
-    }.recover {
-      case OAuth2ErrorHandler(ex) => Option.empty // Expired or non-exists token - user not authenticated
+    service.profile(token).map(prf => Option.apply(prf.toLoggedUser())).recover {
+      case OAuth2ErrorHandler(_) => Option.empty // Expired or non-exists token - user not authenticated
     }
 }
 
@@ -42,11 +33,12 @@ object OAuth2Authenticator extends LazyLogging {
 object OAuth2ErrorHandler {
   case class OAuth2AuthenticationRejection(body: String) extends Exception
   case class OAuth2AccessTokenRejection(body: String) extends Exception
+  case class OAuth2ServerError(body: String) extends Exception
 
   def apply(t: Throwable): Boolean = t match {
     case _: OAuth2AuthenticationRejection | _: OAuth2AccessTokenRejection => true
     case _ => false
   }
 
-  def unapply(t: Throwable): Option[Throwable] = if (apply(t)) Some(t) else None
+  def unapply(t: Throwable): Option[Throwable] = Some(t).filter(apply)
 }
