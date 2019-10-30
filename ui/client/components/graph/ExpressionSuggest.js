@@ -16,7 +16,6 @@ import 'brace/ext/searchbox';
 import '../../brace/mode/spel'
 import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
-import {capitalizeFirstLetter} from "../../common/StringUtils";
 
 //to reconsider
 // - respect categories for global variables?
@@ -125,7 +124,7 @@ class ExpressionSuggest extends React.Component {
              }}
            />
          </div>
-         {!_.isEmpty(this.state.value) ? null : <label className='node-details-validation-label'>{capitalizeFirstLetter(this.props.humanReadableFieldName) + " can not be empty"}</label>}
+         {!_.isEmpty(this.state.value) ? null : <label className='node-details-validation-label'>{this.props.humanReadableFieldName + " can not be empty"}</label>}
        </div>
         )
     } else {
