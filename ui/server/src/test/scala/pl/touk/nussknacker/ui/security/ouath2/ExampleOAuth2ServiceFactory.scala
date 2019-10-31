@@ -4,19 +4,20 @@ import java.net.URI
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.security.AuthenticationBackend
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.api.{GlobalPermission, LoggedUser, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceFactory.{OAuth2AuthenticateData, OAuth2Profile}
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ClientApi, OAuth2Configuration, OAuth2Service}
-import pl.touk.nussknacker.ui.security.ouath2.OAuth2TestServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
+import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
+import pl.touk.nussknacker.ui.security.oauth2.DefaultOAuth2ServiceFactory.{OAuth2AuthenticateData, OAuth2Profile}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2Service, OAuth2ServiceFactory}
+import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ClientApi, OAuth2Configuration}
+import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
+import pl.touk.nussknacker.ui.security.{AuthenticationBackend, api}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class TestOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration) extends OAuth2Service with LazyLogging {
+class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration) extends OAuth2Service with LazyLogging {
   override def authenticate(code: String): Future[OAuth2AuthenticateData] = {
     clientApi.accessTokenRequest(code).map{ resp =>
       OAuth2AuthenticateData(
@@ -32,16 +33,21 @@ class TestOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAcce
       OAuth2Profile(
         id = prf.uid,
         email = prf.email,
-        isAdmin = OAuth2TestServiceFactory.isAdmin(prf.clearance.roles),
-        permissions = OAuth2TestServiceFactory.getPermissions(prf.clearance.roles, prf.clearance.portals),
-        accesses = OAuth2TestServiceFactory.getGlobalPermissions(prf.clearance.roles),
+        isAdmin = ExampleOAuth2ServiceFactory.isAdmin(prf.clearance.roles),
+        permissions = ExampleOAuth2ServiceFactory.getPermissions(prf.clearance.roles, prf.clearance.portals),
+        accesses = ExampleOAuth2ServiceFactory.getGlobalPermissions(prf.clearance.roles),
         roles = prf.clearance.roles
       )
     }
   }
 }
 
-object OAuth2TestServiceFactory {
+class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {
+  override def create(configuration: OAuth2Configuration): OAuth2Service =
+    ExampleOAuth2ServiceFactory.defaultService(configuration)
+}
+
+object ExampleOAuth2ServiceFactory {
   import cats.instances.all._
   import cats.syntax.semigroup._
 
@@ -54,11 +60,10 @@ object OAuth2TestServiceFactory {
     roles.contains(TestPermissionResponse.Admin.toString)
 
   def hasAccessAdminTab(roles: List[String]): Boolean =
-    roles.contains(TestPermissionResponse.Admin.toString)
+    roles.contains(TestPermissionResponse.AdminTab.toString)
 
   def getOnlyMatchingRoles(roles: List[String]): List[Permission.Value] =
-    roles
-      .flatMap(p => TestPermissionResponse.mappedPermission.get(p))
+    roles.flatMap(TestPermissionResponse.mapToNkPermission)
 
   def getGlobalPermissions(roles: List[String]): List[GlobalPermission] = {
     if (isAdmin(roles)) {
@@ -70,13 +75,18 @@ object OAuth2TestServiceFactory {
     }
   }
 
-  def apply(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]): TestOAuth2Service
-    = new TestOAuth2Service(getTestClient(configuration), configuration)
+  def apply(): ExampleOAuth2ServiceFactory = new ExampleOAuth2ServiceFactory()
 
-  def getTestClient(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]): OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse]
+  def defaultService(configuration: OAuth2Configuration): ExampleOAuth2Service =
+    new ExampleOAuth2Service(OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse](configuration), configuration)
+
+  def service(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]): ExampleOAuth2Service =
+    new ExampleOAuth2Service(testClient(configuration), configuration)
+
+  def testClient(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]): OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse]
     = new OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse](configuration)
 
-  def getTestConfig: OAuth2Configuration =
+  def testConfig: OAuth2Configuration =
     OAuth2Configuration(
       AuthenticationBackend.OAuth2,
       "ui/server/develConf/tests/oauth2-users.conf",
@@ -96,11 +106,14 @@ object OAuth2TestServiceFactory {
     val Admin = Value("Admin")
     val AdminTab = Value("AdminTab")
 
-    val mappedPermission = Map(
+    val mappedPermissions = Map(
       Reader.toString -> Permission.Read,
       Writer.toString -> Permission.Write,
       Deployer.toString -> Permission.Deploy
     )
+
+    def mapToNkPermission(role: String): Option[api.Permission.Value] =
+      mappedPermissions.get(role)
   }
 
   @JsonCodec case class TestAccessTokenResponse(access_token: String, token_type: String)
