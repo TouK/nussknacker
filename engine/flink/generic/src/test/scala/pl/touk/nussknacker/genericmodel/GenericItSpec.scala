@@ -2,6 +2,7 @@ package pl.touk.nussknacker.genericmodel
 
 import java.nio.charset.StandardCharsets
 
+import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient}
@@ -10,11 +11,12 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSpec, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaUtils}
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
@@ -153,6 +155,60 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
     val consumer = kafkaClient.createConsumer()
     val processed = consumeOneAvroMessage(AvroTypedOutTopic)
     processed shouldEqual List(givenMatchingAvroObj)
+  }
+
+  it("should merge two streams with union and save it to kafka") {
+    val topicIn1: String = "union.json.input1"
+    val topicIn2: String = "union.json.input2"
+    val topicOut: String = "union.json.output"
+
+    val dataJson1 = """{"data1": "from source1"}"""
+    val dataJson2 = """{"data2": "from source2"}"""
+
+    kafkaClient.sendMessage(topicIn1, dataJson1)
+    kafkaClient.sendMessage(topicIn2, dataJson2)
+
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "kafka-typed-json",
+            "topic" -> s"'$topicIn1'",
+            "type" -> """{"data1": "String"}""" )
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .source("sourceId2", "kafka-typed-json",
+            "topic" -> s"'$topicIn2'",
+            "type" -> """{"data2": "String"}""")
+          .branchEnd("branch2", "join1"),
+        GraphBuilder
+          .branch("join1", "union", Some("outPutVar"),
+            List(
+              "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
+              "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
+            ),
+            "type" -> """{"branch1":"String", "branch2":"String"}"""
+          )
+          .filter("always-true-filter", "true")
+          .sink("end", "#outPutVar","kafka-json", "topic" -> s"'$topicOut'")
+      ))
+
+    register(process)
+
+    env.execute(process.id)
+
+    val consumer = kafkaClient.createConsumer()
+    val processed = consumer.consume(topicOut).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(2).toList
+    processed.map(parseJson) should contain theSameElementsAs List(
+      parseJson("""{
+                  |  "key" : "key2",
+                  |  "branch2" : "from source2"
+                  |}""".stripMargin
+      ),
+      parseJson("""{
+                  |  "key" : "key1",
+                  |  "branch1" : "from source1"
+                  |}""".stripMargin
+      )
+    )
   }
 
   private def parseJson(str: String) = io.circe.parser.parse(str).right.get
