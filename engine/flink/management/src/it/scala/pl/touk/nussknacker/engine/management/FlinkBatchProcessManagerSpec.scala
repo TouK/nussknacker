@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.apache.flink.runtime.jobgraph.JobStatus
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FunSuite, Matchers}
@@ -13,6 +13,9 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
+import scala.collection.JavaConverters._
+
+// TODO: kafka does not need to be started for batch tests
 class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
@@ -33,10 +36,10 @@ class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
   private def prepareProcess(processName: ProcessName): EspProcess = {
     BatchProcessBuilder
       .id(processName.value)
-      .exceptionHandler("param1" -> "'val1'")
-      .source("source", "batch-elements-source", "elements" -> "{1, 2, 3, 4, 5, 6}")
+      .exceptionHandler()
+      .source("source", "elements-source", "elements" -> "{1, 2, 3, 4, 5, 6}")
       .filter("filter", "#input % 2 == 0")
-      .sink("sink", "#input", "batch-file-sink", "path" -> "'/tmp/batchTestOutput'")
+      .sink("sink", "#input", "file-sink", "path" -> "'/tmp/testOutput'")
   }
 
   private def deployProcessAndWaitUntilFinished(process: EspProcess, processVersion: ProcessVersion): Unit = {
@@ -51,8 +54,9 @@ class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
   private def processVersion(processName: ProcessName): Option[ProcessVersion] =
     batchProcessManager.findJobStatus(processName).futureValue.flatMap(_.version)
 
-  private def batchConfig : Config = ConfigFactory.load()
+  private def batchConfig: Config = ConfigFactory.load()
     .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
+    .withValue("flinkConfig.classpath", ConfigValueFactory.fromIterable(List("./engine/flink/management/batch_sample/target/scala-2.11/managementBatchSample.jar").asJava))
 
   private lazy val batchProcessManager = {
     val typeConfig = FlinkBatchProcessManagerProvider.defaultTypeConfig(batchConfig)

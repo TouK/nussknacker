@@ -8,6 +8,10 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             languages: LanguageConfiguration = LanguageConfiguration.default,
                             optimizeCompilation: Boolean = true)
 
+object ExpressionConfig {
+  val empty = ExpressionConfig(Map.empty, Nil)
+}
+
 object LanguageConfiguration {
   val default = LanguageConfiguration(List.empty)
 }
