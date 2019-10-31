@@ -227,32 +227,16 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("valid process using context transformation api - union") {
-    def process(serviceExpression: String) =
-      EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
-        GraphBuilder
-          .source("sourceId1", "mySource")
-          .branchEnd("branch1", "join1"),
-        GraphBuilder
-          .source("sourceId2", "mySource")
-          .branchEnd("branch2", "join1"),
-        GraphBuilder
-          .branch("join1", "unionTransformer", Some("outPutVar"),
-            // TODO JOIN: use branch context in expressions
-            List(
-              "branch1" -> List("key" -> "'key1'", "value" -> "'ala'"),
-              "branch2" -> List("key" -> "'key2'", "value" -> "123")
-            )
-          )
-          .processorEnd("stringService", "stringService" , "stringParam" -> serviceExpression)
-      ))
-    val validProcess = process("#outPutVar.branch1")
+    val validProcess = processWithUnion("#outPutVar.branch1")
 
     val validationResult = validator.validate(validProcess).result
     validationResult should matchPattern {
       case Valid(_) =>
     }
+  }
 
-    val invalidProcess = process("#outPutVar.branch2")
+  test("invalid process using context transformation api - union") {
+    val invalidProcess = processWithUnion("#outPutVar.branch2")
     val validationResult2 = validator.validate(invalidProcess).result
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
@@ -262,6 +246,34 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "stringService", Some("stringParam"), _) =>
     }
   }
+
+  test("global variables in scope after custom context transformation") {
+    val process = processWithUnion("#meta.processName")
+
+    val validationResult = validator.validate(process).result
+    validationResult should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  private def processWithUnion(serviceExpression: String) =
+    EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "mySource")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .source("sourceId2", "mySource")
+        .branchEnd("branch2", "join1"),
+      GraphBuilder
+        .branch("join1", "unionTransformer", Some("outPutVar"),
+          // TODO JOIN: use branch context in expressions
+          List(
+            "branch1" -> List("key" -> "'key1'", "value" -> "'ala'"),
+            "branch2" -> List("key" -> "'key2'", "value" -> "123")
+          )
+        )
+        .processorEnd("stringService", "stringService" , "stringParam" -> serviceExpression)
+    ))
 
   test("extract expression typing info from join") {
     val process =
