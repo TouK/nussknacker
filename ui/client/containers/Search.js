@@ -6,7 +6,7 @@ class Search extends React.Component {
   render() {
     if (this.props.settings.url) {
       return (
-        <div className="Page">
+        <div className="page">
           <iframe
             ref="metricsFrame"
             src={this.props.settings.url}

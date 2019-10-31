@@ -74,7 +74,7 @@ class Processes extends BaseProcesses {
 
   render() {
     return (
-      <div className="Page">
+      <div className="page">
         <HealthCheck/>
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">

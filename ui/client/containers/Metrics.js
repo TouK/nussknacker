@@ -41,7 +41,7 @@ class Metrics extends React.Component {
     const finalIframeUrl = url.replace("$dashboard", dashboard).replace("$process", processName)
 
     return (
-      <div className="Page">
+      <div className="page">
         <iframe
           ref="metricsFrame"
           src={finalIframeUrl}

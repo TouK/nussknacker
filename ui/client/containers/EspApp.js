@@ -92,7 +92,6 @@ class EspApp extends React.Component {
               </NavLink>
               {this.environmentAlert(this.props.featuresSettings.environmentAlert)}
             </div>
-
             <div className="collapse navbar-collapse">
               <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                 <li><NavLink to={Processes.path}>{Processes.header}</NavLink></li>
@@ -121,7 +120,7 @@ class EspApp extends React.Component {
         <main>
           <DragArea>
             <AllDialogs/>
-            <div id="working-area" className={this.props.leftPanelIsOpened ? 'is-opened' : null}>
+            <div id="page-container">
               <ErrorHandler>
                 <Route path={EspApp.path} render={({location}) => (
                   <TransitionGroup>
@@ -153,7 +152,6 @@ class EspApp extends React.Component {
 function mapState(state) {
   const loggedUser = state.settings.loggedUser
   return {
-    leftPanelIsOpened: state.ui.leftPanelIsOpened,
     featuresSettings: state.settings.featuresSettings,
     loggedUser: loggedUser,
     resolved: !_.isEmpty(loggedUser)

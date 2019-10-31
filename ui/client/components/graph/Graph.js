@@ -40,16 +40,15 @@ class Graph extends React.Component {
     })
     this.nodesMoving();
 
-    this.espGraphRef = React.createRef()
-    this.parent = document.getElementById(this.props.parent)
+    this.selfRef = React.createRef()
 
     this.windowListeners = {
       resize: this.updateDimensions.bind(this)
     }
   }
 
-  getEspGraphRef = () => {
-    return this.espGraphRef.current
+  getSelfRef = () => {
+    return this.selfRef.current
   }
 
   componentDidMount() {
@@ -67,8 +66,8 @@ class Graph extends React.Component {
 
   updateDimensions() {
     this.processGraphPaper.fitToContent()
-    this.svgDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
-    this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    this.svgDimensions(this.selfRef().offsetWidth, this.selfRef().offsetHeight)
+    this.processGraphPaper.setDimensions(this.selfRef().offsetWidth, this.selfRef().offsetHeight)
   }
 
   canAddNode(node) {
@@ -84,9 +83,9 @@ class Graph extends React.Component {
     }
   }
 
-    componentWillUnmount() {
-        _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
-    }
+  componentWillUnmount() {
+      _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
+  }
 
   componentWillUpdate(nextProps, nextState) {
     const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
@@ -157,10 +156,10 @@ class Graph extends React.Component {
   createPaper = () => {
     const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly;
     return new joint.dia.Paper({
-      el: this.getEspGraphRef(),
+      el: this.getSelfRef(),
       gridSize: 1,
-      height: this.parent.clientHeight,
-      width: this.parent.clientWidth - 2 * this.props.padding,
+      height: this.getSelfRef().offsetHeight,
+      width: this.getSelfRef().offsetWidth,
       model: this.graph,
       snapLinks: {radius: 75},
       interactive: function (cellView) {
@@ -301,8 +300,8 @@ class Graph extends React.Component {
   }
 
   _prepareContentForExport = () => {
-    const oldHeight = this.getEspGraphRef().offsetHeight
-    const oldWidth = this.getEspGraphRef().offsetWidth
+    const oldHeight = this.getSelfRef().offsetHeight
+    const oldWidth = this.getSelfRef().offsetWidth
     //we fit to content to be able to export svg nicely...
     this.processGraphPaper.fitToContent()
 
@@ -314,7 +313,7 @@ class Graph extends React.Component {
 
   //Hack for FOP to properly export image from svg xml
   svgDimensions = (width, height) => {
-    let svg = this.getEspGraphRef().getElementsByTagName("svg")[0]
+    let svg = this.getSelfRef().getElementsByTagName("svg")[0]
     svg.setAttribute('width', width)
     svg.setAttribute('height', height)
     this.setState({exported: SVGUtils.toXml(svg)})
@@ -377,7 +376,7 @@ class Graph extends React.Component {
   }
 
   enablePanZoom() {
-    const svgElement =  this.getEspGraphRef().getElementsByTagName("svg").item(0);
+    const svgElement =  this.getSelfRef().getElementsByTagName("svg").item(0);
 
     const panAndZoom = svgPanZoom(svgElement, {
       viewportSelector: '.svg-pan-zoom_viewport',
@@ -506,15 +505,11 @@ class Graph extends React.Component {
 
   cursorBehaviour() {
     this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
-      if (this.getEspGraphRef()) {
-        this.getEspGraphRef().style.cursor = "move"
-      }
+      this.getSelfRef().style.cursor = "move"
     })
 
     this.processGraphPaper.on('blank:pointerup', (evt, x, y) => {
-      if (this.getEspGraphRef()) {
-        this.getEspGraphRef().style.cursor = "auto"
-      }
+      this.getSelfRef().style.cursor = "auto"
     })
   }
 
@@ -561,7 +556,7 @@ class Graph extends React.Component {
       <div id="graphContainer" style={{padding: this.props.padding}}>
         {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
-        <div ref={this.espGraphRef} id={this.props.divId}></div>
+        <div ref={this.selfRef} id={this.props.divId}></div>
       </div>
     )
 
@@ -580,7 +575,6 @@ const spec = {
 function mapState(state, props) {
   return {
     divId: "esp-graph",
-    parent: "working-area",
     padding: 0,
     readonly: state.graphReducer.businessView,
     singleClickNodeDetailsEnabled: true,

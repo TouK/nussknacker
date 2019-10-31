@@ -230,7 +230,7 @@ class Visualization extends React.Component {
     const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading;
 
     return (
-      <div className="Page">
+      <div className="page">
         <RouteLeavingGuard
           when={!this.props.nothingToSave}
           navigate={path => this.props.history.push(path)}

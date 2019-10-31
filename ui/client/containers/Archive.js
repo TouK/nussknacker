@@ -33,7 +33,7 @@ class Archive extends BaseProcesses {
 
   render() {
     return (
-      <div className="Page">
+      <div className="page">
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
             <input
