@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process
 
 import java.util.Date
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 import cats.data.Validated.Valid
@@ -9,36 +8,27 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.FilterFunction
-import org.apache.flink.api.common.io.{InputFormat, OutputFormat}
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.io.{DiscardingOutputFormat, TextInputFormat, TextOutputFormat}
-import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
-import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkInputFormat, FlinkInputFormatFactory, FlinkOutputFormat, NoParamInputFormatFactory}
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.flink.util.exception._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, FlinkCollectionInputFormat}
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.compiler.{FlinkBatchProcessCompiler, FlinkStreamingProcessCompiler}
+import pl.touk.nussknacker.engine.process.CommonTestHelpers.RecordingExceptionHandler
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 
 object ProcessTestHelpers {
 
@@ -66,20 +56,6 @@ object ProcessTestHelpers {
 
     }
 
-    def invokeBatch(process: EspProcess, data: List[SimpleRecord],
-                    processVersion: ProcessVersion = ProcessVersion.empty,
-                    parallelism: Int = 1): Unit = {
-      val env = ExecutionEnvironment.createLocalEnvironment(parallelism)
-      val creator = prepareCreator(env.getConfig, data)
-      env.getConfig.disableSysoutLogging
-
-      new FlinkBatchProcessCompiler(creator, ConfigFactory.load())
-        .createFlinkProcessRegistrar()
-        .register(env, process, processVersion)
-
-      env.execute(process.id)
-    }
-
     def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]) = new ProcessConfigCreator {
 
       override def services(config: Config) = Map(
@@ -95,17 +71,13 @@ object ProcessTestHelpers {
             override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
           }), Typed[SimpleRecord]
         ))),
-        "intInputWithParam" -> WithCategories(new IntParamSourceFactory(exConfig)),
-        "batchInput" -> WithCategories(new NoParamInputFormatFactory(new FlinkCollectionInputFormat[SimpleRecord](exConfig, data))),
-        "batchTextLineSource" -> WithCategories(BatchTextLineSourceFactory)
+        "intInputWithParam" -> WithCategories(new IntParamSourceFactory(exConfig))
       )
 
       override def sinkFactories(config: Config) = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
-        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
-        "batchSinkForStrings" -> WithCategories(SinkFactory.noParam(BatchSinkForStrings)),
-        "batchTextLineSink" -> WithCategories(BatchTextLineSinkFactory)
+        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings))
       )
 
       override def customStreamTransformers(config: Config) = Map(
@@ -120,7 +92,7 @@ object ProcessTestHelpers {
       override def listeners(config: Config) = List()
 
       override def exceptionHandlerFactory(config: Config) =
-        ExceptionHandlerFactory.noParams(RecordingExceptionHandler(_))
+        ExceptionHandlerFactory.noParams(_ => RecordingExceptionHandler)
 
 
       override def expressionConfig(config: Config) = {
@@ -133,15 +105,7 @@ object ProcessTestHelpers {
     }
   }
 
-  case class RecordingExceptionHandler(metaData: MetaData) extends FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
-    override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-
-
-    override protected val consumer: FlinkEspExceptionConsumer = new RateMeterExceptionConsumer(new FlinkEspExceptionConsumer {
-      override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit =
-        RecordingExceptionHandler.add(exceptionInfo)
-    })
-  }
+  val RecordingExceptionHandler = new CommonTestHelpers.RecordingExceptionHandler
 
   class IntParamSourceFactory(exConfig: ExecutionConfig) extends FlinkSourceFactory[Int] {
 
@@ -154,27 +118,6 @@ object ProcessTestHelpers {
     override def timestampAssigner: Option[TimestampAssigner[Int]] = None
 
   }
-
-  object BatchTextLineSourceFactory extends FlinkInputFormatFactory[String] {
-
-    @MethodToInvoke
-    def create(@ParamName("path") path: String): FlinkInputFormat[String] = {
-      new TextLineSource(path)
-    }
-
-    class TextLineSource(path: String) extends FlinkInputFormat[String] {
-
-      override def toFlink: InputFormat[String, _] = {
-        new TextInputFormat(new Path(path))
-      }
-
-      override def typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
-
-      override def classTag: ClassTag[String] = implicitly[ClassTag[String]]
-    }
-  }
-
-  object RecordingExceptionHandler extends WithDataList[EspExceptionInfo[_ <: Throwable]]
 
   object StateCustomNode extends CustomStreamTransformer {
 
@@ -379,32 +322,6 @@ object ProcessTestHelpers {
     override def testDataOutput : Option[Any => String] = None
   }
 
-  object BatchSinkForStrings extends FlinkOutputFormat with Serializable with WithDataList[String] {
-    override def toFlink: OutputFormat[Any] = new DiscardingOutputFormat[Any] {
-      override def writeRecord(record: Any): Unit = {
-        add(record.toString)
-      }
-    }
-
-    override def testDataOutput: Option[Any => String] = None
-  }
-
-  object BatchTextLineSinkFactory extends SinkFactory {
-
-    @MethodToInvoke
-    def create(@ParamName("path") path: String): FlinkOutputFormat = {
-      new TextLineSink(path)
-    }
-
-    class TextLineSink(path: String) extends FlinkOutputFormat with Serializable {
-
-      override def toFlink: OutputFormat[Any] = new TextOutputFormat[Any](new Path(path))
-
-      override def testDataOutput: Option[Any => String] = None
-    }
-  }
-
-
   object EmptyService extends Service {
     def invoke() = Future.successful(Unit)
   }
@@ -415,20 +332,5 @@ object ProcessHelper {
   val constant = 4
   def add(a: Int, b: Int) : Int = {
     a + b
-  }
-}
-
-trait WithDataList[T] {
-
-  private val dataList = new CopyOnWriteArrayList[T]
-
-  def add(element: T) : Unit = dataList.add(element)
-
-  def data : List[T] = {
-    dataList.toArray.toList.map(_.asInstanceOf[T])
-  }
-
-  def clear() : Unit = {
-    dataList.clear()
   }
 }
