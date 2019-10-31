@@ -4,6 +4,7 @@ import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2Service
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

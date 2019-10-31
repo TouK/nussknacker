@@ -6,10 +6,10 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withoutPermissions
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceFactory
-import pl.touk.nussknacker.ui.security.ouath2.OAuth2TestServiceFactory
+import pl.touk.nussknacker.ui.security.oauth2.DefaultOAuth2ServiceFactory
+import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory
+import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{HttpError, Response}
 import sttp.model.{StatusCode, Uri}
 
 import scala.concurrent.Future
@@ -17,15 +17,15 @@ import scala.language.higherKinds
 
 class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with ScalatestRouteTest with FailFastCirceSupport with EspItTest {
 
-  val config = OAuth2TestServiceFactory.getTestConfig
+  val config = ExampleOAuth2ServiceFactory.testConfig
 
   protected lazy val errorAuthenticationResources = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
-      .thenRespond(throw HttpError("Bad authorize token or data"))
+      .thenRespondWrapped(Future(Response(Option.empty, StatusCode.InternalServerError, "Bad Request")))
 
-    new AuthenticationOAuth2Resources(OAuth2ServiceFactory(config))
+    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config))
   }
 
   protected lazy val badAuthenticationResources = {
@@ -34,7 +34,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.BadRequest, "Bad Request")))
 
-    new AuthenticationOAuth2Resources(OAuth2ServiceFactory(config))
+    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config))
   }
 
   protected lazy val authenticationResources = {
@@ -43,7 +43,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(""" {"access_token": "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm", "token_type": "Bearer", "refresh_token": "yFLU8w5VZtqjYrdpD5K9s27JZdJuCRrL"} """)
 
-    new AuthenticationOAuth2Resources(OAuth2ServiceFactory(config))
+    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config))
   }
 
   def authenticationOauth2(resource: AuthenticationOAuth2Resources, authorizeToken: String) = {

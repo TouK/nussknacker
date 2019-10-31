@@ -8,12 +8,13 @@ import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.LoggedUserAuth
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.{AuthenticatorFactory, GlobalPermission, Permission}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2Service
 
 class OAuth2AuthenticatorFactory extends AuthenticatorFactory with LazyLogging {
 
   override def createAuthenticator(config: Config, classLoader: ClassLoader): LoggedUserAuth = {
     val configuration = AuthenticationConfigurationFactory.oAuth2Config(config)
-    val service = OAuth2ServiceFactory(configuration, classLoader)
+    val service = OAuth2ServiceProvider(configuration, classLoader)
     createAuthenticator(configuration, service)
   }
 
