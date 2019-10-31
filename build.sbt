@@ -240,7 +240,8 @@ lazy val management = (project in engine("flink/management")).
     name := "nussknacker-management",
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in managementSample,
-      (assembly in Compile) in managementJavaSample
+      (assembly in Compile) in managementJavaSample,
+      (assembly in Compile) in managementBatchSample
     ).value,
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
