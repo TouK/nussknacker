@@ -88,7 +88,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, imports, flavour)
+    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, strictTypeChecking = true, imports, flavour)
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
@@ -305,7 +305,9 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Long]("'d'? 3 : 4", ctx) should not be 'valid
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be 'valid
     parse[Long]("1 > 2 ? 12 : 23", ctx) shouldBe 'valid
+    parse[Number]("1 > 2 ? 12 : 23.0", ctx) shouldBe 'valid
     parse[String]("1 > 2 ? 'ss' : 'dd'", ctx) shouldBe 'valid
+    parse[Any]("1 > 2 ? '123' : 123", ctx) shouldBe 'invalid
   }
 
   test("validate selection for inline list") {
@@ -470,6 +472,45 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
     parseOrFail[Int]("#dicts.foo.value", withObjVar).evaluateSyncToValue[Int](withObjVar) should equal(123)
     parse[String]("#dicts.bar.value", withObjVar) shouldBe 'invalid
+  }
+
+  test("adding invalid type to number") {
+    val floatAddExpr = "12.1 + #obj"
+    parse[Float](floatAddExpr, ctx) shouldBe 'invalid
+  }
+
+  test("different types in equality") {
+    parse[Boolean]("'123' == 234", ctx) shouldBe 'invalid
+    parse[Boolean]("'123' == '234'", ctx) shouldBe 'valid
+    parse[Boolean]("'123' == null", ctx) shouldBe 'valid
+
+    parse[Boolean]("'123' != 234", ctx) shouldBe 'invalid
+    parse[Boolean]("'123' != '234'", ctx) shouldBe 'valid
+    parse[Boolean]("'123' != null", ctx) shouldBe 'valid
+
+    parse[Boolean]("123 == 123123123123L", ctx) shouldBe 'valid
+  }
+
+  test("precise type parsing in two operand operators") {
+    val floatAddExpr = "12.1 + 23.4"
+    parse[Int](floatAddExpr, ctx) shouldBe 'invalid
+    parse[Float](floatAddExpr, ctx) shouldBe 'valid
+    parse[java.lang.Float](floatAddExpr, ctx) shouldBe 'valid
+    parse[Double](floatAddExpr, ctx) shouldBe 'valid
+
+    val floatMultiplyExpr = "12.1 * 23.4"
+    parse[Int](floatMultiplyExpr, ctx) shouldBe 'invalid
+    parse[Float](floatMultiplyExpr, ctx) shouldBe 'valid
+    parse[java.lang.Float](floatMultiplyExpr, ctx) shouldBe 'valid
+    parse[Double](floatMultiplyExpr, ctx) shouldBe 'valid
+  }
+
+  test("precise type parsing in single operand operators") {
+    val floatAddExpr = "12.1++"
+    parse[Int](floatAddExpr, ctx) shouldBe 'invalid
+    parse[Float](floatAddExpr, ctx) shouldBe 'valid
+    parse[java.lang.Float](floatAddExpr, ctx) shouldBe 'valid
+    parse[Double](floatAddExpr, ctx) shouldBe 'valid
   }
 
 }

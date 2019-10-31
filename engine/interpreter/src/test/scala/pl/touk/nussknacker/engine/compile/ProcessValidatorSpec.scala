@@ -70,7 +70,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ObjectDefinition.noParam,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ClazzRef(ProcessHelper.getClass)), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, LanguageConfiguration.default, optimizeCompilation = false
+      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true
     ),
     TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleEnricher], Typed[SimpleRecord], Typed(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
   )

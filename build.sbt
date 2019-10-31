@@ -113,7 +113,8 @@ val flinkV = "1.7.2"
 val kafkaMajorV = "0.11"
 val kafkaV = s"$kafkaMajorV.0.2"
 val springV = "5.1.4.RELEASE"
-val scalaTestV = "3.0.3"
+val scalaTestV = "3.0.8"
+val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
 val log4jV = "1.7.21"
 val argonautV = "6.2.1"
@@ -371,7 +372,8 @@ lazy val interpreter = (project in engine("interpreter")).
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "org.scalacheck" %% "scalacheck" % scalaCheckV % "test"
       )
     }
   ).
