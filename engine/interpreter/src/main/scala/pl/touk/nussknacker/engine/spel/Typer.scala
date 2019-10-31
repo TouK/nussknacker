@@ -175,7 +175,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case left :: right :: Nil if left == Unknown || right == Unknown => Valid(Unknown)
         case left :: right :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
         case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToCommonWidestType))
-        case left :: right :: Nil => invalid(s"Invalid operands: $left ${e.getOperatorName} $right")
+        case left :: right :: Nil => invalid(s"Operator '${e.getOperatorName}' used with mismatch types: ${left.display} and ${right.display}")
         case left :: Nil => Valid(left)
         case Nil => invalid("Empty plus")
       }
@@ -213,11 +213,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: Ternary => withTypedChildren {
         case condition :: onTrue :: onFalse :: Nil =>
-          val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)(NumberTypesPromotionStrategy.ToSupertype)
-          if (condition.canBeSubclassOf(Typed[Boolean]) && superType != Typed.empty) {
-            Valid(superType)
+          lazy val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)(NumberTypesPromotionStrategy.ToSupertype)
+          if (!condition.canBeSubclassOf(Typed[Boolean])) {
+            invalid(s"Not a boolean expression used in ternary operator (expr ? onTrue : onFalse). Computed expression type: ${condition.display}")
+          } else if (superType == Typed.empty) {
+            invalid(s"Ternary operator (expr ? onTrue : onFalse) used with mismatch result types: ${onTrue.display} and ${onFalse.display}")
           } else {
-            invalid(s"Invalid operands: $condition ? $onTrue : $onFalse")
+            Valid(superType)
           }
         case _ => invalid("Invalid ternary operator") // shouldn't happen
       }
@@ -237,7 +239,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case left :: right :: Nil if commonSupertypeFinder.commonSupertype(right, left)(NumberTypesPromotionStrategy.ToSupertype) != Typed.empty => Valid(Typed[Boolean])
-      case left :: right :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
+      case left :: right :: Nil => invalid(s"Operator '${node.getOperatorName}' used with not comparable types: ${left.display} and ${right.display}")
       case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
     }
   }
@@ -246,7 +248,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                                                  (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right))
-      case left :: right :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName} $right")
+      case left :: right :: Nil => invalid(s"Operator '${node.getOperatorName}' used with mismatch types: ${left.display} and ${right.display}")
       case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
     }
   }
@@ -254,7 +256,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def checkSingleOperandArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case left :: Nil if left.canBeSubclassOf(Typed[Number]) => Valid(left)
-      case left :: Nil => invalid(s"Invalid operands: $left ${node.getOperatorName}")
+      case left :: Nil => invalid(s"Operator '${node.getOperatorName}' used with non numeric type: ${left.display}")
       case _ => invalid(s"Bad ${node.getOperatorName} construction") // shouldn't happen
     }
   }

@@ -86,6 +86,7 @@ class SpelExpression(parsed: ParsedSpelExpression,
         classOf[Any]
     }
 
+  // TODO: better interoperability with scala type, mainly: scala.math.BigDecimal, scala.math.BigInt and collections
   override def evaluate[T](ctx: Context,
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
     if (expectedClass == classOf[SpelExpressionRepr]) {

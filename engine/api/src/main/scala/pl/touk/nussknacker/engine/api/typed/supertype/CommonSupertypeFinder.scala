@@ -1,11 +1,8 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
-import java.lang
-
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
-
-import scala.collection.mutable
 
 /**
   * This class finding common supertype of two types. It basically based on fact that TypingResults are
@@ -19,33 +16,33 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     (left, right) match {
       case (Unknown, _) => Unknown // can't be sure intention of user - union is more secure than intersection
       case (_, Unknown) => Unknown
-      case (f: SingleTypingResult, s: TypedUnion) => Typed(commonSupertype(Set(f), s.possibleTypes))
-      case (f: TypedUnion, s: SingleTypingResult) => Typed(commonSupertype(f.possibleTypes, Set(s)))
-      case (f: SingleTypingResult, s: SingleTypingResult) => singleCommonSupertype(f, s)
-      case (f: TypedUnion, s: TypedUnion) => Typed(commonSupertype(f.possibleTypes, s.possibleTypes))
+      case (l: SingleTypingResult, r: TypedUnion) => Typed(commonSupertype(Set(l), r.possibleTypes))
+      case (l: TypedUnion, r: SingleTypingResult) => Typed(commonSupertype(l.possibleTypes, Set(r)))
+      case (l: SingleTypingResult, r: SingleTypingResult) => singleCommonSupertype(l, r)
+      case (l: TypedUnion, r: TypedUnion) => Typed(commonSupertype(l.possibleTypes, r.possibleTypes))
     }
 
   private def commonSupertype(leftSet: Set[SingleTypingResult], rightSet: Set[SingleTypingResult])
                              (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): Set[TypingResult] =
-    leftSet.flatMap(f => rightSet.map(singleCommonSupertype(f, _)))
+    leftSet.flatMap(l => rightSet.map(singleCommonSupertype(l, _)))
 
 
   private def singleCommonSupertype(left: SingleTypingResult, right: SingleTypingResult)
                                    (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingResult =
     (left, right) match {
-      case (f: TypedObjectTypingResult, s: TypedObjectTypingResult) =>
-        if (f == s) {
-          f
+      case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
+        if (l == r) {
+          l
         } else {
-          klassCommonSupertypeReturningTypedClass(f.objType, s.objType).map { commonSupertype =>
+          klassCommonSupertypeReturningTypedClass(l.objType, r.objType).map { commonSupertype =>
             // can't be sure intention of user - union of fields is more secure than intersection
-            val fields = unionOfFields(f, s)
+            val fields = unionOfFields(l, r)
             TypedObjectTypingResult(fields, commonSupertype)
           }.getOrElse(Typed.empty)
         }
       case (_: TypedObjectTypingResult, _) => Typed.empty
       case (_, _: TypedObjectTypingResult) => Typed.empty
-      case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
+      case (l: TypedClass, r: TypedClass) => klassCommonSupertype(l, r)
     }
 
   private def unionOfFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)
@@ -67,8 +64,8 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
   // This implementation is because TypedObjectTypingResult has underlying TypedClass instead of TypingResult
   private def klassCommonSupertypeReturningTypedClass(left: TypedClass, right: TypedClass)
                                                      (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): Option[TypedClass] = {
-    val boxedLeftClass = boxClass(left.klass)
-    val boxedRightClass = boxClass(right.klass)
+    val boxedLeftClass = ClassUtils.primitiveToWrapper(left.klass)
+    val boxedRightClass = ClassUtils.primitiveToWrapper(right.klass)
     if (List(boxedLeftClass, boxedRightClass).forall(isSimpleType)) {
       commonSuperTypeForSimpleTypes(boxedLeftClass, boxedRightClass) match {
         case tc: TypedClass => Some(tc)
@@ -86,8 +83,8 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
 
   private def klassCommonSupertype(left: TypedClass, right: TypedClass)
                                   (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingResult = {
-    val boxedLeftClass = boxClass(left.klass)
-    val boxedRightClass = boxClass(right.klass)
+    val boxedLeftClass = ClassUtils.primitiveToWrapper(left.klass)
+    val boxedRightClass = ClassUtils.primitiveToWrapper(right.klass)
     if (List(boxedLeftClass, boxedRightClass).forall(isSimpleType)) {
       commonSuperTypeForSimpleTypes(boxedLeftClass, boxedRightClass)
     } else {
@@ -118,23 +115,10 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
 
   private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[Class[_]] = {
     classResolutionStrategy match {
-      case SupertypeClassResolutionStrategy.Intersection => ClsssHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right)
+      case SupertypeClassResolutionStrategy.Intersection => ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right)
       case SupertypeClassResolutionStrategy.Union => Set(left, right)
     }
   }
-
-  private def boxClass(clazz: Class[_]) =
-    clazz match {
-      case p if p == classOf[Boolean] => classOf[lang.Boolean]
-      case p if p == classOf[Byte] => classOf[lang.Byte]
-      case p if p == classOf[Character] => classOf[Character]
-      case p if p == classOf[Short] => classOf[lang.Short]
-      case p if p == classOf[Int] => classOf[Integer]
-      case p if p == classOf[Long] => classOf[lang.Long]
-      case p if p == classOf[Float] => classOf[lang.Float]
-      case p if p == classOf[Double] => classOf[lang.Double]
-      case _ => clazz
-    }
 
   private def isSimpleType(clazz: Class[_]) =
     clazz == classOf[java.lang.Boolean] || clazz == classOf[String] || classOf[Number].isAssignableFrom(clazz)

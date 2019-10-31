@@ -3,9 +3,21 @@ package pl.touk.nussknacker.engine.api.typed.supertype
 import scala.collection.mutable
 
 /**
-  * It looks for common super type using algorithm described here: See https://stackoverflow.com/a/9797689
+  * It looks for nearest common super type using algorithm described here: See https://stackoverflow.com/a/9797689
+  * It means that for combination:
+  * {{{
+  * C <: B <: A
+  * D <: B <: A
+  * }}}
+  * it will return only B (without A).
+  * For combination:
+  * {{{
+  * C <: (B <: A) with (B' <: A')
+  * D <: (B <: A) with (B' <: A')
+  * }}}
+  * it will return union (B or B')
   */
-object ClsssHierarchyCommonSupertypeFinder {
+object ClassHierarchyCommonSupertypeFinder {
 
   private val IgnoredCommonInterfaces = Set[Class[_]](
     classOf[Serializable],
@@ -15,10 +27,12 @@ object ClsssHierarchyCommonSupertypeFinder {
   )
 
   def findCommonSupertypes(first: Class[_], sec: Class[_]): Set[Class[_]] = {
+    // We need to have breadth first search to make reduction below work
     val firstBfs = classesBfs(first)
     val secBfs = classesBfs(sec)
     val intersection = firstBfs.intersect(secBfs)
     // We try to reduce this list - sometimes it is useful when it is exact one element (see klassCommonSupertypeReturningTypedClass)
+    // also this type can be shown on FE
     intersection.foldLeft(Set.empty[Class[_]]) { (uniqueClasses, clazz) =>
       if (uniqueClasses.exists(clazz.isAssignableFrom)) {
         uniqueClasses

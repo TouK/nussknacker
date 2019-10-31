@@ -10,42 +10,46 @@ import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedCla
   */
 private[typed] object CanBeSubclassDeterminer {
 
-  def canBeSubclassOf(first: TypingResult, sec: TypingResult): Boolean =
-    (first, sec) match {
+  /**
+    * This method checks if `givenType` can by subclass of `superclassCandidate`
+    * It will return true if `givenType` is equals to `superclassCandidate` or `givenType` "extends" `superclassCandidate`
+    */
+  def canBeSubclassOf(givenType: TypingResult, superclassCandidate: TypingResult): Boolean =
+    (givenType, superclassCandidate) match {
       case (_, Unknown) => true
       case (Unknown, _) => true
-      case (f: SingleTypingResult, s: TypedUnion) => canBeSubclassOf(Set(f), s.possibleTypes)
-      case (f: TypedUnion, s: SingleTypingResult) => canBeSubclassOf(f.possibleTypes, Set(s))
-      case (f: SingleTypingResult, s: SingleTypingResult) => singleCanBeSubclassOf(f, s)
-      case (f: TypedUnion, s: TypedUnion) => canBeSubclassOf(f.possibleTypes, s.possibleTypes)
+      case (given: SingleTypingResult, superclass: TypedUnion) => canBeSubclassOf(Set(given), superclass.possibleTypes)
+      case (given: TypedUnion, superclass: SingleTypingResult) => canBeSubclassOf(given.possibleTypes, Set(superclass))
+      case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
+      case (given: TypedUnion, superclass: TypedUnion) => canBeSubclassOf(given.possibleTypes, superclass.possibleTypes)
     }
 
-  private def canBeSubclassOf(firstSet: Set[SingleTypingResult], secSet: Set[SingleTypingResult]): Boolean =
-    firstSet.exists(f => secSet.exists(singleCanBeSubclassOf(f, _)))
+  private def canBeSubclassOf(givenTypes: Set[SingleTypingResult], superclassCandidates: Set[SingleTypingResult]): Boolean =
+    givenTypes.exists(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _)))
 
-  private def singleCanBeSubclassOf(first: SingleTypingResult, sec: SingleTypingResult): Boolean = {
-    def typedObjectRestrictions = sec match {
-      case s: TypedObjectTypingResult =>
-        val firstFields = first match {
-          case f: TypedObjectTypingResult => f.fields
+  private def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): Boolean = {
+    def typedObjectRestrictions = superclassCandidate match {
+      case superclass: TypedObjectTypingResult =>
+        val firstFields = givenType match {
+          case given: TypedObjectTypingResult => given.fields
           case _ => Map.empty[String, TypingResult]
         }
-        s.fields.forall {
+        superclass.fields.forall {
           case (name, typ) => firstFields.get(name).exists(canBeSubclassOf(_, typ))
         }
       case _ =>
         true
     }
-    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions
+    klassCanBeSubclassOf(givenType.objType, superclassCandidate.objType) && typedObjectRestrictions
   }
 
-  private def klassCanBeSubclassOf(first: TypedClass, sec: TypedClass): Boolean = {
+  private def klassCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
     def hasSameTypeParams =
     //we are lax here - the generic type may be co- or contra-variant - and we don't want to
     //throw validation errors in this case. It's better to accept to much than too little
-      sec.params.zip(first.params).forall(t => canBeSubclassOf(t._1, t._2) || canBeSubclassOf(t._2, t._1))
+      superclassCandidate.params.zip(givenClass.params).forall(t => canBeSubclassOf(t._1, t._2) || canBeSubclassOf(t._2, t._1))
 
-    first == sec || ClassUtils.isAssignable(first.klass, sec.klass) && hasSameTypeParams
+    givenClass == superclassCandidate || ClassUtils.isAssignable(givenClass.klass, superclassCandidate.klass) && hasSameTypeParams
   }
 
 }
