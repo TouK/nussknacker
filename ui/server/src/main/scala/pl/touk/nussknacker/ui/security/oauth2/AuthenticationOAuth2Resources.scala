@@ -1,11 +1,11 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler
+import pl.touk.nussknacker.ui.api.{EspErrorToHttp, RouteWithoutUser}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2Service
 
 import scala.concurrent.{ExecutionContext, Future}

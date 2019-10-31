@@ -4,11 +4,13 @@ import java.io.File
 import java.net.URI
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
+import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.{AuthenticationBackend, AuthenticationConfiguration, AuthenticationConfigurationFactory}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration.{OAuth2ConfigRule, OAuth2ConfigUser}
 
-final case class OAuth2Configuration(backend: AuthenticationBackend.Value,
+case class OAuth2Configuration(method: AuthenticationMethod,
                                usersFile: String,
                                authorizeUri: URI,
                                clientSecret: String,
@@ -20,19 +22,13 @@ final case class OAuth2Configuration(backend: AuthenticationBackend.Value,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,
                                authorizationHeader: String = "Authorization"
-                         ) extends AuthenticationConfiguration {
-
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.readers.EnumerationReader._
+                              ) extends AuthenticationConfiguration {
 
   private val userConfig: Config = ConfigFactory.parseFile(new File(usersFile))
 
-  lazy val users: List[OAuth2ConfigUser]
-    = userConfig.as[List[OAuth2ConfigUser]](AuthenticationConfigurationFactory.usersConfigurationPath)
+  lazy val users: List[OAuth2ConfigUser] = OAuth2Configuration.getUsers(userConfig)
 
-  lazy val rules: List[OAuth2ConfigRule]
-    = userConfig.as[List[OAuth2ConfigRule]](AuthenticationConfigurationFactory.rulesConfigurationPath)
+  lazy val rules: List[OAuth2ConfigRule] = OAuth2Configuration.getRules(userConfig)
 
   override def authorizeUrl: Option[URI] = Option.apply({
     new URI(dispatch.url(authorizeUri.toString)
@@ -46,10 +42,26 @@ final case class OAuth2Configuration(backend: AuthenticationBackend.Value,
   def redirectUrl: String = redirectUri.toString
 }
 
-final case class OAuth2ConfigUser(email: String, roles: List[String])
+object OAuth2Configuration {
+  import AuthenticationConfiguration._
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.EnumerationReader._
 
-final case class OAuth2ConfigRule(roleName: String,
-                                  isAdmin: Boolean = false,
-                                  categories: List[String] = List.empty,
-                                  permissions: List[Permission] = List.empty,
-                                  globalPermissions: List[GlobalPermission] = List.empty)
+  def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)
+
+  def getUsers(config: Config): List[OAuth2ConfigUser] =
+    config.as[List[OAuth2ConfigUser]](AuthenticationConfiguration.usersConfigurationPath)
+
+  def getRules(config: Config): List[OAuth2ConfigRule] =
+    config.as[List[OAuth2ConfigRule]](AuthenticationConfiguration.rulesConfigurationPath)
+
+
+  case class OAuth2ConfigUser(email: String, roles: List[String])
+
+  case class OAuth2ConfigRule(roleName: String,
+                              isAdmin: Boolean = false,
+                              categories: List[String] = List.empty,
+                              permissions: List[Permission] = List.empty,
+                              globalPermissions: List[GlobalPermission] = List.empty)
+}

@@ -10,7 +10,6 @@ import sttp.client.{Response, _}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.circe._
 import sttp.model.Uri
-
 import OAuth2ClientApi.ContentType
 
 import scala.concurrent.{ExecutionContext, Future}
