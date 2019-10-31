@@ -26,7 +26,8 @@ class Graph extends React.Component {
     processToDisplay: PropTypes.object.isRequired,
     groupingState: PropTypes.array,
     loggedUser: PropTypes.object.isRequired,
-    connectDropTarget: PropTypes.func
+    connectDropTarget: PropTypes.func,
+    //pageRef: PropTypes.object.isRequired
   }
 
   constructor(props) {
@@ -40,15 +41,16 @@ class Graph extends React.Component {
     })
     this.nodesMoving();
 
-    this.selfRef = React.createRef()
+    this.myRef = React.createRef()
+    this.containerRef = React.createRef();
 
     this.windowListeners = {
       resize: this.updateDimensions.bind(this)
     }
   }
 
-  getSelfRef = () => {
-    return this.selfRef.current
+  getMyRef = () => {
+    return this.myRef.current
   }
 
   componentDidMount() {
@@ -65,9 +67,15 @@ class Graph extends React.Component {
   }
 
   updateDimensions() {
+    const width = this.containerRef.current.offsetWidth
+    const height = this.containerRef.current.offsetHeight
+
+    console.log("Container size: " + this.containerRef.current.offsetWidth + " " + this.containerRef.current.offsetHeight)
+    console.log("My size: " + this.getMyRef().offsetWidth + " " + this.getMyRef().offsetHeight)
+
     this.processGraphPaper.fitToContent()
-    this.svgDimensions(this.selfRef().offsetWidth, this.selfRef().offsetHeight)
-    this.processGraphPaper.setDimensions(this.selfRef().offsetWidth, this.selfRef().offsetHeight)
+    this.svgDimensions(width, height)
+    this.processGraphPaper.setDimensions(width, height)
   }
 
   canAddNode(node) {
@@ -156,10 +164,10 @@ class Graph extends React.Component {
   createPaper = () => {
     const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly;
     return new joint.dia.Paper({
-      el: this.getSelfRef(),
+      el: this.getMyRef(),
       gridSize: 1,
-      height: this.getSelfRef().offsetHeight,
-      width: this.getSelfRef().offsetWidth,
+      height: this.getMyRef().offsetHeight,
+      width: this.getMyRef().offsetWidth,
       model: this.graph,
       snapLinks: {radius: 75},
       interactive: function (cellView) {
@@ -300,8 +308,8 @@ class Graph extends React.Component {
   }
 
   _prepareContentForExport = () => {
-    const oldHeight = this.getSelfRef().offsetHeight
-    const oldWidth = this.getSelfRef().offsetWidth
+    const oldHeight = this.getMyRef().offsetHeight
+    const oldWidth = this.getMyRef().offsetWidth
     //we fit to content to be able to export svg nicely...
     this.processGraphPaper.fitToContent()
 
@@ -313,7 +321,7 @@ class Graph extends React.Component {
 
   //Hack for FOP to properly export image from svg xml
   svgDimensions = (width, height) => {
-    let svg = this.getSelfRef().getElementsByTagName("svg")[0]
+    let svg = this.getMyRef().getElementsByTagName("svg")[0]
     svg.setAttribute('width', width)
     svg.setAttribute('height', height)
     this.setState({exported: SVGUtils.toXml(svg)})
@@ -376,7 +384,7 @@ class Graph extends React.Component {
   }
 
   enablePanZoom() {
-    const svgElement =  this.getSelfRef().getElementsByTagName("svg").item(0);
+    const svgElement =  this.getMyRef().getElementsByTagName("svg").item(0);
 
     const panAndZoom = svgPanZoom(svgElement, {
       viewportSelector: '.svg-pan-zoom_viewport',
@@ -505,11 +513,11 @@ class Graph extends React.Component {
 
   cursorBehaviour() {
     this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
-      this.getSelfRef().style.cursor = "move"
+      this.getMyRef().style.cursor = "move"
     })
 
     this.processGraphPaper.on('blank:pointerup', (evt, x, y) => {
-      this.getSelfRef().style.cursor = "auto"
+      this.getMyRef().style.cursor = "auto"
     })
   }
 
@@ -517,7 +525,6 @@ class Graph extends React.Component {
     const pan = this.panAndZoom ? this.panAndZoom.getPan() : {x: 0, y: 0}
     const zoom = this.panAndZoom ? this.panAndZoom.getSizes().realZoom : 1
 
-    //TODO: is it REALLY ok?
     const paddingLeft = cssVariables.svgGraphPaddingLeft
     const paddingTop = cssVariables.svgGraphPaddingTop
 
@@ -553,10 +560,10 @@ class Graph extends React.Component {
 
   render() {
     const toRender = (
-      <div id="graphContainer" style={{padding: this.props.padding}}>
+      <div id="graph-container" ref={this.containerRef}>
         {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
-        <div ref={this.selfRef} id={this.props.divId}></div>
+        <div ref={this.myRef} id={this.props.divId}></div>
       </div>
     )
 
@@ -575,7 +582,6 @@ const spec = {
 function mapState(state, props) {
   return {
     divId: "esp-graph",
-    padding: 0,
     readonly: state.graphReducer.businessView,
     singleClickNodeDetailsEnabled: true,
     nodeIdPrefixForSubprocessTests: "",
@@ -587,6 +593,7 @@ function mapState(state, props) {
     groupingState: state.graphReducer.groupingState,
     expandedGroups: state.ui.expandedGroups,
     layout: state.graphReducer.layout,
+    //pageRef: props.pageRef,
     ...commonState(state)
   };
 }
@@ -594,13 +601,13 @@ function mapState(state, props) {
 function mapSubprocessState(state, props) {
   return {
     divId: "esp-graph-subprocess",
-    parent: "modal-content",
     padding: 40,
     readonly: true,
     singleClickNodeDetailsEnabled: false,
     nodeIdPrefixForSubprocessTests: state.graphReducer.nodeToDisplay.id + "-", //TODO where should it be?
     processToDisplay: props.processToDisplay,
     processCounts: props.processCounts,
+    //pageRef: props.pageRef,
     ...commonState(state)
   }
 }
@@ -610,7 +617,7 @@ function commonState(state) {
     processCategory: state.graphReducer.fetchedProcessDetails.processCategory,
     loggedUser: state.settings.loggedUser,
     processDefinitionData: state.settings.processDefinitionData || {},
-    selectionState: state.graphReducer.selectionState,
+    selectionState: state.graphReducer.selectionState
   }
 }
 

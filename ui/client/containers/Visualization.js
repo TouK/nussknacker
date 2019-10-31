@@ -19,11 +19,24 @@ import RouteLeavingGuard from "../components/RouteLeavingGuard";
 class Visualization extends React.Component {
 
   constructor(props) {
-    super(props);
-    this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false};
-    this.graphRef = React.createRef();
-    this.bindShortCuts();
+    super(props)
+    this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false}
+    this.bindShortCuts()
+
+    this.graphRef = React.createRef()
+    // this.pageRef = React.createRef()
+    //
+    // this.windowListeners = {
+    //   resize: this.updateDimensions.bind(this)
+    // }
   }
+
+  // updateDimensions() {
+  //   console.log("Page size: " + this.pageRef.current.offsetWidth + " " + this.pageRef.current.offsetHeight)
+  //   this.graphRef.current.offsetWidth = this.pageRef.current.offsetWidth
+  //   this.graphRef.current.offsetHeight = this.pageRef.current.offsetHeight
+  // }
+
 
   bindShortCuts() {
     this.windowListeners = {
@@ -230,7 +243,7 @@ class Visualization extends React.Component {
     const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading;
 
     return (
-      <div className="page">
+      <div className="page" ref={this.pageRef}>
         <RouteLeavingGuard
           when={!this.props.nothingToSave}
           navigate={path => this.props.history.push(path)}
