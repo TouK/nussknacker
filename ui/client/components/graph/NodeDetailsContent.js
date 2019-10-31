@@ -162,8 +162,11 @@ export class NodeDetailsContent extends React.Component {
                 <Fields
                   fields={this.state.editedNode.parameters || []}
                   fieldCreator={(field, onChange) =>
-                  (<input type="text" className="node-input" value={field.typ.refClazzName}
-                          onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>)}
+                    (<React.Fragment>
+                      <input type="text" className="node-input" value={field.typ.refClazzName}
+                             onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
+                      {notEmptyValidator.isValid(field.typ.refClazzName) ? null : <label key={uuid4()} className='node-details-validation-label'>{notEmptyValidator.message}</label>}
+                    </React.Fragment>)}
                   onChange={(fields) => this.setNodeDataAt("parameters", fields)}
                   newValue={{name: "", typ: {refClazzName: ""}}}
                   isMarked={index => this.isMarked(`parameters[${index}].name`) || this.isMarked(`parameters[${index}].typ.refClazzName`)}
@@ -247,7 +250,6 @@ export class NodeDetailsContent extends React.Component {
                   node={this.state.editedNode}
                   joinDef={this.nodeDef}
                   isMarked={this.isMarked}
-                  handlePropertyValidation={this.props.handlePropertyValidation}
               />
             }
             {(this.state.editedNode.parameters).map((param, index) => {
@@ -268,7 +270,6 @@ export class NodeDetailsContent extends React.Component {
             addElement={this.addElement}
             isMarked={this.isMarked}
             readOnly={!this.props.isEditMode}
-            handlePropertyValidation={this.props.handlePropertyValidation}
         />;
       case 'Variable':
         return <Variable
@@ -276,7 +277,6 @@ export class NodeDetailsContent extends React.Component {
             node={this.state.editedNode}
             isMarked={this.isMarked}
             readOnly={!this.props.isEditMode}
-            handlePropertyValidation={this.props.handlePropertyValidation}
         />;
       case 'Switch':
         return (
@@ -408,10 +408,7 @@ export class NodeDetailsContent extends React.Component {
         fieldLabel,
         fieldName,
         _.get(this.state.editedNode, fieldProperty, ""),
-        ((newValue) => {
-          this.setNodeDataAt(fieldProperty, newValue, defaultValue);
-          validators.forEach(validator => this.props.handlePropertyValidation(fieldProperty, validator.isValid(newValue)))
-        }),
+        ((newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)),
         readonly,
         this.isMarked(fieldProperty),
         key,
@@ -465,16 +462,11 @@ export class NodeDetailsContent extends React.Component {
           <ExpressionSuggest
             fieldName={fieldName}
             inputProps={{
-              rows: 1,
-              cols: 50,
+              rows: 1, cols: 50,
               className: "node-input",
               value: expressionObj.expression,
               language: expressionObj.language,
-              onValueChange: ((newValue) => {
-                this.setNodeDataAt(exprTextPath, newValue)
-                this.props.handlePropertyValidation(fieldName, notEmptyValidator.isValid(newValue))
-              }),
-              readOnly: readOnly}}
+              onValueChange: ((newValue) => this.setNodeDataAt(exprTextPath, newValue)), readOnly: readOnly}}
             validators={[notEmptyValidator]}
           />
         </div>

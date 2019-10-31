@@ -51,10 +51,6 @@ class AddProcessDialog extends React.Component {
     })
   }
 
-  canConfirm = () =>
-    !nameAlreadyExists(this.props.processes, this.props.subProcesses, this.state.processId)
-      && notEmptyValidator.isValid(this.state.processId)
-
   render() {
     const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
@@ -81,8 +77,7 @@ class AddProcessDialog extends React.Component {
                                onChange={(e) => this.setState({processId: e.target.value})}/>
                         {
                           validators.map(validator => validator.isValid(this.props.processes, this.props.subProcesses, this.state.processId) ?
-                              null : <label key={this.state.processId + uuid4()} className='validation-label'>{validator.message}</label>
-                          )
+                              null : <label key={this.state.processId + uuid4()} className='validation-label'>{validator.message}</label>)
                         }
                       </div>
                     </div>
@@ -104,7 +99,7 @@ class AddProcessDialog extends React.Component {
                 <div className="footerButtons">
                   <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel
                   </button>
-                  <button type="button" title="Create" className='modalButton' disabled={!this.canConfirm()} onClick={this.confirm}>Create
+                  <button type="button" title="Create" className='modalButton' onClick={this.confirm}>Create
                   </button>
                 </div>
               </div>

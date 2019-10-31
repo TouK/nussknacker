@@ -1,7 +1,6 @@
 import ExpressionSuggest from "../ExpressionSuggest";
 import PropTypes from "prop-types";
 import React from "react";
-import {notEmptyValidator} from "../../../common/Validators";
 
 const ExpressionInput = (props) => {
     const {label, name, path, value, onChange, isMarked, readOnly, rows, cols, validators} = props;

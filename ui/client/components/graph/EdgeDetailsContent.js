@@ -20,7 +20,7 @@ export default class EdgeDetailsContent extends React.Component {
   }
 
   baseModalContent(toAppend) {
-    const { edge, edgeErrors, readOnly, changeEdgeTypeValue, handlePropertyValidation} = this.props
+    const { edge, edgeErrors, readOnly, changeEdgeTypeValue } = this.props
 
     return (
       <div className="node-table">
@@ -42,12 +42,7 @@ export default class EdgeDetailsContent extends React.Component {
                 disabled={readOnly}
                 className="node-input"
                 value={edge.edgeType.type}
-                onChange={(e) => {
-                  changeEdgeTypeValue(e.target.value);
-                  if (e.target.value === "SwitchDefault") {
-                    handlePropertyValidation(edgeName(edge), true)
-                  }
-                }}
+                onChange={(e) => changeEdgeTypeValue(e.target.value)}
               >
                 <option value={"SwitchDefault"}>Default</option>
                 <option value={"NextSwitch"}>Condition</option>
@@ -61,7 +56,7 @@ export default class EdgeDetailsContent extends React.Component {
   }
 
   render() {
-    const { edge, readOnly, updateEdgeProp, handlePropertyValidation} = this.props
+    const { edge, readOnly, updateEdgeProp } = this.props
 
     switch (_.get(edge.edgeType, 'type')) {
       case "SwitchDefault": {
@@ -78,10 +73,7 @@ export default class EdgeDetailsContent extends React.Component {
                   cols: 50,
                   className: "node-input",
                   value: edge.edgeType.condition.expression,
-                  onValueChange: (newValue) => {
-                    updateEdgeProp("edgeType.condition.expression", newValue)
-                    handlePropertyValidation(edgeName(edge), notEmptyValidator.isValid(newValue))
-                  },
+                  onValueChange: (newValue) => updateEdgeProp("edgeType.condition.expression", newValue),
                   language: edge.edgeType.condition.language, readOnly: readOnly}}
                 validators={[notEmptyValidator]}
               />

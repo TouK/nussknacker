@@ -1,11 +1,11 @@
 import React from "react";
 import PropTypes from 'prop-types';
 import _ from "lodash";
-import { DragSource, DropTarget } from "react-dnd";
+import {DragSource, DropTarget} from "react-dnd";
 import dragHandleIcon from "../assets/img/drag-handle.png";
 import update from "immutability-helper";
 import ReactDOM from "react-dom";
-
+import {notEmptyValidator} from "../common/Validators";
 
 class RawField extends React.Component {
   render() {
@@ -15,11 +15,12 @@ class RawField extends React.Component {
     const opacity = this.props.isDragging ? 0 : 1;
 
     return this.props.connectDropTarget(this.props.connectDragSource(
-      <div className="node-row" style={{opacity}}>
+      <div className="node-row movable-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
           <input className="node-input" type="text" value={field.name} placeholder="Name"
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
+          {notEmptyValidator.isValid(field.name) ? null : <label key={field.name} className='node-details-validation-label'>{notEmptyValidator.message}</label>}
         </div>
         <div className={"node-value field" + markedClass}>
           {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value))}

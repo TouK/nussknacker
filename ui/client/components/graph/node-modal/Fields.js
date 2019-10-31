@@ -6,7 +6,7 @@ import {v4 as uuid4} from "uuid";
 
 const Fields = (props) => {
 
-    const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, expressionValue, handlePropertyValidation} = props
+    const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, expressionValue} = props
 
     return (
         <div className="node-row">
@@ -19,17 +19,14 @@ const Fields = (props) => {
                             const paths = `${namespace}[${index}]`
 
                             return (
-                                <div className="node-row" key={field.uuid}>
+                                <div className="node-row movable-row" key={field.uuid}>
                                     <div className={"node-value fieldName" + (isMarked(paths) ? " marked" : "")}>
                                         <input
                                             className="node-input"
                                             type="text"
                                             value={field.name}
                                             placeholder="Field name"
-                                            onChange={((e) => {
-                                                onChange(`${paths}.name`, e.target.value)
-                                                handlePropertyValidation(`${paths}.name`, notEmptyValidator.isValid(e.target.value))
-                                            })}
+                                            onChange={((e) => onChange(`${paths}.name`, e.target.value))}
                                             readOnly={readOnly}
                                         />
                                         {
@@ -41,10 +38,7 @@ const Fields = (props) => {
                                         <ExpressionSuggest
                                             fieldName={`value-${field.uuid}`}
                                             inputProps={{
-                                                onValueChange: ((value) => {
-                                                    onChange(`${paths}.expression.expression`, value);
-                                                    handlePropertyValidation(`value-${field.uuid}`, notEmptyValidator.isValid(value))
-                                                }),
+                                                onValueChange: ((value) => onChange(`${paths}.expression.expression`, value)),
                                                 value: expression.expression,
                                                 language: expression.language,
                                                 readOnly}}

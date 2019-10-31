@@ -9,7 +9,7 @@ import {notEmptyValidator} from "../../../common/Validators";
 
 const MapVariable = (props) => {
 
-    const {isMarked, node, removeElement, addElement, onChange, readOnly, handlePropertyValidation} = props;
+    const {isMarked, node, removeElement, addElement, onChange, readOnly} = props;
 
     const addField = () => {
         addElement("fields", {"name": "", "uuid": uuid4(), "expression": {"expression":"", "language": "spel"}});
@@ -21,10 +21,7 @@ const MapVariable = (props) => {
               label="Id"
               value={node.id}
               path="id"
-              onChange={(property, value) => {
-                onChange(property, value);
-                handlePropertyValidation(property, notEmptyValidator.isValid(value))
-              }}
+              onChange={onChange}
               isMarked={isMarked("id")}
               readOnly={readOnly}
               validators={[notEmptyValidator]}
@@ -33,10 +30,7 @@ const MapVariable = (props) => {
               label="Variable Name"
               value={node.varName}
               path="varName"
-              onChange={(property, value) => {
-                onChange(property, value);
-                handlePropertyValidation(property, notEmptyValidator.isValid(value))
-              }}
+              onChange={onChange}
               isMarked={isMarked("varName")}
               readOnly={readOnly}
               validators={[notEmptyValidator]}
@@ -49,7 +43,6 @@ const MapVariable = (props) => {
                 namespace="fields"
                 addField={addField}
                 isMarked={isMarked}
-                handlePropertyValidation={handlePropertyValidation}
             />
             <Textarea
                 label="Description"

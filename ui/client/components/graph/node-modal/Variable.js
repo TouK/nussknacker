@@ -8,7 +8,7 @@ import {notEmptyValidator} from "../../../common/Validators";
 
 const Variable = (props) => {
 
-  const {node, onChange, isMarked, readOnly, handlePropertyValidation} = props;
+  const {node, onChange, isMarked, readOnly} = props;
 
   return (
     <div className="node-table-body node-variable-builder-body">
@@ -16,10 +16,7 @@ const Variable = (props) => {
         label="Id"
         value={node.id}
         path="id"
-        onChange={(property, value) => {
-          onChange(property, value);
-          handlePropertyValidation(property, notEmptyValidator.isValid(value))
-        }}
+        onChange={onChange}
         isMarked={isMarked("id")} readOnly={readOnly}
         validators={[notEmptyValidator]}
       />
@@ -27,10 +24,7 @@ const Variable = (props) => {
         label="Variable Name"
         value={node.varName}
         path="varName"
-        onChange={(property, value) => {
-          onChange(property, value);
-          handlePropertyValidation(property, notEmptyValidator.isValid(value))
-        }}
+        onChange={onChange}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
         validators={[notEmptyValidator]}
@@ -40,10 +34,7 @@ const Variable = (props) => {
         label="Expression"
         value={node.value}
         path="value.expression"
-        onChange={(property, value) => {
-          onChange(property, value);
-          handlePropertyValidation(property, notEmptyValidator.isValid(value))
-        }}
+        onChange={onChange}
         readOnly={readOnly}
         validators={[notEmptyValidator]}
       />

@@ -208,6 +208,13 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     .node-row
       margin-bottom: 8px
       margin-top: 7px
+    .movable-row
+      display flex
+      img
+        padding-top 10px
+        padding-bottom 25px
+        margin-top auto
+        margin-bottom auto
     .node-label
       color: modalLabelTextColor
       width: labelWidth
@@ -321,11 +328,9 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
         &:hover
           cursor pointer
     .node-details-validation-label
-      padding 0 20px
       color warningColor
     .node-details-validation-label::first-letter
       text-transform capitalize
-
     .node-group
       padding-top 15px
       width: 100%
