@@ -1,6 +1,7 @@
 import PropTypes from "prop-types"
 import React from "react"
 import ExpressionSuggest from "../ExpressionSuggest"
+import {notEmptyValidator} from "../../../common/Validators";
 
 const BranchParameters = (props) => {
 
@@ -34,16 +35,15 @@ const BranchParameters = (props) => {
                                             <div className={"node-value field" + (isMarked(path) ? " marked" : "")}>
                                                 <ExpressionSuggest
                                                     fieldName={`value-${branchParamDef.name}-${edge.from}`}
-                                                    humanReadableFieldName={"Expression"}
                                                     inputProps={{
                                                         onValueChange: ((value) => {
                                                           onChange(`${path}.expression.expression`, value)
-                                                          handlePropertyValidation(`${path}.expression.expression`, !_.isEmpty(value))
+                                                          handlePropertyValidation(`${path}.expression.expression`, notEmptyValidator.isValid(value))
                                                         }),
                                                         value: paramValue.expression.expression,
                                                         language: paramValue.expression.language,
-                                                        readOnly
-                                                    }}
+                                                        readOnly}}
+                                                    validators={[notEmptyValidator]}
                                                 />
                                             </div>
                                         </div>

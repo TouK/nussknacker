@@ -4,6 +4,7 @@ import _ from 'lodash'
 import "ladda/dist/ladda.min.css"
 import ExpressionSuggest from './ExpressionSuggest'
 import ModalRenderUtils from "./ModalRenderUtils"
+import {notEmptyValidator} from "../../common/Validators";
 
 export default class EdgeDetailsContent extends React.Component {
   static propTypes = {
@@ -72,7 +73,6 @@ export default class EdgeDetailsContent extends React.Component {
             <div className="node-label">Expression</div>
             <div className={"node-value" + (this.isMarked("edgeType.condition.expression") ? " marked" : "")}>
               <ExpressionSuggest
-                humanReadableFieldName={"Expression"}
                 inputProps={{
                   rows: 1,
                   cols: 50,
@@ -80,10 +80,11 @@ export default class EdgeDetailsContent extends React.Component {
                   value: edge.edgeType.condition.expression,
                   onValueChange: (newValue) => {
                     updateEdgeProp("edgeType.condition.expression", newValue)
-                    handlePropertyValidation(edgeName(edge), !_.isEmpty(newValue))
+                    handlePropertyValidation(edgeName(edge), notEmptyValidator.isValid(newValue))
                   },
-                  language: edge.edgeType.condition.language, readOnly: readOnly
-              }}/>
+                  language: edge.edgeType.condition.language, readOnly: readOnly}}
+                validators={[notEmptyValidator]}
+              />
             </div>
           </div>
         )

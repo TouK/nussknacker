@@ -12,6 +12,8 @@ import HttpService from "../http/HttpService";
 import * as VisualizationUrl from '../common/VisualizationUrl';
 import Draggable from 'react-draggable';
 import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
+import {duplicate, notEmptyValidator} from "../common/Validators";
+import {v4 as uuid4} from "uuid";
 
 //TODO: Consider integrating with GenericModalDialog 
 class AddProcessDialog extends React.Component {
@@ -51,7 +53,7 @@ class AddProcessDialog extends React.Component {
 
   canConfirm = () =>
     !nameAlreadyExists(this.props.processes, this.props.subProcesses, this.state.processId)
-      && !_.isEmpty(this.state.processId)
+      && notEmptyValidator.isValid(this.state.processId)
 
   render() {
     const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
@@ -78,9 +80,8 @@ class AddProcessDialog extends React.Component {
                                value={this.state.processId}
                                onChange={(e) => this.setState({processId: e.target.value})}/>
                         {
-                          validations.map(validation =>
-                              validation.isValid(this.props.processes, this.props.subProcesses, this.state.processId) ?
-                              null : <label className='validation-label'>{validation.message}</label>
+                          validators.map(validator => validator.isValid(this.props.processes, this.props.subProcesses, this.state.processId) ?
+                              null : <label key={this.state.processId + uuid4()} className='validation-label'>{validator.message}</label>
                           )
                         }
                       </div>
@@ -127,14 +128,14 @@ const nameAlreadyExists = (processes, subprocesses, name) => {
     || subprocesses.map(subProcess => subProcess.name).includes(name)
 }
 
-const validations = [
+const validators = [
   {
-    isValid: (processes, subprocesses, name) => !_.isEmpty(name),
-    message: "Id can not be empty"
+    isValid: (processes, subprocesses, name) => notEmptyValidator.isValid(name),
+    message: notEmptyValidator.message
   },
   {
     isValid: (processes, subprocesses, name) => !nameAlreadyExists(processes, subprocesses, name),
-    message: "Process or subprocess with given id already exists"
+    message: duplicate("Id")
   }
 ];
 

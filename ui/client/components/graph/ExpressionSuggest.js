@@ -16,6 +16,8 @@ import 'brace/ext/searchbox';
 import '../../brace/mode/spel'
 import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
+import {notEmptyValidator} from "../../common/Validators";
+import {v4 as uuid4} from "uuid";
 
 //to reconsider
 // - respect categories for global variables?
@@ -27,7 +29,7 @@ class ExpressionSuggest extends React.Component {
   static propTypes = {
     inputProps: PropTypes.object.isRequired,
     fieldName: PropTypes.string,
-    humanReadableFieldName: PropTypes.string
+    validators: PropTypes.array.isRequired
   }
 
   customAceEditorCompleter = {
@@ -124,7 +126,10 @@ class ExpressionSuggest extends React.Component {
              }}
            />
          </div>
-         {!_.isEmpty(this.state.value) ? null : <label className='node-details-validation-label'>{this.props.humanReadableFieldName + " can not be empty"}</label>}
+         {
+           notEmptyValidator.isValid(this.state.value) ?
+             null : <label key={"expression" + uuid4()} className='node-details-validation-label'>{notEmptyValidator.message}</label>
+         }
        </div>
         )
     } else {

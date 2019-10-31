@@ -1,7 +1,8 @@
 import PropTypes from "prop-types"
 import React from "react"
-import _ from "lodash"
 import ExpressionSuggest from "../ExpressionSuggest"
+import {notEmptyValidator} from "../../../common/Validators";
+import {v4 as uuid4} from "uuid";
 
 const Fields = (props) => {
 
@@ -27,27 +28,27 @@ const Fields = (props) => {
                                             placeholder="Field name"
                                             onChange={((e) => {
                                                 onChange(`${paths}.name`, e.target.value)
-                                                handlePropertyValidation(`${paths}.name`, !_.isEmpty(e.target.value))
+                                                handlePropertyValidation(`${paths}.name`, notEmptyValidator.isValid(e.target.value))
                                             })}
                                             readOnly={readOnly}
                                         />
                                         {
-                                            _.isEmpty(field.name) ? <label className='node-details-validation-label'>{"Field name can not be empty"}</label> : null
+                                            notEmptyValidator.isValid(field.name) ?
+                                              null : <label key={label + uuid4()} className='node-details-validation-label'>{notEmptyValidator.message}</label>
                                         }
                                     </div>
                                     <div className={"node-value field" + (isMarked(paths) ? " marked" : "")}>
                                         <ExpressionSuggest
                                             fieldName={`value-${field.uuid}`}
-                                            humanReadableFieldName={"Expression"}
                                             inputProps={{
                                                 onValueChange: ((value) => {
                                                     onChange(`${paths}.expression.expression`, value);
-                                                    handlePropertyValidation(`value-${field.uuid}`, !_.isEmpty(value))
+                                                    handlePropertyValidation(`value-${field.uuid}`, notEmptyValidator.isValid(value))
                                                 }),
                                                 value: expression.expression,
                                                 language: expression.language,
-                                                readOnly
-                                            }}
+                                                readOnly}}
+                                            validators={[notEmptyValidator]}
                                         />
                                     </div>
                                     <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>

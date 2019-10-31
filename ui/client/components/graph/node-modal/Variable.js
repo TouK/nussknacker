@@ -4,6 +4,7 @@ import Textarea from "./Textarea";
 import ExpressionInput from "./ExpressionInput";
 import React from "react";
 import _ from "lodash";
+import {notEmptyValidator} from "../../../common/Validators";
 
 const Variable = (props) => {
 
@@ -17,10 +18,10 @@ const Variable = (props) => {
         path="id"
         onChange={(property, value) => {
           onChange(property, value);
-          handlePropertyValidation(property, !_.isEmpty(value))
+          handlePropertyValidation(property, notEmptyValidator.isValid(value))
         }}
         isMarked={isMarked("id")} readOnly={readOnly}
-        isValid={(value) => _.isEmpty(value)}
+        validators={[notEmptyValidator]}
       />
       <Input
         label="Variable Name"
@@ -28,11 +29,11 @@ const Variable = (props) => {
         path="varName"
         onChange={(property, value) => {
           onChange(property, value);
-          handlePropertyValidation(property, !_.isEmpty(value))
+          handlePropertyValidation(property, notEmptyValidator.isValid(value))
         }}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
-        isValid={(value) => _.isEmpty(value)}
+        validators={[notEmptyValidator]}
       />
       <ExpressionInput
         name="expression"
@@ -41,10 +42,10 @@ const Variable = (props) => {
         path="value.expression"
         onChange={(property, value) => {
           onChange(property, value);
-          handlePropertyValidation(property, !_.isEmpty(value))
+          handlePropertyValidation(property, notEmptyValidator.isValid(value))
         }}
-        isValid={(value) => _.isEmpty(value)}
         readOnly={readOnly}
+        validators={[notEmptyValidator]}
       />
       <Textarea
         label="Description"

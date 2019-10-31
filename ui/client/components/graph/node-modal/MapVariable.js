@@ -5,6 +5,7 @@ import {v4 as uuid4} from "uuid";
 import React from "react";
 import _ from "lodash";
 import Fields from "./Fields";
+import {notEmptyValidator} from "../../../common/Validators";
 
 const MapVariable = (props) => {
 
@@ -22,11 +23,11 @@ const MapVariable = (props) => {
               path="id"
               onChange={(property, value) => {
                 onChange(property, value);
-                handlePropertyValidation(property, !_.isEmpty(value))
+                handlePropertyValidation(property, notEmptyValidator.isValid(value))
               }}
               isMarked={isMarked("id")}
               readOnly={readOnly}
-              isValid={(value) => _.isEmpty(value)}
+              validators={[notEmptyValidator]}
             />
             <Input
               label="Variable Name"
@@ -34,11 +35,11 @@ const MapVariable = (props) => {
               path="varName"
               onChange={(property, value) => {
                 onChange(property, value);
-                handlePropertyValidation(property, !_.isEmpty(value))
+                handlePropertyValidation(property, notEmptyValidator.isValid(value))
               }}
               isMarked={isMarked("varName")}
               readOnly={readOnly}
-              isValid={(value) => _.isEmpty(value)}
+              validators={[notEmptyValidator]}
             />
             <Fields
                 label="Fields"

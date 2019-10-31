@@ -1,14 +1,17 @@
 import PropTypes from "prop-types";
 import React from "react";
+import {notEmptyValidator} from "../../../common/Validators";
+import {v4 as uuid4} from "uuid";
 
 const Input = (props) => {
-    const {label, path, value, onChange, isMarked, readOnly, shouldRenderValidationLabel: isValid = () => false} = props;
+    const {label, path, value, onChange, isMarked, readOnly, validators} = props;
 
     return (
         <div className="node-row">
             <div className="node-label" title={label}>{label}:</div>
             <div className={"node-value" + (isMarked ? " marked" : "")}>
                 <input
+                    key={label}
                     type="text"
                     className="node-input"
                     value={value}
@@ -16,8 +19,8 @@ const Input = (props) => {
                     readOnly={readOnly}
                 />
                 {
-                    isValid(value) ?
-                        <label className='node-details-validation-label'>{label + " can not be empty"}</label> : null
+                    validators.map(validator =>
+                      validator.isValid(value) ? null : <label key={label + uuid4()} className='node-details-validation-label'>{notEmptyValidator.message}</label>)
                 }
             </div>
         </div>

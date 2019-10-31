@@ -1,9 +1,10 @@
 import ExpressionSuggest from "../ExpressionSuggest";
 import PropTypes from "prop-types";
 import React from "react";
+import {notEmptyValidator} from "../../../common/Validators";
 
 const ExpressionInput = (props) => {
-    const {label, name, path, value, onChange, isMarked, readOnly, rows, cols} = props;
+    const {label, name, path, value, onChange, isMarked, readOnly, rows, cols, validators} = props;
 
     return (
         <div className="node-row">
@@ -11,7 +12,6 @@ const ExpressionInput = (props) => {
             <div className={"node-value" + (isMarked ? " marked" : "")}>
                 <ExpressionSuggest
                     fieldName={name}
-                    humanReadableFieldName={name}
                     inputProps={{
                         className: "node-input",
                         value: value.expression,
@@ -19,8 +19,8 @@ const ExpressionInput = (props) => {
                         onValueChange: ((value) => onChange(path, value)),
                         readOnly,
                         rows,
-                        cols
-                    }}
+                        cols}}
+                    validators={validators}
                 />
             </div>
         </div>
