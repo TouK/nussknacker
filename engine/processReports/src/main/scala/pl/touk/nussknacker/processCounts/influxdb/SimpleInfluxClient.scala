@@ -12,6 +12,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class InfluxConfig(influxUrl: String, user: String, password: String, database: String = "esp")
 
+class InfluxException(cause: Throwable) extends Exception(cause)
+case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
+  override def getMessage: String = s"Influx query failed with message '$message'"
+}
+case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) extends InfluxException(cause) {
+  override def getMessage: String = s"Connection to influx failed with message '$body'"
+}
+
 //we use simplistic InfluxClient, as we only need queries
 class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) {
 
@@ -23,6 +31,10 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
       .response(asJson[InfluxResponse])
       .send()
       .flatMap(SttpJson.failureToFuture[InfluxResponse])
+      .recoverWith {
+        case ex: DeserializationError[_] => Future.failed(InvalidInfluxResponse(ex.getMessage, ex))
+        case ex: HttpError => Future.failed(InfluxHttpError(config.influxUrl, ex.body, ex))
+      }
       //we assume only one query
       .map(_.results.head.series)
   }

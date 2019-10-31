@@ -65,8 +65,6 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Scala
 
     val kafkaProcess = SampleProcess.kafkaProcess(processId, inTopic)
 
-
-    val kafkaClient: KafkaClient = createKafkaClient
     logger.info("Kafka client created")
 
     kafkaClient.createTopic(outTopic, 1)
@@ -100,16 +98,15 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Scala
 
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
-    val kafkaClient: KafkaClient = createKafkaClient
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
     //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
-    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("List(One element)")
+    messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
 
-    val messages = messagesFromTopic(outTopic, kafkaClient, 2)
+    val messages = messagesFromTopic(outTopic, 2)
 
     messages shouldBe List("List(One element)", "List(One element, One element)")
 
@@ -123,13 +120,11 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Scala
 
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
-    val kafkaClient: KafkaClient = createKafkaClient
-
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
     //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
-    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("List(One element)")
+    messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
     val dir = new File("/tmp").toURI.toString
     val savepointPath = processManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), dir)
@@ -139,7 +134,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Scala
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
 
-    val messages = messagesFromTopic(outTopic, kafkaClient, 2)
+    val messages = messagesFromTopic(outTopic, 2)
 
     messages shouldBe List("List(One element)", "List(One element, One element)")
 
@@ -153,11 +148,10 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Scala
 
     val process = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
 
-    val kafkaClient: KafkaClient = createKafkaClient
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
-    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("")
+    messagesFromTopic(outTopic,1) shouldBe List("")
 
     logger.info("Starting to redeploy")
 
@@ -199,29 +193,28 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Scala
     val kafkaClient = new KafkaClient(
       configWithSignals.getString("processConfig.kafka.kafkaAddress"),
       configWithSignals.getString("processConfig.kafka.zkAddress"))
-    val consumer = kafkaClient.createConsumer()
 
-    flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
+    try {
+      val consumer = kafkaClient.createConsumer()
+      flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
-    val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
-    val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
-    signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
-    signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
-    signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
+      val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
+      val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
+      signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
+      signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
+      signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
+    } finally {
+      kafkaClient.shutdown()
+    }
+
   }
 
 
-  private def messagesFromTopic(outTopic: String, kafkaClient: KafkaClient, count: Int): List[String] = {
+  private def messagesFromTopic(outTopic: String, count: Int): List[String] = {
     kafkaClient.createConsumer()
       .consume(outTopic)
       .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
       .take(count).toList
-  }
-
-  private def createKafkaClient: KafkaClient = {
-    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      config.getString("processConfig.kafka.zkAddress"))
-    kafkaClient
   }
 
   private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {

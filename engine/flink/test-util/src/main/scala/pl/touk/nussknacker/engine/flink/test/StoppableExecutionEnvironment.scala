@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import java.io.File
-import java.nio.file.{Files, Path}
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobExecutionResult, JobID, JobSubmissionResult}
@@ -11,9 +9,7 @@ import org.apache.flink.runtime.jobgraph.JobGraph
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
-import org.apache.flink.test.util.TestBaseUtils
 import org.apache.flink.util.OptionalFailure
-import org.junit.Assert
 
 object StoppableExecutionEnvironment {
 
@@ -53,6 +49,7 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
 
     userFlinkClusterConfig.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, false)
     userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
+    getConfig.disableSysoutLogging()
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
 
     localFlinkMiniCluster = new LocalFlinkMiniCluster(jobGraph.getJobConfiguration, singleActorSystem)
