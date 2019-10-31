@@ -15,7 +15,7 @@ object LoggedUser {
             globalPermissions: List[GlobalPermission] = Nil,
             isAdmin: Boolean = false): LoggedUser = {
     if (isAdmin) {
-      AdminUser(id, categoryPermissions, globalPermissions)
+      AdminUser(id)
     }
     else {
       CommonUser(id, categoryPermissions, globalPermissions)
@@ -37,9 +37,7 @@ case class CommonUser(id: String,
   override val isAdmin: Boolean = false
 }
 
-case class AdminUser(id: String,
-                     categoryPermissions: Map[String, Set[Permission]] = Map.empty,
-                     globalPermissions: List[GlobalPermission] = Nil) extends LoggedUser {
+case class AdminUser(id: String) extends LoggedUser {
   override def can(category: String, permission: Permission): Boolean = true
   override val isAdmin: Boolean = true
 }
