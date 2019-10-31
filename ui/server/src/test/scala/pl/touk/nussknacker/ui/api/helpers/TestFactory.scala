@@ -80,7 +80,7 @@ object TestFactory extends TestPermissions{
 
   def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, Nil, isAdmin = true)
 
-  class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
+  class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigFactory.load()), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
       Some(ProcessState(DeploymentId("1"), runningState = managerProcessState.get(), "RUNNING", 0, None)))

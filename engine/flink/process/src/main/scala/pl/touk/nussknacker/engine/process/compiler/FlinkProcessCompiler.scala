@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.async.DefaultAsyncExecutionConfigPreparer
 import pl.touk.nussknacker.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.duration.FiniteDuration
@@ -76,8 +76,6 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
     = definitions().signalsWithTransformers.mapValuesNow(_._1.as[FlinkProcessSignalSender])
       .map { case (k, v) => SignalSenderKey(k, v.getClass) -> v }
 
-  def createFlinkProcessRegistrar() = FlinkProcessRegistrar(this, config)
-
   //TODO: consider moving to CompiledProcess??
   private class ListeningExceptionHandler(listeners: Seq[ProcessListener], exceptionHandler: FlinkEspExceptionHandler)
     extends DelegatingFlinkEspExceptionHandler(exceptionHandler) {
@@ -88,6 +86,3 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
     }
   }
 }
-
-class StandardFlinkProcessCompiler(creator: ProcessConfigCreator, config: Config)
-  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport = true)

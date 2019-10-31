@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkInputFormat, Fli
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.BatchFlinkProcessRegistrar._
+import pl.touk.nussknacker.engine.process.FlinkBatchProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, UserClassLoader}
 import pl.touk.nussknacker.engine.splittedgraph.end.End
@@ -35,9 +35,8 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
-                                 enableObjectReuse: Boolean
-                                ) extends LazyLogging {
+class FlinkBatchProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
+                                 enableObjectReuse: Boolean) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
@@ -126,17 +125,17 @@ class BatchFlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
 }
 
 
-object BatchFlinkProcessRegistrar {
+object FlinkBatchProcessRegistrar {
 
   import net.ceedubs.ficus.Ficus._
 
   private final val EndId = "$end"
 
-  def apply(compiler: FlinkProcessCompiler, config: Config): BatchFlinkProcessRegistrar = {
+  def apply(compiler: FlinkProcessCompiler, config: Config): FlinkBatchProcessRegistrar = {
 
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
 
-    new BatchFlinkProcessRegistrar(
+    new FlinkBatchProcessRegistrar(
       compileProcess = compiler.compileProcess,
       enableObjectReuse = enableObjectReuse
     )

@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.process
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
 import scala.concurrent.Future
@@ -32,7 +32,7 @@ class SampleRecomendationProcess extends FlatSpec with Matchers {
 
     val config = ConfigFactory.load()
 
-    new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar().register(env, process, ProcessVersion.empty)
+    new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar().register(env, process, ProcessVersion.empty)
 
     Future {
       env.getConfig.disableSysoutLogging

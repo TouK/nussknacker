@@ -40,7 +40,7 @@ import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
-import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar._
+import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, StateConfiguration, UserClassLoader}
@@ -57,11 +57,10 @@ import scala.language.implicitConversions
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
-                            eventTimeMetricDuration: FiniteDuration,
-                            checkpointInterval: FiniteDuration,
-                            enableObjectReuse: Boolean, diskStateBackend: Option[AbstractStateBackend]
-                           ) extends LazyLogging {
+class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
+                                     eventTimeMetricDuration: FiniteDuration,
+                                     checkpointInterval: FiniteDuration,
+                                     enableObjectReuse: Boolean, diskStateBackend: Option[AbstractStateBackend]) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
@@ -275,20 +274,20 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
 }
 
 
-object FlinkProcessRegistrar {
+object FlinkStreamingProcessRegistrar {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   private final val EndId = "$end"
 
-  def apply(compiler: FlinkProcessCompiler, config: Config) : FlinkProcessRegistrar = {
+  def apply(compiler: FlinkProcessCompiler, config: Config) : FlinkStreamingProcessRegistrar = {
 
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
     val checkpointInterval = config.as[FiniteDuration]("checkpointInterval")
 
-    new FlinkProcessRegistrar(
+    new FlinkStreamingProcessRegistrar(
       compileProcess = compiler.compileProcess,
       eventTimeMetricDuration = eventTimeMetricDuration,
       checkpointInterval = checkpointInterval,

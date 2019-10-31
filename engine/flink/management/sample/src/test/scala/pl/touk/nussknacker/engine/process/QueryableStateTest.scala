@@ -8,14 +8,13 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.management.sample.TestProcessConfigCreator
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,12 +35,12 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
   val config = FlinkTestConfiguration.configuration
   val stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled(config, QueryStateProxyPortLow, QueryStateProxyPortHigh)
   val env = new StreamExecutionEnvironment(stoppableEnv)
-  var registrar: FlinkProcessRegistrar = _
+  var registrar: FlinkStreamingProcessRegistrar = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val config = TestConfig(kafkaZookeeperServer)
-    registrar = new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
   }
 
   override protected def afterAll(): Unit = {

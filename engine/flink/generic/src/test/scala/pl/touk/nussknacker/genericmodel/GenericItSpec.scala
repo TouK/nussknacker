@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaUtils}
-import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
 class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with EitherValues {
@@ -173,7 +173,7 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
 
   private val stoppableEnv = new StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
   private val env = new StreamExecutionEnvironment(stoppableEnv)
-  private var registrar: FlinkProcessRegistrar = _
+  private var registrar: FlinkStreamingProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(Registry)
   private lazy val valueDeserializer = new KafkaAvroDeserializer(Registry)
 
@@ -183,7 +183,7 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
     env.getConfig.disableSysoutLogging()
-    registrar = new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
   }
 
   override protected def afterAll(): Unit = {

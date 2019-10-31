@@ -12,7 +12,7 @@ import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.api.common.io.{InputFormat, OutputFormat}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.io.{DiscardingOutputFormat, LocalCollectionOutputFormat, TextInputFormat, TextOutputFormat}
+import org.apache.flink.api.java.io.{DiscardingOutputFormat, TextInputFormat, TextOutputFormat}
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.core.fs.Path
@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.flink.util.exception._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, FlinkCollectionInputFormat}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.compiler.{BatchStandardFlinkProcessCompiler, StandardFlinkProcessCompiler}
+import pl.touk.nussknacker.engine.process.compiler.{FlinkBatchProcessCompiler, FlinkStreamingProcessCompiler}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -59,7 +59,7 @@ object ProcessTestHelpers {
       val creator = prepareCreator(env.getConfig, data)
       env.getConfig.disableSysoutLogging
 
-      new StandardFlinkProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process, processVersion)
+      new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process, processVersion)
 
       MockService.clear()
       env.execute(process.id)
@@ -73,8 +73,8 @@ object ProcessTestHelpers {
       val creator = prepareCreator(env.getConfig, data)
       env.getConfig.disableSysoutLogging
 
-      new BatchStandardFlinkProcessCompiler(creator, ConfigFactory.load())
-        .createBatchFlinkProcessRegistrar()
+      new FlinkBatchProcessCompiler(creator, ConfigFactory.load())
+        .createFlinkProcessRegistrar()
         .register(env, process, processVersion)
 
       env.execute(process.id)
