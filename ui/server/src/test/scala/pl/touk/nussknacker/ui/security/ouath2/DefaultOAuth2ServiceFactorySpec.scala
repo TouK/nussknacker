@@ -82,8 +82,8 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
     user.accesses.isEmpty shouldBe true
 
     user.permissions shouldBe Map(
-      "Default" -> Set(Permission.Read, Permission.Write),
-      "FraudDetection" -> Set(Permission.Read, Permission.Write)
+      "Category1" -> Set(Permission.Read, Permission.Write),
+      "Category2" -> Set(Permission.Read, Permission.Write)
     )
   }
 
@@ -100,9 +100,9 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
     user.accesses.contains(GlobalPermission.AdminTab)
 
     user.permissions shouldBe Map(
-      "Default" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
-      "FraudDetection" -> Set(Permission.Read, Permission.Write),
-      "Recommendations" -> Set(Permission.Read, Permission.Write, Permission.Deploy)
+      "Category2" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
+      "Category1" -> Set(Permission.Read, Permission.Write),
+      "StandaloneCategory1" -> Set(Permission.Read, Permission.Write, Permission.Deploy)
     )
   }
 
@@ -119,9 +119,9 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
     user.accesses.contains(GlobalPermission.AdminTab)
 
     user.permissions shouldBe Map(
-      "Default" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
-      "FraudDetection" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
-      "Recommendations" -> Set(Permission.Read, Permission.Write, Permission.Deploy)
+      "Category1" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
+      "Category2" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
+      "StandaloneCategory1" -> Set(Permission.Read, Permission.Write, Permission.Deploy)
     )
   }
 

@@ -5,7 +5,8 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2AuthenticatorFactory, OAuth2ConfigRule}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration.OAuth2ConfigRule
+import pl.touk.nussknacker.ui.security.oauth2.{OAuth2AuthenticatorFactory}
 
 class OAuth2ServiceFactorySpec  extends FunSuite with Matchers with TableDrivenPropertyChecks {
   val emptyRule = OAuth2ConfigRule(roleName = "")

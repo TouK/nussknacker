@@ -6,7 +6,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.security.AuthenticationConfiguration
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
 
@@ -34,7 +34,7 @@ class SettingsResources(config: FeatureTogglesConfig,
           )
 
           val authenticationSettings = AuthenticationSettings(
-            authenticationConfig.backend.toString,
+            authenticationConfig.method.toString,
             authenticationConfig.authorizeUrl.map(_.toString)
           )
 

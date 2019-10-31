@@ -2,7 +2,7 @@
 
 Nussnkacker has pluggable security architecture - by default we support two ways of authentication: BasicAuth and OAuth2.
 You can either use default authentication provider, based on Basic authentication and static user configuration or integrate 
-with other authentication mechanisms such as corporate SSO.
+with other authentication mechanisms such as custom SSO implementation.
 
 ## Users and permissions
 Each user has id and set of permissions for every process category. There are following permissions:
@@ -22,7 +22,7 @@ Currently supported permissions:
 #### Configuration in following format:
 ```
 authentication: {
-  backend: "BasicAuth"
+  method: "BasicAuth"
   usersFile: "conf/users.conf"
 }
 ```
@@ -54,9 +54,9 @@ users: [
 #### Configuration in following format:
 ```
 authentication: {
-  backend: "OAuth2",
-  clientSecret: "{your_app_secret}"
-  clientId: "{your_client_id}"
+  method: "OAuth2"
+  clientSecret: ""
+  clientId: ""
   authorizeUri: "https://github.com/login/oauth/authorize"
   redirectUri: "http://localhost:3000"
   accessTokenUri: "https://github.com/login/oauth/access_token"
@@ -71,7 +71,7 @@ authentication: {
     response_type: "code"
   }
 
-  usersFile: "./develConf/tests/users.conf"
+  usersFile: "./develConf/tests/oauth2-users.conf"
 }
 
 ```
@@ -94,7 +94,7 @@ rules: [
     categories: ["Defautl", "FraudDetection", "Recommendations"]
   },
   {
-    roleName: "User", //this is default role for all users
+    roleName: "User" //this is default role for all users
     permissions: ["Read", "Write", "Deploy"]
     categories: ["Defautl", "FraudDetection"]
   }

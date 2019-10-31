@@ -6,12 +6,11 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermission, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.DefaultOAuth2ServiceFactory.{OAuth2AuthenticateData, OAuth2Profile}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2Service, OAuth2ServiceFactory}
 import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ClientApi, OAuth2Configuration}
 import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
-import pl.touk.nussknacker.ui.security.{AuthenticationBackend, api}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -88,7 +87,7 @@ object ExampleOAuth2ServiceFactory {
 
   def testConfig: OAuth2Configuration =
     OAuth2Configuration(
-      AuthenticationBackend.OAuth2,
+      AuthenticationMethod.OAuth2,
       "ui/server/develConf/tests/oauth2-users.conf",
       URI.create("https://github.com/login/oauth/authorize"),
       "clientSecret",
@@ -112,7 +111,7 @@ object ExampleOAuth2ServiceFactory {
       Deployer.toString -> Permission.Deploy
     )
 
-    def mapToNkPermission(role: String): Option[api.Permission.Value] =
+    def mapToNkPermission(role: String): Option[Permission] =
       mappedPermissions.get(role)
   }
 

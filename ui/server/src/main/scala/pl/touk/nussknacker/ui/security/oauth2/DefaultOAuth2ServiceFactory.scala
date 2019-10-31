@@ -58,9 +58,9 @@ object DefaultOAuth2ServiceFactory extends  {
   def getUserRoles(email: String, configuration: OAuth2Configuration, defaults: List[String] = List.empty): List[String] =
     configuration.users.find(_.email.equals(email)).map(_.roles ++ defaults).getOrElse(defaults)
 
-  final case class OAuth2AuthenticateData(access_token: String, token_type: String, refresh_token: Option[String])
+  case class OAuth2AuthenticateData(access_token: String, token_type: String, refresh_token: Option[String])
 
-  final case class OAuth2Profile(id: String,
+  case class OAuth2Profile(id: String,
                                  email: String,
                                  isAdmin: Boolean,
                                  permissions: Map[String, Set[Permission]] = Map.empty,

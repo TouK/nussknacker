@@ -5,14 +5,13 @@ import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import org.mindrot.jbcrypt.BCrypt
 import pl.touk.nussknacker.ui.security.BasicHttpAuthenticator._
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.basicauth.BasicAuthConfiguration
+import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class BasicHttpAuthenticator(configuration: BasicAuthConfiguration) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
+class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
   //If we want use always reloaded config then we need just prepareUsers()
   private val users = prepareUsers()
 
@@ -40,7 +39,7 @@ class BasicHttpAuthenticator(configuration: BasicAuthConfiguration) extends Secu
   }
 
   private def prepareUsers(): Map[String, UserWithPassword] = {
-    configuration.loadUsers().map { u =>
+    configuration.users.map { u =>
       val password = (u.password, u.encryptedPassword) match {
         case (Some(plain), None) => PlainPassword(plain)
         case (None, Some(encrypted)) => EncryptedPassword(encrypted)
@@ -54,7 +53,7 @@ class BasicHttpAuthenticator(configuration: BasicAuthConfiguration) extends Secu
 }
 
 object BasicHttpAuthenticator {
-  def apply(config: BasicAuthConfiguration): BasicHttpAuthenticator
+  def apply(config: DefaultAuthenticationConfiguration): BasicHttpAuthenticator
     = new BasicHttpAuthenticator(config)
 
   private sealed trait Password {

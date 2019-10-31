@@ -23,13 +23,13 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.{AuthenticationConfigurationFactory, AuthenticatorProvider}
+import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
-import pl.touk.nussknacker.ui.security.oauth2.{DefaultOAuth2ServiceFactory, OAuth2Configuration, OAuth2ServiceProvider}
+import pl.touk.nussknacker.ui.security.oauth2.{AuthenticationOAuth2Resources, OAuth2Configuration, OAuth2ServiceProvider}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 
@@ -111,7 +111,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
 
-    val authenticationConfig = AuthenticationConfigurationFactory(config)
     val authenticator = AuthenticatorProvider(config, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
@@ -168,27 +167,18 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
-    //TODO: Think about move creating AuthenticationOAuth2Resources at oauth2 module?
-    val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = authenticationConfig match {
-      case oauth2Configuration: OAuth2Configuration => List(
-        new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig),
-        new AuthenticationOAuth2Resources(OAuth2ServiceProvider(
-          oauth2Configuration,
-          getClass.getClassLoader
-        ))
-      )
-      case _ => List(
-        new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
-      )
-    }
+    //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
+    val apiResourcesWithoutAuthentication: List[Route] = List(
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).route()
+    ) ++ authenticator.routes
 
     val webResources = new WebResources(config.getString("http.publicPath"))
     CorsSupport.cors(featureTogglesConfig.development) {
       pathPrefixTest(!"api") {
         webResources.route
       } ~  pathPrefix("api") {
-        apiResourcesWithoutAuthentication.map(_.route()).reduce(_ ~ _)
-      } ~ authenticator { user =>
+        apiResourcesWithoutAuthentication.reduce(_ ~ _)
+      } ~ authenticator.directive { user =>
         pathPrefix("api") {
           apiResourcesWithAuthentication.map(_.route(user)).reduce(_ ~ _)
         }

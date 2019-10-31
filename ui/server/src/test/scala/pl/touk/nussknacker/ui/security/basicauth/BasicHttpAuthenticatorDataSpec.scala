@@ -2,14 +2,16 @@ package pl.touk.nussknacker.ui.security.basicauth
 
 import akka.http.scaladsl.server.directives.Credentials
 import org.scalatest.{FunSpec, Matchers}
-import pl.touk.nussknacker.ui.security.AuthenticationConfigurationFactory.DefaultConfigUser
-import pl.touk.nussknacker.ui.security.{AuthenticationBackend, BasicHttpAuthenticator}
+import pl.touk.nussknacker.ui.security.BasicHttpAuthenticator
+import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, DefaultAuthenticationConfiguration}
+import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
+import pl.touk.nussknacker.ui.security.api.DefaultAuthenticationConfiguration.DefaultConfigUser
 
 
-class BasicHttpAuthenticatorSpec extends FunSpec with Matchers {
-  class DummyConfiguration(users: List[DefaultConfigUser], backend: AuthenticationBackend.Value = AuthenticationBackend.BasicAuth, usersFile: String = "")
-    extends BasicAuthConfiguration(backend: AuthenticationBackend.Value, usersFile: String) {
-    override def loadUsers(): List[DefaultConfigUser] = users
+class BasicHttpAuthenticatorDataSpec extends FunSpec with Matchers {
+  class DummyConfiguration(usersList: List[DefaultConfigUser], method: AuthenticationMethod = AuthenticationMethod.BasicAuth, usersFile: String = "")
+    extends DefaultAuthenticationConfiguration(method: AuthenticationMethod, usersFile: String) {
+    override lazy val users: List[DefaultConfigUser] = usersList
   }
 
   it("should authenticate using plain password") {
