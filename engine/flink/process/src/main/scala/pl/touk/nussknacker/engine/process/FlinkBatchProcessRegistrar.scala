@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.RemoteEnvironment
 import org.apache.flink.api.scala.{ExecutionEnvironment, _}
 import org.apache.flink.configuration.Configuration
@@ -32,7 +31,6 @@ import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class FlinkBatchProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
@@ -70,6 +68,7 @@ class FlinkBatchProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
     env.setRestartStrategy(processWithDeps.exceptionHandler.restartStrategy)
     batchMetaData.parallelism.foreach(env.setParallelism)
 
+    // TODO: multiple sources
     registerSourcePart(processWithDeps.sources.head.asInstanceOf[SourcePart])
 
     def registerSourcePart(part: SourcePart): Unit = {
@@ -113,10 +112,12 @@ class FlinkBatchProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
                   .map(_.output)
                   .output(sink.toFlink)
               case Some(_) =>
+                // TODO: test run
                 throw new NotImplementedError("Test run is not implemented")
             }
 
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
+        // TODO: custom node support
         case part =>
           throw new NotImplementedError(s"${part.getClass.getSimpleName} is not implemented")
       }
@@ -142,6 +143,8 @@ object FlinkBatchProcessRegistrar {
   }
 
   case class TaggedInterpretationResult(tagName: String, interpretationResult: InterpretationResult)
+
+  // TODO: extract common functions
 
   class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps,
                                    node: SplittedNode[_], validationContext: ValidationContext)
