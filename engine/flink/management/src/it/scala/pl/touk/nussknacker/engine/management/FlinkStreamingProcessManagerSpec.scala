@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import scala.concurrent.duration._
 
 //TODO: get rid of at least some Thread.sleep
-class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
+class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
 
   import pl.touk.nussknacker.engine.kafka.KafkaUtils._
 
@@ -185,7 +185,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
   test("extract process definition") {
 
-    val definition = FlinkProcessManagerProvider.defaultTypeConfig(config).toModelData.processDefinition
+    val definition = FlinkStreamingProcessManagerProvider.defaultTypeConfig(config).toModelData.processDefinition
 
     definition.services should contain key "accountService"
   }
@@ -194,7 +194,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = config
       .withValue("processConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
-    val flinkModelData = FlinkProcessManagerProvider.defaultTypeConfig(configWithSignals).toModelData
+    val flinkModelData = FlinkStreamingProcessManagerProvider.defaultTypeConfig(configWithSignals).toModelData
 
     val kafkaClient = new KafkaClient(
       configWithSignals.getString("processConfig.kafka.kafkaAddress"),

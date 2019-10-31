@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String = "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain")
+abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
   extends ProcessManager with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)

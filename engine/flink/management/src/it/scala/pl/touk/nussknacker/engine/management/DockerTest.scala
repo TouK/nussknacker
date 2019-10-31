@@ -105,6 +105,6 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     tempDir.toFile.getName
   }
 
-  protected lazy val processManager = FlinkProcessManagerProvider.defaultProcessManager(config)
+  protected lazy val processManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
 
 }

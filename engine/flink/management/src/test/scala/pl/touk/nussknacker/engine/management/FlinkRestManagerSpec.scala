@@ -24,7 +24,10 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
 
   private var configs: Map[String, Map[String, Json]] = Map()
 
-  private val manager = new FlinkRestManager(config, LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()))(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
+  private val manager = new FlinkRestManager(
+    config = config,
+    modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
+  )(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
     val toReturn = req.uri.path match {
       case List("jobs", "overview") =>
         JobsResponse(statuses)

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
-class BatchFlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
+class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -55,7 +55,7 @@ class BatchFlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
     .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
 
   private lazy val batchProcessManager = {
-    val typeConfig = BatchFlinkProcessManagerProvider.defaultTypeConfig(batchConfig)
-    new BatchFlinkProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
+    val typeConfig = FlinkBatchProcessManagerProvider.defaultTypeConfig(batchConfig)
+    new FlinkBatchProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
   }
 }

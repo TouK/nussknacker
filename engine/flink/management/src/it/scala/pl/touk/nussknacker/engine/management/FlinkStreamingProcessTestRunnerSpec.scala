@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.Await
 
-class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
+class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = Span(10, Seconds),
@@ -23,7 +23,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
 
   it should "run process in test mode" in {
     val config = ConfigFactory.load()
-    val processManager = FlinkProcessManagerProvider.defaultProcessManager(config)
+    val processManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
 
     val processId = UUID.randomUUID().toString
 
@@ -49,7 +49,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
       .emptySink("endSend", "sendSms")
 
     val config = ConfigFactory.load()
-    val processManager = FlinkProcessManagerProvider.defaultProcessManager(config)
+    val processManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
 
     val processData = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.collection.JavaConverters._
 
-class FlinkProcessConfigLocationTest extends FunSuite with DockerTest with Matchers {
+class FlinkStreamingProcessConfigLocationTest extends FunSuite with DockerTest with Matchers {
 
 
   //FIXME: do we still need it??

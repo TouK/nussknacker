@@ -13,7 +13,7 @@ import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import scala.concurrent.Future
 
-class FlinkProcessManagerProvider extends ProcessManagerProvider {
+class FlinkStreamingProcessManagerProvider extends ProcessManagerProvider {
 
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.Ficus._
@@ -23,7 +23,7 @@ class FlinkProcessManagerProvider extends ProcessManagerProvider {
     implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
 
     val flinkConfig = config.rootAs[FlinkConfig]
-    new FlinkRestManager(flinkConfig, modelData)
+    new FlinkStreamingRestManager(flinkConfig, modelData)
   }
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = {
@@ -39,7 +39,7 @@ class FlinkProcessManagerProvider extends ProcessManagerProvider {
   override def supportsSignals: Boolean = true
 }
 
-object FlinkProcessManagerProvider {
+object FlinkStreamingProcessManagerProvider {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -56,6 +56,6 @@ object FlinkProcessManagerProvider {
 
   def defaultProcessManager(config: Config): ProcessManager = {
     val typeConfig = defaultTypeConfig(config)
-    new FlinkProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
+    new FlinkStreamingProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
   }
 }
