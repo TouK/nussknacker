@@ -287,6 +287,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
     assemblyJarName in assembly := "managementSample.jar",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Info),
     test in assembly := {},
+    test in Test := {},
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -327,6 +328,7 @@ lazy val example = (project in engine("example")).
       )
     },
     test in assembly := {},
+    test in Test := {},
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))
@@ -346,6 +348,8 @@ lazy val generic = (project in engine("flink/generic")).
       )
     },
     test in assembly := {},
+    test in Test := {},
+    
     assemblyJarName in assembly := "genericModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
