@@ -6,10 +6,15 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID, JobSubmissionResu
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.jobgraph.JobGraph
+import org.apache.flink.runtime.messages.JobManagerMessages
+import org.apache.flink.runtime.messages.JobManagerMessages.{CancellationFailure, CancellationResponse}
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.util.OptionalFailure
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 object StoppableExecutionEnvironment {
 
@@ -27,10 +32,6 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
                                     singleActorSystem: Boolean = true) extends StreamExecutionEnvironment with LazyLogging {
 
   protected var localFlinkMiniCluster: LocalFlinkMiniCluster = _
-
-  def getJobManagerActorSystem() = {
-    localFlinkMiniCluster.jobManagerActorSystems.get.head
-  }
 
   def queryableClient(proxyPort: Int) : QueryableStateClient= {
     new QueryableStateClient("localhost", proxyPort)

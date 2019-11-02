@@ -287,7 +287,6 @@ lazy val managementSample = (project in engine("flink/management/sample")).
     assemblyJarName in assembly := "managementSample.jar",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Info),
     test in assembly := {},
-    test in Test := {},
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
