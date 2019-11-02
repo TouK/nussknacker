@@ -11,6 +11,7 @@ object ValidationContext {
 }
 
 case class ValidationContext(localVariables: Map[String, TypingResult] = Map.empty,
+                            //TODO global variables should not be part of ValidationContext
                              globalVariables: Map[String, TypingResult] = Map.empty,
                              parent: Option[ValidationContext] = None) {
 

@@ -89,7 +89,6 @@ object KafkaUtils {
     val props = new Properties()
     props.put("bootstrap.servers", kafkaAddress)
     props.put("batch.size", "100000")
-    props.put("request.required.acks", "1")
     props
   }
 

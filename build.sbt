@@ -121,7 +121,8 @@ val flinkV = "1.7.2"
 val kafkaMajorV = "0.11"
 val kafkaV = s"$kafkaMajorV.0.2"
 val springV = "5.1.4.RELEASE"
-val scalaTestV = "3.0.3"
+val scalaTestV = "3.0.8"
+val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
 val log4jV = "1.7.21"
 val argonautV = "6.2.1"
@@ -218,7 +219,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-app",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Debug),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Info),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))
@@ -284,7 +285,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
   settings(
     name := "nussknacker-management-sample"  ,
     assemblyJarName in assembly := "managementSample.jar",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Info),
     test in assembly := {},
     libraryDependencies ++= {
       Seq(
@@ -301,7 +302,7 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
   settings(
     name := "nussknacker-management-java-sample"  ,
     assemblyJarName in assembly := "managementJavaSample.jar",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Info),
     test in assembly := {},
     libraryDependencies ++= {
       Seq(
@@ -380,7 +381,8 @@ lazy val interpreter = (project in engine("interpreter")).
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "org.scalacheck" %% "scalacheck" % scalaCheckV % "test"
       )
     }
   ).
@@ -663,7 +665,7 @@ lazy val ui = (project in file("ui/server"))
       runNpm("run build", "Client build failed")
     },
     parallelExecution in ThisBuild := false,
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Info),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))

@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableE
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.management.sample.TestProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
