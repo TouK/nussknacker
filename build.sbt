@@ -347,7 +347,6 @@ lazy val generic = (project in engine("flink/generic")).
       )
     },
     test in assembly := {},
-    test in Test := {},
     
     assemblyJarName in assembly := "genericModel.jar",
     artifact in (Compile, assembly) := {
