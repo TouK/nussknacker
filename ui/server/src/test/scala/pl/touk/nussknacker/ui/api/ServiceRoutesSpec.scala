@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, MediaTypes, StatusCodes}
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ScalatestRouteTest}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, DisplayableAsJson}

@@ -3,10 +3,9 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ScalatestRouteTest}
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import cats.instances.all._
 import cats.syntax.semigroup._
-import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Json, Printer}
 import org.scalatest._
