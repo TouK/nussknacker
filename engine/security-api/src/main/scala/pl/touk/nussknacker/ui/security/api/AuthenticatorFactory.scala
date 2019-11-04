@@ -12,7 +12,6 @@ trait AuthenticatorFactory {
   def createAuthenticator(config: Config, classLoader: ClassLoader): AuthenticatorData
 }
 
-
 object AuthenticatorFactory {
   type LoggedUserAuth = AuthenticationDirective[LoggedUser]
 

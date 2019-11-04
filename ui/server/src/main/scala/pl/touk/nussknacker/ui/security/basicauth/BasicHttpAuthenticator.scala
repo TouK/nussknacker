@@ -53,8 +53,7 @@ class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration) 
 }
 
 object BasicHttpAuthenticator {
-  def apply(config: DefaultAuthenticationConfiguration): BasicHttpAuthenticator
-    = new BasicHttpAuthenticator(config)
+  def apply(config: DefaultAuthenticationConfiguration): BasicHttpAuthenticator = new BasicHttpAuthenticator(config)
 
   private sealed trait Password {
     def value: String
