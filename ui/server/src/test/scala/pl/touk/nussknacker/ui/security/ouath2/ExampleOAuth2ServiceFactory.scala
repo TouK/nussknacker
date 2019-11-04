@@ -6,8 +6,8 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermission, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Profile, OAuth2Service, OAuth2ServiceFactory}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermission, LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Service, OAuth2ServiceFactory}
 import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ClientApi, OAuth2Configuration}
 import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
@@ -26,15 +26,13 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
     }
   }
 
-  override def profile(token: String): Future[OAuth2Profile] = {
+  override def authorize(token: String): Future[LoggedUser] = {
     clientApi.profileRequest(token).map{ prf =>
-      OAuth2Profile(
+      LoggedUser(
         id = prf.uid,
-        email = prf.email,
         isAdmin = ExampleOAuth2ServiceFactory.isAdmin(prf.clearance.roles),
-        permissions = ExampleOAuth2ServiceFactory.getPermissions(prf.clearance.roles, prf.clearance.portals),
-        accesses = ExampleOAuth2ServiceFactory.getGlobalPermissions(prf.clearance.roles),
-        roles = prf.clearance.roles
+        categoryPermissions = ExampleOAuth2ServiceFactory.getPermissions(prf.clearance.roles, prf.clearance.portals),
+        globalPermissions = ExampleOAuth2ServiceFactory.getGlobalPermissions(prf.clearance.roles)
       )
     }
   }

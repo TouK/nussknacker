@@ -6,10 +6,10 @@ import io.circe.Json
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers, Suite}
-import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.{DefaultOAuth2ServiceFactory, OAuth2ErrorHandler}
+import pl.touk.nussknacker.ui.security.api.{GlobalPermission, LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2ServerError
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Profile}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2AuthenticateData
 import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestPermissionResponse, TestProfileClearanceResponse, TestProfileResponse}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
@@ -80,20 +80,14 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
     )
 
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.profile("6V1reBXblpmfjRJP").futureValue
+    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
 
-    user shouldBe a[OAuth2Profile]
+    user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
     user.id shouldBe response.uid
-    user.roles.contains(TestPermissionResponse.Reader.toString) shouldBe true
-    user.roles.contains(TestPermissionResponse.Writer.toString) shouldBe false
-    user.roles.contains(TestPermissionResponse.Deployer.toString) shouldBe false
-    user.accesses.isEmpty shouldBe true
 
-    user.permissions shouldBe Map(
-      "somePortal1" -> Set(Permission.Read),
-      "somePortal2" -> Set(Permission.Read)
-    )
+    user.can("somePortal1", Permission.Read) shouldBe true
+    user.can("somePortal2", Permission.Read) shouldBe true
   }
 
   it should ("properly parse data from profile for profile Deploy, Writer role with access to AdminTab") in {
@@ -111,21 +105,16 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
     )
 
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.profile("6V1reBXblpmfjRJP").futureValue
+    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
 
-    user shouldBe a[OAuth2Profile]
+    user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
     user.id shouldBe response.uid
-    user.roles.contains(TestPermissionResponse.Deployer.toString) shouldBe true
-    user.roles.contains(TestPermissionResponse.Writer.toString) shouldBe true
-    user.roles.contains(TestPermissionResponse.Reader.toString) shouldBe false
-    user.roles.contains(TestPermissionResponse.AdminTab.toString) shouldBe true
-    user.accesses.contains(GlobalPermission.AdminTab)
 
-    user.permissions shouldBe Map(
-      "somePortal1" -> Set(Permission.Deploy, Permission.Write),
-      "somePortal2" -> Set(Permission.Deploy, Permission.Write)
-    )
+    user.can("somePortal1", Permission.Read) shouldBe false
+    user.can("somePortal1", Permission.Deploy) shouldBe true
+    user.can("somePortal2", Permission.Read) shouldBe false
+    user.can("somePortal2", Permission.Deploy) shouldBe true
   }
 
   it should ("properly parse data from profile for profile role Admin") in {
@@ -141,29 +130,27 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
     )
 
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.profile("6V1reBXblpmfjRJP").futureValue
+    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
 
-    user shouldBe a[OAuth2Profile]
+    user shouldBe a[LoggedUser]
     user.isAdmin shouldBe true
     user.id shouldBe response.uid
-    user.roles.contains(TestPermissionResponse.Admin.toString) shouldBe true
-    user.accesses.contains(GlobalPermission.AdminTab)
 
-    user.permissions shouldBe Map(
-      "somePortal1" -> Set(Permission.Read, Permission.Write, Permission.Deploy)
-    )
+    user.can("somePortal1", Permission.Read) shouldBe true
+    user.can("somePortal1", Permission.Write) shouldBe true
+    user.can("somePortal1", Permission.Deploy) shouldBe true
   }
 
   it should ("handling BadRequest response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.BadRequest)
-    service.profile("6V1reBXblpmfjRJP").recover{
+    service.authorize("6V1reBXblpmfjRJP").recover{
       case OAuth2ErrorHandler(_) => succeed
     }.futureValue
   }
 
   it should ("should InternalServerError response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.InternalServerError)
-    service.profile("6V1reBXblpmfjRJP").recover{
+    service.authorize("6V1reBXblpmfjRJP").recover{
       case _: OAuth2ServerError => succeed
     }.futureValue
   }

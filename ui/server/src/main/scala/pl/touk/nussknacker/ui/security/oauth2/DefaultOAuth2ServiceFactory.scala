@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.{DefaultAccessTokenResponse, DefaultProfileResponse}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Profile, OAuth2Service, OAuth2ServiceFactory}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Service, OAuth2ServiceFactory}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,18 +21,21 @@ class DefaultOAuth2Service(clientApi: OAuth2ClientApi[DefaultProfileResponse, De
     }
   }
 
-  override def profile(token: String): Future[OAuth2Profile] = {
+  override def authorize(token: String): Future[LoggedUser] = {
     clientApi.profileRequest(token).map { profile =>
       val userRoles = DefaultOAuth2ServiceFactory.getUserRoles(profile.email, configuration)
       val roles = OAuth2ServiceFactory.getOnlyMatchingRoles(userRoles, configuration.rules)
+      val isAdmin = OAuth2ServiceFactory.isAdmin(roles)
 
-      OAuth2Profile(
-        id = profile.id.toString,
-        email = profile.email,
-        isAdmin = OAuth2ServiceFactory.isAdmin(roles),
-        permissions = OAuth2ServiceFactory.getPermissions(roles),
-        accesses = OAuth2ServiceFactory.getGlobalPermissions(roles)
-      )
+      if (isAdmin) {
+        LoggedUser(id = profile.id.toString, isAdmin = true)
+      } else {
+        LoggedUser(
+          id = profile.id.toString,
+          categoryPermissions = OAuth2ServiceFactory.getPermissions(roles),
+          globalPermissions = OAuth2ServiceFactory.getGlobalPermissions(roles)
+        )
+      }
     }
   }
 }
