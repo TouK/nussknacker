@@ -6,10 +6,10 @@ import io.circe.Json
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers, Suite}
-import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
+import pl.touk.nussknacker.ui.security.api.{GlobalPermission, LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2ServerError
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Profile}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2AuthenticateData
 import pl.touk.nussknacker.ui.security.oauth2._
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
@@ -73,68 +73,68 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
   it should ("properly parse data from profile for profile type User") in {
     val response: Map[String, String] = Map("id" -> "1", "email" -> "some@email.com")
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.profile("6V1reBXblpmfjRJP").futureValue
+    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
 
-    user shouldBe a[OAuth2Profile]
+    user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
     user.id.toString shouldBe response.get("id").get
-    user.roles.contains(DefaultOAuth2ServiceFactory.defaultUserRole) shouldBe true
-    user.accesses.isEmpty shouldBe true
 
-    user.permissions shouldBe Map(
-      "Category1" -> Set(Permission.Read, Permission.Write),
-      "Category2" -> Set(Permission.Read, Permission.Write)
-    )
+    user.can("Category1", Permission.Read) shouldBe true
+    user.can("Category1", Permission.Write) shouldBe true
+    user.can("Category2", Permission.Read) shouldBe true
+    user.can("Category2", Permission.Write) shouldBe true
   }
 
   it should ("properly parse data from profile for profile type UserWithAdminTab") in {
     val response: Map[String, String] = Map("id" -> "1", "email" -> "example2@email.com")
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.profile("6V1reBXblpmfjRJP").futureValue
+    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
 
-    user shouldBe a[OAuth2Profile]
+    user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
     user.id.toString shouldBe response.get("id").get
-    user.roles.contains(DefaultOAuth2ServiceFactory.defaultUserRole) shouldBe true
-    user.roles.contains("UserWithAdminTab") shouldBe true
-    user.accesses.contains(GlobalPermission.AdminTab)
 
-    user.permissions shouldBe Map(
-      "Category2" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
-      "Category1" -> Set(Permission.Read, Permission.Write),
-      "StandaloneCategory1" -> Set(Permission.Read, Permission.Write, Permission.Deploy)
-    )
+    user.can("Category1", Permission.Read) shouldBe true
+    user.can("Category1", Permission.Write) shouldBe true
+    user.can("Category2", Permission.Read) shouldBe true
+    user.can("Category2", Permission.Write) shouldBe true
+    user.can("Category2", Permission.Deploy) shouldBe true
+    user.can("StandaloneCategory1", Permission.Read) shouldBe true
+    user.can("StandaloneCategory1", Permission.Write) shouldBe true
+    user.can("StandaloneCategory1", Permission.Deploy) shouldBe true
   }
 
   it should ("properly parse data from profile for profile type Admin") in {
     val response: Map[String, String] = Map("id" -> "1", "email" -> "example@email.com")
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.profile("6V1reBXblpmfjRJP").futureValue
+    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
 
-    user shouldBe a[OAuth2Profile]
+    user shouldBe a[LoggedUser]
     user.isAdmin shouldBe true
     user.id.toString shouldBe response.get("id").get
-    user.roles.contains(DefaultOAuth2ServiceFactory.defaultUserRole) shouldBe true
-    user.roles.contains("Admin") shouldBe true
-    user.accesses.contains(GlobalPermission.AdminTab)
 
-    user.permissions shouldBe Map(
-      "Category1" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
-      "Category2" -> Set(Permission.Read, Permission.Write, Permission.Deploy),
-      "StandaloneCategory1" -> Set(Permission.Read, Permission.Write, Permission.Deploy)
-    )
+
+    user.can("Category1", Permission.Read) shouldBe true
+    user.can("Category1", Permission.Write) shouldBe true
+    user.can("Category1", Permission.Deploy) shouldBe true
+    user.can("Category2", Permission.Read) shouldBe true
+    user.can("Category2", Permission.Write) shouldBe true
+    user.can("Category2", Permission.Deploy) shouldBe true
+    user.can("StandaloneCategory1", Permission.Read) shouldBe true
+    user.can("StandaloneCategory1", Permission.Write) shouldBe true
+    user.can("StandaloneCategory1", Permission.Deploy) shouldBe true
   }
 
   it should ("handling BadRequest response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.BadRequest)
-    service.profile("6V1reBXblpmfjRJP").recover{
+    service.authorize("6V1reBXblpmfjRJP").recover{
       case OAuth2ErrorHandler(_) => succeed
     }.futureValue
   }
 
   it should ("should InternalServerError response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.InternalServerError)
-    service.profile("6V1reBXblpmfjRJP").recover{
+    service.authorize("6V1reBXblpmfjRJP").recover{
       case _: OAuth2ServerError => succeed
     }.futureValue
   }
