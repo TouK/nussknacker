@@ -2,19 +2,18 @@ package pl.touk.nussknacker.engine.flink.test
 
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{JobExecutionResult, JobID, JobSubmissionResult}
+import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
-import org.apache.flink.runtime.jobgraph.JobGraph
-import org.apache.flink.runtime.messages.JobManagerMessages
-import org.apache.flink.runtime.messages.JobManagerMessages.{CancellationFailure, CancellationResponse}
-import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
+import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
+import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
+import org.apache.flink.test.util.MiniClusterWithClientResource
 import org.apache.flink.util.OptionalFailure
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.collection.JavaConverters._
+
 
 object StoppableExecutionEnvironment {
 
@@ -31,14 +30,33 @@ object StoppableExecutionEnvironment {
 class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
                                     singleActorSystem: Boolean = true) extends StreamExecutionEnvironment with LazyLogging {
 
-  protected var localFlinkMiniCluster: LocalFlinkMiniCluster = _
+  private val config: MiniClusterResourceConfiguration
+    = new MiniClusterResourceConfiguration.Builder()
+    .setNumberSlotsPerTaskManager(2)
+    .setNumberTaskManagers(1)
+    .setConfiguration(userFlinkClusterConfig)
+    .build
+  private val mini = new MiniClusterWithClientResource(config)
+
+  {
+    mini.before()
+  }
 
   def queryableClient(proxyPort: Int) : QueryableStateClient= {
     new QueryableStateClient("localhost", proxyPort)
   }
 
   def runningJobs(): Iterable[JobID] = {
-    localFlinkMiniCluster.currentlyRunningJobs
+    mini.getMiniCluster.listJobs().get().asScala.filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId)
+  }
+
+  def withJobRunning[T](jobName: String)(action: => T): T = {
+    execute(jobName)
+    try {
+      action
+    } finally {
+      cancel(jobName)
+    }
   }
 
   def execute(jobName: String): JobExecutionResult = {
@@ -53,17 +71,17 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
     getConfig.disableSysoutLogging()
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
 
-    localFlinkMiniCluster = new LocalFlinkMiniCluster(jobGraph.getJobConfiguration, singleActorSystem)
-    localFlinkMiniCluster.start()
+    val submissionRes = mini.getMiniCluster.submitJob(jobGraph).get()
 
-    val submissionRes: JobSubmissionResult = localFlinkMiniCluster.submitJobDetached(jobGraph)
     new JobExecutionResult(submissionRes.getJobID, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
   }
 
+  def cancel(name: String): Unit = {
+    mini.getMiniCluster.listJobs().get().asScala.filter(_.getJobName == name).map(_.getJobId).foreach(mini.getClusterClient.cancel)
+  }
+
   def stop(): Unit = {
-    if (localFlinkMiniCluster != null) {
-      localFlinkMiniCluster.stop()
-    }
+    mini.after()
   }
 
 }

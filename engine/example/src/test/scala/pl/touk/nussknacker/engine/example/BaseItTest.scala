@@ -31,7 +31,6 @@ trait BaseITest extends KafkaSpec {
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val config = TestConfig(kafkaZookeeperServer)
-    env.getConfig.disableSysoutLogging()
     registrar = new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar()
   }
 
