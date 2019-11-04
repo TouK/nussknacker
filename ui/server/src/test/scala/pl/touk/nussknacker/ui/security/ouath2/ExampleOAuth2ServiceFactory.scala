@@ -7,8 +7,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermission, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.DefaultOAuth2ServiceFactory.{OAuth2AuthenticateData, OAuth2Profile}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2Service, OAuth2ServiceFactory}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Profile, OAuth2Service, OAuth2ServiceFactory}
 import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ClientApi, OAuth2Configuration}
 import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
