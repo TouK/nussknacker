@@ -2,7 +2,7 @@ import PropTypes from "prop-types"
 import React from "react"
 import ExpressionSuggest from "../ExpressionSuggest"
 import {notEmptyValidator} from "../../../common/Validators";
-import {v4 as uuid4} from "uuid";
+import ValidationLabels from "../../ValidationLabels";
 
 const Fields = (props) => {
 
@@ -29,10 +29,7 @@ const Fields = (props) => {
                                             onChange={((e) => onChange(`${paths}.name`, e.target.value))}
                                             readOnly={readOnly}
                                         />
-                                        {
-                                            notEmptyValidator.isValid(field.name) ?
-                                              null : <label key={label + uuid4()} className='validation-label'>{notEmptyValidator.message}</label>
-                                        }
+                                        <ValidationLabels validators={[notEmptyValidator]} value={field.name}/>
                                     </div>
                                     <div className={"node-value field" + (isMarked(paths) ? " marked" : "")}>
                                         <ExpressionSuggest

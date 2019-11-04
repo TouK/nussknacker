@@ -6,6 +6,7 @@ import dragHandleIcon from "../assets/img/drag-handle.png";
 import update from "immutability-helper";
 import ReactDOM from "react-dom";
 import {notEmptyValidator} from "../common/Validators";
+import ValidationLabels from "./ValidationLabels";
 
 class RawField extends React.Component {
   render() {
@@ -20,7 +21,7 @@ class RawField extends React.Component {
         <div className={"node-value fieldName" + markedClass}>
           <input className="node-input" type="text" value={field.name} placeholder="Name"
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
-          {notEmptyValidator.isValid(field.name) ? null : <label key={field.name} className='validation-label'>{notEmptyValidator.message}</label>}
+          <ValidationLabels validators={[notEmptyValidator]} value={field.name}/>
         </div>
         <div className={"node-value field" + markedClass}>
           {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value))}

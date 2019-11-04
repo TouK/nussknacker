@@ -16,7 +16,7 @@ import 'brace/ext/searchbox';
 import '../../brace/mode/spel'
 import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
-import {v4 as uuid4} from "uuid";
+import ValidationLabels from "../ValidationLabels";
 
 //to reconsider
 // - respect categories for global variables?
@@ -125,10 +125,7 @@ class ExpressionSuggest extends React.Component {
              }}
            />
          </div>
-         {
-           this.props.validators.map(validator => validator.isValid(this.state.value) ?
-               null : <label key={"expression" + uuid4()} className='validation-label'>{validator.message}</label>)
-         }
+         <ValidationLabels validators={this.props.validators} value={this.state.value}/>
        </div>
         )
     } else {

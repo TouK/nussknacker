@@ -19,6 +19,7 @@ import BranchParameters from "./node-modal/BranchParameters";
 import Variable from "./node-modal/Variable";
 import JoinDef from "./node-modal/JoinDef"
 import {notEmptyValidator} from "../../common/Validators";
+import ValidationLabels from "../ValidationLabels";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -165,7 +166,7 @@ export class NodeDetailsContent extends React.Component {
                     (<React.Fragment>
                       <input type="text" className="node-input" value={field.typ.refClazzName}
                              onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
-                      {notEmptyValidator.isValid(field.typ.refClazzName) ? null : <label key={uuid4()} className='validation-label'>{notEmptyValidator.message}</label>}
+                      <ValidationLabels validators={[notEmptyValidator]} value={field.typ.refClazzName}/>
                     </React.Fragment>)}
                   onChange={(fields) => this.setNodeDataAt("parameters", fields)}
                   newValue={{name: "", typ: {refClazzName: ""}}}
@@ -505,11 +506,7 @@ export class NodeDetailsContent extends React.Component {
                     onChange={(e) => handleChange(e.target.value)}
                   />
               }
-              {
-                validators.map(validator => validator.isValid(fieldValue) ?
-                    null : <label key={fieldLabel + uuid4()} className='validation-label'>{validator.message}</label>
-                )
-              }
+              <ValidationLabels validators={validators} value={fieldValue}/>
             </div>
           </div>
         )
@@ -544,11 +541,7 @@ export class NodeDetailsContent extends React.Component {
                   readOnly={readOnly}
               />
             </div>
-            {
-              validators.map(validator => validator.isValid(fieldValue) ?
-                null : <label key={fieldLabel + uuid4()} className='validation-label'>{validator.message}</label>
-              )
-            }
+            <ValidationLabels validators={validators} value={fieldValue}/>
           </div>
         )
       default:

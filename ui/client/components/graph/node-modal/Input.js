@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import React from "react";
+import ValidationLabels from "../../ValidationLabels";
 import {notEmptyValidator} from "../../../common/Validators";
-import {v4 as uuid4} from "uuid";
 
 const Input = (props) => {
     const {label, path, value, onChange, isMarked, readOnly, validators} = props;
@@ -18,10 +18,7 @@ const Input = (props) => {
                     onChange={(event) => onChange(path, event.target.value)}
                     readOnly={readOnly}
                 />
-                {
-                    validators.map(validator =>
-                      validator.isValid(value) ? null : <label key={label + uuid4()} className='validation-label'>{notEmptyValidator.message}</label>)
-                }
+                <ValidationLabels validators={[notEmptyValidator]} value={value}/>
             </div>
         </div>
     );
