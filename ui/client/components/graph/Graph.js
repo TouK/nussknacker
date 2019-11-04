@@ -26,8 +26,7 @@ class Graph extends React.Component {
     processToDisplay: PropTypes.object.isRequired,
     groupingState: PropTypes.array,
     loggedUser: PropTypes.object.isRequired,
-    connectDropTarget: PropTypes.func,
-    //pageRef: PropTypes.object.isRequired
+    connectDropTarget: PropTypes.func
   }
 
   constructor(props) {
@@ -41,7 +40,7 @@ class Graph extends React.Component {
     })
     this.nodesMoving();
 
-    this.myRef = React.createRef()
+    this.graphRef = React.createRef()
     this.containerRef = React.createRef();
 
     this.windowListeners = {
@@ -49,8 +48,8 @@ class Graph extends React.Component {
     }
   }
 
-  getMyRef = () => {
-    return this.myRef.current
+  getGraphRef = () => {
+    return this.graphRef.current
   }
 
   componentDidMount() {
@@ -69,10 +68,6 @@ class Graph extends React.Component {
   updateDimensions() {
     const width = this.containerRef.current.offsetWidth
     const height = this.containerRef.current.offsetHeight
-
-    console.log("Container size: " + this.containerRef.current.offsetWidth + " " + this.containerRef.current.offsetHeight)
-    console.log("My size: " + this.getMyRef().offsetWidth + " " + this.getMyRef().offsetHeight)
-
     this.processGraphPaper.fitToContent()
     this.svgDimensions(width, height)
     this.processGraphPaper.setDimensions(width, height)
@@ -164,10 +159,10 @@ class Graph extends React.Component {
   createPaper = () => {
     const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly;
     return new joint.dia.Paper({
-      el: this.getMyRef(),
+      el: this.getGraphRef(),
       gridSize: 1,
-      height: this.getMyRef().offsetHeight,
-      width: this.getMyRef().offsetWidth,
+      height: this.getGraphRef().offsetHeight,
+      width: this.getGraphRef().offsetWidth,
       model: this.graph,
       snapLinks: {radius: 75},
       interactive: function (cellView) {
@@ -308,8 +303,8 @@ class Graph extends React.Component {
   }
 
   _prepareContentForExport = () => {
-    const oldHeight = this.getMyRef().offsetHeight
-    const oldWidth = this.getMyRef().offsetWidth
+    const oldHeight = this.getGraphRef().offsetHeight
+    const oldWidth = this.getGraphRef().offsetWidth
     //we fit to content to be able to export svg nicely...
     this.processGraphPaper.fitToContent()
 
@@ -321,7 +316,7 @@ class Graph extends React.Component {
 
   //Hack for FOP to properly export image from svg xml
   svgDimensions = (width, height) => {
-    let svg = this.getMyRef().getElementsByTagName("svg")[0]
+    let svg = this.getGraphRef().getElementsByTagName("svg")[0]
     svg.setAttribute('width', width)
     svg.setAttribute('height', height)
     this.setState({exported: SVGUtils.toXml(svg)})
@@ -384,7 +379,7 @@ class Graph extends React.Component {
   }
 
   enablePanZoom() {
-    const svgElement =  this.getMyRef().getElementsByTagName("svg").item(0);
+    const svgElement =  this.getGraphRef().getElementsByTagName("svg").item(0);
 
     const panAndZoom = svgPanZoom(svgElement, {
       viewportSelector: '.svg-pan-zoom_viewport',
@@ -513,11 +508,11 @@ class Graph extends React.Component {
 
   cursorBehaviour() {
     this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
-      this.getMyRef().style.cursor = "move"
+      this.getGraphRef().style.cursor = "move"
     })
 
     this.processGraphPaper.on('blank:pointerup', (evt, x, y) => {
-      this.getMyRef().style.cursor = "auto"
+      this.getGraphRef().style.cursor = "auto"
     })
   }
 
@@ -563,7 +558,7 @@ class Graph extends React.Component {
       <div id="graph-container" ref={this.containerRef}>
         {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
-        <div ref={this.myRef} id={this.props.divId}></div>
+        <div ref={this.graphRef} id={this.props.divId}></div>
       </div>
     )
 

@@ -22,21 +22,8 @@ class Visualization extends React.Component {
     super(props)
     this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false}
     this.bindShortCuts()
-
     this.graphRef = React.createRef()
-    // this.pageRef = React.createRef()
-    //
-    // this.windowListeners = {
-    //   resize: this.updateDimensions.bind(this)
-    // }
   }
-
-  // updateDimensions() {
-  //   console.log("Page size: " + this.pageRef.current.offsetWidth + " " + this.pageRef.current.offsetHeight)
-  //   this.graphRef.current.offsetWidth = this.pageRef.current.offsetWidth
-  //   this.graphRef.current.offsetHeight = this.pageRef.current.offsetHeight
-  // }
-
 
   bindShortCuts() {
     this.windowListeners = {
