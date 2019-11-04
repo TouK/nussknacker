@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.{DefaultAccessTokenResponse, DefaultProfileResponse}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Service, OAuth2ServiceFactory}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,7 +41,7 @@ class DefaultOAuth2Service(clientApi: OAuth2ClientApi[DefaultProfileResponse, De
 }
 
 class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory {
-  override def create(configuration: OAuth2Configuration): OAuth2Service =
+  override def create(configuration: OAuth2Configuration, allCategories: List[String]): OAuth2Service =
     DefaultOAuth2ServiceFactory.defaultService(configuration)
 }
 

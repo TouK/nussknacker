@@ -6,8 +6,6 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.api.{EspErrorToHttp, RouteWithoutUser}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2Service
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: ExecutionContext)

@@ -104,8 +104,8 @@ rules: [
 #### Implementation own OAuth2ServiceFactory 
 OAuth2 backend allows to exchange engine to fetching / parsing data from your OAuth2 Authentication Server and Profile Resource. 
 By default we support Github data format. To do this, simply replace the OAuth2ServiceFactory by your own implementation. 
-After that you have to register your implementation using Java's ServiceLoader mechanism by prepare `META-INFO.service` 
-resource for `pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2ServiceFactory`. You can find an example at tests in 
+After that you have to register your implementation using Java's ServiceLoader mechanism by prepare `META-INFO/service` 
+resource for `pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceFactory`. You can find an example at tests in 
 `ExampleOAuth2ServiceFactory` file.
 
 ```

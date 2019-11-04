@@ -7,8 +7,8 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermission, LoggedUser, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Service, OAuth2ServiceFactory}
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ClientApi, OAuth2Configuration}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2AuthenticateData
+import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ClientApi, OAuth2Configuration, OAuth2Service, OAuth2ServiceFactory}
 import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -39,7 +39,7 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
 }
 
 class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {
-  override def create(configuration: OAuth2Configuration): OAuth2Service =
+  override def create(configuration: OAuth2Configuration, allCategories: List[String]): OAuth2Service =
     ExampleOAuth2ServiceFactory.defaultService(configuration)
 }
 
