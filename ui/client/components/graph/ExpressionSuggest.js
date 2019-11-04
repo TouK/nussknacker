@@ -127,7 +127,7 @@ class ExpressionSuggest extends React.Component {
          </div>
          {
            this.props.validators.map(validator => validator.isValid(this.state.value) ?
-               null : <label key={"expression" + uuid4()} className='node-details-validation-label'>{validator.message}</label>)
+               null : <label key={"expression" + uuid4()} className='validation-label'>{validator.message}</label>)
          }
        </div>
         )

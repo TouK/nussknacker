@@ -20,7 +20,7 @@ const Input = (props) => {
                 />
                 {
                     validators.map(validator =>
-                      validator.isValid(value) ? null : <label key={label + uuid4()} className='node-details-validation-label'>{notEmptyValidator.message}</label>)
+                      validator.isValid(value) ? null : <label key={label + uuid4()} className='validation-label'>{notEmptyValidator.message}</label>)
                 }
             </div>
         </div>

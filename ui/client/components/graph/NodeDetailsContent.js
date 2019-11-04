@@ -165,7 +165,7 @@ export class NodeDetailsContent extends React.Component {
                     (<React.Fragment>
                       <input type="text" className="node-input" value={field.typ.refClazzName}
                              onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
-                      {notEmptyValidator.isValid(field.typ.refClazzName) ? null : <label key={uuid4()} className='node-details-validation-label'>{notEmptyValidator.message}</label>}
+                      {notEmptyValidator.isValid(field.typ.refClazzName) ? null : <label key={uuid4()} className='validation-label'>{notEmptyValidator.message}</label>}
                     </React.Fragment>)}
                   onChange={(fields) => this.setNodeDataAt("parameters", fields)}
                   newValue={{name: "", typ: {refClazzName: ""}}}
@@ -302,7 +302,7 @@ export class NodeDetailsContent extends React.Component {
           this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", true, [], "parallelism", null, null, 'parallelism'),
           this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", false,  [], "checkpointIntervalInSeconds", null, null, 'interval-seconds'),
           this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", false, [],"splitStateToDisk", false, false, 'split-state-disk'),
-          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", false, false, "useAsyncInterpretation", false, false, 'use-async')
+          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", false, [], "useAsyncInterpretation", false, false, 'use-async')
         ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", false, [],"path", null, null, 'query-path')]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
           ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig, fieldName)

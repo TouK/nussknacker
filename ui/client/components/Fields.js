@@ -20,7 +20,7 @@ class RawField extends React.Component {
         <div className={"node-value fieldName" + markedClass}>
           <input className="node-input" type="text" value={field.name} placeholder="Name"
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
-          {notEmptyValidator.isValid(field.name) ? null : <label key={field.name} className='node-details-validation-label'>{notEmptyValidator.message}</label>}
+          {notEmptyValidator.isValid(field.name) ? null : <label key={field.name} className='validation-label'>{notEmptyValidator.message}</label>}
         </div>
         <div className={"node-value field" + markedClass}>
           {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value))}

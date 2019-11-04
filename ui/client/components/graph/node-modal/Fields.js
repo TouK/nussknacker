@@ -31,7 +31,7 @@ const Fields = (props) => {
                                         />
                                         {
                                             notEmptyValidator.isValid(field.name) ?
-                                              null : <label key={label + uuid4()} className='node-details-validation-label'>{notEmptyValidator.message}</label>
+                                              null : <label key={label + uuid4()} className='validation-label'>{notEmptyValidator.message}</label>
                                         }
                                     </div>
                                     <div className={"node-value field" + (isMarked(paths) ? " marked" : "")}>

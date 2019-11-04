@@ -115,7 +115,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     HttpService.fetchProcesses(searchParams).then(response => {
       if (!this.state.showAddProcess) {
         this.setState({subProcesses: response.data, showLoader: false})
-      }q
+      }
     }).catch(() => this.setState({showLoader: false}))
   }
 
