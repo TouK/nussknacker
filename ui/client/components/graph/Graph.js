@@ -588,7 +588,6 @@ function mapState(state, props) {
     groupingState: state.graphReducer.groupingState,
     expandedGroups: state.ui.expandedGroups,
     layout: state.graphReducer.layout,
-    //pageRef: props.pageRef,
     ...commonState(state)
   };
 }
