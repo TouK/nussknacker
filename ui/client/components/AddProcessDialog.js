@@ -12,7 +12,7 @@ import HttpService from "../http/HttpService";
 import * as VisualizationUrl from '../common/VisualizationUrl';
 import Draggable from 'react-draggable';
 import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
-import {duplicate, notEmptyValidator} from "../common/Validators";
+import {duplicateValue, notEmptyValidator} from "../common/Validators";
 import {v4 as uuid4} from "uuid";
 
 //TODO: Consider integrating with GenericModalDialog 
@@ -130,7 +130,7 @@ const validators = [
   },
   {
     isValid: (processes, subprocesses, name) => !nameAlreadyExists(processes, subprocesses, name),
-    message: duplicate("Id")
+    message: duplicateValue
   }
 ];
 

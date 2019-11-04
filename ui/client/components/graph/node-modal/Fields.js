@@ -2,7 +2,7 @@ import PropTypes from "prop-types"
 import React from "react"
 import ExpressionSuggest from "../ExpressionSuggest"
 import {notEmptyValidator} from "../../../common/Validators";
-import ValidationLabels from "../../ValidationLabels";
+import ValidationLabels from "../../modals/ValidationLabels";
 
 const Fields = (props) => {
 

@@ -172,7 +172,7 @@ class UserRightPanel extends Component {
           {
             name: "duplicate",
             onClick: this.duplicateSelection,
-            icon: 'duplicate.svg',
+            icon: 'duplicateValue.svg',
             //cloning groups can be tricky...
             disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
             visible: this.props.capabilities.write
@@ -406,7 +406,7 @@ function mapState(state) {
     isOpened: state.ui.rightPanelIsOpened,
     fetchedProcessDetails: fetchedProcessDetails,
     processToDisplay: state.graphReducer.processToDisplay || {},
-    //TODO: now only needed for duplicate, maybe we can do it somehow differently?
+    //TODO: now only needed for duplicateValue, maybe we can do it somehow differently?
     layout: state.graphReducer.layout || [],
 
     testCapabilities: state.graphReducer.testCapabilities || {},

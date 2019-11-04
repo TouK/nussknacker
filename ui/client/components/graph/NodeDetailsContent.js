@@ -19,7 +19,7 @@ import BranchParameters from "./node-modal/BranchParameters";
 import Variable from "./node-modal/Variable";
 import JoinDef from "./node-modal/JoinDef"
 import {notEmptyValidator} from "../../common/Validators";
-import ValidationLabels from "../ValidationLabels";
+import ValidationLabels from "../modals/ValidationLabels";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal

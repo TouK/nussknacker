@@ -16,7 +16,7 @@ import 'brace/ext/searchbox';
 import '../../brace/mode/spel'
 import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
-import ValidationLabels from "../ValidationLabels";
+import ValidationLabels from "../modals/ValidationLabels";
 
 //to reconsider
 // - respect categories for global variables?

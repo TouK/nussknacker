@@ -6,7 +6,7 @@ import dragHandleIcon from "../assets/img/drag-handle.png";
 import update from "immutability-helper";
 import ReactDOM from "react-dom";
 import {notEmptyValidator} from "../common/Validators";
-import ValidationLabels from "./ValidationLabels";
+import ValidationLabels from "./modals/ValidationLabels";
 
 class RawField extends React.Component {
   render() {
