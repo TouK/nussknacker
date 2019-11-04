@@ -51,22 +51,21 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
         override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
           val valuesWithContexts = inputs.map {
             case (branchId, stream) =>
-              stream
-                .map(new AbstractLazyParameterInterpreterFunction(context.lazyParameterHelper)
-                  with MapFunction[Context, ValueWithContext[Any]] {
+              val keyParam = keyByBranchId(branchId)
+              val valueParam = valueByBranchId(branchId)
+              stream.map(new AbstractLazyParameterInterpreterFunction(context.lazyParameterHelper)
+                with MapFunction[Context, ValueWithContext[Any]] {
 
-                  private lazy val evaluateKey = lazyParameterInterpreter.syncInterpretationFunction(keyByBranchId(branchId))
+                private lazy val evaluateKey =  lazyParameterInterpreter.syncInterpretationFunction(keyParam)
+                private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
 
-                  private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId(branchId))
-
-                  override def map(context: Context): ValueWithContext[Any] = {
-                    ValueWithContext(Map(
-                      KeyField -> evaluateKey(context),
-                      branchId -> evaluateValue(context)
-                    ), context)
-                  }
-
-                })
+                override def map(context: Context): ValueWithContext[Any] = {
+                  ValueWithContext(Map(
+                    KeyField -> evaluateKey(context),
+                    branchId -> evaluateValue(context)
+                  ), context)
+                }
+              })
           }
           valuesWithContexts.reduce(_.connect(_).map(identity, identity))
         }
