@@ -87,14 +87,14 @@ users: [ //Special settings by user email
 
 rules: [
   {
-    roleName: "Admin"
+    role: "Admin"
     isAdmin: true
     permissions: ["Read", "Write", "Deploy"]
     globalPermissions: ["AdminTab"]
     categories: ["Defautl", "FraudDetection", "Recommendations"]
   },
   {
-    roleName: "User" //this is default role for all users
+    role: "User" //this is default role for all users
     permissions: ["Read", "Write", "Deploy"]
     categories: ["Defautl", "FraudDetection"]
   }

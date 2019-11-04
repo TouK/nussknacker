@@ -9,7 +9,7 @@ import org.scalatest.{FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2ServerError
-import pl.touk.nussknacker.ui.security.oauth2.DefaultOAuth2ServiceFactory.{OAuth2AuthenticateData, OAuth2Profile}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.{OAuth2AuthenticateData, OAuth2Profile}
 import pl.touk.nussknacker.ui.security.oauth2._
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub

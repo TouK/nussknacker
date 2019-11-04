@@ -56,10 +56,9 @@ object OAuth2Configuration {
   def getRules(config: Config): List[OAuth2ConfigRule] =
     config.as[List[OAuth2ConfigRule]](AuthenticationConfiguration.rulesConfigurationPath)
 
-
   case class OAuth2ConfigUser(email: String, roles: List[String])
 
-  case class OAuth2ConfigRule(roleName: String,
+  case class OAuth2ConfigRule(role: String,
                               isAdmin: Boolean = false,
                               categories: List[String] = List.empty,
                               permissions: List[Permission] = List.empty,
