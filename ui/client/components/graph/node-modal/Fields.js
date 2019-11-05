@@ -1,10 +1,8 @@
 import PropTypes from "prop-types"
-import Input from "./Input"
-import Textarea from "./Textarea"
-import ExpressionInput from "./ExpressionInput"
 import React from "react"
-import _ from "lodash"
 import ExpressionSuggest from "../ExpressionSuggest"
+import {notEmptyValidator} from "../../../common/Validators";
+import ValidationLabels from "../../modals/ValidationLabels";
 
 const Fields = (props) => {
 
@@ -21,7 +19,7 @@ const Fields = (props) => {
                             const paths = `${namespace}[${index}]`
 
                             return (
-                                <div className="node-row" key={field.uuid}>
+                                <div className="node-row movable-row" key={field.uuid}>
                                     <div className={"node-value fieldName" + (isMarked(paths) ? " marked" : "")}>
                                         <input
                                             className="node-input"
@@ -31,6 +29,7 @@ const Fields = (props) => {
                                             onChange={((e) => onChange(`${paths}.name`, e.target.value))}
                                             readOnly={readOnly}
                                         />
+                                        <ValidationLabels validators={[notEmptyValidator]} values={[field.name]}/>
                                     </div>
                                     <div className={"node-value field" + (isMarked(paths) ? " marked" : "")}>
                                         <ExpressionSuggest
@@ -39,8 +38,8 @@ const Fields = (props) => {
                                                 onValueChange: ((value) => onChange(`${paths}.expression.expression`, value)),
                                                 value: expression.expression,
                                                 language: expression.language,
-                                                readOnly
-                                            }}
+                                                readOnly}}
+                                            validators={[notEmptyValidator]}
                                         />
                                     </div>
                                     <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>

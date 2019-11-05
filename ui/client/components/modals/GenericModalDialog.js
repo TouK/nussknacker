@@ -87,7 +87,7 @@ function mapState(state) {
   }
 }
 
-export const preventFromMoveSelectors = "input, textarea, #brace-editor, .datePickerContainer, svg"
+export const preventFromMoveSelectors = "input, textarea, #brace-editor, .datePickerContainer, svg, img"
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(GenericModalDialog);
 
