@@ -10,8 +10,9 @@ import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerialize
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
-class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with EitherValues {
+class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with EitherValues {
 
   import KafkaUtils._
   import MockSchemaRegistry._
@@ -102,62 +103,57 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
       .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
       .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroTypedOutTopic'")
 
-  it("should read json object from kafka, filter and save it to kafka") {
+  test("should read json object from kafka, filter and save it to kafka") {
     kafkaClient.sendMessage(JsonInTopic, givenNotMatchingJsonObj)
     kafkaClient.sendMessage(JsonInTopic, givenMatchingJsonObj)
 
     assertThrows[Exception] {
-      register(jsonProcess("asdf"))
+      run(jsonProcess("asdf")){}
     }
     val validJsonProcess = jsonProcess("first")
-    register(validJsonProcess)
-    env.execute(validJsonProcess.id)
+    run(validJsonProcess) {
+      val consumer = kafkaClient.createConsumer()
+      val processed = consumer.consume(JsonOutTopic).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
+      processed.map(parseJson) shouldEqual List(parseJson(givenMatchingJsonObj))
+    }
 
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume(JsonOutTopic).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
-    processed.map(parseJson) shouldEqual List(parseJson(givenMatchingJsonObj))
   }
 
-  it("should read avro object from kafka, filter and save it to kafka") {
+  test("should read avro object from kafka, filter and save it to kafka") {
     send(givenNotMatchingAvroObj, AvroInTopic)
     send(givenMatchingAvroObj, AvroInTopic)
 
-    register(avroProcess)
-    env.execute(avroProcess.id)
-
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumeOneAvroMessage(AvroOutTopic)
-    processed shouldEqual List(givenMatchingAvroObj)
+    run(avroProcess) {
+      val consumer = kafkaClient.createConsumer()
+      val processed = consumeOneAvroMessage(AvroOutTopic)
+      processed shouldEqual List(givenMatchingAvroObj)
+    }
   }
 
-  it("should read avro object from kafka and save new one created from scratch") {
+  test("should read avro object from kafka and save new one created from scratch") {
     send(givenMatchingAvroObj, AvroFromScratchInTopic)
 
-    register(avroFromScratchProcess)
-    env.execute(avroFromScratchProcess.id)
-
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumeOneAvroMessage(AvroFromScratchOutTopic)
-    processed shouldEqual List(givenMatchingAvroObj)
+    run(avroFromScratchProcess) {
+      val processed = consumeOneAvroMessage(AvroFromScratchOutTopic)
+      processed shouldEqual List(givenMatchingAvroObj)
+    }
   }
 
-  it("should read avro typed object from kafka and save it to kafka") {
+  test("should read avro typed object from kafka and save it to kafka") {
     send(givenNotMatchingAvroObj, AvroTypedInTopic)
     send(givenMatchingAvroObj, AvroTypedInTopic)
 
     assertThrows[Exception] {
-      register(avroTypedProcess("asdf"))
+      run(avroTypedProcess("asdf")){}
     }
     val validAvroTypedProcess = avroTypedProcess("first")
-    register(validAvroTypedProcess)
-    env.execute(validAvroTypedProcess.id)
-
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumeOneAvroMessage(AvroTypedOutTopic)
-    processed shouldEqual List(givenMatchingAvroObj)
+    run(validAvroTypedProcess) {
+      val processed = consumeOneAvroMessage(AvroTypedOutTopic)
+      processed shouldEqual List(givenMatchingAvroObj)
+    }
   }
 
-  it("should merge two streams with union and save it to kafka") {
+  test("should merge two streams with union and save it to kafka") {
     val topicIn1: String = "union.json.input1"
     val topicIn2: String = "union.json.input2"
     val topicOut: String = "union.json.output"
@@ -191,24 +187,23 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
           .sink("end", "#outPutVar","kafka-json", "topic" -> s"'$topicOut'")
       ))
 
-    register(process)
+    run(process) {
 
-    env.execute(process.id)
-
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume(topicOut).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(2).toList
-    processed.map(parseJson) should contain theSameElementsAs List(
-      parseJson("""{
-                  |  "key" : "key2",
-                  |  "branch2" : "from source2"
-                  |}""".stripMargin
-      ),
-      parseJson("""{
-                  |  "key" : "key1",
-                  |  "branch1" : "from source1"
-                  |}""".stripMargin
+      val consumer = kafkaClient.createConsumer()
+      val processed = consumer.consume(topicOut).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(2).toList
+      processed.map(parseJson) should contain theSameElementsAs List(
+        parseJson("""{
+                    |  "key" : "key2",
+                    |  "branch2" : "from source2"
+                    |}""".stripMargin
+        ),
+        parseJson("""{
+                    |  "key" : "key1",
+                    |  "branch1" : "from source1"
+                    |}""".stripMargin
+        )
       )
-    )
+    }
   }
 
   private def parseJson(str: String) = io.circe.parser.parse(str).right.get
@@ -243,12 +238,13 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
   }
 
   override protected def afterAll(): Unit = {
-    super.afterAll()
     stoppableEnv.stop()
+    super.afterAll()
   }
 
-  private def register(process: EspProcess):Unit= {
+  private def run(process: EspProcess)(action: =>Unit):Unit= {
     registrar.register(env, process, ProcessVersion.empty)
+    stoppableEnv.withJobRunning(process.id)(action)
   }
 
   private def send(obj: Any, topic: String) = {
