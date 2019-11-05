@@ -5,12 +5,18 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
+import org.apache.flink.runtime.execution.ExecutionState
+import org.apache.flink.runtime.executiongraph.AccessExecutionJobVertex
 import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.test.util.MiniClusterWithClientResource
 import org.apache.flink.util.OptionalFailure
+import org.scalactic.source.Position
+import org.scalatest.Matchers
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.time.{Millis, Seconds, Span}
 
 import scala.collection.JavaConverters._
 
@@ -27,7 +33,8 @@ object StoppableExecutionEnvironment {
 
 }
 
-class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment with LazyLogging {
+class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment
+  with LazyLogging with Eventually with Matchers {
 
   private val config: MiniClusterResourceConfiguration
     = new MiniClusterResourceConfiguration.Builder()
@@ -50,12 +57,23 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
   }
 
   def withJobRunning[T](jobName: String)(action: => T): T = {
-    execute(jobName)
+    val res = execute(jobName)
+    waitForStart(res.getJobID, jobName)
     try {
       action
     } finally {
       cancel(jobName)
     }
+  }
+
+  private def patienceConfigForJobStart: PatienceConfig = PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
+
+  private def waitForStart(jobID: JobID, name: String): Unit = {
+    eventually {
+      val executionVertices: Iterable[AccessExecutionJobVertex] = flinkMiniCluster.getMiniCluster.getExecutionGraph(jobID).get().getAllVertices.asScala.values
+      val notRunning = executionVertices.filterNot(_.getAggregateState != ExecutionState.RUNNING)
+      assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getName} - ${rs.getAggregateState}")}")
+    }(patienceConfigForJobStart, implicitly[Position])
   }
 
   def execute(jobName: String): JobExecutionResult = {
