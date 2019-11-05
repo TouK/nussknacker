@@ -9,7 +9,6 @@ import org.scalatest.{FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.ui.security.api.{GlobalPermission, LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2ServerError
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceProvider.OAuth2AuthenticateData
 import pl.touk.nussknacker.ui.security.oauth2._
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
@@ -33,7 +32,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
       .whenRequestMatches(_.uri.equals(Uri(uri)))
       .thenRespondWrapped(Future(Response(Option.empty, code)))
 
-    DefaultOAuth2ServiceFactory.service(config)
+    DefaultOAuth2ServiceFactory.service(config, List.empty)
   }
 
   def createDefaultServiceMock(body: Json, uri: URI): DefaultOAuth2Service = {
@@ -42,7 +41,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
       .whenRequestMatches(_.uri.equals(Uri(uri)))
       .thenRespond(body.toString)
 
-    DefaultOAuth2ServiceFactory.service(config)
+    DefaultOAuth2ServiceFactory.service(config, List.empty)
   }
 
   it should ("properly parse data from authentication") in {

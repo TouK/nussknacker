@@ -24,7 +24,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.InternalServerError, "Bad Request")))
 
-    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config))
+    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config, List.empty))
   }
 
   protected lazy val badAuthenticationResources = {
@@ -33,7 +33,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.BadRequest, "Bad Request")))
 
-    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config))
+    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config, List.empty))
   }
 
   protected lazy val authenticationResources = {
@@ -42,7 +42,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(""" {"access_token": "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm", "token_type": "Bearer", "refresh_token": "yFLU8w5VZtqjYrdpD5K9s27JZdJuCRrL"} """)
 
-    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config))
+    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config, List.empty))
   }
 
   def authenticationOauth2(resource: AuthenticationOAuth2Resources, authorizeToken: String) = {
