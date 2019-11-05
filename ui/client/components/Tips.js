@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {render} from 'react-dom';
 import {Scrollbars} from 'react-custom-scrollbars';
 import {connect} from 'react-redux';
 import ActionsUtils from '../actions/ActionsUtils';

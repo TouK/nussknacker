@@ -35,7 +35,7 @@ class AdminPage extends React.Component {
 
   render() {
     return (
-      <div className="Page">
+      <div className="page">
         <Tabs defaultIndex={this.state.selectedTab} onSelect={this.onTabChange}>
           <TabList>
             {
