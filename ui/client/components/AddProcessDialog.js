@@ -14,6 +14,7 @@ import Draggable from 'react-draggable';
 import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
 import {duplicateValue, notEmptyValidator} from "../common/Validators";
 import {v4 as uuid4} from "uuid";
+import ValidationLabels from "./modals/ValidationLabels";
 
 //TODO: Consider integrating with GenericModalDialog 
 class AddProcessDialog extends React.Component {
@@ -75,10 +76,7 @@ class AddProcessDialog extends React.Component {
                         <input autoFocus={true} type="text" id="newProcessId" className="node-input"
                                value={this.state.processId}
                                onChange={(e) => this.setState({processId: e.target.value})}/>
-                        {
-                          validators.map(validator => validator.isValid(this.props.processes, this.props.subProcesses, this.state.processId) ?
-                              null : <label key={this.state.processId + uuid4()} className='validation-label'>{validator.message}</label>)
-                        }
+                         <ValidationLabels validators={validators} values={[this.props.processes, this.props.subProcesses, this.state.processId]}/>
                       </div>
                     </div>
                     <div className="node-row">

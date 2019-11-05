@@ -18,7 +18,7 @@ const Input = (props) => {
                     onChange={(event) => onChange(path, event.target.value)}
                     readOnly={readOnly}
                 />
-                <ValidationLabels validators={[notEmptyValidator]} value={value}/>
+                <ValidationLabels validators={[notEmptyValidator]} values={[value]}/>
             </div>
         </div>
     );

@@ -166,7 +166,7 @@ export class NodeDetailsContent extends React.Component {
                     (<React.Fragment>
                       <input type="text" className="node-input" value={field.typ.refClazzName}
                              onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
-                      <ValidationLabels validators={[notEmptyValidator]} value={field.typ.refClazzName}/>
+                      <ValidationLabels validators={[notEmptyValidator]} values={[field.typ.refClazzName]}/>
                     </React.Fragment>)}
                   onChange={(fields) => this.setNodeDataAt("parameters", fields)}
                   newValue={{name: "", typ: {refClazzName: ""}}}
@@ -506,7 +506,7 @@ export class NodeDetailsContent extends React.Component {
                     onChange={(e) => handleChange(e.target.value)}
                   />
               }
-              <ValidationLabels validators={validators} value={fieldValue}/>
+              <ValidationLabels validators={validators} values={[fieldValue]}/>
             </div>
           </div>
         )
@@ -541,7 +541,7 @@ export class NodeDetailsContent extends React.Component {
                   readOnly={readOnly}
               />
             </div>
-            <ValidationLabels validators={validators} value={fieldValue}/>
+            <ValidationLabels validators={validators} values={[fieldValue]}/>
           </div>
         )
       default:

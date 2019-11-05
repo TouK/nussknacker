@@ -125,7 +125,7 @@ class ExpressionSuggest extends React.Component {
              }}
            />
          </div>
-         <ValidationLabels validators={this.props.validators} value={this.state.value}/>
+         <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>
        </div>
         )
     } else {

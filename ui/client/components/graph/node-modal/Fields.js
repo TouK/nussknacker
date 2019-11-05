@@ -29,7 +29,7 @@ const Fields = (props) => {
                                             onChange={((e) => onChange(`${paths}.name`, e.target.value))}
                                             readOnly={readOnly}
                                         />
-                                        <ValidationLabels validators={[notEmptyValidator]} value={field.name}/>
+                                        <ValidationLabels validators={[notEmptyValidator]} values={[field.name]}/>
                                     </div>
                                     <div className={"node-value field" + (isMarked(paths) ? " marked" : "")}>
                                         <ExpressionSuggest
