@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient}
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
@@ -23,7 +24,7 @@ import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
-class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with EitherValues {
+class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with EitherValues with LazyLogging {
 
   import KafkaUtils._
   import MockSchemaRegistry._
@@ -187,10 +188,12 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
           .sink("end", "#outPutVar","kafka-json", "topic" -> s"'$topicOut'")
       ))
 
+    logger.info("Starting union process")
     run(process) {
-
-      val consumer = kafkaClient.createConsumer()
-      val processed = consumer.consume(topicOut).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(2).toList
+      logger.info("Waiting for consumer")
+      val consumer = kafkaClient.createConsumer().consume(topicOut, 20)
+      logger.info("Waiting for messages")
+      val processed = consumer.map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(2).toList
       processed.map(parseJson) should contain theSameElementsAs List(
         parseJson("""{
                     |  "key" : "key2",
