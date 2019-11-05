@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.security.api.DefaultAuthenticationConfiguration.De
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 
-trait AuthenticationConfiguration extends Product {
+trait AuthenticationConfiguration {
   def authorizeUrl: Option[URI] = Option.empty
   def method: AuthenticationMethod
 }
