@@ -19,7 +19,7 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
   }
 
   private[security] def authenticate(token: String): Future[Option[LoggedUser]] =
-    service.authorize(token).map(prf => Option.apply(prf)).recover {
+    service.authorize(token).map(prf => Option(prf)).recover {
       case OAuth2ErrorHandler(_) => Option.empty // Expired or non-exists token - user not authenticated
     }
 }

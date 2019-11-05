@@ -1,15 +1,47 @@
-package pl.touk.nussknacker.ui.security.ouath2
+package pl.touk.nussknacker.ui.security
 
-import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
+import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration.OAuth2ConfigRule
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2ServiceFactory}
 
-class OAuth2ServiceFactorySpec  extends FunSuite with Matchers with TableDrivenPropertyChecks {
+class RulesSetSpec  extends FunSuite with Matchers with TableDrivenPropertyChecks {
   val emptyRule = OAuth2ConfigRule(role = "")
+
+  test("getOnlyMatchingRules - normalize role name") {
+    val readRule = emptyRule.copy(role = "ReAdeR", categories = List("Default", "FraudDetection"), permissions = List(Permission.Read))
+    val rules = List(readRule)
+
+    val table = Table[List[String], List[OAuth2ConfigRule], Map[String, Set[Permission]]](
+      ("roles", "rules", "permissions"),
+      (List("unknown role"), rules, Map.empty),
+      (List(readRule.role), rules, Map("FraudDetection" -> Set(Permission.Read), "Default" -> Set(Permission.Read)))
+    )
+
+    forAll(table) { (roles: List[String], rules: List[OAuth2ConfigRule], permission: Map[String, Set[Permission]]) =>
+      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, List.empty)
+      rulesSet.permissions shouldBe permission
+    }
+  }
+
+  test("mapCategory - normalize category name") {
+    val allCategories = List("Default", "FraudDetection")
+    val readRule = emptyRule.copy(role = "ReAdeR", categories = List("DeFaulT", "frauddetection", "Recommendations"), permissions = List(Permission.Read))
+    val rules = List(readRule)
+
+    val table = Table[List[String], List[OAuth2ConfigRule], Map[String, Set[Permission]]](
+      ("roles", "rules", "permissions"),
+      (List("unknown role"), rules, Map.empty),
+      (List(readRule.role), rules, Map("FraudDetection" -> Set(Permission.Read), "Default" -> Set(Permission.Read), "Recommendations" -> Set(Permission.Read)))
+    )
+
+    forAll(table) { (roles: List[String], rules: List[OAuth2ConfigRule], permission: Map[String, Set[Permission]]) =>
+      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, allCategories)
+      rulesSet.permissions shouldBe permission
+    }
+  }
 
   test("permissions") {
     val readRule = emptyRule.copy(role = "Reader", categories = List("Default", "FraudDetection"), permissions = List(Permission.Read))
@@ -27,8 +59,8 @@ class OAuth2ServiceFactorySpec  extends FunSuite with Matchers with TableDrivenP
     )
 
     forAll(table) { (roles: List[String], rules: List[OAuth2ConfigRule], permission: Map[String, Set[Permission]]) =>
-      val matchedRoles = OAuth2ServiceFactory.getOnlyMatchingRoles(roles, rules)
-      OAuth2ServiceFactory.getPermissions(matchedRoles) shouldBe permission
+      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, List.empty)
+      rulesSet.permissions shouldBe permission
     }
   }
 
@@ -51,8 +83,8 @@ class OAuth2ServiceFactorySpec  extends FunSuite with Matchers with TableDrivenP
       (List(userRule.role, adminRule.role, userRuleWithAdminTab.role), rules, GlobalPermission.AdminTab :: Nil)
     )
     forAll(table) { (roles: List[String], rules: List[OAuth2ConfigRule], permissions: List[GlobalPermission]) =>
-      val matchedRoles = OAuth2ServiceFactory.getOnlyMatchingRoles(roles, rules)
-      OAuth2ServiceFactory.getGlobalPermissions(matchedRoles) shouldBe permissions
+      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, List.empty)
+      rulesSet.globalPermissions shouldBe permissions
     }
   }
 }

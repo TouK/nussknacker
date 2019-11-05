@@ -30,7 +30,7 @@ case class OAuth2Configuration(method: AuthenticationMethod,
 
   lazy val rules: List[OAuth2ConfigRule] = OAuth2Configuration.getRules(userConfig)
 
-  override def authorizeUrl: Option[URI] = Option.apply({
+  override def authorizeUrl: Option[URI] = Option({
     new URI(dispatch.url(authorizeUri.toString)
       .setQueryParameters((Map(
         "client_id" -> clientId,

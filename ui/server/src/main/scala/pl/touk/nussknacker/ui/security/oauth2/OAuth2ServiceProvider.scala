@@ -13,6 +13,4 @@ object OAuth2ServiceProvider extends LazyLogging {
 
     service.create(configuration, allCategories)
   }
-
-  case class OAuth2AuthenticateData(access_token: String, token_type: String, refresh_token: Option[String])
 }
