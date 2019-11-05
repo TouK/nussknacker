@@ -42,14 +42,14 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
   }
 }
 
-case class InfluxResponse(results: List[InfluxResult] = List())
+case class InfluxResponse(results: List[InfluxResult] = Nil)
 
 object InfluxResponse {
   import io.circe.generic.semiauto._
   implicit val decoder: Decoder[InfluxResponse] = deriveDecoder
 }
 
-case class InfluxResult(series: List[InfluxSerie] = List())
+case class InfluxResult(series: List[InfluxSerie] = Nil)
 
 object InfluxResult {
   import io.circe.generic.extras.Configuration
@@ -69,7 +69,7 @@ object InfluxSerie {
 
 }
 
-case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = List()) {
+case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = Nil) {
   val toMap: List[Map[String, Any]] = values.map(value => columns.zip(value).toMap)
 }
 
