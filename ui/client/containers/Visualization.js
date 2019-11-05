@@ -19,10 +19,10 @@ import RouteLeavingGuard from "../components/RouteLeavingGuard";
 class Visualization extends React.Component {
 
   constructor(props) {
-    super(props)
-    this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false}
-    this.bindShortCuts()
-    this.graphRef = React.createRef()
+    super(props);
+    this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false};
+    this.graphRef = React.createRef();
+    this.bindShortCuts();
   }
 
   bindShortCuts() {
@@ -230,7 +230,7 @@ class Visualization extends React.Component {
     const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading;
 
     return (
-      <div className="page" ref={this.pageRef}>
+      <div className="Page">
         <RouteLeavingGuard
           when={!this.props.nothingToSave}
           navigate={path => this.props.history.push(path)}
