@@ -1,6 +1,6 @@
 # Security
 
-Nussnkacker has pluggable security architecture - by default we support two ways of authentication: BasicAuth and OAuth2.
+Nussknacker has pluggable security architecture - by default we support two type of authentication: BasicAuth and OAuth2.
 You can either use default authentication provider, based on Basic authentication and static user configuration or integrate 
 with other authentication mechanisms such as custom SSO implementation.
 
