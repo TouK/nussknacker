@@ -32,8 +32,8 @@ class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaS
 
 
     //first partition 1, than 0
-    new String(dataFor3, StandardCharsets.UTF_8) shouldBe "b\nd\na"
-    new String(dataFor5, StandardCharsets.UTF_8) shouldBe "b\nd\na\nc"
+    new String(dataFor3, StandardCharsets.UTF_8) shouldBe "a\nc\nb"
+    new String(dataFor5, StandardCharsets.UTF_8) shouldBe "a\nc\nb\nd"
 
   }
 

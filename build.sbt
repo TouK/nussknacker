@@ -131,7 +131,7 @@ val configV = "1.3.0"
 val commonsLangV = "3.3.2"
 val dropWizardV = "3.1.5"
 
-val akkaHttpV = "10.1.10"
+val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
 val slickV = "3.2.3"
 val hsqldbV = "2.3.4"
@@ -223,6 +223,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
         "com.typesafe.akka" %% "akka-stream" % akkaV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
@@ -513,7 +514,8 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
         "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         //akka-http is only for StandaloneRequestResponseLogger
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force()
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force(),
+        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force()
       )
     }
   ).dependsOn(util, standaloneApi)
@@ -555,7 +557,9 @@ lazy val securityApi = (project in engine("security-api")).
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
         "com.typesafe" % "config" % configV
       )
     }
@@ -703,6 +707,8 @@ lazy val ui = (project in file("ui/server"))
         "org.mindrot" % "jbcrypt" % "0.4",
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
+        
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",

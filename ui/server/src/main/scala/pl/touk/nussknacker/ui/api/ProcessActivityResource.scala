@@ -79,6 +79,6 @@ class AttachmentResources(attachmentService: ProcessAttachmentService, val proce
   private def fileEntity(settings: RoutingSettings, file: File): ResponseEntity = {
     val contentType = ContentTypeResolver.Default(file.getName)
     HttpEntity.Default(contentType, file.length,
-      FileIO.fromPath(file.toPath).withAttributes(ActorAttributes.dispatcher(settings.fileIODispatcher)))
+      FileIO.fromPath(file.toPath).withAttributes(ActorAttributes.dispatcher("")))
   }
 }

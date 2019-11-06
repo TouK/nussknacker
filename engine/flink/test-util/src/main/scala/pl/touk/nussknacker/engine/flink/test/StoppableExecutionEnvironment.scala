@@ -76,10 +76,7 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
     }(patienceConfigForJobStart, implicitly[Position])
   }
 
-  def execute(jobName: String): JobExecutionResult = {
-    // transform the streaming program into a JobGraph
-    val streamGraph: StreamGraph = getStreamGraph
-    streamGraph.setJobName(jobName)
+  override def execute(streamGraph: StreamGraph): JobExecutionResult = {
     val jobGraph: JobGraph = streamGraph.getJobGraph
     logger.info("Running job on local embedded Flink flinkMiniCluster cluster")
 
