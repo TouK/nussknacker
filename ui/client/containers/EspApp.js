@@ -111,7 +111,7 @@ class EspApp extends React.Component {
                 }
                 <li><NavLink to={Archive.path}>{Archive.header}</NavLink></li>
                 {
-                  this.props.loggedUser.isAdmin ?
+                  this.props.loggedUser.globalPermissions.adminTab ?
                     <li><NavLink to={AdminPage.path}>{AdminPage.header}</NavLink></li> : null
                 }
               </ul>

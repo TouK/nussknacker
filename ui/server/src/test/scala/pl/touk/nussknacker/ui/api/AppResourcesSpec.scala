@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.collection.JavaConverters._
 
@@ -42,7 +43,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
 
     val first = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(new Exception("Failed to check status"))
+    statusCheck.reply(akka.actor.Status.Failure(new Exception("Failed to check status")))
 
     val second = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, isRunning = true, isDeployInProgress = false)))
@@ -117,7 +118,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   }
 
   private def saveProcessWithDeployInfo(id: String) = {
-    implicit val logged = TestFactory.adminUser("userId")
+    implicit val logged: LoggedUser = TestFactory.adminUser("userId")
     writeProcessRepository.saveNewProcess(ProcessName(id), TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
       .futureValue shouldBe Right(())
     val processId = processRepository.fetchProcessId(ProcessName(id)).futureValue.get

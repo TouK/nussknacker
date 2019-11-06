@@ -9,6 +9,11 @@ class ProcessUtils {
     return !_.isEmpty(fetchedProcessDetails) ? _.isEqual(fetchedProcessDetails.json, processToDisplay) : true
   }
 
+  canExport = (state) => {
+      const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
+      return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
+  }
+
   processDisplayName = (processId, versionId) => {
     return `${processId}:v${versionId}`
   }

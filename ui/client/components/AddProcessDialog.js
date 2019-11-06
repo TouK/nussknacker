@@ -9,7 +9,12 @@ import ActionsUtils from "../actions/ActionsUtils";
 import EspModalStyles from "../common/EspModalStyles";
 import "../stylesheets/visualization.styl";
 import HttpService from "../http/HttpService";
-import * as VisualizationUrl from '../common/VisualizationUrl'
+import * as VisualizationUrl from '../common/VisualizationUrl';
+import Draggable from 'react-draggable';
+import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
+import {duplicateValue, notEmptyValidator} from "../common/Validators";
+import {v4 as uuid4} from "uuid";
+import ValidationLabels from "./modals/ValidationLabels";
 
 //TODO: Consider integrating with GenericModalDialog 
 class AddProcessDialog extends React.Component {
@@ -20,7 +25,9 @@ class AddProcessDialog extends React.Component {
     onClose: PropTypes.func.isRequired,
     isSubprocess: PropTypes.bool,
     visualizationPath: PropTypes.string.isRequired,
-    message: PropTypes.string.isRequired
+    message: PropTypes.string.isRequired,
+    processes: PropTypes.array,
+    subProcesses: PropTypes.array
   }
 
   initialState(props) {
@@ -46,36 +53,56 @@ class AddProcessDialog extends React.Component {
   }
 
   render() {
-    const headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
+    const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
-      <Modal isOpen={this.props.isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeDialog}>
-        <div className="modalHeader" style={headerStyles}>
-          <span>{this.props.message}</span>
-        </div>
-        <div className="modalContentDark">
-          <div className="node-table">
-            <div className="node-table-body">
-              <div className="node-row">
-                <div className="node-label">Id</div>
-                <div className="node-value"><input autoFocus={true} type="text" id="newProcessId" className="node-input" value={this.state.processId}
-                                                   onChange={(e) => this.setState({processId: e.target.value})}/></div>
+      <Modal isOpen={this.props.isOpen}
+             shouldCloseOnOverlayClick={false}
+             onRequestClose={this.closeDialog}>
+        <div className="draggable-container">
+          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+            <div className="espModal">
+              <div className="modalHeader">
+                <div className="modal-title" style={titleStyles}>
+                  <span>{this.props.message}</span>
+                </div>
               </div>
-              <div className="node-row">
-                <div className="node-label">Category</div>
-                <div className="node-value">
-                  <select id="processCategory" className="node-input"  onChange={(e) => this.setState({processCategory: e.target.value})}>
-                    {this.props.categories.map((cat, index) => (<option key={index} value={cat}>{cat}</option>))}
-                  </select>
+
+              <div className="modalContentDark">
+                <div className="node-table">
+                  <div className="node-table-body">
+                    <div className="node-row">
+                      <div className="node-label">Id</div>
+                      <div className="node-value">
+                        <input autoFocus={true} type="text" id="newProcessId" className="node-input"
+                               value={this.state.processId}
+                               onChange={(e) => this.setState({processId: e.target.value})}/>
+                         <ValidationLabels validators={validators} values={[this.props.processes, this.props.subProcesses, this.state.processId]}/>
+                      </div>
+                    </div>
+                    <div className="node-row">
+                      <div className="node-label">Category</div>
+                      <div className="node-value">
+                        <select id="processCategory" className="node-input"
+                                onChange={(e) => this.setState({processCategory: e.target.value})}>
+                          {this.props.categories.map((cat, index) => (
+                              <option key={index} value={cat}>{cat}</option>))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modalFooter">
+                <div className="footerButtons">
+                  <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel
+                  </button>
+                  <button type="button" title="Create" className='modalButton' onClick={this.confirm}>Create
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-        <div className="modalFooter">
-          <div className="footerButtons">
-            <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel</button>
-            <button type="button" title="Create" className='modalButton' onClick={this.confirm}>Create</button>
-          </div>
+          </Draggable>
         </div>
       </Modal>
     );
@@ -88,6 +115,22 @@ function mapState(state) {
     categories: (user.categories || []).filter(c => user.canWrite(c))
   }
 }
+
+const nameAlreadyExists = (processes, subprocesses, name) => {
+  return processes.map(process => process.name).includes(name)
+    || subprocesses.map(subProcess => subProcess.name).includes(name)
+}
+
+const validators = [
+  {
+    isValid: (processes, subprocesses, name) => notEmptyValidator.isValid(name),
+    message: notEmptyValidator.message
+  },
+  {
+    isValid: (processes, subprocesses, name) => !nameAlreadyExists(processes, subprocesses, name),
+    message: duplicateValue
+  }
+];
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(AddProcessDialog);
 

@@ -1,10 +1,14 @@
+import Moment from "moment";
+import {displayDateFormat} from "../config";
 
-export default {
+class DateUtils {
+    formatRelatively = (dateTimeString) => {
+        return Moment(dateTimeString).calendar(null, {sameElse: displayDateFormat})
+    }
 
-
-  format(dateTimeString) {
-    //TODO: something better?
-    return dateTimeString.replace("T", " | ").substring(0, 18)
-  }
-
+    formatAbsolutely = (dateTimeString) => {
+        return dateTimeString.replace("T", " | ").substring(0, 18)
+    }
 }
+
+export default new DateUtils()

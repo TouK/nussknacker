@@ -7,7 +7,7 @@ import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -105,7 +105,7 @@ class AppResources(config: Config,
   private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
     processRepository.fetchProcessesDetails[DisplayableProcess]().map { processes =>
       val processesWithErrors = processes.flatMap(_.json)
-        .map(processValidation.toValidated)
+        .map(process => new ValidatedDisplayableProcess(process, processValidation.validate(process)))
         .filter(process => !process.validationResult.errors.isEmpty)
       processesWithErrors.map(_.id)
     }

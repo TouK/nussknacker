@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import {connect} from "react-redux";
-import {Panel} from "react-bootstrap";
+import {Panel, Tooltip} from "react-bootstrap";
 import {Scrollbars} from 'react-custom-scrollbars';
 import history from "../../history"
 import cn from "classnames";
@@ -50,10 +50,10 @@ class UserRightPanel extends Component {
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
             <div className="panel-properties">
               <label>
-                <input type="checkbox" defaultChecked={this.props.businessView} onChange={(e) => {
-                  this.props.actions.businessViewChanged(e.target.checked)
-                  this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
-                }}/>
+                  <input disabled={!this.props.nothingToSave} type="checkbox" defaultChecked={this.props.businessView} onChange={(e) => {
+                    this.props.actions.businessViewChanged(e.target.checked)
+                    this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
+                  }}/>
                 Business view
               </label>
             </div>
@@ -133,32 +133,33 @@ class UserRightPanel extends Component {
         {name: "migrate", visible: this.props.capabilities.deploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !conf.deployPossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
         {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
         {name: "import", visible: this.props.capabilities.write, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
-        {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
-        {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
+        {name: "JSON", disabled: !this.props.canExport, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
+        {name: "PDF", disabled: !this.props.canExport, onClick: this.exportProcessToPdf, icon: InlinedSvgs.pdf},
         {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
         {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
-        {name: "archive", onClick: this.archiveProcess, icon: 'archive.svg', visible: this.props.capabilities.write}
+        {name: "archive", onClick: this.archiveProcess, disabled: this.isRunning(), icon: 'archive.svg', visible: this.props.capabilities.write}
       ]
     },
       {
         panelName: "Edit",
         buttons: [
-          {
-            name: "undo",
+          {name: "undo",
             visible: this.props.capabilities.write,
+            disabled: this.props.history.past.length === 0,
             onClick: this.undo,
             icon: InlinedSvgs.buttonUndo
           },
           {
             name: "redo",
             visible: this.props.capabilities.write,
+            disabled: this.props.history.future.length === 0,
             onClick: this.redo,
             icon: InlinedSvgs.buttonRedo
           },
           {
-            name: "align",
+            name: "layout",
             onClick: this.props.graphLayoutFunction,
-            icon: InlinedSvgs.buttonAlign,
+            icon: InlinedSvgs.buttonLayout,
             visible: this.props.capabilities.write
           },
           {
@@ -327,9 +328,7 @@ class UserRightPanel extends Component {
   }
 
   archiveProcess = () => {
-    if(this.isRunning()){
-      this.props.actions.toggleInfoModal(Dialogs.types.infoModal,DialogMessages.cantArchiveRunningProcess())
-    }else{
+    if(!this.isRunning()){
       this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
           return HttpService.archiveProcess(this.processId()).then((response) => history.push(Archive.path))
       })
@@ -414,6 +413,7 @@ function mapState(state) {
 
     loggedUser: state.settings.loggedUser,
     nothingToSave: ProcessUtils.nothingToSave(state),
+    canExport: ProcessUtils.canExport(state),
     showRunProcessDetails: !_.isEmpty(state.graphReducer.testResults) || !_.isEmpty(state.graphReducer.processCounts),
     keyActionsAvailable: state.ui.allModalsClosed,
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
@@ -423,7 +423,8 @@ function mapState(state) {
     featuresSettings: state.settings.featuresSettings,
     isSubprocess: _.get(state.graphReducer.processToDisplay, "properties.isSubprocess", false),
     businessView: state.graphReducer.businessView,
-    clipboard: state.graphReducer.clipboard
+    clipboard: state.graphReducer.clipboard,
+    history: state.graphReducer.history
   };
 }
 

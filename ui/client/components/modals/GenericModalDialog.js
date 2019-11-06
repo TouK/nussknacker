@@ -6,7 +6,7 @@ import "../../stylesheets/visualization.styl";
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
 import PropTypes from 'prop-types';
-
+import Draggable from "react-draggable";
 
 class GenericModalDialog extends React.Component {
 
@@ -54,16 +54,23 @@ class GenericModalDialog extends React.Component {
     return (
       <Modal isOpen={this.props.modalDialog.openDialog === this.props.type}
              shouldCloseOnOverlayClick={false}
-             className={style} onRequestClose={this.closeDialog}>
-        { this.props.header ? (<div className="modalHeader" style={{color: 'white', 'backgroundColor': '#70c6ce'}}>
-          <span>{this.props.header}</span>
-        </div>) : null }
-        <div className="modalContentDark">
-          {this.props.children}
-          <div className="confirmationButtons">
-            <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel</button>
-            { this.props.confirm ? this.renderOkBtn() : null }
-          </div>
+             onRequestClose={this.closeDialog}>
+        <div className="draggable-container">
+          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+            <div className={style}>
+              {this.props.header ? (<div className="modal-title" style={{color: 'white', 'backgroundColor': '#70c6ce'}}>
+                <span>{this.props.header}</span>
+              </div>) : null}
+              <div className="modalContentDark">
+                {this.props.children}
+                <div className="confirmationButtons">
+                  <button type="button" title="CANCEL" className='modalButton' onClick={this.closeDialog}>CANCEL
+                  </button>
+                  {this.props.confirm ? this.renderOkBtn() : null}
+                </div>
+              </div>
+            </div>
+          </Draggable>
         </div>
       </Modal>
     );
@@ -79,6 +86,8 @@ function mapState(state) {
     modalDialog: state.ui.modalDialog || {},
   }
 }
+
+export const preventFromMoveSelectors = "input, textarea, #brace-editor, .datePickerContainer, svg, img"
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(GenericModalDialog);
 

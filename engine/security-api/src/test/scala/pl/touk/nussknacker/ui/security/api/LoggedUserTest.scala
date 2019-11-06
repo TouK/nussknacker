@@ -8,7 +8,7 @@ import org.scalatest.prop.{TableFor3, TableFor4}
 class LoggedUserTest extends FunSuite with Matchers {
 
   test("Admin permission grants other permissions") {
-    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("admin", cp, true)
+    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("admin", cp, Nil, true)
 
     val perms: TableFor3[LoggedUser, Permission, String] = Table(
       ("user", "permission", "category"),

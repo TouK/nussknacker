@@ -1,14 +1,12 @@
 import React from "react";
-import {render} from "react-dom";
 import Modal from "react-modal";
 import {connect} from "react-redux";
-import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";
 import ProcessUtils from '../../common/ProcessUtils';
 import "../../stylesheets/visualization.styl";
-import InlinedSvgs from '../../assets/icons/InlinedSvgs'
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
-
+import Draggable from "react-draggable";
+import {preventFromMoveSelectors} from "./GenericModalDialog";
 
 //TODO: consider extending GenericModalDialog
 class ConfirmDialog extends React.Component {
@@ -32,17 +30,24 @@ class ConfirmDialog extends React.Component {
   }
 
   render() {
+    const confirmDialog = this.props.confirmDialog;
     return (
-      <Modal isOpen={this.props.confirmDialog.isOpen}
+      <Modal isOpen={confirmDialog.isOpen}
              shouldCloseOnOverlayClick={false}
-             className="espModal confirmationModal" onRequestClose={this.closeDialog}>
-        <div className="modalContentDark">
-          <p>{this.props.confirmDialog.text}</p>
-          <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings}/>
-          <div className="confirmationButtons">
-            <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>No</button>
-            <button type="button" title="Yes" className='modalButton' onClick={this.confirm}>Yes</button>
-          </div>
+             onRequestClose={this.closeDialog}>
+        <div className="draggable-container">
+          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+            <div className="espModal confirmationModal modalContentDark">
+              <p>{confirmDialog.text}</p>
+              <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings}/>
+              <div className="confirmationButtons">
+                <button type="button" title={confirmDialog.denyText} className='modalButton'
+                        onClick={this.closeDialog}>{confirmDialog.denyText}</button>
+                <button type="button" title={confirmDialog.confirmText} className='modalButton'
+                        onClick={this.confirm}>{confirmDialog.confirmText}</button>
+              </div>
+            </div>
+          </Draggable>
         </div>
       </Modal>
     );

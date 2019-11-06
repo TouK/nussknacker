@@ -15,7 +15,7 @@ object SampleProcess {
       .parallelism(1)
       .exceptionHandler("param1" -> "'ala'")
       .source("startProcess", "csv-source")
-      .filter("input", "#input != 'ala'")
+      .filter("input", "#input != null")
       .to(endWithMessage("suffix", "message"))
   }
 

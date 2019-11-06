@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.security.api
 
+import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 
 sealed trait LoggedUser {
@@ -9,18 +10,22 @@ sealed trait LoggedUser {
 }
 
 object LoggedUser {
-  def apply(id: String, categoryPermissions: Map[String, Set[Permission]] = Map.empty, isAdmin: Boolean = false): LoggedUser = {
+  def apply(id: String,
+            categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+            globalPermissions: List[GlobalPermission] = Nil,
+            isAdmin: Boolean = false): LoggedUser = {
     if (isAdmin) {
       AdminUser(id)
     }
     else {
-      CommonUser(id, categoryPermissions)
+      CommonUser(id, categoryPermissions, globalPermissions)
     }
   }
 }
 
 case class CommonUser(id: String,
-                      categoryPermissions: Map[String, Set[Permission]] = Map.empty) extends LoggedUser {
+                      categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+                      globalPermissions: List[GlobalPermission] = Nil) extends LoggedUser {
   def categories(permission: Permission): Set[String] = categoryPermissions.collect {
     case (category, permissions) if permissions contains permission => category
   }.toSet

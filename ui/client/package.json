@@ -1,5 +1,5 @@
 {
-  "name": "esp-ui-client",
+  "name": "nussknacker-ui",
   "version": "0.0.0",
   "description": "ESP UI - client",
   "main": "server.js",
@@ -37,6 +37,7 @@
     "react-datepicker": "~2.8.0",
     "react-dnd": "~7.6.0",
     "react-dnd-html5-backend": "~7.6.0",
+    "react-draggable": "^4.0.3",
     "react-dom": "~16.8.6",
     "react-dropzone": "~10.1.5",
     "react-hot-loader": "~4.11.0",

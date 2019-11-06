@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, Stream
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -29,7 +30,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
   val validation: ProcessValidation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam,
-      ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false), List())
+      ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true), Set.empty)
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
     new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator), Map(TestProcessingTypes.Streaming -> Map()), sampleResolver, Map.empty)
   }
@@ -41,7 +42,8 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
    val canonical = ProcessConverter.fromDisplayable(process)
-   validation.toValidated(ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming))
+    val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming)
+    new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
   }
 
   test("be able to convert empty process") {
@@ -104,7 +106,8 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         List.empty,
         List.empty,
         Map(
-          "s" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
+          ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(meta)),
+          "s" -> Map("meta" -> MetaVariables.typingResult(meta)),
           "v" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
           "e" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]))
       )

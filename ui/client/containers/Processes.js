@@ -24,6 +24,8 @@ class Processes extends BaseProcesses {
     isArchived: false
   }
 
+  page = 'processes'
+
   searchItems = ['categories', 'isDeployed']
   shouldReloadStatuses = true
 
@@ -138,6 +140,8 @@ class Processes extends BaseProcesses {
           isSubprocess={false}
           visualizationPath={Processes.path}
           message="Create new process"
+          processes={this.state.processes}
+          subProcesses={this.state.subProcesses}
         />
 
         <LoaderSpinner show={this.state.showLoader}/>
@@ -159,7 +163,7 @@ class Processes extends BaseProcesses {
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
-            {key: 'name', label: 'Process name'},
+            {key: 'name', label: 'Name'},
             {key: 'category', label: 'Category'},
             {key: 'modifyDate', label: 'Last modification'},
             {key: 'status', label: 'Status'},
@@ -180,7 +184,7 @@ class Processes extends BaseProcesses {
                   />
                 </Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column" value={process.modificationDate}>{DateUtils.formatRelatively(process.modificationDate)}</Td>
                 <Td column="status" className="status-column">
                   <div
                     className={this.processStatusClass(process)}

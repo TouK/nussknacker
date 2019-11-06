@@ -3,175 +3,171 @@ package pl.touk.nussknacker.engine.example
 import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneId}
 
+import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Suite}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers, Outcome, fixture}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.spel
 
-trait ExampleItTest1 extends FlatSpec with BeforeAndAfterAll with Matchers with Eventually with ExampleItTest { self: BaseITest =>
+import scala.concurrent.Future
+
+//TODO: do we currently need these tests?
+trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matchers with Eventually { self: BaseITest =>
 
   import KafkaUtils._
   import spel.Implicits._
 
-  def process() =
-    EspProcessBuilder
+  override type FixtureParam = String
+
+  //to be able to run tests concurrently/not care about cleaning, we use different topics
+  override protected def withFixture(test: OneArgTest): Outcome = {
+    val topicPrefix = s"topic.for.test.${test.name.replace(" ", "_")}."
+    withFixture(test.toNoArgTest(topicPrefix))
+  }
+
+  test("filter events and save to kafka") { topicPrefix =>
+    val in = topicPrefix + "in"
+    val out = topicPrefix + "out"
+
+    val process = EspProcessBuilder
       .id("example1")
       .parallelism(1)
       .exceptionHandler("sampleParam" -> "'sampleParamValue'")
-      .source("start", "kafka-transaction", "topic" -> "'topic.transaction'")
+      .source("start", "kafka-transaction", "topic" -> s"'$in'")
       .filter("amountFilter", "#input.amount > 1")
       .sink("end", "#UTIL.mapToJson({'clientId': #input.clientId, 'amount': #input.amount})",
-        "kafka-stringSink", "topic" -> "'topic.out'")
+        "kafka-stringSink", "topic" -> s"'$out'")
 
-  it should "filter events and save to kafka" in {
-    sendTransaction(Transaction("ClientA", 1))
-    sendTransaction(Transaction("ClientB", 2))
-    register(this, process())
 
-    env.execute(process().id)
+    sendTransaction(in, Transaction("ClientA", 1))
+    sendTransaction(in, Transaction("ClientB", 2))
 
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume("topic.out").take(1).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
-    processed shouldBe List(
-      """{"clientId":"ClientB","amount":"2"}"""
-    )
+    register(process) {
+
+      val consumer = kafkaClient.createConsumer()
+      val processed = consumer.consume(out).take(1).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
+      processed shouldBe List(
+        """{"clientId":"ClientB","amount":"2"}"""
+      )
+    }
   }
-}
 
-trait ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest { self: BaseITest =>
+  test("enrich transaction events with client data")  { topicPrefix =>
+    val in = topicPrefix + "in"
+    val out = topicPrefix + "out"
 
-  import KafkaUtils._
-  import spel.Implicits._
-
-  def process() =
-    EspProcessBuilder
+    val process = EspProcessBuilder
       .id("example2")
       .parallelism(1)
       .exceptionHandler("sampleParam" -> "'sampleParamValue'")
-      .source("start", "kafka-transaction", "topic" -> "'topic.transaction'")
+      .source("start", "kafka-transaction", "topic" -> s"'$in'")
       .enricher("clientEnricher", "client", "clientService", "clientId" -> "#input.clientId")
       .sink("end",
         "#UTIL.mapToJson({'clientId': #input.clientId, 'clientName': #client.name, 'cardNumber': #client.cardNumber})",
-        "kafka-stringSink", "topic" -> "'topic.out'"
+        "kafka-stringSink", "topic" -> s"'$out'"
       )
 
-  it should "enrich transaction events with client data" in {
     //this event triggers clientEnricher exception which will be logged
-    sendTransaction(Transaction("ClientX", 3))
+    sendTransaction(in, Transaction("ClientX", 3))
 
     //these are happy path events
-    sendTransaction(Transaction("Client1", 1))
-    sendTransaction(Transaction("Client2", 2))
+    sendTransaction(in, Transaction("Client1", 1))
+    sendTransaction(in, Transaction("Client2", 2))
 
-    register(this, process())
+    register(process) {
 
-    env.execute(process().id)
-
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume("topic.out").take(2).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
-    processed.toSet shouldBe Set(
-      """{"clientId":"Client1","clientName":"Alice","cardNumber":"123"}""",
-      """{"clientId":"Client2","clientName":"Bob","cardNumber":"234"}"""
-    )
-  }
-}
-
-trait ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest { self: BaseITest =>
-
-  import KafkaUtils._
-  import spel.Implicits._
-
-  def process() =
-    EspProcessBuilder
-      .id("example3")
-      .parallelism(1)
-      .exceptionHandler("sampleParam" -> "'sampleParamValue'")
-      .source("start", "kafka-transaction", "topic" -> "'topic.transaction'")
-      .customNode("aggregate", "aggregatedAmount", "transactionAmountAggregator", "clientId" -> "#input.clientId")
-      .filter("aggregateFilter", "#aggregatedAmount.amount > 10")
-      .sink("end",
-        "#UTIL.mapToJson({'clientId': #input.clientId, 'aggregatedAmount': #aggregatedAmount.amount})",
-        "kafka-stringSink", "topic" -> "'topic.out'"
+      val consumer = kafkaClient.createConsumer()
+      val processed = consumer.consume(out).take(2).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
+      processed.toSet shouldBe Set(
+        """{"clientId":"Client1","clientName":"Alice","cardNumber":"123"}""",
+        """{"clientId":"Client2","clientName":"Bob","cardNumber":"234"}"""
       )
-
-  it should "perform transaction amount aggregation for every client" in {
-    sendTransaction(Transaction("Client1", 2))
-    sendTransaction(Transaction("Client1", 9))
-    sendTransaction(Transaction("Client2", 1))
-    sendTransaction(Transaction("Client2", 9))
-    sendTransaction(Transaction("Client3", 13))
-
-    register(this, process())
-
-    env.execute(process().id)
-
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume("topic.out").take(2).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
-    processed.toSet shouldBe Set(
-      """{"clientId":"Client1","aggregatedAmount":"11"}""",
-      """{"clientId":"Client3","aggregatedAmount":"13"}"""
-    )
+    }
   }
-}
 
+  test("perform transaction amount aggregation for every client") { topicPrefix =>
+    val in = topicPrefix + "in"
+    val out = topicPrefix + "out"
 
-trait ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest { self: BaseITest =>
+    val process =EspProcessBuilder
+        .id("example3")
+        .parallelism(1)
+        .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+        .source("start", "kafka-transaction", "topic" -> s"'$in'")
+        .customNode("aggregate", "aggregatedAmount", "transactionAmountAggregator", "clientId" -> "#input.clientId")
+        .filter("aggregateFilter", "#aggregatedAmount.amount > 10")
+        .sink("end",
+          "#UTIL.mapToJson({'clientId': #input.clientId, 'aggregatedAmount': #aggregatedAmount.amount})",
+          "kafka-stringSink", "topic" -> s"'$out'"
+        )
+    sendTransaction(in, Transaction("Client1", 2))
+    sendTransaction(in, Transaction("Client1", 9))
+    sendTransaction(in, Transaction("Client2", 1))
+    sendTransaction(in, Transaction("Client2", 9))
+    sendTransaction(in, Transaction("Client3", 13))
 
-  import KafkaUtils._
-  import spel.Implicits._
+    register(process) {
 
-  def process() =
-    EspProcessBuilder
+      val consumer = kafkaClient.createConsumer()
+      val processed = consumer.consume(out).take(2).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
+      processed.toSet shouldBe Set(
+        """{"clientId":"Client1","aggregatedAmount":"11"}""",
+        """{"clientId":"Client3","aggregatedAmount":"13"}"""
+      )
+    }
+  }
+
+  test("count transactions in 1h window") { topicPrefix =>
+      val in = topicPrefix + "in"
+      val out = topicPrefix + "out"
+
+    val process = EspProcessBuilder
       .id("example4")
       .parallelism(1)
       .exceptionHandler("sampleParam" -> "'sampleParamValue'")
-      .source("start", "kafka-transaction", "topic" -> "'topic.transaction'")
+      .source("start", "kafka-transaction", "topic" -> s"'$in'")
       .customNode("transactionCounter", "transactionCounts", "eventsCounter", "key" -> "#input.clientId", "length" -> "'1h'")
       .filter("aggregateFilter", "#transactionCounts.count > 1")
       .sink("end",
         "#UTIL.mapToJson({'clientId': #input.clientId, 'transactionsCount': #transactionCounts.count})",
-        "kafka-stringSink", "topic" -> "'topic.out'"
+        "kafka-stringSink", "topic" -> s"'$out'"
       )
 
-  it should "count transactions in 1h window" in {
     val now = LocalDateTime.of(2017, 1, 1, 10, 0)
     val windowLengthMinutes = 60
 
     //transactions for clientId=Client1 are within window so will pass whole process
-    sendTransaction(Transaction("Client1", 1, toEpoch(now)))
-    sendTransaction(Transaction("Client1", 2, toEpoch(now.plusMinutes(windowLengthMinutes - 10))))
+    sendTransaction(in, Transaction("Client1", 1, toEpoch(now)))
+    sendTransaction(in, Transaction("Client1", 2, toEpoch(now.plusMinutes(windowLengthMinutes - 10))))
 
     //transactions for clientId=Client2 are NOT within window so will NOT pass whole process
-    sendTransaction(Transaction("Client2", 1, toEpoch(now)))
-    sendTransaction(Transaction("Client2", 2, toEpoch(now.plusMinutes(windowLengthMinutes + 2))))
+    sendTransaction(in, Transaction("Client2", 1, toEpoch(now)))
+    sendTransaction(in, Transaction("Client2", 2, toEpoch(now.plusMinutes(windowLengthMinutes + 2))))
 
     //transactions for clientId=Client3 are within window so will pass whole process
-    sendTransaction(Transaction("Client3", 1, toEpoch(now.plusMinutes(72))))
-    sendTransaction(Transaction("Client3", 2, toEpoch(now.plusMinutes(72 + windowLengthMinutes - 2))))
+    sendTransaction(in, Transaction("Client3", 1, toEpoch(now.plusMinutes(72))))
+    sendTransaction(in, Transaction("Client3", 2, toEpoch(now.plusMinutes(72 + windowLengthMinutes - 2))))
 
-    register(this, process())
-    env.execute(process().id)
-
-    val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume("topic.out").take(2).toList.map(msg => new String(msg.message(), StandardCharsets.UTF_8))
-    processed.toSet shouldBe Set(
-      """{"clientId":"Client1","transactionsCount":"2"}""",
-      """{"clientId":"Client3","transactionsCount":"2"}"""
-    )
+    register(process) {
+      val consumer = kafkaClient.createConsumer()
+      val processed = consumer.consume(out).take(2).toList.map(msg => new String(msg.message(), StandardCharsets.UTF_8))
+      processed.toSet shouldBe Set(
+        """{"clientId":"Client1","transactionsCount":"2"}""",
+        """{"clientId":"Client3","transactionsCount":"2"}"""
+      )
+    }
   }
 
-}
-
-trait ExampleItTest { self: KafkaSpec =>
-  def register(self:BaseITest, process: EspProcess):Unit= {
-    self.registrar.register(self.env, process, ProcessVersion.empty)
+  def register(process: EspProcess)(action: => Unit):Unit= {
+    registrar.register(env, process, ProcessVersion.empty)
+    stoppableEnv.withJobRunning(process.id)(action)
   }
 
-  def sendTransaction(t: Transaction) = {
-    kafkaClient.sendMessage("topic.transaction", t.asJson.noSpaces)
+  def sendTransaction(topic: String, t: Transaction): Future[RecordMetadata] = {
+    kafkaClient.sendMessage(topic, t.asJson.noSpaces)
   }
 
   def toEpoch(d: LocalDateTime): Long = {
@@ -180,12 +176,5 @@ trait ExampleItTest { self: KafkaSpec =>
 
 }
 
-class ExampleItTest1Java extends ExampleItTest1 with BaseJavaITest
-class ExampleItTest2Java extends ExampleItTest2 with BaseJavaITest
-class ExampleItTest3Java extends ExampleItTest3 with BaseJavaITest
-class ExampleItTest4Java extends ExampleItTest4 with BaseJavaITest
-
-class ExampleItTest1Scala extends ExampleItTest1 with BaseScalaITest
-class ExampleItTest2Scala extends ExampleItTest2 with BaseScalaITest
-class ExampleItTest3Scala extends ExampleItTest3 with BaseScalaITest
-class ExampleItTest4Scala extends ExampleItTest4 with BaseScalaITest
+class ExampleItTestsJava extends ExampleItTests with BaseJavaITest
+class ExampleItTestsScala extends ExampleItTests with BaseScalaITest
