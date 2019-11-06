@@ -287,11 +287,11 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("not allow unknown variables in methods") {
     parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass)) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference a"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'a'"), Nil)) =>
     }
 
     parse[Any]("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference a"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'a'"), Nil)) =>
     }
   }
 
@@ -299,6 +299,14 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Any]("nonexisting == 'ala'", ctx) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Non reference 'nonexisting' occurred. Maybe you missed '#' in front of it?"), Nil)) =>
     }
+  }
+
+  test("validate simple literals") {
+    parse[Long]("-1", ctx) shouldBe 'valid
+    parse[Float]("-1.1", ctx) shouldBe 'valid
+    parse[Long]("-1.1", ctx) should not be 'valid
+    parse[Double]("-1.1", ctx) shouldBe 'valid
+    parse[java.math.BigDecimal]("-1.1", ctx) shouldBe 'valid
   }
 
   test("validate ternary operator") {

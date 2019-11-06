@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 
 /**
   * This class determine if type can be subclass of other type. It basically based on fact that TypingResults are
@@ -49,7 +49,17 @@ private[typed] object CanBeSubclassDeterminer {
     //throw validation errors in this case. It's better to accept to much than too little
       superclassCandidate.params.zip(givenClass.params).forall(t => canBeSubclassOf(t._1, t._2) || canBeSubclassOf(t._2, t._1))
 
-    givenClass == superclassCandidate || ClassUtils.isAssignable(givenClass.klass, superclassCandidate.klass) && hasSameTypeParams
+    val canBeSubclass = givenClass == superclassCandidate || ClassUtils.isAssignable(givenClass.klass, superclassCandidate.klass) && hasSameTypeParams
+    canBeSubclass || canBeConvertedTo(givenClass, superclassCandidate)
+  }
+
+  private def canBeConvertedTo(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
+    if (superclassCandidate == Typed[java.math.BigDecimal]) {
+      // see org.springframework.core.convert.support.NumberToNumberConverterFactory
+      givenClass.canBeSubclassOf(Typed[Number])
+    } else {
+      false
+    }
   }
 
 }
