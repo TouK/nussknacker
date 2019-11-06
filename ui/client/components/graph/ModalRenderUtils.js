@@ -19,7 +19,7 @@ class ModalRenderUtils {
         <div className="node-value">
           <div>
             {errors.map((error, index) =>
-              (<div className="node-error" key={index}>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</div>)
+              (<div className="node-error" key={index} title={error.description}>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</div>)
             )}
           </div>
 
