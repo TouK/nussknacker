@@ -282,6 +282,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-queryable-state-runtime" % flinkV % "test",
+        "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -493,6 +494,7 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-test-utils" % flinkV,
+        "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "ch.qos.logback" % "logback-classic" % logbackV,
