@@ -16,58 +16,58 @@ const MapVariable = (props) => {
   };
 
   return (
-        <div className="node-table-body node-variable-builder-body">
-            <Input
-              label="Id"
-              value={node.id}
-              path="id"
-              onChange={onChange}
-              isMarked={isMarked("id")}
-              readOnly={readOnly}
-              validators={[notEmptyValidator, errorValidator(errors, "id")]}
-            />
-            <Input
-              label="Variable Name"
-              value={node.varName}
-              path="varName"
-              onChange={onChange}
-              isMarked={isMarked("varName")}
-              readOnly={readOnly}
-              validators={[notEmptyValidator, errorValidator(errors, "varName")]}
-            />
-            <Fields
-                label="Fields"
-                onChange={onChange}
-                fields={node.fields}
-                removeField={removeElement}
-                namespace="fields"
-                addField={addField}
-                isMarked={isMarked}
-                errors={errors}
-            />
-            <Textarea
-                label="Description"
-                value={_.get(props.node, "additionalFields.description", "")}
-                path="additionalFields.description"
-                onChange={onChange}
-                isMarked={isMarked("additionalFields.description")}
-                readOnly={readOnly}
-            />
-        </div>
-    );
+    <div className="node-table-body node-variable-builder-body">
+      <Input
+        label="Id"
+        value={node.id}
+        path="id"
+        onChange={onChange}
+        isMarked={isMarked("id")}
+        readOnly={readOnly}
+        validators={[notEmptyValidator, errorValidator(errors, "id")]}
+      />
+      <Input
+        label="Variable Name"
+        value={node.varName}
+        path="varName"
+        onChange={onChange}
+        isMarked={isMarked("varName")}
+        readOnly={readOnly}
+        validators={[notEmptyValidator, errorValidator(errors, "varName")]}
+      />
+      <Fields
+        label="Fields"
+        onChange={onChange}
+        fields={node.fields}
+        removeField={removeElement}
+        namespace="fields"
+        addField={addField}
+        isMarked={isMarked}
+        errors={errors}
+      />
+      <Textarea
+        label="Description"
+        value={_.get(props.node, "additionalFields.description", "")}
+        path="additionalFields.description"
+        onChange={onChange}
+        isMarked={isMarked("additionalFields.description")}
+        readOnly={readOnly}
+      />
+    </div>
+  );
 };
 
 MapVariable.propTypes = {
-    isMarked: PropTypes.func.isRequired,
-    node: PropTypes.object.isRequired,
-    removeElement: PropTypes.func.isRequired,
-    addElement: PropTypes.func.isRequired,
-    onChange: PropTypes.func.isRequired,
-    readOnly: PropTypes.bool
+  isMarked: PropTypes.func.isRequired,
+  node: PropTypes.object.isRequired,
+  removeElement: PropTypes.func.isRequired,
+  addElement: PropTypes.func.isRequired,
+  onChange: PropTypes.func.isRequired,
+  readOnly: PropTypes.bool
 };
 
 MapVariable.defaultProps = {
-    readOnly: false
+  readOnly: false
 };
 
 MapVariable.availableFields = (node) => {

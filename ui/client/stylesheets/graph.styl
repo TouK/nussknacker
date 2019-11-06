@@ -252,8 +252,6 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       &.partly-hidden
         textarea
           height 100px !important
-      &.marked
-        border 2px solid markColor
       &.node-value-select
         .node-value-select__control
           background-color modalInputBkgColor
@@ -589,6 +587,13 @@ espPanelButton()
     font-size: 14px
     font-weight: 400
 
+.marked
+  border 2px solid markColor !important
+
+.read-only
+  background-color #444
+  font-weight 400;
+  font-size 14px;
 
 .fieldsControl
   .addRemoveButton

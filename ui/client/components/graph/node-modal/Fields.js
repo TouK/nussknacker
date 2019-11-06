@@ -15,46 +15,47 @@ const Fields = (props) => {
         <div className="fieldsControl">
           {
             fields.map((field, index) => {
-                const expression = field.expression
-                const paths = `${namespace}[${index}]`
+              const expression = field.expression
+              const paths = `${namespace}[${index}]`
               const validators = [notEmptyValidator];
               return (
-                  <div className="node-row movable-row" key={field.uuid}>
-                    <div className={"node-value fieldName" + (isMarked(paths) ? " marked" : "")}>
-                      <input
-                        className={validators.some(validator => validator.isValid(field.name) === false) ?
-                          "node-input node-input-with-error" : "node-input"}
-                        type="text"
-                        value={field.name}
-                        placeholder="Field name"
-                        onChange={((e) => onChange(`${paths}.name`, e.target.value))}
-                        readOnly={readOnly}
-                      />
-                      <ValidationLabels validators={validators} values={[field.name]}/>
-                    </div>
-                    <div className={"node-value field" + (isMarked(paths) ? " marked" : "")}>
-                      <ExpressionSuggest
-                        fieldName={`value-${field.uuid}`}
-                        inputProps={{
-                          onValueChange: ((value) => onChange(`${paths}.expression.expression`, value)),
-                          value: expression.expression,
-                          language: expression.language,
-                          readOnly}}
-                        validators={validators}
-                      />
-                    </div>
-                    <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>
-                      <button
-                        className="addRemoveButton"
-                        title="Remove field"
-                        onClick={() => removeField(namespace, index)}
-                      >
-                        -
-                      </button>
-                    </div>
-                  </div>)
-              }
-            )
+                <div className="node-row movable-row" key={field.uuid}>
+                  <div className={"node-value fieldName" + (isMarked(paths) ? " marked" : "")}>
+                    <input
+                      className={validators.some(validator => validator.isValid(field.name) === false) ?
+                        "node-input node-input-with-error" : "node-input"}
+                      type="text"
+                      value={field.name}
+                      placeholder="Field name"
+                      onChange={((e) => onChange(`${paths}.name`, e.target.value))}
+                      readOnly={readOnly}
+                    />
+                    <ValidationLabels validators={validators} values={[field.name]}/>
+                  </div>
+                  <div className={"node-value field"}>
+                    <ExpressionSuggest
+                      fieldName={`value-${field.uuid}`}
+                      inputProps={{
+                        onValueChange: ((value) => onChange(`${paths}.expression.expression`, value)),
+                        value: expression.expression,
+                        language: expression.language,
+                        readOnly}}
+                      validators={validators}
+                      isMarked={isMarked(paths)}
+                    />
+                  </div>
+                  <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>
+                    <button
+                      className="addRemoveButton"
+                      title="Remove field"
+                      onClick={() => removeField(namespace, index)}
+                    >
+                      -
+                    </button>
+                  </div>
+                </div>)
+            }
+          )
           }
           <div>
             <button onClick={addField} className="addRemoveButton" title="Add field">+</button>

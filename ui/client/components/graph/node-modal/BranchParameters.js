@@ -32,7 +32,7 @@ const BranchParameters = (props) => {
                           readOnly={true}
                         />
                       </div>
-                      <div className={"node-value field" + (isMarked(path) ? " marked" : "")}>
+                      <div className={"node-value field"}>
                         <ExpressionSuggest
                           fieldName={fieldName}
                           inputProps={{
@@ -42,6 +42,7 @@ const BranchParameters = (props) => {
                             readOnly
                           }}
                           validators={[notEmptyValidator, errorValidator(errors, branchErrorFieldName(branchParamDef.name, edge.from))]}
+                          isMarked={isMarked(path)}
                         />
                       </div>
                     </div>

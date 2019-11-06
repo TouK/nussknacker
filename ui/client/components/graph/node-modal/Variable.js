@@ -51,14 +51,14 @@ const Variable = (props) => {
 };
 
 Variable.propTypes = {
-    readOnly: PropTypes.bool,
-    isMarked: PropTypes.func.isRequired,
-    node: PropTypes.object.isRequired,
-    onChange: PropTypes.func.isRequired
+  readOnly: PropTypes.bool,
+  isMarked: PropTypes.func.isRequired,
+  node: PropTypes.object.isRequired,
+  onChange: PropTypes.func.isRequired
 };
 
 Variable.defaultProps = {
-    readOnly: false
+  readOnly: false
 };
 
 Variable.availableFields = ["id", "varName", "expression"]

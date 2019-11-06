@@ -40,7 +40,7 @@ export class NodeDetailsContent extends React.Component {
     };
 
     let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
-    this.showOutputVar = hasNoReturn  === false || (hasNoReturn === true && this.state.editedNode.outputVar)
+    this.showOutputVar = hasNoReturn === false || (hasNoReturn === true && this.state.editedNode.outputVar)
 
     this.generateUUID("fields");
   }
@@ -210,8 +210,8 @@ export class NodeDetailsContent extends React.Component {
                 </div>
               )
             })}
-            {this.props.node.type === 'Enricher' ? this.createField("input", "Output", "output", false, [notEmptyValidator, errorValidator(fieldErrors, "output")]) : null }
-            {this.props.node.type === 'Processor' ? this.createField("checkbox", "Disabled", "isDisabled") : null }
+            {this.props.node.type === 'Enricher' ? this.createField("input", "Output", "output", false, [notEmptyValidator, errorValidator(fieldErrors, "output")]) : null}
+            {this.props.node.type === 'Processor' ? this.createField("checkbox", "Disabled", "isDisabled") : null}
             {this.descriptionField()}
           </div>
         )
@@ -229,12 +229,12 @@ export class NodeDetailsContent extends React.Component {
               createListField={(param, index) => this.createExpressionListField(param.name, "expression", `ref.parameters[${index}]`, [notEmptyValidator, errorValidator(fieldErrors, param.name)])}
               createReadOnlyField={params => (
                 <div className="node-row">{this.renderFieldLabel(params.name)}
-                <div className="node-value">
-                  <input type="text"
-                         className="node-input"
-                         value={params.expression.expression}
-                         disabled={true}/>
-                </div>
+                  <div className="node-value">
+                    <input type="text"
+                           className="node-input"
+                           value={params.expression.expression}
+                           disabled={true}/>
+                  </div>
                 </div>)}
             />
             {this.descriptionField()}
@@ -252,13 +252,13 @@ export class NodeDetailsContent extends React.Component {
             }
             {this.createReadonlyField("input", "Node type", "nodeType")}
             {NodeUtils.nodeType(this.props.node) === 'Join' &&
-              <BranchParameters
-                  onChange={this.setNodeDataAt}
-                  node={this.state.editedNode}
-                  joinDef={this.nodeDef}
-                  isMarked={this.isMarked}
-                  errors={fieldErrors}
-              />
+            <BranchParameters
+              onChange={this.setNodeDataAt}
+              node={this.state.editedNode}
+              joinDef={this.nodeDef}
+              isMarked={this.isMarked}
+              errors={fieldErrors}
+            />
             }
             {(this.state.editedNode.parameters).map((param, index) => {
               return (
@@ -272,21 +272,21 @@ export class NodeDetailsContent extends React.Component {
         )
       case 'VariableBuilder':
         return <MapVariable
-            removeElement={this.removeElement}
-            onChange={this.setNodeDataAt}
-            node={this.state.editedNode}
-            addElement={this.addElement}
-            isMarked={this.isMarked}
-            readOnly={!this.props.isEditMode}
-            errors={fieldErrors}
+          removeElement={this.removeElement}
+          onChange={this.setNodeDataAt}
+          node={this.state.editedNode}
+          addElement={this.addElement}
+          isMarked={this.isMarked}
+          readOnly={!this.props.isEditMode}
+          errors={fieldErrors}
         />;
       case 'Variable':
         return <Variable
-            onChange={this.setNodeDataAt}
-            node={this.state.editedNode}
-            isMarked={this.isMarked}
-            readOnly={!this.props.isEditMode}
-            errors={fieldErrors}
+          onChange={this.setNodeDataAt}
+          node={this.state.editedNode}
+          isMarked={this.isMarked}
+          readOnly={!this.props.isEditMode}
+          errors={fieldErrors}
         />;
       case 'Switch':
         return (
@@ -310,18 +310,18 @@ export class NodeDetailsContent extends React.Component {
         //fixme move this configuration to some better place?
         const fields = type == "StreamMetaData" ? [
           this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", true, [errorValidator(fieldErrors, "parallelism")], "parallelism", null, null, 'parallelism'),
-          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", false,  [errorValidator(fieldErrors, "checkpointIntervalInSeconds")], "checkpointIntervalInSeconds", null, null, 'interval-seconds'),
-          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", false, [errorValidator(fieldErrors, "splitStateToDisk")],"splitStateToDisk", false, false, 'split-state-disk'),
+          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", false, [errorValidator(fieldErrors, "checkpointIntervalInSeconds")], "checkpointIntervalInSeconds", null, null, 'interval-seconds'),
+          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", false, [errorValidator(fieldErrors, "splitStateToDisk")], "splitStateToDisk", false, false, 'split-state-disk'),
           this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", false, [errorValidator(fieldErrors, "useAsyncInterpretation")], "useAsyncInterpretation", false, false, 'use-async')
-        ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", false, [errorValidator(fieldErrors, "path")],"path", null, null, 'query-path')]
+        ] : [this.createField("input", "Query path", "typeSpecificProperties.path", false, [errorValidator(fieldErrors, "path")], "path", null, null, 'query-path')]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
           ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig, fieldName, fieldErrors)
         );
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
-            { _.concat(fields, commonFields, additionalFields) }
-            { hasExceptionHandlerParams ?
+            {_.concat(fields, commonFields, additionalFields)}
+            {hasExceptionHandlerParams ?
               (<div className="node-row">
                 <div className="node-label">Exception handler:</div>
                 <div className="node-group">
@@ -329,7 +329,7 @@ export class NodeDetailsContent extends React.Component {
                     return (
                       <div className="node-block" key={this.props.node.id + param.name + index}>
                         {this.createExpressionListField(param.name, "expression", `exceptionHandler.parameters[${index}]`, [notEmptyValidator, errorValidator(fieldErrors, param.name)])}
-                        <hr />
+                        <hr/>
                       </div>
                     )
                   })}
@@ -379,14 +379,14 @@ export class NodeDetailsContent extends React.Component {
     return [
       //TODO this should be nice looking selectbox
       this.doCreateField(
-          "plain-textarea",
-          "Subprocess Versions",
-          "subprocessVersions",
-          JsonUtils.tryStringify(this.state.editedNode.subprocessVersions || {}),
-          (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)),
-          null,
-          false,
-          'subprocess-versions'
+        "plain-textarea",
+        "Subprocess Versions",
+        "subprocessVersions",
+        JsonUtils.tryStringify(this.state.editedNode.subprocessVersions || {}),
+        (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)),
+        null,
+        false,
+        'subprocess-versions'
       )]
   }
 
@@ -414,16 +414,16 @@ export class NodeDetailsContent extends React.Component {
 
   createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName, readonly, defaultValue, key) => {
     return this.doCreateField(
-        fieldType,
-        fieldLabel,
-        fieldName,
-        _.get(this.state.editedNode, fieldProperty, ""),
-        ((newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)),
-        readonly,
-        this.isMarked(fieldProperty),
-        key,
-        autofocus,
-        validators
+      fieldType,
+      fieldLabel,
+      fieldName,
+      _.get(this.state.editedNode, fieldProperty, ""),
+      ((newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)),
+      readonly,
+      this.isMarked(fieldProperty),
+      key,
+      autofocus,
+      validators
     )
   }
 
@@ -431,13 +431,13 @@ export class NodeDetailsContent extends React.Component {
     const path = `${listFieldProperty}.${fieldProperty}`
 
     return this.doCreateField(
-        fieldType,
-        fieldLabel,
-        fieldName,
-        _.get(obj, fieldProperty),
-        ((newValue) => this.setNodeDataAt(path, newValue) ),
-        null,
-        this.isMarked(path)
+      fieldType,
+      fieldLabel,
+      fieldName,
+      _.get(obj, fieldProperty),
+      ((newValue) => this.setNodeDataAt(path, newValue)),
+      null,
+      this.isMarked(path)
     )
   }
 
@@ -452,7 +452,6 @@ export class NodeDetailsContent extends React.Component {
     const exprTextPath = `${exprPath}.expression`;
     const expressionObj = _.get(this.state.editedNode, exprPath);
     const isMarked = this.isMarked(exprTextPath);
-    const nodeValueClass = this.nodeValueClass(isMarked);
     const restriction = this.getRestriction(fieldName);
 
     if (restriction.hasFixedValues)
@@ -468,7 +467,7 @@ export class NodeDetailsContent extends React.Component {
     return TestRenderUtils.wrapWithTestResult(fieldName, this.state.testResultsToShow, this.state.testResultsToHide, this.toggleTestResult, (
       <div className="node-row">
         {this.renderFieldLabel(fieldLabel)}
-        <div className={nodeValueClass}>
+        <div className={"node-value"}>
           <ExpressionSuggest
             fieldName={fieldName}
             inputProps={{
@@ -478,6 +477,7 @@ export class NodeDetailsContent extends React.Component {
               language: expressionObj.language,
               onValueChange: ((newValue) => this.setNodeDataAt(exprTextPath, newValue)), readOnly: readOnly}}
             validators={validators}
+            isMarked={isMarked}
           />
         </div>
       </div>)
@@ -496,25 +496,25 @@ export class NodeDetailsContent extends React.Component {
 
   doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked, key, autofocus = false, validators = []) => {
     const readOnly = !this.props.isEditMode || forceReadonly;
-    const nodeValueClass = this.nodeValueClass(isMarked);
-
     switch (fieldType) {
       case 'input':
         return (
           <div className="node-row" key={key}>
             {this.renderFieldLabel(fieldLabel)}
-            <div className={nodeValueClass}>
-              {
-                readOnly ?
-                  <div className="node-read-only-input" title={fieldValue}>{fieldValue}</div> :
-                  <input
-                    autoFocus={autofocus}
-                    type="text"
-                    className={validators.map(validator => validator.isValid(fieldValue)).includes(false) ? "node-input node-input-with-error" : "node-input"}
-                    value={fieldValue || ""}
-                    onChange={(e) => handleChange(e.target.value)}
-                  />
-              }
+            <div className={"node-value"}>
+              <div className={isMarked ? " marked" : ""}>
+                {
+                  readOnly ?
+                    <div className="node-read-only-input" title={fieldValue}>{fieldValue}</div> :
+                    <input
+                      autoFocus={autofocus}
+                      type="text"
+                      className={validators.map(validator => validator.isValid(fieldValue)).includes(false) ? "node-input node-input-with-error" : "node-input"}
+                      value={fieldValue || ""}
+                      onChange={(e) => handleChange(e.target.value)}
+                    />
+                }
+              </div>
               <ValidationLabels validators={validators} values={[fieldValue]}/>
             </div>
           </div>
@@ -523,7 +523,7 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-row" key={key}>
             {this.renderFieldLabel(fieldLabel)}
-            <div className={nodeValueClass}>
+            <div className={"node-value" + (isMarked ? " marked" : "")}>
               <input
                   autoFocus={autofocus}
                   type="checkbox"
@@ -539,15 +539,15 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-row" key={key}>
             {this.renderFieldLabel(fieldLabel)}
-            <div className={nodeValueClass}>
+            <div className={"node-value" + (isMarked ? " marked" : "")}>
               <Textarea
-                  autoFocus={autofocus}
-                  rows={1}
-                  cols={50}
-                  className="node-input"
-                  value={fieldValue || ""}
-                  onChange={(e) => handleChange(e.target.value)}
-                  readOnly={readOnly}
+                autoFocus={autofocus}
+                rows={1}
+                cols={50}
+                className="node-input"
+                value={fieldValue || ""}
+                onChange={(e) => handleChange(e.target.value)}
+                readOnly={readOnly}
               />
             </div>
             <ValidationLabels validators={validators} values={[fieldValue]}/>
@@ -569,8 +569,6 @@ export class NodeDetailsContent extends React.Component {
       values: restriction && restriction.values
     }
   };
-
-  nodeValueClass = (isMarked) => "node-value" + (isMarked ? " marked" : "");
 
   setNodeDataAt = (propToMutate, newValue, defaultValue) => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
@@ -597,8 +595,14 @@ export class NodeDetailsContent extends React.Component {
     const parameter = this.findParamByName(label)
     return (
       <div className="node-label" title={label}>{label}:
-        {parameter ? <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ.refClazzName)}</div> : null}
-    </div>)
+        {parameter ?
+          <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ.refClazzName)}</div> : null}
+      </div>)
+  }
+
+  fieldErrors = (errors) => {
+    return errors.filter(error => error.fieldName &&
+      this.availableFields().includes(error.fieldName)) || []
   }
 
   availableFields = () => {
@@ -665,15 +669,10 @@ export class NodeDetailsContent extends React.Component {
     }
   }
 
-  fieldErrors = (errors) => {
-    return errors.filter(error => error.fieldName &&
-      this.availableFields().includes(error.fieldName)) || []
-  }
-
   render() {
     const nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode});
-    const fieldErrors = this.fieldErrors(this.props.nodeErrors)
-    const otherErrors = this.props.nodeErrors.filter(error => !fieldErrors.includes(error)) || []
+    const fieldErrors = this.fieldErrors(this.props.nodeErrors || [])
+    const otherErrors = this.props.nodeErrors ? this.props.nodeErrors.filter(error => !fieldErrors.includes(error)) : []
     return (
       <div className={nodeClass}>
         {ModalRenderUtils.renderOtherErrors(otherErrors, 'Node has errors')}
