@@ -34,7 +34,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     super.afterAll()
   }
 
-  private val flinkEsp = "flinkesp:1.7.2"
+  private val flinkEsp = "flinkesp:1.9.1"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 

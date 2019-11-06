@@ -59,7 +59,7 @@ services:
 
   jobmanager:
     container_name: nussknacker_jobmanager
-    image: flink:${FLINK_VERSION-1.7.2-scala_2.11}
+    image: flink:${FLINK_VERSION-1.9.1-scala_2.11}
     expose:
       - "6123"
       - "8081"
@@ -80,7 +80,7 @@ services:
 
   taskmanager:
     container_name: nussknacker_taskmanager
-    image: flink:${FLINK_VERSION-1.7.2-scala_2.11}
+    image: flink:${FLINK_VERSION-1.9.1-scala_2.11}
     entrypoint: /flink-entrypoint.sh
     command: taskmanager
     links:

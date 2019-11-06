@@ -26,6 +26,7 @@ object StoppableExecutionEnvironment {
   def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int) : StoppableExecutionEnvironment= {
     //blaaa this is needed to make queryableState work with two task manager instances
     configuration.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, 2)
+    configuration.setBoolean(QueryableStateOptions.ENABLE_QUERYABLE_STATE_PROXY_SERVER, true)
     configuration.setString(QueryableStateOptions.PROXY_PORT_RANGE, s"$proxyPortLow-$proxyPortHigh")
 
     new StoppableExecutionEnvironment(configuration)
