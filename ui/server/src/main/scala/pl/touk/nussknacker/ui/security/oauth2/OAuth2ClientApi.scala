@@ -78,5 +78,5 @@ object OAuth2ClientApi {
   }
 
   @JsonCodec case class DefaultAccessTokenResponse(access_token: String, token_type: String, refresh_token: Option[String])
-  @JsonCodec case class DefaultProfileResponse(id: Int, email: String)
+  @JsonCodec case class DefaultProfileResponse(id: Long, email: String)
 }
