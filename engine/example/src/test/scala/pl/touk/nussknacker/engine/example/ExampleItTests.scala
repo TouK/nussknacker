@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.spel
 
 import scala.concurrent.Future
 
+//TODO: do we currently need these tests?
 trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matchers with Eventually { self: BaseITest =>
 
   import KafkaUtils._
@@ -21,6 +22,7 @@ trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matche
 
   override type FixtureParam = String
 
+  //to be able to run tests concurrently/not care about cleaning, we use different topics
   override protected def withFixture(test: OneArgTest): Outcome = {
     val topicPrefix = s"topic.for.test.${test.name.replace(" ", "_")}."
     withFixture(test.toNoArgTest(topicPrefix))
@@ -121,7 +123,7 @@ trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matche
   test("count transactions in 1h window") { topicPrefix =>
       val in = topicPrefix + "in"
       val out = topicPrefix + "out"
-    
+
     val process = EspProcessBuilder
       .id("example4")
       .parallelism(1)
@@ -133,7 +135,7 @@ trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matche
         "#UTIL.mapToJson({'clientId': #input.clientId, 'transactionsCount': #transactionCounts.count})",
         "kafka-stringSink", "topic" -> s"'$out'"
       )
-    
+
     val now = LocalDateTime.of(2017, 1, 1, 10, 0)
     val windowLengthMinutes = 60
 

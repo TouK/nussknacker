@@ -3,8 +3,6 @@ package pl.touk.nussknacker.processCounts.influxdb
 import sttp.client._
 import sttp.client.circe._
 import io.circe.Decoder
-import io.circe.generic.JsonCodec
-import io.circe.generic.semiauto._
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import sttp.model.Uri
 
@@ -44,11 +42,25 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
   }
 }
 
-@JsonCodec(decodeOnly = true) case class InfluxResponse(results: List[InfluxResult] = List())
+case class InfluxResponse(results: List[InfluxResult] = Nil)
 
-@JsonCodec(decodeOnly = true) case class InfluxResult(series: List[InfluxSerie] = List())
+object InfluxResponse {
+  import io.circe.generic.semiauto._
+  implicit val decoder: Decoder[InfluxResponse] = deriveDecoder
+}
+
+case class InfluxResult(series: List[InfluxSerie] = Nil)
+
+object InfluxResult {
+  import io.circe.generic.extras.Configuration
+  import io.circe.generic.extras.semiauto._
+  implicit val config: Configuration = Configuration.default.withDefaults
+  implicit val decoder: Decoder[InfluxResult] = deriveDecoder
+}
 
 object InfluxSerie {
+
+  import io.circe.generic.semiauto._
 
   private implicit val numberOrStringDecoder: Decoder[Any] =
     Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder.const[Any]("")
@@ -57,7 +69,7 @@ object InfluxSerie {
 
 }
 
-case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = List()) {
+case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = Nil) {
   val toMap: List[Map[String, Any]] = values.map(value => columns.zip(value).toMap)
 }
 

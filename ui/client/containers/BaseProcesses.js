@@ -13,6 +13,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   shouldReloadStatuses = false
   intervalTime = 15000
   queries = {}
+  page = ''
 
   customSelectStyles = {
     control: styles => ({
@@ -53,6 +54,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
     let state = {
       processes: [],
+      subProcesses: [],
       showLoader: true,
       showAddProcess: false,
       search: query.search || "",
@@ -70,7 +72,18 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   onMount() {
-    this.reloadProcesses()
+    switch (this.page) {
+      case ('processes'): {
+        this.reloadProcesses()
+        this.reloadSubProcesses(false)
+        break;
+      }
+      case ('subProcesses'): {
+        this.reloadProcesses(false)
+        this.reloadSubProcesses()
+        break;
+      }
+    }
 
     if (this.shouldReloadStatuses) {
       this.reloadStatuses()
@@ -79,23 +92,44 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   reload() {
     this.reloadProcesses(false)
+    this.reloadSubProcesses(false)
 
     if (this.shouldReloadStatuses) {
       this.reloadStatuses()
     }
   }
 
-  reloadProcesses(showLoader, search) {
-    this.setState({showLoader: showLoader == null ? true : showLoader})
-
-    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
-    const data = Object.assign(query, search, this.queries || {})
-
-    HttpService.fetchProcesses(data).then(response => {
+  reloadProcesses(shouldShowLoader, search) {
+    this.showLoader(shouldShowLoader);
+    const searchParams = this.prepareSearchParams(search, false);
+    HttpService.fetchProcesses(searchParams).then(response => {
       if (!this.state.showAddProcess) {
         this.setState({processes: response.data, showLoader: false})
       }
     }).catch(() => this.setState({showLoader: false}))
+  }
+
+  reloadSubProcesses(showLoader, search) {
+    this.showLoader(showLoader);
+    const searchParams = this.prepareSearchParams(search, true);
+    HttpService.fetchProcesses(searchParams).then(response => {
+      if (!this.state.showAddProcess) {
+        this.setState({subProcesses: response.data, showLoader: false})
+      }
+    }).catch(() => this.setState({showLoader: false}))
+  }
+
+  showLoader(shouldShowLoader) {
+    this.setState({showLoader: shouldShowLoader == null ? true : shouldShowLoader})
+  }
+
+  prepareSearchParams(search, isSubprocess) {
+    this.queries = {
+      ...this.queries,
+      isSubprocess: isSubprocess
+    }
+    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
+    return Object.assign(query, search, this.queries || {});
   }
 
   reloadStatuses() {

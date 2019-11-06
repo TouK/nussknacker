@@ -5,6 +5,7 @@ import {v4 as uuid4} from "uuid";
 import React from "react";
 import _ from "lodash";
 import Fields from "./Fields";
+import {notEmptyValidator} from "../../../common/Validators";
 
 const MapVariable = (props) => {
 
@@ -14,10 +15,26 @@ const MapVariable = (props) => {
         addElement("fields", {"name": "", "uuid": uuid4(), "expression": {"expression":"", "language": "spel"}});
     };
 
-    return (
+  return (
         <div className="node-table-body node-variable-builder-body">
-            <Input label="Id" value={node.id} path="id" onChange={onChange} isMarked={isMarked("id")} readOnly={readOnly} />
-            <Input label="Variable Name" value={node.varName} path="varName" onChange={onChange} isMarked={isMarked("varName")} readOnly={readOnly} />
+            <Input
+              label="Id"
+              value={node.id}
+              path="id"
+              onChange={onChange}
+              isMarked={isMarked("id")}
+              readOnly={readOnly}
+              validators={[notEmptyValidator]}
+            />
+            <Input
+              label="Variable Name"
+              value={node.varName}
+              path="varName"
+              onChange={onChange}
+              isMarked={isMarked("varName")}
+              readOnly={readOnly}
+              validators={[notEmptyValidator]}
+            />
             <Fields
                 label="Fields"
                 onChange={onChange}

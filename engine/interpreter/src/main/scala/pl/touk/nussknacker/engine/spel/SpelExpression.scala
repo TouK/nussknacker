@@ -297,11 +297,12 @@ object SpelExpressionParser extends LazyLogging {
 
   class ScalaLazyPropertyAccessor(lazyValuesTimeout: Duration) extends PropertyAccessor with ReadOnly with Caching {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
+    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
       target.getMethods.find(
         m => m.getParameterCount == 0 &&
         m.getReturnType == classOf[State[_,_]] &&
         m.getName == name)
+    }
 
     override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext)  = {
       val f = method
