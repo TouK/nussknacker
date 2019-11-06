@@ -166,13 +166,10 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)
 
       case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
-      case e: OpMinus => withTypedChildren {
-        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToCommonWidestType))
-        case left :: right :: Nil => invalid(s"Operator '${e.getOperatorName}' used with mismatch types: ${left.display} and ${right.display}")
-        case left :: Nil if left.canBeSubclassOf(Typed[Number]) => Valid(left)
-        case left :: Nil => invalid(s"Operator '${e.getOperatorName}' used with non numeric type: ${left.display}")
-        case _ => invalid(s"Bad '${e.getOperatorName}' operator construction") // shouldn't happen
-      }
+      case e: OpMinus =>
+        checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType).orElse(
+          checkSingleOperandArithmeticOperation(validationContext, e, current)
+        )
       case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
       case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
       case e: OperatorPower => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForPowerOperation)
