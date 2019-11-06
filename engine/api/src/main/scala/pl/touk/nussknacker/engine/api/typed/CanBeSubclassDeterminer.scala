@@ -7,7 +7,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, T
 /**
   * This class determine if type can be subclass of other type. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
-  * It has very similar logic to CommonSupertypeFinder
+  *
+  * This class, like CommonSupertypeFinder is in spirit of "Be type safety as much as possible, but also provide some helpful
+  * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
+  * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
 private[typed] object CanBeSubclassDeterminer {
 

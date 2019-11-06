@@ -7,7 +7,10 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 /**
   * This class finding common supertype of two types. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
-  * It has very similar logic to CanBeSubclassDeterminer
+  *
+  * This class, like CanBeSubclassDeterminer is in spirit of "Be type safety as much as possible, but also provide some helpful
+  * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
+  * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
 class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStrategy) {
 
