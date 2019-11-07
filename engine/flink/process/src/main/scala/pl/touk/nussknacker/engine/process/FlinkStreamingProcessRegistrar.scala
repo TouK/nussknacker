@@ -12,7 +12,6 @@ import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
-import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.runtime.state.AbstractStateBackend
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
@@ -41,10 +40,9 @@ import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
-import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, StateConfiguration, UserClassLoader}
+import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, StateConfiguration, UserClassLoader}
 import pl.touk.nussknacker.engine.splittedgraph.end.{BranchEnd, DeadEnd, End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 import shapeless.syntax.typeable._
 
@@ -58,32 +56,21 @@ import scala.util.{Failure, Success}
 class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
                                      eventTimeMetricDuration: FiniteDuration,
                                      checkpointInterval: FiniteDuration,
-                                     enableObjectReuse: Boolean, diskStateBackend: Option[AbstractStateBackend]) extends LazyLogging {
+                                     enableObjectReuse: Boolean, diskStateBackend: Option[AbstractStateBackend])
+  extends FlinkProcessRegistrar[StreamExecutionEnvironment] {
 
   import FlinkProcessRegistrar._
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
-  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
-    Serializers.registerSerializers(env.getConfig)
-    if (enableObjectReuse) {
-      env.getConfig.enableObjectReuse()
-      logger.info("Object reuse enabled")
-    }
+  override protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.getJavaEnv.isInstanceOf[RemoteStreamEnvironment]
 
+  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
+    prepareExecutionConfig(env.getConfig, enableObjectReuse)
     usingRightClassloader(env) {
       register(env, compileProcess(process, processVersion), testRunId)
     }
     initializeStateDescriptors(env)
-  }
-
-  private def usingRightClassloader(env: StreamExecutionEnvironment)(action: => Unit): Unit = {
-    if (!env.getJavaEnv.isInstanceOf[RemoteStreamEnvironment]) {
-      val flinkLoaderSimulation =  FlinkUserCodeClassLoaders.childFirst(Array.empty, Thread.currentThread().getContextClassLoader, Array.empty)
-      ThreadUtils.withThisAsContextClassLoader[Unit](flinkLoaderSimulation)(action)
-    } else {
-      action
-    }
   }
 
   //When serializing process graph (StateDescriptor:233) KryoSerializer is initialized without env configuration

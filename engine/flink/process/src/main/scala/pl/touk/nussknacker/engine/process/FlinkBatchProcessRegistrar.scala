@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.process
 
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.java.RemoteEnvironment
 import org.apache.flink.api.scala.{ExecutionEnvironment, _}
-import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.compiledgraph.part._
@@ -13,35 +11,22 @@ import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSink, Flink
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.FlinkBatchProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
-import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, UserClassLoader}
+import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, UserClassLoader}
 import pl.touk.nussknacker.engine.splittedgraph.end.End
-import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.language.implicitConversions
 
 class FlinkBatchProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
-                                 enableObjectReuse: Boolean) extends LazyLogging {
+                                 enableObjectReuse: Boolean) extends FlinkProcessRegistrar[ExecutionEnvironment] {
 
   import FlinkProcessRegistrar._
 
-  def register(env: ExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
-    Serializers.registerSerializers(env.getConfig)
-    if (enableObjectReuse) {
-      env.getConfig.enableObjectReuse()
-      logger.info("Object reuse enabled")
-    }
+  override protected def isRemoteEnv(env: ExecutionEnvironment): Boolean = env.getJavaEnv.isInstanceOf[RemoteEnvironment]
 
+  def register(env: ExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
+    prepareExecutionConfig(env.getConfig, enableObjectReuse)
     usingRightClassloader(env) {
       register(env, compileProcess(process, processVersion), testRunId)
-    }
-  }
-
-  private def usingRightClassloader(env: ExecutionEnvironment)(action: => Unit): Unit = {
-    if (!env.getJavaEnv.isInstanceOf[RemoteEnvironment]) {
-      val flinkLoaderSimulation =  FlinkUserCodeClassLoaders.childFirst(Array.empty, Thread.currentThread().getContextClassLoader, Array.empty)
-      ThreadUtils.withThisAsContextClassLoader[Unit](flinkLoaderSimulation)(action)
-    } else {
-      action
     }
   }
 
