@@ -88,3 +88,5 @@ jobs:
         - docker push ${DOCKER_REPOSITORY}:latest
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:staging-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker push ${DOCKER_REPOSITORY}:staging-latest; fi
