@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
@@ -56,21 +56,21 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
 
   def baseFlink(name: String) = DockerContainer(flinkEsp, Some(name))
 
-  lazy val jobManagerContainer = {
-    val savepointDirName = prepareSavepointDirName()
-    val savepointDir = "/tmp/" + savepointDirName
+  lazy val jobManagerContainer: DockerContainer = {
+    val savepointDir = prepareVolumeDir()
     baseFlink("jobmanager")
       .withCommand("jobmanager")
-      .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'", s"SAVEPOINT_DIR_NAME=$savepointDirName")
+      .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'", s"SAVEPOINT_DIR_NAME=${savepointDir.getFileName}")
       .withReadyChecker(DockerReadyChecker.LogLineContains("Recovering all persisted jobs").looped(5, 1 second))
       .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
-      .withVolumes(List(VolumeMapping(savepointDir, savepointDir, true)))
+      .withVolumes(List(VolumeMapping(savepointDir.toString, savepointDir.toString, rw = true)))
       .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
         logger.debug(s"jobmanager: $s")
       }))
   }
 
-  def taskManagerContainer(additionalLinks: List[ContainerLink]) = {
+  def buildTaskManagerContainer(additionalLinks: Seq[ContainerLink] = Nil,
+                                volumes: Seq[VolumeMapping] = Nil): DockerContainer = {
     val links = List(
       ContainerLink(zookeeperContainer, "zookeeper"),
       ContainerLink(jobManagerContainer, "jobmanager")
@@ -79,6 +79,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
       .withCommand("taskmanager")
       .withReadyChecker(DockerReadyChecker.LogLineContains("Successful registration at resource manager").looped(5, 1 second))
       .withLinks(links :_*)
+      .withVolumes(volumes)
       .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
         logger.debug(s"taskmanager: $s")
       }))
@@ -86,10 +87,9 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
 
   protected def ipOfContainer(container: DockerContainer): String = container.getIpAddresses().futureValue.head
 
-  private def prepareSavepointDirName() : String = {
+  protected def prepareVolumeDir(): Path = {
     import scala.collection.JavaConverters._
-    val tempDir = Files.createTempDirectory("dockerTest",
+    Files.createTempDirectory("dockerTest",
       PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission].asJava))
-    tempDir.toFile.getName
   }
 }

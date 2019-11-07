@@ -23,7 +23,7 @@ trait StreamingDockerTest extends DockerTest { self: Suite =>
     super.afterAll()
   }
 
-  lazy val kafkaContainer = DockerContainer("wurstmeister/kafka:1.0.1", name = Some("kafka"))
+  lazy val kafkaContainer: DockerContainer = DockerContainer("wurstmeister/kafka:1.0.1", name = Some("kafka"))
     .withEnv(s"KAFKA_ADVERTISED_PORT=$KafkaPort",
       s"KAFKA_ZOOKEEPER_CONNECT=zookeeper:$ZookeeperDefaultPort",
       "KAFKA_BROKER_ID=0",
@@ -31,13 +31,16 @@ trait StreamingDockerTest extends DockerTest { self: Suite =>
     .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
     .withReadyChecker(DockerReadyChecker.LogLineContains("started (kafka.server.KafkaServer)").looped(5, 1 second))
 
-  abstract override def dockerContainers: List[DockerContainer] =
+  lazy val taskManagerContainer: DockerContainer = buildTaskManagerContainer(additionalLinks = List(ContainerLink(kafkaContainer, "kafka")))
+
+  abstract override def dockerContainers: List[DockerContainer] = {
     List(
       zookeeperContainer,
       kafkaContainer,
       jobManagerContainer,
-      taskManagerContainer(additionalLinks = List(ContainerLink(kafkaContainer, "kafka")))
+      taskManagerContainer
     ) ++ super.dockerContainers
+  }
 
   def config: Config = ConfigFactory.load()
     .withValue("processConfig.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
