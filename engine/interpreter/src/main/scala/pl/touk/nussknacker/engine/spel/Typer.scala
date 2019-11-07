@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, Expressi
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.dict.DictTyper
+import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 import scala.reflect.runtime._
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
-                          dictTyper: DictTyper) extends LazyLogging {
+                          dictTyper: SpelDictTyper) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -334,7 +334,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def invalid[T](message: String): ValidatedNel[ExpressionParseError, T] =
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
-  def withDictTyper(dictTyper: DictTyper) =
+  def withDictTyper(dictTyper: SpelDictTyper) =
     new Typer(classLoader, commonSupertypeFinder, dictTyper)
 
 }

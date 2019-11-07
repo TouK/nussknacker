@@ -49,7 +49,6 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
 
   def validateWithTypingInfo(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
-      .add(warningValidation(displayable))
 
     //there is no point in further validations if ui process structure is invalid
     //displayable to canonical conversion for invalid ui process structure can have unexpected results
@@ -86,19 +85,20 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
     }
   }
 
-  private def warningValidation(process: DisplayableProcess): ValidationResult = {
-    val disabledNodes = process.nodes.collect { case d: NodeData with Disableable if d.isDisabled.getOrElse(false) => d }
-    val disabledNodesWarnings = disabledNodes.map(node => (node.id, List(PrettyValidationErrors.disabledNode(uiValidationError)))).toMap
-    ValidationResult.warnings(disabledNodesWarnings)
-  }
-
-  private def uiValidation(displayable: DisplayableProcess): ValidationResult = {
+  def uiValidation(displayable: DisplayableProcess): ValidationResult = {
     validateIds(displayable)
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
       .add(validateAdditionalProcessProperties(displayable))
       .add(validateWithCustomProcessValidator(displayable))
+      .add(warningValidation(displayable))
+  }
+
+  private def warningValidation(process: DisplayableProcess): ValidationResult = {
+    val disabledNodes = process.nodes.collect { case d: NodeData with Disableable if d.isDisabled.getOrElse(false) => d }
+    val disabledNodesWarnings = disabledNodes.map(node => (node.id, List(PrettyValidationErrors.disabledNode(uiValidationError)))).toMap
+    ValidationResult.warnings(disabledNodesWarnings)
   }
 
   private def validateIds(displayable: DisplayableProcess): ValidationResult = {

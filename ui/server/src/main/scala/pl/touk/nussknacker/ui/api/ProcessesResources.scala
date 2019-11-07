@@ -363,25 +363,15 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
       }
   }
 
-  private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess], businessView: Boolean): Future[ValidatedProcessDetails] = {
-    validateAndReverseResolve(processDetails).map { validatedDetails =>
-      if (businessView)
-        validatedDetails.mapProcess(validated => validated.copy(validationResult = ValidationResult.success)) // TODO: add some doc why validation result is cleared
-      else
-        validatedDetails
-    }
-  }
-
   private def validateAndReverseResolveAll(processDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]) : Future[List[ValidatedProcessDetails]] = {
-    processDetails.flatMap(all => Future.sequence(all.map(validateAndReverseResolve)))
+    processDetails.flatMap(all => Future.sequence(all.map(validateAndReverseResolve(_, businessView = false))))
   }
 
-  private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess]): Future[ValidatedProcessDetails] = {
+  private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess], businessView: Boolean): Future[ValidatedProcessDetails] = {
     val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
       val validationResult = processValidation.processingTypeValidationWithTypingInfo(canonical, processingType)
-      val displayable = processResolving.reverseResolveExpressions(canonical, processingType, validationResult.typingInfo)
-      new ValidatedDisplayableProcess(displayable, validationResult.withClearedTypingInfo)
+      processResolving.reverseResolveExpressions(canonical, processingType, businessView, validationResult)
     }
     Future.successful(validatedDetails)
   }

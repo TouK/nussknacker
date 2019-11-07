@@ -54,9 +54,11 @@ object typing {
 
   sealed trait TypedDict extends SingleTypingResult {
 
+    type ValueType = SingleTypingResult
+
     def dictId: String
 
-    def valueType: SingleTypingResult
+    def valueType: ValueType
 
     override def canHasAnyPropertyOrField: Boolean = false
 

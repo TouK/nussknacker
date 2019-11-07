@@ -8,17 +8,20 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{DynamicTypedDict, StaticTypedDict, Typed, TypedDict, TypingResult}
 import pl.touk.nussknacker.engine.spel.ast
 
-trait DictTyper {
+/**
+  * It handle typing process off SpEL AST in places where typer referencing to TypedDict type.
+  */
+trait SpelDictTyper {
 
   def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[ExpressionParseError, TypingResult]
 
 }
 
-trait BaseDictTyper extends DictTyper {
+trait BaseDictTyper extends SpelDictTyper {
 
   import ast.SpelAst._
 
-  override def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[ExpressionParseError, TypingResult]  = {
+  override def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[ExpressionParseError, dict.ValueType]  = {
     node match {
       case _: Indexer =>
         node.children match {

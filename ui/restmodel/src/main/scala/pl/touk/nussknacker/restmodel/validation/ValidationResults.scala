@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel.validation
 
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import cats.implicits._
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -91,7 +91,7 @@ object ValidationResults {
       )
     }
 
-    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = Encoder.instance(_ => throw new IllegalStateException("typingInfo shouldn't be encoded"))
+    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = Encoder.instance(_ => Json.Null)
     implicit val typingInfoDecoder: Decoder[ExpressionTypingInfo] = Decoder.failedWithMessage("typingInfo shouldn't be decoded")
 
   }
