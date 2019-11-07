@@ -94,12 +94,12 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
           }
         }
 
-        override def typeInformation = implicitly[TypeInformation[String]]
+        override val typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
       }), "Category1", "Category2"),
       "csv-source" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord]
         with TestDataParserProvider[CsvRecord] with TestDataGenerator {
 
-        override def typeInformation = implicitly[TypeInformation[CsvRecord]]
+        override val typeInformation: TypeInformation[CsvRecord] = implicitly[TypeInformation[CsvRecord]]
 
         override def toFlinkSource = new SourceFunction[CsvRecord] {
           override def cancel() = {}
@@ -125,7 +125,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
   def prepareNotEndingSource: FlinkSource[String] = {
     new FlinkSource[String] with TestDataParserProvider[String] {
-      override def typeInformation = implicitly[TypeInformation[String]]
+      override val typeInformation = implicitly[TypeInformation[String]]
 
       override def timestampAssigner = Option(new BoundedOutOfOrdernessTimestampExtractor[String](Time.minutes(10)) {
         override def extractTimestamp(element: String): Long = System.currentTimeMillis()

@@ -25,7 +25,7 @@ class Objects extends Serializable {
       }
     }
 
-    override def typeInformation: TypeInformation[Model] = implicitly[TypeInformation[Model]]
+    override val typeInformation: TypeInformation[Model] = implicitly[TypeInformation[Model]]
 
     override def timestampAssigner: Option[TimestampAssigner[Model]] = None
   }))

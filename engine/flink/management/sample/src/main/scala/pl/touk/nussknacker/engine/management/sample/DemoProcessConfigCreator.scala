@@ -143,7 +143,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     def create(@ParamName("ratePerMinute") rate: Int) = {
       new FlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
 
-        override def typeInformation = implicitly[TypeInformation[T]]
+        override val typeInformation = implicitly[TypeInformation[T]]
 
         override def toFlinkSource = new SourceFunction[T] {
 

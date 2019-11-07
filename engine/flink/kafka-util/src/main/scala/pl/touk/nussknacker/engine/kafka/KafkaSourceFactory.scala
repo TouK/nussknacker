@@ -91,7 +91,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
   class KafkaSource(consumerGroupId: String, topics: List[String], schema: KafkaDeserializationSchema[T], recordFormatterOpt: Option[RecordFormatter])
     extends FlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
 
-    override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
+    override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
     override def toFlinkSource: SourceFunction[T] = {
       topics.foreach(KafkaEspUtils.setToLatestOffsetIfNeeded(config, _, consumerGroupId))
