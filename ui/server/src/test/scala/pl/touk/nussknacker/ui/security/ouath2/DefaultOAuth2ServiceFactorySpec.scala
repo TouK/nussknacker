@@ -124,6 +124,22 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaF
     user.can("StandaloneCategory1", Permission.Deploy) shouldBe true
   }
 
+  it should ("properly parse data from profile for profile without email") in {
+    val response: Map[String, String] = Map("id" -> "1")
+    val service = createDefaultServiceMock(response.asJson, config.profileUri)
+    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
+
+    user shouldBe a[LoggedUser]
+    user.isAdmin shouldBe false
+    user.id.toString shouldBe response.get("id").get
+
+
+    user.can("Category1", Permission.Read) shouldBe true
+    user.can("Category1", Permission.Write) shouldBe true
+    user.can("Category2", Permission.Read) shouldBe true
+    user.can("Category2", Permission.Write) shouldBe true
+  }
+
   it should ("handling BadRequest response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.BadRequest)
     service.authorize("6V1reBXblpmfjRJP").recover{
