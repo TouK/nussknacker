@@ -27,8 +27,8 @@ class KafkaSinkFactory(config: KafkaConfig,
     override def toFlinkFunction: SinkFunction[Any] = {
       PartitionByKeyFlinkKafkaProducer(config.kafkaAddress, topic, serializationSchema, config.kafkaProperties)
     }
-    //FIXME
-    override def testDataOutput: Option[Any => String] = Option(value => new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8))
+    override def testDataOutput: Option[Any => String] = Option(value =>
+      new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8))
   }
 
 }

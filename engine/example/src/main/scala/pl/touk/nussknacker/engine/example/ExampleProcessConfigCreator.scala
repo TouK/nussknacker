@@ -1,9 +1,5 @@
 package pl.touk.nussknacker.engine.example
 
-import java.lang
-import java.nio.charset.StandardCharsets
-import java.util.UUID
-
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -12,7 +8,6 @@ import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
@@ -28,8 +23,7 @@ import pl.touk.nussknacker.engine.util.LoggingListener
 import CirceUtil.decodeJsonUnsafe
 import io.circe.Json
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
-import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 
 class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
@@ -84,23 +78,13 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
-    val encoder = BestEffortJsonEncoder(failOnUnkown = false)
-    val stringOrJsonSink = kafkaSink(kafkaConfig, topic => new KafkaSerializationSchema[Any] {
-
-
-      override def serialize(element: Any, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-        val value = element match {
-          case a:DisplayJson => a.asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
-          case a:Json => a.noSpaces.getBytes(StandardCharsets.UTF_8)
-          case a:String => a.getBytes(StandardCharsets.UTF_8)
-          case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
-        }
-        new ProducerRecord[Array[Byte], Array[Byte]](topic, UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8), value)
-      }
-    })
-    Map(
-      "kafka-stringSink" -> all(stringOrJsonSink)
-    )
+    val stringOrJsonSink = kafkaSink(kafkaConfig, new SimpleSerializationSchema[Any](_, {
+      case a: DisplayJson => a.asJson.noSpaces
+      case a: Json => a.noSpaces
+      case a: String => a
+      case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
+    }))
+    Map("kafka-stringSink" -> all(stringOrJsonSink))
   }
 
   private def kafkaSink(kafkaConfig: KafkaConfig, serializationSchema: String => KafkaSerializationSchema[Any]) : SinkFactory = {

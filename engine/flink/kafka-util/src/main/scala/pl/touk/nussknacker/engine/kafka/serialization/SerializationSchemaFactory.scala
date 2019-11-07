@@ -105,10 +105,9 @@ abstract class KafkaKeyValueSerializationSchemaFactoryBase[T] extends Serializat
         val key = extractKey(element, topic)
         val value = extractValue(element, topic)
 
-        new ProducerRecord[Array[Byte], Array[Byte]](topic,
+        new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestamp,
           keySerializer.serialize(topic, key),
           valueSerializer.serialize(topic, value)
-
         )
       }
     }

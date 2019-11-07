@@ -41,6 +41,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.sample.JavaSampleEnum
@@ -56,12 +57,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "sendSms" -> WithCategories(SinkFactory.noParam(sendSmsSink), "Category1"),
       "monitor" -> WithCategories(SinkFactory.noParam(monitorSink), "Category1", "Category2"),
-      "kafka-string" -> WithCategories(new KafkaSinkFactory(kConfig,
-        topic => new KafkaSerializationSchema[Any] {
-          override def serialize(element: Any, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-            new ProducerRecord[Array[Byte], Array[Byte]](topic, element.toString.getBytes(StandardCharsets.UTF_8))
-          }
-        }), "Category1", "Category2")
+      "kafka-string" -> WithCategories(new KafkaSinkFactory(kConfig, new SimpleSerializationSchema[Any](_, _.toString)), "Category1", "Category2")
     )
   }
 
