@@ -263,7 +263,7 @@ lazy val management = (project in engine("flink/management")).
         "ch.qos.logback" % "logback-core" % logbackV % "it,test"
       )
     }
-  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", securityApi)
+  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", security)
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -289,7 +289,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       )
     }
   ).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", securityApi)
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", security)
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -562,10 +562,10 @@ lazy val api = (project in engine("api")).
     }
   )
 
-lazy val securityApi = (project in engine("security-api")).
+lazy val security = (project in engine("security")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-security-api",
+    name := "nussknacker-security",
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
@@ -692,7 +692,7 @@ lazy val ui = (project in file("ui/server"))
     /*
       We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and 
+      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
     packageBin in Compile := (packageBin in Compile).dependsOn(
@@ -728,7 +728,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel)
+  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel)
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly")
 
