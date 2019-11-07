@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import cats.syntax.semigroup._
 import cats.instances.all._
@@ -25,7 +26,6 @@ import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import io.circe.syntax._
-import pl.touk.nussknacker.ui.security.Permission
 
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {

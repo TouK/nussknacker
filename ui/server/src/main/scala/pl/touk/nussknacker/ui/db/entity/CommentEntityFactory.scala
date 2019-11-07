@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.ui.security.LoggedUser
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.jdbc.{HsqldbProfile, JdbcProfile, PostgresProfile}
 import slick.lifted.{TableQuery => LTableQuery}

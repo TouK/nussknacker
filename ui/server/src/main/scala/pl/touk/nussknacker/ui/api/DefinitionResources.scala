@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.ui.definition.UIProcessObjects
 import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
-import pl.touk.nussknacker.ui.security.LoggedUser
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 
 import scala.concurrent.ExecutionContext

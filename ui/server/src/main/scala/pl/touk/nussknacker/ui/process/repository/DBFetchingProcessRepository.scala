@@ -6,6 +6,7 @@ import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
@@ -17,7 +18,6 @@ import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, 
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.security.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds

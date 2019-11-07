@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.restmodel.processdetails.ProcessHistoryEntry
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import cats.syntax.semigroup._
 import cats.instances.all._
@@ -27,7 +28,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
-import pl.touk.nussknacker.ui.security.LoggedUser
 
 class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers with FailFastCirceSupport
   with BeforeAndAfterEach with Inside with EspItTest {

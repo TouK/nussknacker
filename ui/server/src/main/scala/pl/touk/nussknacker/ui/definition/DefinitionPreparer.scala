@@ -17,11 +17,11 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{Fi
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.ParameterEvaluatorExtractor
-import pl.touk.nussknacker.ui.security.Permission._
+import pl.touk.nussknacker.ui.security.api.Permission._
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
-import pl.touk.nussknacker.ui.security.LoggedUser
 
 import scala.runtime.BoxedUnit
 

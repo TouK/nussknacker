@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.security.LoggedUser
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

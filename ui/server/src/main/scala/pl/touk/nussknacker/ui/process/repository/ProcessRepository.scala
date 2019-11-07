@@ -6,7 +6,7 @@ import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry, ProcessHis
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.security.{AdminUser, CommonUser, LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 

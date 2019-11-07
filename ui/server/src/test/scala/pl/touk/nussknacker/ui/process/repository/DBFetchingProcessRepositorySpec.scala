@@ -15,7 +15,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessAlreadyExists
-import pl.touk.nussknacker.ui.security.Permission
+import pl.touk.nussknacker.ui.security.api.Permission
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}

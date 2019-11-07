@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directive0, Directives}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.ui.security.Permission.Permission
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.Permission.Permission
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.language.implicitConversions
 

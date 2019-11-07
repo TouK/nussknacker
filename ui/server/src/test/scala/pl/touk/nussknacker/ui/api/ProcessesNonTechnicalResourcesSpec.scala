@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
-import pl.touk.nussknacker.ui.security.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.language.higherKinds
 

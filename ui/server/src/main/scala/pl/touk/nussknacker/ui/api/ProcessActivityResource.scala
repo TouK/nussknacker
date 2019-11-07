@@ -13,8 +13,8 @@ import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.scaladsl.FileIO
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
-import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 

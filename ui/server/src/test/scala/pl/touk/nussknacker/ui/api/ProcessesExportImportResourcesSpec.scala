@@ -15,8 +15,7 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.security
-import pl.touk.nussknacker.ui.security.LoggedUser
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
 import scala.language.higherKinds
@@ -31,7 +30,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   import akka.http.scaladsl.server.RouteConcatenation._
   private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
-  private implicit val loggedUser: LoggedUser = security.LoggedUser("lu", testPermissionEmpty)
+  private implicit val loggedUser: LoggedUser = LoggedUser("lu", testPermissionEmpty)
 
   test("export process from displayable") {
     val processToExport = ProcessTestData.sampleDisplayableProcess

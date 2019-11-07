@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Attachment, Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.security.LoggedUser
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, FetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -21,14 +21,13 @@ import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetail
 
 import scala.concurrent.Future
 import scala.language.higherKinds
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.security
-import pl.touk.nussknacker.ui.security.LoggedUser
 
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -41,7 +40,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   val routeWithAllPermissions = withAllPermissions(processesRoute)
   val routeWithAdminPermissions = withAdminPermissions(processesRoute)
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
-  implicit val loggedUser = security.LoggedUser("lu", testCategory)
+  implicit val loggedUser = LoggedUser("lu", testCategory)
 
   private val processName = ProcessName(SampleProcess.process.id)
 
