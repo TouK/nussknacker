@@ -1,14 +1,27 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 
 /**
   * This class determine if type can be subclass of other type. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
-  * It has very similar logic to CommonSupertypeFinder
+  *
+  * This class, like CommonSupertypeFinder is in spirit of "Be type safety as much as possible, but also provide some helpful
+  * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
+  * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
 private[typed] object CanBeSubclassDeterminer {
+
+  /**
+    * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
+    * Given to this we cannot to be sure if conversion is safe or not based on type (without scale knowledge).
+    * So we have two options: enforce user to convert to some type without floating point (e.g. BigInteger) or be loose in this point.
+    * Be default we will be loose.
+    */
+    // TODO: Add feature flag: strictBigDecimalChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
+  private val ConversionFromClassesForDecimals = NumberTypesPromotionStrategy.AllDecimalClasses + classOf[java.math.BigDecimal]
 
   /**
     * This method checks if `givenType` can by subclass of `superclassCandidate`
@@ -49,7 +62,23 @@ private[typed] object CanBeSubclassDeterminer {
     //throw validation errors in this case. It's better to accept to much than too little
       superclassCandidate.params.zip(givenClass.params).forall(t => canBeSubclassOf(t._1, t._2) || canBeSubclassOf(t._2, t._1))
 
-    givenClass == superclassCandidate || ClassUtils.isAssignable(givenClass.klass, superclassCandidate.klass) && hasSameTypeParams
+    val canBeSubclass = givenClass == superclassCandidate || ClassUtils.isAssignable(givenClass.klass, superclassCandidate.klass) && hasSameTypeParams
+    canBeSubclass || canBeConvertedTo(givenClass, superclassCandidate)
+  }
+
+  // See org.springframework.core.convert.support.NumberToNumberConverterFactory
+  private def canBeConvertedTo(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
+    val boxedGivenClass = ClassUtils.primitiveToWrapper(givenClass.klass)
+    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
+    // We can't check precision here so we need to be loose here
+    // TODO: Add feature flag: strictNumberPrecisionChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
+    if (NumberTypesPromotionStrategy.isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
+      ClassUtils.isAssignable(boxedGivenClass, classOf[Number])
+    } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
+      ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _))
+    } else {
+      false
+    }
   }
 
 }

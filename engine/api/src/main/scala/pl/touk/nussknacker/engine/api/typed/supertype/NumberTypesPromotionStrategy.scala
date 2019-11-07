@@ -20,6 +20,8 @@ object NumberTypesPromotionStrategy {
     classOf[java.lang.Float]
   )
 
+  def isFloatingNumber(clazz: Class[_]): Boolean = FloatingNumbers.contains(clazz)
+
   private val DecimalNumbers: mutable.LinkedHashMap[Class[_], Class[_]] = mutable.LinkedHashMap(
     classOf[java.math.BigInteger] -> classOf[java.math.BigInteger],
     classOf[java.lang.Long] -> classOf[java.lang.Long],
@@ -29,6 +31,10 @@ object NumberTypesPromotionStrategy {
   )
 
   private val DecimalNumbersKeys = DecimalNumbers.keys.toIndexedSeq
+
+  val AllDecimalClasses: Set[Class[_]] = DecimalNumbers.keySet.toSet
+
+  def isDecimalNumber(clazz: Class[_]): Boolean = AllDecimalClasses.contains(clazz)
 
   // See org.springframework.expression.spel.ast.OpPlus and so on for details
   object ToCommonWidestType extends NumberTypesPromotionStrategy {
