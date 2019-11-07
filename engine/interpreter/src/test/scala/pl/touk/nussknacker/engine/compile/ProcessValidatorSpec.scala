@@ -270,8 +270,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-      ExpressionParseError("Unresolved reference doesNotExist1", "sampleFilter", None, _),
-      List(ExpressionParseError("Unresolved reference doesNotExist2", "sampleFilter", None, _)))) =>
+      ExpressionParseError("Unresolved reference 'doesNotExist1'", "sampleFilter", None, _),
+      List(ExpressionParseError("Unresolved reference 'doesNotExist2'", "sampleFilter", None, _)))) =>
     }
   }
 
@@ -365,7 +365,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference strangeVar", "cNode1", Some("par1"), "#strangeVar"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'strangeVar'", "cNode1", Some("par1"), "#strangeVar"), _)) =>
     }
   }
 
@@ -442,8 +442,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Invalid(NonEmptyList(
       ExpressionParseError("Expression [{] @0: EL1044E: Unexpectedly ran out of input", "c1", Some("par1"), _),
       List(
-      ExpressionParseError("Unresolved reference terefere", "p1", Some("par1"), _),
-      ExpressionParseError("Unresolved reference terefere22", "v1", Some("par1"), _))
+      ExpressionParseError("Unresolved reference 'terefere'", "p1", Some("par1"), _),
+      ExpressionParseError("Unresolved reference 'terefere22'", "v1", Some("par1"), _))
       )) =>
     }
   }
@@ -570,7 +570,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
          Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference var3", "id3", None, "#var3"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'var3'", "id3", None, "#var3"), _)) =>
     }
   }
 
@@ -598,7 +598,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .sink("id2", "#input.toString()", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference input", "id2", None, "#input.toString()"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'input'", "id2", None, "#input.toString()"), _)) =>
     }
   }
 
@@ -700,7 +700,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .emptySink("id2", "sink")
 
     validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference input", "custom", Some("par1"), "#input.toString()"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'input'", "custom", Some("par1"), "#input.toString()"), Nil)) =>
     }
   }
 

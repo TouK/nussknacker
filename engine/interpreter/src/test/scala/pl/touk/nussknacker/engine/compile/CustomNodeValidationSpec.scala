@@ -154,7 +154,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       .sink("out", "''", "dummySink")
 
     validator.validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference nonExisitngVar", "custom1",Some("stringVal"), "#nonExisitngVar"), _))  =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'nonExisitngVar'", "custom1",Some("stringVal"), "#nonExisitngVar"), _))  =>
     }
   }
 
@@ -199,7 +199,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     val redundantOutErrors = redundantOutValidationResult.swap.toOption.value.toList
     redundantOutErrors should have size 1
     redundantOutErrors.head should matchPattern {
-      case ExpressionParseError(message, _, _, _) if message.startsWith("Unresolved reference outPutVar") =>
+      case ExpressionParseError(message, _, _, _) if message.startsWith("Unresolved reference 'outPutVar'") =>
     }
   }
 
