@@ -16,17 +16,17 @@ import scala.util.{Failure, Try}
 //org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil.readSerializersAndConfigsWithResilience
 object Serializers extends LazyLogging {
 
-  def registerSerializers(env: StreamExecutionEnvironment): Unit = {
-    val registers = registerSerializer(env) _
+  def registerSerializers(config: ExecutionConfig): Unit = {
+    val registers = registerSerializer(config) _
     (CaseClassSerializer ::  SpelHack :: SpelMapHack :: Nil).map(registers)
 
-    TimeSerializers.addDefaultSerializers(env)
+    TimeSerializers.addDefaultSerializers(config)
 
   }
 
-  private def registerSerializer(env: StreamExecutionEnvironment)(serializer: SerializerWithSpecifiedClass[_]) = {
-    env.getConfig.getRegisteredTypesWithKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
-    env.getConfig.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
+  private def registerSerializer(config: ExecutionConfig)(serializer: SerializerWithSpecifiedClass[_]) = {
+    config.getRegisteredTypesWithKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
+    config.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
   }
 
   abstract class SerializerWithSpecifiedClass[T](acceptsNull: Boolean, immutable: Boolean)

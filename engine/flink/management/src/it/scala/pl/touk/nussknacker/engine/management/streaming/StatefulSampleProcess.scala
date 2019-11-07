@@ -1,13 +1,9 @@
-package pl.touk.nussknacker.engine.management
+package pl.touk.nussknacker.engine.management.streaming
 
-import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel
-
-import scala.concurrent.duration._
 
 object StatefulSampleProcess {
 

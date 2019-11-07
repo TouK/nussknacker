@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import pl.touk.nussknacker.engine.spel
 
-class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
+class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
 
   import spel.Implicits._
 

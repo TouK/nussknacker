@@ -5,7 +5,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, DisplayableAsJson}
-import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
+import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.ui.api.ServiceRoutes.JsonThrowable
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
@@ -22,7 +22,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 
   private implicit val user = LoggedUser("admin", category1Deploy)
-  private val modelData = FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())
+  private val modelData = FlinkStreamingProcessManagerProvider.defaultModelData(ConfigFactory.load())
   private val serviceRoutes = new ServiceRoutes(Map(TestProcessingTypes.Streaming -> modelData))
 
   implicit val queryResultDecoder: Decoder[QueryResult] = Decoder.decodeJson

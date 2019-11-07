@@ -8,7 +8,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
-import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
+import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManagerProvider
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
@@ -39,7 +39,7 @@ object ProcessingTypeDeps {
       config.as[Map[String, ProcessingTypeConfig]]("processTypes")
     } else {
       //TODO: this is legacy mode, should be removed in the future...
-      val str = Map("streaming" -> FlinkProcessManagerProvider.defaultTypeConfig(config))
+      val str = Map("streaming" -> FlinkStreamingProcessManagerProvider.defaultTypeConfig(config))
       if (standaloneModeEnabled) {
         str + ("request-response" -> StandaloneProcessManagerProvider.defaultTypeConfig(config))
       } else str

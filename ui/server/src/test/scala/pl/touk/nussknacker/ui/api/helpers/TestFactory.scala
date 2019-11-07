@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkProcessManagerProvider}
+import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.ui.api.RouteWithUser
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
@@ -80,7 +80,7 @@ object TestFactory extends TestPermissions{
 
   def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, Nil, isAdmin = true)
 
-  class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
+  class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigFactory.load()), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
       Some(ProcessState(DeploymentId("1"), runningState = managerProcessState.get(), "RUNNING", 0, None)))

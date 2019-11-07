@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
 class SampleRecommendationProcess extends FlatSpec with BeforeAndAfterAll with Matchers {
@@ -35,7 +35,7 @@ class SampleRecommendationProcess extends FlatSpec with BeforeAndAfterAll with M
     val config = ConfigFactory.load()
 
 
-    new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
     val result = env.execute(process.id)
