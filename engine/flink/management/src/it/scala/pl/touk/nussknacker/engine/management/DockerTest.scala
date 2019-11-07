@@ -5,8 +5,6 @@ import java.nio.file.Files
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
@@ -15,24 +13,12 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 
 import scala.concurrent.duration._
 
 trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   self: Suite =>
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-          config.getString("processConfig.kafka.zkAddress"))
-  }
-
-  override def afterAll(): Unit = {
-    kafkaClient.shutdown()
-    super.afterAll()
-  }
 
   private val flinkEsp = "flinkesp:1.7.2"
 
@@ -68,14 +54,6 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   lazy val zookeeperContainer =
     DockerContainer("wurstmeister/zookeeper:3.4.6", name = Some("zookeeper"))
 
-  lazy val kafkaContainer = DockerContainer("wurstmeister/kafka:1.0.1", name = Some("kafka"))
-    .withEnv(s"KAFKA_ADVERTISED_PORT=$KafkaPort",
-              s"KAFKA_ZOOKEEPER_CONNECT=zookeeper:$ZookeeperDefaultPort",
-              "KAFKA_BROKER_ID=0",
-              "HOSTNAME_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'")
-    .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
-    .withReadyChecker(DockerReadyChecker.LogLineContains("started (kafka.server.KafkaServer)").looped(5, 1 second))
-
   def baseFlink(name: String) = DockerContainer(flinkEsp, Some(name))
 
   lazy val jobManagerContainer = {
@@ -92,26 +70,21 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
       }))
   }
 
-  lazy val taskManagerContainer = baseFlink("taskmanager")
-    .withCommand("taskmanager")
-    .withReadyChecker(DockerReadyChecker.LogLineContains("Successful registration at resource manager").looped(5, 1 second))
-    .withLinks(
-      ContainerLink(kafkaContainer, "kafka"),
+  def taskManagerContainer(additionalLinks: List[ContainerLink]) = {
+    val links = List(
       ContainerLink(zookeeperContainer, "zookeeper"),
-      ContainerLink(jobManagerContainer, "jobmanager"))
-    .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
-      logger.debug(s"taskmanager: $s")
-    }))
+      ContainerLink(jobManagerContainer, "jobmanager")
+    ) ++ additionalLinks
+    baseFlink("taskmanager")
+      .withCommand("taskmanager")
+      .withReadyChecker(DockerReadyChecker.LogLineContains("Successful registration at resource manager").looped(5, 1 second))
+      .withLinks(links :_*)
+      .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
+        logger.debug(s"taskmanager: $s")
+      }))
+  }
 
-  def config : Config = ConfigFactory.load()
-    .withValue("processConfig.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
-    .withValue("processConfig.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
-    .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${ipOfContainer(jobManagerContainer)}:$FlinkJobManagerRestPort"))
-
-  private def ipOfContainer(container: DockerContainer) = container.getIpAddresses().futureValue.head
-
-  abstract override def dockerContainers: List[DockerContainer] =
-    List(zookeeperContainer, kafkaContainer, jobManagerContainer, taskManagerContainer) ++ super.dockerContainers
+  protected def ipOfContainer(container: DockerContainer): String = container.getIpAddresses().futureValue.head
 
   private def prepareSavepointDirName() : String = {
     import scala.collection.JavaConverters._
@@ -119,7 +92,4 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
       PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission].asJava))
     tempDir.toFile.getName
   }
-
-  protected lazy val processManager: ProcessManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
-
 }

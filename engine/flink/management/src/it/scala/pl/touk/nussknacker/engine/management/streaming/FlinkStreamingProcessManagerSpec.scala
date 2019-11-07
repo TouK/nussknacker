@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management
+package pl.touk.nussknacker.engine.management.streaming
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -9,18 +9,19 @@ import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
+import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.duration._
 
 //TODO: get rid of at least some Thread.sleep
-class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
+class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with StreamingDockerTest {
 
   import pl.touk.nussknacker.engine.kafka.KafkaUtils._
 

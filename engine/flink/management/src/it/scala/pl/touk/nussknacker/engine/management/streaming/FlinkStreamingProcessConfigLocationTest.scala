@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management
+package pl.touk.nussknacker.engine.management.streaming
 
 import java.io.File
 import java.nio.file.Files
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.collection.JavaConverters._
 
-class FlinkStreamingProcessConfigLocationTest extends FunSuite with DockerTest with Matchers {
+class FlinkStreamingProcessConfigLocationTest extends FunSuite with StreamingDockerTest with Matchers {
 
 
   //FIXME: do we still need it??

@@ -1,7 +1,5 @@
-package pl.touk.nussknacker.engine.management
+package pl.touk.nussknacker.engine.management.batch
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.apache.flink.runtime.jobgraph.JobStatus
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FunSuite, Matchers}
@@ -13,10 +11,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
-import scala.collection.JavaConverters._
-
-// TODO: kafka does not need to be started for batch tests
-class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
+class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with BatchDockerTest {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -24,7 +19,6 @@ class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
 
   test("deploy process in running flink") {
     val processName = ProcessName("batchProcess")
-
     val version = ProcessVersion(versionId = 15, processName = processName, user = "user1", modelVersion = Some(13))
     val process = prepareProcess(processName)
 
@@ -44,22 +38,13 @@ class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
 
   private def deployProcessAndWaitUntilFinished(process: EspProcess, processVersion: ProcessVersion): Unit = {
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(batchProcessManager.deploy(processVersion, GraphProcess(marshaled), savepointPath = None).isReadyWithin(100 seconds))
+    assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath = None).isReadyWithin(100 seconds))
     eventually {
-      val jobStatus = batchProcessManager.findJobStatus(ProcessName(process.id)).futureValue
+      val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
       jobStatus.map(_.status) shouldBe Some(JobStatus.FINISHED.name())
     }
   }
 
   private def processVersion(processName: ProcessName): Option[ProcessVersion] =
-    batchProcessManager.findJobStatus(processName).futureValue.flatMap(_.version)
-
-  private def batchConfig: Config = ConfigFactory.load()
-    .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
-    .withValue("flinkConfig.classpath", ConfigValueFactory.fromIterable(List("./engine/flink/management/batch_sample/target/scala-2.11/managementBatchSample.jar").asJava))
-
-  private lazy val batchProcessManager = {
-    val typeConfig = FlinkBatchProcessManagerProvider.defaultTypeConfig(batchConfig)
-    new FlinkBatchProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
-  }
+    processManager.findJobStatus(processName).futureValue.flatMap(_.version)
 }

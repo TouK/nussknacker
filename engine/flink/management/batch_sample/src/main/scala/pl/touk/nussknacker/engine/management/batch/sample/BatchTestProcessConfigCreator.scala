@@ -9,13 +9,13 @@ import org.apache.flink.core.fs.Path
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSource, FlinkBatchSourceFactory, FlinkBatchSink}
+import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSink, FlinkBatchSource, FlinkBatchSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
-import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
 import scala.reflect.ClassTag
 
-class BatchTestProcessConfigCreator extends EmptyProcessConfigCreator {
+class BatchTestProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     Map(
@@ -30,6 +30,18 @@ class BatchTestProcessConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler(_))
+
+  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map.empty
+
+  override def services(config: Config): Map[String, WithCategories[Service]] = Map.empty
+
+  override def listeners(config: Config): Seq[ProcessListener] = Nil
+
+  override def expressionConfig(config: Config): ExpressionConfig = ExpressionConfig.empty
+
+  override def buildInfo(): Map[String, String] = Map.empty
+
+  override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 }
 
 object ElementsSourceFactory extends FlinkBatchSourceFactory[Any] {
