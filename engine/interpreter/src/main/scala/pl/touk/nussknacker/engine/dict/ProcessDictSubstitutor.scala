@@ -4,13 +4,9 @@ import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.spel.ast.{Indexer, StringLiteral}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.StaticTypedDict
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessRewriter}
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor.KeyToLabelReplacingStrategy
 import pl.touk.nussknacker.engine.expression.{ExpressionSubstitutionsCollector, ExpressionSubstitutor}
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.{NodeData, Sink}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.{OptionallyTypedNode, ReplacingStrategy, SpelSubstitutionsCollector, TypedTreeLevel}
@@ -19,38 +15,22 @@ class ProcessDictSubstitutor(replacingStrategy: ReplacingStrategy,
                              prepareSubstitutionsCollector: (ExpressionTypingInfo, ReplacingStrategy) => Option[ExpressionSubstitutionsCollector]) extends LazyLogging {
 
   def substitute(process: CanonicalProcess, processTypingInfo: Map[String, Map[String, ExpressionTypingInfo]]): CanonicalProcess = {
-    def substitute(node: CanonicalNode): CanonicalNode = {
-      val nodeTypingInfo = processTypingInfo.getOrElse(node.id, Map.empty)
-
-      def substituteExpression(expressionId: String, expr: Expression) = {
-        val substitutedExpression = nodeTypingInfo.get(expressionId).flatMap(prepareSubstitutionsCollector(_, replacingStrategy)).map { substitutionsCollector =>
-          val substitutions = substitutionsCollector.collectSubstitutions(expr)
-          val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
-          if (substitutions.nonEmpty)
-            logger.debug(s"Found ${substitutions.size} substitutions in expression: ${process.metaData.id}>${node.id}>$expressionId. " +
-              s"Expression: '${expr.expression}' replaced with '$afterSubstitution'")
-          afterSubstitution
-        }.getOrElse(expr.expression)
-        expr.copy(expression = substitutedExpression)
-      }
-
-      def substituteNode(data: NodeData) = {
-        data match {
-          // FIXME other node data and expressions
-          case sink@Sink(_, _, Some(endResultExpression), _, _) => sink.copy(endResult = Some(substituteExpression(NodeTypingInfo.DefaultExpressionId, endResultExpression)))
-          case _ => data
-        }
-      }
-      node match {
-        case flat: FlatNode =>
-          flat.copy(data = substituteNode(flat.data))
-        // FIXME other nodes
-        case _ => node
-      }
+    val rewriter = ProcessRewriter.rewritingAllExpressions { exprIdWithMetadata => expr =>
+      val nodeExpressionId = exprIdWithMetadata.expressionId
+      val nodeTypingInfo = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
+      val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
+      val substitutedExpression = optionalExpressionTypingInfo.flatMap(prepareSubstitutionsCollector(_, replacingStrategy)).map { substitutionsCollector =>
+        val substitutions = substitutionsCollector.collectSubstitutions(expr)
+        val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
+        if (substitutions.nonEmpty)
+          logger.debug(s"Found ${substitutions.size} substitutions in expression: ${process.metaData.id}>${nodeExpressionId.nodeId.id}>${nodeExpressionId.expressionId}. " +
+            s"Expression: '${expr.expression}' replaced with '$afterSubstitution'")
+        afterSubstitution
+      }.getOrElse(expr.expression)
+      expr.copy(expression = substitutedExpression)
     }
 
-    // FIXME exception handler
-    process.copy(nodes = process.nodes.map(substitute))
+    rewriter.rewriteProcess(process)
   }
 
   def reversed: ProcessDictSubstitutor = new ProcessDictSubstitutor(KeyToLabelReplacingStrategy, prepareSubstitutionsCollector)

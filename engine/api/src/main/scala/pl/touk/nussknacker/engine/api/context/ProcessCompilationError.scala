@@ -22,6 +22,13 @@ object ProcessCompilationError {
 
   case class NodeId(id: String)
 
+  case class NodeExpressionId(nodeId: NodeId, expressionId: String)
+
+  object NodeExpressionId {
+    def apply(expressionId: String)(implicit nodeId: NodeId): NodeExpressionId =
+      NodeExpressionId(nodeId, expressionId)
+  }
+
   trait InASingleNode { self: ProcessCompilationError =>
 
     override def nodeIds: Set[String] = Set(nodeId)
