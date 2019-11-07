@@ -20,6 +20,8 @@ branches:
   only:
     - master
     - demo
+    - staging
+    - /^preview/.*$/
 
 #TODO: upgrade to newer (e.g. xenial) after upgrading java to > 8
 dist: trusty
@@ -49,11 +51,13 @@ cache:
     - $HOME/.sbt/boot/
     - $HOME/.npm
 
-# We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
 stages:
   - test
   - name: releases
-    if: fork = false AND type != cron
+    # We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
+    # We also don't allow for pull request builds because they are built from merge of source and upstream branches.
+    # See more: https://docs.travis-ci.com/user/pull-requests/#how-pull-requests-are-built . Use preview branches instead.
+    if: fork = false AND type != cron AND type != pull_request
 
 jobs:
   include:
@@ -85,3 +89,5 @@ jobs:
         - docker push ${DOCKER_REPOSITORY}:latest
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:staging-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker push ${DOCKER_REPOSITORY}:staging-latest; fi
