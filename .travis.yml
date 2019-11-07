@@ -19,6 +19,8 @@ branches:
   only:
     - master
     - demo
+    - staging
+    - /^preview/.*$/
 
 #TODO: upgrade to newer (e.g. xenial) after upgrading java to > 8
 dist: trusty
@@ -48,11 +50,13 @@ cache:
     - $HOME/.sbt/boot/
     - $HOME/.npm
 
-# We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
 stages:
   - tests
   - name: releases
-    if: fork = false AND type != cron
+    # We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
+    # We also don't allow for pull request builds because they are built from merge of source and upstream branches.
+    # See more: https://docs.travis-ci.com/user/pull-requests/#how-pull-requests-are-built . Use preview branches instead.
+    if: fork = false AND type != cron AND type != pull_request
 
 jobs:
   include:
