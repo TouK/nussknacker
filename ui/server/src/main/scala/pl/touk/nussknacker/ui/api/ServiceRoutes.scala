@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, MessageEntity, ResponseEntity}
+import akka.http.scaladsl.model.{HttpResponse, ResponseEntity}
 import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
@@ -10,20 +10,20 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.util.service.query.{ExpressionServiceQuery, ServiceQuery}
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Encoder, Json, ObjectEncoder}
+import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
-import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.process.WithCategories
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 
-class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
-                   (implicit ec: ExecutionContext)
+import io.circe.syntax._
+
+class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])(implicit ec: ExecutionContext)
   extends Directives
     with RouteWithUser
     with FailFastCirceSupport

@@ -11,9 +11,9 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.processCounts._
+import pl.touk.nussknacker.ui.security.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 

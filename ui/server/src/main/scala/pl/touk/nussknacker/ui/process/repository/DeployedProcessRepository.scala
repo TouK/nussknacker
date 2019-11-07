@@ -11,7 +11,7 @@ import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, DeployedProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.LoggedUser
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, DisplayableAsJson
 import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
 import pl.touk.nussknacker.ui.api.ServiceRoutes.JsonThrowable
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder.Result
 import io.circe.generic.JsonCodec
@@ -16,6 +15,8 @@ import io.circe.{Decoder, HCursor}
 import pl.touk.nussknacker.engine.util.service.query.ExpressionServiceQuery.ParametersCompilationException
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions
+import pl.touk.nussknacker.ui.security
+import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 
 class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
 
@@ -96,11 +97,11 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
     serviceRoutes.canUserInvokeService(user, "enricher", modelData) shouldBe false
   }
   test("user with category invoke service") {
-    val user = LoggedUser("nonAdmin", category1Deploy)
+    val user = security.LoggedUser("nonAdmin", category1Deploy)
     serviceRoutes.canUserInvokeService(user, "enricher", modelData) shouldBe true
   }
   test("canUserInvokeService always pass unexciting service") {
-    val user = LoggedUser("nonAdmin", category1Deploy)
+    val user = security.LoggedUser("nonAdmin", category1Deploy)
     serviceRoutes.canUserInvokeService(user, "unexcitingService", modelData) shouldBe true
   }
 

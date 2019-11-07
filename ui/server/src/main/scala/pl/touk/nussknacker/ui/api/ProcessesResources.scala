@@ -31,7 +31,7 @@ import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicPr
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal

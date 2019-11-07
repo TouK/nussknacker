@@ -6,7 +6,6 @@ import akka.stream.Materializer
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -16,6 +15,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.security.LoggedUser
 
 class NotificationResources(managementActor: ActorRef,
                             processRepository: FetchingProcessRepository)

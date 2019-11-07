@@ -6,7 +6,7 @@ import akka.util.Timeout
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.LoggedUser
 
 import scala.concurrent.Future
 

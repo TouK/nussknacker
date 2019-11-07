@@ -19,8 +19,8 @@ import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.ui.security.LoggedUser
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
                                  val processRepository: FetchingProcessRepository,

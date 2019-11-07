@@ -7,7 +7,7 @@ import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, Deploym
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 

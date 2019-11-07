@@ -12,11 +12,11 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import net.ceedubs.ficus.Ficus._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import pl.touk.nussknacker.ui.security.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
