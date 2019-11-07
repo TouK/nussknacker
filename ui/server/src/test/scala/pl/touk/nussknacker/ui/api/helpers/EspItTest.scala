@@ -32,7 +32,6 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val scalaBinaryVersion: String = util.Properties.versionNumberString.replaceAll("(\\d+\\.\\d+)\\..*$", "$1")
 
   override def testConfigSource: String = {
-    System.setProperty("scala.binary.version", util.Properties.versionNumberString.replaceAll("(\\d+\\.\\d+)\\..*$", "$1"))
     s"""{scala.binary.version = $scalaBinaryVersion}"""
   }
 
@@ -76,7 +75,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     processAuthorizer = processAuthorizer
   )
 
-  private val config = system.settings.config.withFallback(ConfigWithScalaVersion.config)
+  private val config = ConfigWithScalaVersion.config
   val featureTogglesConfig = FeatureTogglesConfig.create(config)
   val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig)

@@ -37,8 +37,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
   test("saves, updates and retrieves sample process") {
-    val scalaBinaryVersion: String = util.Properties.versionNumberString.replaceAll("(\\d+\\.\\d+)\\..*$", "$1")
-    System.setProperty("scala.binary.version", scalaBinaryVersion)
 
     val processId = UUID.randomUUID().toString
     val endpoint = s"/api/processes/$processId"

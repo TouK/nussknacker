@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModel
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
 
@@ -30,7 +31,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
 
   test("should read restrictions from config") {
 
-    val model : ModelData = LocalModelData(ConfigFactory.load().getConfig("processConfig"), new EmptyProcessConfigCreator() {
+    val model : ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator() {
       override def services(config: Config): Map[String, WithCategories[Service]] =
         Map("enricher" -> WithCategories(TestService))
     })
@@ -68,7 +69,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
 
   test("should read restrictions from config for subprocess") {
 
-    val model : ModelData = LocalModelData(ConfigFactory.load().getConfig("processConfig"), new EmptyProcessConfigCreator())
+    val model : ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator())
 
     val processObjects =
       UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(
