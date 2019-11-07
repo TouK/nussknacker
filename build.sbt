@@ -317,7 +317,7 @@ lazy val managementBatchSample = (project in engine("flink/management/batch_samp
       )
     }
 
-  ).dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", securityApi)
+  ).dependsOn(flinkUtil, process % "runtime,test")
 
 lazy val example = (project in engine("example")).
   settings(commonSettings).

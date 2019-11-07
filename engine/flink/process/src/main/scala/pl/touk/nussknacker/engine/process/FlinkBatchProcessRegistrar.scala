@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkInputFormat, FlinkOutputFormat}
+import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSource, FlinkBatchSink}
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -72,10 +72,10 @@ class FlinkBatchProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
     registerSourcePart(processWithDeps.sources.head.asInstanceOf[SourcePart])
 
     def registerSourcePart(part: SourcePart): Unit = {
-      val inputFormat = part.obj.asInstanceOf[FlinkInputFormat[Any]]
+      val source = part.obj.asInstanceOf[FlinkBatchSource[Any]]
 
       val start = env
-        .createInput[Any](inputFormat.toFlink)(inputFormat.classTag, inputFormat.typeInformation)
+        .createInput[Any](source.toFlink)(source.classTag, source.typeInformation)
         .name(s"${metaData.id}-source")
         .map(new RateMeterFunction[Any]("source"))
         .map(InitContextFunction(metaData.id, part.node.id))
@@ -99,7 +99,7 @@ class FlinkBatchProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
     def registerSubsequentPart(start: DataSet[InterpretationResult],
                                processPart: SubsequentPart): Unit = {
       processPart match {
-        case part@SinkPart(sink: FlinkOutputFormat, _, validationContext) =>
+        case part@SinkPart(sink: FlinkBatchSink, _, validationContext) =>
           val startAfterSinkEvaluated = start
             .map(_.finalContext)
             .flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, part.node, validationContext))

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 
 import scala.reflect.ClassTag
 
-trait FlinkInputFormat[T] extends Source[T] {
+trait FlinkBatchSource[T] extends Source[T] {
 
   def toFlink: InputFormat[T, _]
 
@@ -16,15 +16,15 @@ trait FlinkInputFormat[T] extends Source[T] {
   def classTag: ClassTag[T]
 }
 
-abstract class FlinkInputFormatFactory[T: TypeInformation] extends SourceFactory[T] with Serializable {
+abstract class FlinkBatchSourceFactory[T: TypeInformation] extends SourceFactory[T] with Serializable {
 
   override def clazz: Class[T] = typeInformation.getTypeClass
 
   def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 }
 
-class NoParamInputFormatFactory[T: TypeInformation](inputFormat: FlinkInputFormat[T]) extends FlinkInputFormatFactory[T] {
+class NoParamBatchSourceFactory[T: TypeInformation](source: FlinkBatchSource[T]) extends FlinkBatchSourceFactory[T] {
 
   @MethodToInvoke
-  def create(): Source[T] = inputFormat
+  def create(): Source[T] = source
 }

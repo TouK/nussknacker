@@ -4,12 +4,12 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.io.InputFormat
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.io.CollectionInputFormat
-import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkInputFormat, FlinkInputFormatFactory}
+import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSource, FlinkBatchSourceFactory}
 
 import scala.reflect.ClassTag
 
-class FlinkCollectionInputFormat[T: TypeInformation : ClassTag](config: ExecutionConfig,
-                                                                list: List[T]) extends FlinkInputFormat[T] {
+class FlinkCollectionBatchSource[T: TypeInformation : ClassTag](config: ExecutionConfig,
+                                                                list: List[T]) extends FlinkBatchSource[T] {
   override def toFlink: InputFormat[T, _] = {
     import scala.collection.JavaConverters._
 
