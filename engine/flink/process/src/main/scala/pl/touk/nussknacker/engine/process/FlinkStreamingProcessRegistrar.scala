@@ -14,7 +14,6 @@ import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.runtime.state.AbstractStateBackend
-import org.apache.flink.streaming.api.{TimeCharacteristic, datastream}
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
@@ -23,10 +22,10 @@ import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, Chainin
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.{TimeCharacteristic, datastream}
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -36,7 +35,6 @@ import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
-import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
@@ -46,13 +44,13 @@ import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBa
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, StateConfiguration, UserClassLoader}
 import pl.touk.nussknacker.engine.splittedgraph.end.{BranchEnd, DeadEnd, End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
+import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
-import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils}
 import shapeless.syntax.typeable._
 
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
@@ -61,6 +59,8 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
                                      eventTimeMetricDuration: FiniteDuration,
                                      checkpointInterval: FiniteDuration,
                                      enableObjectReuse: Boolean, diskStateBackend: Option[AbstractStateBackend]) extends LazyLogging {
+
+  import FlinkProcessRegistrar._
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
@@ -304,29 +304,6 @@ object FlinkStreamingProcessRegistrar {
                                (runtimeContext: RuntimeContext) =>
     new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDepsProvider(runtimeContext.getUserCodeClassLoader))
 
-  class SyncInterpretationFunction(val compiledProcessWithDepsProvider: (ClassLoader) => CompiledProcessWithDeps,
-                                   node: SplittedNode[_], validationContext: ValidationContext)
-    extends RichFlatMapFunction[Context, InterpretationResult] with WithCompiledProcessDeps {
-
-    private lazy implicit val ec = SynchronousExecutionContext.ctx
-    private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
-    import compiledProcessWithDeps._
-
-    override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
-      (try {
-        Await.result(interpreter.interpret(compiledNode, metaData, input), processTimeout)
-      } catch {
-        case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
-      }) match {
-        case Left(ir) =>
-          exceptionHandler.handling(None, input)(ir.foreach(collector.collect))
-        case Right(info) =>
-          exceptionHandler.handle(info)
-      }
-    }
-
-  }
-
   class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: (ClassLoader) => CompiledProcessWithDeps,
                                     node: SplittedNode[_], validationContext: ValidationContext, asyncExecutionContextPreparer: AsyncExecutionContextPreparer)
     extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with WithCompiledProcessDeps {
@@ -387,31 +364,6 @@ object FlinkStreamingProcessRegistrar {
         collectingSink.collect(value)
       }
     }
-  }
-
-  class RateMeterFunction[T](groupId: String) extends RichMapFunction[T, T] {
-    private var instantRateMeter : RateMeter = _
-
-    override def open(parameters: Configuration): Unit = {
-      super.open(parameters)
-
-      instantRateMeter = InstantRateMeterWithCount.register(getRuntimeContext.getMetricGroup.addGroup(groupId))
-    }
-
-    override def map(value: T) = {
-      instantRateMeter.mark()
-      value
-    }
-  }
-
-  case class InitContextFunction(processId: String, taskName: String) extends RichMapFunction[Any, Context] with ContextInitializingFunction {
-
-    override def open(parameters: Configuration) = {
-      init(getRuntimeContext)
-    }
-
-    override def map(input: Any) = newContext.withVariable(Interpreter.InputParamName, input)
-
   }
 
   class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration)
