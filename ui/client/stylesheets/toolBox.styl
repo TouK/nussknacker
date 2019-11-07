@@ -19,13 +19,14 @@ grabMixin()
   margin-right 10px
   .tree-view_item
     border 1px solid listBorderColor
-    span
-      cursor: pointer
+    cursor: pointer
     &.disabled
       opacity 0.4
       cursor: not-allowed !important
     &:hover
       background-color toolHoverBkgColor
+  .tree-view_arrow
+    cursor inherit
   .toolWrapper
     margin-left 17px
     white-space: nowrap
@@ -49,3 +50,7 @@ grabMixin()
     svg
       height 16px
       margin-top -1px
+
+.group-label
+  display inline-block
+  width 95%
