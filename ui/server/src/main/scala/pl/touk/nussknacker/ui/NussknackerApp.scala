@@ -29,7 +29,9 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
+import pl.touk.nussknacker.ui.security.oauth2.{AuthenticationOAuth2Resources, OAuth2Configuration, OAuth2ServiceProvider}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
+
 
 object NussknackerApp extends App with Directives with LazyLogging {
 
@@ -108,6 +110,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
+
     val authenticator = AuthenticatorProvider(config, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
@@ -119,7 +122,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
 
-    val apiResources: List[RouteWithUser] = {
+    val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
         new ProcessesResources(
           processRepository = processRepository,
@@ -140,7 +143,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(typesForCategories),
         new NotificationResources(managementActor, processRepository),
-        new SettingsResources(featureTogglesConfig, typeToConfig),
         new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
@@ -165,20 +167,23 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
+    //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
+    val apiResourcesWithoutAuthentication: List[Route] = List(
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).route()
+    ) ++ authenticator.routes
 
     val webResources = new WebResources(config.getString("http.publicPath"))
     CorsSupport.cors(featureTogglesConfig.development) {
-      authenticator { user =>
+      pathPrefixTest(!"api") {
+        webResources.route
+      } ~  pathPrefix("api") {
+        apiResourcesWithoutAuthentication.reduce(_ ~ _)
+      } ~ authenticator.directive { user =>
         pathPrefix("api") {
-          apiResources.map(_.route(user)).reduce(_ ~ _)
-        } ~
-          //this is separated from api to do serve it without authentication
-          pathPrefixTest(!"api") {
-            webResources.route
-          }
+          apiResourcesWithAuthentication.map(_.route(user)).reduce(_ ~ _)
+        }
       }
     }
-
   }
 
   //by default, we use InfluxCountsReporterCreator
@@ -193,7 +198,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         throw new IllegalArgumentException(s"Many CountsReporters found: ${many.mkString(", ")}")
     }
     creator.createReporter(env, configAtKey)
-  } 
+  }
 
   private def initDb(config: Config) = {
     val db = JdbcBackend.Database.forConfig("db", config)
@@ -221,5 +226,4 @@ object NussknackerApp extends App with Directives with LazyLogging {
       }
     })
   }
-
 }

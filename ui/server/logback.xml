@@ -13,7 +13,4 @@
 
     <logger name="ch.qos.logback" level="warn"/>
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="warn"/>
-
 </configuration>
-
-

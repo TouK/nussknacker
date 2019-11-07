@@ -125,5 +125,4 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     val componentsNotExist = ProcessObjectsFinder.findComponents(processesList, "notExistingTransformer")
     componentsNotExist shouldBe Nil
   }
-
 }

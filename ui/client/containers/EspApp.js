@@ -1,6 +1,5 @@
 import React from "react"
 import {matchPath, NavLink, Route, Switch, withRouter} from 'react-router-dom'
-import {hot} from 'react-hot-loader'
 import _ from "lodash"
 import Processes from "./Processes"
 import SubProcesses from "./SubProcesses"
@@ -25,7 +24,6 @@ import '../assets/fonts/fonts.less'
 import '../stylesheets/main.styl'
 import '../app.styl'
 import ErrorHandler from "./ErrorHandler"
-
 
 class EspApp extends React.Component {
 
@@ -163,4 +161,4 @@ function mapState(state) {
 EspApp.path = `${nkPath}/`
 EspApp.header = 'ESP'
 
-export default hot(module)(withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EspApp)))
+export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EspApp))
