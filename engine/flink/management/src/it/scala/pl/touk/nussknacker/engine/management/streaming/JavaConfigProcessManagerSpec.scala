@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management
+package pl.touk.nussknacker.engine.management.streaming
 
 import java.util.Collections
 
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.duration._
 
-class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
+class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with StreamingDockerTest {
 
 
   override def config: Config = {

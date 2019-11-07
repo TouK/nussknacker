@@ -38,7 +38,7 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.JavaConverters._
 
-class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
+class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
 
   import spel.Implicits._
 
@@ -53,7 +53,7 @@ class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
         .emptySink("out", "monitor")
 
     FlinkTestConfiguration.setQueryableStatePortRangesBySystemProperties()
-    FlinkProcessMain.main(Array(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2, Encoder[ProcessVersion].apply(ProcessVersion.empty).noSpaces))
+    FlinkStreamingProcessMain.main(Array(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2, Encoder[ProcessVersion].apply(ProcessVersion.empty).noSpaces))
   }
 
 }

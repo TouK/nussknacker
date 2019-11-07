@@ -20,7 +20,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 
-class FlinkProcessRegistrarKafkaSpec
+class FlinkStreamingProcessRegistrarKafkaSpec
   extends FlatSpec
     with BeforeAndAfterAll
     with KafkaSpec

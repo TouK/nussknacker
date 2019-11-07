@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: ProcessConfigCreator, config: Config)
-  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport = false) {
+  extends FlinkStreamingProcessCompiler(creator, config, diskStateBackendSupport = false) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
