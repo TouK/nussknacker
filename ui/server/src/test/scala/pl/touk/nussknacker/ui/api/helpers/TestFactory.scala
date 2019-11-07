@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
+import cats.instances.future._
 
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions{
@@ -47,7 +48,7 @@ object TestFactory extends TestPermissions{
   val buildInfo = Map("engine-version" -> "0.1")
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DBFetchingProcessRepository[Future](dbs) with FetchingProcessRepository with BasicRepository
+    new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DbWriteProcessRepository[Future](dbs, modelVersions.map(TestProcessingTypes.Streaming -> _).toMap)

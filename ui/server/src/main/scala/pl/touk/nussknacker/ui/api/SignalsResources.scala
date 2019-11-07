@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 class SignalsResources(modelData: Map[String, ModelData],
-                       val processRepository: FetchingProcessRepository,
+                       val processRepository: FetchingProcessRepository[Future],
                        val processAuthorizer:AuthorizeProcess)(implicit val ec: ExecutionContext)
   extends Directives
     with FailFastCirceSupport

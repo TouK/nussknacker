@@ -40,7 +40,7 @@ object ManagementResources {
             managementActor: ActorRef,
             testResultsMaxSizeInBytes: Int,
             processAuthorizator: AuthorizeProcess,
-            processRepository: FetchingProcessRepository, featuresOptions: FeatureTogglesConfig)
+            processRepository: FetchingProcessRepository[Future], featuresOptions: FeatureTogglesConfig)
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
@@ -90,7 +90,7 @@ class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testResultsMaxSizeInBytes: Int,
                           val processAuthorizer: AuthorizeProcess,
-                          val processRepository: FetchingProcessRepository, deploySettings: Option[DeploySettings])
+                          val processRepository: FetchingProcessRepository[Future], deploySettings: Option[DeploySettings])
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
