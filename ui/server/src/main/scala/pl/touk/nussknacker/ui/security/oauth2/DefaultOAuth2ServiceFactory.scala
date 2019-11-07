@@ -53,6 +53,10 @@ object DefaultOAuth2ServiceFactory extends {
   def service(configuration: OAuth2Configuration, allCategories: List[String])(implicit backend: SttpBackend[Future, Nothing, NothingT]): DefaultOAuth2Service =
     new DefaultOAuth2Service(new OAuth2ClientApi[DefaultProfileResponse, DefaultAccessTokenResponse](configuration), configuration, allCategories)
 
-  def getUserRoles(email: String, configuration: OAuth2Configuration, defaults: List[String] = List(defaultUserRole)): List[String] =
-    configuration.users.find(_.email.equals(email)).map(_.roles ++ defaults).getOrElse(defaults)
+  def getUserRoles(email: Option[String], configuration: OAuth2Configuration, defaults: List[String] = List(defaultUserRole)): List[String] =
+    configuration
+      .users
+      .find(us => email.exists(_.toLowerCase.equals(us.email.toLowerCase)))
+      .map(_.roles ++ defaults)
+      .getOrElse(defaults)
 }
