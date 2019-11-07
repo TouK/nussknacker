@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.security.ouath2
+package pl.touk.nussknacker.ui.security.api.ouath2
 
 import java.net.URI
 
@@ -6,9 +6,10 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
+import pl.touk.nussknacker.ui.security.api.oauth2.{OAuth2AuthenticateData, OAuth2ClientApi, OAuth2Service, OAuth2ServiceFactory}
+import pl.touk.nussknacker.ui.security.api.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermission, LoggedUser, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2AuthenticateData, OAuth2ClientApi, OAuth2Configuration, OAuth2Service, OAuth2ServiceFactory}
-import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global

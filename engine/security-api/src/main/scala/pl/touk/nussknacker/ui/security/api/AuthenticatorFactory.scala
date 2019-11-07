@@ -9,7 +9,7 @@ trait AuthenticatorFactory {
 
   val realm = "nussknacker"
 
-  def createAuthenticator(config: Config, classLoader: ClassLoader): AuthenticatorData
+  def createAuthenticator(config: Config, classLoader: ClassLoader, allCategories: List[String]): AuthenticatorData
 }
 
 object AuthenticatorFactory {

@@ -1,11 +1,11 @@
-package pl.touk.nussknacker.ui.security
+package pl.touk.nussknacker.ui.security.api.basicauth
 
 import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import org.mindrot.jbcrypt.BCrypt
-import pl.touk.nussknacker.ui.security.BasicHttpAuthenticator._
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
+import pl.touk.nussknacker.ui.security.api.basicauth.BasicHttpAuthenticator.{EncryptedPassword, PlainPassword, UserWithPassword}
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
 
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -1,12 +1,10 @@
-package pl.touk.nussknacker.ui.security.ouath2
+package pl.touk.nussknacker.ui.security.api.ouath2
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
-import pl.touk.nussknacker.ui.api.helpers.EspItTest
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withoutPermissions
-import pl.touk.nussknacker.ui.security.oauth2.{AuthenticationOAuth2Resources, DefaultOAuth2ServiceFactory, Oauth2AuthenticationResponse}
+import pl.touk.nussknacker.ui.security.api.oauth2.{AuthenticationOAuth2Resources, DefaultOAuth2ServiceFactory, Oauth2AuthenticationResponse}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
@@ -14,9 +12,11 @@ import sttp.model.{StatusCode, Uri}
 import scala.concurrent.Future
 import scala.language.higherKinds
 
-class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with ScalatestRouteTest with FailFastCirceSupport with EspItTest {
+class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with ScalatestRouteTest with FailFastCirceSupport {
 
   val config = ExampleOAuth2ServiceFactory.testConfig
+
+  def routes(route: AuthenticationOAuth2Resources) = route.route()
 
   protected lazy val errorAuthenticationResources = {
     implicit val testingBackend = SttpBackendStub
@@ -46,7 +46,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
   }
 
   def authenticationOauth2(resource: AuthenticationOAuth2Resources, authorizeToken: String) = {
-    Get(s"/authentication/oauth2?code=$authorizeToken") ~> withoutPermissions(resource)
+    Get(s"/authentication/oauth2?code=$authorizeToken") ~> routes(resource)
   }
 
   it("should return 400 for wrong authorize token") {

@@ -1,20 +1,19 @@
-package pl.touk.nussknacker.ui.security.oauth2
+package pl.touk.nussknacker.ui.security.api.oauth2
 
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory
 import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.{AuthenticatorData, LoggedUserAuth}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class OAuth2AuthenticatorFactory extends AuthenticatorFactory with LazyLogging {
-  override def createAuthenticator(config: Config, classLoader: ClassLoader): AuthenticatorData = {
+  override def createAuthenticator(config: Config, classLoader: ClassLoader, allCategories: List[String]): AuthenticatorData = {
     val configuration = OAuth2Configuration.create(config)
-    val typesForCategories = new ProcessTypesForCategories(config)
-    val service = OAuth2ServiceProvider(configuration, classLoader, typesForCategories.getAllCategories)
+    val service = OAuth2ServiceProvider(configuration, classLoader, allCategories)
 
     AuthenticatorData(
       createDirective(configuration, service),

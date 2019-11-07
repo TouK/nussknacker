@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.security.ouath2
+package pl.touk.nussknacker.ui.security.api.ouath2
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
@@ -6,7 +6,7 @@ import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration.OAuth2ConfigRule
-import pl.touk.nussknacker.ui.security.oauth2.RulesSet
+import pl.touk.nussknacker.ui.security.api.oauth2.RulesSet
 
 class RulesSetSpec  extends FunSuite with Matchers with TableDrivenPropertyChecks {
   val emptyRule = OAuth2ConfigRule(role = "")
