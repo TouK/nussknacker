@@ -1,35 +1,24 @@
 package pl.touk.nussknacker.ui.security
 
-import java.util.ServiceLoader
-
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Multiplicity, One}
-import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory
-import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.LoggedUserAuth
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.AuthenticatorData
+import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, AuthenticationMethod, AuthenticatorFactory}
+import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticatorFactory
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2AuthenticatorFactory
 
-import scala.util.{Failure, Success, Try}
-
-object AuthenticatorProvider {
-
-  import scala.collection.JavaConverters._
-
-  def apply(config: Config, classLoader: ClassLoader): LoggedUserAuth = {
-    chooseAuthenticator(
-      default = BasicAuthenticatorFactory(),
-      loaded = ServiceLoader.load(classOf[AuthenticatorFactory], classLoader)
-        .asScala
-        .toList) match {
-      case Success(auth) => auth.createAuthenticator(config)
-      case Failure(e) => throw e
+object AuthenticatorProvider extends LazyLogging {
+  def apply(config: Config, classLoader: ClassLoader): AuthenticatorData = {
+    val loaded = ScalaServiceLoader.loadClass[AuthenticatorFactory](classLoader) {
+      AuthenticationConfiguration.parseMethod(config) match {
+        case AuthenticationMethod.OAuth2 => OAuth2AuthenticatorFactory()
+        case _ => BasicAuthenticatorFactory()
+      }
     }
-  }
 
-  private[security] def chooseAuthenticator(default: AuthenticatorFactory,
-                                            loaded: List[AuthenticatorFactory]): Try[AuthenticatorFactory] = {
-    (Multiplicity(loaded), default) match {
-      case (One(only), _) => Success(only)
-      case (Empty(), default_) => Success(default_)
-      case _ => Failure(new IllegalArgumentException(s"default: $default, loaded: $loaded"))
-    }
+    logger.info(s"Loaded authenticator method: $loaded.")
+
+    loaded.createAuthenticator(config, classLoader)
   }
 }
