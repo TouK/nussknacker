@@ -137,6 +137,7 @@ val hsqldbV = "2.3.4"
 val postgresV = "42.2.5"
 val flywayV = "5.2.4"
 val confluentV = "4.1.2"
+val jbcryptV = "0.4"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -549,13 +550,16 @@ lazy val securityApi = (project in engine("security-api")).
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "org.mindrot" % "jbcrypt" % jbcryptV,
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe" % "config" % configV
       )
     }
   )
-  .dependsOn(util)
+  .dependsOn(util, httpUtils)
 
 lazy val flinkApi = (project in engine("flink/api")).
   settings(commonSettings).
@@ -695,7 +699,6 @@ lazy val ui = (project in file("ui/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.3",
-        "org.mindrot" % "jbcrypt" % "0.4",
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",

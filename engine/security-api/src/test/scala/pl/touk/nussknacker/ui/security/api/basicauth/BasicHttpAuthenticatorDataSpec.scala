@@ -1,11 +1,10 @@
-package pl.touk.nussknacker.ui.security.basicauth
+package pl.touk.nussknacker.ui.security.api.basicauth
 
 import akka.http.scaladsl.server.directives.Credentials
 import org.scalatest.{FunSpec, Matchers}
-import pl.touk.nussknacker.ui.security.BasicHttpAuthenticator
-import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, DefaultAuthenticationConfiguration}
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.api.DefaultAuthenticationConfiguration.DefaultConfigUser
+import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, DefaultAuthenticationConfiguration}
 
 
 class BasicHttpAuthenticatorDataSpec extends FunSpec with Matchers {

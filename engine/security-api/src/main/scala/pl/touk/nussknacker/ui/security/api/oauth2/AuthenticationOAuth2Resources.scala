@@ -1,15 +1,17 @@
-package pl.touk.nussknacker.ui.security.oauth2
+package pl.touk.nussknacker.ui.security.api.oauth2
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.api.{EspErrorToHttp, RouteWithoutUser}
+
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.parsing.json.JSONObject
 
 class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: ExecutionContext)
-  extends Directives with FailFastCirceSupport with RouteWithoutUser with LazyLogging {
+  extends Directives with LazyLogging with FailFastCirceSupport {
 
   def route(): Route = pathPrefix("authentication") {
     path("oauth2") {
@@ -29,9 +31,16 @@ class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: Executi
     }.recover {
       case OAuth2ErrorHandler(ex) => {
         logger.debug("Retrieving access token error:", ex)
-        EspErrorToHttp.toResponseReject("Retrieving access token error. Please try authenticate again.")
+        toResponseReject(Map("message" -> "Retrieving access token error. Please try authenticate again."))
       }
     }
+  }
+
+  private def toResponseReject(entity: Map[String, String]): ToResponseMarshallable = {
+    HttpResponse(
+      status = StatusCodes.BadRequest,
+      entity = HttpEntity(ContentTypes.`application/json`, JSONObject(entity).toString().stripMargin)
+    )
   }
 }
 

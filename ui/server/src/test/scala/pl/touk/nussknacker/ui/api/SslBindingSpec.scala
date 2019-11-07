@@ -9,7 +9,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import org.scalatest._
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.NussknackerApp.system
-import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
+import pl.touk.nussknacker.ui.security.api.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

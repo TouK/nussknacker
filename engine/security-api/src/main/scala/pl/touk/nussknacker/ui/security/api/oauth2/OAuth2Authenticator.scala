@@ -1,9 +1,11 @@
-package pl.touk.nussknacker.ui.security.oauth2
+package pl.touk.nussknacker.ui.security.api.oauth2
 
 import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
