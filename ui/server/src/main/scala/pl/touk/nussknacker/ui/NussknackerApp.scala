@@ -31,7 +31,6 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.security.oauth2.{AuthenticationOAuth2Resources, OAuth2Configuration, OAuth2ServiceProvider}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 
