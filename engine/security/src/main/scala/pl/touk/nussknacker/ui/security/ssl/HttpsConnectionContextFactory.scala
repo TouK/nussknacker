@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.security.api.ssl
+package pl.touk.nussknacker.ui.security.ssl
 
 import java.security.{KeyStore, SecureRandom}
 

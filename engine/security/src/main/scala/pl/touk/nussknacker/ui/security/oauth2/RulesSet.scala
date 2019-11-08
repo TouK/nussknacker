@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.security.api.oauth2
+package pl.touk.nussknacker.ui.security.oauth2
 
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission

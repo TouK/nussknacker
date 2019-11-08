@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.ui.security.api.ssl
+package pl.touk.nussknacker.ui.security.ssl
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FlatSpec, FunSuite, Matchers, OptionValues}
+import org.scalatest.{FlatSpec, Matchers, OptionValues}
 
 class SslConfigParserSpec extends FlatSpec with Matchers with OptionValues {
 

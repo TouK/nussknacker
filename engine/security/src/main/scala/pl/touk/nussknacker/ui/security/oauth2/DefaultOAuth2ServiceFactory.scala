@@ -1,9 +1,8 @@
-package pl.touk.nussknacker.ui.security.api.oauth2
+package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.security.api.oauth2.OAuth2ClientApi.{DefaultAccessTokenResponse, DefaultProfileResponse}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.{DefaultAccessTokenResponse, DefaultProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global

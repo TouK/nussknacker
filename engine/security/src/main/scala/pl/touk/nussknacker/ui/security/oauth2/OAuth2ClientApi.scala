@@ -1,17 +1,15 @@
-package pl.touk.nussknacker.ui.security.api.oauth2
-
+package pl.touk.nussknacker.ui.security.oauth2
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Error}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.sttp.SttpJson
-import pl.touk.nussknacker.ui.security.api.oauth2.OAuth2ClientApi.ContentType
-import pl.touk.nussknacker.ui.security.api.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2ServerError}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.circe._
 import sttp.client.{Response, _}
 import sttp.model.Uri
+import OAuth2ClientApi._
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2ServerError}
 
 import scala.concurrent.{ExecutionContext, Future}
 

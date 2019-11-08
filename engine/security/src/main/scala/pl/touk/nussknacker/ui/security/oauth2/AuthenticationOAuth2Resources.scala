@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.security.api.oauth2
+package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}

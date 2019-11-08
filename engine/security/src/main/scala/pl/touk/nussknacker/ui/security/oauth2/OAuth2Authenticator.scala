@@ -1,13 +1,12 @@
-package pl.touk.nussknacker.ui.security.api.oauth2
+package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
+import scala.concurrent.Future
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] with LazyLogging {
   def apply(credentials: Credentials): Future[Option[LoggedUser]] =
@@ -20,7 +19,7 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
     }
   }
 
-  private[security] def authenticate(token: String): Future[Option[LoggedUser]] =
+  private[oauth2] def authenticate(token: String): Future[Option[LoggedUser]] =
     service.authorize(token).map(prf => Option(prf)).recover {
       case OAuth2ErrorHandler(_) => Option.empty // Expired or non-exists token - user not authenticated
     }

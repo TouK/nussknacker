@@ -6,11 +6,12 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory
 import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.{AuthenticatorData, LoggedUserAuth}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
+import pl.touk.nussknacker.ui.security.oauth2.{AuthenticationOAuth2Resources, OAuth2Authenticator, OAuth2Configuration, OAuth2Service, OAuth2ServiceProvider}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class OAuth2AuthenticatorFactory extends AuthenticatorFactory with LazyLogging {
+  import scala.concurrent.ExecutionContext.Implicits.global
+
   override def createAuthenticator(config: Config, classLoader: ClassLoader, allCategories: List[String]): AuthenticatorData = {
     val configuration = OAuth2Configuration.create(config)
     val service = OAuth2ServiceProvider(configuration, classLoader, allCategories)

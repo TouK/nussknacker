@@ -573,6 +573,7 @@ lazy val security = (project in engine("security")).
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV % "provided",
         "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force(),
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "io.circe" %% "circe-core" % circeV % "provided",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV % "provided",
         "com.typesafe" % "config" % configV % "provided",
         "org.mindrot" % "jbcrypt" % jbcryptV
