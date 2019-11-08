@@ -46,6 +46,9 @@ object TestProcess {
 
   }
 
+  /*
+    We have to be careful not to put too much into results, as they are serialized to JSON.
+   */
   case class NodeResult[+T](context: ResultContext[T])
 
   case class ExpressionInvocationResult[+T](contextId: String, name: String, value: T)
