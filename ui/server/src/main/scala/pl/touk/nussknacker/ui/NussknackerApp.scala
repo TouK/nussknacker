@@ -29,6 +29,7 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.security.api.AuthenticatorProvider
+import pl.touk.nussknacker.ui.util.ReplyingToSenderSupervisorActor
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 
@@ -116,7 +117,15 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
-    val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
+    val managementActor = {
+      val managementProps = ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
+      if (featureTogglesConfig.wrapManagementWithReplyToSenderSupervisor) {
+        system.actorOf(ReplyingToSenderSupervisorActor.props(managementProps, "management"), "replyToSender")
+      } else {
+        system.actorOf(managementProps, "management")
+      }
+    }
+
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)

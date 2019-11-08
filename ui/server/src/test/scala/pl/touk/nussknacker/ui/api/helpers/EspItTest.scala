@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
+import pl.touk.nussknacker.ui.util.ReplyingToSenderSupervisorActor
 
 
 trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
@@ -46,9 +47,10 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val existingProcessingType = "streaming"
 
   val processManager = new MockProcessManager
-  def createManagementActorRef = ManagementActor(env,
-    Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
-
+  def createManagementActorRef =
+    system.actorOf(ReplyingToSenderSupervisorActor.props(
+      ManagementActor.props(env, Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver), "management"),
+      "replyToSender")
   val managementActor: ActorRef = createManagementActorRef
   val jobStatusService = new JobStatusService(managementActor)
   val newProcessPreparer = new NewProcessPreparer(

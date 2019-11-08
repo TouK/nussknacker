@@ -52,14 +52,14 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   }
 
   test("initializes custom processes") {
-    Get("/api/processes/customProcess1") ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Get("/api/processes/customProcess1") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
     }
   }
 
 
   test("ensure config is properly parsed") {
-    Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("nodesConfig").focus.get
       val settings = Decoder[Map[String, SingleNodeConfig]].decodeJson(settingsJson).right.get
 
@@ -96,9 +96,9 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       processingType = TestProcessingTypes.Streaming
     )
 
-    Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
-      Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> check {
+      Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
 
         val res = responseAs[ValidationResult]
@@ -106,7 +106,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         res.errors.globalErrors.map(_.description) shouldBe List(
           "Fatal error: Failed to load subprocess parameter: i.do.not.exist for input1, please check configuration")
 
-        Get(endpoint) ~> addCredentials(credentials) ~> mainRoute ~> check {
+        Get(endpoint) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
           status shouldEqual StatusCodes.OK
         }
       }
@@ -129,20 +129,26 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     saveProcess(endpoint, process)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
-    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
     }
   }
 
   private def saveProcess(endpoint: String, process: EspProcess) = {
-    Post(s"$endpoint/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Post(s"$endpoint/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
-      Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> check {
+      Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
-        Get(endpoint) ~> addCredentials(credentials) ~> mainRoute ~> check {
+        Get(endpoint) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
           status shouldEqual StatusCodes.OK
         }
       }
+    }
+  }
+  
+  def checkWithClue[T](body: => T): RouteTestResult => T = check {
+    withClue(s"response: '${responseAs[String]}'") {
+      body
     }
   }
 

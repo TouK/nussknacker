@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDe
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.util.ReplyingToSenderSupervisorActor
 
 import scala.concurrent.ExecutionContextExecutor
 
@@ -29,8 +30,10 @@ class ManagementActorSpec extends FunSuite  with Matchers with ScalaFutures with
   private val processRepository = newProcessRepository(db)
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val deploymentProcessRepository = newDeploymentProcessRepository(db)
-  private val managementActor = ManagementActor(env,
-    Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
+  private val managementActor =
+    system.actorOf(ReplyingToSenderSupervisorActor.props(
+      ManagementActor.props(env, Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver), "management"),
+      "replyToSender")
 
   private val jobStatusService = new JobStatusService(managementActor)
 

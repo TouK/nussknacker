@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
+import akka.actor.{Actor, ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
+import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
@@ -23,11 +22,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object ManagementActor {
-  def apply(environment: String,
+  def props(environment: String,
             managers: Map[ProcessingType, ProcessManager],
             processRepository: FetchingProcessRepository,
-            deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver)(implicit context: ActorRefFactory): ActorRef = {
-    context.actorOf(Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver))
+            deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver)(implicit context: ActorRefFactory): Props = {
+    Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver)
   }
 
 }
