@@ -568,17 +568,18 @@ lazy val security = (project in engine("security")).
     name := "nussknacker-security",
     libraryDependencies ++= {
       Seq(
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided",
+        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided",
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
         "org.mindrot" % "jbcrypt" % jbcryptV,
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
-        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe" % "config" % configV
       )
     }
   )
-  .dependsOn(util, httpUtils)
+  .dependsOn(util % "provided")
+  .dependsOn(httpUtils % "provided")
 
 lazy val flinkApi = (project in engine("flink/api")).
   settings(commonSettings).
