@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
@@ -26,6 +26,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import scala.concurrent.duration._
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -35,6 +36,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   private val mainRoute = NussknackerApp.initializeRoute(system.settings.config)
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
+
+  implicit val timeout: RouteTestTimeout = RouteTestTimeout(1.minute)
 
   test("saves, updates and retrieves sample process") {
     val processId = UUID.randomUUID().toString
