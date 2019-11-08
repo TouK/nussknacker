@@ -38,6 +38,4 @@ object RulesSet {
     val filtered = rules.filter(rule => roles.map(_.toLowerCase).contains(rule.role.toLowerCase))
     new RulesSet(filtered, allCategories)
   }
-
-  def apply(rules: List[ConfigRule], allCategories: List[String]): RulesSet = new RulesSet(rules, allCategories)
 }
