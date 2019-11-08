@@ -8,6 +8,7 @@ import * as UndoRedoActions from "./undoRedoActions";
 import * as VisualizationUrl from '../common/VisualizationUrl';
 import {dateFormat} from "../config";
 import history from '../history'
+import User from "../common/models/User";
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -429,6 +430,20 @@ export function toggleInfoModal(openDialog, text) {
     type: "TOGGLE_INFO_MODAL",
     openDialog: openDialog,
     text: text
+  }
+}
+
+export function assignUser(data) {
+  return {
+    type: "LOGGED_USER",
+    user: new User(data)
+  }
+}
+
+export function assignSettings(settings) {
+  return {
+    type: "UI_SETTINGS",
+    settings: settings
   }
 }
 

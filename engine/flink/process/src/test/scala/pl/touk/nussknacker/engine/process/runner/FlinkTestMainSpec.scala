@@ -63,12 +63,12 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val invocationResults = results.invocationResults
 
     invocationResults("proc2") shouldBe
-      List(ExpressionInvocationResult(ResultContext[Any]("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "all", "0"))
+      List(ExpressionInvocationResult("proc1-id-0-1", "all", "0"))
     invocationResults("out") shouldBe
-      List(ExpressionInvocationResult(ResultContext[Any]("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "expression", 11))
+      List(ExpressionInvocationResult("proc1-id-0-1", "expression", 11))
 
-    results.mockedResults("proc2") shouldBe List(MockedResult(ResultContext("proc1-id-0-1", Map()), "logService", "0-collectedDuringServiceInvocation"))
-    results.mockedResults("out") shouldBe List(MockedResult(ResultContext("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "monitor", "11"))
+    results.mockedResults("proc2") shouldBe List(MockedResult("proc1-id-0-1", "logService", "0-collectedDuringServiceInvocation"))
+    results.mockedResults("out") shouldBe List(MockedResult("proc1-id-0-1", "monitor", "11"))
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
   }
@@ -126,19 +126,19 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     invocationResults("cid") shouldBe
       List(
         //we record only LazyParameter execution results
-        ExpressionInvocationResult(ResultContext("proc1-id-0-0", Map("input" -> input)), "keyBy", "0"),
-        ExpressionInvocationResult(ResultContext("proc1-id-0-1", Map("input" -> input2)), "keyBy", "0")
+        ExpressionInvocationResult("proc1-id-0-0", "keyBy", "0"),
+        ExpressionInvocationResult("proc1-id-0-1", "keyBy", "0")
       )
     invocationResults("out") shouldBe
       List(
-        ExpressionInvocationResult(ResultContext("proc1-id-0-0", Map("input" -> input, "out" -> aggregate)), "expression", "1 0"),
-        ExpressionInvocationResult(ResultContext("proc1-id-0-1", Map("input" -> input2, "out" -> aggregate2)), "expression", "11 1")
+        ExpressionInvocationResult("proc1-id-0-0", "expression", "1 0"),
+        ExpressionInvocationResult("proc1-id-0-1", "expression", "11 1")
       )
 
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(ResultContext("proc1-id-0-0", Map("input" -> input, "out" -> aggregate)), "monitor", "1 0"),
-        MockedResult(ResultContext("proc1-id-0-1", Map("input" -> input2, "out" -> aggregate2)), "monitor", "11 1")
+        MockedResult("proc1-id-0-0", "monitor", "1 0"),
+        MockedResult("proc1-id-0-1", "monitor", "11 1")
       )
 
   }
@@ -259,9 +259,9 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.nodeResults("id") should have size 3
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(ResultContext[Any]("proc1-id-0-0", Map("input" -> SimpleJsonRecord("1", "11"))), "monitor", "SimpleJsonRecord(1,11)"),
-        MockedResult(ResultContext[Any]("proc1-id-0-1", Map("input" -> SimpleJsonRecord("2", "22"))), "monitor", "SimpleJsonRecord(2,22)"),
-        MockedResult(ResultContext[Any]("proc1-id-0-2", Map("input" -> SimpleJsonRecord("3", "33"))), "monitor", "SimpleJsonRecord(3,33)")
+        MockedResult("proc1-id-0-0", "monitor", "SimpleJsonRecord(1,11)"),
+        MockedResult("proc1-id-0-1", "monitor", "SimpleJsonRecord(2,22)"),
+        MockedResult("proc1-id-0-2", "monitor", "SimpleJsonRecord(3,33)")
       )
   }
 
@@ -390,7 +390,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     invocationResults("switch").filter(_.name == "expression").head.value shouldBe true
     invocationResults("switch").filter(_.name == "expression").last.value shouldBe false
     // first record was filtered out
-    invocationResults("out").head.context.variables("output") shouldBe false
+    invocationResults("out").head.contextId shouldBe "sampleProcess-id-0-1"
   }
 
   def nodeResult(count: Int, vars: (String, Any)*)
