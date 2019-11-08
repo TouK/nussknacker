@@ -59,6 +59,8 @@ espCheckbox(checkboxWidth)
     display block
     position relative
     cursor pointer
+    -moz-appearance: none
+    border none
 
   input[type='checkbox']:after
     content ""
@@ -71,11 +73,11 @@ espCheckbox(checkboxWidth)
     width checkboxWidth
     font-size checkboxWidth - 6
     box-shadow inset 0px 1px 1px #000, 0px 1px 0px #444
-    background #45484d
+    background #333
 
   input[type='checkbox']:checked
     &:after
-      background #202020
+      background #333
       content '\2714'
       color #fff
 
@@ -424,11 +426,6 @@ espPanelButton()
     width 27px
     height 27px
     border 1px solid buttonBorderColor
-  &.attachment-button
-    svg
-      margin-top 10px
-      width 27px
-      height 27px
 
 .espButton
   espPanelButton()
