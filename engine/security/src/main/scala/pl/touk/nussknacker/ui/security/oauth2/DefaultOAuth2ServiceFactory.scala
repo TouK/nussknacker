@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.api.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RulesSet}
 import pl.touk.nussknacker.ui.security.api.oauth2.OAuth2ClientApi.{DefaultAccessTokenResponse, DefaultProfileResponse}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
 import sttp.client.{NothingT, SttpBackend}
@@ -23,17 +23,8 @@ class DefaultOAuth2Service(clientApi: OAuth2ClientApi[DefaultProfileResponse, De
   override def authorize(token: String): Future[LoggedUser] = {
     clientApi.profileRequest(token).map { profile =>
       val userRoles = DefaultOAuth2ServiceFactory.getUserRoles(profile.email, configuration)
-
       val rulesSet = RulesSet.getOnlyMatchingRules(userRoles, configuration.rules, allCategories)
-      if (rulesSet.isAdmin) {
-        LoggedUser(id = profile.id.toString, isAdmin = true)
-      } else {
-        LoggedUser(
-          id = profile.id.toString,
-          categoryPermissions = rulesSet.permissions,
-          globalPermissions = rulesSet.globalPermissions
-        )
-      }
+      LoggedUser(profile.id.toString, rulesSet)
     }
   }
 }
@@ -57,7 +48,7 @@ object DefaultOAuth2ServiceFactory extends {
   def getUserRoles(email: Option[String], configuration: OAuth2Configuration, defaults: List[String] = List(defaultUserRole)): List[String] =
     configuration
       .users
-      .find(us => email.exists(_.toLowerCase.equals(us.email.toLowerCase)))
+      .find(us => email.exists(_.toLowerCase.equals(us.identity.toLowerCase)))
       .map(_.roles ++ defaults)
       .getOrElse(defaults)
 }

@@ -10,12 +10,12 @@ class BasicAuthenticatorFactory extends AuthenticatorFactory with Directives {
 
   override def createAuthenticator(config: Config, classLoader: ClassLoader, allCategories: List[String]): AuthenticatorData = {
     val configuration = DefaultAuthenticationConfiguration.create(config)
-    AuthenticatorData(createDirective(configuration), configuration)
+    AuthenticatorData(createDirective(configuration, allCategories), configuration)
   }
 
-  def createDirective(config: DefaultAuthenticationConfiguration): LoggedUserAuth =
+  def createDirective(config: DefaultAuthenticationConfiguration, allCategories: List[String]): LoggedUserAuth =
     SecurityDirectives.authenticateBasicAsync(
-      authenticator = BasicHttpAuthenticator(config),
+      authenticator = BasicHttpAuthenticator(config, allCategories),
       realm = realm
     )
 }

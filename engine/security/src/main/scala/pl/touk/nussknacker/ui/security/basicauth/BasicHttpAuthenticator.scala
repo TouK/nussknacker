@@ -3,30 +3,33 @@ package pl.touk.nussknacker.ui.security.api.basicauth
 import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import org.mindrot.jbcrypt.BCrypt
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.basicauth.BasicHttpAuthenticator.{EncryptedPassword, PlainPassword, UserWithPassword}
-import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser, RulesSet}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
+class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration, allCategories: List[String]) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
   //If we want use always reloaded config then we need just prepareUsers()
   private val users = prepareUsers()
 
   def apply(credentials: Credentials): Future[Option[LoggedUser]] = Future {
-    authenticate(credentials)
-  }
-
-  private[security] def authenticate(credentials: Credentials): Option[LoggedUser] = {
     credentials match {
-      case d@Provided(id) => users
-        .get(id)
-        .filter(u => d.verify(u.password.value, hash(u)))
-        .map(_.toLoggedUser)
+      case d@Provided(id) => authenticate(d)
       case _ => None
     }
+  }
+
+  private[basicauth] def authenticate(prov: Provided): Option[LoggedUser] = {
+    users
+      .get(prov.identifier)
+      .filter(us => prov.verify(us.password.value, hash(us)))
+      .map(toLoggedUser)
+  }
+
+  private[basicauth] def toLoggedUser(user: UserWithPassword): LoggedUser = {
+    val rulesSet = RulesSet.getOnlyMatchingRules(user.roles, configuration.rules, allCategories)
+    LoggedUser(user.identity, rulesSet)
   }
 
   private def hash(u: UserWithPassword)(receivedSecret: String): String = {
@@ -43,27 +46,22 @@ class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration) 
       val password = (u.password, u.encryptedPassword) match {
         case (Some(plain), None) => PlainPassword(plain)
         case (None, Some(encrypted)) => EncryptedPassword(encrypted)
-        case (Some(_), Some(_)) => throw new IllegalStateException("Specified both password and encrypted password for user: " + u.id)
-        case (None, None) => throw new IllegalStateException("Neither specified password nor encrypted password for user: " + u.id)
+        case (Some(_), Some(_)) => throw new IllegalStateException("Specified both password and encrypted password for user: " + u.identity)
+        case (None, None) => throw new IllegalStateException("Neither specified password nor encrypted password for user: " + u.identity)
       }
-      u.id -> UserWithPassword(u.id, password, u.categoryPermissions, u.globalPermissions, u.isAdmin)
+      u.identity -> UserWithPassword(u.identity, password, u.roles)
     }.toMap
   }
-
 }
 
 object BasicHttpAuthenticator {
-  def apply(config: DefaultAuthenticationConfiguration): BasicHttpAuthenticator = new BasicHttpAuthenticator(config)
+  def apply(config: DefaultAuthenticationConfiguration, allCategories: List[String]): BasicHttpAuthenticator = new BasicHttpAuthenticator(config, allCategories)
 
   private sealed trait Password {
     def value: String
   }
 
   private case class PlainPassword(value: String) extends Password
-
   private case class EncryptedPassword(value: String) extends Password
-
-  private case class UserWithPassword(id: String, password: Password, categoryPermissions: Map[String, Set[Permission]], globalPermissions: List[GlobalPermission], isAdmin: Boolean) {
-    def toLoggedUser = LoggedUser(id, categoryPermissions, globalPermissions, isAdmin)
-  }
+  private case class UserWithPassword(identity: String, password: Password, roles: List[String])
 }

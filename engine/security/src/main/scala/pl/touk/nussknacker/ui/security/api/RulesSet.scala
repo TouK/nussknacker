@@ -1,11 +1,10 @@
-package pl.touk.nussknacker.ui.security.api.oauth2
+package pl.touk.nussknacker.ui.security.api
 
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.api.{GlobalPermission, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration.OAuth2ConfigRule
 
-class RulesSet(rules: List[OAuth2ConfigRule], allCategories: List[String]) {
+class RulesSet(rules: List[ConfigRule], allCategories: List[String]) {
   import cats.instances.all._
   import cats.syntax.semigroup._
 
@@ -35,8 +34,10 @@ class RulesSet(rules: List[OAuth2ConfigRule], allCategories: List[String]) {
 }
 
 object RulesSet {
-  def getOnlyMatchingRules(roles: List[String], rules: List[OAuth2ConfigRule], allCategories: List[String]): RulesSet = {
+  def getOnlyMatchingRules(roles: List[String], rules: List[ConfigRule], allCategories: List[String]): RulesSet = {
     val filtered = rules.filter(rule => roles.map(_.toLowerCase).contains(rule.role.toLowerCase))
     new RulesSet(filtered, allCategories)
   }
+
+  def apply(rules: List[ConfigRule], allCategories: List[String]): RulesSet = new RulesSet(rules, allCategories)
 }
