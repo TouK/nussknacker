@@ -568,13 +568,13 @@ lazy val security = (project in engine("security")).
     name := "nussknacker-security",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided",
-        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided",
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force(),
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV % "provided",
+        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force(),
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
-        "org.mindrot" % "jbcrypt" % jbcryptV,
-        "com.typesafe" % "config" % configV
+        "com.typesafe" % "config" % configV % "provided",
+        "org.mindrot" % "jbcrypt" % jbcryptV
       )
     }
   )
