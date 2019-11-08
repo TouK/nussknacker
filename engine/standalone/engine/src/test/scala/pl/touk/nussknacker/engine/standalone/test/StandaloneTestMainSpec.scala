@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator}
+import pl.touk.nussknacker.engine.standalone.{Request1, StandaloneProcessConfigCreator}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -51,8 +51,8 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
       ExpressionInvocationResult("proc1-1", "expression", false)
     )
 
-    results.mockedResults("processor").toSet shouldBe Set(MockedResult(ResultContext("proc1-0", Map()), "processorService", "processor service invoked"))
-    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"), "var1" -> Response("alamakota"))),
+    results.mockedResults("processor").toSet shouldBe Set(MockedResult("proc1-0", "processorService", "processor service invoked"))
+    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0",
       "endNodeIID", """{
                       |  "field1" : "alamakota"
                       |}""".stripMargin))
@@ -108,7 +108,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     )
 
     results.mockedResults("endNodeIID").toSet shouldBe Set(
-      MockedResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"))), "endNodeIID", "a withRandomString")
+      MockedResult("proc1-0", "endNodeIID", "a withRandomString")
     )
 
   }

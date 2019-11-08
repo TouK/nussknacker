@@ -67,8 +67,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     invocationResults("out") shouldBe
       List(ExpressionInvocationResult("proc1-id-0-1", "expression", 11))
 
-    results.mockedResults("proc2") shouldBe List(MockedResult(ResultContext("proc1-id-0-1", Map()), "logService", "0-collectedDuringServiceInvocation"))
-    results.mockedResults("out") shouldBe List(MockedResult(ResultContext("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "monitor", "11"))
+    results.mockedResults("proc2") shouldBe List(MockedResult("proc1-id-0-1", "logService", "0-collectedDuringServiceInvocation"))
+    results.mockedResults("out") shouldBe List(MockedResult("proc1-id-0-1", "monitor", "11"))
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
   }
@@ -137,8 +137,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(ResultContext("proc1-id-0-0", Map("input" -> input, "out" -> aggregate)), "monitor", "1 0"),
-        MockedResult(ResultContext("proc1-id-0-1", Map("input" -> input2, "out" -> aggregate2)), "monitor", "11 1")
+        MockedResult("proc1-id-0-0", "monitor", "1 0"),
+        MockedResult("proc1-id-0-1", "monitor", "11 1")
       )
 
   }
@@ -259,9 +259,9 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.nodeResults("id") should have size 3
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(ResultContext[Any]("proc1-id-0-0", Map("input" -> SimpleJsonRecord("1", "11"))), "monitor", "SimpleJsonRecord(1,11)"),
-        MockedResult(ResultContext[Any]("proc1-id-0-1", Map("input" -> SimpleJsonRecord("2", "22"))), "monitor", "SimpleJsonRecord(2,22)"),
-        MockedResult(ResultContext[Any]("proc1-id-0-2", Map("input" -> SimpleJsonRecord("3", "33"))), "monitor", "SimpleJsonRecord(3,33)")
+        MockedResult("proc1-id-0-0", "monitor", "SimpleJsonRecord(1,11)"),
+        MockedResult("proc1-id-0-1", "monitor", "SimpleJsonRecord(2,22)"),
+        MockedResult("proc1-id-0-2", "monitor", "SimpleJsonRecord(3,33)")
       )
   }
 

@@ -39,7 +39,7 @@ class TestResultUtils {
       .invocationResults
       .filter(result => result.contextId == contextId)
       .map(result => [result.name, result.value]))
-    var mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.context.id == contextId)
+    var mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.contextId == contextId)
     var mockedResultsForEveryContext = nodeTestResults.mockedResults
     var error = ((nodeTestResults.errors || []).find((error) => error.context.id == contextId) || {}).exception
     return {
