@@ -1,9 +1,5 @@
 language: scala
 
-scala:
-  - 2.11.12
-  - 2.12.10
-
 jdk:
   - oraclejdk8
 
@@ -62,22 +58,31 @@ stages:
 jobs:
   include:
     - stage: test
-      name: "Backend tests"
-      script: ./ciBackendTest.sh $TRAVIS_SCALA_VERSION
-      after_success: if [ "$COVERAGE" = true ]; then sbt ++$TRAVIS_SCALA_VERSION coveralls; else echo "Skipping coveralls"; fi
+      name: "Backend tests 2.11"
+      script: ./ciBackendTest.sh 2.11.12
+      after_success: if [ "$COVERAGE" = true ]; then sbt ++2.11.12 coveralls; else echo "Skipping coveralls"; fi
+    - name: "UI slow tests 2.11"
+      script: sbt ++2.11.12 clean ui/slow:test
+    - name: "Management tests 2.11"
+      script: sbt ++2.11.12 clean management/it:test
+    - name: "EngineStandalone tests 2.11"
+      script: sbt ++2.11.12 clean engineStandalone/it:test
+    - name: "Backend tests 2.12"
+      script: ./ciBackendTest.sh 2.12.10
+      after_success: if [ "$COVERAGE" = true ]; then sbt ++2.12.10 coveralls; else echo "Skipping coveralls"; fi
+    - name: "UI slow tests 2.12"
+      script: sbt ++2.12.10 clean ui/slow:test
+    - name: "Management tests 2.12"
+      script: sbt ++2.12.10 clean management/it:test
+    - name: "EngineStandalone tests 2.12"
+      script: sbt ++2.12.10 clean engineStandalone/it:test
     - name: "Frontend tests"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script: ./ciFrontendTest.sh
-    - name: "UI slow tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/slow:test
-    - name: "Management tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
-    - name: "EngineStandalone tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
     - stage: releases
       name: "Release sonatype packages"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
-      script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
+      script: ./ciPublish.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER}
     - name: "Push Docker Image"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script:
