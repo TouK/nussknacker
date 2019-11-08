@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator}
+import pl.touk.nussknacker.engine.standalone.{Request1, StandaloneProcessConfigCreator}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -47,12 +47,12 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
-      ExpressionInvocationResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"))), "expression", true),
-      ExpressionInvocationResult(ResultContext("proc1-1", Map("input" -> Request1("c","d"))), "expression", false)
+      ExpressionInvocationResult("proc1-0", "expression", true),
+      ExpressionInvocationResult("proc1-1", "expression", false)
     )
 
-    results.mockedResults("processor").toSet shouldBe Set(MockedResult(ResultContext("proc1-0", Map()), "processorService", "processor service invoked"))
-    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"), "var1" -> Response("alamakota"))),
+    results.mockedResults("processor").toSet shouldBe Set(MockedResult("proc1-0", "processorService", "processor service invoked"))
+    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0",
       "endNodeIID", """{
                       |  "field1" : "alamakota"
                       |}""".stripMargin))
@@ -81,7 +81,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8)), variableEncoder = identity)
 
-    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(ResultContext("proc1-1", Map("input" -> Request1("c","d"))), "expression", true))
+    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult("proc1-1", "expression", true))
     results.exceptions should have size 1
     results.exceptions.head.context shouldBe ResultContext("proc1-0", Map("input" -> Request1("a","b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
@@ -108,7 +108,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     )
 
     results.mockedResults("endNodeIID").toSet shouldBe Set(
-      MockedResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"))), "endNodeIID", "a withRandomString")
+      MockedResult("proc1-0", "endNodeIID", "a withRandomString")
     )
 
   }
