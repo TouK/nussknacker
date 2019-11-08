@@ -308,7 +308,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     .node-input
       height: 40px
       common-node-input(20px)
-    .node-read-only-input
+    .read-only
       height: 40px
       padding: 0 20px
       border: none
@@ -608,3 +608,13 @@ espPanelButton()
       margin-right 5px
     &.fieldRemove
       width: 5%
+
+.branch-parameter-row
+  margin-top 7px
+  margin-bottom 8px
+  display flex
+  & .read-only
+    color #ccc
+    font-weight 400
+    font-size 14px
+    padding 10px 20px 0 20px
