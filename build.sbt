@@ -138,6 +138,7 @@ val hsqldbV = "2.3.4"
 val postgresV = "42.2.5"
 val flywayV = "5.2.4"
 val confluentV = "4.1.2"
+val jbcryptV = "0.4"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -262,7 +263,7 @@ lazy val management = (project in engine("flink/management")).
         "ch.qos.logback" % "logback-core" % logbackV % "it,test"
       )
     }
-  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", securityApi)
+  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", security)
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -288,7 +289,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       )
     }
   ).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", securityApi)
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", security)
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -561,20 +562,26 @@ lazy val api = (project in engine("api")).
     }
   )
 
-lazy val securityApi = (project in engine("security-api")).
+lazy val security = (project in engine("security")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-security-api",
+    name := "nussknacker-security",
     libraryDependencies ++= {
       Seq(
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
-        "com.typesafe" % "config" % configV
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV % "provided",
+        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force(),
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "io.circe" %% "circe-core" % circeV % "provided",
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV % "provided",
+        "com.typesafe" % "config" % configV % "provided",
+        "org.mindrot" % "jbcrypt" % jbcryptV
       )
     }
   )
-  .dependsOn(util)
+  .dependsOn(util % "provided")
+  .dependsOn(httpUtils % "provided")
 
 lazy val flinkApi = (project in engine("flink/api")).
   settings(commonSettings).
@@ -688,7 +695,7 @@ lazy val ui = (project in file("ui/server"))
     /*
       We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and 
+      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
     packageBin in Compile := (packageBin in Compile).dependsOn(
@@ -714,7 +721,6 @@ lazy val ui = (project in file("ui/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.3",
-        "org.mindrot" % "jbcrypt" % "0.4",
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
@@ -725,7 +731,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel)
+  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel)
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly")
 
