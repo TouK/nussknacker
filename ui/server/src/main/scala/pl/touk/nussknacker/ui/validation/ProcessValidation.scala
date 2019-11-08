@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
@@ -163,7 +163,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
     val globalErrors = errors.filter(_.nodeIds.isEmpty)
-    val processPropertyErrors = errors.filter(_.nodeIds == Set(ProcessCompilationError.ProcessNodeId))
+    val processPropertyErrors = errors.filter(_.nodeIds == Set(NodeTypingInfo.ExceptionHandlerNodeId))
 
     ValidationResult.errors(
       (for {

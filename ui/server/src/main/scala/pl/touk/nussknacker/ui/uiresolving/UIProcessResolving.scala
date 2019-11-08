@@ -26,11 +26,9 @@ class UIProcessResolving(validation: ProcessValidation, dictSubstitutor: Process
     v.validateWithTypingInfo(displayable)
   }
 
-  def resolveExpressions(displayable: DisplayableProcess, typingInfo: Map[String, Map[String, ExpressionTypingInfo]]): GraphProcess = {
+  def resolveExpressions(displayable: DisplayableProcess, typingInfo: Map[String, Map[String, ExpressionTypingInfo]]): CanonicalProcess = {
     val canonical = ProcessConverter.fromDisplayable(displayable)
-    val substituted = dictSubstitutor.substitute(canonical, typingInfo)
-    val json = ProcessMarshaller.toJson(substituted).spaces2
-    GraphProcess(json)
+    dictSubstitutor.substitute(canonical, typingInfo)
   }
 
   def reverseResolveExpressions(canonical: CanonicalProcess, processingType: ProcessingType, businessView: Boolean,

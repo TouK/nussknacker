@@ -380,7 +380,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       ObjectDefinition.withParams(List(Parameter("param1", ClazzRef[String]))))
 
     inside (validate(process, definitionWithExceptionHandlerWithParams).result) {
-      case Invalid(NonEmptyList(MissingParameters(missingParam, "$process"), _)) => missingParam shouldBe Set("param1")
+      case Invalid(NonEmptyList(MissingParameters(missingParam, "$exceptionHandler"), _)) => missingParam shouldBe Set("param1")
     }
   }
 

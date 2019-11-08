@@ -18,8 +18,7 @@ object ProcessCompilationError {
   val ValidatedNelApplicative: Applicative[ValidatedNelCompilationError] =
     Applicative[ValidatedNelCompilationError]
 
-  final val ProcessNodeId = "$process"
-
+  // TODO: Move NodeId and NodeExpressionId to NodeTypingInfo or somewhere closer to process model
   case class NodeId(id: String)
 
   case class NodeExpressionId(nodeId: NodeId, expressionId: String)

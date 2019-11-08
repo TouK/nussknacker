@@ -27,44 +27,50 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
+  private val EndNodeId = "end"
+  private val Key = "foo"
+  private val Label = "Foo"
+
   test("save process with expression using dicts and load get it") {
-    val expressionUsingDictWithLabel = "#DICT['Foo']"
+    val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
     saveProcessAndCheckIfCanBeGet(process, expressionUsingDictWithLabel)
   }
 
-  ignore("save process with expression using dicts and test it") {
-    val expressionUsingDictWithLabel = "#DICT['Foo']"
+  test("save process with expression using dicts and test it") {
+    val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
     saveProcessAndCheckIfCanBeGet(process, expressionUsingDictWithLabel)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
-    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
-      val response = responseAs[Json]
+      val endInvocationResult = extractedEndInvocationResult()
+      endInvocationResult shouldEqual Key
     }
   }
 
   private def sampleProcessWithExpression(processId: String, endResultExpression: String) =
     EspProcessBuilder
       .id(processId)
-      .exceptionHandler()
+      .additionalFields(properties = Map("param1" -> "true"))
+      .exceptionHandler("param1" -> "'fooParam1'")
       .source("source", "csv-source")
-      .sink("end", endResultExpression, "monitor")
+      .sink(EndNodeId, endResultExpression, "monitor")
 
   private def saveProcessAndCheckIfCanBeGet(process: EspProcess,
                                             endResultExpressionToPost: String) = {
 
 
     val processRootResource = s"/api/processes/${process.id}"
-    Post("/api/processValidation", TestFactory.posting.toEntity(process))~> addCredentials(credentials) ~> mainRoute ~> check {
+    Post("/api/processValidation", TestFactory.posting.toEntity(process))~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       checkNoInvalidNodesDirect()
     }
 
     saveProcess(processRootResource, process)
 
-    Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       checkNoInvalidNodesInValidationResul()
       val returnedEndResultExpression = extractEndResultExpression()
@@ -73,11 +79,11 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
   }
 
   private def saveProcess(processRootResource: String, process: EspProcess) = {
-    Post(s"$processRootResource/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Post(s"$processRootResource/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
     }
 
-    Put(processRootResource, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> check {
+    Put(processRootResource, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       checkNoInvalidNodesDirect()
     }
@@ -88,9 +94,22 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     response.hcursor
       .downField("json")
       .downField("nodes")
-      .downAt(_.hcursor.get[String]("id").right.value == "end")
+      .downAt(_.hcursor.get[String]("id").right.value == EndNodeId)
       .downField("endResult")
       .downField("expression")
+      .as[String].right.value
+  }
+
+  private def extractedEndInvocationResult() = {
+    val response = responseAs[Json]
+    response.hcursor
+      .downField("results")
+      .downField("invocationResults")
+      .downField(EndNodeId)
+      .downArray
+      .first
+      .downField("value")
+      .downField("pretty")
       .as[String].right.value
   }
 
@@ -118,6 +137,12 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     val invalidNodesObj = invalidNodes.asObject.value
 
     invalidNodesObj shouldBe empty
+  }
+
+  def checkWithClue[T](body: ⇒ T): RouteTestResult ⇒ T = check {
+    withClue(responseAs[String]) {
+      body
+    }
   }
 
 }

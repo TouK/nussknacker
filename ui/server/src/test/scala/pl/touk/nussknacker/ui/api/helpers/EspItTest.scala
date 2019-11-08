@@ -90,7 +90,8 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     testResultsMaxSizeInBytes = 500 * 1024 * 1000,
     processAuthorizer = processAuthorizer,
     processRepository = processRepository,
-    deploySettings = Some(DeploySettings(requireComment = requireComment))
+    deploySettings = Some(DeploySettings(requireComment = requireComment)),
+    processResolving = processResolving
   )
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, processRepository)

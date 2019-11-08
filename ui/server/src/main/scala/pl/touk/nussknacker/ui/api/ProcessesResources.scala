@@ -326,7 +326,11 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     val displayableProcess = processToSave.process
     (for {
       validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(displayableProcess)))
-      deploymentData = processResolving.resolveExpressions(displayableProcess, validation.typingInfo)
+      deploymentData = {
+        val substituted = processResolving.resolveExpressions(displayableProcess, validation.typingInfo)
+        val json = ProcessMarshaller.toJson(substituted).spaces2
+        GraphProcess(json)
+      }
       _ <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
     } yield validation.withClearedTypingInfo).value
   }

@@ -146,7 +146,7 @@ protected trait ProcessCompilerBase {
 
   private def compile(ref: ExceptionHandlerRef)
                      (implicit metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, EspExceptionHandler]) = {
-    implicit val nodeId: NodeId = NodeId(ProcessCompilationError.ProcessNodeId)
+    implicit val nodeId: NodeId = NodeId(NodeTypingInfo.ExceptionHandlerNodeId)
     if (metaData.isSubprocess) {
       //FIXME: what should be here?
       (Map.empty, Valid(new EspExceptionHandler {

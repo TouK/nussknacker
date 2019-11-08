@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,7 +41,8 @@ object ManagementResources {
             managementActor: ActorRef,
             testResultsMaxSizeInBytes: Int,
             processAuthorizator: AuthorizeProcess,
-            processRepository: FetchingProcessRepository[Future], featuresOptions: FeatureTogglesConfig)
+            processRepository: FetchingProcessRepository[Future], featuresOptions: FeatureTogglesConfig,
+            processResolving: UIProcessResolving)
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
@@ -49,7 +51,8 @@ object ManagementResources {
       testResultsMaxSizeInBytes,
       processAuthorizator,
       processRepository,
-      featuresOptions.deploySettings
+      featuresOptions.deploySettings,
+      processResolving
     )
   }
 
@@ -90,7 +93,8 @@ class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testResultsMaxSizeInBytes: Int,
                           val processAuthorizer: AuthorizeProcess,
-                          val processRepository: FetchingProcessRepository[Future], deploySettings: Option[DeploySettings])
+                          val processRepository: FetchingProcessRepository[Future], deploySettings: Option[DeploySettings],
+                          processResolving: UIProcessResolving)
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
@@ -197,7 +201,8 @@ class ManagementResources(processCounter: ProcessCounter,
   private def performTest(id: ProcessIdWithName, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
     parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
       case Right(process) =>
-        val canonical = ProcessConverter.fromDisplayable(process)
+        val validationResult = processResolving.validateBeforeUiResolving(process)
+        val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
         val canonicalJson = ProcessMarshaller.toJson(canonical).spaces2
         (managementActor ? Test(id, canonicalJson, TestData(testData), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
