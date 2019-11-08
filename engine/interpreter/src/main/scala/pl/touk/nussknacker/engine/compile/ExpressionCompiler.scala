@@ -55,7 +55,6 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
     compileObjectParameters(parameterDefinitions, parameters, List.empty, ctx, ctx).map(_.map {
       case TypedParameter(name, expr: TypedExpression) => compiledgraph.evaluatedparam.Parameter(name, expr.expression, expr.returnType, expr.typingInfo)
-      //FIXME
       case TypedParameter(name, expr: TypedExpressionMap) => throw new IllegalArgumentException("Typed expression map should not be here...")
     })
   }
