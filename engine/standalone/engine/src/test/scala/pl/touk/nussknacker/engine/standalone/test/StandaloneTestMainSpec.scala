@@ -47,8 +47,8 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
-      ExpressionInvocationResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"))), "expression", true),
-      ExpressionInvocationResult(ResultContext("proc1-1", Map("input" -> Request1("c","d"))), "expression", false)
+      ExpressionInvocationResult("proc1-0", "expression", true),
+      ExpressionInvocationResult("proc1-1", "expression", false)
     )
 
     results.mockedResults("processor").toSet shouldBe Set(MockedResult(ResultContext("proc1-0", Map()), "processorService", "processor service invoked"))
@@ -81,7 +81,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8)), variableEncoder = identity)
 
-    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(ResultContext("proc1-1", Map("input" -> Request1("c","d"))), "expression", true))
+    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult("proc1-1", "expression", true))
     results.exceptions should have size 1
     results.exceptions.head.context shouldBe ResultContext("proc1-0", Map("input" -> Request1("a","b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")

@@ -37,7 +37,7 @@ class TestResultUtils {
     var context = (nodeTestResults.nodeResults.find(result => result.context.id == contextId) || {}).context
     var expressionResults = _.fromPairs(nodeTestResults
       .invocationResults
-      .filter(result => result.context.id == contextId)
+      .filter(result => result.contextId == contextId)
       .map(result => [result.name, result.value]))
     var mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.context.id == contextId)
     var mockedResultsForEveryContext = nodeTestResults.mockedResults

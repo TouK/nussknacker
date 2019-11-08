@@ -23,7 +23,7 @@ object TestProcess {
     }
 
     def updateExpressionResult(nodeId: String, context: Context, name: String, result: Any) = {
-      val invocationResult = ExpressionInvocationResult(toResult(context), name, variableEncoder(result))
+      val invocationResult = ExpressionInvocationResult(context.id, name, variableEncoder(result))
       copy(invocationResults = invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List()))))
     }
 
@@ -39,7 +39,7 @@ object TestProcess {
     //when evaluating e.g. keyBy expression can be invoked more than once...
     //TODO: is it the best way to handle it??
     private def addResults(invocationResult: ExpressionInvocationResult[T], resultsSoFar: List[ExpressionInvocationResult[T]])
-    = resultsSoFar.filterNot(res => res.context.id == invocationResult.context.id && res.name == invocationResult.name) :+ invocationResult
+    = resultsSoFar.filterNot(res => res.contextId == invocationResult.contextId && res.name == invocationResult.name) :+ invocationResult
 
     private def toResult(context: Context): ResultContext[T] = ResultContext(context.id, context.variables.map { case (k, v) => k -> variableEncoder(v) })
 
@@ -48,7 +48,7 @@ object TestProcess {
 
   case class NodeResult[+T](context: ResultContext[T])
 
-  case class ExpressionInvocationResult[+T](context: ResultContext[T], name: String, value: T)
+  case class ExpressionInvocationResult[+T](contextId: String, name: String, value: T)
 
   case class MockedResult[+T](context: ResultContext[T], name: String, value: T)
 
