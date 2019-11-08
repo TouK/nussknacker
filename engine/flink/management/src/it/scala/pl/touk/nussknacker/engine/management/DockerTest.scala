@@ -4,8 +4,11 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.{Files, Path}
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
+import java.util.Collections
 
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
 import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
@@ -15,13 +18,14 @@ import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
+import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
 
 import scala.concurrent.duration._
 
-trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with ScalaVersionHack {
+trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   self: Suite =>
 
-  private val flinkEsp = s"flinkesp:1.7.2-scala_$scalaBinaryVersion"
+  private val flinkEsp = s"flinkesp:1.7.2-scala_${ScalaBinaryConfig.scalaBinaryVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 
@@ -40,8 +44,8 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with S
     val dirFile = dir.toFile
 
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "docker-entrypoint.sh").foreach { file =>
-      val withVersionReplaced =
-        IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file")).replace("${scala.binary.version}", scalaBinaryVersion)
+      val resource = IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file"))
+      val withVersionReplaced = resource.replace("${scala.binary.version}", ScalaBinaryConfig.scalaBinaryVersion)
       FileUtils.writeStringToFile(new File(dirFile, file), withVersionReplaced)
     }
 
@@ -95,4 +99,15 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging with S
     Files.createTempDirectory("dockerTest",
       PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission].asJava))
   }
+
+  def config: Config = ConfigFactory.load()
+    .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
+    .withValue("flinkConfig.classpath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
+    .withFallback(additionalConfig)
+
+
+  protected def classPath: String
+
+  protected def additionalConfig: Config = ConfigFactory.empty()
+
 }
