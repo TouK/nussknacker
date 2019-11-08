@@ -11,8 +11,11 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions{
+
+  private val processTypesForCategories = ProcessTypesForCategories(ConfigWithScalaVersion.config)
 
   test("return groups sorted by name") {
 
@@ -106,7 +109,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = nodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))),
       nodeCategoryMapping = nodeCategoryMapping,
-      typesForCategories = ProcessTypesForCategories()
+      typesForCategories = processTypesForCategories
     )
     groups
   }
@@ -122,7 +125,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = Map(),
       nodeCategoryMapping =  Map(),
-      typesForCategories = ProcessTypesForCategories()
+      typesForCategories = processTypesForCategories
     )
     groups
   }

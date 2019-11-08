@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, Sta
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import org.scalatest._
@@ -29,6 +30,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
+
+  override def testConfig: Config = ConfigWithScalaVersion.config
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 

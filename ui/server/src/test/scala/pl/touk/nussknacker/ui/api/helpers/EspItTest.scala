@@ -6,6 +6,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import cats.instances.all._
 import cats.syntax.semigroup._
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Json, Printer}
 import org.scalatest._
@@ -30,11 +31,7 @@ import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, 
 
 trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
-  val scalaBinaryVersion: String = util.Properties.versionNumberString.replaceAll("(\\d+\\.\\d+)\\..*$", "$1")
-
-  override def testConfigSource: String = {
-    s"""{scala.binary.version = $scalaBinaryVersion}"""
-  }
+  override def testConfig: Config = ConfigWithScalaVersion.config
 
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
@@ -47,7 +44,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
-  val typesForCategories = ProcessTypesForCategories()
+  val typesForCategories = ProcessTypesForCategories(testConfig)
 
   val existingProcessingType = "streaming"
 
@@ -76,11 +73,10 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     processAuthorizer = processAuthorizer
   )
 
-  private val config = ConfigWithScalaVersion.config
-  val authenticationConfig = DefaultAuthenticationConfiguration.create(config)
+  val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)
 
-  val featureTogglesConfig = FeatureTogglesConfig.create(config)
-  val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+  val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
+  val typeToConfig = ProcessingTypeDeps(testConfig, featureTogglesConfig.standaloneMode)
   val usersRoute = new UserResources(typesForCategories)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
 

@@ -37,7 +37,8 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
     })
 
     val processObjects =
-      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false, ProcessTypesForCategories())
+      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false,
+        ProcessTypesForCategories(ConfigWithScalaVersion.config))
 
     processObjects.nodesConfig("enricher").params shouldBe Some(Map("param" -> ParameterConfig(Some("'default value'"),
       Some(FixedExpressionValues(List(
@@ -76,7 +77,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
         SubprocessDetails(CanonicalProcess(MetaData("enricher", null, isSubprocess = true), null, List(FlatNode(SubprocessInputDefinition("", List(
           SubprocessParameter("param", SubprocessClazzRef[String])
         )))), None), "")
-      ), false, ProcessTypesForCategories())
+      ), false, ProcessTypesForCategories(ConfigWithScalaVersion.config))
 
     processObjects.processDefinition.subprocessInputs("enricher").parameters.map(p => (p.name, p.restriction)).toMap shouldBe Map(
       "param" -> Some(FixedExpressionValues(List(
