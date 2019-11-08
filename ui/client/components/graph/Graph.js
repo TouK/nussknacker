@@ -186,11 +186,27 @@ class Graph extends React.Component {
         this.handleInjectBetweenNodes(cellView)
       })
       .on("link:connect", (c) => {
+        this.disconnectPreviousEdge(c.model.id);
         this.props.actions.nodesConnected(
           c.sourceView.model.attributes.nodeData,
           c.targetView.model.attributes.nodeData
         )
       })
+  }
+
+  disconnectPreviousEdge = (previousEdge) => {
+    const nodeIds = this.extractNodeIds(previousEdge);
+    if (this.graphContainsEdge(nodeIds)) {
+      this.props.actions.nodesDisconnected(...nodeIds)
+    }
+  }
+
+  extractNodeIds = (edge) => {
+    return edge.split("-").slice(0, 2)
+  }
+
+  graphContainsEdge(nodeIds) {
+    return this.props.processToDisplay.edges.some(edge => edge.from === nodeIds[0] && edge.to === nodeIds[1]);
   }
 
   handleInjectBetweenNodes = (cellView) => {
