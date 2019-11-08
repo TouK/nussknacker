@@ -18,7 +18,7 @@ import MapVariable from "./node-modal/MapVariable";
 import BranchParameters, {branchErrorFieldName} from "./node-modal/BranchParameters";
 import Variable from "./node-modal/Variable";
 import JoinDef from "./node-modal/JoinDef"
-import {errorValidator, notEmptyValidator} from "../../common/Validators";
+import {allValid, errorValidator, notEmptyValidator} from "../../common/Validators";
 import ValidationLabels from "../modals/ValidationLabels";
 
 //move state to redux?
@@ -165,7 +165,7 @@ export class NodeDetailsContent extends React.Component {
                     const validators = [notEmptyValidator]
                     return (<React.Fragment>
                       <input type="text"
-                             className={validators.some(validator => validator.isValid(field.typ.refClazzName) === false) ? "node-input node-input-with-error" : "node-input"}
+                             className={allValid(validators, field.typ.refClazzName) ? "node-input" : "node-input node-input-with-error"}
                              value={field.typ.refClazzName}
                              onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
                       <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>

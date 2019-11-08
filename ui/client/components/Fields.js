@@ -5,7 +5,7 @@ import {DragSource, DropTarget} from "react-dnd";
 import dragHandleIcon from "../assets/img/drag-handle.png";
 import update from "immutability-helper";
 import ReactDOM from "react-dom";
-import {notEmptyValidator} from "../common/Validators";
+import {allValid, notEmptyValidator} from "../common/Validators";
 import ValidationLabels from "./modals/ValidationLabels";
 
 class RawField extends React.Component {
@@ -20,8 +20,7 @@ class RawField extends React.Component {
       <div className="node-row movable-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
-          <input className={validators.some(validator => validator.isValid(field.name) === false) ?
-                  "node-input node-input-with-error" : "node-input"}
+          <input className={allValid(validators, field.name) ? "node-input" : "node-input node-input-with-error"}
                  type="text"
                  value={field.name}
                  placeholder="Name"

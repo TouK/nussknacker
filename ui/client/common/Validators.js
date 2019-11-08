@@ -25,3 +25,7 @@ export function errorValidator(errors, fieldName) {
     }
 }
 
+export function allValid(validators, values) {
+  return validators.every(validator => validator.isValid(...values))
+}
+

@@ -17,6 +17,7 @@ import '../../brace/mode/spel'
 import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
 import ValidationLabels from "../modals/ValidationLabels";
+import {allValid} from "../../common/Validators";
 
 //to reconsider
 // - respect categories for global variables?
@@ -110,8 +111,7 @@ class ExpressionSuggest extends React.Component {
                        paddingRight: 20 - 4,
                        backgroundColor: '#333',
                        borderBottom: '1px solid #808080'}}
-               className={(this.props.validators.some(validator => validator.isValid(this.state.value) === false) ?
-                 "node-input-with-error " : "") + (isMarked ? " marked" : "")}>
+               className={(allValid(this.props.validators, this.state.value) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
             <AceEditor mode={this.props.inputProps.language}
                        width={"100%"}
                        minLines={1}

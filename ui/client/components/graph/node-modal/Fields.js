@@ -1,7 +1,7 @@
 import PropTypes from "prop-types"
 import React from "react"
 import ExpressionSuggest from "../ExpressionSuggest"
-import {notEmptyValidator} from "../../../common/Validators";
+import {allValid, notEmptyValidator} from "../../../common/Validators";
 import ValidationLabels from "../../modals/ValidationLabels";
 
 const Fields = (props) => {
@@ -22,8 +22,7 @@ const Fields = (props) => {
                 <div className="node-row movable-row" key={field.uuid}>
                   <div className={"node-value fieldName" + (isMarked(paths) ? " marked" : "")}>
                     <input
-                      className={validators.some(validator => validator.isValid(field.name) === false) ?
-                        "node-input node-input-with-error" : "node-input"}
+                      className={allValid(validators, field.name) ? "node-input" : "node-input node-input-with-error"}
                       type="text"
                       value={field.name}
                       placeholder="Field name"

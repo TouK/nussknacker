@@ -1,6 +1,7 @@
 import PropTypes from "prop-types";
 import React from "react";
 import ValidationLabels from "../../modals/ValidationLabels";
+import {allValid} from "../../../common/Validators";
 
 const Input = (props) => {
     const {label, path, value, onChange, isMarked, readOnly, validators} = props;
@@ -12,8 +13,7 @@ const Input = (props) => {
                 <input
                     key={label}
                     type="text"
-                    className={validators.some(validator => validator.isValid(value) === false) ?
-                      "node-input node-input-with-error" : "node-input"}
+                    className={allValid(validators, value) ? "node-input" : "node-input node-input-with-error"}
                     value={value}
                     onChange={(event) => onChange(path, event.target.value)}
                     readOnly={readOnly}
