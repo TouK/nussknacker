@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFou
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.util.CatsSyntax
+import pl.touk.nussknacker.ui.util.{CatsSyntax, FailurePropagatingActor}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -33,7 +33,7 @@ object ManagementActor {
 
 class ManagementActor(environment: String, managers: Map[ProcessingType, ProcessManager],
                       processRepository: FetchingProcessRepository,
-                      deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver) extends Actor with LazyLogging {
+                      deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver) extends FailurePropagatingActor with LazyLogging {
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()
 

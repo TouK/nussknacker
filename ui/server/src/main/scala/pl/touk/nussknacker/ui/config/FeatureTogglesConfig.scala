@@ -16,8 +16,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
                                 intervalTimeSettings: IntervalTimeSettings,
-                                attachments: Option[String],
-                                wrapManagementWithReplyToSenderSupervisor: Boolean)
+                                attachments: Option[String])
 
 object FeatureTogglesConfig extends LazyLogging{
   import com.typesafe.config.Config
@@ -38,8 +37,6 @@ object FeatureTogglesConfig extends LazyLogging{
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
-    val wrapManagementWithReplyToSenderSupervisor =
-      config.hasPath("wrapManagementWithReplyToSenderSupervisor") && config.getBoolean("wrapManagementWithReplyToSenderSupervisor")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
@@ -52,8 +49,7 @@ object FeatureTogglesConfig extends LazyLogging{
       deploySettings = deploySettings,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
-      attachments = attachments,
-      wrapManagementWithReplyToSenderSupervisor = wrapManagementWithReplyToSenderSupervisor
+      attachments = attachments
     )
   }
 
