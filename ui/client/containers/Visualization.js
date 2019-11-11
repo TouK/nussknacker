@@ -15,6 +15,7 @@ import * as VisualizationUrl from '../common/VisualizationUrl'
 import SpinnerWrapper from "../components/SpinnerWrapper";
 import * as JsonUtils from "../common/JsonUtils";
 import RouteLeavingGuard from "../components/RouteLeavingGuard";
+import ClipboardUtils from "../common/ClipboardUtils";
 
 class Visualization extends React.Component {
 
@@ -149,7 +150,9 @@ class Visualization extends React.Component {
 
   copySelection = (event, shouldCreateNotification) => {
     const copyNodeElementId = 'copy-node'
-    if (event.target && event.target.id !== copyNodeElementId && this.canCopySelection()) {
+    // Skip event triggered by writing selection to the clipboard.
+    const isNotThisCopyEvent = event == null || (event.target && event.target.id !== copyNodeElementId);
+    if (isNotThisCopyEvent && this.canCopySelection()) {
       let nodeIds = this.props.selectionState;
       let process = this.props.processToDisplay;
       const selectedNodes = NodeUtils.getAllNodesById(nodeIds, process)
@@ -158,7 +161,7 @@ class Visualization extends React.Component {
         nodes: selectedNodes,
         edges: edgesForNodes
       }
-      this.props.actions.copySelection(JSON.stringify(selection));
+      ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId);
       if (shouldCreateNotification) {
         this.props.notificationActions.success(this.successMessage('Copied', selectedNodes))
       }
@@ -193,7 +196,21 @@ class Visualization extends React.Component {
     if (!this.props.allModalsClosed) {
       return
     }
-    const selection = JsonUtils.tryParseOrNull(this.props.clipboard)
+    const clipboardText = ClipboardUtils.readText(event);
+    this.pasteSelectionFromText(clipboardText)
+  }
+
+  pasteSelectionFromClipboard = () => {
+    const clipboard = navigator.clipboard
+    if (typeof clipboard.readText !== 'function') {
+      this.props.notificationActions.error("Paste button is not available. Try Ctrl+V")
+    } else {
+      clipboard.readText().then(text => this.pasteSelectionFromText(text))
+    }
+  }
+
+  pasteSelectionFromText = (text) => {
+    const selection = JsonUtils.tryParseOrNull(text)
     const canPasteSelection = _.has(selection, 'nodes') && _.has(selection, 'edges') && selection.nodes.every(node => this.canAddNode(node))
     if (!canPasteSelection) {
       this.props.notificationActions.error("Cannot paste invalid nodes")
@@ -251,9 +268,17 @@ class Visualization extends React.Component {
           zoomOut={zoomOutFun}
           capabilities={this.props.capabilities}
           isReady={this.state.dataResolved}
-          copySelection={(event) => this.copySelection(event, true)}
-          cutSelection={(event) => this.cutSelection(event)}
-          pasteSelection={(event) => this.pasteSelection(event)}
+          selectionActions={{
+            copy: () => this.copySelection(null, true),
+            canCopy: this.canCopySelection(),
+            cut: () => this.cutSelection(null),
+            canCut: this.canCutSelection(),
+            paste: () => this.pasteSelectionFromClipboard(null),
+            canPaste: true
+          }}
+          copySelection={() => this.copySelection(null, true)}
+          cutSelection={() => this.cutSelection(null)}
+          pasteSelection={() => this.pasteSelection(null)}
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>
@@ -289,7 +314,6 @@ function mapState(state) {
     allModalsClosed: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
     loggedUser: loggedUser,
-    clipboard: state.graphReducer.clipboard,
     capabilities: {
       write: loggedUser.canWrite(processCategory) && !isArchived,
       deploy: loggedUser.canDeploy(processCategory) && !isArchived,

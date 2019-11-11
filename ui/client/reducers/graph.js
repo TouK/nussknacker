@@ -297,12 +297,6 @@ export function reducer(state, action) {
         businessView: action.businessView
       }
     }
-    case "COPY_SELECTION": {
-      return {
-        ...state,
-        clipboard: action.selection
-      }
-    }
     default:
       return state
   }
