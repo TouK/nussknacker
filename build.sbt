@@ -90,7 +90,8 @@ val commonSettings =
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
-        "-deprecation",
+        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
+//        "-deprecation",
         "-encoding", "utf8",
         "-Xfatal-warnings",
         "-feature",

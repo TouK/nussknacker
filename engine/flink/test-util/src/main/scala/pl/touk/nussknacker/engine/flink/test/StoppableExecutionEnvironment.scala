@@ -8,10 +8,10 @@ import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.AccessExecutionJobVertex
 import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
-import org.apache.flink.runtime.testutils.{MiniClusterResource, MiniClusterResourceConfiguration}
+import org.apache.flink.runtime.minicluster.MiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
-import org.apache.flink.test.util.MiniClusterWithClientResource
+import org.apache.flink.test.util.{MiniClusterResource, MiniClusterResourceConfiguration}
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
 import org.scalatest.Matchers
@@ -47,10 +47,10 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
     .setConfiguration(userFlinkClusterConfig)
     .build
 
-  // For backward compatibility with Flink 1.6 we have here MiniClusterResource
-  // TODO after breaking compatibility with 1.6, replace flinkMiniCluster.getMiniCluster with flinkMiniCluster.getClusterClient
+  // For backward compatibility with Flink 1.6 we have here MiniClusterResource intstead of MiniClusterWithClientResource
+  // TODO after breaking compatibility with 1.6, replace MiniClusterResource with MiniClusterWithClientResource
   protected def prepareMiniClusterResource(): MiniClusterResource = {
-    new MiniClusterWithClientResource(config)
+    new MiniClusterResource(config)
   }
 
   private val flinkMiniCluster: MiniClusterResource = prepareMiniClusterResource()
@@ -64,7 +64,7 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
   }
 
   def runningJobs(): Iterable[JobID] = {
-    flinkMiniCluster.getMiniCluster.listJobs().get().asScala.filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId)
+    flinkMiniCluster.getClusterClient.listJobs().get().asScala.filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId)
   }
 
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
@@ -93,10 +93,19 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
 
   def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
     eventually {
-      val executionVertices: Iterable[AccessExecutionJobVertex] = flinkMiniCluster.getMiniCluster.getExecutionGraph(jobID).get().getAllVertices.asScala.values
+      // We access miniCluster because ClusterClient doesn't expose getExecutionGraph and getJobStatus doesn't satisfy us
+      // It returns RUNNING even when some vertices are not started yet
+      val executionVertices: Iterable[AccessExecutionJobVertex] = getMiniCluster.getExecutionGraph(jobID).get().getAllVertices.asScala.values
       val notRunning = executionVertices.filterNot(_.getAggregateState != expectedState)
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getName} - ${rs.getAggregateState}")}")
     }(patience, implicitly[Position])
+  }
+
+  // see comment in waitForJobState
+  private def getMiniCluster: MiniCluster = {
+    val miniClusterField = flinkMiniCluster.getClass.getDeclaredField("miniCluster")
+    miniClusterField.setAccessible(true)
+    miniClusterField.get(flinkMiniCluster).asInstanceOf[MiniCluster]
   }
 
   def execute(jobName: String): JobExecutionResult = {
@@ -111,17 +120,14 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
     getConfig.disableSysoutLogging()
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
 
-    val submissionRes = flinkMiniCluster.getMiniCluster.submitJob(jobGraph).get()
+    // Is passed classloader is ok?
+    val submissionResult = flinkMiniCluster.getClusterClient.submitJob(jobGraph, getClass.getClassLoader)
 
-    new JobExecutionResult(submissionRes.getJobID, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
-  }
-
-  def cancel(name: String): Unit = {
-    flinkMiniCluster.getMiniCluster.listJobs().get().asScala.filter(_.getJobName == name).map(_.getJobId).foreach(jobId => cancel(jobId))
+    new JobExecutionResult(submissionResult.getJobID, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
   }
 
   def cancel(jobId: JobID): Unit = {
-    flinkMiniCluster.getMiniCluster.cancelJob(jobId).get()
+    flinkMiniCluster.getClusterClient.cancel(jobId)
   }
 
   def stop(): Unit = {
