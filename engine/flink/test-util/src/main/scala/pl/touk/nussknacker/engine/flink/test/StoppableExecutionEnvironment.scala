@@ -23,6 +23,8 @@ import scala.collection.JavaConverters._
 
 object StoppableExecutionEnvironment {
 
+  def apply(userFlinkClusterConfig: Configuration) = new StoppableExecutionEnvironment(userFlinkClusterConfig) with MiniClusterResourceFlink_1_7
+
   def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int): Configuration = {
     //blaaa this is needed to make queryableState work with two task manager instances
     configuration.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, 2)
@@ -30,33 +32,24 @@ object StoppableExecutionEnvironment {
     configuration
   }
 
-
   def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int) : StoppableExecutionEnvironment= {
-    new StoppableExecutionEnvironment(addQueryableStateConfiguration(configuration, proxyPortLow, proxyPortHigh))
+    StoppableExecutionEnvironment(addQueryableStateConfiguration(configuration, proxyPortLow, proxyPortHigh))
   }
 
 }
 
-class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment
+abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment
   with LazyLogging with Eventually with Matchers {
-
-  private val config: MiniClusterResourceConfiguration
-    = new MiniClusterResourceConfiguration.Builder()
-    //TODO: what should be here?
-    .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, 2))
-    .setConfiguration(userFlinkClusterConfig)
-    .build
 
   // For backward compatibility with Flink 1.6 we have here MiniClusterResource intstead of MiniClusterWithClientResource
   // TODO after breaking compatibility with 1.6, replace MiniClusterResource with MiniClusterWithClientResource
-  protected def prepareMiniClusterResource(): MiniClusterResource = {
-    new MiniClusterResource(config)
-  }
+  protected def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): org.apache.flink.test.util.MiniClusterResource
 
-  private val flinkMiniCluster: MiniClusterResource = prepareMiniClusterResource()
-
-  {
-    flinkMiniCluster.before()
+  private lazy val flinkMiniCluster: MiniClusterResource = {
+    val resource = prepareMiniClusterResource(userFlinkClusterConfig)
+    resource.getClusterClient.setDetached(true)
+    resource.before()
+    resource
   }
 
   def queryableClient(proxyPort: Int) : QueryableStateClient= {
@@ -132,6 +125,19 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
 
   def stop(): Unit = {
     flinkMiniCluster.after()
+  }
+
+}
+
+trait MiniClusterResourceFlink_1_7 extends StoppableExecutionEnvironment {
+
+  override def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): org.apache.flink.test.util.MiniClusterResource = {
+    val clusterConfig: MiniClusterResourceConfiguration = new MiniClusterResourceConfiguration.Builder()
+      //TODO: what should be here?
+      .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, 2))
+      .setConfiguration(userFlinkClusterConfig)
+      .build
+    new MiniClusterResource(clusterConfig)
   }
 
 }
