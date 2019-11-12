@@ -92,7 +92,8 @@ val commonSettings =
         "-unchecked",
         "-deprecation",
         "-encoding", "utf8",
-        "-Xfatal-warnings",
+        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
+//        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
