@@ -1,11 +1,11 @@
 import PropTypes from "prop-types"
 import React from "react"
 import ExpressionSuggest from "../ExpressionSuggest"
-import {notEmptyValidator} from "../../../common/Validators";
+import {errorValidator, notEmptyValidator} from "../../../common/Validators";
 
 const BranchParameters = (props) => {
 
-  const {node, joinDef, onChange, isMarked, readOnly} = props
+  const {node, joinDef, onChange, isMarked, readOnly, errors} = props
 
   return (
     joinDef.branchParameters.map((branchParamDef, paramIndex) => {
@@ -20,8 +20,9 @@ const BranchParameters = (props) => {
                   // in the same order as here, but it is true because for filling is used the same JoinDef
                   const path = `branchParameters[${edgeIndex}].parameters[${paramIndex}]`
                   const paramValue = node.branchParameters[edgeIndex].parameters[paramIndex]
+                  const fieldName = `value-${branchParamDef.name}-${edge.from}`;
                   return (
-                    <div className="node-row" key={`${branchParamDef.name}-${edge.from}`}>
+                    <div className="node-row movable-row" key={`${branchParamDef.name}-${edge.from}`}>
                       <div className={"node-value fieldName" + (isMarked(path) ? " marked" : "")}>
                         <input
                           className="node-input"
@@ -31,16 +32,17 @@ const BranchParameters = (props) => {
                           readOnly={true}
                         />
                       </div>
-                      <div className={"node-value field" + (isMarked(path) ? " marked" : "")}>
+                      <div className={"node-value field"}>
                         <ExpressionSuggest
-                          fieldName={`value-${branchParamDef.name}-${edge.from}`}
+                          fieldName={fieldName}
                           inputProps={{
                             onValueChange: ((value) => onChange(`${path}.expression.expression`, value)),
                             value: paramValue.expression.expression,
                             language: paramValue.expression.language,
                             readOnly
                           }}
-                          validators={[notEmptyValidator]}
+                          validators={[notEmptyValidator, errorValidator(errors, branchErrorFieldName(branchParamDef.name, edge.from))]}
+                          isMarked={isMarked(path)}
                         />
                       </div>
                     </div>
@@ -68,3 +70,7 @@ BranchParameters.defaultProps = {
 }
 
 export default BranchParameters
+
+export const branchErrorFieldName = (paramName, branch) => {
+  return `${paramName}` + " for branch " + `${branch}`;
+}

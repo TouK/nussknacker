@@ -4,11 +4,11 @@ import Textarea from "./Textarea";
 import ExpressionInput from "./ExpressionInput";
 import React from "react";
 import _ from "lodash";
-import {notEmptyValidator} from "../../../common/Validators";
+import {errorValidator, notEmptyValidator} from "../../../common/Validators";
 
 const Variable = (props) => {
 
-  const {node, onChange, isMarked, readOnly} = props;
+  const {node, onChange, isMarked, readOnly, errors} = props;
 
   return (
     <div className="node-table-body node-variable-builder-body">
@@ -18,7 +18,7 @@ const Variable = (props) => {
         path="id"
         onChange={onChange}
         isMarked={isMarked("id")} readOnly={readOnly}
-        validators={[notEmptyValidator]}
+        validators={[notEmptyValidator, errorValidator(errors, "id")]}
       />
       <Input
         label="Variable Name"
@@ -27,7 +27,7 @@ const Variable = (props) => {
         onChange={onChange}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
-        validators={[notEmptyValidator]}
+        validators={[notEmptyValidator, errorValidator(errors, "varName")]}
       />
       <ExpressionInput
         name="expression"
@@ -36,7 +36,7 @@ const Variable = (props) => {
         path="value.expression"
         onChange={onChange}
         readOnly={readOnly}
-        validators={[notEmptyValidator]}
+        validators={[notEmptyValidator, errorValidator(errors, "expression")]}
       />
       <Textarea
         label="Description"
@@ -51,14 +51,16 @@ const Variable = (props) => {
 };
 
 Variable.propTypes = {
-    readOnly: PropTypes.bool,
-    isMarked: PropTypes.func.isRequired,
-    node: PropTypes.object.isRequired,
-    onChange: PropTypes.func.isRequired
+  readOnly: PropTypes.bool,
+  isMarked: PropTypes.func.isRequired,
+  node: PropTypes.object.isRequired,
+  onChange: PropTypes.func.isRequired
 };
 
 Variable.defaultProps = {
-    readOnly: false
+  readOnly: false
 };
+
+Variable.availableFields = ["id", "varName", "expression"]
 
 export default Variable;

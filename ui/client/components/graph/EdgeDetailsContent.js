@@ -24,7 +24,7 @@ export default class EdgeDetailsContent extends React.Component {
 
     return (
       <div className="node-table">
-        {ModalRenderUtils.renderErrors(edgeErrors, "Edge has errors")}
+        {ModalRenderUtils.renderOtherErrors(edgeErrors, "Edge has errors")}
         <div className="node-table-body">
           <div className="node-row">
             <div className="node-label">From</div>
@@ -66,7 +66,7 @@ export default class EdgeDetailsContent extends React.Component {
         return this.baseModalContent(
           <div className="node-row">
             <div className="node-label">Expression</div>
-            <div className={"node-value" + (this.isMarked("edgeType.condition.expression") ? " marked" : "")}>
+            <div className={"node-value"}>
               <ExpressionSuggest
                 inputProps={{
                   rows: 1,
@@ -76,6 +76,7 @@ export default class EdgeDetailsContent extends React.Component {
                   onValueChange: (newValue) => updateEdgeProp("edgeType.condition.expression", newValue),
                   language: edge.edgeType.condition.language, readOnly: readOnly}}
                 validators={[notEmptyValidator]}
+                isMarked={this.isMarked("edgeType.condition.expression")}
               />
             </div>
           </div>

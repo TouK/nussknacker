@@ -8,7 +8,7 @@ const ExpressionInput = (props) => {
     return (
         <div className="node-row">
             <div className="node-label" title={label}>{label}:</div>
-            <div className={"node-value" + (isMarked ? " marked" : "")}>
+            <div className={"node-value"}>
                 <ExpressionSuggest
                     fieldName={name}
                     inputProps={{
@@ -20,6 +20,7 @@ const ExpressionInput = (props) => {
                         rows,
                         cols}}
                     validators={validators}
+                    isMarked={isMarked}
                 />
             </div>
         </div>
