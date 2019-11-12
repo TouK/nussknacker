@@ -101,7 +101,8 @@ val commonSettings =
         "-target:jvm-1.8"
       ),
       javacOptions := Seq(
-        "-Xlint:deprecation",
+        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
+//        "-Xlint:deprecation",
         "-Xlint:unchecked"
       ),
       assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
