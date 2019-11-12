@@ -654,11 +654,11 @@ lazy val queryableState = (project in engine("queryableState")).
 
 lazy val buildUi = taskKey[Unit]("builds ui")
 
-def runNpm(command: String, errorMessage: String): Unit = {
+def runNpm(command: String, errorMessage: String, outputPath: File): Unit = {
   import sys.process.Process
   val path = Path.apply("ui/client").asFile
   println("Using path: " + path.getAbsolutePath)
-  val result = Process(s"npm $command", path)!;
+  val result = Process(s"npm $command", path, "OUTPUT_PATH" -> outputPath.absolutePath)!;
   if (result != 0) throw new RuntimeException(errorMessage)
 }
 
@@ -679,8 +679,8 @@ lazy val ui = (project in file("ui/server"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-ui",
-    buildUi := {
-      runNpm("run build", "Client build failed")
+    buildUi :=  {
+      runNpm("run build", "Client build failed", (crossTarget in compile).value)
     },
     parallelExecution in ThisBuild := false,
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Info),
