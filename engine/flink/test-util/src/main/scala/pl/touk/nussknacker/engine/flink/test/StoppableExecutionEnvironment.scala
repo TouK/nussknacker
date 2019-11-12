@@ -43,12 +43,12 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
 
   // For backward compatibility with Flink 1.6 we have here MiniClusterResource intstead of MiniClusterWithClientResource
   // TODO after breaking compatibility with 1.6, replace MiniClusterResource with MiniClusterWithClientResource
-  protected def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): org.apache.flink.test.util.MiniClusterResource
+  protected def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterResource
 
   private lazy val flinkMiniCluster: MiniClusterResource = {
     val resource = prepareMiniClusterResource(userFlinkClusterConfig)
-    resource.getClusterClient.setDetached(true)
     resource.before()
+    resource.getClusterClient.setDetached(true)
     resource
   }
 
@@ -89,14 +89,15 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
       // We access miniCluster because ClusterClient doesn't expose getExecutionGraph and getJobStatus doesn't satisfy us
       // It returns RUNNING even when some vertices are not started yet
       val executionVertices: Iterable[AccessExecutionJobVertex] = getMiniCluster.getExecutionGraph(jobID).get().getAllVertices.asScala.values
-      val notRunning = executionVertices.filterNot(_.getAggregateState != expectedState)
+      // We compare strings because equals not works when you run tests on other flink version
+      val notRunning = executionVertices.filterNot(_.getAggregateState.toString != expectedState.toString)
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getName} - ${rs.getAggregateState}")}")
     }(patience, implicitly[Position])
   }
 
   // see comment in waitForJobState
   private def getMiniCluster: MiniCluster = {
-    val miniClusterField = flinkMiniCluster.getClass.getDeclaredField("miniCluster")
+    val miniClusterField = flinkMiniCluster.getClass.getDeclaredField("jobExecutorService")
     miniClusterField.setAccessible(true)
     miniClusterField.get(flinkMiniCluster).asInstanceOf[MiniCluster]
   }
@@ -131,7 +132,7 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
 
 trait MiniClusterResourceFlink_1_7 extends StoppableExecutionEnvironment {
 
-  override def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): org.apache.flink.test.util.MiniClusterResource = {
+  override def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterResource = {
     val clusterConfig: MiniClusterResourceConfiguration = new MiniClusterResourceConfiguration.Builder()
       //TODO: what should be here?
       .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, 2))
