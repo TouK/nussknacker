@@ -60,19 +60,20 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
   // Running multiple parallel instances of job in one test class can cause stealing of data from sources between those instances.
   def withJobRunning[T](jobName: String)(action: => T): T = {
-    executeAndWaitForStart(jobName)
+    val executionResult = executeAndWaitForStart(jobName)
     try {
       action
     } finally {
-      cancel(jobName)
+      cancel(executionResult.getJobID)
     }
   }
 
   val defaultWaitForStatePatience: PatienceConfig = PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
 
-  def executeAndWaitForStart[T](jobName: String): Unit = {
+  def executeAndWaitForStart[T](jobName: String): JobExecutionResult = {
     val res = execute(jobName)
     waitForStart(res.getJobID, jobName)()
+    res
   }
 
   def waitForStart(jobID: JobID, name: String)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
@@ -105,7 +106,11 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
   }
 
   def cancel(name: String): Unit = {
-    flinkMiniCluster.getMiniCluster.listJobs().get().asScala.filter(_.getJobName == name).map(_.getJobId).foreach(flinkMiniCluster.getClusterClient.cancel)
+    flinkMiniCluster.getMiniCluster.listJobs().get().asScala.filter(_.getJobName == name).map(_.getJobId).foreach(jobId => cancel(jobId))
+  }
+
+  def cancel(jobId: JobID): Unit = {
+    flinkMiniCluster.getClusterClient.cancel(jobId)
   }
 
   def stop(): Unit = {
