@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "start": "PROXY_API_DOMAIN=http://localhost:8081/api webpack-dev-server",
-    "start-backend-demo": "PROXY_API_DOMAIN=https://demo.nussknacker.io/api webpack-dev-server",
+    "start-backend-demo": "PROXY_API_DOMAIN=https://staging.nussknacker.io/api webpack-dev-server",
     "build": "NODE_ENV=production webpack -p --progress && cp -R assets/icons/license dist",
     "test": "NODE_ENV=production ./node_modules/karma/bin/karma start --single-run"
   },

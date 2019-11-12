@@ -195,14 +195,10 @@ class Graph extends React.Component {
   }
 
   disconnectPreviousEdge = (previousEdge) => {
-    const nodeIds = this.extractNodeIds(previousEdge);
+    const nodeIds = previousEdge.split("-").slice(0, 2);
     if (this.graphContainsEdge(nodeIds)) {
       this.props.actions.nodesDisconnected(...nodeIds)
     }
-  }
-
-  extractNodeIds = (edge) => {
-    return edge.split("-").slice(0, 2)
   }
 
   graphContainsEdge(nodeIds) {
