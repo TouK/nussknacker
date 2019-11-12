@@ -90,10 +90,10 @@ val commonSettings =
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
-        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
-//        "-deprecation",
+        "-deprecation",
         "-encoding", "utf8",
-        "-Xfatal-warnings",
+        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
+//        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
@@ -101,8 +101,7 @@ val commonSettings =
         "-target:jvm-1.8"
       ),
       javacOptions := Seq(
-        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
-//        "-Xlint:deprecation",
+        "-Xlint:deprecation",
         "-Xlint:unchecked"
       ),
       assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
