@@ -9,7 +9,8 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
-import pl.touk.nussknacker.engine.flink.util.transformer.{AggregateTransformer, PreviousValueTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateTransformer
+import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
