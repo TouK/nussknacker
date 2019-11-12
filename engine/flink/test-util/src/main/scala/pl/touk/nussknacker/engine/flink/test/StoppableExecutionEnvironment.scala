@@ -57,8 +57,7 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
   }
 
   def withJobRunning[T](jobName: String)(action: => T): T = {
-    val res = execute(jobName)
-    waitForStart(res.getJobID, jobName)
+    executeAndWaitForStart(jobName)
     try {
       action
     } finally {
@@ -66,14 +65,23 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
     }
   }
 
-  private def patienceConfigForJobStart: PatienceConfig = PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
+  val defaultWaitForStatePatience: PatienceConfig = PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
 
-  private def waitForStart(jobID: JobID, name: String): Unit = {
+  def executeAndWaitForStart[T](jobName: String): Unit = {
+    val res = execute(jobName)
+    waitForStart(res.getJobID, jobName)()
+  }
+
+  def waitForStart(jobID: JobID, name: String)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
+    waitForJobState(jobID, name, expectedState = ExecutionState.RUNNING)(patience)
+  }
+
+  def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
     eventually {
       val executionVertices: Iterable[AccessExecutionJobVertex] = flinkMiniCluster.getMiniCluster.getExecutionGraph(jobID).get().getAllVertices.asScala.values
-      val notRunning = executionVertices.filterNot(_.getAggregateState != ExecutionState.RUNNING)
+      val notRunning = executionVertices.filterNot(_.getAggregateState != expectedState)
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getName} - ${rs.getAggregateState}")}")
-    }(patienceConfigForJobStart, implicitly[Position])
+    }(patience, implicitly[Position])
   }
 
   def execute(jobName: String): JobExecutionResult = {
