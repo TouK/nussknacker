@@ -254,8 +254,6 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       &.partly-hidden
         textarea
           height 100px !important
-      &.marked
-        border 2px solid markColor
       &.node-value-select
         .node-value-select__control
           background-color modalInputBkgColor
@@ -345,6 +343,9 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     &.node-editable
       .node-input
         border-bottom: 1px solid gray
+      .node-input-with-error
+        border 1px solid warningColor !important
+        border-radius 2px
     .testResultDownload
       padding-left: 15px
       font-size: 14
@@ -583,6 +584,13 @@ espPanelButton()
     font-size: 14px
     font-weight: 400
 
+.marked
+  border 2px solid markColor !important
+
+.read-only
+  background-color #444
+  font-weight 400;
+  font-size 14px;
 
 .fieldsControl
   .addRemoveButton
