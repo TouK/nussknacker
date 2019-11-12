@@ -8,14 +8,14 @@ import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.AccessExecutionJobVertex
 import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
-import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
+import org.apache.flink.runtime.testutils.{MiniClusterResource, MiniClusterResourceConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.test.util.MiniClusterWithClientResource
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
 import org.scalatest.Matchers
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 
 import scala.collection.JavaConverters._
@@ -23,12 +23,16 @@ import scala.collection.JavaConverters._
 
 object StoppableExecutionEnvironment {
 
-  def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int) : StoppableExecutionEnvironment= {
+  def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int): Configuration = {
     //blaaa this is needed to make queryableState work with two task manager instances
     configuration.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, 2)
     configuration.setString(QueryableStateOptions.PROXY_PORT_RANGE, s"$proxyPortLow-$proxyPortHigh")
+    configuration
+  }
 
-    new StoppableExecutionEnvironment(configuration)
+
+  def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int) : StoppableExecutionEnvironment= {
+    new StoppableExecutionEnvironment(addQueryableStateConfiguration(configuration, proxyPortLow, proxyPortHigh))
   }
 
 }
@@ -42,7 +46,14 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
     .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, 2))
     .setConfiguration(userFlinkClusterConfig)
     .build
-  private val flinkMiniCluster = new MiniClusterWithClientResource(config)
+
+  // For backward compatibility with Flink 1.6 we have here MiniClusterResource
+  // TODO after breaking compatibility with 1.6, replace flinkMiniCluster.getMiniCluster with flinkMiniCluster.getClusterClient
+  protected def prepareMiniClusterResource(): MiniClusterResource = {
+    new MiniClusterWithClientResource(config)
+  }
+
+  private val flinkMiniCluster: MiniClusterResource = prepareMiniClusterResource()
 
   {
     flinkMiniCluster.before()
@@ -110,7 +121,7 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
   }
 
   def cancel(jobId: JobID): Unit = {
-    flinkMiniCluster.getClusterClient.cancel(jobId)
+    flinkMiniCluster.getMiniCluster.cancelJob(jobId).get()
   }
 
   def stop(): Unit = {
