@@ -90,7 +90,7 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
       // It returns RUNNING even when some vertices are not started yet
       val executionVertices: Iterable[AccessExecutionJobVertex] = getMiniCluster.getExecutionGraph(jobID).get().getAllVertices.asScala.values
       // We compare strings because equals not works when you run tests on other flink version
-      val notRunning = executionVertices.filterNot(_.getAggregateState.toString != expectedState.toString)
+      val notRunning = executionVertices.filterNot(_.getAggregateState.toString == expectedState.toString)
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getName} - ${rs.getAggregateState}")}")
     }(patience, implicitly[Position])
   }
