@@ -56,6 +56,9 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) exten
     flinkMiniCluster.getMiniCluster.listJobs().get().asScala.filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId)
   }
 
+  // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
+  // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
+  // Running multiple parallel instances of job in one test class can cause stealing of data from sources between those instances.
   def withJobRunning[T](jobName: String)(action: => T): T = {
     executeAndWaitForStart(jobName)
     try {
