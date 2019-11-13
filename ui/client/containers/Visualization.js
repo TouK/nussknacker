@@ -259,6 +259,7 @@ class Visualization extends React.Component {
           loggedUser={loggedUser}
           capabilities={this.props.capabilities}
           isReady={this.state.dataResolved}
+          processName={this.props.processToDisplay ? this.props.processToDisplay.id : ""}
         />
 
         <UserRightPanel

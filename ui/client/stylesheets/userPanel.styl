@@ -147,6 +147,39 @@ sidenavMixin()
   div
     text-align center
 
-
 .thumbVertical
   background-color scrollbarColor
+
+.floating
+  position: fixed
+  top: menuBarHeight
+  transition left 0.5s ease, right 0.5s ease
+  z-index: 100
+  padding-top 10px
+
+  &.right
+    right: 0
+
+  &.is-opened
+    right: sidebarWidth
+
+  &.left
+    left: 0
+    &.is-opened
+      left: sidebarWidth
+
+.process-name
+  @extend .floating
+  font-family 'Open Sans'
+  font-size 16px
+  font-weight 600
+  color #3A3A3A
+  padding-left 25px
+
+.zoom-in-out
+  @extend .floating
+  padding-right 25px
+  display inline-flex
+
+.zoom
+    cursor: pointer

@@ -50,7 +50,10 @@ class UserRightPanel extends Component {
 
     return (
       <div id="espRightNav" className={cn('rightSidenav', { 'is-opened': isOpened })}>
-        <TogglePanel type="right" isOpened={isOpened} onToggle={actions.toggleRightPanel}/>
+        <div className={cn('zoom-in-out', 'right', { 'is-opened': isOpened})}>
+          <SvgDiv className={"zoom"} title={"zoom-in"} svgFile={`buttons/zoomin.svg`} onClick={this.props.zoomIn}/>
+          <SvgDiv className={"zoom"} title={"zoom-out"} svgFile={`buttons/zoomout.svg`} onClick={this.props.zoomOut}/>
+        </div>
         <SpinnerWrapper isReady={isReady}>
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
             <div className="panel-properties">
@@ -86,6 +89,7 @@ class UserRightPanel extends Component {
             }
           </Scrollbars>
         </SpinnerWrapper>
+        <TogglePanel type="right" isOpened={isOpened} onToggle={actions.toggleRightPanel}/>
       </div>
     )
   }
@@ -140,8 +144,6 @@ class UserRightPanel extends Component {
         {name: "import", visible: this.props.capabilities.write, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
         {name: "JSON", disabled: !this.props.canExport, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
         {name: "PDF", disabled: !this.props.canExport, onClick: this.exportProcessToPdf, icon: InlinedSvgs.pdf},
-        {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
-        {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
         {name: "archive", onClick: this.archiveProcess, disabled: this.isRunning(), icon: 'archive.svg', visible: this.props.capabilities.write}
       ]
     },
