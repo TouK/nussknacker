@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{Processor, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.migration.{FlatNodeMigration, ProcessMigration, ProcessMigrations}
+import pl.touk.nussknacker.engine.migration.{NodeMigration, ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 
 class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
@@ -23,7 +23,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
     7 -> Migration7
   ).filter(m => migrationsToAdd.contains(m._1))
 
-  object Migration1 extends FlatNodeMigration {
+  object Migration1 extends NodeMigration {
 
     override val description = "testMigration1"
 
@@ -46,7 +46,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
         StreamMetaData(Some(11))))
   }
 
-  object Migration3 extends FlatNodeMigration {
+  object Migration3 extends NodeMigration {
 
     override val description = "testMigration3"
 
@@ -58,7 +58,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
     }
   }
 
-  object Migration4 extends FlatNodeMigration {
+  object Migration4 extends NodeMigration {
 
     override val description = "testMigration4"
 
@@ -71,7 +71,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
   }
 
 
-  object Migration5 extends FlatNodeMigration {
+  object Migration5 extends NodeMigration {
 
     override val description = "testMigration5"
 
@@ -81,7 +81,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
   }
 
 
-  object Migration6 extends FlatNodeMigration {
+  object Migration6 extends NodeMigration {
 
     override val description = "testMigration6"
 
@@ -94,7 +94,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
   }
 
 
-  object Migration7 extends FlatNodeMigration {
+  object Migration7 extends NodeMigration {
 
     override val description = "testMigration7"
 

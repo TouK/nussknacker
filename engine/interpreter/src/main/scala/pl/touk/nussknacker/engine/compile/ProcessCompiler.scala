@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
-import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -59,6 +59,9 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
 
   override protected def factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
 
+  override def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessCompiler =
+    new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), definitions, objectParametersExpressionCompiler.withExpressionParsers(modify))
+
 }
 
 trait ProcessValidator extends LazyLogging {
@@ -76,6 +79,8 @@ trait ProcessValidator extends LazyLogging {
         CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
     }
   }
+
+  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessValidator
 
   protected def compile(process : EspProcess): CompilationResult[_]
 
@@ -141,7 +146,7 @@ protected trait ProcessCompilerBase {
 
   private def compile(ref: ExceptionHandlerRef)
                      (implicit metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, EspExceptionHandler]) = {
-    implicit val nodeId: NodeId = NodeId(ProcessCompilationError.ProcessNodeId)
+    implicit val nodeId: NodeId = NodeId(NodeTypingInfo.ExceptionHandlerNodeId)
     if (metaData.isSubprocess) {
       //FIXME: what should be here?
       (Map.empty, Valid(new EspExceptionHandler {

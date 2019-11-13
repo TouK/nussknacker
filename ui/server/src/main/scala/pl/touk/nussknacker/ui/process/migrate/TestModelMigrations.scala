@@ -60,7 +60,7 @@ class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], pr
         after.errors.processPropertiesErrors.diff(before.errors.processPropertiesErrors),
         after.errors.globalErrors.diff(before.errors.globalErrors)
       ),
-      ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)), Map()
+      ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)), Map.empty, Map.empty
     )
   }
 

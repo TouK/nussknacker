@@ -152,4 +152,9 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }
   }
 
+  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ExpressionCompiler =
+    new ExpressionCompiler(expressionParsers.map {
+      case (k, v) => k -> modify.lift(v).getOrElse(v)
+    })
+
 }

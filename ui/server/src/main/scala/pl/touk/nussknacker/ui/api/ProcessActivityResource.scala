@@ -16,9 +16,9 @@ import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, Pro
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessActivityResource(processActivityRepository: ProcessActivityRepository, val processRepository: FetchingProcessRepository)
+class ProcessActivityResource(processActivityRepository: ProcessActivityRepository, val processRepository: FetchingProcessRepository[Future])
                              (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] =
@@ -50,7 +50,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
   }
 }
 
-class AttachmentResources(attachmentService: ProcessAttachmentService, val processRepository: FetchingProcessRepository)
+class AttachmentResources(attachmentService: ProcessAttachmentService, val processRepository: FetchingProcessRepository[Future])
                          (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
   def route(implicit user: LoggedUser) : Route = {

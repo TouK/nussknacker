@@ -136,6 +136,14 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
     unionFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed(Typed[Dog], Typed[Cactus])
   }
 
+  test("determine if can be subclass for tagged value") {
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[String], "tag1")) shouldBe true
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[String], "tag2")) shouldBe false
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[Integer], "tag1")) shouldBe false
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(TypedClass[String]) shouldBe true
+    TypedClass[String].canBeSubclassOf(Typed.tagged(TypedClass[String], "tag1")) shouldBe false
+  }
+
   object ClassHierarchy {
 
     class Animal extends Serializable

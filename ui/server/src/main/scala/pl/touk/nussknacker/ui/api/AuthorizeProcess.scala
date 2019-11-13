@@ -7,7 +7,7 @@ import pl.touk.nussknacker.ui.security.api.Permission.Permission
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthorizeProcess(processRepository:  FetchingProcessRepository)
+class AuthorizeProcess(processRepository:  FetchingProcessRepository[Future])
                       (implicit executionContext: ExecutionContext) {
 
   def check(processId: ProcessId, permission: Permission, user:LoggedUser):Future[Boolean] = {
