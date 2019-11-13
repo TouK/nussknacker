@@ -536,10 +536,3 @@ export function handleHTTPError(error) {
     error: error
   }
 }
-
-export function copySelection(selection) {
-  return {
-    type: "COPY_SELECTION",
-    selection: selection
-  }
-}

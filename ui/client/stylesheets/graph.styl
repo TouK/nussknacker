@@ -5,10 +5,7 @@
   position: absolute
   margin-left: 15px
 
-
-
 .baseEspGraph
-  height: 100%
   overflow-y: overlay
   overflow-x: auto
   background-color: graphBkgColor
@@ -19,11 +16,11 @@
     height 100%
 
 #esp-graph
+  height: 100% !important
   @extend .baseEspGraph;
-  svg
-    padding: svgGraphPaddingTop svgGraphPaddingLeft
 
 #esp-graph-subprocess
+  height: 100%
   @extend .baseEspGraph;
   #svg-pan-zoom-controls
     transform: translate(0, 0px) scale(0.5)
@@ -36,7 +33,10 @@ node-highlight(strokeColor, backgroundFill)
     fill: backgroundFill
 
 .node-validation-error
-  node-highlight(#a94442, #f2dede)
+  node-highlight(#FF9A4D, #FCDCCA)
+
+.node-focused-with-validation-error
+  node-highlight(#0058a9, #f2dede)
 
 .node-grouping
   node-highlight(#5ba935, #caf2d6)
@@ -254,8 +254,6 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       &.partly-hidden
         textarea
           height 100px !important
-      &.marked
-        border 2px solid markColor
       &.node-value-select
         .node-value-select__control
           background-color modalInputBkgColor
@@ -310,7 +308,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     .node-input
       height: 40px
       common-node-input(20px)
-    .node-read-only-input
+    .read-only
       height: 40px
       padding: 0 20px
       border: none
@@ -345,6 +343,9 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     &.node-editable
       .node-input
         border-bottom: 1px solid gray
+      .node-input-with-error
+        border 1px solid warningColor !important
+        border-radius 2px
     .testResultDownload
       padding-left: 15px
       font-size: 14
@@ -457,7 +458,7 @@ espPanelButton()
   outline: none
 
 .error
-  background-color: red
+  background-color: #FBB03B
 
 .element
   cursor: pointer
@@ -583,6 +584,13 @@ espPanelButton()
     font-size: 14px
     font-weight: 400
 
+.marked
+  border 2px solid markColor !important
+
+.read-only
+  background-color #444
+  font-weight 400;
+  font-size 14px;
 
 .fieldsControl
   .addRemoveButton
@@ -600,3 +608,13 @@ espPanelButton()
       margin-right 5px
     &.fieldRemove
       width: 5%
+
+.branch-parameter-row
+  margin-top 7px
+  margin-bottom 8px
+  display flex
+  & .read-only
+    color #ccc
+    font-weight 400
+    font-size 14px
+    padding 10px 20px 0 20px

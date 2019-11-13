@@ -66,7 +66,7 @@ class NussknackerInitializer extends React.Component {
 
   httpErrorHandler = (error) => {
     this.setState({
-      error: _.get(this.errors, error.response.status, this.errors[HTTP_APPLICATION_CODE])
+      error: _.get(this.errors, _.get(error, 'response.status'), this.errors[HTTP_APPLICATION_CODE])
     })
   }
 

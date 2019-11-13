@@ -34,9 +34,14 @@ class UserRightPanel extends Component {
     zoomOut: PropTypes.func.isRequired,
     featuresSettings: PropTypes.object.isRequired,
     isReady: PropTypes.bool.isRequired,
-    copySelection: PropTypes.func.isRequired,
-    pasteSelection: PropTypes.func.isRequired,
-    cutSelection: PropTypes.func.isRequired
+    selectionActions: PropTypes.shape({
+      copy: PropTypes.func.isRequired,
+      canCopy: PropTypes.bool.isRequired,
+      cut: PropTypes.func.isRequired,
+      canCut: PropTypes.bool.isRequired,
+      paste: PropTypes.func.isRequired,
+      canPaste: PropTypes.bool.isRequired
+    }).isRequired
   };
 
   render() {
@@ -45,7 +50,10 @@ class UserRightPanel extends Component {
 
     return (
       <div id="espRightNav" className={cn('rightSidenav', { 'is-opened': isOpened })}>
-        <TogglePanel type="right" isOpened={isOpened} onToggle={actions.toggleRightPanel}/>
+        <div className={cn('zoom-in-out', 'right', { 'is-opened': isOpened})}>
+          <SvgDiv className={"zoom"} title={"zoom-in"} svgFile={`buttons/zoomin.svg`} onClick={this.props.zoomIn}/>
+          <SvgDiv className={"zoom"} title={"zoom-out"} svgFile={`buttons/zoomout.svg`} onClick={this.props.zoomOut}/>
+        </div>
         <SpinnerWrapper isReady={isReady}>
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
             <div className="panel-properties">
@@ -81,6 +89,7 @@ class UserRightPanel extends Component {
             }
           </Scrollbars>
         </SpinnerWrapper>
+        <TogglePanel type="right" isOpened={isOpened} onToggle={actions.toggleRightPanel}/>
       </div>
     )
   }
@@ -135,8 +144,6 @@ class UserRightPanel extends Component {
         {name: "import", visible: this.props.capabilities.write, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
         {name: "JSON", disabled: !this.props.canExport, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
         {name: "PDF", disabled: !this.props.canExport, onClick: this.exportProcessToPdf, icon: InlinedSvgs.pdf},
-        {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
-        {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
         {name: "archive", onClick: this.archiveProcess, disabled: this.isRunning(), icon: 'archive.svg', visible: this.props.capabilities.write}
       ]
     },
@@ -179,17 +186,17 @@ class UserRightPanel extends Component {
           },
           {
             name: "copy",
-            onClick: (event) =>  this.props.copySelection(event, true),
+            onClick: this.props.selectionActions.copy,
             icon: 'copy.svg',
             visible: this.props.capabilities.write,
-            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
+            disabled: !this.props.selectionActions.canCopy
           },
           {
             name: "cut",
-            onClick: (event) =>  this.props.cutSelection(event),
+            onClick: this.props.selectionActions.cut,
             icon: 'cut.svg',
             visible: this.props.capabilities.write,
-            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
+            disabled: !this.props.selectionActions.canCut
           },
           {
             name: "delete",
@@ -200,10 +207,10 @@ class UserRightPanel extends Component {
           },
           {
             name: "paste",
-            onClick: (event) =>  this.props.pasteSelection(event),
+            onClick: this.props.selectionActions.paste,
             icon: 'paste.svg',
             visible: this.props.capabilities.write,
-            disabled: !this.props.clipboard
+            disabled: !this.props.selectionActions.canPaste
           }
         ]
       },
@@ -423,7 +430,6 @@ function mapState(state) {
     featuresSettings: state.settings.featuresSettings,
     isSubprocess: _.get(state.graphReducer.processToDisplay, "properties.isSubprocess", false),
     businessView: state.graphReducer.businessView,
-    clipboard: state.graphReducer.clipboard,
     history: state.graphReducer.history
   };
 }

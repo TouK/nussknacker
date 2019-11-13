@@ -63,6 +63,7 @@ class Graph extends React.Component {
     this.cursorBehaviour();
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
     _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
+    this.updateDimensions()
   }
 
   updateDimensions() {
@@ -186,11 +187,23 @@ class Graph extends React.Component {
         this.handleInjectBetweenNodes(cellView)
       })
       .on("link:connect", (c) => {
+        this.disconnectPreviousEdge(c.model.id);
         this.props.actions.nodesConnected(
           c.sourceView.model.attributes.nodeData,
           c.targetView.model.attributes.nodeData
         )
       })
+  }
+
+  disconnectPreviousEdge = (previousEdge) => {
+    const nodeIds = previousEdge.split("-").slice(0, 2);
+    if (this.graphContainsEdge(nodeIds)) {
+      this.props.actions.nodesDisconnected(...nodeIds)
+    }
+  }
+
+  graphContainsEdge(nodeIds) {
+    return this.props.processToDisplay.edges.some(edge => edge.from === nodeIds[0] && edge.to === nodeIds[1]);
   }
 
   handleInjectBetweenNodes = (cellView) => {
@@ -324,20 +337,23 @@ class Graph extends React.Component {
     this.graph.getCells().forEach(cell => {
       this.unhighlightCell(cell, 'node-validation-error')
       this.unhighlightCell(cell, 'node-focused')
+      this.unhighlightCell(cell, 'node-focused-with-validation-error')
       this.unhighlightCell(cell, 'node-grouping')
-
-    })
-
-    _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes).forEach(name => {
-      this.highlightNode(name, 'node-validation-error')
     });
 
-    if (nodeToDisplay) {
-      this.highlightNode(nodeToDisplay.id, 'node-focused')
-    }
+    const invalidNodeIds = _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes)
+    const selectedNodeIds = selectionState || [];
+
+    invalidNodeIds.forEach(id =>
+      selectedNodeIds.includes(id) ?
+        this.highlightNode(id, 'node-focused-with-validation-error') : this.highlightNode(id, 'node-validation-error'));
 
     (groupingState || []).forEach(id => this.highlightNode(id, 'node-grouping'));
-    (selectionState || []).forEach(id => this.highlightNode(id, 'node-focused'));
+    selectedNodeIds.forEach(id => {
+      if (!invalidNodeIds.includes(id)) {
+        this.highlightNode(id, 'node-focused')
+      }
+    });
   }
 
   highlightCell(cell, className) {

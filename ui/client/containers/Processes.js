@@ -192,11 +192,18 @@ class Processes extends BaseProcesses {
                   />
                 </Td>
                 <Td column="edit" className="edit-column">
-                  <Glyphicon glyph="edit" title="Edit process"
-                             onClick={this.showProcess.bind(this, process)}/>
+                  <Glyphicon glyph="edit"
+                             title="Edit process"
+                             onClick={this.showProcess.bind(this, process)}
+                             className={"processes-table-row-icon"}
+                  />
                 </Td>
                 <Td column="metrics" className="metrics-column">
-                  <Glyphicon glyph="stats" title="Show metrics" onClick={this.showMetrics.bind(this, process)}/>
+                  <Glyphicon glyph="stats"
+                             title="Show metrics"
+                             onClick={this.showMetrics.bind(this, process)}
+                             className={"processes-table-row-icon"}
+                  />
                 </Td>
               </Tr>
             )
