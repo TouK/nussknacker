@@ -505,7 +505,7 @@ export class NodeDetailsContent extends React.Component {
               <div className={isMarked ? " marked" : ""}>
                 {
                   readOnly ?
-                    <div className="node-read-only-input" title={fieldValue}>{fieldValue}</div> :
+                    <div className="read-only" title={fieldValue}>{fieldValue}</div> :
                     <input
                       autoFocus={autofocus}
                       type="text"

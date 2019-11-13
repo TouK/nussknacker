@@ -22,16 +22,8 @@ const BranchParameters = (props) => {
                   const paramValue = node.branchParameters[edgeIndex].parameters[paramIndex]
                   const fieldName = `value-${branchParamDef.name}-${edge.from}`;
                   return (
-                    <div className="node-row movable-row" key={`${branchParamDef.name}-${edge.from}`}>
-                      <div className={"node-value fieldName" + (isMarked(path) ? " marked" : "")}>
-                        <input
-                          className="node-input"
-                          type="text"
-                          value={edge.from}
-                          placeholder="branchId"
-                          readOnly={true}
-                        />
-                      </div>
+                    <div className="branch-parameter-row movable-row" key={`${branchParamDef.name}-${edge.from}`}>
+                      <div className={"read-only"}>{edge.from}</div>
                       <div className={"node-value field"}>
                         <ExpressionSuggest
                           fieldName={fieldName}
