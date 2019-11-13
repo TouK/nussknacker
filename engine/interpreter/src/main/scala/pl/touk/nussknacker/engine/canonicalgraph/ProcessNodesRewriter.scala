@@ -11,12 +11,17 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, SubprocessInputDefinition, SubprocessOutput, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
 
-trait ProcessRewriter {
+import scala.reflect._
+
+/**
+  * Rewrites data of each node in process without changing the structure of process graph.
+  */
+trait ProcessNodesRewriter {
 
   def rewriteProcess(canonicalProcess: CanonicalProcess): CanonicalProcess = {
     implicit val metaData: MetaData = canonicalProcess.metaData
     canonicalProcess.copy(
-      exceptionHandlerRef = rewriteExpressionHandler.applyOrElse(canonicalProcess.exceptionHandlerRef, identity[ExceptionHandlerRef]),
+      exceptionHandlerRef = rewriteExceptionHandler(canonicalProcess.exceptionHandlerRef).getOrElse(canonicalProcess.exceptionHandlerRef),
       nodes = rewriteNodes(canonicalProcess.nodes))
   }
 
@@ -25,7 +30,6 @@ trait ProcessRewriter {
 
   private def rewriteSingleNode(node: CanonicalNode)
                                (implicit metaData: MetaData): CanonicalNode = {
-    def rewriteIfMatching[T <: NodeData](data: T): T = rewriteNode.applyOrElse(data, identity[T]).asInstanceOf[T]
     node match {
       case FlatNode(data) =>
         FlatNode(
@@ -50,26 +54,40 @@ trait ProcessRewriter {
     }
   }
 
-  protected def rewriteExpressionHandler(implicit metaData: MetaData): PartialFunction[ExceptionHandlerRef, ExceptionHandlerRef]
+  protected def rewriteExceptionHandler(exceptionHandlerRef: ExceptionHandlerRef)(implicit metaData: MetaData): Option[ExceptionHandlerRef]
 
-  protected def rewriteNode(implicit metaData: MetaData): PartialFunction[NodeData, NodeData]
+  protected def rewriteIfMatching[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): T = {
+    val rewritten = rewriteNode(data).getOrElse(data)
+    assume(rewritten.isInstanceOf[T], s"Result type of rewritten node's data: ${rewritten.getClass} is not a subtype of expected type: ${classTag[T].runtimeClass}")
+    rewritten
+  }
+
+  /**
+    * Rewrites node's data. Result type should be a subtype of T. Type parameter T depends on place in structure that is rewritten.
+    * See `rewriteSingleNode` for implementation details.
+    *
+    * @param data node's data
+    * @param metaData process metada
+    * @tparam T required common supertype for input `data` and result
+    * @return rewritten data that satisfy T
+    */
+  protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T]
 
 }
 
-object ProcessRewriter {
+object ProcessNodesRewriter {
 
-  def rewritingAllExpressions(rewrite: ExpressionIdWithMetaData => Expression => Expression): ProcessRewriter = {
+  def rewritingAllExpressions(rewrite: ExpressionIdWithMetaData => Expression => Expression): ProcessNodesRewriter = {
     val exprRewriter = new ExpressionRewriter {
       override protected def rewriteExpression(e: Expression)(implicit expressionIdWithMetaData: ExpressionIdWithMetaData): Expression =
         rewrite(expressionIdWithMetaData)(e)
     }
-    new ProcessRewriter {
-      override protected def rewriteExpressionHandler(implicit metaData: MetaData): PartialFunction[ExceptionHandlerRef, ExceptionHandlerRef] = {
-        case exceptionHandlerRef => exprRewriter.rewriteExpressionHandler(exceptionHandlerRef)
-      }
-      override protected def rewriteNode(implicit metaData: MetaData): PartialFunction[NodeData, NodeData] = {
-        case data => exprRewriter.rewriteNode(data)
-      }
+    new ProcessNodesRewriter {
+      override protected def rewriteExceptionHandler(exceptionHandlerRef: ExceptionHandlerRef)(implicit metaData: MetaData) =
+        Some(exprRewriter.rewriteExpressionHandler(exceptionHandlerRef))
+
+      override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData) =
+        Some(exprRewriter.rewriteNode(data))
     }
   }
 
@@ -82,8 +100,12 @@ trait ExpressionRewriter {
     exceptionHandlerRef.copy(parameters = rewriteParameters(exceptionHandlerRef.parameters))
   }
 
-  def rewriteNode(data: NodeData)(implicit metaData: MetaData): NodeData = {
+  def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): T = {
     implicit val nodeId: NodeId = NodeId(data.id)
+    rewriteNodeInternal(data).asInstanceOf[T]
+  }
+
+  private def rewriteNodeInternal(data: NodeData)(implicit metaData: MetaData, nodeId: NodeId): NodeData =
     data match {
       case n: node.Join =>
         n.copy(
@@ -122,7 +144,6 @@ trait ExpressionRewriter {
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
       case _: BranchEndData | _: Split | _: SubprocessInputDefinition | _: SubprocessOutputDefinition | _: SubprocessOutput => data
     }
-  }
 
   private def rewriteFields(list: List[Field])(implicit metaData: MetaData, nodeId: NodeId): List[Field] =
     list.map(f => f.copy(expression = rewriteExpressionInternal(f.expression, f.name)))

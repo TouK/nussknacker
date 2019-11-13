@@ -48,6 +48,13 @@ trait BaseDictTyper extends SpelDictTyper {
 
 }
 
+/**
+  * This is default dict typer which will be used in most case where we will have process with resolved labels to keys.
+  * It will be used in validations during:
+  * - import from json
+  * - deploy (also on engine's side)
+  * - migrations
+  */
 object KeysDictTyper extends BaseDictTyper {
   override protected def possibleValuesFromDict(dict: TypedDict): Iterable[String] = {
     dict match {
@@ -57,6 +64,9 @@ object KeysDictTyper extends BaseDictTyper {
   }
 }
 
+/**
+  * This is typer that will be used just before resolving labels to kesy on UI.
+  */
 object LabelsDictTyper extends BaseDictTyper {
   override protected def possibleValuesFromDict(dict: TypedDict): Iterable[String] = {
     dict match {

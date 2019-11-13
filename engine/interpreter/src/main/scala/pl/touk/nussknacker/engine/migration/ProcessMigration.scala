@@ -1,9 +1,12 @@
 package pl.touk.nussknacker.engine.migration
 
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessRewriter}
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessNodesRewriter}
 import pl.touk.nussknacker.engine.graph.exceptionhandler
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
+
+import scala.reflect.ClassTag
 
 /**
   * TODO: should this be in API??
@@ -34,16 +37,20 @@ trait ProcessMigrations {
 
 }
 
-trait FlatNodeMigration extends ProcessMigration {
+/**
+  * It migrates data of each node in process without changing the structure of process graph.
+  */
+trait NodeMigration extends ProcessMigration {
 
   def migrateNode(metaData: MetaData): PartialFunction[NodeData, NodeData]
 
   override def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess = {
-    val rewriter = new ProcessRewriter {
-      override protected def rewriteExpressionHandler(implicit metaData: MetaData):
-      PartialFunction[exceptionhandler.ExceptionHandlerRef, exceptionhandler.ExceptionHandlerRef] = PartialFunction.empty
+    val rewriter = new ProcessNodesRewriter {
+      override protected def rewriteExceptionHandler(exceptionHandlerRef: ExceptionHandlerRef)(implicit metaData: MetaData): Option[ExceptionHandlerRef] =
+        None
 
-      override protected def rewriteNode(implicit metaData: MetaData): PartialFunction[NodeData, NodeData] = migrateNode(metaData)
+      override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
+        migrateNode(metaData).lift(data).map(_.asInstanceOf[T])
     }
     rewriter.rewriteProcess(canonicalProcess)
   }

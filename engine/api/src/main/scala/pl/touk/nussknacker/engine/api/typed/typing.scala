@@ -66,6 +66,7 @@ object typing {
 
   }
 
+  // FIXME: This static/dynamic api will change in near future. At the end we want to have only TypedDict in api and static/dynamic will be only an implementation details
   case class StaticTypedDict(dictId: String, valueType: SingleTypingResult, labelByKey: Map[String, String]) extends TypedDict {
 
     lazy val keysByLabel: Map[String, String] = labelByKey.map(_.swap)

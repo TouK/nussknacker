@@ -33,7 +33,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
 
-  // Unfortunately we can't sue scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
+  // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
   case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None,
                           value3: BigDecimal = 1, intAsAny: Any = 1, enumValue: SimpleJavaEnum = SimpleJavaEnum.ONE)
 
