@@ -63,6 +63,7 @@ class Graph extends React.Component {
     this.cursorBehaviour();
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
     _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
+    this.updateDimensions()
   }
 
   updateDimensions() {
@@ -336,20 +337,23 @@ class Graph extends React.Component {
     this.graph.getCells().forEach(cell => {
       this.unhighlightCell(cell, 'node-validation-error')
       this.unhighlightCell(cell, 'node-focused')
+      this.unhighlightCell(cell, 'node-focused-with-validation-error')
       this.unhighlightCell(cell, 'node-grouping')
-
-    })
-
-    _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes).forEach(name => {
-      this.highlightNode(name, 'node-validation-error')
     });
 
-    if (nodeToDisplay) {
-      this.highlightNode(nodeToDisplay.id, 'node-focused')
-    }
+    const invalidNodeIds = _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes)
+    const selectedNodeIds = selectionState || [];
+
+    invalidNodeIds.forEach(id =>
+      selectedNodeIds.includes(id) ?
+        this.highlightNode(id, 'node-focused-with-validation-error') : this.highlightNode(id, 'node-validation-error'));
 
     (groupingState || []).forEach(id => this.highlightNode(id, 'node-grouping'));
-    (selectionState || []).forEach(id => this.highlightNode(id, 'node-focused'));
+    selectedNodeIds.forEach(id => {
+      if (!invalidNodeIds.includes(id)) {
+        this.highlightNode(id, 'node-focused')
+      }
+    });
   }
 
   highlightCell(cell, className) {
