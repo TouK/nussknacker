@@ -63,6 +63,7 @@ class Graph extends React.Component {
     this.cursorBehaviour();
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
     _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
+    this.updateDimensions()
   }
 
   updateDimensions() {
