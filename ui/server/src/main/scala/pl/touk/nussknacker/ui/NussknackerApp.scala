@@ -6,16 +6,19 @@ import _root_.cors.CorsSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.Materializer
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
+import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
+import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
@@ -23,12 +26,10 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
+import pl.touk.nussknacker.ui.security.api._
+import pl.touk.nussknacker.ui.security.ssl._
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
-import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
-import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
-import pl.touk.nussknacker.ui.security.api.AuthenticatorProvider
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 
@@ -103,6 +104,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
     val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
     val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver, customProcessNodesValidators)
+    val processResolving = new UIProcessResolving(processValidation, ProcessDictSubstitutor())
 
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)
@@ -130,6 +132,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           jobStatusService = jobStatusService,
           processActivityRepository = processActivityRepository,
           processValidation = processValidation,
+          processResolving = processResolving,
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
           processAuthorizer = processAuthorizer
@@ -137,8 +140,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, processRepository),
         ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
-          processAuthorizer, processRepository, featureTogglesConfig),
-        new ValidationResources(processValidation),
+          processAuthorizer, processRepository, featureTogglesConfig, processResolving),
+        new ValidationResources(processResolving),
         new DefinitionResources(modelData, subprocessRepository, typesForCategories),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(typesForCategories),

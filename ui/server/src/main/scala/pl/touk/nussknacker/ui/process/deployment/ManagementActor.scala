@@ -24,7 +24,7 @@ import scala.util.{Failure, Success}
 object ManagementActor {
   def props(environment: String,
             managers: Map[ProcessingType, ProcessManager],
-            processRepository: FetchingProcessRepository,
+            processRepository: FetchingProcessRepository[Future],
             deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver)(implicit context: ActorRefFactory): Props = {
     Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver)
   }
@@ -32,7 +32,7 @@ object ManagementActor {
 }
 
 class ManagementActor(environment: String, managers: Map[ProcessingType, ProcessManager],
-                      processRepository: FetchingProcessRepository,
+                      processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver) extends FailurePropagatingActor with LazyLogging {
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()

@@ -7,7 +7,7 @@ import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.typed.ServiceReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
@@ -294,6 +294,11 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         ).toValidatedNel
     }
   }
+
+
+  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): PartSubGraphCompiler =
+    new PartSubGraphCompiler(classLoader, expressionCompiler.withExpressionParsers(modify), expressionConfig, services)
+
 }
 
 object PartSubGraphCompiler {

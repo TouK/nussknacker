@@ -53,9 +53,6 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 }
 
-
-
-
 @JsonCodec case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
                                         exceptionHandler: ExceptionHandlerRef,
                                         isSubprocess: Boolean = false,

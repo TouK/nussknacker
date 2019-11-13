@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeData],
-                              val processRepository: FetchingProcessRepository,
+                              val processRepository: FetchingProcessRepository[Future],
                               jobStatusService: JobStatusService,
                               val processAuthorizer:AuthorizeProcess)
                              (implicit val ec: ExecutionContext)

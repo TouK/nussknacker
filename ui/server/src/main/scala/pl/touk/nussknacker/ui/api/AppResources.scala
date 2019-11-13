@@ -23,7 +23,7 @@ import scala.util.control.NonFatal
 
 class AppResources(config: Config,
                    modelData: Map[ProcessingType, ModelData],
-                   processRepository: FetchingProcessRepository,
+                   processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with SecurityDirectives {
