@@ -67,18 +67,18 @@ object TestFactory extends TestPermissions{
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
   def asAdmin(route: RouteWithUser): Route = {
-    route.route(adminUser())
+    route.securedRoute(adminUser())
   }
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
-    route.route(user("userId", permissions))
+    route.securedRoute(user("userId", permissions))
 
   //FIXME: update
   def withAllPermissions(route: RouteWithUser): Route = withPermissions(route, testPermissionAll)
 
-  def withAdminPermissions(route: RouteWithUser): Route = route.route(adminUser("adminId"))
+  def withAdminPermissions(route: RouteWithUser): Route = route.securedRoute(adminUser("adminId"))
 
-  def withoutPermissions(route: RouteWithoutUser): Route = route.route()
+  def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
   //FIXME: update
   def user(userName: String = "userId", testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(userName, testPermissions)

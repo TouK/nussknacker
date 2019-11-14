@@ -173,8 +173,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).route(),
-      appResources.route()
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).publicRoute(),
+      appResources.publicRoute()
     ) ++ authenticator.routes
 
     val webResources = new WebResources(config.getString("http.publicPath"))
@@ -185,7 +185,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
       } ~ authenticator.directive { user =>
         pathPrefix("api") {
-          apiResourcesWithAuthentication.map(_.route(user)).reduce(_ ~ _)
+          apiResourcesWithAuthentication.map(_.securedRoute(user)).reduce(_ ~ _)
         }
       }
     }

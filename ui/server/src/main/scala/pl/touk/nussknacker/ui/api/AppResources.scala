@@ -29,7 +29,7 @@ class AppResources(config: Config,
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
   //Public app resources
-  def route(): Route = pathPrefix("app") {
+  def publicRoute(): Route = pathPrefix("app") {
     path("buildInfo") {
       get {
         complete {
@@ -44,7 +44,7 @@ class AppResources(config: Config,
   }
 
   //Secure app resources
-  def route(implicit user: LoggedUser): Route =
+  def securedRoute(implicit user: LoggedUser): Route =
     pathPrefix("app") {
       path("healthCheck") {
         get {

@@ -24,7 +24,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller
 
-  def route(implicit user: LoggedUser) : Route = {
+  def securedRoute(implicit user: LoggedUser) : Route = {
     path("processes" / Segment / "activity") { processName =>
       (get & processId(processName)) { processId =>
         complete {
@@ -53,7 +53,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
 class AttachmentResources(attachmentService: ProcessAttachmentService, val processRepository: FetchingProcessRepository[Future])
                          (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
-  def route(implicit user: LoggedUser) : Route = {
+  def securedRoute(implicit user: LoggedUser) : Route = {
     path("processes" / Segment / LongNumber / "activity" / "attachments") { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         fileUpload("attachment") { case (metadata, byteSource) =>

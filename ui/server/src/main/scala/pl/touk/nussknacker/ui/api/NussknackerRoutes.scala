@@ -4,9 +4,9 @@ import akka.http.scaladsl.server.Route
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 trait RouteWithUser {
-  def route(implicit user: LoggedUser): Route
+  def securedRoute(implicit user: LoggedUser): Route
 }
 
 trait RouteWithoutUser {
-  def route(): Route
+  def publicRoute(): Route
 }
