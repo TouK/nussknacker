@@ -28,7 +28,7 @@ class AppResources(config: Config,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
-  //Public app resources
+  //We use duplicated pathPrefix("app") code - look at comment in NussknackerApp where routes are created
   def publicRoute(): Route = pathPrefix("app") {
     path("buildInfo") {
       get {
@@ -43,7 +43,6 @@ class AppResources(config: Config,
     }
   }
 
-  //Secure app resources
   def securedRoute(implicit user: LoggedUser): Route =
     pathPrefix("app") {
       path("healthCheck") {
