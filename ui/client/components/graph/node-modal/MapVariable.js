@@ -6,6 +6,7 @@ import React from "react";
 import _ from "lodash";
 import Fields from "./Fields";
 import {errorValidator, notEmptyValidator} from "../../../common/Validators";
+import NodeFields from "../NodeFields";
 
 const MapVariable = (props) => {
 
@@ -24,7 +25,7 @@ const MapVariable = (props) => {
         onChange={onChange}
         isMarked={isMarked("id")}
         readOnly={readOnly}
-        validators={[notEmptyValidator, errorValidator(errors, "id")]}
+        validators={[notEmptyValidator, errorValidator(errors, NodeFields.id)]}
       />
       <Input
         label="Variable Name"
@@ -33,7 +34,7 @@ const MapVariable = (props) => {
         onChange={onChange}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
-        validators={[notEmptyValidator, errorValidator(errors, "varName")]}
+        validators={[notEmptyValidator, errorValidator(errors, NodeFields.varName)]}
       />
       <Fields
         label="Fields"
@@ -71,7 +72,7 @@ MapVariable.defaultProps = {
 };
 
 MapVariable.availableFields = (node) => {
-  return ["id", "varName"]
+  return [NodeFields.id, NodeFields.varName]
 }
 
 export default MapVariable;

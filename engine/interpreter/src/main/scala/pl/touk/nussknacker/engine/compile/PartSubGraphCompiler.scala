@@ -66,7 +66,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         compiledNexts.andThen(nx => toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx)), Map.empty))
 
       case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
-        val (expressionTyping, validatedExpression) = compile(expression, None, ctx, Typed[Boolean])
+        val (expressionTyping, validatedExpression) = compile(expression, Some("Expression"), ctx, Typed[Boolean])
         CompilationResult.map3(toCompilationResult(validatedExpression, expressionTyping.toDefaultExpressionTypingInfoEntry.toMap), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
           (expr, next, nextFalse) =>
             compiledgraph.node.Filter(id = id,
@@ -76,7 +76,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
             isDisabled = f.isDisabled.contains(true)))
 
       case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
-        val (expressionTyping, validatedExpression) = compile(expression, None, ctx, Unknown)
+        val (expressionTyping, validatedExpression) = compile(expression, Some("Expression"), ctx, Unknown)
         val (newCtx, combinedValidatedExpression) = withVariableCombined(ctx, exprVal, expressionTyping.typingResult, validatedExpression)
         CompilationResult.map3(toCompilationResult(combinedValidatedExpression, expressionTyping.toDefaultExpressionTypingInfoEntry.toMap), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
           (realCompiledExpression, cases, next) => {
@@ -110,7 +110,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingResult.expressionsTypingInfo)
       case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
         val (expressionTypingInfoEntry, validatedOptionalExpression) = optionalExpression.map { oe =>
-          val (expressionTyping, validatedExpression) = compile(oe, None, ctx, Unknown)
+          val (expressionTyping, validatedExpression) = compile(oe, Some("Expression"), ctx, Unknown)
           (expressionTyping.toDefaultExpressionTypingInfoEntry, validatedExpression.map(expr => Some((expr, expressionTyping.typingResult))))
         }.getOrElse {
           (None, Valid(None))
@@ -136,7 +136,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
     data match {
       case graph.node.Variable(id, varName, expression, _) =>
-        val (expressionTypingResult, validatedExpression) = compile(expression, None, ctx, Unknown)
+        val (expressionTypingResult, validatedExpression) = compile(expression, Some("Expression"), ctx, Unknown)
         val (newCtx, combinedValidatedExpression) = withVariableCombined(ctx, varName, expressionTypingResult.typingResult, validatedExpression)
 
         CompilationResult.map2(toCompilationResult(combinedValidatedExpression, expressionTypingResult.toDefaultExpressionTypingInfoEntry.toMap), compile(next, newCtx)) { (compiled, compiledNext) =>
@@ -239,7 +239,8 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   private def compile(n: splittednode.Case, ctx: ValidationContext)
                      (implicit nodeId: NodeId): CompilationResult[compiledgraph.node.Case] =
-    CompilationResult.map2(CompilationResult(compile(n.expression, None, ctx, Typed[Boolean])._2), compile(n.node, ctx))((expr, next) => compiledgraph.node.Case(expr, next))
+    CompilationResult.map2(CompilationResult(compile(n.expression, Some("Expression"), ctx, Typed[Boolean])._2), compile(n.node, ctx))((expr, next) => compiledgraph.node.Case(expr, next))
+
 
   private def compile(field: graph.variable.Field, ctx: ValidationContext)
                      (implicit nodeId: NodeId): (FieldExpressionTypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.variable.Field]) = {

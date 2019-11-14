@@ -5,6 +5,7 @@ import ExpressionInput from "./ExpressionInput";
 import React from "react";
 import _ from "lodash";
 import {errorValidator, notEmptyValidator} from "../../../common/Validators";
+import NodeFields from "../NodeFields";
 
 const Variable = (props) => {
 
@@ -18,7 +19,7 @@ const Variable = (props) => {
         path="id"
         onChange={onChange}
         isMarked={isMarked("id")} readOnly={readOnly}
-        validators={[notEmptyValidator, errorValidator(errors, "id")]}
+        validators={[notEmptyValidator, errorValidator(errors, NodeFields.id)]}
       />
       <Input
         label="Variable Name"
@@ -27,7 +28,7 @@ const Variable = (props) => {
         onChange={onChange}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
-        validators={[notEmptyValidator, errorValidator(errors, "varName")]}
+        validators={[notEmptyValidator, errorValidator(errors, NodeFields.varName)]}
       />
       <ExpressionInput
         name="expression"
@@ -36,7 +37,7 @@ const Variable = (props) => {
         path="value.expression"
         onChange={onChange}
         readOnly={readOnly}
-        validators={[notEmptyValidator, errorValidator(errors, "expression")]}
+        validators={[notEmptyValidator, errorValidator(errors, NodeFields.Expression)]}
       />
       <Textarea
         label="Description"
@@ -61,6 +62,6 @@ Variable.defaultProps = {
   readOnly: false
 };
 
-Variable.availableFields = ["id", "varName", "expression"]
+Variable.availableFields = [NodeFields.id, NodeFields.varName, NodeFields.Expression]
 
 export default Variable;

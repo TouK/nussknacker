@@ -20,6 +20,7 @@ import Variable from "./node-modal/Variable";
 import JoinDef from "./node-modal/JoinDef"
 import {allValid, errorValidator, notEmptyValidator} from "../../common/Validators";
 import ValidationLabels from "../modals/ValidationLabels";
+import NodeFields from "./NodeFields";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -146,7 +147,7 @@ export class NodeDetailsContent extends React.Component {
           <div>
             {
               //TODO: this is a bit clumsy. we should use some metadata, instead of relying on what comes in diagram
-              this.props.node.endResult ? this.createExpressionField("expression", "Expression", "endResult", [notEmptyValidator, errorValidator(fieldErrors, "expression")]) : null
+              this.props.node.endResult ? this.createExpressionField("expression", "Expression", "endResult", [notEmptyValidator, errorValidator(fieldErrors, NodeFields.Expression)]) : null
             }
             {this.createField("checkbox", "Disabled", "isDisabled")}
           </div>
@@ -155,7 +156,7 @@ export class NodeDetailsContent extends React.Component {
         //FIXME: currently there is no way to add new parameters or display them correctly
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "Id")])}
+            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.id)])}
             <div className="node-row">
               {this.renderFieldLabel("Parameters")}
               <div className="node-value">
@@ -183,16 +184,16 @@ export class NodeDetailsContent extends React.Component {
       case 'SubprocessOutputDefinition':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createField("input", "Output name", "outputName", false, [notEmptyValidator, errorValidator(fieldErrors, "outputName")])}
+            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.id)])}
+            {this.createField("input", "Output name", "outputName", false, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.outputName)])}
             {this.descriptionField()}
           </div>
         )
       case 'Filter':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createExpressionField("expression", "Expression", "expression", [notEmptyValidator, errorValidator(fieldErrors, "expression")])}
+            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.id)])}
+            {this.createExpressionField("expression", "Expression", "expression", [notEmptyValidator, errorValidator(fieldErrors, NodeFields.Expression)])}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             {this.descriptionField()}
           </div>
@@ -201,7 +202,7 @@ export class NodeDetailsContent extends React.Component {
       case 'Processor':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.id)])}
             {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
@@ -210,7 +211,7 @@ export class NodeDetailsContent extends React.Component {
                 </div>
               )
             })}
-            {this.props.node.type === 'Enricher' ? this.createField("input", "Output", "output", false, [notEmptyValidator, errorValidator(fieldErrors, "output")]) : null}
+            {this.props.node.type === 'Enricher' ? this.createField("input", "Output", "output", false, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.output)]) : null}
             {this.props.node.type === 'Processor' ? this.createField("checkbox", "Disabled", "isDisabled") : null}
             {this.descriptionField()}
           </div>
@@ -218,7 +219,7 @@ export class NodeDetailsContent extends React.Component {
       case 'SubprocessInput':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.id)])}
             {this.createReadonlyField("input", "Subprocess Id", "ref.id")}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
@@ -245,10 +246,10 @@ export class NodeDetailsContent extends React.Component {
       case 'CustomNode':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.id)])}
 
             {
-              this.showOutputVar && this.createField("input", "Output", "outputVar", false, [notEmptyValidator, errorValidator(fieldErrors, "outputVar")], "outputVar", false, null)
+              this.showOutputVar && this.createField("input", "Output", "outputVar", false, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.Output)], "outputVar", false, null)
             }
             {this.createReadonlyField("input", "Node type", "nodeType")}
             {NodeUtils.nodeType(this.props.node) === 'Join' &&
@@ -291,16 +292,16 @@ export class NodeDetailsContent extends React.Component {
       case 'Switch':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createExpressionField("expression", "Expression", "expression", [notEmptyValidator, errorValidator(fieldErrors, "expression")])}
-            {this.createField("input", "exprVal", "exprVal", false, [notEmptyValidator, errorValidator(fieldErrors, "exprVal")])}
+            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.id)])}
+            {this.createExpressionField("expression", "Expression", "expression", [notEmptyValidator, errorValidator(fieldErrors, NodeFields.Expression)])}
+            {this.createField("input", "exprVal", "exprVal", false, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.exprVal)])}
             {this.descriptionField()}
           </div>
         )
       case 'Split':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, NodeFields.id)])}
             {this.descriptionField()}
           </div>
         )
@@ -608,43 +609,43 @@ export class NodeDetailsContent extends React.Component {
   availableFields = () => {
     switch (NodeUtils.nodeType(this.state.editedNode)) {
       case 'Source': {
-        const commonFields = ["id"]
+        const commonFields = [NodeFields.id]
         return _.concat(commonFields, this.state.editedNode.ref.parameters.map(param => param.name))
       }
       case 'Sink': {
-        const commonFields = ["id", "expression"]
+        const commonFields = [NodeFields.id, NodeFields.Expression]
         return _.concat(commonFields, this.state.editedNode.ref.parameters.map(param => param.name))
       }
       case 'SubprocessInputDefinition': {
-        return ["id"]
+        return [NodeFields.id]
       }
       case 'SubprocessOutputDefinition':
-        return ["id", "outputName"]
+        return [NodeFields.id, NodeFields.Output]
       case 'Filter':
-        return ["id", "expression"]
+        return [NodeFields.id, NodeFields.Expression]
       case 'Enricher':
-        const commonFields = ["id", "output"]
+        const commonFields = [NodeFields.id, NodeFields.Output]
         const paramFields = this.state.editedNode.service.parameters.map(param => param.name);
         return _.concat(commonFields, paramFields)
       case 'Processor': {
-        const commonFields = ["id"]
+        const commonFields = [NodeFields.id]
         const paramFields = this.state.editedNode.service.parameters.map(param => param.name);
         return _.concat(commonFields, paramFields)
       }
       case 'SubprocessInput': {
-        const commonFields = ["id"]
+        const commonFields = [NodeFields.id]
         const paramFields = this.state.editedNode.ref.parameters.map(param => param.name);
         return _.concat(commonFields, paramFields)
       }
       case 'Join': {
-        const commonFields = ["id", "outputVar"]
+        const commonFields = [NodeFields.id, NodeFields.Output]
         const paramFields = this.state.editedNode.parameters.map(param => param.name)
         const branchParamsFields = this.state.editedNode.branchParameters
           .flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
         return _.concat(commonFields, paramFields, branchParamsFields)
       }
       case 'CustomNode': {
-        const commonFields = ["id", "outputVar"]
+        const commonFields = [NodeFields.id, NodeFields.Output]
         const paramFields = this.state.editedNode.parameters.map(param => param.name)
         return _.concat(commonFields, paramFields)
       }
@@ -653,9 +654,9 @@ export class NodeDetailsContent extends React.Component {
       case 'Variable':
         return Variable.availableFields
       case 'Switch':
-        return ["id", "expression", "exprVal"]
+        return [NodeFields.id, , NodeFields.Expression]
       case 'Split':
-        return ["id"]
+        return [NodeFields.id]
       case 'Properties': {
         const commonFields = "subprocessVersions"
         const fields = this.props.node.typeSpecificProperties.type === "StreamMetaData" ?
