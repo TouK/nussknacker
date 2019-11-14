@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
@@ -26,7 +26,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Scala
 
   import pl.touk.nussknacker.engine.kafka.KafkaUtils._
 
-  override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaBinaryConfig.scalaBinaryVersion}/managementSample.jar"
+  override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
   test("deploy process in running flink") {
     val processId = "runningFlink"

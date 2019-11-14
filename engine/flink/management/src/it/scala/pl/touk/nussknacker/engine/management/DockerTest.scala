@@ -18,14 +18,14 @@ import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
-import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
 trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   self: Suite =>
 
-  private val flinkEsp = s"flinkesp:1.7.2-scala_${ScalaBinaryConfig.scalaBinaryVersion}"
+  private val flinkEsp = s"flinkesp:1.7.2-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 
@@ -43,7 +43,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
 
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "docker-entrypoint.sh").foreach { file =>
       val resource = IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file"))
-      val withVersionReplaced = resource.replace("${scala.binary.version}", ScalaBinaryConfig.scalaBinaryVersion)
+      val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
       FileUtils.writeStringToFile(new File(dirFile, file), withVersionReplaced)
     }
 

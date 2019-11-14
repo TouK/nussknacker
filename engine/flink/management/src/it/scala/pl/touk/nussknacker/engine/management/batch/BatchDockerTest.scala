@@ -6,7 +6,7 @@ import com.whisk.docker.{DockerContainer, VolumeMapping}
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkBatchProcessManagerProvider}
-import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 trait BatchDockerTest extends DockerTest { self: Suite =>
 
@@ -27,5 +27,5 @@ trait BatchDockerTest extends DockerTest { self: Suite =>
   }
 
   override protected def classPath: String
-    = s"./engine/flink/management/batch_sample/target/scala-${ScalaBinaryConfig.scalaBinaryVersion}/managementBatchSample.jar"
+    = s"./engine/flink/management/batch_sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementBatchSample.jar"
 }

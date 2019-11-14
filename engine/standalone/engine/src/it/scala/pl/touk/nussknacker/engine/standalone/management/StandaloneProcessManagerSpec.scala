@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Matchers {
 
@@ -22,7 +22,7 @@ class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Match
 
   test("it should parse test data and test standalone process") {
 
-    val config = ScalaBinaryConfig.configWithScalaBinaryVersion(ConfigFactory.parseResources("standalone.conf"))
+    val config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("standalone.conf"))
     val modelData = StandaloneProcessManagerProvider
       .defaultTypeConfig(config).toModelData
 

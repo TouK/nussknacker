@@ -12,13 +12,13 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.Await
 
 class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
 
-  private val classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaBinaryConfig.scalaBinaryVersion}/managementSample.jar"
+  private val classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
   private val config = ConfigFactory.load()
     .withValue("processConfig.kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:1234"))

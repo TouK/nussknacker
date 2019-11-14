@@ -7,7 +7,7 @@ import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStreamingProcessManagerProvider}
-import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 

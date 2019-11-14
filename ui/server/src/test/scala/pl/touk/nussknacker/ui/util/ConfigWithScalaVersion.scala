@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.util
 
 
 import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 object ConfigWithScalaVersion {
 
-  val config: Config = ScalaBinaryConfig.configWithScalaBinaryVersion(ConfigFactory.parseResources("ui.conf"))
+  val config: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("ui.conf"))
 }

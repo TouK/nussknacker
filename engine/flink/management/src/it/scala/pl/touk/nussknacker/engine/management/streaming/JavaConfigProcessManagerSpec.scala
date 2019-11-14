@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.config.ScalaBinaryConfig
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
 class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with StreamingDockerTest {
 
-  override protected def classPath: String = s"./engine/flink/management/java_sample/target/scala-${ScalaBinaryConfig.scalaBinaryVersion}/managementJavaSample.jar"
+  override protected def classPath: String = s"./engine/flink/management/java_sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementJavaSample.jar"
 
   test("deploy java process in running flink") {
     val processId = "runningJavaFlink"
