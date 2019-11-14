@@ -35,20 +35,21 @@ export default class ExpressionSuggester {
     const variableNames = _.keys(variables)
     const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) })
     const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable.toLowerCase(), value.toLowerCase()) })
+    let result;
     if (variableAlreadySelected && focusedClazz) {
       const currentType = this._getTypeInfo(focusedClazz)
       const inputValue = this._justTypedProperty(value)
       const allowedMethodList = this._getAllowedMethods(currentType)
-      return inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
+      result = inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
     } else if (variableNotSelected && !_.isEmpty(value)) {
       const allVariablesWithClazzRefs = _.map(variables, (val, key) => {
         return {'methodName': key, 'refClazz': val}
       })
-      return this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
+      result = this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
+    } else {
+      result = []
     }
-    else {
-      return []
-    }
+    return new Promise((resolve, reject) => resolve(result))
   }
 
   _getAllowedMethods(currentType) {
@@ -67,9 +68,9 @@ export default class ExpressionSuggester {
     })
   }
 
-  _filterSuggestionsForInput = (methods, inputValue) => {
-    return _.filter(methods, (method) => {
-      return _.includes(method.methodName.toLowerCase(), inputValue.toLowerCase())
+  _filterSuggestionsForInput = (variables, inputValue) => {
+    return _.filter(variables, (variable) => {
+      return _.includes(variable.methodName.toLowerCase(), inputValue.toLowerCase())
     })
   }
 
