@@ -4,7 +4,7 @@ import ValidationLabels from "../../modals/ValidationLabels";
 import {allValid} from "../../../common/Validators";
 
 const Input = (props) => {
-    const {label, path, value, onChange, isMarked, readOnly, validators} = props;
+    const {label, path, value, onChange, isMarked, readOnly, isComparison, validators} = props;
 
     return (
         <div className="node-row">
@@ -13,12 +13,12 @@ const Input = (props) => {
                 <input
                     key={label}
                     type="text"
-                    className={allValid(validators, value) ? "node-input" : "node-input node-input-with-error"}
+                    className={isComparison || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"}
                     value={value}
                     onChange={(event) => onChange(path, event.target.value)}
                     readOnly={readOnly}
                 />
-                <ValidationLabels validators={validators} values={[value]}/>
+                {!isComparison && <ValidationLabels validators={validators} values={[value]}/>}
             </div>
         </div>
     );

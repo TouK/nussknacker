@@ -150,6 +150,7 @@ class CompareVersionsDialog extends React.Component {
 
   printNode(node, pathsToMark) {
     return node ? (<NodeDetailsContent isEditMode={false}
+                                       isComparison={true}
                                        node={node}
                                        pathsToMark={pathsToMark}
                                        onChange={() => {}} />) :
@@ -159,6 +160,7 @@ class CompareVersionsDialog extends React.Component {
   printEdge(edge, pathsToMark) {
     return edge ? (<EdgeDetailsContent edge={edge}
                                        readOnly={true}
+                                       isComparison={true}
                                        changeEdgeTypeValue={() => {}}
                                        updateEdgeProp={() => {}}
                                        pathsToMark={pathsToMark} />) :
@@ -167,6 +169,7 @@ class CompareVersionsDialog extends React.Component {
 
   printProperties(property, pathsToMark) {
     return property ? (<NodeDetailsContent isEditMode={false}
+                                           isComparison={true}
                                            node={property}
                                            pathsToMark={pathsToMark}
                                            onChange={() => {}} />) :

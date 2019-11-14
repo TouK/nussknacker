@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import React from "react";
 
 const ExpressionInput = (props) => {
-    const {label, name, path, value, onChange, isMarked, readOnly, rows, cols, validators} = props;
+    const {label, name, path, value, onChange, isMarked, readOnly, isComparison, rows, cols, validators} = props;
 
     return (
         <div className="node-row">
@@ -21,6 +21,7 @@ const ExpressionInput = (props) => {
                         cols}}
                     validators={validators}
                     isMarked={isMarked}
+                    isComparison={isComparison}
                 />
             </div>
         </div>

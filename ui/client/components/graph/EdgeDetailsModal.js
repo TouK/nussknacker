@@ -117,6 +117,7 @@ class EdgeDetailsModal extends React.Component {
                     updateEdgeProp={this.updateEdgeProp}
                     readOnly={false}
                     edge={this.state.editedEdge}
+                    isComparison={false}
                   />
                 </div>
                 <div className="modalFooter">

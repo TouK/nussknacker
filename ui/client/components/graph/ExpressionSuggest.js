@@ -103,6 +103,7 @@ class ExpressionSuggest extends React.Component {
   render() {
     const {isMarked} = this.props
     if (this.props.dataResolved) {
+      const isComparison = this.props.isComparison;
       return (
         <div>
           <div style={{paddingTop: 8,
@@ -110,7 +111,7 @@ class ExpressionSuggest extends React.Component {
                        paddingLeft: 10,
                        paddingRight: 10,
                        backgroundColor: '#333'}}
-               className={(allValid(this.props.validators, this.state.value) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
+               className={(isComparison || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
             <AceEditor mode={this.props.inputProps.language}
                        width={"100%"}
                        minLines={1}
@@ -138,7 +139,7 @@ class ExpressionSuggest extends React.Component {
                          readOnly: this.props.inputProps.readOnly
                        }}/>
           </div>
-          <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>
+          {!isComparison && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
         </div>
       )
     } else {

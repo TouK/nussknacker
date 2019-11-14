@@ -56,7 +56,7 @@ export default class EdgeDetailsContent extends React.Component {
   }
 
   render() {
-    const { edge, readOnly, updateEdgeProp } = this.props
+    const { edge, readOnly, updateEdgeProp, isComparison} = this.props
 
     switch (_.get(edge.edgeType, 'type')) {
       case "SwitchDefault": {
@@ -77,6 +77,7 @@ export default class EdgeDetailsContent extends React.Component {
                   language: edge.edgeType.condition.language, readOnly: readOnly}}
                 validators={[notEmptyValidator]}
                 isMarked={this.isMarked("edgeType.condition.expression")}
+                isComparison={isComparison}
               />
             </div>
           </div>
