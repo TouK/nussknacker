@@ -43,6 +43,7 @@ const MapVariable = (props) => {
         namespace="fields"
         addField={addField}
         isMarked={isMarked}
+        readOnly={readOnly}
         errors={errors}
       />
       <Textarea

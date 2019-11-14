@@ -138,6 +138,7 @@ export class NodeDetailsContent extends React.Component {
   };
 
   customNode = (fieldErrors) => {
+    const readOnly = !this.props.isEditMode
     switch (NodeUtils.nodeType(this.props.node)) {
       case 'Source':
         return this.sourceSinkCommon(null, fieldErrors)
@@ -165,15 +166,16 @@ export class NodeDetailsContent extends React.Component {
                     const validators = [notEmptyValidator]
                     return (<React.Fragment>
                       <input type="text"
-                             className={allValid(validators, field.typ.refClazzName) ? "node-input" : "node-input node-input-with-error"}
+                             className={(readOnly || allValid(validators, [field.typ.refClazzName]) ? "node-input" : "node-input node-input-with-error")}
                              value={field.typ.refClazzName}
                              onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
-                      <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>
+                        {!readOnly && <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>}
                     </React.Fragment>)
                   }}
                   onChange={(fields) => this.setNodeDataAt("parameters", fields)}
                   newValue={{name: "", typ: {refClazzName: ""}}}
                   isMarked={index => this.isMarked(`parameters[${index}].name`) || this.isMarked(`parameters[${index}].typ.refClazzName`)}
+                  readOnly={readOnly}
                 />
               </div>
             </div>
@@ -509,13 +511,13 @@ export class NodeDetailsContent extends React.Component {
                     <input
                       autoFocus={autofocus}
                       type="text"
-                      className={validators.map(validator => validator.isValid(fieldValue)).includes(false) ? "node-input node-input-with-error" : "node-input"}
+                      className={readOnly || allValid(validators, [fieldValue]) ? "node-input" : "node-input node-input-with-error"}
                       value={fieldValue || ""}
                       onChange={(e) => handleChange(e.target.value)}
                     />
                 }
               </div>
-              <ValidationLabels validators={validators} values={[fieldValue]}/>
+              {!readOnly && <ValidationLabels validators={validators} values={[fieldValue]}/>}
             </div>
           </div>
         )
@@ -544,13 +546,13 @@ export class NodeDetailsContent extends React.Component {
                 autoFocus={autofocus}
                 rows={1}
                 cols={50}
-                className="node-input"
+                className={(readOnly || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
                 value={fieldValue || ""}
                 onChange={(e) => handleChange(e.target.value)}
                 readOnly={readOnly}
               />
             </div>
-            <ValidationLabels validators={validators} values={[fieldValue]}/>
+            {!readOnly && <ValidationLabels validators={validators} values={[fieldValue]}/>}
           </div>
         )
       default:

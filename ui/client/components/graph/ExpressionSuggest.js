@@ -103,6 +103,7 @@ class ExpressionSuggest extends React.Component {
   render() {
     const {isMarked} = this.props
     if (this.props.dataResolved) {
+      const readOnly = this.props.inputProps.readOnly;
       return (
         <div>
           <div style={{paddingTop: 10,
@@ -111,7 +112,7 @@ class ExpressionSuggest extends React.Component {
                        paddingRight: 20 - 4,
                        backgroundColor: '#333',
                        borderBottom: '1px solid #808080'}}
-               className={(allValid(this.props.validators, this.state.value) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
+               className={(readOnly || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
             <AceEditor mode={this.props.inputProps.language}
                        width={"100%"}
                        minLines={1}
@@ -136,10 +137,10 @@ class ExpressionSuggest extends React.Component {
                          showLineNumbers: false,
                          fontSize: 16,
                          fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
-                         readOnly: this.props.inputProps.readOnly
+                         readOnly: readOnly
                        }}/>
           </div>
-          <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>
+          {!readOnly && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
         </div>
       )
     } else {
