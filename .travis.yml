@@ -62,11 +62,11 @@ jobs:
       script: ./ciBackendTest.sh
       after_success: if [ "$COVERAGE" = true ]; then sbt + coveralls; else echo "Skipping coveralls"; fi
     - name: "UI slow tests"
-      script: sbt + clean ui/slow:test
+      script: sbt +clean +ui/slow:test
     - name: "Management tests"
-      script: sbt + clean management/it:test
+      script: sbt +clean +management/it:test
     - name: "EngineStandalone tests"
-      script: sbt + clean engineStandalone/it:test
+      script: sbt +clean +engineStandalone/it:test
     - name: "Frontend tests"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script: ./ciFrontendTest.sh
