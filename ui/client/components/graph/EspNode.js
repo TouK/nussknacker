@@ -190,8 +190,8 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     }
   };
 
-  let inPorts = NodeUtils.hasInputs(node) ? ['In'] : [];
-  let outPorts = NodeUtils.hasOutputs(node) ? ['Out'] : [];
+  const inPorts = NodeUtils.hasInputs(node) ? ['In'] : [];
+  const outPorts = NodeUtils.hasOutputs(node) ? ['Out'] : [];
 
   return new joint.shapes.devs.EspNode({
     id: node.id,
