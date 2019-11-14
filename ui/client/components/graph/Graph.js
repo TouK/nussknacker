@@ -69,7 +69,9 @@ class Graph extends React.Component {
   updateDimensions() {
     this.processGraphPaper.fitToContent()
     this.svgDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
-    this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    if (this.props.parent !== subprocessParent) {
+      this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    }
   }
 
   canAddNode(node) {
@@ -616,8 +618,8 @@ function mapState(state, props) {
 function mapSubprocessState(state, props) {
   return {
     divId: "esp-graph-subprocess",
-    parent: "modal-content",
-    padding: 40,
+    parent: subprocessParent,
+    padding: 30,
     readonly: true,
     singleClickNodeDetailsEnabled: false,
     nodeIdPrefixForSubprocessTests: state.graphReducer.nodeToDisplay.id + "-", //TODO where should it be?
@@ -635,6 +637,8 @@ function commonState(state) {
     selectionState: state.graphReducer.selectionState,
   }
 }
+
+const subprocessParent = "modal-content";
 
 export let BareGraph = connect(mapSubprocessState, ActionsUtils.mapDispatchWithEspActions)(Graph)
 
