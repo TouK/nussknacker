@@ -123,6 +123,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
+    val appResources = new AppResources(config, modelData, processRepository, processValidation, jobStatusService)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
@@ -146,7 +147,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(typesForCategories),
         new NotificationResources(managementActor, processRepository),
-        new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
+        appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
       )
@@ -172,7 +173,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).route()
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).route(),
+      appResources.route()
     ) ++ authenticator.routes
 
     val webResources = new WebResources(config.getString("http.publicPath"))

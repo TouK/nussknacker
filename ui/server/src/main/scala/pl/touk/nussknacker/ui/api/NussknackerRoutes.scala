@@ -6,3 +6,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 trait RouteWithUser {
   def route(implicit user: LoggedUser): Route
 }
+
+trait RouteWithoutUser {
+  def route(): Route
+}

@@ -5,18 +5,18 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
-import net.ceedubs.ficus.Ficus._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -26,22 +26,27 @@ class AppResources(config: Config,
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
-  extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with SecurityDirectives {
+  extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
+  //Public app resources
+  def route(): Route = pathPrefix("app") {
+    path("buildInfo") {
+      get {
+        complete {
+          val globalBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map()).mapValues(_.asJson)
+          val modelDataInfo = modelData.map {
+            case (k,v) => (k.toString, v.configCreator.buildInfo())
+          }.asJson
+          (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
+        }
+      }
+    }
+  }
+
+  //Secure app resources
   def route(implicit user: LoggedUser): Route =
     pathPrefix("app") {
-      path("buildInfo") {
-        get {
-          complete {
-            val globalBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
-              .getOrElse(Map()).mapValues(_.asJson)
-            val modelDataInfo = modelData.map {
-              case (k,v) => (k.toString, v.configCreator.buildInfo())
-            }.asJson
-            (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
-          }
-        }
-      } ~ path("healthCheck") {
+      path("healthCheck") {
         get {
           complete {
             notRunningProcessesThatShouldRun.map[HttpResponse] { set =>
@@ -91,7 +96,6 @@ class AppResources(config: Config,
         }
       }
     }
-
 
   private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser) : Future[Set[String]] = {
     for {
