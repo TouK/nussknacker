@@ -3,19 +3,22 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
 import akka.http.scaladsl.server.Route
+import cats.instances.future._
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, FetchingProcessRepository, _}
+import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,11 +47,12 @@ object TestFactory extends TestPermissions{
     sampleResolver,
     Map.empty
   )
+  val processResolving = new UIProcessResolving(processValidation, ProcessDictSubstitutor())
   val posting = new ProcessPosting
   val buildInfo = Map("engine-version" -> "0.1")
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DBFetchingProcessRepository[Future](dbs) with FetchingProcessRepository with BasicRepository
+    new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DbWriteProcessRepository[Future](dbs, modelVersions.map(TestProcessingTypes.Streaming -> _).toMap)

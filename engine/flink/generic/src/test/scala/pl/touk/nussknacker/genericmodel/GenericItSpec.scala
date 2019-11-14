@@ -225,7 +225,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
     }
   }
 
-  private val stoppableEnv = new StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
   private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(Registry)

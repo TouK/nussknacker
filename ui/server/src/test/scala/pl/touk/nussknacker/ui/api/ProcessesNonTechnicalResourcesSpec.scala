@@ -63,20 +63,37 @@ class ProcessesNonTechnicalResourcesSpec extends FlatSpec with ScalatestRouteTes
 
     saveProcess(ProcessName(processToSave.id), processToSave) {
       status shouldEqual StatusCodes.OK
+      Get(s"/processes/${processToSave.id}?businessView=false") ~> routeWithAllPermissions ~> check {
+        val processDetails = responseAs[ValidatedProcessDetails]
+        checkNonBusinessView(allNodeIds, allEdges, processDetails)
+      }
+
       Get(s"/processes/${processToSave.id}/2?businessView=false") ~> routeWithAllPermissions ~> check {
         val processDetails = responseAs[ValidatedProcessDetails]
-        processDetails.json.get.nodes.map(_.id) shouldBe allNodeIds
-        processDetails.json.get.edges.map(e => (e.from, e.to)) shouldBe allEdges
-        processDetails.json.get.validationResult.isOk shouldBe true
+        checkNonBusinessView(allNodeIds, allEdges, processDetails)
+      }
+
+      Get(s"/processes/${processToSave.id}?businessView=true") ~> routeWithAllPermissions ~> check {
+        val processDetails = responseAs[ValidatedProcessDetails]
+        checkBusinessView(nonTechnicalNodeIds, nonTechnicalAdges, processDetails)
       }
 
       Get(s"/processes/${processToSave.id}/2?businessView=true") ~> routeWithAllPermissions ~> check {
         val processDetails = responseAs[ValidatedProcessDetails]
-        processDetails.json.get.nodes.map(_.id) shouldBe nonTechnicalNodeIds
-        processDetails.json.get.edges.map(e => (e.from, e.to)) shouldBe nonTechnicalAdges
-        processDetails.json.get.validationResult.isOk shouldBe true
+        checkBusinessView(nonTechnicalNodeIds, nonTechnicalAdges, processDetails)
       }
     }
   }
 
+  private def checkBusinessView(nonTechnicalNodeIds: List[String], nonTechnicalAdges: List[(String, String)], processDetails: ValidatedProcessDetails) = {
+    processDetails.json.get.nodes.map(_.id) shouldBe nonTechnicalNodeIds
+    processDetails.json.get.edges.map(e => (e.from, e.to)) shouldBe nonTechnicalAdges
+    processDetails.json.get.validationResult.isOk shouldBe true
+  }
+
+  private def checkNonBusinessView(allNodeIds: List[String], allEdges: List[(String, String)], processDetails: ValidatedProcessDetails) = {
+    processDetails.json.get.nodes.map(_.id) shouldBe allNodeIds
+    processDetails.json.get.edges.map(e => (e.from, e.to)) shouldBe allEdges
+    processDetails.json.get.validationResult.isOk shouldBe true
+  }
 }

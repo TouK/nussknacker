@@ -14,9 +14,9 @@ import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, Pro
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessesExportResources(val processRepository: FetchingProcessRepository,
+class ProcessesExportResources(val processRepository: FetchingProcessRepository[Future],
                                processActivityRepository: ProcessActivityRepository)
                               (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {

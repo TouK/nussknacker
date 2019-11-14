@@ -24,7 +24,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List())
 
-    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map())
+    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty)
   }
 
   test("should perform migration that should fail on new errors") {
@@ -33,7 +33,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List())
 
-    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map())
+    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty)
     results.head.shouldFail shouldBe false
     results.head.shouldFailOnNewErrors shouldBe true
   }

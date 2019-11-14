@@ -52,6 +52,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         ValidationErrors(nodes, Nil, Nil),
         ValidationWarnings.success,
         //TODO: add typing results in this case
+        _,
         _
       ) if nodes == Map("subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError,
           EdgeType.SubprocessOutput("out2")))) =>
@@ -76,6 +77,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         ValidationErrors(_, Nil, globalErrors),
         ValidationWarnings.success,
         //TODO: add typing results in this case
+        _,
         _
       ) if globalErrors == List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("in"))) =>
     }
@@ -96,6 +98,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         ValidationErrors(nodes, Nil, Nil),
         ValidationWarnings.success,
         //TODO: add typing results in this case
+        _,
         _
       ) if nodes == Map("loose" -> List(PrettyValidationErrors.looseNode(validator.uiValidationError))) =>
     }
@@ -151,6 +154,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       case ValidationResult(
         ValidationErrors(_, Nil, errors),
         ValidationWarnings.success,
+        _,
         _
       ) if errors == List(PrettyValidationErrors.noValidatorKnown(TestProcessingTypes.RequestResponse)) =>
     }
@@ -235,7 +239,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val (processValidation, process) = mockProcessValidationAndProcess(subprocessDisabled = false)
 
     processValidation.validate(process) should matchPattern {
-      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _
+      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _, _
       ) if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
     }
   }

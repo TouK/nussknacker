@@ -96,7 +96,8 @@ val commonSettings =
         "-unchecked",
         "-deprecation",
         "-encoding", "utf8",
-        "-Xfatal-warnings",
+        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
+//        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
@@ -146,6 +147,7 @@ val hsqldbV = "2.3.4"
 val postgresV = "42.2.5"
 val flywayV = "5.2.4"
 val confluentV = "4.1.2"
+val jbcryptV = "0.4"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -271,7 +273,7 @@ lazy val management = (project in engine("flink/management")).
         "ch.qos.logback" % "logback-core" % logbackV % "it,test"
       )
     }
-  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", securityApi)
+  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", security)
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -297,7 +299,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       )
     }
   ).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", securityApi)
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", security)
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -571,20 +573,26 @@ lazy val api = (project in engine("api")).
     }
   )
 
-lazy val securityApi = (project in engine("security-api")).
+lazy val security = (project in engine("security")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-security-api",
+    name := "nussknacker-security",
     libraryDependencies ++= {
       Seq(
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
-        "com.typesafe" % "config" % configV
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "com.typesafe" % "config" % configV ,
+        "org.mindrot" % "jbcrypt" % jbcryptV,
+        //Packages below are only for plugin providers purpose
+        "io.circe" %% "circe-core" % circeV,
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
       )
     }
   )
-  .dependsOn(util)
+  .dependsOn(util, httpUtils)
 
 lazy val flinkApi = (project in engine("flink/api")).
   settings(commonSettings).
@@ -701,7 +709,7 @@ lazy val ui = (project in file("ui/server"))
     /*
       We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and 
+      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
     packageBin in Compile := (packageBin in Compile).dependsOn(
@@ -727,7 +735,6 @@ lazy val ui = (project in file("ui/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.3",
-        "org.mindrot" % "jbcrypt" % "0.4",
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
@@ -738,7 +745,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel)
+  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel)
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly")
 

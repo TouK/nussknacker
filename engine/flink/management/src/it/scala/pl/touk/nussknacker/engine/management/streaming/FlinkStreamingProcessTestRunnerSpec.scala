@@ -63,7 +63,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Sc
     val caught = intercept[IllegalArgumentException] {
       Await.result(processManager.test(ProcessName(processId), processData, TestData("terefere"), _ => null), patienceConfig.timeout)
     }
-    caught.getMessage shouldBe "Compilation errors: MissingParameters(Set(param1),$process)"
+    caught.getMessage shouldBe "Compilation errors: MissingParameters(Set(param1),$exceptionHandler)"
   }
 
 }

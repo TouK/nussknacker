@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.typed.dict.StaticTypedDictInstance
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -209,7 +210,11 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def expressionConfig(config: Config) = {
     val globalProcessVariables = Map(
-      "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2")
+      "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2"),
+      "DICT" -> WithCategories(StaticTypedDictInstance("dict", Map(
+        "foo" -> "Foo",
+        "bar" -> "Boo"
+      )), "Category1", "Category2")
     )
     ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()))
   }
