@@ -31,7 +31,7 @@ object AggregateTransformer extends CustomStreamTransformer {
         start
           .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
           .keyBy(_.value._1)
-          .process(new AggregatorFunction[AnyRef](aggregator, windowMillis, ctx.nodeId))
+          .process(new AggregatorFunction(aggregator, windowMillis, ctx.nodeId))
       }))
 }
 
@@ -40,7 +40,7 @@ object AggregateTumblingTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[AnyRef])
   def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
-              @ParamName("lengthInSe") length: String,
+              @ParamName("length") length: String,
               @ParamName("aggregator") aggregator: Aggregator,
               @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
               @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
@@ -51,7 +51,7 @@ object AggregateTumblingTransformer extends CustomStreamTransformer {
 
         start
           .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
-          .keyBy(_.value)
+          .keyBy(_.value._1)
           .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowMillis)))
           .aggregate(aggregator
             // this casting seems to be needed for Flink to infer TypeInformation correctly....
@@ -64,27 +64,24 @@ object AggregateTumblingTransformer extends CustomStreamTransformer {
 class KeyWithValueMapper(val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[String], value: LazyParameter[AnyRef])
   extends RichMapFunction[NkContext, ValueWithContext[(String, AnyRef)]] with LazyParameterInterpreterFunction {
 
-  private lazy val keyInterpreter = lazyParameterInterpreter.syncInterpretationFunction(key)
+  private lazy val interpreter = lazyParameterInterpreter.syncInterpretationFunction(key.product(value)(lazyParameterInterpreter))
 
-  private lazy val valueInterpreter = lazyParameterInterpreter.syncInterpretationFunction(value)
-
-  override def map(value: NkContext): ValueWithContext[(String, AnyRef)] = {
-    ValueWithContext((keyInterpreter(value), valueInterpreter(value)), value)
-  }
+  override def map(ctx: NkContext): ValueWithContext[(String, AnyRef)] = ValueWithContext(interpreter(ctx), ctx)
 }
 
 
 //TODO: figure out if it's more convenient/faster to just use SlidingWindow with 60s slide and appropriate trigger?
-class AggregatorFunction[T <: AnyRef](aggregator: Aggregator, lengthInMillis: Long, nodeId: String)
+class AggregatorFunction(aggregator: Aggregator, lengthInMillis: Long, nodeId: String)
   extends LatelyEvictableStateFunction[ValueWithContext[(String, AnyRef)], ValueWithContext[Any], TreeMap[Long, AnyRef]] {
+
+  type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[Any]]#Context
 
   private val minimalResolutionMs = 60000L
 
   override protected def stateDescriptor: ValueStateDescriptor[TreeMap[Long, AnyRef]]
   = new ValueStateDescriptor[TreeMap[Long, AnyRef]]("state", classOf[TreeMap[Long, AnyRef]])
 
-
-  override def processElement(value: ValueWithContext[(String, AnyRef)], ctx: KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[Any]]#Context, out: Collector[ValueWithContext[Any]]): Unit = {
+  override def processElement(value: ValueWithContext[(String, AnyRef)], ctx: FlinkCtx, out: Collector[ValueWithContext[Any]]): Unit = {
 
     moveEvictionTime(lengthInMillis, ctx)
 
@@ -102,22 +99,23 @@ class AggregatorFunction[T <: AnyRef](aggregator: Aggregator, lengthInMillis: Lo
     aggregator.getResult(foldedState)
   }
 
-  private def computeNewState(newValue: aggregator.Element, ctx: KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[Any]]#Context): TreeMap[Long, aggregator.Aggregate] = {
+  private def computeNewState(newValue: aggregator.Element, ctx: FlinkCtx): TreeMap[Long, aggregator.Aggregate] = {
 
     val current: TreeMap[Long, aggregator.Aggregate] = currentState(ctx)
 
-    val timestamp = computeTimestampToStore(ctx)
+    val timestampToUse = computeTimestampToStore(ctx)
 
-    val valueForTimestamp = current.getOrElse(timestamp, aggregator.createAccumulator())
+    val currentAggregate = current.getOrElse(timestampToUse, aggregator.createAccumulator())
+    val newAggregate = aggregator.add(newValue, currentAggregate).asInstanceOf[aggregator.Aggregate]
 
-    current.updated(timestamp, aggregator.add(newValue, valueForTimestamp).asInstanceOf[aggregator.Aggregate])
+    current.updated(timestampToUse, newAggregate)
   }
 
-  private def computeTimestampToStore(ctx: KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[Any]]#Context) = {
+  private def computeTimestampToStore(ctx: FlinkCtx): Long = {
     (ctx.timestamp() / minimalResolutionMs) * minimalResolutionMs
   }
 
-  private def currentState(ctx: KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[Any]]#Context): TreeMap[Long, aggregator.Aggregate] = {
+  private def currentState(ctx: FlinkCtx): TreeMap[Long, aggregator.Aggregate] = {
     val currentState = Option(state.value().asInstanceOf[TreeMap[Long, aggregator.Aggregate]]).getOrElse(TreeMap[Long, aggregator.Aggregate]()(Ordering.Long))
     currentState.from(ctx.timestamp() - lengthInMillis)
   }

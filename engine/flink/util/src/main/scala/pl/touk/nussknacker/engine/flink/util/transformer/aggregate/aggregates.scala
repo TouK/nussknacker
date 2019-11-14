@@ -56,6 +56,26 @@ object aggregates {
 
   }
 
+  object SetAggregator extends Aggregator {
+
+    override type Aggregate = Set[AnyRef]
+
+    override type Element = AnyRef
+
+    override def zero: Aggregate = Set()
+
+    override def add: (Element, Aggregate) => Aggregate = (el, agg) => agg + el
+
+    override def merge: (Aggregate, Aggregate) => Aggregate = _ ++ _
+
+    override def result: Aggregate => Any = _.asJava
+
+    override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
+      = Valid(TypedClass(classOf[java.util.Set[_]], List(input)))
+
+  }
+
+
   class MapAggregator(fields: java.util.Map[String, Aggregator]) extends Aggregator {
 
     private val scalaFields = fields.asScala.toMap
@@ -85,8 +105,10 @@ object aggregates {
               .leftMap(m => NonEmptyList.of(s"field $key: $m"))
           }.toList.sequence.leftMap(list => s"Invalid fields: ${list.toList.mkString(", ")}")
           validationRes.map(fields => TypedObjectTypingResult(fields.toMap))
-        case TypedObjectTypingResult(inputFields, _) => Invalid("Fields do not match")
-        case _ => Invalid("Input should be declared as typed map")
+        case TypedObjectTypingResult(inputFields, _) =>
+          Invalid(s"Fields do not match, aggregateBy: ${inputFields.keys.mkString(", ")}), aggregator: ${scalaFields.keys.mkString(", ")}")
+        case _ =>
+          Invalid("Input should be declared as fixed map")
       }
     }
   }
