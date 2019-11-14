@@ -44,7 +44,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
-  val typesForCategories = ProcessTypesForCategories(testConfig)
+  val typesForCategories = new ProcessTypesForCategories(testConfig)
 
   val existingProcessingType = "streaming"
 

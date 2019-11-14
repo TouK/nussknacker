@@ -13,6 +13,8 @@ import scala.concurrent.duration._
 
 trait StreamingDockerTest extends DockerTest { self: Suite =>
 
+  protected var kafkaClient: KafkaClient = _
+
   override def beforeAll(): Unit = {
     super.beforeAll()
     kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),

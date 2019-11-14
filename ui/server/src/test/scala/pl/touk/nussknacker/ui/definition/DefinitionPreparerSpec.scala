@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions{
 
-  private val processTypesForCategories = ProcessTypesForCategories(ConfigWithScalaVersion.config)
+  private val processTypesForCategories = new ProcessTypesForCategories(ConfigWithScalaVersion.config)
 
   test("return groups sorted by name") {
 

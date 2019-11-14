@@ -16,7 +16,6 @@ RUN chmod +x /docker-entrypoint.sh
 
 USER flink
 RUN mkdir -p /tmp/storage
-RUN mkdir -p /tmp/storage/1.7/blob/cache
 
 USER root
 ENTRYPOINT ["/entrypointWithIP.sh"]

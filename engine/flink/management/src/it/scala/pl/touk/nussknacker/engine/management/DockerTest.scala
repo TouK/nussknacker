@@ -29,8 +29,6 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 
-  protected var kafkaClient: KafkaClient = _
-
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = Span(90, Seconds),
     interval = Span(1, Millis)

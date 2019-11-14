@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 import net.ceedubs.ficus.Ficus._
 
 
-case class ProcessTypesForCategories(config: Config) {
+class ProcessTypesForCategories(config: Config) {
 
   private val categoriesToTypesMap = {
     val categories = config.getOrElse("categoriesConfig", ConfigFactory.parseMap(Collections.singletonMap("Default", "streaming")))

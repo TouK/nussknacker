@@ -4,12 +4,10 @@ import java.sql._
 import java.util.UUID
 
 import com.typesafe.scalalogging.LazyLogging
-import org.hsqldb.jdbc.JDBCDriver
 import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedObjectDefinition, typing}
 
 import scala.collection.mutable
-import scala.util.Try
 
 /** This class is *not* thread safe. One connection is used to handle all operations
   the idea is that we prepare all tables, and compile all queries during (lazy) initialization
@@ -22,14 +20,8 @@ class HsqlSqlQueryableDataBase(query: String, tables: Map[String, ColumnModel]) 
 
   import HsqlSqlQueryableDataBase._
 
-  private val connection: Connection = {
-    val url = s"jdbc:hsqldb:mem:${UUID.randomUUID()};shutdown=true;allow_empty_batch=true"
-    //TODO: should not really happen, but sometimes happens in tests..
-    if (Try(DriverManager.getDriver(url)).isFailure) {
-      DriverManager.registerDriver(new JDBCDriver)
-    }
-    DriverManager.getConnection(url, "SA", "")
-  }
+  private val connection: Connection =
+    DriverManager.getConnection(s"jdbc:hsqldb:mem:${UUID.randomUUID()};shutdown=true;allow_empty_batch=true", "SA", "")
 
   init()
 

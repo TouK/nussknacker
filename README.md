@@ -16,3 +16,11 @@ Talk to us on our [mailing list](https://groups.google.com/forum/#!forum/nusskna
 ## License
 
 **Nussknacker** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+## Scala compatibility
+
+Currently we do support Scala 2.11 and 2.12, we cross publish versions.
+
+## Flink compatibility
+
+We currently support only one Flink version (please see flinkV in build.sbt)
