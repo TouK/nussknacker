@@ -213,7 +213,7 @@ class Visualization extends React.Component {
     const selection = JsonUtils.tryParseOrNull(text)
     const canPasteSelection = _.has(selection, 'nodes') && _.has(selection, 'edges') && selection.nodes.every(node => this.canAddNode(node))
     if (!canPasteSelection) {
-      this.props.notificationActions.error("Cannot paste invalid nodes")
+      this.props.notificationActions.error("Cannot paste content from clipboard")
       return
     }
 
