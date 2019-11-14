@@ -35,7 +35,7 @@ export default class ExpressionSuggester {
     const variableNames = _.keys(variables)
     const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) })
     const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable.toLowerCase(), value.toLowerCase()) })
-    let result;
+    let result = []
     if (variableAlreadySelected && focusedClazz) {
       const currentType = this._getTypeInfo(focusedClazz)
       const inputValue = this._justTypedProperty(value)
@@ -46,8 +46,6 @@ export default class ExpressionSuggester {
         return {'methodName': key, 'refClazz': val}
       })
       result = this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
-    } else {
-      result = []
     }
     return new Promise((resolve, reject) => resolve(result))
   }
