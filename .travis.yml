@@ -58,24 +58,15 @@ stages:
 jobs:
   include:
     - stage: test
-      name: "Backend tests 2.11"
-      script: ./ciBackendTest.sh 2.11.12
-      after_success: if [ "$COVERAGE" = true ]; then sbt ++2.11.12 coveralls; else echo "Skipping coveralls"; fi
-    - name: "UI slow tests 2.11"
-      script: sbt ++2.11.12 clean ui/slow:test
-    - name: "Management tests 2.11"
-      script: sbt ++2.11.12 clean management/it:test
-    - name: "EngineStandalone tests 2.11"
-      script: sbt ++2.11.12 clean engineStandalone/it:test
-    - name: "Backend tests 2.12"
-      script: ./ciBackendTest.sh 2.12.10
-      after_success: if [ "$COVERAGE" = true ]; then sbt ++2.12.10 coveralls; else echo "Skipping coveralls"; fi
-    - name: "UI slow tests 2.12"
-      script: sbt ++2.12.10 clean ui/slow:test
-    - name: "Management tests 2.12"
-      script: sbt ++2.12.10 clean management/it:test
-    - name: "EngineStandalone tests 2.12"
-      script: sbt ++2.12.10 clean engineStandalone/it:test
+      name: "Backend tests"
+      script: ./ciBackendTest.sh
+      after_success: if [ "$COVERAGE" = true ]; then sbt + coveralls; else echo "Skipping coveralls"; fi
+    - name: "UI slow tests"
+      script: sbt + clean ui/slow:test
+    - name: "Management tests"
+      script: sbt + clean management/it:test
+    - name: "EngineStandalone tests"
+      script: sbt + clean engineStandalone/it:test
     - name: "Frontend tests"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script: ./ciFrontendTest.sh
