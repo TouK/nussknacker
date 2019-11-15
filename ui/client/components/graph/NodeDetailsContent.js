@@ -334,11 +334,11 @@ export class NodeDetailsContent extends React.Component {
                     return (
                       <div className="node-block" key={this.props.node.id + param.name + index}>
                         {this.createExpressionListField(param.name, "expression", `exceptionHandler.parameters[${index}]`, [notEmptyValidator, errorValidator(fieldErrors, param.name)])}
-                        <hr/>
                       </div>
                     )
                   })}
                 </div>
+                <hr/>
               </div>) : null
             }
             {this.descriptionField()}
