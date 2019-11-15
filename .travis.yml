@@ -33,6 +33,8 @@ env:
     - DOCKER_SOURCE_TAG=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}:${BUILD_VERSION}`
     - DOCKER_REPOSITORY=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}`
     - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true"`
+    #We do cross build in tests only for staging/master
+    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] ) && echo "true"`
 
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
@@ -60,13 +62,13 @@ jobs:
     - stage: test
       name: "Backend tests"
       script: ./ciBackendTest.sh
-      after_success: if [ "$COVERAGE" = true ]; then sbt + coveralls; else echo "Skipping coveralls"; fi
+      after_success: if [ "$COVERAGE" = true ]; then ./ciRunSbt.sh coveralls; else echo "Skipping coveralls"; fi
     - name: "UI slow tests"
-      script: sbt +clean +ui/slow:test
+      script: ./ciRunSbt.sh clean ui/slow:test
     - name: "Management tests"
-      script: sbt +clean +management/it:test
+      script: ./ciRunSbt.sh clean management/it:test
     - name: "EngineStandalone tests"
-      script: sbt +clean +engineStandalone/it:test
+      script: ./ciRunSbt.sh clean engineStandalone/it:test
     - name: "Frontend tests"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script: ./ciFrontendTest.sh
