@@ -7,12 +7,11 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.Future
 
-class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers with ScalaFutures {
-
-  implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(20, Millis)))
+class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers with PatientScalaFutures {
 
   val failClient = new StandaloneProcessClient {
 

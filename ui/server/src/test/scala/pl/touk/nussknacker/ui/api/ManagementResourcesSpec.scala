@@ -6,31 +6,29 @@ import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import org.scalatest._
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.api.deployment.CustomProcess
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.restmodel.processdetails._
-import pl.touk.nussknacker.ui.security.api.Permission
-import pl.touk.nussknacker.ui.util.MultipartUtils
-import cats.syntax.semigroup._
 import cats.instances.all._
+import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import org.scalatest.matchers.BeMatcher
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import io.circe.syntax._
+import org.scalatest._
+import org.scalatest.matchers.BeMatcher
+import pl.touk.nussknacker.engine.api.deployment.CustomProcess
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.security.api.Permission
+import pl.touk.nussknacker.ui.util.MultipartUtils
 
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val fixedTime = LocalDateTime.now()

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
@@ -27,9 +26,10 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 
-trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
+trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 

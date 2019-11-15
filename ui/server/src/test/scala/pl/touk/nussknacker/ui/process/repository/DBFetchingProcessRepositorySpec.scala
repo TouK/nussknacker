@@ -2,18 +2,17 @@ package pl.touk.nussknacker.ui.process.repository
 
 import java.time.LocalDateTime
 
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.security.api.Permission
 
@@ -26,11 +25,9 @@ class DBFetchingProcessRepositorySpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
-    with ScalaFutures
+    with PatientScalaFutures
     with TestPermissions {
   import cats.syntax.either._
-
-  implicit val defaultPatience = PatienceConfig(timeout = Span(1, Seconds), interval = Span(5, Millis))
 
   private val writingRepo = new DbWriteProcessRepository[Future](db, Map(TestProcessingTypes.Streaming -> 0))
     with WriteProcessRepository with BasicRepository {

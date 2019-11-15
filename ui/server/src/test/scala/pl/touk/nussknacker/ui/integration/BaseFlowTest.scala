@@ -4,15 +4,12 @@ import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import org.scalatest._
-import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
@@ -22,16 +19,18 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.ui.NussknackerApp
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.NussknackerApp
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+
 import scala.concurrent.duration._
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
+  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
