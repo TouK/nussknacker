@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import React from "react";
 
 const ExpressionInput = (props) => {
-    const {label, name, path, value, onChange, isMarked, readOnly, isComparison, rows, cols, validators} = props;
+    const {label, name, path, value, onChange, isMarked, readOnly, showValidation, rows, cols, validators} = props;
 
     return (
         <div className="node-row">
@@ -21,7 +21,7 @@ const ExpressionInput = (props) => {
                         cols}}
                     validators={validators}
                     isMarked={isMarked}
-                    isComparison={isComparison}
+                    showValidation={showValidation}
                 />
             </div>
         </div>
@@ -37,7 +37,8 @@ ExpressionInput.propTypes = {
     label: PropTypes.string.isRequired,
     value: PropTypes.object.isRequired,
     path: PropTypes.string.isRequired,
-    onChange: PropTypes.func.isRequired
+    onChange: PropTypes.func.isRequired,
+    showValidation: PropTypes.bool.required
 };
 
 ExpressionInput.defaultProps = {

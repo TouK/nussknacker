@@ -138,7 +138,7 @@ export class NodeDetailsContent extends React.Component {
   };
 
   customNode = (fieldErrors) => {
-    const isComparison = this.props.isComparison
+    const showValidation = this.props.showValidation
     switch (NodeUtils.nodeType(this.props.node)) {
       case 'Source':
         return this.sourceSinkCommon(null, fieldErrors)
@@ -166,16 +166,16 @@ export class NodeDetailsContent extends React.Component {
                     const validators = [notEmptyValidator]
                     return (<React.Fragment>
                       <input type="text"
-                             className={(isComparison || allValid(validators, [field.typ.refClazzName]) ? "node-input" : "node-input node-input-with-error")}
+                             className={(showValidation || allValid(validators, [field.typ.refClazzName]) ? "node-input" : "node-input node-input-with-error")}
                              value={field.typ.refClazzName}
                              onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
-                        {!isComparison && <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>}
+                        {!showValidation && <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>}
                     </React.Fragment>)
                   }}
                   onChange={(fields) => this.setNodeDataAt("parameters", fields)}
                   newValue={{name: "", typ: {refClazzName: ""}}}
                   isMarked={index => this.isMarked(`parameters[${index}].name`) || this.isMarked(`parameters[${index}].typ.refClazzName`)}
-                  isComparison={isComparison}
+                  showValidation={showValidation}
                 />
               </div>
             </div>
@@ -259,7 +259,7 @@ export class NodeDetailsContent extends React.Component {
               node={this.state.editedNode}
               joinDef={this.nodeDef}
               isMarked={this.isMarked}
-              isComparison={isComparison}
+              showValidation={showValidation}
               errors={fieldErrors}
             />
             }
@@ -281,7 +281,7 @@ export class NodeDetailsContent extends React.Component {
           addElement={this.addElement}
           isMarked={this.isMarked}
           readOnly={!this.props.isEditMode}
-          isComparison={isComparison}
+          showValidation={showValidation}
           errors={fieldErrors}
         />;
       case 'Variable':
@@ -290,7 +290,7 @@ export class NodeDetailsContent extends React.Component {
           node={this.state.editedNode}
           isMarked={this.isMarked}
           readOnly={!this.props.isEditMode}
-          isComparison={isComparison}
+          showValidation={showValidation}
           errors={fieldErrors}
         />;
       case 'Switch':
@@ -458,7 +458,7 @@ export class NodeDetailsContent extends React.Component {
     const expressionObj = _.get(this.state.editedNode, exprPath);
     const isMarked = this.isMarked(exprTextPath);
     const restriction = this.getRestriction(fieldName);
-    const isComparison = this.props.isComparison
+    const showValidation = this.props.showValidation
 
     if (restriction.hasFixedValues)
       return <ExpressionWithFixedValues
@@ -484,7 +484,7 @@ export class NodeDetailsContent extends React.Component {
               onValueChange: ((newValue) => this.setNodeDataAt(exprTextPath, newValue)), readOnly: readOnly}}
             validators={validators}
             isMarked={isMarked}
-            isComparison={isComparison}
+            showValidation={showValidation}
           />
         </div>
       </div>)
@@ -503,7 +503,7 @@ export class NodeDetailsContent extends React.Component {
 
   doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked, key, autofocus = false, validators = []) => {
     const readOnly = !this.props.isEditMode || forceReadonly
-    const isComparison = this.props.isComparison
+    const showValidation = this.props.showValidation
     switch (fieldType) {
       case 'input':
         return (
@@ -517,13 +517,13 @@ export class NodeDetailsContent extends React.Component {
                     <input
                       autoFocus={autofocus}
                       type="text"
-                      className={isComparison || allValid(validators, [fieldValue]) ? "node-input" : "node-input node-input-with-error"}
+                      className={showValidation || allValid(validators, [fieldValue]) ? "node-input" : "node-input node-input-with-error"}
                       value={fieldValue || ""}
                       onChange={(e) => handleChange(e.target.value)}
                     />
                 }
               </div>
-              {!isComparison && <ValidationLabels validators={validators} values={[fieldValue]}/>}
+              {!showValidation && <ValidationLabels validators={validators} values={[fieldValue]}/>}
             </div>
           </div>
         )
@@ -552,13 +552,13 @@ export class NodeDetailsContent extends React.Component {
                 autoFocus={autofocus}
                 rows={1}
                 cols={50}
-                className={(isComparison || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
+                className={(showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
                 value={fieldValue || ""}
                 onChange={(e) => handleChange(e.target.value)}
                 readOnly={readOnly}
               />
             </div>
-            {!isComparison && <ValidationLabels validators={validators} values={[fieldValue]}/>}
+            {!showValidation && <ValidationLabels validators={validators} values={[fieldValue]}/>}
           </div>
         )
       default:

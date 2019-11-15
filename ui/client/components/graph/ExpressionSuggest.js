@@ -29,7 +29,8 @@ class ExpressionSuggest extends React.Component {
   static propTypes = {
     inputProps: PropTypes.object.isRequired,
     fieldName: PropTypes.string,
-    validators: PropTypes.array.isRequired
+    validators: PropTypes.array.isRequired,
+    showValidation: PropTypes.bool.required
   }
 
   customAceEditorCompleter = {
@@ -103,7 +104,7 @@ class ExpressionSuggest extends React.Component {
   render() {
     const {isMarked} = this.props
     if (this.props.dataResolved) {
-      const isComparison = this.props.isComparison;
+      const showValidation = this.props.showValidation;
       return (
         <div>
           <div style={{paddingTop: 8,
@@ -111,7 +112,7 @@ class ExpressionSuggest extends React.Component {
                        paddingLeft: 10,
                        paddingRight: 10,
                        backgroundColor: '#333'}}
-               className={(isComparison || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
+               className={(showValidation || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
             <AceEditor mode={this.props.inputProps.language}
                        width={"100%"}
                        minLines={1}
@@ -139,7 +140,7 @@ class ExpressionSuggest extends React.Component {
                          readOnly: this.props.inputProps.readOnly
                        }}/>
           </div>
-          {!isComparison && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
+          {!showValidation && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
         </div>
       )
     } else {
