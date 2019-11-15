@@ -105,12 +105,11 @@ class ExpressionSuggest extends React.Component {
     if (this.props.dataResolved) {
       return (
         <div>
-          <div style={{paddingTop: 10,
-                       paddingBottom: 10,
-                       paddingLeft: 20 - 4,
-                       paddingRight: 20 - 4,
-                       backgroundColor: '#333',
-                       borderBottom: '1px solid #808080'}}
+          <div style={{paddingTop: 8,
+                       paddingBottom: 8,
+                       paddingLeft: 10,
+                       paddingRight: 10,
+                       backgroundColor: '#333'}}
                className={(allValid(this.props.validators, this.state.value) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
             <AceEditor mode={this.props.inputProps.language}
                        width={"100%"}
