@@ -112,7 +112,7 @@ class ExpressionSuggest extends React.Component {
                        paddingLeft: 10,
                        paddingRight: 10,
                        backgroundColor: '#333'}}
-               className={(showValidation || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
+               className={(!showValidation || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
             <AceEditor mode={this.props.inputProps.language}
                        width={"100%"}
                        minLines={1}
@@ -140,7 +140,7 @@ class ExpressionSuggest extends React.Component {
                          readOnly: this.props.inputProps.readOnly
                        }}/>
           </div>
-          {!showValidation && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
+          {showValidation && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
         </div>
       )
     } else {

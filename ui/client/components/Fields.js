@@ -19,12 +19,12 @@ class RawField extends React.Component {
       <div className="node-row movable-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
-          <input className={showValidation || allValid(validators, field.name) ? "node-input" : "node-input node-input-with-error"}
+          <input className={!showValidation || allValid(validators, field.name) ? "node-input" : "node-input node-input-with-error"}
                  type="text"
                  value={field.name}
                  placeholder="Name"
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
-          {!showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
+          {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
         </div>
         <div className={"node-value field" + markedClass}>
           {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value))}

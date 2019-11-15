@@ -13,12 +13,12 @@ const Input = (props) => {
                 <input
                     key={label}
                     type="text"
-                    className={showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"}
+                    className={!showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"}
                     value={value}
                     onChange={(event) => onChange(path, event.target.value)}
                     readOnly={readOnly}
                 />
-                {!showValidation && <ValidationLabels validators={validators} values={[value]}/>}
+                {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
             </div>
         </div>
     );

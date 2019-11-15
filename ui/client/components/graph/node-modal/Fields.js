@@ -22,14 +22,14 @@ const Fields = (props) => {
                 <div className="node-row movable-row" key={field.uuid}>
                   <div className={"node-value fieldName" + (isMarked(paths) ? " marked" : "")}>
                     <input
-                      className={showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
+                      className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
                       type="text"
                       value={field.name}
                       placeholder="Field name"
                       onChange={((e) => onChange(`${paths}.name`, e.target.value))}
                       readOnly={readOnly}
                     />
-                    {!showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
+                    {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
                   </div>
                   <div className={"node-value field"}>
                     <ExpressionSuggest

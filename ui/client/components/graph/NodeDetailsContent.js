@@ -166,10 +166,10 @@ export class NodeDetailsContent extends React.Component {
                     const validators = [notEmptyValidator]
                     return (<React.Fragment>
                       <input type="text"
-                             className={(showValidation || allValid(validators, [field.typ.refClazzName]) ? "node-input" : "node-input node-input-with-error")}
+                             className={(!showValidation || allValid(validators, [field.typ.refClazzName]) ? "node-input" : "node-input node-input-with-error")}
                              value={field.typ.refClazzName}
                              onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
-                        {!showValidation && <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>}
+                        {showValidation && <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>}
                     </React.Fragment>)
                   }}
                   onChange={(fields) => this.setNodeDataAt("parameters", fields)}
@@ -517,13 +517,13 @@ export class NodeDetailsContent extends React.Component {
                     <input
                       autoFocus={autofocus}
                       type="text"
-                      className={showValidation || allValid(validators, [fieldValue]) ? "node-input" : "node-input node-input-with-error"}
+                      className={!showValidation || allValid(validators, [fieldValue]) ? "node-input" : "node-input node-input-with-error"}
                       value={fieldValue || ""}
                       onChange={(e) => handleChange(e.target.value)}
                     />
                 }
               </div>
-              {!showValidation && <ValidationLabels validators={validators} values={[fieldValue]}/>}
+              {showValidation && <ValidationLabels validators={validators} values={[fieldValue]}/>}
             </div>
           </div>
         )
@@ -552,13 +552,13 @@ export class NodeDetailsContent extends React.Component {
                 autoFocus={autofocus}
                 rows={1}
                 cols={50}
-                className={(showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
+                className={(!showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
                 value={fieldValue || ""}
                 onChange={(e) => handleChange(e.target.value)}
                 readOnly={readOnly}
               />
             </div>
-            {!showValidation && <ValidationLabels validators={validators} values={[fieldValue]}/>}
+            {showValidation && <ValidationLabels validators={validators} values={[fieldValue]}/>}
           </div>
         )
       default:
