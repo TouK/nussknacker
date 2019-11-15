@@ -6,20 +6,17 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.apache.commons.io.FileUtils
 import org.scalatest._
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.{DateUtils, MultipartUtils}
 
 import scala.language.higherKinds
 
-class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
+class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
-
-  implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
 

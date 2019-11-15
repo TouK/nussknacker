@@ -4,16 +4,16 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.process.KeyValueTestHelper.MockService
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -25,14 +25,9 @@ class FlinkStreamingProcessRegistrarKafkaSpec
     with BeforeAndAfterAll
     with KafkaSpec
     with Matchers
-    with ScalaFutures
+    with VeryPatientScalaFutures
     with Eventually
     with LazyLogging {
-
-  override implicit val patienceConfig = PatienceConfig(
-    timeout = Span(10, Seconds),
-    interval = Span(100, Millis)
-  )
 
   import spel.Implicits._
 
