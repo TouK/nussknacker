@@ -34,7 +34,7 @@ trait FlinkProcessRegistrar[Env] extends LazyLogging {
     Serializers.registerSerializers(config)
     if (enableObjectReuse) {
       config.enableObjectReuse()
-      logger.info("Object reuse enabled")
+      logger.debug("Object reuse enabled")
     }
   }
 

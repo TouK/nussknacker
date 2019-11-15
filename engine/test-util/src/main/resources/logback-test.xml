@@ -17,13 +17,23 @@
     <!-- we are declaring here loggers for libs that not in dependency of this module, but we are doing it for simplicity of logging configurations -->
     <!-- levels below can be sometimes duplicated in root level but let's keep them just in case if we want to change value for root logger -->
     <logger name="org.apache.zookeeper.server.PrepRequestProcessor" level="WARN"/>
-    <logger name="org.apache.zookeeper.ClientCnxn" level="WARN"/>
-    <logger name="org.apache.kafka" level="WARN"/>
     <logger name="com.spotify.docker.client.LoggingPullHandler" level="WARN"/>
     <logger name="com.spotify.docker.client.LoggingBuildHandler" level="WARN"/>
-    <logger name="kafka" level="WARN"/>
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
     <logger name="org.apache.flink" level="WARN"/>
+
     <logger name="org.apache.flink.runtime.webmonitor.WebMonitorUtils" level="ERROR"/>
+    <logger name="kafka" level="ERROR"/>
+    <logger name="org.apache.kafka.consumer" level="ERROR"/>
+    <logger name="org.apache.kafka.producer" level="ERROR"/>
+    <logger name="org.apache.kafka.clients.consumer" level="ERROR"/>
+    <logger name="org.apache.kafka.clients.producer" level="ERROR"/>
+    <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR"/>
+    <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
+    <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>
+    <logger name="org.apache.fop.apps.FOUserAgent" level="ERROR"/>
+
+    <!-- TODO: Warnings that are currently hidden are important. We probable have problems with correctly closing of resources in tests. It should be fixed. -->
+    <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
 
 </configuration>

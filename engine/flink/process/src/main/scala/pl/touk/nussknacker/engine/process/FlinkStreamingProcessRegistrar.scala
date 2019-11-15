@@ -101,9 +101,9 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
 
     diskStateBackend match {
       case Some(backend) if streamMetaData.splitStateToDisk.getOrElse(false) =>
-        logger.info("Using disk state backend")
+        logger.debug("Using disk state backend")
         env.setStateBackend(backend)
-      case _ => logger.info("Using default state backend")
+      case _ => logger.debug("Using default state backend")
     }
 
     {
