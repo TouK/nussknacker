@@ -338,7 +338,6 @@ export class NodeDetailsContent extends React.Component {
                     )
                   })}
                 </div>
-                <hr/>
               </div>) : null
             }
             {this.descriptionField()}
