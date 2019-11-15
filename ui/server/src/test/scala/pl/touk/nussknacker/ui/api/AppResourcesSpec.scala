@@ -98,7 +98,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     }
   }
 
-  test("it should return global config") {
+  test("it should return build info without authentication") {
     import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
     val creatorWithBuildInfo = new EmptyProcessConfigCreator {
@@ -109,8 +109,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
       Map("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
-    
-    val result = Get("/app/buildInfo") ~> withPermissions(resources, testPermissionRead)
+
+    val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
     result ~> check {
       status shouldBe StatusCodes.OK
       entityAs[Map[String, Json]] shouldBe globalConfig.mapValues(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)

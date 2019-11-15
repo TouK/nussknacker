@@ -23,7 +23,7 @@ class SignalsResources(modelData: Map[String, ModelData],
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("signal" / Segment / Segment) { (signalType, processName) =>
       (post & processId(processName)) { processId =>
         canDeploy(processId) {

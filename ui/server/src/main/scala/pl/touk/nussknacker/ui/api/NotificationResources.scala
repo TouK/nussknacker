@@ -28,7 +28,7 @@ class NotificationResources(managementActor: ActorRef,
   private val durationFromConfig = system.settings.config.getDuration("akka.http.server.request-timeout")
   private implicit val timeout: Timeout = Timeout(durationFromConfig.toMillis millis)
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
     path("notifications") {
       get {
         complete {

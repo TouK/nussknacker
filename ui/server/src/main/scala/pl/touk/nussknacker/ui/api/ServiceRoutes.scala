@@ -51,7 +51,7 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
         complete(Marshal(JsonThrowable(e)).to[ResponseEntity].map(res => HttpResponse(status = InternalServerError, entity = res)))
     }
 
-  override def route(implicit user: LoggedUser): Route = {
+  override def securedRoute(implicit user: LoggedUser): Route = {
       handleExceptions(serviceExceptionHandler) {
         invokeServicePath
       }

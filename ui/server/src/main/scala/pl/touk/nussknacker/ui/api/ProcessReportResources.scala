@@ -20,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, val processRepository: FetchingProcessRepository[Future])
                             (implicit val ec: ExecutionContext) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
-  def route(implicit loggedUser: LoggedUser): Route = {
+  def securedRoute(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processName =>
       (get & processId(processName)) { processId =>
         parameterMap { parameters =>

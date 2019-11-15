@@ -40,7 +40,7 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
     //TODO: is Write enough here?
     pathPrefix("testInfo") {
       post {

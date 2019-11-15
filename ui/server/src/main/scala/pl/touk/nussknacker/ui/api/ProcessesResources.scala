@@ -57,7 +57,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
 
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
       encodeResponse {
         path("archive") {
           get {
