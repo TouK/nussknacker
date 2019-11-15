@@ -56,7 +56,7 @@ BranchParameters.propTypes = {
   onChange: PropTypes.func.isRequired,
   isMarked: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
-  showValidation: PropTypes.bool.required
+  showValidation: PropTypes.bool.isRequired
 }
 
 BranchParameters.defaultProps = {

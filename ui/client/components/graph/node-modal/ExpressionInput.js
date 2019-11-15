@@ -38,7 +38,7 @@ ExpressionInput.propTypes = {
     value: PropTypes.object.isRequired,
     path: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
-    showValidation: PropTypes.bool.required
+    showValidation: PropTypes.bool.isRequired
 };
 
 ExpressionInput.defaultProps = {

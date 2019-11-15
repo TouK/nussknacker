@@ -107,7 +107,7 @@ export default class Fields extends React.Component {
     onChange: PropTypes.func.isRequired,
     //e.g. { name: "", value1: "" }
     newValue: PropTypes.object.isRequired,
-    showValidation: PropTypes.bool.required
+    showValidation: PropTypes.bool.isRequired
   }
 
   constructor(props) {

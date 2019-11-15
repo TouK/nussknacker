@@ -13,7 +13,7 @@ export default class EdgeDetailsContent extends React.Component {
     updateEdgeProp: PropTypes.func.isRequired,
     changeEdgeTypeValue: PropTypes.func.isRequired,
     pathsToMark: PropTypes.array,
-    showValidation: PropTypes.bool.required
+    showValidation: PropTypes.bool.isRequired
   }
 
   isMarked = (path) => {

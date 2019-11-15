@@ -68,7 +68,7 @@ MapVariable.propTypes = {
   addElement: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
-  showValidation: PropTypes.bool.required
+  showValidation: PropTypes.bool.isRequired
 };
 
 MapVariable.defaultProps = {

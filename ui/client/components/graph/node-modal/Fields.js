@@ -76,7 +76,7 @@ Fields.propTypes = {
   removeField: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
   expressionValue: PropTypes.bool,
-  showValidation: PropTypes.bool.required
+  showValidation: PropTypes.bool.isRequired
 }
 
 Fields.defaultProps = {

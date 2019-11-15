@@ -31,7 +31,7 @@ Input.propTypes = {
     value: PropTypes.string.isRequired,
     path: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
-    showValidation: PropTypes.bool.required
+    showValidation: PropTypes.bool.isRequired
 };
 
 Input.defaultProps = {

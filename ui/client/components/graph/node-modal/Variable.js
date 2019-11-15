@@ -58,7 +58,7 @@ Variable.propTypes = {
   isMarked: PropTypes.func.isRequired,
   node: PropTypes.object.isRequired,
   onChange: PropTypes.func.isRequired,
-  showValidation: PropTypes.bool.required
+  showValidation: PropTypes.bool.isRequired
 };
 
 Variable.defaultProps = {
