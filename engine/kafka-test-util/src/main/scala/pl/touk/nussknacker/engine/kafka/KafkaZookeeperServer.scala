@@ -71,10 +71,11 @@ case class KafkaZookeeperServer(zooKeeperServer: NIOServerCnxnFactory, kafkaServ
 
 object KafkaUtils {
 
-  def createRawKafkaProducer(kafkaAddress: String): KafkaProducer[Array[Byte], Array[Byte]] = {
+  def createRawKafkaProducer(kafkaAddress: String, id: String): KafkaProducer[Array[Byte], Array[Byte]] = {
     val props: Properties = createCommonProducerProps(kafkaAddress)
     props.put("key.serializer", classOf[ByteArraySerializer].getName)
     props.put("value.serializer", classOf[ByteArraySerializer].getName)
+    props.put("client.id", id.replaceAll("[, ;]", "_"))
     new KafkaProducer(props)
   }
 
