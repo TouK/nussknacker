@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.process
 
 import java.lang
 
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -19,15 +19,14 @@ import pl.touk.nussknacker.engine.kafka.{AvailablePortFinder, KafkaSpec, KafkaZo
 import pl.touk.nussknacker.engine.management.sample.TestProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.test.{PatientScalaFutures, VeryPatientScalaFutures}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with LazyLogging with ScalaFutures {
+class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with LazyLogging with VeryPatientScalaFutures {
 
   private val QueryStateProxyPortLow = AvailablePortFinder.findAvailablePorts(1).head
-
-    override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
 
   private implicit val booleanTypeInfo: TypeInformation[lang.Boolean] = TypeInformation.of(classOf[java.lang.Boolean])
 

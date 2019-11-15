@@ -1,24 +1,20 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
+import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.language.higherKinds
 
 class ProcessesNonTechnicalResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
-
-  implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
+  with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   val routeWithAllPermissions = withAllPermissions(processesRoute)
   implicit val loggedUser = LoggedUser("lu", testPermissionEmpty)

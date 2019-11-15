@@ -1,21 +1,22 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
+import org.scalatest.concurrent.Eventually
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.engine.util.service.GenericTimeMeasuringService
+import pl.touk.nussknacker.test.PatientScalaFutures
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceQueryOpenCloseSpec
   extends FunSuite
     with Matchers
-    with ScalaFutures
+    with PatientScalaFutures
     with Eventually {
 
   import ServiceQueryOpenCloseSpec._

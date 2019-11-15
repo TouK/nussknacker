@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.security.ouath2
 import java.net.URI
 
 import io.circe.Json
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers, Suite}
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2ServerError
@@ -16,13 +16,10 @@ import sttp.model.{StatusCode, Uri}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with ScalaFutures with Suite  {
+class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with PatientScalaFutures with Suite  {
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
-
-  //Some future takes long time..
-  implicit val defaultPatience = PatienceConfig(timeout = Span(5, Seconds), interval = Span(500, Millis))
 
   val config = ExampleOAuth2ServiceFactory.testConfig
 

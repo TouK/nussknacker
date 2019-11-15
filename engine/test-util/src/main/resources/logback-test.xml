@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
+        </encoder>
+    </appender>
+
+    <root level="WARN">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
+    <logger name="pl.touk.nussknacker" level="INFO"/>
+
+    <!-- we are declaring here loggers for libs that not in dependency of this module, but we are doing it for simplicity of logging configurations -->
+    <!-- levels below can be sometimes duplicated in root level but let's keep them just in case if we want to change value for root logger -->
+    <logger name="org.apache.zookeeper.server.PrepRequestProcessor" level="WARN"/>
+    <logger name="org.apache.zookeeper.ClientCnxn" level="WARN"/>
+    <logger name="org.apache.kafka" level="WARN"/>
+    <logger name="com.spotify.docker.client.LoggingPullHandler" level="WARN"/>
+    <logger name="com.spotify.docker.client.LoggingBuildHandler" level="WARN"/>
+    <logger name="kafka" level="WARN"/>
+    <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
+    <logger name="org.apache.flink" level="WARN"/>
+    <logger name="org.apache.flink.runtime.webmonitor.WebMonitorUtils" level="ERROR"/>
+
+</configuration>
