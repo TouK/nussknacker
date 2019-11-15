@@ -8,8 +8,9 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.scalactic.source.Position
 import org.scalatest.concurrent.Eventually
-import org.scalatest.time.{Seconds, Span}
+import org.scalatest.time.{Milliseconds, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -53,32 +54,33 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
       .id("queryableStateProc1")
       .parallelism(1)
       .exceptionHandler("param1" -> "'errors'")
-      .source("start", "kafka-transaction")
+      .source("start", "oneSource")
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")
       .emptySink("sink", "sendSms")
 
     registrar.register(env, lockProcess, ProcessVersion.empty)
-    val jobId = env.execute().getJobID.toString
+    val jobId = stoppableEnv.execute().getJobID
+
     //this port should not exist...
     val strangePort = 12345
     val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$QueryStateProxyPortLow")
 
-
-    def queryState(jobId: String): Future[Boolean] =
-      client
-        .fetchState[java.lang.Boolean](
-          jobId = jobId,
-          queryName = "single-lock-state",
-          key = "TestInput1")
-        .map {
-          Boolean.box(_)
-        }
+    def queryState(jobId: String): Future[Boolean] = client.fetchState[java.lang.Boolean](
+      jobId = jobId,
+      queryName = "single-lock-state",
+      key = TestProcessConfigCreator.oneElementValue).map(Boolean.box(_))
 
     //we have to be sure the job is *really* working
     eventually {
-      val state = queryState(jobId)
-      state.futureValue shouldBe true
+      queryState(jobId.toString).futureValue shouldBe true
     }
+    creator.signals(TestConfig(kafkaZookeeperServer)).values
+      .head.value.sendSignal(TestProcessConfigCreator.oneElementValue)(lockProcess.id)
+
+    eventually {
+      queryState(jobId.toString).futureValue shouldBe false
+    }
+
   }
 }
 
