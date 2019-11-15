@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
@@ -24,6 +25,8 @@ import scala.concurrent.duration._
 class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with StreamingDockerTest {
 
   import pl.touk.nussknacker.engine.kafka.KafkaUtils._
+
+  override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
   test("deploy process in running flink") {
     val processId = "runningFlink"
@@ -191,22 +194,14 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Scala
       .withValue("processConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
     val flinkModelData = FlinkStreamingProcessManagerProvider.defaultTypeConfig(configWithSignals).toModelData
 
-    val kafkaClient = new KafkaClient(
-      configWithSignals.getString("processConfig.kafka.kafkaAddress"),
-      configWithSignals.getString("processConfig.kafka.zkAddress"))
+    val consumer = kafkaClient.createConsumer()
+    flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
-    try {
-      val consumer = kafkaClient.createConsumer()
-      flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
-
-      val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
-      val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
-      signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
-      signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
-      signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
-    } finally {
-      kafkaClient.shutdown()
-    }
+    val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
+    val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
+    signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
+    signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
+    signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
 
   }
 

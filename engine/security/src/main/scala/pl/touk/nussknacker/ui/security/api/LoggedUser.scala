@@ -16,9 +16,20 @@ object LoggedUser {
             isAdmin: Boolean = false): LoggedUser = {
     if (isAdmin) {
       AdminUser(id)
-    }
-    else {
+    } else {
       CommonUser(id, categoryPermissions, globalPermissions)
+    }
+  }
+
+  def apply(id: String, rulesSet: RulesSet): LoggedUser = {
+    if (rulesSet.isAdmin) {
+      LoggedUser(id = id, isAdmin = true)
+    } else {
+      LoggedUser(
+        id = id,
+        categoryPermissions = rulesSet.permissions,
+        globalPermissions = rulesSet.globalPermissions
+      )
     }
   }
 }

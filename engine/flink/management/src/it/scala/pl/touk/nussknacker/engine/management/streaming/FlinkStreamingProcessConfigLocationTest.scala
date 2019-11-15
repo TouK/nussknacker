@@ -13,11 +13,12 @@ import scala.collection.JavaConverters._
 
 class FlinkStreamingProcessConfigLocationTest extends FunSuite with StreamingDockerTest with Matchers {
 
-
   //FIXME: do we still need it??
   ignore("reads config from local dir") {
     processManager.findJobStatus(ProcessName("aaa")).futureValue shouldBe None
   }
+
+  override protected def classPath: String = ""
 
   override lazy val config: Config = {
     val normalConf = super.config

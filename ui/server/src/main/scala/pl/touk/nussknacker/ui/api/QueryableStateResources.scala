@@ -29,7 +29,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
 
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
 
     path("queryableState" / "list") {
       get {

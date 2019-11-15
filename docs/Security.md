@@ -31,20 +31,33 @@ authentication: {
 ```
 users: [
   {
-    id: "user1"
-    password: "pass"
-    categoryPermissions: {
-      "Category1": ["Read", "Deploy"]
-      "Category2": ["Read", "Write"]
-    }
-    globalPermissions: ["AdminTab"]
+    identity: "user1"
+    password: "pass",
+    roles: ["Writer"]
   },
   {
-    id: "user2"
+    identity: "user2"
     encrypedPassword: "$2a$12$oA3U7DXkT5eFkyB8GbtKzuVqxUCU0zDmcueBYV218zO/JFQ9/bzY6"
-    categoryPermissions: {
-      "Category1": ["Read", "Deploy"]
-    }
+    permissions: ["Deployer"]
+  }
+]
+
+rules: [
+  {
+    role: "Reader"
+    permissions: ["Read"]
+    categories: ["Category1", "Category2"]
+  },
+  {
+    role: "Writer"
+    permissions: ["Read", "Write"]
+    categories: ["Category1", "Category2"]
+  },
+  {
+    role: "Deployer"
+    permissions: ["Read", "Write", "Deploy"]
+    globalPermissions: ["AdminTab"]
+    categories: ["Category1", "Category2"]
   }
 ]
 ```
@@ -80,7 +93,7 @@ authentication: {
 ```
 users: [ //Special settings by user email
   {
-    email: "some@email.com"
+    identity: "some@email.com"
     roles: ["Admin"]
   }
 ]
@@ -89,9 +102,6 @@ rules: [
   {
     role: "Admin"
     isAdmin: true
-    permissions: ["Read", "Write", "Deploy"]
-    globalPermissions: ["AdminTab"]
-    categories: ["Defautl", "FraudDetection", "Recommendations"]
   },
   {
     role: "User" //this is default role for all users

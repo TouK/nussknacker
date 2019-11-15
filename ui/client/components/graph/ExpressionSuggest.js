@@ -34,22 +34,23 @@ class ExpressionSuggest extends React.Component {
 
   customAceEditorCompleter = {
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
-      const suggestions = this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d)
-      callback(null, _.map(suggestions, (s) => {
-        //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
-        //maybe it depends on language mode?
-        const methodName = s.methodName.replace("#", "")
-        const returnType = ProcessUtils.humanReadableType(s.refClazz)
-        return {
-          name: methodName,
-          value: methodName,
-          score: 1,
-          meta: returnType,
-          description: s.description,
-          parameters: s.parameters,
-          returnType: returnType
-        }
-      }))
+      this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d).then(suggestions => {
+        callback(null, _.map(suggestions, (s) => {
+          //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
+          //maybe it depends on language mode?
+          const methodName = s.methodName.replace("#", "")
+          const returnType = ProcessUtils.humanReadableType(s.refClazz)
+          return {
+            name: methodName,
+            value: methodName,
+            score: 1,
+            meta: returnType,
+            description: s.description,
+            parameters: s.parameters,
+            returnType: returnType
+          }
+        }))
+      })
     },
     getDocTooltip: (item) => {
       if (item.description || !_.isEmpty(item.parameters)) {
@@ -105,12 +106,11 @@ class ExpressionSuggest extends React.Component {
     if (this.props.dataResolved) {
       return (
         <div>
-          <div style={{paddingTop: 10,
-                       paddingBottom: 10,
-                       paddingLeft: 20 - 4,
-                       paddingRight: 20 - 4,
-                       backgroundColor: '#333',
-                       borderBottom: '1px solid #808080'}}
+          <div style={{paddingTop: 8,
+                       paddingBottom: 8,
+                       paddingLeft: 10,
+                       paddingRight: 10,
+                       backgroundColor: '#333'}}
                className={(allValid(this.props.validators, this.state.value) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
             <AceEditor mode={this.props.inputProps.language}
                        width={"100%"}

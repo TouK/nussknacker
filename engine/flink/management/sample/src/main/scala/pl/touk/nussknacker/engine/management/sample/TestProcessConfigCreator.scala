@@ -293,7 +293,7 @@ case object CustomFilter extends CustomStreamTransformer {
    = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
       start
         .filter(ctx.lazyParameterHelper.lazyFilterFunction(expression))
-        .map(ValueWithContext(null, _)))
+        .map(ValueWithContext[Any](null, _)))
 
 }
 
@@ -309,7 +309,7 @@ object AdditionalVariableTransformer extends CustomStreamTransformer {
   @MethodToInvoke(returnType = classOf[Void])
   def execute(@AdditionalVariables(Array(new AdditionalVariable(name = "additional", clazz = classOf[String]))) @ParamName("expression") expression: LazyParameter[Boolean])
    = FlinkCustomStreamTransformation((start: DataStream[Context]) =>
-      start.map(ValueWithContext("", _)))
+      start.map(ValueWithContext[Any]("", _)))
 
 }
 

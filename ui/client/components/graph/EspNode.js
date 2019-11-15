@@ -190,16 +190,8 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     }
   };
 
-  let inPorts = [];
-  let outPorts = [];
-  if (node.type == 'Sink') {
-      inPorts = ['In']
-  } else if (node.type == 'Source') {
-      outPorts = ['Out']
-  } else {
-      inPorts = ['In'];
-      outPorts = ['Out']
-  }
+  const inPorts = NodeUtils.hasInputs(node) ? ['In'] : [];
+  const outPorts = NodeUtils.hasOutputs(node) ? ['Out'] : [];
 
   return new joint.shapes.devs.EspNode({
     id: node.id,

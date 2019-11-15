@@ -20,7 +20,7 @@
   @extend .baseEspGraph;
 
 #esp-graph-subprocess
-  height: 100%
+  width: 100% !important
   @extend .baseEspGraph;
   #svg-pan-zoom-controls
     transform: translate(0, 0px) scale(0.5)
@@ -204,14 +204,16 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       width: 30px
       height: 30px
   .node-table
-    margin: 0 30px
+    margin: 0 25px
     .node-table-body
       clear: both
     .node-row
-      margin-bottom: 8px
-      margin-top: 7px
+      margin-bottom: 14px
+      margin-top: 14px
     .movable-row
       display flex
+      margin-top 0
+      margin-bottom 14px
       img
         padding-top 10px
         padding-bottom 25px
@@ -222,7 +224,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       width: labelWidth
       display: inline-block
       vertical-align: top
-      padding-top: 10px
+      margin-top: 9px
       font-size: 12px
       font-weight: 700
       .labelFooter
@@ -249,8 +251,8 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
         overflow hidden
       espCheckbox(20px)
       input[type='checkbox']
-        margin-top 10px
-        margin-bottom 10px
+        margin-top 7px
+        margin-bottom 7px
       &.partly-hidden
         textarea
           height 100px !important
@@ -259,7 +261,6 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
           background-color modalInputBkgColor
           border: 0
           border-radius: 0
-          border-bottom: 1px solid gray;
           color modalInputTextColor
           box-shadow: 0
         .node-value-select__control--is-focused
@@ -276,16 +277,14 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
         .node-value-select__menu
           z-index: 2
           border-radius: 0
-          border-bottom: 1px solid gray;
         .node-value-select__menu-list
           padding-top: 0
           padding-bottom: 0
         .node-value-select__option
-          common-node-input(20px)
+          common-node-input(10px)
           height: 25px
           border: 1
           border-radius: 0
-          border-bottom: 1px solid gray;
         .node-value-select__option--is-selected
           background-color: modalInputBkgColor
         .node-value-select__option--is-focused
@@ -306,18 +305,18 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       border: 1px solid testResultsColor
       padding: 5px
     .node-input
-      height: 40px
-      common-node-input(20px)
+      height: 35px
+      common-node-input(10px)
     .read-only
       height: 40px
-      padding: 0 20px
+      padding: 0
       border: none
       color: modalInputTextColor
       font-weight: 400
       font-size: 14px
       display: inline-block
       vertical-align: top
-      padding-top: 10px
+      padding-top: 9px
       .labelFooter
         font-weight 500
         opacity: 0.7
@@ -336,15 +335,13 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     textarea.node-input
       resize: vertical
       line-height: 1.5
-      padding-top: 10px
-      padding-bottom: 10px
+      padding-top: 7px
+      padding-bottom: 7px
     input[type=checkbox].node-input
       height: 20px
     &.node-editable
-      .node-input
-        border-bottom: 1px solid gray
       .node-input-with-error
-        border 1px solid warningColor !important
+        outline 1px solid warningColor !important
         border-radius 2px
     .testResultDownload
       padding-left: 15px

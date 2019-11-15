@@ -159,7 +159,7 @@ object ProcessTestHelpers {
         .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
-        .map(ValueWithContext(null, _))
+        .map(ValueWithContext[Any](null, _))
     })
   }
 
@@ -177,7 +177,7 @@ object ProcessTestHelpers {
               .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
-              .map(ValueWithContext(null, _))
+              .map(ValueWithContext[Any](null, _))
           })
   }
 

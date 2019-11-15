@@ -115,7 +115,7 @@ class ManagementResources(processCounter: ProcessCounter,
       case comment => provide(comment)
     }
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
     path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processName, savepointDir) =>
       (post & processId(processName)) { processId =>
         canDeploy(processId) {

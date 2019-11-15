@@ -9,6 +9,8 @@ trait AuthenticatorFactory {
 
   val realm = "nussknacker"
 
+  //TODO: Extract putting allCategories in up level. Authenticator should return only Authenticated User(id, roles)
+  // mapping Authenticated User with all Categories should be do only at one place
   def createAuthenticator(config: Config, classLoader: ClassLoader, allCategories: List[String]): AuthenticatorData
 }
 

@@ -4,8 +4,11 @@ import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import org.scalatest._
@@ -24,22 +27,24 @@ import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.util.MultipartUtils
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import scala.concurrent.duration._
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
 
+  override def testConfig: Config = ConfigWithScalaVersion.config
+
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val mainRoute = NussknackerApp.initializeRoute(system.settings.config)
+  private val mainRoute = NussknackerApp.initializeRoute(ConfigWithScalaVersion.config)
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(1.minute)
 
   test("saves, updates and retrieves sample process") {
+
     val processId = UUID.randomUUID().toString
     val endpoint = s"/api/processes/$processId"
 
@@ -145,7 +150,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       }
     }
   }
-  
+
   def checkWithClue[T](body: => T): RouteTestResult => T = check {
     withClue(s"response: '${responseAs[String]}'") {
       body

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, DisplayableAsJson}
@@ -22,7 +23,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 
   private implicit val user = LoggedUser("admin", category1Deploy)
-  private val modelData = FlinkStreamingProcessManagerProvider.defaultModelData(ConfigFactory.load())
+  private val modelData = FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config)
   private val serviceRoutes = new ServiceRoutes(Map(TestProcessingTypes.Streaming -> modelData))
 
   implicit val queryResultDecoder: Decoder[QueryResult] = Decoder.decodeJson
@@ -50,7 +51,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
         | }
         |]
       """.stripMargin)
-    Post("/service/streaming/enricher", entity) ~> serviceRoutes.route ~> check {
+    Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.OK
       val result = entityAs[io.circe.Json]
       result.asObject.flatMap(_.apply("result")).flatMap(_.asString).getOrElse("") shouldEqual "RichObject(parameterValue,123,Some(rrrr))" //TODO: should be JSON
@@ -69,7 +70,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
         | }
         |]
       """.stripMargin)
-    Post("/service/streaming/enricher", entity) ~> serviceRoutes.route ~> check {
+    Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.InternalServerError
       entityAs[JsonThrowable].message shouldEqual Some("NonEmptyList(ExpressionParseError(EL1041E: After parsing a valid expression, there is still more data in the expression: 'spell',defaultNodeId,Some(param),not valid spell expression))")
       entityAs[JsonThrowable].className shouldEqual classOf[ParametersCompilationException].getCanonicalName
@@ -77,7 +78,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
   }
   test("display valuable error message for mismatching parameters") {
     val entity = HttpEntity(MediaTypes.`application/json`, "[]")
-    Post("/service/streaming/enricher", entity) ~> serviceRoutes.route ~> check {
+    Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.InternalServerError
       entityAs[JsonThrowable].message shouldEqual Some( "Missing parameter: param")
       entityAs[JsonThrowable].className shouldEqual classOf[IllegalArgumentException].getCanonicalName
@@ -85,7 +86,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
   }
   test("display valuable error message for missing service") {
     val entity = HttpEntity(MediaTypes.`application/json`, "[]")
-    Post("/service/streaming/unexcitingService", entity) ~> serviceRoutes.route ~> check {
+    Post("/service/streaming/unexcitingService", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.NotFound
       entityAs[JsonThrowable].message shouldEqual Some("service unexcitingService not found")
       entityAs[JsonThrowable].className shouldEqual classOf[ServiceNotFoundException].getCanonicalName
