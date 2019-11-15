@@ -57,7 +57,8 @@ module.exports = {
   },
   entry: entry,
   output: {
-    path: path.join(__dirname, '..', 'server', 'target', 'scala-2.11', 'classes', 'web', 'static'),
+    //by default we use default webpack value, but we want to be able to override it for building frontend via sbt
+    path: process.env.OUTPUT_PATH ? path.join(process.env.OUTPUT_PATH, 'classes', 'web', 'static') : path.join(process.cwd(), 'dist'),
     filename: '[name].js',
     //see config.js
     publicPath: isProd ? '__publicPath__/static/' : '/static/',

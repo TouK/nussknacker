@@ -1,30 +1,33 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.{Files, Path}
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
+import java.util.Collections
 
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
 import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver, VolumeMapping}
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
 trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   self: Suite =>
 
-  private val flinkEsp = "flinkesp:1.7.2"
+  private val flinkEsp = s"flinkesp:1.7.2-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
-
-  protected var kafkaClient: KafkaClient = _
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = Span(90, Seconds),
@@ -39,7 +42,9 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     val dirFile = dir.toFile
 
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "docker-entrypoint.sh").foreach { file =>
-      FileUtils.copyInputStreamToFile(getClass.getResourceAsStream(s"/docker/$file"), new File(dirFile, file))
+      val resource = IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file"))
+      val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
+      FileUtils.writeStringToFile(new File(dirFile, file), withVersionReplaced)
     }
 
     client.build(dir, flinkEsp)
@@ -92,4 +97,15 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     Files.createTempDirectory("dockerTest",
       PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission].asJava))
   }
+
+  def config: Config = ConfigFactory.load()
+    .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
+    .withValue("flinkConfig.classpath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
+    .withFallback(additionalConfig)
+
+
+  protected def classPath: String
+
+  protected def additionalConfig: Config = ConfigFactory.empty()
+
 }

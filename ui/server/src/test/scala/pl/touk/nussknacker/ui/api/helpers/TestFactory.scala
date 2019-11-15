@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -85,7 +86,7 @@ object TestFactory extends TestPermissions{
 
   def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, Nil, isAdmin = true)
 
-  class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigFactory.load()), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
+  class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
       Some(ProcessState(DeploymentId("1"), runningState = managerProcessState.get(), "RUNNING", 0, None)))
