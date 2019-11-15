@@ -53,7 +53,7 @@ object KafkaEspUtils extends LazyLogging {
     props
   }
 
-  def toProducerProperties(config: KafkaConfig) = {
+  def toProducerProperties(config: KafkaConfig, clientId: String) = {
     val props: Properties = new Properties
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("key.serializer", classOf[ByteArraySerializer].getCanonicalName)
@@ -63,6 +63,7 @@ object KafkaEspUtils extends LazyLogging {
     props.setProperty("batch.size", "16384")
     props.setProperty("linger.ms", "1")
     props.setProperty("buffer.memory", "33554432")
+    props.setProperty("client.id", clientId)
     config.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
       props.setProperty(k, v)
     }
@@ -139,7 +140,7 @@ object KafkaEspUtils extends LazyLogging {
   def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaConfig: KafkaConfig): Future[RecordMetadata] = {
     var producer: KafkaProducer[Array[Byte], Array[Byte]] = null
     try {
-      producer = createProducer(kafkaConfig)
+      producer = createProducer(kafkaConfig, "temp-"+topic)
       sendToKafka(topic, key, value)(producer)
     } finally {
       if (producer != null) {
@@ -154,8 +155,8 @@ object KafkaEspUtils extends LazyLogging {
     promise.future
   }
 
-  def createProducer(kafkaConfig: KafkaConfig): KafkaProducer[Array[Byte], Array[Byte]] = {
-    new KafkaProducer[Array[Byte], Array[Byte]](KafkaEspUtils.toProducerProperties(kafkaConfig))
+  def createProducer(kafkaConfig: KafkaConfig, clientId: String): KafkaProducer[Array[Byte], Array[Byte]] = {
+    new KafkaProducer[Array[Byte], Array[Byte]](KafkaEspUtils.toProducerProperties(kafkaConfig, clientId))
   }
 
   def producerCallback(promise: Promise[RecordMetadata]): Callback =

@@ -78,10 +78,11 @@ object KafkaUtils {
     new KafkaProducer(props)
   }
 
-  def createKafkaProducer(kafkaAddress: String): KafkaProducer[String, String] = {
+  def createKafkaProducer(kafkaAddress: String, id: String): KafkaProducer[String, String] = {
     val props: Properties = createCommonProducerProps(kafkaAddress)
     props.put("key.serializer", classOf[StringSerializer].getName)
     props.put("value.serializer", classOf[StringSerializer].getName)
+    props.put("client.id", id.replaceAll("[, ;]", "_"))
     new KafkaProducer(props)
   }
 

@@ -18,14 +18,15 @@ class KafkaSinkFactory(config: KafkaConfig,
     this(config, FixedSerializationSchemaFactory(schema))
 
   @MethodToInvoke
-  def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Sink = {
+  def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String)(metaData: MetaData): Sink = {
     val serializationSchema = schemaFactory.create(topic, config)
-    new KafkaSink(topic, serializationSchema)
+    new KafkaSink(topic, serializationSchema, metaData + "-" + topic)
   }
 
-  class KafkaSink(topic: String, serializationSchema: KeyedSerializationSchema[Any]) extends FlinkSink with Serializable {
+  class KafkaSink(topic: String,
+                  serializationSchema: KeyedSerializationSchema[Any], clientId: String) extends FlinkSink with Serializable {
     override def toFlinkFunction: SinkFunction[Any] = {
-      PartitionByKeyFlinkKafkaProducer011(config.kafkaAddress, topic, serializationSchema, config.kafkaProperties)
+      PartitionByKeyFlinkKafkaProducer011(config.kafkaAddress, topic, serializationSchema, clientId, config.kafkaProperties)
     }
     override def testDataOutput: Option[Any => String] = Option(value => new String(serializationSchema.serializeValue(value), StandardCharsets.UTF_8))
   }

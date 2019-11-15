@@ -9,7 +9,7 @@ class KafkaExceptionConsumer(val kafkaConfig: KafkaConfig,
                              serializationSchema: SerializationSchema[EspExceptionInfo[NonTransientException]])
   extends FlinkEspExceptionConsumer {
 
-  lazy val producer = KafkaEspUtils.createProducer(kafkaConfig)
+  lazy val producer = KafkaEspUtils.createProducer(kafkaConfig, "exception-"+topic)
 
   def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     val toSend = serializationSchema.serialize(exceptionInfo)
