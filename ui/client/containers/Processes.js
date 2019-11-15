@@ -19,11 +19,6 @@ import * as  queryString from 'query-string'
 import {nkPath} from "../config";
 
 class Processes extends BaseProcesses {
-  queries = {
-    isSubprocess: false,
-    isArchived: false
-  }
-
   page = 'processes'
 
   searchItems = ['categories', 'isDeployed']
@@ -142,6 +137,7 @@ class Processes extends BaseProcesses {
           message="Create new process"
           processes={this.state.processes}
           subProcesses={this.state.subProcesses}
+          archivedProcesses={this.state.archivedProcesses}
         />
 
         <LoaderSpinner show={this.state.showLoader}/>

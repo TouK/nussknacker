@@ -17,11 +17,6 @@ import ProcessUtils from "../common/ProcessUtils"
 import {nkPath} from "../config";
 
 class SubProcesses extends BaseProcesses {
-  queries = {
-    isSubprocess: true,
-    isArchived: false
-  }
-
   page = 'subProcesses'
 
   constructor(props) {
@@ -87,6 +82,7 @@ class SubProcesses extends BaseProcesses {
           message="Create new subprocess"
           processes={this.state.processes}
           subProcesses={this.state.subProcesses}
+          archivedProcesses={this.state.archivedProcesses}
         />
 
         <LoaderSpinner show={this.state.showLoader}/>

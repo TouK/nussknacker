@@ -15,11 +15,9 @@ import ProcessUtils from "../common/ProcessUtils"
 import {nkPath} from "../config";
 
 class Archive extends BaseProcesses {
-  queries = {
-    isArchived: true
-  }
-
   searchItems = ['categories', 'isSubprocess']
+
+  page = 'archive'
 
   constructor(props) {
     super(props)
@@ -104,7 +102,7 @@ class Archive extends BaseProcesses {
           ]}
         >
           {
-            this.state.processes.map((process, index) => {
+            this.state.archivedProcesses.map((process, index) => {
               return (
                 <Tr className="row-hover" key={index}>
                   <Td column="name">{process.name}</Td>

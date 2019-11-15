@@ -76,7 +76,7 @@ class AddProcessDialog extends React.Component {
                         <input autoFocus={true} type="text" id="newProcessId" className="node-input"
                                value={this.state.processId}
                                onChange={(e) => this.setState({processId: e.target.value})}/>
-                         <ValidationLabels validators={validators} values={[this.props.processes, this.props.subProcesses, this.state.processId]}/>
+                         <ValidationLabels validators={validators} values={[this.props.processes, this.props.subProcesses, this.props.archivedProcesses, this.state.processId]}/>
                       </div>
                     </div>
                     <div className="node-row">
@@ -116,18 +116,19 @@ function mapState(state) {
   }
 }
 
-const nameAlreadyExists = (processes, subprocesses, name) => {
-  return processes.map(process => process.name).includes(name)
-    || subprocesses.map(subProcess => subProcess.name).includes(name)
+const nameAlreadyExists = (processes, subprocesses, archivedProcesses, name) => {
+  return processes.some(process => process.name === name)
+    || subprocesses.some(subProcess => subProcess.name === name)
+    || archivedProcesses.some(archivedProcess => archivedProcess.name === name)
 }
 
 const validators = [
   {
-    isValid: (processes, subprocesses, name) => notEmptyValidator.isValid(name),
+    isValid: (processes, subprocesses, archivedProcesses, name) => notEmptyValidator.isValid(name),
     message: notEmptyValidator.message
   },
   {
-    isValid: (processes, subprocesses, name) => !nameAlreadyExists(processes, subprocesses, name),
+    isValid: (processes, subprocesses, archivedProcesses, name) => !nameAlreadyExists(processes, subprocesses, archivedProcesses, name),
     message: duplicateValue
   }
 ];

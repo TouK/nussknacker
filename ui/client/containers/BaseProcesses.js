@@ -12,7 +12,6 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
   shouldReloadStatuses = false
   intervalTime = 15000
-  queries = {}
   page = ''
 
   customSelectStyles = {
@@ -55,6 +54,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     let state = {
       processes: [],
       subProcesses: [],
+      archivedProcesses: [],
       showLoader: true,
       showAddProcess: false,
       search: query.search || "",
@@ -73,14 +73,12 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   onMount() {
     switch (this.page) {
-      case ('processes'): {
-        this.reloadProcesses()
-        this.reloadSubProcesses(false)
+      case (processesProperty): {
+        this.reloadAllProcessesKinds(true, false, false, {})
         break;
       }
-      case ('subProcesses'): {
-        this.reloadProcesses(false)
-        this.reloadSubProcesses()
+      case (subProcessesProperty): {
+        this.reloadAllProcessesKinds(false, true, false, {})
         break;
       }
     }
@@ -91,30 +89,24 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   reload() {
-    this.reloadProcesses(false)
-    this.reloadSubProcesses(false)
-
+    this.reloadAllProcessesKinds(false, false, false, {})
     if (this.shouldReloadStatuses) {
       this.reloadStatuses()
     }
   }
 
-  reloadProcesses(shouldShowLoader, search) {
-    this.showLoader(shouldShowLoader);
-    const searchParams = this.prepareSearchParams(search, false);
-    HttpService.fetchProcesses(searchParams).then(response => {
-      if (!this.state.showAddProcess) {
-        this.setState({processes: response.data, showLoader: false})
-      }
-    }).catch(() => this.setState({showLoader: false}))
+  reloadAllProcessesKinds(showProcessesLoader, showSubProcessesLoader, showArchivedProcessesLoader, search) {
+    this.reloadProcesses(showProcessesLoader, search, processesQueryParams, processesProperty)
+    this.reloadProcesses(showSubProcessesLoader, search, subProcessesQueryParams, subProcessesProperty)
+    this.reloadProcesses(showArchivedProcessesLoader, search, archivedProcessesQueryParams, archivedProcessesProperty)
   }
 
-  reloadSubProcesses(showLoader, search) {
-    this.showLoader(showLoader);
-    const searchParams = this.prepareSearchParams(search, true);
+  reloadProcesses(shouldShowLoader, search, queryParams, propertyName) {
+    this.showLoader(shouldShowLoader)
+    const searchParams = this.prepareSearchParams({}, queryParams)
     HttpService.fetchProcesses(searchParams).then(response => {
       if (!this.state.showAddProcess) {
-        this.setState({subProcesses: response.data, showLoader: false})
+        this.setState({[propertyName]: response.data, showLoader: false})
       }
     }).catch(() => this.setState({showLoader: false}))
   }
@@ -123,10 +115,10 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     this.setState({showLoader: shouldShowLoader == null ? true : shouldShowLoader})
   }
 
-  prepareSearchParams(search, isSubprocess) {
+  prepareSearchParams(search, queryParams) {
     this.queries = {
       ...this.queries,
-      isSubprocess: isSubprocess
+      ...queryParams
     }
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
     return Object.assign(query, search, this.queries || {});
@@ -152,7 +144,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     this.setState(params)
 
     if (reload) {
-      this.reloadProcesses(showLoader, search)
+     this.reloadAllProcessesKinds(false, false, false, search)
     }
   }
 
@@ -205,5 +197,13 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
 }
+
+const processesProperty = 'processes'
+const subProcessesProperty = 'subProcesses'
+const archivedProcessesProperty = 'archivedProcesses'
+
+const processesQueryParams = {isSubprocess: false, isArchived: false}
+const subProcessesQueryParams = {isSubprocess: true, isArchived: false}
+const archivedProcessesQueryParams = {isSubprocess: false, isArchived: true}
 
 export default BaseProcesses
