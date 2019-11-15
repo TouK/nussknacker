@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
-import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
+import pl.touk.nussknacker.ui.api.{RouteWithoutUser, RouteWithUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, _}
@@ -68,18 +68,18 @@ object TestFactory extends TestPermissions{
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
   def asAdmin(route: RouteWithUser): Route = {
-    route.route(adminUser())
+    route.securedRoute(adminUser())
   }
 
-  def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission) =
-    route.route(user("userId", permissions))
+  def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
+    route.securedRoute(user("userId", permissions))
 
   //FIXME: update
-  def withAllPermissions(route: RouteWithUser) = withPermissions(route, testPermissionAll)
+  def withAllPermissions(route: RouteWithUser): Route = withPermissions(route, testPermissionAll)
 
-  def withAdminPermissions(route: RouteWithUser) = route.route(adminUser("adminId"))
+  def withAdminPermissions(route: RouteWithUser): Route = route.securedRoute(adminUser("adminId"))
 
-  def withoutPermissions(route: RouteWithoutUser) = route.route()
+  def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
   //FIXME: update
   def user(userName: String = "userId", testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(userName, testPermissions)

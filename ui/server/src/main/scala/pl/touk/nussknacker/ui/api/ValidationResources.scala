@@ -13,7 +13,7 @@ class ValidationResources(processResolving: UIProcessResolving)
                          (implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithUser {
 
-  def route(implicit user: LoggedUser): Route =
+  def securedRoute(implicit user: LoggedUser): Route =
     path("processValidation") {
       post {
         entity(as[DisplayableProcess]) { displayable =>

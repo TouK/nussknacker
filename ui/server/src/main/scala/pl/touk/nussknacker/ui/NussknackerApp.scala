@@ -123,6 +123,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
+    val appResources = new AppResources(config, modelData, processRepository, processValidation, jobStatusService)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
@@ -146,7 +147,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(typesForCategories),
         new NotificationResources(managementActor, processRepository),
-        new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
+        appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
       )
@@ -172,9 +173,11 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).route()
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).publicRoute(),
+      appResources.publicRoute()
     ) ++ authenticator.routes
 
+    //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"))
     CorsSupport.cors(featureTogglesConfig.development) {
       pathPrefixTest(!"api") {
@@ -183,7 +186,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
       } ~ authenticator.directive { user =>
         pathPrefix("api") {
-          apiResourcesWithAuthentication.map(_.route(user)).reduce(_ ~ _)
+          apiResourcesWithAuthentication.map(_.securedRoute(user)).reduce(_ ~ _)
         }
       }
     }
