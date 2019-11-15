@@ -104,7 +104,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
     val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
     val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver, customProcessNodesValidators)
-    val processResolving = new UIProcessResolving(processValidation, ProcessDictSubstitutor())
+
+    val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
+    val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)

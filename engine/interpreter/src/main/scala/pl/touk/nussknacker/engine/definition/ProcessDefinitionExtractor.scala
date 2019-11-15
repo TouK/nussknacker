@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
-import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
+import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CirceUtil, CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -71,7 +70,8 @@ object ProcessDefinitionExtractor {
         globalImportsDefs,
         expressionConfig.languages,
         expressionConfig.optimizeCompilation,
-        expressionConfig.strictTypeChecking), typesInformation)
+        expressionConfig.strictTypeChecking,
+        expressionConfig.dictionaries.mapValuesNow(_.value)), typesInformation)
   }
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
@@ -131,7 +131,8 @@ object ProcessDefinitionExtractor {
       definition.expressionConfig.globalImports,
       definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation,
-      definition.expressionConfig.strictTypeChecking
+      definition.expressionConfig.strictTypeChecking,
+      definition.expressionConfig.dictionaries
     )
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
@@ -146,6 +147,6 @@ object ProcessDefinitionExtractor {
   }
 
   case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], languages: LanguageConfiguration,
-                                                        optimizeCompilation: Boolean, strictTypeChecking: Boolean)
+                                                        optimizeCompilation: Boolean, strictTypeChecking: Boolean, dictionaries: Map[String, DictDefinition])
 
 }

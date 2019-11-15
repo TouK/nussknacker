@@ -3,11 +3,13 @@ package pl.touk.nussknacker.engine
 import java.net.URL
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.api.dict.{DictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
@@ -62,7 +64,11 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   lazy val processDefinition: ProcessDefinition[ObjectDefinition] = ProcessDefinitionExtractor.toObjectDefinition(processWithObjectsDefinition)
 
-  lazy val validator: ProcessValidator = ProcessValidator.default(processWithObjectsDefinition, modelClassLoader.classLoader)
+  // We can create restrictive services because I assume that ModelData is created once on UI side
+  lazy val dictServices: UiDictServices =
+    DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(processDefinition.expressionConfig.dictionaries, processConfig)
+
+  lazy val validator: ProcessValidator = ProcessValidator.default(processWithObjectsDefinition, dictServices.dictRegistry, modelClassLoader.classLoader)
 
   def withThisAsContextClassLoader[T](block: => T) : T = {
     ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {
