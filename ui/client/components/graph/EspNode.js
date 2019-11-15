@@ -155,7 +155,8 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
 
   let attrs = {
     '.background': {
-      width: widthWithTestResults
+      width: widthWithTestResults,
+      opacity: node.isDisabled ? 0.4 : 1
     },
     '.background title': {
       text: description
@@ -165,13 +166,14 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     },
     'rect.nodeIconPlaceholder': {
       fill: customAttrs[node.type].styles.fill,
-      opacity: node.isDisabled ? 0.5 : 1
+      opacity: node.isDisabled ? 0.4 : 1
     },
     '.nodeIconItself': {
       'xlink:href': SVGUtils.svgToDataURL(icon), //we encode icon data to have standalone svg that can be used to generate pdf
     },
     '.contentText': {
-      text: bodyContent
+      text: bodyContent,
+      opacity: node.isDisabled ? 0.65 : 1
     },
     '.testResultsPlaceHolder': {
       display: hasCounts && !forExport ? 'block' : 'none',
