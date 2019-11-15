@@ -9,7 +9,7 @@ import {errorValidator, notEmptyValidator} from "../../../common/Validators";
 
 const MapVariable = (props) => {
 
-  const {isMarked, node, removeElement, addElement, onChange, readOnly, errors} = props;
+  const {isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors} = props;
 
   const addField = () => {
     addElement("fields", {"name": "", "uuid": uuid4(), "expression": {"expression": "", "language": "spel"}});
@@ -24,6 +24,7 @@ const MapVariable = (props) => {
         onChange={onChange}
         isMarked={isMarked("id")}
         readOnly={readOnly}
+        showValidation={showValidation}
         validators={[notEmptyValidator, errorValidator(errors, "id")]}
       />
       <Input
@@ -33,6 +34,7 @@ const MapVariable = (props) => {
         onChange={onChange}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
+        showValidation={showValidation}
         validators={[notEmptyValidator, errorValidator(errors, "varName")]}
       />
       <Fields
@@ -43,6 +45,8 @@ const MapVariable = (props) => {
         namespace="fields"
         addField={addField}
         isMarked={isMarked}
+        readOnly={readOnly}
+        showValidation={showValidation}
         errors={errors}
       />
       <Textarea
@@ -63,7 +67,8 @@ MapVariable.propTypes = {
   removeElement: PropTypes.func.isRequired,
   addElement: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
-  readOnly: PropTypes.bool
+  readOnly: PropTypes.bool,
+  showValidation: PropTypes.bool.isRequired
 };
 
 MapVariable.defaultProps = {

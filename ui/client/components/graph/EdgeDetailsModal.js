@@ -16,7 +16,8 @@ import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
 class EdgeDetailsModal extends React.Component {
 
   static propTypes = {
-    edgeToDisplay: PropTypes.object.isRequired
+    edgeToDisplay: PropTypes.object.isRequired,
+    showValidation: PropTypes.bool.isRequired
   }
 
   constructor(props) {
@@ -117,6 +118,7 @@ class EdgeDetailsModal extends React.Component {
                     updateEdgeProp={this.updateEdgeProp}
                     readOnly={false}
                     edge={this.state.editedEdge}
+                    showValidation={true}
                   />
                 </div>
                 <div className="modalFooter">

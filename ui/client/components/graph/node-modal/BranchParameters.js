@@ -5,7 +5,7 @@ import {errorValidator, notEmptyValidator} from "../../../common/Validators";
 
 const BranchParameters = (props) => {
 
-  const {node, joinDef, onChange, isMarked, readOnly, errors} = props
+  const {node, joinDef, onChange, isMarked, readOnly, showValidation, errors} = props
 
   return (
     joinDef.branchParameters.map((branchParamDef, paramIndex) => {
@@ -35,6 +35,7 @@ const BranchParameters = (props) => {
                           }}
                           validators={[notEmptyValidator, errorValidator(errors, branchErrorFieldName(branchParamDef.name, edge.from))]}
                           isMarked={isMarked(path)}
+                          showValidation={showValidation}
                         />
                       </div>
                     </div>
@@ -55,6 +56,7 @@ BranchParameters.propTypes = {
   onChange: PropTypes.func.isRequired,
   isMarked: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
+  showValidation: PropTypes.bool.isRequired
 }
 
 BranchParameters.defaultProps = {
