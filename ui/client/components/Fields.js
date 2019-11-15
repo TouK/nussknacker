@@ -11,21 +11,20 @@ import ValidationLabels from "./modals/ValidationLabels";
 class RawField extends React.Component {
   render() {
     const markedClass = this.props.isMarked(this.props.index) ? " marked" : "";
-    const index = this.props.index;
-    const field = this.props.field;
     const opacity = this.props.isDragging ? 0 : 1;
+    const {index, field, showValidation} = this.props
 
     const validators = [notEmptyValidator];
     return this.props.connectDropTarget(this.props.connectDragSource(
       <div className="node-row movable-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
-          <input className={allValid(validators, field.name) ? "node-input" : "node-input node-input-with-error"}
+          <input className={!showValidation || allValid(validators, field.name) ? "node-input" : "node-input node-input-with-error"}
                  type="text"
                  value={field.name}
                  placeholder="Name"
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
-          <ValidationLabels validators={validators} values={[field.name]}/>
+          {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
         </div>
         <div className={"node-value field" + markedClass}>
           {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value))}
@@ -107,7 +106,8 @@ export default class Fields extends React.Component {
     //function (fields)
     onChange: PropTypes.func.isRequired,
     //e.g. { name: "", value1: "" }
-    newValue: PropTypes.object.isRequired
+    newValue: PropTypes.object.isRequired,
+    showValidation: PropTypes.bool.isRequired
   }
 
   constructor(props) {
@@ -142,6 +142,7 @@ export default class Fields extends React.Component {
                  changeValue={this.changeValue.bind(this)}
                  removeField={this.removeField.bind(this)}
                  moveItem={moveItem}
+                 showValidation={this.props.showValidation}
                  {...this.props} />
         )
       }
