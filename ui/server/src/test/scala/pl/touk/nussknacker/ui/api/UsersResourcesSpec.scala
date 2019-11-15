@@ -6,12 +6,11 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.scalatest._
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 
 class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with EspItTest {
-
-  implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
+  with Matchers with EspItTest with PatientScalaFutures {
 
   test("fetch user info") {
     getUser(isAdmin = false) ~> check {
