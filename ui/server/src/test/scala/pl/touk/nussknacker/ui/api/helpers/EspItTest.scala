@@ -3,9 +3,10 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import cats.instances.all._
 import cats.syntax.semigroup._
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Json, Printer}
 import org.scalatest._
@@ -30,6 +31,8 @@ import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, 
 
 trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
+  override def testConfig: Config = ConfigWithScalaVersion.config
+
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
 
@@ -41,7 +44,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
-  val typesForCategories = ProcessTypesForCategories()
+  val typesForCategories = new ProcessTypesForCategories(testConfig)
 
   val existingProcessingType = "streaming"
 
@@ -71,17 +74,16 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     processAuthorizer = processAuthorizer
   )
 
-  private val config = system.settings.config.withFallback(ConfigFactory.load())
-  val authenticationConfig = DefaultAuthenticationConfiguration.create(config)
+  val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)
 
-  val featureTogglesConfig = FeatureTogglesConfig.create(config)
-  val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+  val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
+  val typeToConfig = ProcessingTypeDeps(testConfig, featureTogglesConfig.standaloneMode)
   val usersRoute = new UserResources(typesForCategories)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
 
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
   val definitionResources = new DefinitionResources(
-    Map(existingProcessingType ->  FlinkStreamingProcessManagerProvider.defaultModelData(ConfigFactory.load())), subprocessRepository, typesForCategories)
+    Map(existingProcessingType ->  FlinkStreamingProcessManagerProvider.defaultModelData(testConfig)), subprocessRepository, typesForCategories)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 

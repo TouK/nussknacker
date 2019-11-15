@@ -1,8 +1,5 @@
 language: scala
 
-scala:
-  - 2.11.12
-
 jdk:
   - oraclejdk8
 
@@ -51,7 +48,7 @@ cache:
     - $HOME/.npm
 
 stages:
-  - tests
+  - test
   - name: releases
     # We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
     # We also don't allow for pull request builds because they are built from merge of source and upstream branches.
@@ -60,23 +57,23 @@ stages:
 
 jobs:
   include:
-    - stage: tests
+    - stage: test
       name: "Backend tests"
-      script: ./ciBackendTest.sh $TRAVIS_SCALA_VERSION
-      after_success: if [ "$COVERAGE" = true ]; then sbt ++$TRAVIS_SCALA_VERSION coveralls; else echo "Skipping coveralls"; fi
+      script: ./ciBackendTest.sh
+      after_success: if [ "$COVERAGE" = true ]; then sbt + coveralls; else echo "Skipping coveralls"; fi
+    - name: "UI slow tests"
+      script: sbt +clean +ui/slow:test
+    - name: "Management tests"
+      script: sbt +clean +management/it:test
+    - name: "EngineStandalone tests"
+      script: sbt +clean +engineStandalone/it:test
     - name: "Frontend tests"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script: ./ciFrontendTest.sh
-    - name: "UI slow tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/slow:test
-    - name: "Management tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
-    - name: "EngineStandalone tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
     - stage: releases
       name: "Release sonatype packages"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
-      script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
+      script: ./ciPublish.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER}
     - name: "Push Docker Image"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script:

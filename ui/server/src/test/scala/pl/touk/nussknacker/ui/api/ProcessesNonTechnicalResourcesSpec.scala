@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 
 import scala.language.higherKinds
 

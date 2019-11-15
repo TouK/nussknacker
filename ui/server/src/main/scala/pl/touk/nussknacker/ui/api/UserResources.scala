@@ -28,6 +28,7 @@ object GlobalPermissions {
   def apply(permissions: List[GlobalPermission]): GlobalPermissions = {
     permissions.foldLeft(GlobalPermissions(false)) {
       case (acc, GlobalPermission.AdminTab) => acc.copy(adminTab = true)
+      case (acc, _) => acc
     }
   }
 }

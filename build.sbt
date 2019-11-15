@@ -5,7 +5,9 @@ import sbt._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
-val scalaV = "2.11.12"
+val scala211 = "2.11.12"
+val scala212 = "2.12.10"
+lazy val supportedScalaVersions = List(scala212, scala211)
 
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
@@ -26,7 +28,8 @@ val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false
 publishTo := Some(Resolver.defaultLocal)
-
+crossScalaVersions := Nil
+               
 val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
@@ -81,7 +84,8 @@ val commonSettings =
     Seq(
       test in assembly := {},
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-      scalaVersion  := scalaV,
+      crossScalaVersions := supportedScalaVersions,
+      scalaVersion  := scala212,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven"
       ),
@@ -102,11 +106,15 @@ val commonSettings =
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
-        "-Xlint:unchecked"
+        "-Xlint:unchecked",
+        //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
+        "-parameters"
       ),
       assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
       coverageMinimum := 60,
-      coverageFailOnMinimum := false
+      coverageFailOnMinimum := false,
+      //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
+      scalacOptions in (Compile, doc) -= "-Xfatal-warnings"
     )
 
 val akkaV = "2.4.20" //same version as in Flink
@@ -156,7 +164,7 @@ lazy val dockerSettings = {
     dockerLabels := Map(
       "tag" -> dockerTagName.getOrElse(version.value),
       "version" -> version.value,
-      "scala" -> scalaV,
+      "scala" -> scalaVersion.value,
       "flink" -> flinkV
     ),
     version in Docker := dockerTagName.getOrElse(version.value)
@@ -172,12 +180,13 @@ lazy val dist = (project in file("nussknacker-dist"))
       (assembly in Compile) in generic,
       (assembly in Compile) in example
     ).value,
+    
     mappings in Universal += {
-      val genericModel = generic.base / "target" / "scala-2.11" / "genericModel.jar"
+      val genericModel = (crossTarget in generic).value / "genericModel.jar"
       genericModel -> "model/genericModel.jar"
     },
     mappings in Universal += {
-      val exampleModel = example.base / "target" / "scala-2.11" / s"nussknacker-example-assembly-${version.value}.jar"
+      val exampleModel = (crossTarget in example).value / s"nussknacker-example-assembly-${version.value}.jar"
       exampleModel -> "model/exampleModel.jar"
     },
     publishArtifact := false,
@@ -355,6 +364,7 @@ lazy val generic = (project in engine("flink/generic")).
       )
     },
     test in assembly := {},
+    
     assemblyJarName in assembly := "genericModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
@@ -484,7 +494,7 @@ lazy val util = (project in engine("util")).
       Seq(
         "com.iheart" %% "ficus" % ficusV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "io.circe" %% "circe-java8" % "0.11.1"
+        "io.circe" %% "circe-java8" % circeV
       )
     }
   ).dependsOn(api)
@@ -618,6 +628,9 @@ lazy val httpUtils = (project in engine("httpUtils")).
     libraryDependencies ++= {
       val sttpV = "2.0.0-M6"
       Seq(
+        //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
+        "io.circe" %% "circe-core" % circeV force(),
+        "io.circe" %% "circe-parser" % circeV force(),
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
         "org.asynchttpclient" % "async-http-client" % "2.10.4",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
@@ -649,11 +662,11 @@ lazy val queryableState = (project in engine("queryableState")).
 
 lazy val buildUi = taskKey[Unit]("builds ui")
 
-def runNpm(command: String, errorMessage: String): Unit = {
+def runNpm(command: String, errorMessage: String, outputPath: File): Unit = {
   import sys.process.Process
   val path = Path.apply("ui/client").asFile
   println("Using path: " + path.getAbsolutePath)
-  val result = Process(s"npm $command", path)!;
+  val result = Process(s"npm $command", path, "OUTPUT_PATH" -> outputPath.absolutePath)!;
   if (result != 0) throw new RuntimeException(errorMessage)
 }
 
@@ -674,8 +687,8 @@ lazy val ui = (project in file("ui/server"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-ui",
-    buildUi := {
-      runNpm("run build", "Client build failed")
+    buildUi :=  {
+      runNpm("run build", "Client build failed", (crossTarget in compile).value)
     },
     parallelExecution in ThisBuild := false,
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Info),

@@ -10,6 +10,7 @@ import org.scalatest._
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.NussknackerApp.system
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -18,7 +19,7 @@ import scala.language.higherKinds
 class SslBindingSpec extends FlatSpec with Matchers {
 
   it should "connect to api via SSL" in {
-    implicit val system: ActorSystem = ActorSystem("SslBindingSpec")
+    implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.config)
     implicit val materializer: Materializer = ActorMaterializer()
 
     val route = NussknackerApp.initializeRoute(system.settings.config)
