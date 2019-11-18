@@ -13,9 +13,11 @@ object PartitionByKeyFlinkKafkaProducer011 {
   def apply[T](kafkaAddress: String,
                topic: String,
                serializationSchema: KeyedSerializationSchema[T],
+               clientId: String,
                kafkaProperties: Option[Map[String, String]] = None): FlinkKafkaProducer011[T] = {
     val props = new Properties()
     props.setProperty("bootstrap.servers", kafkaAddress)
+    KafkaEspUtils.setClientId(props, clientId)
     kafkaProperties.map(_.asJava).foreach(props.putAll)
     //we give null as partitioner to use default kafka partition behaviour...
     //default behaviour should partition by key
