@@ -1,7 +1,6 @@
 import React from "react"
 import {Table, Td, Tr} from "reactable"
 import {connect} from "react-redux"
-import Select from 'react-select'
 import HttpService from "../http/HttpService"
 import ActionsUtils from "../actions/ActionsUtils"
 import DateUtils from "../common/DateUtils"
@@ -9,14 +8,15 @@ import LoaderSpinner from "../components/Spinner.js"
 import AddProcessDialog from "../components/AddProcessDialog.js"
 import HealthCheck from "../components/HealthCheck.js"
 import "../stylesheets/processes.styl"
-import filterIcon from '../assets/img/search.svg'
-import createProcessIcon from '../assets/img/create-process.svg'
 import {withRouter} from 'react-router-dom'
 import ProcessUtils from "../common/ProcessUtils"
 import BaseProcesses from "./BaseProcesses"
 import {Glyphicon} from 'react-bootstrap'
 import * as  queryString from 'query-string'
 import {nkPath} from "../config";
+import AddProcessButton from "./AddProcessButton"
+import TableSelect from "./TableSelect"
+import SearchFilter from "./SearchFilter"
 
 class Processes extends BaseProcesses {
   page = 'processes'
@@ -74,59 +74,25 @@ class Processes extends BaseProcesses {
       <div className="Page">
         <HealthCheck/>
         <div id="process-top-bar">
-          <div id="table-filter" className="input-group">
-            <input
-              type="text"
-              placeholder="Filter by text.."
-              className="form-control"
-              aria-describedby="basic-addon1"
-              value={this.state.search}
-              onChange={this.onSearchChange}
-            />
-            <span className="input-group-addon" id="basic-addon1">
-              <img id="search-icon" src={filterIcon}/>
-            </span>
-          </div>
+          <SearchFilter onChange={this.onSearchChange}
+                        value={this.state.search}/>
 
-          <div id="categories-filter" className="input-group">
-            <Select
-              isMulti
-              isSearchable
-              defaultValue={this.state.selectedCategories}
-              closeMenuOnSelect={false}
-              className="form-select"
-              options={this.props.filterCategories}
-              placeholder="Select categories.."
-              onChange={this.onCategoryChange}
-              styles={this.customSelectStyles}
-              theme={this.customSelectTheme}
-            />
-          </div>
+          <TableSelect defaultValue={this.state.selectedCategories}
+                       options={this.props.filterCategories}
+                       placeholder={"Select categories.."}
+                       onChange={this.onCategoryChange}
+                       isMulti={true}
+                       isSearchable={true}/>
 
-          <div id="deployed-filter" className="input-group">
-            <Select
-              defaultValue={this.state.selectedDeployedOption}
-              className="form-select"
-              options={this.deployedOptions}
-              placeholder="Select deployed info.."
-              onChange={this.onDeployedChange}
-              styles={this.customSelectStyles}
-              theme={this.customSelectTheme}
-            />
-          </div>
-          {
-            this.props.loggedUser.isWriter() ? (
-              <div
-                id="process-add-button"
-                className="big-blue-button input-group "
-                role="button"
-                onClick={() => this.setState({showAddProcess: true})}
-              >
-                CREATE NEW PROCESS
-                <img id="add-icon" src={createProcessIcon}/>
-              </div>
-            ) : null
-          }
+          <TableSelect defaultValue={this.state.selectedDeployedOption}
+                       options={this.deployedOptions}
+                       placeholder="Select deployed info.."
+                       onChange={this.onDeployedChange}
+                       isMulti={false}
+                       isSearchable={false}/>
+
+          <AddProcessButton loggedUser={this.props.loggedUser}
+                            onClick={() => this.setState({showAddProcess: true})}/>
         </div>
 
         <AddProcessDialog
@@ -180,7 +146,9 @@ class Processes extends BaseProcesses {
                   />
                 </Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column" value={process.modificationDate}>{DateUtils.formatRelatively(process.modificationDate)}</Td>
+                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)}
+                    className="centered-column"
+                    value={process.modificationDate}>{DateUtils.formatRelatively(process.modificationDate)}</Td>
                 <Td column="status" className="status-column">
                   <div
                     className={this.processStatusClass(process)}

@@ -1,27 +1,27 @@
 @import "./_variables.styl"
 @import "./_mixins.styl"
 
-#categories-filter, #processing-types-filter, #subprocess-types-filter, #deployed-filter
-  margin: 45px containerPadding
-  max-width: 450px
-  flex: 1 1 auto;
-
 #table-filter
   margin: 45px containerPadding
-  max-width: 470px
+  max-width: 450px
+  min-width: 200px
+  flex: 1 1 auto
+  border-radius 0
   input
     background-color: processesSearchInput
     box-shadow: none
   .input-group-addon
     background-color: buttonBlueBkgColor
     border: none
-    padding: 0px 10px
+    border-radius 0
+    padding: 0 10px
     #search-icon
       stroke: #FFFFFF
       width: 30px
   .form-control
     height: 45px
-    width: 425px
+    border-radius 0
+    color: black
 
 .table-select
   margin: 10px 0px -20px containerPadding
@@ -32,8 +32,12 @@
   font-size 14px
   color: black
 
+.form-select
+  & .div
+    border-radius 0 !important
+
 #process-top-bar
-  display: flex
+  display flex
   justify-content: space-between
   background-color: processesTopBar
 

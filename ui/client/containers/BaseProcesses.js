@@ -14,35 +14,11 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   intervalTime = 15000
   page = ''
 
-  customSelectStyles = {
-    control: styles => ({
-      ...styles,
-      minHeight: 45,
-      fontSize: 14,
-      color: '#555555',
-    }),
-    option: styles => ({
-      ...styles,
-      fontSize: 14,
-      color: '#555555',
-    })
-  }
-
   filterIsSubprocessOptions = [
     {label: 'Show all types processes', value: undefined},
     {label: 'Show only processes', value: false},
     {label: 'Show only subprocesses', value: true},
   ]
-
-  customSelectTheme(theme) {
-    return {
-      ...theme,
-      colors: {
-        ...theme.colors,
-        primary: '#0e9ae0',
-      }
-    }
-  }
 
   prepareState(withoutCategories) {
     const query = queryString.parse(this.props.history.location.search, {
@@ -73,13 +49,21 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   onMount() {
     switch (this.page) {
-      case (processesProperty): {
+      case ('processes'): {
         this.reloadAllProcessesKinds(true, false, false, {})
         break;
       }
-      case (subProcessesProperty): {
+      case ('subProcesses'): {
         this.reloadAllProcessesKinds(false, true, false, {})
         break;
+      }
+      case ('archive'): {
+        this.reloadAllProcessesKinds(false, false, true, {})
+        break;
+      }
+      case "custom": {
+        this.reloadProcesses(true)
+        break
       }
     }
 
@@ -96,9 +80,9 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   reloadAllProcessesKinds(showProcessesLoader, showSubProcessesLoader, showArchivedProcessesLoader, search) {
-    this.reloadProcesses(showProcessesLoader, search, processesQueryParams, processesProperty)
-    this.reloadProcesses(showSubProcessesLoader, search, subProcessesQueryParams, subProcessesProperty)
-    this.reloadProcesses(showArchivedProcessesLoader, search, archivedProcessesQueryParams, archivedProcessesProperty)
+    this.reloadProcesses(showProcessesLoader, search, defaultProcessesQueryParams, processesProperty)
+    this.reloadProcesses(showSubProcessesLoader, search, defaultSubProcessesQueryParams, subProcessesProperty)
+    this.reloadProcesses(showArchivedProcessesLoader, search, defaultArchivedProcessesQueryParams, archivedProcessesProperty)
   }
 
   reloadProcesses(shouldShowLoader, search, queryParams, propertyName) {
@@ -116,12 +100,8 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   prepareSearchParams(search, queryParams) {
-    this.queries = {
-      ...this.queries,
-      ...queryParams
-    }
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
-    return Object.assign(query, search, this.queries || {});
+    return Object.assign(query, search, {...queryParams});
   }
 
   reloadStatuses() {
@@ -202,8 +182,8 @@ const processesProperty = 'processes'
 const subProcessesProperty = 'subProcesses'
 const archivedProcessesProperty = 'archivedProcesses'
 
-const processesQueryParams = {isSubprocess: false, isArchived: false}
-const subProcessesQueryParams = {isSubprocess: true, isArchived: false}
-const archivedProcessesQueryParams = {isSubprocess: false, isArchived: true}
+const defaultProcessesQueryParams = {isSubprocess: false, isArchived: false}
+const defaultSubProcessesQueryParams = {isSubprocess: true, isArchived: false}
+const defaultArchivedProcessesQueryParams = {isArchived: true}
 
 export default BaseProcesses

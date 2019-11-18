@@ -6,6 +6,7 @@ import BaseAdminTab from "./BaseAdminTab"
 import {Table, Td, Tr} from "reactable"
 import filterIcon from "../../assets/img/search.svg"
 import LoaderSpinner from "../../components/Spinner"
+import SearchFilter from "../SearchFilter"
 
 class UnusedComponents extends BaseAdminTab {
   constructor(props) {
@@ -29,18 +30,9 @@ class UnusedComponents extends BaseAdminTab {
   render() {
     return (
       <div>
-        <div id="table-filter" className="input-group">
-          <input
-            type="text"
-            className="form-control"
-            aria-describedby="basic-addon1"
-            value={this.state.search}
-            onChange={this.onSearchChange}
-          />
-          <span className="input-group-addon" id="basic-addon1">
-            <img id="search-icon" src={filterIcon}/>
-          </span>
-        </div>
+        <SearchFilter
+          value={this.state.search}
+          onChange={this.onSearchChange}/>
 
         <LoaderSpinner show={this.state.showLoader}/>
 
