@@ -7,7 +7,10 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.listner.ChangeEvent.OnDeployed
+import pl.touk.nussknacker.listner.ListenerManagement
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.restmodel.process.deployment.{DeployInfo, DeploymentActionType}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.EspError
@@ -25,15 +28,21 @@ object ManagementActor {
   def props(environment: String,
             managers: Map[ProcessingType, ProcessManager],
             processRepository: FetchingProcessRepository[Future],
-            deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver)(implicit context: ActorRefFactory): Props = {
-    Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver)
+            deployedProcessRepository: DeployedProcessRepository,
+            subprocessResolver: SubprocessResolver,
+            listenerManagement: ListenerManagement)
+           (implicit context: ActorRefFactory): Props = {
+    Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver, listenerManagement)
   }
 
 }
 
-class ManagementActor(environment: String, managers: Map[ProcessingType, ProcessManager],
+class ManagementActor(environment: String,
+                      managers: Map[ProcessingType, ProcessManager],
                       processRepository: FetchingProcessRepository[Future],
-                      deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver) extends FailurePropagatingActor with LazyLogging {
+                      deployedProcessRepository: DeployedProcessRepository,
+                      subprocessResolver: SubprocessResolver,
+                      listenerManagement: ListenerManagement) extends FailurePropagatingActor with LazyLogging {
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()
 
@@ -43,7 +52,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     case Deploy(process, user, savepointPath, comment) =>
       ensureNoDeploymentRunning {
         val deployRes: Future[Unit] = deployProcess(process.id, savepointPath, comment)(user)
-        reply(withDeploymentInfo(process, user.id, DeploymentActionType.Deployment, deployRes))
+        reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, deployRes))
       }
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
@@ -51,7 +60,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val cancelRes = cancelProcess(id, comment)
-        reply(withDeploymentInfo(id, user.id, DeploymentActionType.Cancel, cancelRes))
+        reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, cancelRes))
       }
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
       val info = beingDeployed(id.name)
@@ -68,10 +77,15 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
 
       reply(processStatus)
-    case DeploymentActionFinished(id, None) =>
+    case DeploymentActionFinished(id, user, None) =>
+      implicit val loggedUser = user
       logger.info(s"Finishing ${beingDeployed.get(id.name)} of $id")
+
+      beingDeployed.get(id.name).foreach { deployInfo =>
+        listenerManagement.handler(OnDeployed(id.name, deployInfo))
+      }
       beingDeployed -= id.name
-    case DeploymentActionFinished(id, Some(failure)) =>
+    case DeploymentActionFinished(id, _, Some(failure)) =>
       logger.error(s"Action: ${beingDeployed.get(id.name)} of $id finished with failure", failure)
       beingDeployed -= id.name
     case Test(id, processJson, testData, user, encoder) =>
@@ -103,11 +117,11 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     }
   }
 
-  private def withDeploymentInfo[T](id: ProcessIdWithName, userId: String, action: DeploymentActionType, actionFuture: => Future[T]): Future[T] = {
-    beingDeployed += id.name -> DeployInfo(userId, System.currentTimeMillis(), action)
+  private def withDeploymentInfo[T](id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, actionFuture: => Future[T]): Future[T] = {
+    beingDeployed += id.name -> DeployInfo(user.id, System.currentTimeMillis(), action)
     actionFuture.onComplete {
-      case Success(_) => self ! DeploymentActionFinished(id, None)
-      case Failure(ex) => self ! DeploymentActionFinished(id, Some(ex))
+      case Success(_) => self ! DeploymentActionFinished(id, user, None)
+      case Failure(ex) => self ! DeploymentActionFinished(id, user, Some(ex))
     }
     actionFuture
   }
@@ -197,7 +211,6 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       action
     }
   }
-
 }
 
 
@@ -215,16 +228,7 @@ case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
 case class Test[T](id: ProcessIdWithName, processJson: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
-case class DeploymentActionFinished(id: ProcessIdWithName, optionalFailure: Option[Throwable])
-
-case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
-
-sealed trait DeploymentActionType
-
-object DeploymentActionType {
-  case object Deployment extends DeploymentActionType
-  case object Cancel extends DeploymentActionType
-}
+case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, optionalFailure: Option[Throwable])
 
 case object DeploymentStatus
 
@@ -237,4 +241,3 @@ class ProcessIsBeingDeployed(deployments: Map[ProcessName, DeployInfo]) extends
       case (id, info) => s"${info.action} on $id by ${info.userId}"
     }.mkString(", ")
   }") with EspError
-

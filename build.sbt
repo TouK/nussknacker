@@ -29,7 +29,7 @@ val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 //publishArtifact := false
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
-               
+
 val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
@@ -179,7 +179,7 @@ lazy val dist = (project in file("nussknacker-dist"))
       (assembly in Compile) in generic,
       (assembly in Compile) in example
     ).value,
-    
+
     mappings in Universal += {
       val genericModel = (crossTarget in generic).value / "genericModel.jar"
       genericModel -> "model/genericModel.jar"
@@ -352,7 +352,7 @@ lazy val generic = (project in engine("flink/generic")).
       )
     },
     test in assembly := {},
-    
+
     assemblyJarName in assembly := "genericModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
@@ -662,7 +662,14 @@ lazy val restmodel = (project in file("ui/restmodel"))
       "io.circe" %% "circe-java8" % circeV
     )
   )
-  .dependsOn(interpreter, testUtil % "test")
+  .dependsOn(api, interpreter, security, testUtil % "test")
+
+lazy val listenerApi = (project in file("ui/listner-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-listner-api",
+  )
+  .dependsOn(restmodel, api, util, testUtil % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -727,7 +734,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, testUtil % "test")
+  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly")
 

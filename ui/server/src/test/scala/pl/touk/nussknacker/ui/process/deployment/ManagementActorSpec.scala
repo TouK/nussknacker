@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.listner.ListenerManagement
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -29,7 +30,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   private val deploymentProcessRepository = newDeploymentProcessRepository(db)
   private val managementActor =
     system.actorOf(
-      ManagementActor.props(env, Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver), "management")
+      ManagementActor.props(env, Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver, ListenerManagement.noop), "management")
 
   private val jobStatusService = new JobStatusService(managementActor)
 

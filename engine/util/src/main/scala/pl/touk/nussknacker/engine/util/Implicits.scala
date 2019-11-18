@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
 object Implicits {
@@ -21,5 +22,12 @@ object Implicits {
       if (s == null || s == "") None
       else Some(s)
     }
+  }
+
+  implicit class RichFuture[A](future: Future[A]) {
+    def effect(f: () => Unit)(implicit ec: ExecutionContext): Future[A] = for {
+      result <- future
+      _      = f()
+    } yield result
   }
 }

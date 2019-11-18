@@ -26,6 +26,8 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.listner.ChangeEvent._
+import pl.touk.nussknacker.listner.ListenerManagement
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
@@ -36,6 +38,7 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
+import pl.touk.nussknacker.engine.util.Implicits._
 
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          writeRepository: WriteProcessRepository,
@@ -45,7 +48,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                          processResolving: UIProcessResolving,
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer,
-                         val processAuthorizer:AuthorizeProcess)
+                         val processAuthorizer:AuthorizeProcess,
+                         listenerManagement: ListenerManagement)
                         (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -68,7 +72,10 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("unarchive" / Segment) { processName =>
           (post & processId(processName)) { processId =>
             canWrite(processId) {
-              complete(writeArchive(processId.id, isArchived = false))
+              complete {
+                writeArchive(processId.id, isArchived = false)
+                  .effect(() => listenerManagement.handler(OnUnarchived(processId.name)))
+              }
             }
           }
         } ~ path("archive" / Segment) { processName =>
@@ -77,7 +84,10 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               /*
               should not allow to archive still used subprocess IGNORED TEST
               */
-              complete(writeArchive(processId.id, isArchived = true))
+              complete {
+                writeArchive(processId.id, isArchived = true)
+                  .effect(() => listenerManagement.handler(OnArchived(processId.name)))
+              }
             }
           }
         }  ~ path("processes") {
@@ -173,6 +183,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             (delete & canWrite(processId)) {
               complete {
                 writeRepository.deleteProcess(processId.id).map(toResponse(StatusCodes.OK))
+                  .effect(() => listenerManagement.handler(OnDeleted(processId.name)))
               }
             } ~ (put & canWrite(processId)) {
               entity(as[ProcessToSave]) { processToSave =>
@@ -182,6 +193,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                       rejectSavingArchivedProcess
                     case false =>
                       saveProcess(processToSave, processId.id).map(toResponseEither[ValidationResult])
+                        .effect(() => listenerManagement.handler(OnSaved(processId.name)))
                   }
                 }
               }
@@ -209,6 +221,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                 processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap {
                   case Some(details) if details.currentlyDeployedAt.isEmpty =>
                     writeRepository.renameProcess(processId.id, newName).map(toResponse(StatusCodes.OK))
+                      .effect(() => listenerManagement.handler(OnRenamed(processId.name, ProcessName(newName))))
                   case _ => Future.successful(espErrorToHttp(ProcessAlreadyDeployed(processName)))
                 }
               }
@@ -247,6 +260,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                         isSubprocess = isSubprocess
                       )
                         .map(toResponse(StatusCodes.Created))
+                        .effect(() => listenerManagement.handler(OnSaved(ProcessName(processName))))
                     case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
                   }
                 }
@@ -273,6 +287,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               complete {
                 // TODO: Validate that category exists at categories list
                 writeRepository.updateCategory(processId = processId.id, category = category).map(toResponse(StatusCodes.OK))
+                  .effect(() => listenerManagement.handler(OnCategoryChanged(ProcessName(processName), category)))
               }
             }
           }

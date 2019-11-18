@@ -12,6 +12,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+import pl.touk.nussknacker.listner.ListenerManagementFactory
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
@@ -118,8 +119,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
+    val listenerManagement = ListenerManagementFactory.serviceLoader(getClass.getClassLoader).create(config)
+
     val managementActor = system.actorOf(
-      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver), "management")
+      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver, listenerManagement), "management")
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
@@ -136,7 +139,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
           processResolving = processResolving,
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
-          processAuthorizer = processAuthorizer
+          processAuthorizer = processAuthorizer,
+          listenerManagement = listenerManagement
         ),
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, processRepository),
