@@ -408,7 +408,8 @@ lazy val kafka = (project in engine("kafka")).
     name := "nussknacker-kafka",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" % "kafka-clients" % kafkaV
+        "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "org.scalatest" %% "scalatest" % scalaTestV
       )
     }
   ).
@@ -465,7 +466,7 @@ lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
       )
     }
   )
-  .dependsOn(testUtil)
+  .dependsOn(testUtil, kafka)
 
 lazy val util = (project in engine("util")).
   settings(commonSettings).

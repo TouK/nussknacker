@@ -24,6 +24,13 @@ object KafkaEspUtils extends LazyLogging {
 
   val defaultTimeoutMillis = 10000
 
+  def setClientId(props: Properties, id: String): Unit = {
+    props.setProperty("client.id", sanitizeClientId(id))
+  }
+
+  def sanitizeClientId(originalId: String): String =
+    //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
+    originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
   def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: String, consumerGroupId: String): Unit = {
     val setToLatestOffset =
@@ -44,7 +51,7 @@ object KafkaEspUtils extends LazyLogging {
     Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
   }
 
-  def toProperties(config: KafkaConfig, groupId: Option[String]) = {
+  def toProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
     val props = new Properties()
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("auto.offset.reset", "earliest")
@@ -53,7 +60,7 @@ object KafkaEspUtils extends LazyLogging {
     props
   }
 
-  def toProducerProperties(config: KafkaConfig, clientId: String) = {
+  def toProducerProperties(config: KafkaConfig, clientId: String): Properties = {
     val props: Properties = new Properties
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("key.serializer", classOf[ByteArraySerializer].getCanonicalName)
@@ -63,7 +70,7 @@ object KafkaEspUtils extends LazyLogging {
     props.setProperty("batch.size", "16384")
     props.setProperty("linger.ms", "1")
     props.setProperty("buffer.memory", "33554432")
-    props.setProperty("client.id", clientId)
+    setClientId(props, clientId)
     config.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
       props.setProperty(k, v)
     }

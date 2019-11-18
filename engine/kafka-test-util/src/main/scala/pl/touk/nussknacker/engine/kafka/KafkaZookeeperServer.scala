@@ -72,25 +72,24 @@ case class KafkaZookeeperServer(zooKeeperServer: NIOServerCnxnFactory, kafkaServ
 object KafkaUtils {
 
   def createRawKafkaProducer(kafkaAddress: String, id: String): KafkaProducer[Array[Byte], Array[Byte]] = {
-    val props: Properties = createCommonProducerProps(kafkaAddress)
+    val props: Properties = createCommonProducerProps(kafkaAddress, id)
     props.put("key.serializer", classOf[ByteArraySerializer].getName)
     props.put("value.serializer", classOf[ByteArraySerializer].getName)
-    props.put("client.id", id.replaceAll("[, ;]", "_"))
     new KafkaProducer(props)
   }
 
   def createKafkaProducer(kafkaAddress: String, id: String): KafkaProducer[String, String] = {
-    val props: Properties = createCommonProducerProps(kafkaAddress)
+    val props: Properties = createCommonProducerProps(kafkaAddress, id)
     props.put("key.serializer", classOf[StringSerializer].getName)
     props.put("value.serializer", classOf[StringSerializer].getName)
-    props.put("client.id", id.replaceAll("[, ;]", "_"))
     new KafkaProducer(props)
   }
 
-  private def createCommonProducerProps[K, T](kafkaAddress: String) = {
+  private def createCommonProducerProps[K, T](kafkaAddress: String, id: String) = {
     val props = new Properties()
     props.put("bootstrap.servers", kafkaAddress)
     props.put("batch.size", "100000")
+    KafkaEspUtils.setClientId(props, id)
     props
   }
 
