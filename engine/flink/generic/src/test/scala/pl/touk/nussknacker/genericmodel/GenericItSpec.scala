@@ -236,7 +236,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
     val config = ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
-    env.getConfig.disableSysoutLogging()
     registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
   }
 

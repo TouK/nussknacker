@@ -6,7 +6,7 @@ import ValidationLabels from "../../modals/ValidationLabels";
 
 const Fields = (props) => {
 
-  const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, expressionValue, errors} = props
+  const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation, expressionValue, errors} = props
 
   return (
     <div className="node-row">
@@ -22,14 +22,14 @@ const Fields = (props) => {
                 <div className="node-row movable-row" key={field.uuid}>
                   <div className={"node-value fieldName" + (isMarked(paths) ? " marked" : "")}>
                     <input
-                      className={allValid(validators, field.name) ? "node-input" : "node-input node-input-with-error"}
+                      className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
                       type="text"
                       value={field.name}
                       placeholder="Field name"
                       onChange={((e) => onChange(`${paths}.name`, e.target.value))}
                       readOnly={readOnly}
                     />
-                    <ValidationLabels validators={validators} values={[field.name]}/>
+                    {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
                   </div>
                   <div className={"node-value field"}>
                     <ExpressionSuggest
@@ -41,6 +41,7 @@ const Fields = (props) => {
                         readOnly}}
                       validators={validators}
                       isMarked={isMarked(paths)}
+                      showValidation={showValidation}
                     />
                   </div>
                   <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>
@@ -74,7 +75,8 @@ Fields.propTypes = {
   addField: PropTypes.func.isRequired,
   removeField: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
-  expressionValue: PropTypes.bool
+  expressionValue: PropTypes.bool,
+  showValidation: PropTypes.bool.isRequired
 }
 
 Fields.defaultProps = {

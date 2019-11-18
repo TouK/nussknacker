@@ -72,7 +72,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
 
     val insertNew = processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
 
-    val insertAction = logInfo(s"Saving process ${processName.value} by user $loggedUser").flatMap { _ =>
+    val insertAction = logDebug(s"Saving process ${processName.value} by user $loggedUser").flatMap { _ =>
       latestProcessVersionsNoJson(processName).result.headOption.flatMap {
         case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processName.value).asLeft)
         case None => processesTable.filter(_.name === processName.value).result.headOption.flatMap {
@@ -114,7 +114,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     def rightT[T](value: DB[T]): EitherT[DB, EspError, T] = EitherT[DB, EspError, T](value.map(Right(_)))
 
     val insertAction = for {
-      _ <- rightT(logInfo(s"Updating process $processId by user $loggedUser"))
+      _ <- rightT(logDebug(s"Updating process $processId by user $loggedUser"))
       maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId.value).result.headOption)
       process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
       _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value.toString)))
@@ -126,8 +126,8 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     insertAction.value
   }
 
-  private def logInfo(s: String) = {
-    dbMonad.pure(()).map(_ => logger.info(s))
+  private def logDebug(s: String) = {
+    dbMonad.pure(()).map(_ => logger.debug(s))
   }
 
   def deleteProcess(processId: ProcessId): F[XError[Unit]] = {

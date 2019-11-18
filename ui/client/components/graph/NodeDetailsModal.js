@@ -27,7 +27,8 @@ class NodeDetailsModal extends React.Component {
     testResults: PropTypes.object,
     processId: PropTypes.string.isRequired,
     nodeErrors: PropTypes.array.isRequired,
-    readOnly: PropTypes.bool.isRequired
+    readOnly: PropTypes.bool.isRequired,
+    showValidation: PropTypes.bool.isRequired
   }
 
   constructor(props) {
@@ -139,8 +140,12 @@ class NodeDetailsModal extends React.Component {
               </div>
             </div>
             {this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
-                                    <NodeDetailsContent isEditMode={false} node={node} nodeErrors={this.props.nodeErrors}
-                                                        onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))}
+                                    <NodeDetailsContent isEditMode={false}
+                                                        showValidation={true}
+                                                        node={node}
+                                                        nodeErrors={this.props.nodeErrors}
+                                                        onChange={() => {}}
+                                                        testResults={testResults(node.id)}/><hr/></div>))}
           </div>
         </div>
       </div>
@@ -196,7 +201,9 @@ class NodeDetailsModal extends React.Component {
                               renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
                     {
                       this.isGroup() ? this.renderGroup(testResults)
-                        : (<NodeDetailsContent isEditMode={!this.props.readOnly} node={this.state.editedNode}
+                        : (<NodeDetailsContent isEditMode={!this.props.readOnly}
+                                               showValidation={true}
+                                               node={this.state.editedNode}
                                                nodeErrors={this.props.nodeErrors}
                                                onChange={this.updateNodeState}
                                                testResults={testResults(this.state.currentNodeId)}/>)

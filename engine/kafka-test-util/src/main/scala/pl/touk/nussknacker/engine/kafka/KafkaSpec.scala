@@ -15,7 +15,7 @@ trait KafkaSpec extends { self: Suite with BeforeAndAfterAll =>
       zkPort = zkPort,
       kafkaBrokerConfig = kafkaBrokerConfig
     )
-    kafkaClient = new KafkaClient(kafkaAddress = kafkaZookeeperServer.kafkaAddress, zkAddress = kafkaZookeeperServer.zkAddress)
+    kafkaClient = new KafkaClient(kafkaAddress = kafkaZookeeperServer.kafkaAddress, zkAddress = kafkaZookeeperServer.zkAddress, self.suiteName)
   }
 
   override protected def afterAll(): Unit = {
