@@ -13,7 +13,7 @@ trait KafkaSignalStreamConnector {
   def connectWithSignals[A, B: TypeInformation](start: DataStream[A], processId: String, nodeId: String, schema: DeserializationSchema[B]): ConnectedStreams[A, B] = {
     val signalsSource = new FlinkKafkaConsumer011[B](signalsTopic, schema,
       KafkaEspUtils.toProperties(kafkaConfig, Some(s"$processId-$nodeId-signal")))
-    val signals = start.executionEnvironment.addSource(signalsSource)
+    val signals = start.executionEnvironment.addSource(signalsSource).name(s"signals-$processId-$nodeId")
     start.connect(signals)
   }
 }

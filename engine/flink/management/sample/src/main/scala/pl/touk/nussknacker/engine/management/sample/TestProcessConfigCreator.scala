@@ -45,8 +45,13 @@ import pl.touk.sample.JavaSampleEnum
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
-class TestProcessConfigCreator extends ProcessConfigCreator {
+object TestProcessConfigCreator {
 
+  val oneElementValue = "One element"
+
+}
+
+class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config) = {
     val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
@@ -93,7 +98,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
           override def run(ctx: SourceContext[String]) = {
             while (run) {
-              if (!emited) ctx.collect("One element")
+              if (!emited) ctx.collect(TestProcessConfigCreator.oneElementValue)
               emited = true
               Thread.sleep(1000)
             }

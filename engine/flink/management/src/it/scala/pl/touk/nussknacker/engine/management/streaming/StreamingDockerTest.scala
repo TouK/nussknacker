@@ -18,7 +18,7 @@ trait StreamingDockerTest extends DockerTest { self: Suite =>
   override def beforeAll(): Unit = {
     super.beforeAll()
     kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort")
+      s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort", self.suiteName)
   }
 
   override def afterAll(): Unit = {
