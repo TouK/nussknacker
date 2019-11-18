@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.Properties
 
-import kafka.server.{KafkaConfig, KafkaServer}
+import kafka.server.KafkaServer
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.TopicPartition
@@ -50,7 +50,7 @@ object KafkaZookeeperServer {
       properties.setProperty(key, value)
     }
 
-    val server = new KafkaServer(new KafkaConfig(properties), time = Time.SYSTEM)
+    val server = new KafkaServer(new kafka.server.KafkaConfig(properties), time = Time.SYSTEM)
     server.startup()
 
     server
