@@ -15,13 +15,12 @@ trait DictRegistry {
 
   /**
    * Returns Some(label) if exists matching key in dictionary with id = dictId
-   * Returns None if registry not support fetching of label for given dictId or when there is no entry with given key.
-   * It should be loose because we need to give user ability to fix key in process when dictionary will change possible values.
+   * Returns None if registry not support fetching of label for given dictId.
    */
-  def labelByKey(dictId: String, key: String): Validated[DictNotDeclared, Option[String]]
+  def labelByKey(dictId: String, key: String): Validated[DictLookupError, Option[String]]
 
   def toEngineRegistry: EngineDictRegistry = new EngineDictRegistry {
-    override def labelByKey(dictId: String, label: String): Validated[DictNotDeclared, Option[String]] =
+    override def labelByKey(dictId: String, label: String): Validated[DictLookupError, Option[String]] =
       DictRegistry.this.labelByKey(dictId, label)
   }
 
@@ -42,6 +41,6 @@ object DictRegistry {
 
   case class DictEntryWithLabelNotExists(dictId: String, label: String, possibleLabels: Option[List[String]]) extends DictLookupError
 
-  // DictEntryWithKeyNotExists not exists because on this side of transformation we always need to be loose - see DictRegistry.labelByKey
+  case class DictEntryWithKeyNotExists(dictId: String, key: String, possibleKeys: Option[List[String]]) extends DictLookupError
 
 }

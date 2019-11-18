@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, Lazy
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
+import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper, LooseKeysDictTyper}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 
@@ -121,7 +121,7 @@ class SpelExpression(parsed: ParsedSpelExpression,
 
 class SpelExpressionParser(parser: org.springframework.expression.spel.standard.SpelExpressionParser,
                            validator: SpelExpressionValidator,
-                           labelsDictTyper: LabelsDictTyper,
+                           dictRegistry: DictRegistry,
                            enableSpelForceCompile: Boolean,
                            flavour: Flavour,
                            prepareEvaluationContext: Context => EvaluationContext) extends ExpressionParser {
@@ -156,7 +156,10 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   }
 
   def typingDictLabels =
-    new SpelExpressionParser(parser, validator.withTyper(_.withDictTyper(labelsDictTyper)), labelsDictTyper, enableSpelForceCompile, flavour, prepareEvaluationContext)
+    new SpelExpressionParser(parser, validator.withTyper(_.withDictTyper(new LabelsDictTyper(dictRegistry))), dictRegistry, enableSpelForceCompile, flavour, prepareEvaluationContext)
+
+  def looselyTypingDictKeys =
+    new SpelExpressionParser(parser, validator.withTyper(_.withDictTyper(new LooseKeysDictTyper(dictRegistry))), dictRegistry, enableSpelForceCompile, flavour, prepareEvaluationContext)
 
 }
 
@@ -223,7 +226,7 @@ object SpelExpressionParser extends LazyLogging {
 
     val commonSupertypeFinder = new CommonSupertypeFinder(if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union)
     val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry)))
-    new SpelExpressionParser(parser, validator, labelsDictTyper = new LabelsDictTyper(dictRegistry), enableSpelForceCompile, flavour,
+    new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour,
       prepareEvaluationContext(classLoader, imports, propertyAccessors, functions))
   }
 

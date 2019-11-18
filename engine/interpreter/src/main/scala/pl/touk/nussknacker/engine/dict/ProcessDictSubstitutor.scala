@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.spel.ast.{Indexer, StringLiteral}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictLookupError
+import pl.touk.nussknacker.engine.api.dict.DictRegistry.{DictEntryWithKeyNotExists, DictLookupError}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypedDict
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessNodesRewriter}
@@ -74,6 +74,9 @@ object ProcessDictSubstitutor extends LazyLogging {
 
     private def findDictReplacement(dict: TypedDict, value: String): Option[String] = {
       dictLookup(dict, value) match {
+        case Invalid(DictEntryWithKeyNotExists(_, key, possibleKeys)) =>
+          logger.warn(s"Can't find label for key: $key in ${dict.display}, possible keys: ${possibleKeys}. Probable change in dict definition. Will be used key in this place.")
+          None
         case Invalid(err) => // shouldn't happen
           logger.error(s"Unexpected error: $err. Should be handled in typing phase.")
           None

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.dict.static
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictRegistry}
-import pl.touk.nussknacker.engine.api.dict.DictRegistry.{DictEntryWithLabelNotExists, DictNotDeclared}
+import pl.touk.nussknacker.engine.api.dict.DictRegistry.{DictEntryWithKeyNotExists, DictEntryWithLabelNotExists, DictNotDeclared}
 
 trait StaticDictRegistry extends DictRegistry {
 
@@ -19,10 +19,11 @@ trait StaticDictRegistry extends DictRegistry {
     }
   }
 
-  override def labelByKey(dictId: String, key: String): Validated[DictRegistry.DictNotDeclared, Option[String]] = {
-    declarations.get(dictId).map(Valid(_)).getOrElse(Invalid(DictNotDeclared(dictId))).map {
+  override def labelByKey(dictId: String, key: String): Validated[DictRegistry.DictLookupError, Option[String]] = {
+    declarations.get(dictId).map(Valid(_)).getOrElse(Invalid(DictNotDeclared(dictId))).andThen {
       case static: StaticDictDefinition =>
-        static.labelByKey.get(key)
+        static.labelByKey.get(key).map(key => Valid(Some(key)))
+          .getOrElse(Invalid(DictEntryWithKeyNotExists(dictId, key, Some(static.labelByKey.values.toList))))
       case definition =>
         handleNotStaticLabelByKey(definition, key)
     }
@@ -30,6 +31,6 @@ trait StaticDictRegistry extends DictRegistry {
 
   protected def handleNotStaticUiKeyBeLabel(definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String]
 
-  protected def handleNotStaticLabelByKey(definition: DictDefinition, key: String): Option[String]
+  protected def handleNotStaticLabelByKey(definition: DictDefinition, key: String): Validated[DictEntryWithKeyNotExists, Option[String]]
 
 }
