@@ -20,7 +20,7 @@ class KafkaSinkFactory(config: KafkaConfig,
   @MethodToInvoke
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String)(metaData: MetaData): Sink = {
     val serializationSchema = schemaFactory.create(topic, config)
-    new KafkaSink(topic, serializationSchema, metaData + "-" + topic)
+    new KafkaSink(topic, serializationSchema, s"${metaData.id}-$topic")
   }
 
   class KafkaSink(topic: String,
