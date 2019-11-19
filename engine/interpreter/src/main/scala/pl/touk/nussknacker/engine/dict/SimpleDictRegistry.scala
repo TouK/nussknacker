@@ -6,6 +6,8 @@ import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictEntryWithKeyNotExist
 import pl.touk.nussknacker.engine.api.dict._
 import pl.touk.nussknacker.engine.api.dict.static.StaticDictRegistry
 
+import scala.concurrent.Future
+
 /**
  * This is simple implementation of DictRegistry which handles only StaticDictDefinition
  */
@@ -21,7 +23,7 @@ class SimpleDictRegistry(protected val declarations: Map[String, DictDefinition]
 
 class SimpleDictQueryService(dictRegistry: DictRegistry) extends DictQueryService {
   // FIXME
-  override def queryEntriesByLabel(dictId: String, labelPattern: String): List[DictEntry] = ???
+  override def queryEntriesByLabel(dictId: String, labelPattern: String): Future[List[DictEntry]] = ???
 }
 
 

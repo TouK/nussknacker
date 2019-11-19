@@ -531,7 +531,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
   test("static dict values") {
     val staticDictId = "staticDictId"
-    val dicts = Map(staticDictId -> StaticDictDefinition(staticDictId, Map("fooId" -> "fooLabel")))
+    val dicts = Map(staticDictId -> StaticDictDefinition(Map("fooId" -> "fooLabel")))
     val withObjVar = ctx.withVariable("staticDict", DictInstance(staticDictId, dicts(staticDictId)))
 
     parseWithDicts[String]("#staticDict['fooId']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[String](withObjVar) shouldEqual "fooId"

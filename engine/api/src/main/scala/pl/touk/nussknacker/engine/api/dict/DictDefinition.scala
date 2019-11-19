@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, T
  */
 trait DictDefinition extends Serializable {
 
-  def valueType: SingleTypingResult
+  def valueType(dictId: String): SingleTypingResult
 
   // It should return value in declared type.
   def value(key: String): Any
@@ -23,7 +23,7 @@ trait DictDefinition extends Serializable {
  */
 case class DictInstance(dictId: String, definition: DictDefinition) {
 
-  def valueType: SingleTypingResult = definition.valueType
+  def valueType: SingleTypingResult = definition.valueType(dictId)
 
   def value(key: String): Any = definition.value(key)
 
@@ -34,11 +34,8 @@ case class DictInstance(dictId: String, definition: DictDefinition) {
  */
 trait ReturningKeyWithoutTransformation { self: DictDefinition =>
 
-  // It need to has dictId for tagging values purpose
-  protected def dictId: String
-
   override def value(key: String): Any = key
 
-  override def valueType: SingleTypingResult = Typed.taggedDictValue(TypedClass[String], dictId)
+  override def valueType(dictId: String): SingleTypingResult = Typed.taggedDictValue(TypedClass[String], dictId)
 
 }

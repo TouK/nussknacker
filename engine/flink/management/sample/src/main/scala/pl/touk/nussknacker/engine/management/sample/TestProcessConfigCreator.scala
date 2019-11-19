@@ -216,7 +216,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def expressionConfig(config: Config) = {
     val dictId = "dict"
-    val dictDef = StaticDictDefinition(dictId, Map(
+    val dictDef = StaticDictDefinition(Map(
       "foo" -> "Foo",
       "bar" -> "Bar"))
     val globalProcessVariables = Map(

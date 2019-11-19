@@ -17,14 +17,14 @@ trait StaticDictDefinition extends DictDefinition {
 
 }
 
-private[static] case class SimpleDictDefinition(dictId: String, labelByKey: Map[String, String]) extends StaticDictDefinition with ReturningKeyWithoutTransformation
+private[static] case class SimpleDictDefinition(labelByKey: Map[String, String]) extends StaticDictDefinition with ReturningKeyWithoutTransformation
 
 private[static] case class EnumDictDefinition(valueClass: ClazzRef, private val enumValueByName: Map[String, Any]) extends StaticDictDefinition {
 
   override def labelByKey: Map[String, String] = enumValueByName.keys.map(name => name -> name).toMap
 
   // we don't need to tag it because value class is enough to recognize type
-  override def valueType: SingleTypingResult = TypedClass(valueClass)
+  override def valueType(dictId: String): SingleTypingResult = TypedClass(valueClass)
 
   override def value(key: String): Any = enumValueByName(key)
 
@@ -32,8 +32,8 @@ private[static] case class EnumDictDefinition(valueClass: ClazzRef, private val 
 
 object StaticDictDefinition {
 
-  def apply(dictId: String, labelByKey: Map[String, String]): StaticDictDefinition =
-    SimpleDictDefinition(dictId, labelByKey)
+  def apply(labelByKey: Map[String, String]): StaticDictDefinition =
+    SimpleDictDefinition(labelByKey)
 
   def forJavaEnum[T <: Enum[_]](javaEnumClass: Class[T]): StaticDictDefinition = {
     val enumValueByName = javaEnumClass.getEnumConstants.map(e => e.name() -> e).toMap
