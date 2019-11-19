@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeData],
-                              val processRepository: FetchingProcessRepository,
+                              val processRepository: FetchingProcessRepository[Future],
                               jobStatusService: JobStatusService,
                               val processAuthorizer:AuthorizeProcess)
                              (implicit val ec: ExecutionContext)
@@ -29,7 +29,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
 
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
 
     path("queryableState" / "list") {
       get {

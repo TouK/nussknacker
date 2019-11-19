@@ -6,25 +6,22 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFutures with FailFastCirceSupport {
+class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientScalaFutures with FailFastCirceSupport {
 
   implicit val system = ActorSystem("nussknacker-ui")
 
   implicit val user = LoggedUser("test")
-
-  implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   trait MockRemoteEnvironment extends StandardRemoteEnvironment {
     override def environmentId = "testEnv"

@@ -17,6 +17,7 @@ import '../../brace/mode/spel'
 import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
 import ValidationLabels from "../modals/ValidationLabels";
+import {allValid} from "../../common/Validators";
 
 //to reconsider
 // - respect categories for global variables?
@@ -28,19 +29,29 @@ class ExpressionSuggest extends React.Component {
   static propTypes = {
     inputProps: PropTypes.object.isRequired,
     fieldName: PropTypes.string,
-    validators: PropTypes.array.isRequired
+    validators: PropTypes.array.isRequired,
+    showValidation: PropTypes.bool.isRequired
   }
 
   customAceEditorCompleter = {
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
-      const suggestions = this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d)
-      callback(null, _.map(suggestions, (s) => {
-        //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
-        //maybe it depends on language mode?
-        const methodName = s.methodName.replace("#", "")
-        const returnType = ProcessUtils.humanReadableType(s.refClazz)
-        return {name: methodName, value: methodName, score: 1, meta: returnType, description: s.description, parameters: s.parameters, returnType: returnType}
-      }))
+      this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d).then(suggestions => {
+        callback(null, _.map(suggestions, (s) => {
+          //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
+          //maybe it depends on language mode?
+          const methodName = s.methodName.replace("#", "")
+          const returnType = ProcessUtils.humanReadableType(s.refClazz)
+          return {
+            name: methodName,
+            value: methodName,
+            score: 1,
+            meta: returnType,
+            description: s.description,
+            parameters: s.parameters,
+            returnType: returnType
+          }
+        }))
+      })
     },
     getDocTooltip: (item) => {
       if (item.description || !_.isEmpty(item.parameters)) {
@@ -92,42 +103,47 @@ class ExpressionSuggest extends React.Component {
   }
 
   render() {
+    const {isMarked} = this.props
     if (this.props.dataResolved) {
+      const showValidation = this.props.showValidation;
       return (
-       <div>
-         <div style={{paddingTop: 10, paddingBottom: 10, paddingLeft: 20 - 4, paddingRight: 20 - 4, backgroundColor: '#333', borderBottom: '1px solid #808080'}}>
-           <AceEditor
-             mode={this.props.inputProps.language}
-             width={"100%"}
-             minLines={1}
-             maxLines={50}
-             theme={'nussknacker'}
-             onChange={this.onChange}
-             value={this.state.value}
-             showPrintMargin={false}
-             cursorStart={-1} //line start
-             showGutter={false}
-             highlightActiveLine={false}
-             highlightGutterLine={false}
-             wrapEnabled={true}
-             editorProps={{
-               $blockScrolling: "Infinity"
-             }}
-             setOptions={{
-               indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
-               enableBasicAutocompletion: [this.customAceEditorCompleter],
-               enableLiveAutocompletion: true,
-               enableSnippets: false,
-               showLineNumbers: false,
-               fontSize: 16,
-               fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
-               readOnly: this.props.inputProps.readOnly
-             }}
-           />
-         </div>
-         <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>
-       </div>
-        )
+        <div>
+          <div style={{paddingTop: 8,
+                       paddingBottom: 8,
+                       paddingLeft: 10,
+                       paddingRight: 10,
+                       backgroundColor: '#333'}}
+               className={(!showValidation || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
+            <AceEditor mode={this.props.inputProps.language}
+                       width={"100%"}
+                       minLines={1}
+                       maxLines={50}
+                       theme={'nussknacker'}
+                       onChange={this.onChange}
+                       value={this.state.value}
+                       showPrintMargin={false}
+                       cursorStart={-1} //line start
+                       showGutter={false}
+                       highlightActiveLine={false}
+                       highlightGutterLine={false}
+                       wrapEnabled={true}
+                       editorProps={{
+                         $blockScrolling: "Infinity"
+                       }}
+                       setOptions={{
+                         indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
+                         enableBasicAutocompletion: [this.customAceEditorCompleter],
+                         enableLiveAutocompletion: true,
+                         enableSnippets: false,
+                         showLineNumbers: false,
+                         fontSize: 16,
+                         fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
+                         readOnly: this.props.inputProps.readOnly
+                       }}/>
+          </div>
+          {showValidation && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
+        </div>
+      )
     } else {
       return null
     }
@@ -136,7 +152,7 @@ class ExpressionSuggest extends React.Component {
 }
 
 function mapState(state, props) {
-  const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: { typesInformation: []}}
+  const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: {typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation
   const variablesForNode = state.graphReducer.nodeToDisplay.id || _.get(state.graphReducer, ".edgeToDisplay.to") || null

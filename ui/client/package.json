@@ -7,9 +7,9 @@
   "private": true,
   "scripts": {
     "start": "PROXY_API_DOMAIN=http://localhost:8081/api webpack-dev-server",
-    "start-backend-demo": "PROXY_API_DOMAIN=https://demo.nussknacker.io/api webpack-dev-server",
+    "start-backend-demo": "PROXY_API_DOMAIN=https://staging.nussknacker.io/api webpack-dev-server",
     "build": "NODE_ENV=production webpack -p --progress && cp -R assets/icons/license dist",
-    "test": "NODE_ENV=production ./node_modules/karma/bin/karma start --single-run"
+    "test": "./node_modules/karma/bin/karma start --single-run"
   },
   "dependencies": {
     "@hot-loader/react-dom": "~16.8.6",
@@ -22,7 +22,7 @@
     "flattenizer": "~1.0.5",
     "history": "~4.9.0",
     "immutability-helper": "~3.0.1",
-    "jointjs": "^3.0.2",
+    "jointjs": "^3.1.1",
     "ladda": "~2.0.1",
     "lodash": "~4.17.15",
     "moment": "~2.24.0",

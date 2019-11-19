@@ -63,12 +63,15 @@ class Graph extends React.Component {
     this.cursorBehaviour();
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
     _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
+    this.updateDimensions()
   }
 
   updateDimensions() {
     this.processGraphPaper.fitToContent()
     this.svgDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
-    this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    if (this.props.parent !== subprocessParent) {
+      this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    }
   }
 
   canAddNode(node) {
@@ -186,11 +189,23 @@ class Graph extends React.Component {
         this.handleInjectBetweenNodes(cellView)
       })
       .on("link:connect", (c) => {
+        this.disconnectPreviousEdge(c.model.id);
         this.props.actions.nodesConnected(
           c.sourceView.model.attributes.nodeData,
           c.targetView.model.attributes.nodeData
         )
       })
+  }
+
+  disconnectPreviousEdge = (previousEdge) => {
+    const nodeIds = previousEdge.split("-").slice(0, 2);
+    if (this.graphContainsEdge(nodeIds)) {
+      this.props.actions.nodesDisconnected(...nodeIds)
+    }
+  }
+
+  graphContainsEdge(nodeIds) {
+    return this.props.processToDisplay.edges.some(edge => edge.from === nodeIds[0] && edge.to === nodeIds[1]);
   }
 
   handleInjectBetweenNodes = (cellView) => {
@@ -324,20 +339,23 @@ class Graph extends React.Component {
     this.graph.getCells().forEach(cell => {
       this.unhighlightCell(cell, 'node-validation-error')
       this.unhighlightCell(cell, 'node-focused')
+      this.unhighlightCell(cell, 'node-focused-with-validation-error')
       this.unhighlightCell(cell, 'node-grouping')
-
-    })
-
-    _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes).forEach(name => {
-      this.highlightNode(name, 'node-validation-error')
     });
 
-    if (nodeToDisplay) {
-      this.highlightNode(nodeToDisplay.id, 'node-focused')
-    }
+    const invalidNodeIds = _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes)
+    const selectedNodeIds = selectionState || [];
+
+    invalidNodeIds.forEach(id =>
+      selectedNodeIds.includes(id) ?
+        this.highlightNode(id, 'node-focused-with-validation-error') : this.highlightNode(id, 'node-validation-error'));
 
     (groupingState || []).forEach(id => this.highlightNode(id, 'node-grouping'));
-    (selectionState || []).forEach(id => this.highlightNode(id, 'node-focused'));
+    selectedNodeIds.forEach(id => {
+      if (!invalidNodeIds.includes(id)) {
+        this.highlightNode(id, 'node-focused')
+      }
+    });
   }
 
   highlightCell(cell, className) {
@@ -600,8 +618,8 @@ function mapState(state, props) {
 function mapSubprocessState(state, props) {
   return {
     divId: "esp-graph-subprocess",
-    parent: "modal-content",
-    padding: 40,
+    parent: subprocessParent,
+    padding: 30,
     readonly: true,
     singleClickNodeDetailsEnabled: false,
     nodeIdPrefixForSubprocessTests: state.graphReducer.nodeToDisplay.id + "-", //TODO where should it be?
@@ -619,6 +637,8 @@ function commonState(state) {
     selectionState: state.graphReducer.selectionState,
   }
 }
+
+const subprocessParent = "modal-content";
 
 export let BareGraph = connect(mapSubprocessState, ActionsUtils.mapDispatchWithEspActions)(Graph)
 

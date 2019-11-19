@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 class SignalsResources(modelData: Map[String, ModelData],
-                       val processRepository: FetchingProcessRepository,
+                       val processRepository: FetchingProcessRepository[Future],
                        val processAuthorizer:AuthorizeProcess)(implicit val ec: ExecutionContext)
   extends Directives
     with FailFastCirceSupport
@@ -23,7 +23,7 @@ class SignalsResources(modelData: Map[String, ModelData],
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("signal" / Segment / Segment) { (signalType, processName) =>
       (post & processId(processName)) { processId =>
         canDeploy(processId) {

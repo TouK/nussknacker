@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, Expressi
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
@@ -25,7 +26,8 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.runtime._
 
-private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder) extends LazyLogging {
+private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
+                          dictTyper: SpelDictTyper) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -107,6 +109,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         current.stack match {
           case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
           case TypedClass(clazz, keyParam :: valueParam :: Nil):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
+          case (d: TypedDict) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
           case _ => valid(Unknown)
         }
 
@@ -269,9 +272,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     case Unknown => Valid(Unknown)
     case s: SingleTypingResult =>
       extractSingleProperty(e)(s)
-        .map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${s.display}"))
     case TypedUnion(possible) =>
-      val l = possible.toList.flatMap(single => extractSingleProperty(e)(single))
+      val l = possible.toList.flatMap(single => extractSingleProperty(e)(single).toOption)
       if (l.isEmpty)
         invalid(s"There is no property '${e.getName}' in type: ${t.display}")
       else
@@ -279,13 +281,23 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   }
 
   private def extractSingleProperty(e: PropertyOrFieldReference)
-                                   (t: SingleTypingResult) = t match {
-    case typed: SingleTypingResult if typed.canHasAnyPropertyOrField => Some(Unknown)
-    case typedClass: TypedClass =>
+                                   (t: SingleTypingResult) = {
+    def extractClass(typedClass: TypedClass) = {
       val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
-      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Typed(_))
-    case typed: TypedObjectTypingResult =>
-      typed.fields.get(e.getName)
+      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Typed(_)).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
+    }
+    t match {
+      case typed: SingleTypingResult if typed.canHasAnyPropertyOrField =>
+        Valid(Unknown)
+      case typedClass: TypedClass =>
+        extractClass(typedClass)
+      case typed: TypedObjectTypingResult =>
+        typed.fields.get(e.getName).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
+      case tagged: TypedTaggedValue =>
+        extractClass(tagged.objType)
+      case dict: TypedDict =>
+        dictTyper.typeDictValue(dict, e)
+    }
   }
 
   private def extractListType(parent: TypingResult): TypingResult = parent match {
@@ -321,6 +333,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   private def invalid[T](message: String): ValidatedNel[ExpressionParseError, T] =
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
+
+  def withDictTyper(dictTyper: SpelDictTyper) =
+    new Typer(classLoader, commonSupertypeFinder, dictTyper)
 
 }
 

@@ -7,8 +7,8 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, Suite}
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
-import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 
 trait BaseITest extends KafkaSpec {
   self: Suite with BeforeAndAfterAll with Matchers =>
@@ -24,14 +24,14 @@ trait BaseITest extends KafkaSpec {
     }
   }
 
-  val stoppableEnv = new StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
   val env = new StreamExecutionEnvironment(stoppableEnv)
-  var registrar: FlinkProcessRegistrar = _
+  var registrar: FlinkStreamingProcessRegistrar = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val config = TestConfig(kafkaZookeeperServer)
-    registrar = new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
   }
 
   override protected def afterAll(): Unit = {

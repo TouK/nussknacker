@@ -6,12 +6,12 @@ import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ProcessDirectives {
   import akka.http.scaladsl.server.Directives._
 
-  val processRepository: FetchingProcessRepository
+  val processRepository: FetchingProcessRepository[Future]
   implicit val ec: ExecutionContext
 
   def processId(processName: String): Directive1[ProcessIdWithName] = {

@@ -2,14 +2,14 @@ package pl.touk.nussknacker.processCounts.influxdb
 
 import java.time.LocalDateTime
 
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class InfluxGeneratorSpec extends FunSuite with Matchers with ScalaFutures {
+class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFutures {
 
   import InfluxGenerator._
 

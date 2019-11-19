@@ -20,7 +20,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                          (implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with EspPathMatchers with RouteWithUser {
 
-  def route(implicit user: LoggedUser) : Route = encodeResponse {
+  def securedRoute(implicit user: LoggedUser) : Route = encodeResponse {
     //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
     path("processDefinitionData" / Segment) { (processingType) =>
       parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>

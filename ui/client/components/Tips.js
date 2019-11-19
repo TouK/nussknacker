@@ -25,13 +25,22 @@ export class Tips extends Component {
       return (<div>{this.validTip()}</div>)
     } else {
       const errors = (this.props.currentProcess.validationResult || {}).errors
-      const nodesErrors = ProcessUtils.extractInvalidNodes(errors.invalidNodes).map((error, idx) => this.printError(error.error, error.key, idx))
       const globalErrors = (errors.globalErrors || []).map((error, idx) => this.printError(error, null, idx))
-      const processProperties = (errors.processPropertiesErrors || []).map((error, idx) => this.printError(error, 'Properties', idx))
+      const invalidNodeErrors = this.customError(Object.keys(errors.invalidNodes), "Errors in nodes: " + Object.keys(errors.invalidNodes).join(', '))
+      const processPropertiesErrors = this.customError(errors.processPropertiesErrors, "Errors in process properties")
       const warnings = (this.props.currentProcess.validationResult || {}).warnings
       const nodesWarnings = ProcessUtils.extractInvalidNodes(warnings.invalidNodes).map((error, idx) => this.printError(error.error, error.key, idx))
-      return globalErrors.concat(processProperties.concat(nodesErrors).concat(nodesWarnings))
+      return _.concat(globalErrors, nodesWarnings, invalidNodeErrors, processPropertiesErrors)
     }
+  }
+
+  customError(errors, message) {
+    return (
+      errors.length > 0 ?
+        <div>
+          {message}
+        </div> : null
+    )
   }
 
   validTip = () => {

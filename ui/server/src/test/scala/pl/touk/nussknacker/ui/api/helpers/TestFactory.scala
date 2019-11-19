@@ -3,18 +3,22 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
 import akka.http.scaladsl.server.Route
+import cats.instances.future._
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkProcessManagerProvider}
-import pl.touk.nussknacker.ui.api.RouteWithUser
+import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
+import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
+import pl.touk.nussknacker.ui.api.{RouteWithoutUser, RouteWithUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, FetchingProcessRepository, _}
+import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,11 +47,12 @@ object TestFactory extends TestPermissions{
     sampleResolver,
     Map.empty
   )
+  val processResolving = new UIProcessResolving(processValidation, ProcessDictSubstitutor())
   val posting = new ProcessPosting
   val buildInfo = Map("engine-version" -> "0.1")
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DBFetchingProcessRepository[Future](dbs) with FetchingProcessRepository with BasicRepository
+    new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DbWriteProcessRepository[Future](dbs, modelVersions.map(TestProcessingTypes.Streaming -> _).toMap)
@@ -63,24 +68,25 @@ object TestFactory extends TestPermissions{
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
   def asAdmin(route: RouteWithUser): Route = {
-    route.route(adminUser())
+    route.securedRoute(adminUser())
   }
 
-  def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission) =
-    route.route(user("userId", permissions))
+  def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
+    route.securedRoute(user("userId", permissions))
 
   //FIXME: update
-  def withAllPermissions(route: RouteWithUser) = withPermissions(route, testPermissionAll)
+  def withAllPermissions(route: RouteWithUser): Route = withPermissions(route, testPermissionAll)
 
-  def withAdminPermissions(route: RouteWithUser) =
-    route.route(adminUser("adminId"))
+  def withAdminPermissions(route: RouteWithUser): Route = route.securedRoute(adminUser("adminId"))
+
+  def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
   //FIXME: update
   def user(userName: String = "userId", testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(userName, testPermissions)
 
   def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, Nil, isAdmin = true)
 
-  class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
+  class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
       Some(ProcessState(DeploymentId("1"), runningState = managerProcessState.get(), "RUNNING", 0, None)))

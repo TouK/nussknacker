@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.engine.process
 
 import java.util.Date
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 import cats.data.Validated.Valid
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.{FilterFunction, RuntimeContext}
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
@@ -17,25 +15,27 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.api.typed.dict.StaticTypedDictInstance
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
-import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.flink.util.exception._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.CommonTestHelpers.RecordingExceptionHandler
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
 
-  case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None, value3: BigDecimal = 1, intAsAny: Any = 1)
+  // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
+  case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None,
+                          value3: BigDecimal = 1, intAsAny: Any = 1, enumValue: SimpleJavaEnum = SimpleJavaEnum.ONE)
 
   case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long, added: String)
 
@@ -52,7 +52,7 @@ object ProcessTestHelpers {
       val creator = prepareCreator(env.getConfig, data)
       env.getConfig.disableSysoutLogging
 
-      new StandardFlinkProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process, processVersion)
+      new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process, processVersion)
 
       MockService.clear()
       env.execute(process.id)
@@ -95,11 +95,13 @@ object ProcessTestHelpers {
       override def listeners(config: Config) = List()
 
       override def exceptionHandlerFactory(config: Config) =
-        ExceptionHandlerFactory.noParams(RecordingExceptionHandler(_))
+        ExceptionHandlerFactory.noParams(_ => RecordingExceptionHandler)
 
 
       override def expressionConfig(config: Config) = {
-        val globalProcessVariables = Map("processHelper" -> WithCategories(ProcessHelper))
+        val globalProcessVariables = Map(
+          "processHelper" -> WithCategories(ProcessHelper),
+          "enum" -> WithCategories(StaticTypedDictInstance.forJavaEnum(classOf[SimpleJavaEnum])))
         ExpressionConfig(globalProcessVariables, List.empty)
       }
 
@@ -108,15 +110,7 @@ object ProcessTestHelpers {
     }
   }
 
-  case class RecordingExceptionHandler(metaData: MetaData) extends FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
-    override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-
-
-    override protected val consumer: FlinkEspExceptionConsumer = new RateMeterExceptionConsumer(new FlinkEspExceptionConsumer {
-      override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit =
-        RecordingExceptionHandler.add(exceptionInfo)
-    })
-  }
+  val RecordingExceptionHandler = new CommonTestHelpers.RecordingExceptionHandler
 
   class IntParamSourceFactory(exConfig: ExecutionConfig) extends FlinkSourceFactory[Int] {
 
@@ -129,8 +123,6 @@ object ProcessTestHelpers {
     override def timestampAssigner: Option[TimestampAssigner[Int]] = None
 
   }
-
-  object RecordingExceptionHandler extends WithDataList[EspExceptionInfo[_ <: Throwable]]
 
   object StateCustomNode extends CustomStreamTransformer {
 
@@ -167,7 +159,7 @@ object ProcessTestHelpers {
         .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
-        .map(ValueWithContext(null, _))
+        .map(ValueWithContext[Any](null, _))
     })
   }
 
@@ -185,7 +177,7 @@ object ProcessTestHelpers {
               .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
-              .map(ValueWithContext(null, _))
+              .map(ValueWithContext[Any](null, _))
           })
   }
 
@@ -335,7 +327,6 @@ object ProcessTestHelpers {
     override def testDataOutput : Option[Any => String] = None
   }
 
-
   object EmptyService extends Service {
     def invoke() = Future.successful(Unit)
   }
@@ -346,20 +337,5 @@ object ProcessHelper {
   val constant = 4
   def add(a: Int, b: Int) : Int = {
     a + b
-  }
-}
-
-trait WithDataList[T] {
-
-  private val dataList = new CopyOnWriteArrayList[T]
-
-  def add(element: T) : Unit = dataList.add(element)
-
-  def data : List[T] = {
-    dataList.toArray.toList.map(_.asInstanceOf[T])
-  }
-
-  def clear() : Unit = {
-    dataList.clear()
   }
 }

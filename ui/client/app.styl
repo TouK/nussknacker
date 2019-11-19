@@ -127,6 +127,7 @@ processActivityList()
 .process-attachments
   cursor: default
   margin-bottom 10px
+  display grid
   .process-attachments-list
     processActivityList()
 
@@ -141,20 +142,36 @@ processActivityList()
 
   .add-attachments
     font-size 12px
-    display inline-block
     width 90%
     height: 90px
     border 1px solid buttonBorderColor
-    .dropZone
+    &:hover .attachment-drop-zone
+      background-color lighten(#333, 5%)
+    .attachment-drop-zone
       width 100%
       height 100%
       font-size 12px
       font-weight normal
       padding 0
+      cursor: pointer
+      padding-top 6
+      margin-bottom 5
+      text-align center
+      transition: background-color 0.2s
+      background-color #333
+      svg
+        width 40px
+        margin auto
+        display inline-block
     .attachment-button-text
-      margin-top -50px
-      &:hover
-        background-color buttonBkgHover
+      cursor pointer
+      text-align center
+      margin-top -45px
+    .attachment-button
+      svg
+        margin-top 15px
+        width 27px
+        height 27px
 
 .label-info
   background-color labelBkgColor
@@ -213,6 +230,28 @@ processActivityList()
     font-size 25px
     color black
 
+.big-blue-button
+  margin: 45px 50px
+  width: 360px
+  height: 45px
+  background-color: buttonBlueBkgColor
+  color: buttonBlueColor
+  display: flex
+  align-items: center
+  justify-content: center
+  font open
+  font-size: 21px
+  font-weight: 600
+  &:hover
+    background: processesHoverColor
+  #add-icon
+    width: 20px
+    height: 45px
+    margin: 10px
+    margin-left: 20px
+    &:hover
+      background: processesHoverColor
+
 .error-template
   text-align: center
   position: absolute;
@@ -236,3 +275,5 @@ processActivityList()
   .error-details
     font-size: 24px
 
+    .big-blue-button
+      margin: 45px auto

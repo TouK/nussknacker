@@ -6,16 +6,19 @@ import _root_.cors.CorsSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.Materializer
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
+import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
+import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
@@ -23,13 +26,12 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.AuthenticatorProvider
-import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
+import pl.touk.nussknacker.ui.security.api._
+import pl.touk.nussknacker.ui.security.ssl._
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
-import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
-import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
+
 
 object NussknackerApp extends App with Directives with LazyLogging {
 
@@ -102,24 +104,28 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
     val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
     val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver, customProcessNodesValidators)
+    val processResolving = new UIProcessResolving(processValidation, ProcessDictSubstitutor())
 
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)
 
     val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
-    val authenticator = AuthenticatorProvider(config, getClass.getClassLoader)
+
+    val authenticator = AuthenticatorProvider(config, getClass.getClassLoader, typesForCategories.getAllCategories)
 
     val counter = new ProcessCounter(subprocessRepository)
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
-    val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
+    val managementActor = system.actorOf(
+      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver), "management")
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
+    val appResources = new AppResources(config, modelData, processRepository, processValidation, jobStatusService)
 
-    val apiResources: List[RouteWithUser] = {
+    val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
         new ProcessesResources(
           processRepository = processRepository,
@@ -127,6 +133,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           jobStatusService = jobStatusService,
           processActivityRepository = processActivityRepository,
           processValidation = processValidation,
+          processResolving = processResolving,
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
           processAuthorizer = processAuthorizer
@@ -134,14 +141,13 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, processRepository),
         ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
-          processAuthorizer, processRepository, featureTogglesConfig),
-        new ValidationResources(processValidation),
+          processAuthorizer, processRepository, featureTogglesConfig, processResolving),
+        new ValidationResources(processResolving),
         new DefinitionResources(modelData, subprocessRepository, typesForCategories),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(typesForCategories),
         new NotificationResources(managementActor, processRepository),
-        new SettingsResources(featureTogglesConfig, typeToConfig),
-        new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
+        appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
       )
@@ -165,20 +171,25 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
+    //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
+    val apiResourcesWithoutAuthentication: List[Route] = List(
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).publicRoute(),
+      appResources.publicRoute()
+    ) ++ authenticator.routes
 
+    //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"))
     CorsSupport.cors(featureTogglesConfig.development) {
-      authenticator { user =>
+      pathPrefixTest(!"api") {
+        webResources.route
+      } ~  pathPrefix("api") {
+        apiResourcesWithoutAuthentication.reduce(_ ~ _)
+      } ~ authenticator.directive { user =>
         pathPrefix("api") {
-          apiResources.map(_.route(user)).reduce(_ ~ _)
-        } ~
-          //this is separated from api to do serve it without authentication
-          pathPrefixTest(!"api") {
-            webResources.route
-          }
+          apiResourcesWithAuthentication.map(_.securedRoute(user)).reduce(_ ~ _)
+        }
       }
     }
-
   }
 
   //by default, we use InfluxCountsReporterCreator
@@ -193,7 +204,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         throw new IllegalArgumentException(s"Many CountsReporters found: ${many.mkString(", ")}")
     }
     creator.createReporter(env, configAtKey)
-  } 
+  }
 
   private def initDb(config: Config) = {
     val db = JdbcBackend.Database.forConfig("db", config)
@@ -221,5 +232,4 @@ object NussknackerApp extends App with Directives with LazyLogging {
       }
     })
   }
-
 }

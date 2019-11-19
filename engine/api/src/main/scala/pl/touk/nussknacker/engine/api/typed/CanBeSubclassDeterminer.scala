@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
   * This class determine if type can be subclass of other type. It basically based on fact that TypingResults are
@@ -43,18 +43,35 @@ private[typed] object CanBeSubclassDeterminer {
   private def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): Boolean = {
     def typedObjectRestrictions = superclassCandidate match {
       case superclass: TypedObjectTypingResult =>
-        val firstFields = givenType match {
+        val givenTypeFields = givenType match {
           case given: TypedObjectTypingResult => given.fields
           case _ => Map.empty[String, TypingResult]
         }
         superclass.fields.forall {
-          case (name, typ) => firstFields.get(name).exists(canBeSubclassOf(_, typ))
+          case (name, typ) => givenTypeFields.get(name).exists(canBeSubclassOf(_, typ))
         }
       case _ =>
         true
     }
-    klassCanBeSubclassOf(givenType.objType, superclassCandidate.objType) && typedObjectRestrictions
-  }
+    def dictRestriction: Boolean = (givenType, superclassCandidate) match {
+      case (given: TypedDict, superclass: TypedDict) =>
+        given.dictId == superclass.dictId
+      case (_: TypedDict, _) =>
+        false
+      case (_, _: TypedDict) =>
+        false
+      case _ =>
+        true
+    }
+    def taggedValueRestriction: Boolean = (givenType, superclassCandidate) match {
+      case (givenTaggedValue: TypedTaggedValue, superclassTaggedValue: TypedTaggedValue) =>
+        givenTaggedValue.tag == superclassTaggedValue.tag
+      case (_: TypedTaggedValue, _) => true
+      case (_, _: TypedTaggedValue) => false
+      case _ => true
+    }
+    klassCanBeSubclassOf(givenType.objType, superclassCandidate.objType) && typedObjectRestrictions && dictRestriction && taggedValueRestriction
+ }
 
   private def klassCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
     def hasSameTypeParams =

@@ -12,14 +12,14 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
 object TestInfoResources {
 
-  def apply(providers: Map[ProcessingType, ModelData], processAuthorizer:AuthorizeProcess, processRepository: FetchingProcessRepository)
+  def apply(providers: Map[ProcessingType, ModelData], processAuthorizer:AuthorizeProcess, processRepository: FetchingProcessRepository[Future])
            (implicit ec: ExecutionContext): TestInfoResources =
     new TestInfoResources(providers.mapValuesNow(new ModelDataTestInfoProvider(_)), processAuthorizer, processRepository)
 
@@ -27,7 +27,7 @@ object TestInfoResources {
 
 class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
                         val processAuthorizer:AuthorizeProcess,
-                        val processRepository: FetchingProcessRepository)
+                        val processRepository: FetchingProcessRepository[Future])
                        (implicit val ec: ExecutionContext)
   extends Directives
     with FailFastCirceSupport
@@ -40,7 +40,7 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
     //TODO: is Write enough here?
     pathPrefix("testInfo") {
       post {
