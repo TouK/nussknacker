@@ -125,13 +125,7 @@ export default {
   },
 
   deploy(processId, comment) {
-    return api.post(`/processManagement/deploy/${processId}`, comment).then(response => {
-      if (!response.data.ok) {
-        throw Error(response.data.statusText)
-      } else {
-        return response.data.data
-      }
-    }).then(() => {
+    return api.post(`/processManagement/deploy/${processId}`, comment).then(() => {
       this.addInfo(`Process ${processId} was deployed`)
       return {isSuccess: true}
     }).catch((error) => {
