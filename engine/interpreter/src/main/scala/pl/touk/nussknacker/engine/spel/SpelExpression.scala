@@ -18,6 +18,7 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationExce
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -381,15 +382,15 @@ object SpelExpressionParser extends LazyLogging {
     override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
       !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
 
-    override protected def extractClassFromTarget(target: Any): Class[_] =
-      Option(target).map(_.getClass).orNull
+    override protected def extractClassFromTarget(target: Any): Option[Class[_]] =
+      Option(target).map(_.getClass)
   }
 
   trait StaticMethodCaching extends CachingBase { self: PropertyAccessor =>
     override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
       target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
 
-    override protected def extractClassFromTarget(target: Any): Class[_] = target.asInstanceOf[Class[_]]
+    override protected def extractClassFromTarget(target: Any): Option[Class[_]] = Option(target).map(_.asInstanceOf[Class[_]])
   }
 
   trait CachingBase { self: PropertyAccessor =>
@@ -404,10 +405,12 @@ object SpelExpressionParser extends LazyLogging {
 
     protected def findMethod(name: String, target: Any): Option[Method] = {
       val targetClass = extractClassFromTarget(target)
+        //TODO: better exception message
+        .getOrElse(throw new NonTransientException(name, s"Cannot invoke method/property $name on null object"))
       methodsCache.getOrElseUpdate((name, targetClass), reallyFindMethod(name, targetClass))
     }
 
-    protected def extractClassFromTarget(target: Any): Class[_]
+    protected def extractClassFromTarget(target: Any): Option[Class[_]]
     protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any
     protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method]
   }

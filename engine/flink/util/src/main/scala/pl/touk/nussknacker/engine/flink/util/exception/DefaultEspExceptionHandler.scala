@@ -6,8 +6,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.common.restartstrategy.RestartStrategies.FailureRateRestartStrategyConfiguration
-import org.apache.flink.api.common.time.Time
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
@@ -31,17 +29,21 @@ object DefaultEspExceptionHandler {
 
 }
 
-case class BrieflyLoggingExceptionHandler(processMetaData: MetaData)
+case class BrieflyLoggingExceptionHandler(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
-    with NotRestartingProcesses
-    with LazyLogging {
+    with NotRestartingProcesses {
 
-  override protected val consumer = new FlinkEspExceptionConsumer {
-    override def consume(e: EspExceptionInfo[NonTransientException]) = {
-      logger.warn(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName})")
-    }
-  }
+  override protected val consumer = new RateMeterExceptionConsumer(BrieflyLoggingExceptionConsumer(processMetaData, params))
+
+}
+
+case class BrieflyLoggingRestartingExceptionHandler(processMetaData: MetaData, config: Config, params: Map[String, String] = Map.empty)
+  extends FlinkEspExceptionHandler
+    with ConsumingNonTransientExceptions
+    with RestartingProcessAfterDelay {
+
+  override protected val consumer = BrieflyLoggingExceptionConsumer(processMetaData, params)
 
 }
 
@@ -62,8 +64,19 @@ case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData,
 case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionConsumer
     with LazyLogging {
-  override def consume(e: EspExceptionInfo[NonTransientException]) = {
+  override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
     logger.error(s"${processMetaData.id}: Exception during processing job, params: $params, context: ${e.context}", e.throwable)
+  }
+}
+
+case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
+  extends FlinkEspExceptionConsumer
+    with LazyLogging {
+  override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
+    logger.whenDebugEnabled {
+      logger.debug(s"${processMetaData.id}: Exception: ${e.throwable.getMessage}", e.throwable)
+    }
+    logger.warn(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName})")
   }
 }
 
@@ -92,7 +105,8 @@ trait ConsumingNonTransientExceptions extends LazyLogging {
       case other =>
         val exceptionDetails = s"${ReflectUtils.fixedClassSimpleNameWithoutParentModule(other.getClass)}:${other.getMessage}"
         val nonTransient = NonTransientException(input = exceptionDetails, message = "Unknown exception", cause = other)
-        logger.warn(s"Unknown exception $exceptionDetails for ${exceptionInfo.context}", other)
+        logger.info(s"Unknown exception $exceptionDetails for ${exceptionInfo.context}")
+        logger.debug(s"Unknown exception $exceptionDetails for ${exceptionInfo.context}", other)
         consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
     }
   }
