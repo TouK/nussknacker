@@ -9,6 +9,9 @@ import scala.collection.JavaConverters._
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 
+/*
+  This class lists some simple aggregates
+ */
 object aggregates {
 
   private val syntax = ValidatedSyntax[String]
@@ -76,6 +79,10 @@ object aggregates {
   }
 
 
+  /*
+    This is more complex aggregator, as it is composed from smaller ones.
+    The idea is that 
+   */
   class MapAggregator(fields: java.util.Map[String, Aggregator]) extends Aggregator {
 
     private val scalaFields = fields.asScala.toMap

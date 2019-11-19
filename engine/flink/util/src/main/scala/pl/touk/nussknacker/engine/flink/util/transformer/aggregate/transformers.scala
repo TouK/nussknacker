@@ -16,47 +16,41 @@ import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.Duration
 
-object AggregateTransformer extends CustomStreamTransformer {
+object transformers {
 
-  @MethodToInvoke(returnType = classOf[AnyRef])
-  def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
-              @ParamName("length") length: String,
-              @ParamName("aggregator") aggregator: Aggregator,
-              @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
-              @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
-    .definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
-    .implementedBy(
-      FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-        val windowMillis = Duration(length).toMillis
-        start
-          .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
-          .keyBy(_.value._1)
-          .process(new AggregatorFunction(aggregator, windowMillis, ctx.nodeId))
-      }))
-}
+  def slidingTransformer(keyBy: LazyParameter[String],
+                         aggregateBy: LazyParameter[AnyRef],
+                         aggregator: Aggregator,
+                         windowLength: Duration,
+                         variableName: String,
+                        )(implicit nodeId: NodeId): ContextTransformation =
+    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
+      .implementedBy(
+        FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
+          start
+            .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
+            .keyBy(_.value._1)
+            .process(new AggregatorFunction(aggregator, windowLength.toMillis, ctx.nodeId))
+        }))
 
+  def tumblingTransformer(keyBy: LazyParameter[String],
+                          aggregateBy: LazyParameter[AnyRef],
+                          aggregator: Aggregator,
+                          windowLength: Duration,
+                          variableName: String,
+                         )(implicit nodeId: NodeId): ContextTransformation =
+    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
+      .implementedBy(
+        FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
+          start
+            .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
+            .keyBy(_.value._1)
+            .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
+            .aggregate(aggregator
+              // this casting seems to be needed for Flink to infer TypeInformation correctly....
+              .asInstanceOf[org.apache.flink.api.common.functions.AggregateFunction[ValueWithContext[(String, AnyRef)], AnyRef, ValueWithContext[Any]]])
 
-object AggregateTumblingTransformer extends CustomStreamTransformer {
-
-  @MethodToInvoke(returnType = classOf[AnyRef])
-  def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
-              @ParamName("length") length: String,
-              @ParamName("aggregator") aggregator: Aggregator,
-              @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
-              @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
-    .definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
-    .implementedBy(
-      FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-        val windowMillis = Duration(length).toMillis
-
-        start
-          .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
-          .keyBy(_.value._1)
-          .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowMillis)))
-          .aggregate(aggregator
-            // this casting seems to be needed for Flink to infer TypeInformation correctly....
-            .asInstanceOf[org.apache.flink.api.common.functions.AggregateFunction[ValueWithContext[(String, AnyRef)], AnyRef, ValueWithContext[Any]]])
-      }))
+        }))
 
 }
 
@@ -76,10 +70,8 @@ class AggregatorFunction(aggregator: Aggregator, lengthInMillis: Long, nodeId: S
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[Any]]#Context
 
+  //TODO make it configurable
   private val minimalResolutionMs = 60000L
-
-  override protected def stateDescriptor: ValueStateDescriptor[TreeMap[Long, AnyRef]]
-  = new ValueStateDescriptor[TreeMap[Long, AnyRef]]("state", classOf[TreeMap[Long, AnyRef]])
 
   override def processElement(value: ValueWithContext[(String, AnyRef)], ctx: FlinkCtx, out: Collector[ValueWithContext[Any]]): Unit = {
 
@@ -119,6 +111,9 @@ class AggregatorFunction(aggregator: Aggregator, lengthInMillis: Long, nodeId: S
     val currentState = Option(state.value().asInstanceOf[TreeMap[Long, aggregator.Aggregate]]).getOrElse(TreeMap[Long, aggregator.Aggregate]()(Ordering.Long))
     currentState.from(ctx.timestamp() - lengthInMillis)
   }
+
+  override protected def stateDescriptor: ValueStateDescriptor[TreeMap[Long, AnyRef]]
+  = new ValueStateDescriptor[TreeMap[Long, AnyRef]]("state", classOf[TreeMap[Long, AnyRef]])
 }
 
 
