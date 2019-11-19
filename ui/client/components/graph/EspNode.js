@@ -148,21 +148,23 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
   const { text: bodyContent, multiline } = getBodyContent(node);
   const hasCounts = !_.isEmpty(processCounts);
   const width = rectWidth;
-  const widthWithTestResults = hasCounts ? width + rectHeight : width;
   const height = rectHeight;
   const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
   const icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
 
+  const countsHeight = 20
+  const pxPerChar = 20
+  const countsWidth = _.toArray(_.toString(processCounts ? processCounts.all : "")).length * pxPerChar
   let attrs = {
     '.background': {
-      width: widthWithTestResults,
+      width: width,
       opacity: node.isDisabled ? 0.4 : 1
     },
     '.background title': {
       text: description
     },
     '.body': {
-      width: widthWithTestResults,
+      width: width,
     },
     'rect.nodeIconPlaceholder': {
       fill: customAttrs[node.type].styles.fill,
@@ -177,9 +179,12 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     },
     '.testResultsPlaceHolder': {
       display: hasCounts && !forExport ? 'block' : 'none',
-      refX: width
+      width: countsWidth,
+      refX: width - countsWidth,
+      refY: height,
+      height: countsHeight
     },
-    '.testResultsSummary': getTestResultsSummaryAttr(processCounts, width),
+    '.testResultsSummary': getTestResultsSummaryAttr(processCounts, width, countsWidth, countsHeight),
     '.groupElements': {
       display: NodeUtils.nodeIsGroup(node) ? 'block' : 'none'
     },
@@ -211,7 +216,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
   });
 }
 
-function getTestResultsSummaryAttr(processCounts, width) {
+function getTestResultsSummaryAttr(processCounts, width, countsWidth, countsHeight) {
   const { breakPoint, fontSizeStep, maxExtraDigits, defaultFontSize } = summaryCountConfig;
 
   const hasCounts = !_.isEmpty(processCounts);
@@ -219,15 +224,14 @@ function getTestResultsSummaryAttr(processCounts, width) {
   const countsContent = hasCounts ?  (processCounts ? `${processCounts.all}` : "0") : "";
   let extraDigitsCount = Math.max(countsContent.length - breakPoint, 0);
   extraDigitsCount = Math.min(extraDigitsCount, maxExtraDigits);
-  const summaryCountFontSize = defaultFontSize - extraDigitsCount * fontSizeStep;
 
   return {
     text: countsContent,
-    style: { 'font-size': summaryCountFontSize },
-    fill: hasErrors ? 'red' : 'white',
-    refX: width + rectHeight/2,
+    fill: hasErrors ? 'red' : '#ccc',
+    refX: width - countsWidth/2,
     // magic/hack: central vertical position when font-size changes
-    y: 37 - extraDigitsCount * 1.5,
+    y: 76 - extraDigitsCount * 1.5,
+    height: 16
   }
 }
 
