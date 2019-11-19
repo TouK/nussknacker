@@ -45,8 +45,13 @@ import pl.touk.sample.JavaSampleEnum
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
-class TestProcessConfigCreator extends ProcessConfigCreator {
+object TestProcessConfigCreator {
 
+  val oneElementValue = "One element"
+
+}
+
+class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config) = {
     val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
@@ -93,7 +98,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
           override def run(ctx: SourceContext[String]) = {
             while (run) {
-              if (!emited) ctx.collect("One element")
+              if (!emited) ctx.collect(TestProcessConfigCreator.oneElementValue)
               emited = true
               Thread.sleep(1000)
             }
@@ -293,7 +298,7 @@ case object CustomFilter extends CustomStreamTransformer {
    = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
       start
         .filter(ctx.lazyParameterHelper.lazyFilterFunction(expression))
-        .map(ValueWithContext(null, _)))
+        .map(ValueWithContext[Any](null, _)))
 
 }
 
@@ -309,7 +314,7 @@ object AdditionalVariableTransformer extends CustomStreamTransformer {
   @MethodToInvoke(returnType = classOf[Void])
   def execute(@AdditionalVariables(Array(new AdditionalVariable(name = "additional", clazz = classOf[String]))) @ParamName("expression") expression: LazyParameter[Boolean])
    = FlinkCustomStreamTransformation((start: DataStream[Context]) =>
-      start.map(ValueWithContext("", _)))
+      start.map(ValueWithContext[Any]("", _)))
 
 }
 

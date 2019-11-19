@@ -16,7 +16,7 @@ class SettingsResources(config: FeatureTogglesConfig,
                        )(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
 
-  def route(): Route =
+  def publicRoute(): Route =
     pathPrefix("settings") {
       get {
         complete {

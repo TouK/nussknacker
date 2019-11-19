@@ -9,25 +9,21 @@ import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
+import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.collection.JavaConverters._
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest
-  with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
-
-  implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(20, Millis)))
+  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   test("it should return healthcheck also if cannot retrieve statuses") {
 
@@ -98,7 +94,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     }
   }
 
-  test("it should return global config") {
+  test("it should return build info without authentication") {
     import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
     val creatorWithBuildInfo = new EmptyProcessConfigCreator {
@@ -109,8 +105,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
       Map("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
-    
-    val result = Get("/app/buildInfo") ~> withPermissions(resources, testPermissionRead)
+
+    val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
     result ~> check {
       status shouldBe StatusCodes.OK
       entityAs[Map[String, Json]] shouldBe globalConfig.mapValues(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)

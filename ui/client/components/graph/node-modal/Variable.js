@@ -8,7 +8,7 @@ import {errorValidator, notEmptyValidator} from "../../../common/Validators";
 
 const Variable = (props) => {
 
-  const {node, onChange, isMarked, readOnly, errors} = props;
+  const {node, onChange, isMarked, readOnly, showValidation, errors} = props;
 
   return (
     <div className="node-table-body node-variable-builder-body">
@@ -18,6 +18,7 @@ const Variable = (props) => {
         path="id"
         onChange={onChange}
         isMarked={isMarked("id")} readOnly={readOnly}
+        showValidation={showValidation}
         validators={[notEmptyValidator, errorValidator(errors, "id")]}
       />
       <Input
@@ -27,6 +28,7 @@ const Variable = (props) => {
         onChange={onChange}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
+        showValidation={showValidation}
         validators={[notEmptyValidator, errorValidator(errors, "varName")]}
       />
       <ExpressionInput
@@ -36,6 +38,7 @@ const Variable = (props) => {
         path="value.expression"
         onChange={onChange}
         readOnly={readOnly}
+        showValidation={showValidation}
         validators={[notEmptyValidator, errorValidator(errors, "expression")]}
       />
       <Textarea
@@ -54,7 +57,8 @@ Variable.propTypes = {
   readOnly: PropTypes.bool,
   isMarked: PropTypes.func.isRequired,
   node: PropTypes.object.isRequired,
-  onChange: PropTypes.func.isRequired
+  onChange: PropTypes.func.isRequired,
+  showValidation: PropTypes.bool.isRequired
 };
 
 Variable.defaultProps = {

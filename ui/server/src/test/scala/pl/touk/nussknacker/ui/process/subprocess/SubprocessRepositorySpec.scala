@@ -2,16 +2,14 @@ package pl.touk.nussknacker.ui.process.subprocess
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import scala.language.higherKinds
 
-class SubprocessRepositorySpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest with Eventually {
-  override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
+class SubprocessRepositorySpec extends FlatSpec with ScalatestRouteTest with Matchers with BeforeAndAfterEach with EspItTest with VeryPatientScalaFutures {
 
   import pl.touk.nussknacker.ui.api.helpers.TestFactory.testCategoryName
   it should "fetches subprocess by its version" in {

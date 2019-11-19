@@ -88,9 +88,10 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
     eventually {
       // We access miniCluster because ClusterClient doesn't expose getExecutionGraph and getJobStatus doesn't satisfy us
       // It returns RUNNING even when some vertices are not started yet
-      val executionVertices: Iterable[AccessExecutionJobVertex] = getMiniCluster(flinkMiniCluster).getExecutionGraph(jobID).get().getAllVertices.asScala.values
-      val notRunning = executionVertices.filterNot(_.getAggregateState.toString == expectedState.toString)
-      assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getName} - ${rs.getAggregateState}")}")
+      val executionGraph = getMiniCluster(flinkMiniCluster).getExecutionGraph(jobID).get()
+      val executionVertices = executionGraph.getAllExecutionVertices.asScala
+      val notRunning = executionVertices.filterNot(_.getExecutionState == expectedState)
+      assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
     }(patience, implicitly[Position])
   }
 

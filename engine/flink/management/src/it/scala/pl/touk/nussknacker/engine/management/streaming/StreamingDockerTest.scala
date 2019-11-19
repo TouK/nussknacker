@@ -1,21 +1,24 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerReadyChecker}
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStreamingProcessManagerProvider}
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
 trait StreamingDockerTest extends DockerTest { self: Suite =>
 
+  protected var kafkaClient: KafkaClient = _
+
   override def beforeAll(): Unit = {
     super.beforeAll()
     kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      config.getString("processConfig.kafka.zkAddress"))
+      s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort", self.suiteName)
   }
 
   override def afterAll(): Unit = {
@@ -42,10 +45,8 @@ trait StreamingDockerTest extends DockerTest { self: Suite =>
     ) ++ super.dockerContainers
   }
 
-  def config: Config = ConfigFactory.load()
-    .withValue("processConfig.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
+  override protected def additionalConfig: Config = ConfigFactory.empty()
     .withValue("processConfig.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
-    .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${ipOfContainer(jobManagerContainer)}:$FlinkJobManagerRestPort"))
 
   protected lazy val processManager: ProcessManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
 

@@ -6,18 +6,19 @@ import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues, FunSuite, Matchers, OptionValues}
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
-import pl.touk.nussknacker.ui.util.MultipartUtils
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 
 class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValues with OptionValues {
+  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValues with OptionValues {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -26,6 +27,8 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
   private val mainRoute = NussknackerApp.initializeRoute(system.settings.config)
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
+
+  override def testConfig: Config = ConfigWithScalaVersion.config
 
   private val EndNodeId = "end"
   private val Key = "foo"

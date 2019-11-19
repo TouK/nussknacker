@@ -29,27 +29,29 @@ class ExpressionSuggest extends React.Component {
   static propTypes = {
     inputProps: PropTypes.object.isRequired,
     fieldName: PropTypes.string,
-    validators: PropTypes.array.isRequired
+    validators: PropTypes.array.isRequired,
+    showValidation: PropTypes.bool.isRequired
   }
 
   customAceEditorCompleter = {
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
-      const suggestions = this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d)
-      callback(null, _.map(suggestions, (s) => {
-        //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
-        //maybe it depends on language mode?
-        const methodName = s.methodName.replace("#", "")
-        const returnType = ProcessUtils.humanReadableType(s.refClazz)
-        return {
-          name: methodName,
-          value: methodName,
-          score: 1,
-          meta: returnType,
-          description: s.description,
-          parameters: s.parameters,
-          returnType: returnType
-        }
-      }))
+      this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d).then(suggestions => {
+        callback(null, _.map(suggestions, (s) => {
+          //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
+          //maybe it depends on language mode?
+          const methodName = s.methodName.replace("#", "")
+          const returnType = ProcessUtils.humanReadableType(s.refClazz)
+          return {
+            name: methodName,
+            value: methodName,
+            score: 1,
+            meta: returnType,
+            description: s.description,
+            parameters: s.parameters,
+            returnType: returnType
+          }
+        }))
+      })
     },
     getDocTooltip: (item) => {
       if (item.description || !_.isEmpty(item.parameters)) {
@@ -103,15 +105,15 @@ class ExpressionSuggest extends React.Component {
   render() {
     const {isMarked} = this.props
     if (this.props.dataResolved) {
+      const showValidation = this.props.showValidation;
       return (
         <div>
-          <div style={{paddingTop: 10,
-                       paddingBottom: 10,
-                       paddingLeft: 20 - 4,
-                       paddingRight: 20 - 4,
-                       backgroundColor: '#333',
-                       borderBottom: '1px solid #808080'}}
-               className={(allValid(this.props.validators, this.state.value) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
+          <div style={{paddingTop: 8,
+                       paddingBottom: 8,
+                       paddingLeft: 10,
+                       paddingRight: 10,
+                       backgroundColor: '#333'}}
+               className={(!showValidation || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
             <AceEditor mode={this.props.inputProps.language}
                        width={"100%"}
                        minLines={1}
@@ -139,7 +141,7 @@ class ExpressionSuggest extends React.Component {
                          readOnly: this.props.inputProps.readOnly
                        }}/>
           </div>
-          <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>
+          {showValidation && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
         </div>
       )
     } else {

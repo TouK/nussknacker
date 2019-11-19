@@ -5,9 +5,9 @@ import com.typesafe.scalalogging.LazyLogging
 import com.whisk.docker.DockerFactory
 import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
-import org.scalatest.concurrent.{Futures, ScalaFutures}
 import org.scalatest.time.{Second, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 import slick.util.AsyncExecutor
@@ -63,7 +63,7 @@ trait WithHsqlDbTesting
 
 trait WithPostgresDbTesting
   extends PostgresContainer
-    with ScalaFutures
+    with PatientScalaFutures
     with DockerTestKit
     with DbTesting {
   self: Suite =>

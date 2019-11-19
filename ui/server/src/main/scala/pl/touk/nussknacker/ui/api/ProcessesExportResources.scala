@@ -24,7 +24,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
     path("processesExport" / Segment) { processName =>
       (get & processId(processName)) { processId =>
         complete {

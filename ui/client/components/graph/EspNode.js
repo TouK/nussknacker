@@ -155,7 +155,8 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
 
   let attrs = {
     '.background': {
-      width: widthWithTestResults
+      width: widthWithTestResults,
+      opacity: node.isDisabled ? 0.4 : 1
     },
     '.background title': {
       text: description
@@ -165,13 +166,14 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     },
     'rect.nodeIconPlaceholder': {
       fill: customAttrs[node.type].styles.fill,
-      opacity: node.isDisabled ? 0.5 : 1
+      opacity: node.isDisabled ? 0.4 : 1
     },
     '.nodeIconItself': {
       'xlink:href': SVGUtils.svgToDataURL(icon), //we encode icon data to have standalone svg that can be used to generate pdf
     },
     '.contentText': {
-      text: bodyContent
+      text: bodyContent,
+      opacity: node.isDisabled ? 0.65 : 1
     },
     '.testResultsPlaceHolder': {
       display: hasCounts && !forExport ? 'block' : 'none',
@@ -190,16 +192,8 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     }
   };
 
-  let inPorts = [];
-  let outPorts = [];
-  if (node.type == 'Sink') {
-      inPorts = ['In']
-  } else if (node.type == 'Source') {
-      outPorts = ['Out']
-  } else {
-      inPorts = ['In'];
-      outPorts = ['Out']
-  }
+  const inPorts = NodeUtils.hasInputs(node) ? ['In'] : [];
+  const outPorts = NodeUtils.hasOutputs(node) ? ['Out'] : [];
 
   return new joint.shapes.devs.EspNode({
     id: node.id,

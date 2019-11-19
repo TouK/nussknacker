@@ -8,10 +8,11 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{posting, testPermissionAll, withPermissions}
 
-class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport with EspItTest {
+class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport with EspItTest with PatientScalaFutures {
 
   private val testInfoProvider = new TestInfoProvider {
 

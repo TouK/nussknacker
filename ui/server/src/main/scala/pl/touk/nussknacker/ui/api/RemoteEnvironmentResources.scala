@@ -32,7 +32,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  def route(implicit user: LoggedUser) : Route = {
+  def securedRoute(implicit user: LoggedUser) : Route = {
       pathPrefix("remoteEnvironment") {
           path("compare") {
             get {

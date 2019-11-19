@@ -6,4 +6,4 @@ if [ $# -ge 1 ]; then
 fi
 
 cd server
-java -Dlogback.configurationFile=./logback.xml -Dconfig.file=./develConf/$profile/application.conf -jar ./target/scala-2.11/nussknacker-ui-assembly.jar
+java -Dlogback.configurationFile=./logback.xml -Dconfig.file=./develConf/$profile/application.conf -jar ./target/scala-2.12/nussknacker-ui-assembly.jar
