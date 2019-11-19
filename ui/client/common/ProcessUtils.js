@@ -14,10 +14,6 @@ class ProcessUtils {
       return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
   }
 
-  processDisplayName = (processId, versionId) => {
-    return `${processId}:v${versionId}`
-  }
-
   //fixme maybe return hasErrors flag from backend?
   hasNoErrorsNorWarnings = (process) => {
     return this.hasNoErrors(process) && this.hasNoWarnings(process)
