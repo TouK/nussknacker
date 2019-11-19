@@ -14,9 +14,9 @@ import BaseProcesses from "./BaseProcesses"
 import {Glyphicon} from 'react-bootstrap'
 import * as  queryString from 'query-string'
 import {nkPath} from "../config";
-import AddProcessButton from "./AddProcessButton"
-import TableSelect from "./TableSelect"
-import SearchFilter from "./SearchFilter"
+import AddProcessButton from "../components/table/AddProcessButton"
+import TableSelect from "../components/table/TableSelect"
+import SearchFilter from "../components/table/SearchFilter"
 
 class Processes extends BaseProcesses {
   queries = {

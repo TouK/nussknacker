@@ -11,7 +11,7 @@ import "../../stylesheets/processes.styl"
 import BaseProcesses from "./../BaseProcesses"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils";
-import SearchFilter from "../SearchFilter"
+import SearchFilter from "../../components/table/SearchFilter"
 
 class CustomProcesses extends BaseProcesses {
 

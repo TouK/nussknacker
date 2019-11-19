@@ -11,8 +11,8 @@ import {Glyphicon} from 'react-bootstrap'
 import BaseProcesses from "./BaseProcesses"
 import ProcessUtils from "../common/ProcessUtils"
 import {nkPath} from "../config";
-import TableSelect from "./TableSelect"
-import SearchFilter from "./SearchFilter"
+import TableSelect from "../components/table/TableSelect"
+import SearchFilter from "../components/table/SearchFilter"
 
 class Archive extends BaseProcesses {
   queries = {

@@ -8,7 +8,7 @@ import * as VisualizationUrl from "../../common/VisualizationUrl"
 import LoaderSpinner from "../../components/Spinner"
 import BaseAdminTab from "./BaseAdminTab"
 import axios from "axios"
-import SearchFilter from "../SearchFilter"
+import SearchFilter from "../../components/table/SearchFilter"
 
 class SearchComponents extends BaseAdminTab {
   constructor(props) {

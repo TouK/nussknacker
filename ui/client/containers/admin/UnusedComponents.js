@@ -6,7 +6,7 @@ import BaseAdminTab from "./BaseAdminTab"
 import {Table, Td, Tr} from "reactable"
 import filterIcon from "../../assets/img/search.svg"
 import LoaderSpinner from "../../components/Spinner"
-import SearchFilter from "../SearchFilter"
+import SearchFilter from "../../components/table/SearchFilter"
 
 class UnusedComponents extends BaseAdminTab {
   constructor(props) {

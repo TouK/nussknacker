@@ -1,4 +1,4 @@
-import filterIcon from "../assets/img/search.svg"
+import filterIcon from "../../assets/img/search.svg"
 import React from "react"
 
 export default class SearchFilter extends React.Component {
