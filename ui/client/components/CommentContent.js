@@ -19,7 +19,9 @@ export default class CommentContent extends React.Component {
 
   render() {
      return(
-       <div className={"panel-comment"} dangerouslySetInnerHTML={{__html: this.newContent()}} />
+       <div className={"panel-comment"}>
+         <p>{this.newContent()}</p>
+       </div>
      )
   }
 }
