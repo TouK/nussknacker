@@ -151,10 +151,11 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
   const height = rectHeight;
   const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
   const icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
-
-  const countsHeight = 20
-  const pxPerChar = 20
-  const countsWidth = _.toArray(_.toString(processCounts ? processCounts.all : "")).length * pxPerChar
+  const testResultsHeight = 24
+  const pxPerChar = 8
+  const countsPadding = 8
+  //dynamically sized width
+  const testResultsWidth = (_.toArray(_.toString(processCounts ? processCounts.all : "")).length * pxPerChar) + 2 * countsPadding
   let attrs = {
     '.background': {
       width: width,
@@ -179,12 +180,12 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     },
     '.testResultsPlaceHolder': {
       display: hasCounts && !forExport ? 'block' : 'none',
-      width: countsWidth,
-      refX: width - countsWidth,
+      width: testResultsWidth,
+      refX: width - testResultsWidth,
       refY: height,
-      height: countsHeight
+      height: testResultsHeight
     },
-    '.testResultsSummary': getTestResultsSummaryAttr(processCounts, width, countsWidth, countsHeight),
+    '.testResultsSummary': getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight),
     '.groupElements': {
       display: NodeUtils.nodeIsGroup(node) ? 'block' : 'none'
     },
@@ -216,7 +217,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
   });
 }
 
-function getTestResultsSummaryAttr(processCounts, width, countsWidth, countsHeight) {
+function getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight) {
   const { breakPoint, fontSizeStep, maxExtraDigits, defaultFontSize } = summaryCountConfig;
 
   const hasCounts = !_.isEmpty(processCounts);
@@ -228,9 +229,9 @@ function getTestResultsSummaryAttr(processCounts, width, countsWidth, countsHeig
   return {
     text: countsContent,
     fill: hasErrors ? 'red' : '#ccc',
-    refX: width - countsWidth/2,
+    refX: width - testResultsWidth/2,
     // magic/hack: central vertical position when font-size changes
-    y: 76 - extraDigitsCount * 1.5,
+    y: 78 - extraDigitsCount * 1.5,
     height: 16
   }
 }
