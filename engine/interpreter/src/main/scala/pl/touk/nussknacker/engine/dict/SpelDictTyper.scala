@@ -88,7 +88,6 @@ class LooseKeysDictTyper(protected val dictRegistry: DictRegistry) extends BaseD
   override protected def valueForDictKey(dict: TypedDict, key: String): Validated[DictRegistry.DictLookupError, Option[String]] =
     dictRegistry.labelByKey(dict.dictId, key) match {
       case Invalid(_: DictEntryWithKeyNotExists) =>
-        logger.warn("Key ")
         Valid(None)
       case other => other
     }

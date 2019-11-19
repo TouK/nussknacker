@@ -64,7 +64,7 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   lazy val processDefinition: ProcessDefinition[ObjectDefinition] = ProcessDefinitionExtractor.toObjectDefinition(processWithObjectsDefinition)
 
-  // We can create restrictive services because I assume that ModelData is created once on UI side
+  // We can create dict services here because ModelData is fat object that is created once on start
   lazy val dictServices: UiDictServices =
     DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(processDefinition.expressionConfig.dictionaries, processConfig)
 

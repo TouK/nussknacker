@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NussknackerApp
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 
 class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
@@ -30,9 +30,33 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
+  private val DictId = "dict"
   private val EndNodeId = "end"
   private val Key = "foo"
   private val Label = "Foo"
+
+  test("query dict entries by label pattern") {
+    Get(s"/api/processDefinitionData/${TestProcessingTypes.Streaming}/dict/$DictId/entry?label=fo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      val response = responseAs[Json]
+
+      response shouldEqual Json.arr(Json.obj(
+        "key" -> Json.fromString(Key),
+        "label" -> Json.fromString(Label)))
+    }
+
+    Get(s"/api/processDefinitionData/${TestProcessingTypes.Streaming}/dict/notExisting/entry?label=fo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.NotFound
+    }
+
+    Get(s"/api/processDefinitionData/${TestProcessingTypes.Streaming}/dict/$DictId/entry?label=notexisting") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+
+      val response = responseAs[Json]
+
+      response shouldEqual Json.arr()
+    }
+  }
 
   test("save process with expression using dicts and load get it") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
@@ -43,13 +67,23 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
   test("save process with expression using dicts and test it") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
+    saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
+  }
+
+  test("save process with expression using dict values as property and test it") {
+    val expressionUsingDictWithLabel = s"#DICT.$Label"
+    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
+    saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
+  }
+
+  private def saveProcessAndTestIt(process: EspProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
     saveProcessAndCheckIfCanBeGet(process, expressionUsingDictWithLabel)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       val endInvocationResult = extractedEndInvocationResult()
-      endInvocationResult shouldEqual Key
+      endInvocationResult shouldEqual expectedResult
     }
   }
 

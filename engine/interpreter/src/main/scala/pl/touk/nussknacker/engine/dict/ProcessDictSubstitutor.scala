@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.dict
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
-import org.springframework.expression.spel.ast.{Indexer, StringLiteral}
+import org.springframework.expression.spel.ast.{Indexer, PropertyOrFieldReference, StringLiteral}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.dict.DictRegistry.{DictEntryWithKeyNotExists, DictLookupError}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
@@ -61,7 +61,6 @@ object ProcessDictSubstitutor extends LazyLogging {
     protected def dictRegistry: DictRegistry
 
     def findReplacement(typedNodeTree: List[TypedTreeLevel]): Option[String] = typedNodeTree match {
-      // FIXME: Handle properties
       case
         TypedTreeLevel(OptionallyTypedNode(indexerKey: StringLiteral, _) :: Nil) ::
           TypedTreeLevel(OptionallyTypedNode(_: Indexer, _) :: OptionallyTypedNode(_, Some(dict: TypedDict)) :: _) :: _ =>
@@ -69,6 +68,10 @@ object ProcessDictSubstitutor extends LazyLogging {
         val replacement = findDictReplacement(dict, indexerKeyValue)
 
         replacement.map(key => s"'$key'")
+      case
+        TypedTreeLevel(OptionallyTypedNode(property: PropertyOrFieldReference, _) :: OptionallyTypedNode(_, Some(dict: TypedDict)) :: Nil) :: _ =>
+        val propertyName = property.getName
+        findDictReplacement(dict, propertyName)
       case _ => None
     }
 

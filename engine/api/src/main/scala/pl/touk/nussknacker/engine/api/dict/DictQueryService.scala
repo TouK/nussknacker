@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.api.dict
 
+import cats.data.Validated
 import io.circe.generic.JsonCodec
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DictQueryService {
 
-  def queryEntriesByLabel(dictId: String, labelPattern: String): Future[List[DictEntry]]
+  def queryEntriesByLabel(dictId: String, labelPattern: String)
+                         (implicit ec: ExecutionContext): Validated[DictRegistry.DictNotDeclared, Future[List[DictEntry]]]
 
 }
 
