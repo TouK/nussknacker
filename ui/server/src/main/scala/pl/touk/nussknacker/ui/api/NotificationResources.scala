@@ -15,7 +15,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.process.deployment.{DeployInfo, DeploymentActionType}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
 class NotificationResources(managementActor: ActorRef,

@@ -7,10 +7,9 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.listner.ChangeEvent.OnDeployed
+import pl.touk.nussknacker.listner.ChangeEvent.{OnDeployCancelled, OnDeployFailed, OnDeploySuccess}
 import pl.touk.nussknacker.listner.ListenerManagement
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
-import pl.touk.nussknacker.restmodel.process.deployment.{DeployInfo, DeploymentActionType}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.EspError
@@ -82,11 +81,17 @@ class ManagementActor(environment: String,
       logger.info(s"Finishing ${beingDeployed.get(id.name)} of $id")
 
       beingDeployed.get(id.name).foreach { deployInfo =>
-        listenerManagement.handler(OnDeployed(id.name, deployInfo))
+        deployInfo.action match {
+          case DeploymentActionType.Deployment => listenerManagement.handler(OnDeploySuccess(id.name))
+          case DeploymentActionType.Cancel => listenerManagement.handler(OnDeployCancelled(id.name))
+        }
       }
+
       beingDeployed -= id.name
-    case DeploymentActionFinished(id, _, Some(failure)) =>
+    case DeploymentActionFinished(id, user, Some(failure)) =>
+      implicit val loggedUser = user
       logger.error(s"Action: ${beingDeployed.get(id.name)} of $id finished with failure", failure)
+      listenerManagement.handler(OnDeployFailed(id.name))
       beingDeployed -= id.name
     case Test(id, processJson, testData, user, encoder) =>
       ensureNoDeploymentRunning {
@@ -229,6 +234,15 @@ case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 case class Test[T](id: ProcessIdWithName, processJson: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, optionalFailure: Option[Throwable])
+
+case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
+
+sealed trait DeploymentActionType
+
+object DeploymentActionType {
+  case object Deployment extends DeploymentActionType
+  case object Cancel extends DeploymentActionType
+}
 
 case object DeploymentStatus
 
