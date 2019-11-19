@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {render} from 'react-dom';
 import {Scrollbars} from 'react-custom-scrollbars';
 import {connect} from 'react-redux';
 import _ from 'lodash'
@@ -57,10 +56,6 @@ export class ProcessHistory_ extends Component {
     }
   }
 
-  processDisplayName(historyEntry) {
-    return ProcessUtils.processDisplayName(historyEntry.processName, historyEntry.processVersionId)
-  }
-
   latestVersionIsNotDeployed = (index, historyEntry) => {
     return _.isEqual(index, 0) && _.isEmpty(historyEntry.deployments)
   }
@@ -73,7 +68,7 @@ export class ProcessHistory_ extends Component {
             return (
               <li key={index} className={this.processVersionOnTimeline(historyEntry, index)}
                   onClick={this.showProcess.bind(this, historyEntry, index)}>
-                {this.processDisplayName(historyEntry)} {historyEntry.user}
+                {`v${historyEntry.processVersionId}`} | {historyEntry.user}
                 {this.latestVersionIsNotDeployed(index, historyEntry) ?
                   <small> <span title="Latest version is not deployed" className="glyphicon glyphicon-warning-sign"/></small> :
                   null
