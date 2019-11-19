@@ -15,6 +15,10 @@ import TableSelect from "./TableSelect"
 import SearchFilter from "./SearchFilter"
 
 class Archive extends BaseProcesses {
+  queries = {
+    isArchived: true
+  }
+
   searchItems = ['categories', 'isSubprocess']
 
   page = 'archive'
@@ -79,7 +83,7 @@ class Archive extends BaseProcesses {
           ]}
         >
           {
-            this.state.archivedProcesses.map((process, index) => {
+            this.state.processes.map((process, index) => {
               return (
                 <Tr className="row-hover" key={index}>
                   <Td column="name">{process.name}</Td>

@@ -19,6 +19,11 @@ import TableSelect from "./TableSelect"
 import SearchFilter from "./SearchFilter"
 
 class Processes extends BaseProcesses {
+  queries = {
+    isSubprocess: false,
+    isArchived: false
+  }
+
   page = 'processes'
 
   searchItems = ['categories', 'isDeployed']
@@ -101,10 +106,7 @@ class Processes extends BaseProcesses {
           isSubprocess={false}
           visualizationPath={Processes.path}
           message="Create new process"
-          processes={this.state.processes}
-          subProcesses={this.state.subProcesses}
-          archivedProcesses={this.state.archivedProcesses}
-        />
+          clashedNames={this.state.clashedNames}/>
 
         <LoaderSpinner show={this.state.showLoader}/>
 

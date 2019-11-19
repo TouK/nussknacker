@@ -4,7 +4,6 @@ import * as  queryString from 'query-string'
 import {Table, Td, Tr} from "reactable"
 import "../../stylesheets/processes.styl"
 import HttpService from "../../http/HttpService"
-import filterIcon from "../../assets/img/search.svg"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import LoaderSpinner from "../../components/Spinner"
 import BaseAdminTab from "./BaseAdminTab"

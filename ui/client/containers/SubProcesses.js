@@ -17,6 +17,11 @@ import TableSelect from "./TableSelect"
 import SearchFilter from "./SearchFilter"
 
 class SubProcesses extends BaseProcesses {
+  queries = {
+    isSubprocess: true,
+    isArchived: false
+  }
+
   page = 'subProcesses'
 
   constructor(props) {
@@ -49,9 +54,7 @@ class SubProcesses extends BaseProcesses {
           isOpen={this.state.showAddProcess}
           visualizationPath={SubProcesses.path}
           message="Create new subprocess"
-          processes={this.state.processes}
-          subProcesses={this.state.subProcesses}
-          archivedProcesses={this.state.archivedProcesses}/>
+          clashedNames={this.state.clashedNames}/>
 
         <LoaderSpinner show={this.state.showLoader}/>
 
@@ -78,15 +81,14 @@ class SubProcesses extends BaseProcesses {
             {key: 'edit', label: 'Edit'}
           ]}
         >
-          {this.state.subProcesses.map((process, index) => {
+          {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
                 <Td column="name">{process.name}</Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)}
-                    className="centered-column">{DateUtils.formatRelatively(process.modificationDate)}</Td>
+                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column">{DateUtils.formatRelatively(process.modificationDate)}</Td>
                 <Td column="edit" className="edit-column">
-                  <Glyphicon glyph="edit" title="Edit subprocess" onClick={this.showProcess.bind(this, process)}/>
+                  <Glyphicon glyph="edit" title="Edit subprocess" onClick={this.showProcess.bind(this, process)} />
                 </Td>
               </Tr>
             )
