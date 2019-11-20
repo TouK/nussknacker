@@ -4,7 +4,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.Configuration
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -62,12 +62,14 @@ object node {
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
   }
 
+  sealed trait RealNodeData extends NodeData
+
   sealed trait Disableable { self: NodeData =>
 
     def isDisabled: Option[Boolean]
   }
 
-  sealed trait CustomNodeData extends NodeData with WithComponent {
+  sealed trait CustomNodeData extends NodeData with WithComponent with RealNodeData {
     def nodeType: String
     def parameters: List[Parameter]
     def outputVar: Option[String]
@@ -77,7 +79,7 @@ object node {
     def componentId: String
   }
 
-  sealed trait OneOutputSubsequentNodeData extends NodeData
+  sealed trait OneOutputSubsequentNodeData extends NodeData with RealNodeData
 
   sealed trait EndingNodeData extends NodeData
 
@@ -85,7 +87,7 @@ object node {
 
   sealed trait SourceNodeData extends StartingNodeData
 
-  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends SourceNodeData with WithComponent {
+  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends SourceNodeData with WithComponent with RealNodeData {
     override val componentId = ref.typ
   }
 
@@ -97,9 +99,9 @@ object node {
   }
 
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
-                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable
+                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData
 
-  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
+  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData
 
   case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
@@ -115,17 +117,24 @@ object node {
     override val componentId = nodeType
   }
 
-  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
+  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData
 
   case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent {
     override val componentId = service.id
   }
 
-  case class BranchEndData(id: String, definition: BranchEndDefinition) extends EndingNodeData {
+  case class BranchEndData(definition: BranchEndDefinition) extends EndingNodeData {
     override val additionalFields: Option[UserDefinedAdditionalNodeFields] = None
+
+    override val id: String = definition.artificialNodeId
   }
 
-  @JsonCodec case class BranchEndDefinition(id: String, joinId: String)
+  @JsonCodec case class BranchEndDefinition(id: String, joinId: String) {
+    def artificialNodeId: String = s"$$edge-$id-$joinId"
+
+    //FIXME: what  be here?
+    def joinReference: JoinReference = JoinReference(artificialNodeId, joinId)
+  }
 
   case class Sink(
                    id: String,
@@ -133,7 +142,7 @@ object node {
                    endResult: Option[Expression] = None,
                    isDisabled: Option[Boolean] = None,
                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None
-                 ) extends EndingNodeData with WithComponent with Disableable {
+                 ) extends EndingNodeData with WithComponent with Disableable with RealNodeData {
     override val componentId = ref.typ
   }
 
@@ -155,11 +164,11 @@ object node {
   case class SubprocessInputDefinition(id: String,
                                        parameters: List[SubprocessParameter],
                                        additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
-    extends SourceNodeData
+    extends SourceNodeData with RealNodeData
 
   //this is used only in subprocess definition
   case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
-    extends EndingNodeData
+    extends EndingNodeData with RealNodeData
 
   //we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has ClazzRef which has *real* class inside  
   //TODO: probably should be able to handle class parameters or typed maps
@@ -186,7 +195,13 @@ object node {
   //it has to be here, otherwise it won't compile...
   def prefixNodeId[T<:NodeData](prefix: List[String], nodeData: T) : T = {
     import pl.touk.nussknacker.engine.util.copySyntax._
-    nodeData.asInstanceOf[NodeData].copy(id = (prefix :+ nodeData.id).mkString("-")).asInstanceOf[T]
+    nodeData.asInstanceOf[NodeData] match {
+      case e:RealNodeData =>
+        e.copy(id = (prefix :+ nodeData.id).mkString("-")).asInstanceOf[T]
+      case _:BranchEndData =>
+        throw new IllegalArgumentException("Currently cannot use joins inside subproces...")
+      
+    }
   }
 
   //TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|

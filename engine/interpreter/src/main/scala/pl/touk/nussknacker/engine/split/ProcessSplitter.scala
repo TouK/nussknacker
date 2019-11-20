@@ -83,7 +83,7 @@ object ProcessSplitter {
       case EndingNode(other) =>
         NextWithParts(NextNode(splittednode.EndingNode(other)), List.empty, List(NormalEnd(other.id)))
       case BranchEnd(branchEndData) =>
-        NextWithParts(NextNode(splittednode.EndingNode(branchEndData)), List.empty, List(end.BranchEnd(branchEndData.id, branchEndData.definition.joinId)))
+        NextWithParts(NextNode(splittednode.EndingNode(branchEndData)), List.empty, List(end.BranchEnd(branchEndData.definition)))
       case SubprocessNode(id, _) =>
         throw new RuntimeException("Should not happen")
 

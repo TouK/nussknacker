@@ -131,7 +131,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
       //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
       //accepts this join, maybe we should also validate the graph is connected?
-      case BranchEndData(id, joinId) => toCompilationResult(Valid(compiledgraph.node.BranchEnd(id, joinId.joinId)), Map.empty)
+      case BranchEndData(definition) => toCompilationResult(Valid(compiledgraph.node.BranchEnd(definition)), Map.empty)
     }
   }
 

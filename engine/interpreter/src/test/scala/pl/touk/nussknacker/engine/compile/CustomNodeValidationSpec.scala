@@ -302,9 +302,9 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     validationResult.expressionsInNodes shouldEqual Map(
       ExceptionHandlerNodeId -> Map.empty,
       "sourceId1" -> Map.empty,
-      "branch1" -> Map.empty,
+      "$edge-branch1-join1" -> Map.empty,
       "sourceId2" -> Map.empty,
-      "branch2" -> Map.empty,
+      "$edge-branch2-join1" -> Map.empty,
       "join1" -> Map(
         "key-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed[String])),
         "key-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed[String])),

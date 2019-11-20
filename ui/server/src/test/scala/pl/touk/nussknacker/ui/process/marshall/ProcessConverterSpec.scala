@@ -1,16 +1,20 @@
 package pl.touk.nussknacker.ui.process.marshall
 
+import cats.data.NonEmptyList
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
@@ -26,6 +30,8 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
 
 class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
+
+  private val metaData = StreamMetaData(Some(2), Some(false))
 
   val validation: ProcessValidation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
@@ -53,7 +59,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
   }
 
   test("be able to handle different node order") {
-    val process = DisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
+    val process = DisplayableProcess("t1", ProcessProperties(metaData, ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
@@ -74,7 +80,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     )) { unexpectedEnd =>
       val process = ValidatedDisplayableProcess(
         "t1",
-        ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
+        ProcessProperties(metaData, ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)),
         TestProcessingTypes.Streaming,
@@ -94,7 +100,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
 
   test("return variable type information for process that cannot be canonized") {
-    val meta = MetaData("process", StreamMetaData(Some(2), Some(false)), additionalFields = Some(ProcessAdditionalFields(None, Set.empty, Map.empty)))
+    val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Set.empty, Map.empty)))
     val process = ValidatedDisplayableProcess(
       meta.id,
       ProcessProperties(meta.typeSpecificData, ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
@@ -118,10 +124,10 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
   test("convert process with branches") {
 
-    val process = DisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
+    val process = DisplayableProcess("t1", ProcessProperties(metaData, ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
       List(
         Processor("e", ServiceRef("ref", List.empty)),
-        Join("j1", None, "joinRef", List.empty, List.empty),
+        Join("j1", Some("out1"), "joinRef", List.empty, List(BranchParameters("s1", List()))),
         Source("s2", SourceRef("sourceRef", List.empty)),
         Source("s1", SourceRef("sourceRef", List.empty))
       ),
@@ -131,7 +137,11 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         Edge("j1", "e", None)
       ), TestProcessingTypes.Streaming)
 
-    
+    val processViaBuilder =  EspProcess(MetaData("t1", metaData), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder.branch("j1", "joinRef", Some("out1"), List("s1" -> List())).processorEnd("e", "ref"),
+      GraphBuilder.source("s2", "sourceRef").branchEnd("s2", "j1"),
+      GraphBuilder.source("s1", "sourceRef").branchEnd("s1", "j1")
+    ))
 
     displayableCanonical(process).nodes.sortBy(_.id) shouldBe process.nodes.sortBy(_.id)
     displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
@@ -139,7 +149,10 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     val canonical = ProcessConverter.fromDisplayable(process)
 
     val normal = ProcessCanonizer.uncanonize(canonical).toOption.get
+    normal shouldBe processViaBuilder
     ProcessCanonizer.canonize(normal) shouldBe canonical
+
+
 
   }
 }
