@@ -1,14 +1,13 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {render} from 'react-dom';
 import {Scrollbars} from 'react-custom-scrollbars';
 import {connect} from 'react-redux';
 import _ from 'lodash'
 import ActionsUtils from '../actions/ActionsUtils';
 import DialogMessages from '../common/DialogMessages';
 import '../stylesheets/processHistory.styl'
-import DateUtils from '../common/DateUtils'
 import ProcessUtils from '../common/ProcessUtils'
+import Date from "./common/Date"
 
 export class ProcessHistory_ extends Component {
 
@@ -57,10 +56,6 @@ export class ProcessHistory_ extends Component {
     }
   }
 
-  processDisplayName(historyEntry) {
-    return ProcessUtils.processDisplayName(historyEntry.processName, historyEntry.processVersionId)
-  }
-
   latestVersionIsNotDeployed = (index, historyEntry) => {
     return _.isEqual(index, 0) && _.isEmpty(historyEntry.deployments)
   }
@@ -73,16 +68,16 @@ export class ProcessHistory_ extends Component {
             return (
               <li key={index} className={this.processVersionOnTimeline(historyEntry, index)}
                   onClick={this.showProcess.bind(this, historyEntry, index)}>
-                {this.processDisplayName(historyEntry)} {historyEntry.user}
+                {`v${historyEntry.processVersionId}`} | {historyEntry.user}
                 {this.latestVersionIsNotDeployed(index, historyEntry) ?
                   <small> <span title="Latest version is not deployed" className="glyphicon glyphicon-warning-sign"/></small> :
                   null
                 }
                 <br/>
-                <small><i title={DateUtils.formatAbsolutely(historyEntry.createDate)}>{DateUtils.formatRelatively(historyEntry.createDate)}</i></small>
+                <small><i><Date date={historyEntry.createDate}/></i></small>
                 <br/>
                 {historyEntry.deployments.map((deployment, index) =>
-                  <small key={index}><i title={DateUtils.formatAbsolutely(deployment.deployedAt)}>{DateUtils.formatRelatively(deployment.deployedAt)}</i> <span className="label label-info">{deployment.environment}</span></small>
+                  <small key={index}><i><Date date={deployment.deployedAt}/></i> <span className="label label-info">{deployment.environment}</span></small>
                 )}
               </li>
             )

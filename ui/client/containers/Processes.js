@@ -17,6 +17,7 @@ import {nkPath} from "../config";
 import AddProcessButton from "../components/table/AddProcessButton"
 import TableSelect from "../components/table/TableSelect"
 import SearchFilter from "../components/table/SearchFilter"
+import Date from "../components/common/Date"
 
 class Processes extends BaseProcesses {
   queries = {
@@ -148,9 +149,11 @@ class Processes extends BaseProcesses {
                   />
                 </Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)}
+                <Td column="modifyDate"
                     className="centered-column"
-                    value={process.modificationDate}>{DateUtils.formatRelatively(process.modificationDate)}</Td>
+                    value={process.modificationDate}>
+                  <Date date={process.modificationDate}/>
+                </Td>
                 <Td column="status" className="status-column">
                   <div
                     className={this.processStatusClass(process)}

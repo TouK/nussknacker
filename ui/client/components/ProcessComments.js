@@ -2,10 +2,10 @@ import React from 'react'
 import {connect} from "react-redux";
 import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
-import DateUtils from '../common/DateUtils'
 import DialogMessages from '../common/DialogMessages'
 import CommentContent from "./CommentContent";
 import CommentInput from "./CommentInput";
+import Date from "./common/Date"
 
 class ProcessComments extends React.Component {
 
@@ -51,8 +51,8 @@ class ProcessComments extends React.Component {
             return (
               <div key={idx}>
                 <div className="header">
-                  <span title={DateUtils.formatAbsolutely(comment.createDate)} className="date">{DateUtils.formatRelatively(comment.createDate)}</span>
-                  <span className="comment-header">v{comment.processVersionId} ({comment.user})</span>
+                  <Date date={comment.createDate}/>
+                  <span className="comment-header"> | v{comment.processVersionId} | {comment.user}</span>
                   {comment.user == this.props.loggedUser.id ?
                     <span className="remove glyphicon glyphicon-remove" onClick={this.deleteComment.bind(this, comment)}/>
                     : null}
