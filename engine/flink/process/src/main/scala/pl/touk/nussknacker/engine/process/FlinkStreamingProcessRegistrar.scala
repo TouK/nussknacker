@@ -168,7 +168,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
 
       val asyncAssigned = wrapAsync(withAssigned, part.node, part.validationContext, "interpretation")
 
-      val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  BranchEndDefinition(be.nodeId, be.joinId) ->
+      val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  be.definition ->
         asyncAssigned.getSideOutput(OutputTag[InterpretationResult](be.nodeId))).toMap
 
       registerParts(asyncAssigned, part.nextParts, part.ends) ++ branchEnds
@@ -419,7 +419,7 @@ object FlinkStreamingProcessRegistrar {
         val reference = end match {
           case NormalEnd(nodeId) =>  EndReference(nodeId)
           case DeadEnd(nodeId) =>  DeadEndReference(nodeId)
-          case BranchEnd(nodeId, joinId) => JoinReference(nodeId, joinId)
+          case BranchEnd(definition) => definition.joinReference
         }
         reference -> registerRateMeter(end)
       }.toMap[PartReference, RateMeter]

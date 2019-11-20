@@ -53,9 +53,8 @@ trait GraphBuilder[R] {
   def processorEnd(id: String, svcId: String, params: (String, Expression)*): R =
     creator(EndingNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList))))
 
-  def branchEnd(id: String, joinId: String): R =
-    creator(BranchEnd(node.BranchEndData(id, BranchEndDefinition(id, joinId))))
-
+  def branchEnd(branchId: String, joinId: String): R =
+    creator(BranchEnd(node.BranchEndData(BranchEndDefinition(branchId, joinId))))
 
   def switch(id: String, expression: Expression, exprVal: String, nexts: Case*): R =
     creator(SwitchNode(Switch(id, expression, exprVal), nexts.toList, None))
