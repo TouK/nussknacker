@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientE
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
 import pl.touk.nussknacker.engine.util.ReflectUtils
+import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 
 import scala.concurrent.duration._
 
@@ -71,16 +72,13 @@ case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: 
 
 case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionConsumer
-    with LazyLogging {
+    with LazyLoggingWithTraces {
   override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
-    logger.whenDebugEnabled {
-      logger.debug(s"${processMetaData.id}: Exception: ${e.throwable.getMessage}, params: $params", e.throwable)
-    }
-    logger.warn(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params")
+    warnWithDebugStack(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params", e.throwable)
   }
 }
 
-trait ConsumingNonTransientExceptions extends LazyLogging {
+trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
   self: FlinkEspExceptionHandler =>
 
   protected val transientExceptionExtractor: ExceptionExtractor[Exception] =
@@ -105,8 +103,7 @@ trait ConsumingNonTransientExceptions extends LazyLogging {
       case other =>
         val exceptionDetails = s"${ReflectUtils.fixedClassSimpleNameWithoutParentModule(other.getClass)}:${other.getMessage}"
         val nonTransient = NonTransientException(input = exceptionDetails, message = "Unknown exception", cause = other)
-        logger.info(s"Unknown exception $exceptionDetails for ${exceptionInfo.context}")
-        logger.debug(s"Unknown exception $exceptionDetails for ${exceptionInfo.context}", other)
+        infoWithDebugStack(s"Unknown exception $exceptionDetails for ${exceptionInfo.context.id}", other)
         consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
     }
   }

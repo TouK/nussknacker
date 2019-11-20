@@ -210,6 +210,7 @@ object SpelExpressionParser extends LazyLogging {
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
     val propertyAccessors = Seq(
+      NullPropertyAccessor, //must come first
       new ScalaLazyPropertyAccessor(lazyValuesTimeout), // must be before scalaPropertyAccessor
       ScalaOptionOrNullPropertyAccessor, // // must be before scalaPropertyAccessor
       ScalaPropertyAccessor,
@@ -259,6 +260,16 @@ object SpelExpressionParser extends LazyLogging {
     Collections.singletonList(mr)
   }
 
+  object NullPropertyAccessor extends PropertyAccessor with ReadOnly {
+
+    override def getSpecificTargetClasses: Array[Class[_]] = null
+
+    override def canRead(context: EvaluationContext, target: Any, name: String): Boolean = target == null
+
+    override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
+      //can we extract anything else here?
+      throw NonTransientException(name, s"Cannot invoke method/property $name on null object")
+  }
 
   object ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
@@ -266,11 +277,11 @@ object SpelExpressionParser extends LazyLogging {
       target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name)
 
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext) = {
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): AnyRef = {
       method.invoke(target)
     }
 
-    override def getSpecificTargetClasses = null
+    override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
   object StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
@@ -294,11 +305,11 @@ object SpelExpressionParser extends LazyLogging {
       target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType))
     }
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext) = {
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
       method.invoke(target).asInstanceOf[Option[Any]].orNull
     }
 
-    override def getSpecificTargetClasses = null
+    override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
 
@@ -311,7 +322,7 @@ object SpelExpressionParser extends LazyLogging {
         m.getName == name)
     }
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext)  = {
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
       val f = method
         .invoke(target)
         .asInstanceOf[StateT[IO, ContextWithLazyValuesProvider, Any]]
@@ -325,13 +336,13 @@ object SpelExpressionParser extends LazyLogging {
       value
     }
 
-    override def getSpecificTargetClasses = null
+    override def getSpecificTargetClasses: Array[Class[_]] = null
 
   }
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
 
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
       target.asInstanceOf[java.util.Map[_, _]].containsKey(name)
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
@@ -342,7 +353,7 @@ object SpelExpressionParser extends LazyLogging {
 
   object TypedMapPropertyAccessor extends PropertyAccessor with ReadOnly {
     //in theory this always happends, because we typed it properly ;)
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
       target.asInstanceOf[TypedMap].fields.contains(name)
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
@@ -374,12 +385,12 @@ object SpelExpressionParser extends LazyLogging {
       target.getMethods.find(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
     }
 
-    override def getSpecificTargetClasses = null
+    override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
   trait Caching extends CachingBase { self: PropertyAccessor =>
 
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
       !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
 
     override protected def extractClassFromTarget(target: Any): Option[Class[_]] =
@@ -387,7 +398,7 @@ object SpelExpressionParser extends LazyLogging {
   }
 
   trait StaticMethodCaching extends CachingBase { self: PropertyAccessor =>
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
       target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
 
     override protected def extractClassFromTarget(target: Any): Option[Class[_]] = Option(target).map(_.asInstanceOf[Class[_]])
@@ -396,7 +407,7 @@ object SpelExpressionParser extends LazyLogging {
   trait CachingBase { self: PropertyAccessor =>
     private val methodsCache = new TrieMap[(String, Class[_]), Option[Method]]()
 
-    override def read(context: EvaluationContext, target: scala.Any, name: String) =
+    override def read(context: EvaluationContext, target: scala.Any, name: String): TypedValue =
       findMethod(name, target)
         .map { method =>
           new TypedValue(invokeMethod(name, method, target, context))
@@ -404,9 +415,8 @@ object SpelExpressionParser extends LazyLogging {
         .getOrElse(throw new IllegalAccessException("Property is not readable"))
 
     protected def findMethod(name: String, target: Any): Option[Method] = {
-      val targetClass = extractClassFromTarget(target)
-        //TODO: better exception message
-        .getOrElse(throw new NonTransientException(name, s"Cannot invoke method/property $name on null object"))
+      //this should *not* happen as we have NullPropertyAccessor
+      val targetClass = extractClassFromTarget(target).getOrElse(throw new IllegalArgumentException(s"Null target for $name"))
       methodsCache.getOrElseUpdate((name, targetClass), reallyFindMethod(name, targetClass))
     }
 
