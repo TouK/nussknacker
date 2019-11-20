@@ -25,7 +25,7 @@ object CompiledProcess {
              ): ValidatedNel[ProcessCompilationError, CompiledProcess] = {
     val servicesDefs = definitions.services
 
-    val dictRegistryFactory = DictServicesFactoryLoader.justOne(userCodeClassLoader)
+    val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(definitions.expressionConfig.dictionaries)
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig)
@@ -55,6 +55,11 @@ object CompiledProcess {
       )
 
     }
+  }
+
+  private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
+    // we are loading DictServicesFactory on TaskManager side. It may be tricky because of class loaders...
+    DictServicesFactoryLoader.justOne(userCodeClassLoader)
   }
 
 }

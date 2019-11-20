@@ -32,8 +32,16 @@ private[static] case class EnumDictDefinition(valueClass: ClazzRef, private val 
 
 object StaticDictDefinition {
 
-  def apply(labelByKey: Map[String, String]): StaticDictDefinition =
+  def apply(labelByKey: Map[String, String]): StaticDictDefinition = {
+    checkLabelsAreUnique(labelByKey)
     SimpleDictDefinition(labelByKey)
+  }
+
+  private def checkLabelsAreUnique(labelByKey: Map[String, String]): Unit = {
+    val labels = labelByKey.values.toList
+    val duplicatedValues = labels.diff(labels.distinct).distinct
+    assert(duplicatedValues.isEmpty, s"Duplicated labels for dict: $labels")
+  }
 
   def forJavaEnum[T <: Enum[_]](javaEnumClass: Class[T]): StaticDictDefinition = {
     val enumValueByName = javaEnumClass.getEnumConstants.map(e => e.name() -> e).toMap
