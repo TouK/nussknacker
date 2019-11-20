@@ -23,12 +23,13 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
+import pl.touk.nussknacker.engine.api.dict.DictInstance
+import pl.touk.nussknacker.engine.api.dict.static.StaticDictDefinition
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
-import pl.touk.nussknacker.engine.api.typed.dict.StaticTypedDictInstance
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -214,14 +215,15 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
 
   override def expressionConfig(config: Config) = {
+    val dictId = "dict"
+    val dictDef = StaticDictDefinition(Map(
+      "foo" -> "Foo",
+      "bar" -> "Bar"))
     val globalProcessVariables = Map(
       "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2"),
-      "DICT" -> WithCategories(StaticTypedDictInstance("dict", Map(
-        "foo" -> "Foo",
-        "bar" -> "Boo"
-      )), "Category1", "Category2")
-    )
-    ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()))
+      "DICT" -> WithCategories(DictInstance(dictId, dictDef), "Category1", "Category2"))
+    ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()),
+      dictionaries = Map(dictId -> WithCategories(dictDef, "Category1", "Category2")))
   }
 
   override def buildInfo(): Map[String, String] = {

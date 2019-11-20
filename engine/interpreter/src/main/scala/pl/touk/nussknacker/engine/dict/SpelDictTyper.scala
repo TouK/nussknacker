@@ -1,11 +1,14 @@
 package pl.touk.nussknacker.engine.dict
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.ValidatedNel
+import cats.data.{Validated, ValidatedNel}
+import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{Indexer, PropertyOrFieldReference, StringLiteral}
+import pl.touk.nussknacker.engine.api.dict.DictRegistry
+import pl.touk.nussknacker.engine.api.dict.DictRegistry.{DictEntryWithKeyNotExists, DictEntryWithLabelNotExists, DictNotDeclared}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.{DynamicTypedDict, StaticTypedDict, Typed, TypedDict, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
 import pl.touk.nussknacker.engine.spel.ast
 
 /**
@@ -17,9 +20,11 @@ trait SpelDictTyper {
 
 }
 
-trait BaseDictTyper extends SpelDictTyper {
+trait BaseDictTyper extends SpelDictTyper with LazyLogging {
 
   import ast.SpelAst._
+
+  protected def dictRegistry: DictRegistry
 
   override def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[ExpressionParseError, dict.ValueType]  = {
     node match {
@@ -36,15 +41,21 @@ trait BaseDictTyper extends SpelDictTyper {
     }
   }
 
-  private def findKey(dict: TypedDict, key: String) = {
-    val possibleDictValues = possibleValuesFromDict(dict)
-    if (possibleDictValues.exists(_ == key))
-      Valid(dict.valueType)
-    else
-      Invalid(ExpressionParseError(s"Illegal key: $key for dict: ${dict.dictId}. Possible values are: ${possibleDictValues.mkString(", ")}")).toValidatedNel
+  private def findKey(dict: TypedDict, value: String) = {
+    valueForDictKey(dict, value)
+      .map(_ => dict.valueType)
+      .leftMap {
+        case DictNotDeclared(dictId) =>
+          // It will happen only if will be used dictionary for which, definition wasn't exposed in ExpressionConfig.dictionaries
+          ExpressionParseError(s"Dict with given id: $dictId not exists")
+        case DictEntryWithLabelNotExists(_, label, possibleLabels) =>
+          ExpressionParseError(s"Illegal label: '$label' for ${dict.display}.${possibleLabels.map(_.map("'" + _ + "'").mkString(" Possible labels are: ", ", ", ".")).getOrElse("")}")
+        case DictEntryWithKeyNotExists(_, key, possibleKeys) =>
+          ExpressionParseError(s"Illegal key: '$key' for ${dict.display}.${possibleKeys.map(_.map("'" + _ + "'").mkString(" Possible keys are: ", ", ", ".")).getOrElse("")}")
+      }.toValidatedNel
   }
 
-  protected def possibleValuesFromDict(dict: TypedDict): Iterable[String]
+  protected def valueForDictKey(dict: TypedDict, key: String): Validated[DictRegistry.DictLookupError, Option[String]]
 
 }
 
@@ -55,23 +66,29 @@ trait BaseDictTyper extends SpelDictTyper {
   * - deploy (also on engine's side)
   * - migrations
   */
-object KeysDictTyper extends BaseDictTyper {
-  override protected def possibleValuesFromDict(dict: TypedDict): Iterable[String] = {
-    dict match {
-      case static: StaticTypedDict => static.labelByKey.keys
-      case _: DynamicTypedDict => ??? // FIXME implement
-    }
-  }
+class KeysDictTyper(protected val dictRegistry: DictRegistry) extends BaseDictTyper {
+  override protected def valueForDictKey(dict: TypedDict, key: String): Validated[DictRegistry.DictLookupError, Option[String]] =
+    dictRegistry.labelByKey(dict.dictId, key)
 }
 
 /**
-  * This is typer that will be used just before resolving labels to kesy on UI.
+  * This is typer that will be used just before resolving labels to keys on UI.
   */
-object LabelsDictTyper extends BaseDictTyper {
-  override protected def possibleValuesFromDict(dict: TypedDict): Iterable[String] = {
-    dict match {
-      case static: StaticTypedDict => static.labelByKey.values
-      case _: DynamicTypedDict => ??? // FIXME implement
+class LabelsDictTyper(protected val dictRegistry: DictRegistry) extends BaseDictTyper {
+  override protected def valueForDictKey(dict: TypedDict, key: String): Validated[DictRegistry.DictLookupError, Option[String]] =
+    dictRegistry.keyByLabel(dict.dictId, key).map(Some(_))
+}
+
+
+/**
+ * This is typer that will be used before reverse resolving keys to labels on UI. Need to be loose because we want to
+ * give users ability to fix invalid keys.
+ */
+class LooseKeysDictTyper(protected val dictRegistry: DictRegistry) extends BaseDictTyper {
+  override protected def valueForDictKey(dict: TypedDict, key: String): Validated[DictRegistry.DictLookupError, Option[String]] =
+    dictRegistry.labelByKey(dict.dictId, key) match {
+      case Invalid(_: DictEntryWithKeyNotExists) =>
+        Valid(None)
+      case other => other
     }
-  }
 }

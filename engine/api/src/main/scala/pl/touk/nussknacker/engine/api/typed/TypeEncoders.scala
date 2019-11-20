@@ -24,9 +24,9 @@ object TypeEncoders {
       val fieldsEncoded = "fields" -> fromFields(fields.mapValues(encodeTypingResult).toList)
       fromJsonObject(objTypeEncoded.+:(fieldsEncoded))
     case dict: TypedDict =>
-      obj(
-        "dictId" -> fromString(dict.dictId),
-        "valueType" -> encodeSingleTypingResult(dict.valueType))
+      obj("dict" -> obj(
+        "id" -> fromString(dict.dictId),
+        "valueType" -> encodeSingleTypingResult(dict.valueType)))
     case TypedTaggedValue(underlying, tag) =>
       val objTypeEncoded = encodeSingleTypingResult(underlying).asObject.getOrElse(JsonObject.empty)
       val tagEncoded = "tag" -> fromString(tag)

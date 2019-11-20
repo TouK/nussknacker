@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -70,7 +71,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ObjectDefinition.noParam,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ClazzRef(ProcessHelper.getClass)), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true
+      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty
     ),
     TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleEnricher], Typed[SimpleRecord], Typed(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
   )
@@ -846,7 +847,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
   private def validateWithDef(process: EspProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
-    ProcessValidator.default(definitions).validate(process)
+    ProcessValidator.default(definitions, new SimpleDictRegistry(Map.empty)).validate(process)
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories

@@ -7,9 +7,10 @@ import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.EspProcess
 
@@ -24,9 +25,12 @@ object CompiledProcess {
              ): ValidatedNel[ProcessCompilationError, CompiledProcess] = {
     val servicesDefs = definitions.services
 
-    val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, definitions.expressionConfig)
+    val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
+    val dictRegistry = dictRegistryFactory.createEngineDictRegistry(definitions.expressionConfig.dictionaries)
+
+    val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig)
     // TODO: rethink if optimization for object's parameters is still a problem here because maybe we can use just ProcessCompiler.apply
-    val objectParametersExpressionCompiler = ExpressionCompiler.withoutOptimization(userCodeClassLoader, definitions.expressionConfig)
+    val objectParametersExpressionCompiler = ExpressionCompiler.withoutOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig)
     //for testing environment it's important to take classloader from user jar
     val subCompiler = new PartSubGraphCompiler(userCodeClassLoader, expressionCompiler, definitions.expressionConfig, servicesDefs)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions, objectParametersExpressionCompiler)
@@ -51,6 +55,11 @@ object CompiledProcess {
       )
 
     }
+  }
+
+  private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
+    // we are loading DictServicesFactory on TaskManager side. It may be tricky because of class loaders...
+    DictServicesFactoryLoader.justOne(userCodeClassLoader)
   }
 
 }

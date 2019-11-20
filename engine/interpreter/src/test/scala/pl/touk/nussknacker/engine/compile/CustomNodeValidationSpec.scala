@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -125,7 +126,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
   val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
   val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator, ConfigFactory.empty)
-  val validator = ProcessValidator.default(objectWithMethodDef)
+  val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
   test("valid process") {
     val validProcess = processBase
