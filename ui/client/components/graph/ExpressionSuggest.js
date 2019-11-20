@@ -104,7 +104,6 @@ class ExpressionSuggest extends React.Component {
 
   render() {
     const {isMarked} = this.props
-    console.log("SUGGEST??")
     if (this.props.dataResolved) {
       const showValidation = this.props.showValidation;
       return (

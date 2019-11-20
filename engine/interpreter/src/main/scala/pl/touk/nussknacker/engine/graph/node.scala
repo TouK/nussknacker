@@ -62,6 +62,7 @@ object node {
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
   }
 
+  //this represents node that originates from real node on UI, in contrast with Branch
   sealed trait RealNodeData extends NodeData
 
   sealed trait Disableable { self: NodeData =>
@@ -124,15 +125,20 @@ object node {
   }
 
   case class BranchEndData(definition: BranchEndDefinition) extends EndingNodeData {
+
     override val additionalFields: Option[UserDefinedAdditionalNodeFields] = None
 
     override val id: String = definition.artificialNodeId
   }
 
+  //id - id of particular branch ending in joinId, currently on UI it's id of *previous* node (i.e. node where branch edge originates)
+  //joinId - id of join node
   @JsonCodec case class BranchEndDefinition(id: String, joinId: String) {
+
+    //in CanonicalProcess and EspProcess we have to add artifical node (BranchEnd), we use this generated, unique id
     def artificialNodeId: String = s"$$edge-$id-$joinId"
 
-    //FIXME: what  be here?
+    //TODO: remove it and replace with sth more understandable
     def joinReference: JoinReference = JoinReference(artificialNodeId, joinId)
   }
 
@@ -195,13 +201,14 @@ object node {
   //it has to be here, otherwise it won't compile...
   def prefixNodeId[T<:NodeData](prefix: List[String], nodeData: T) : T = {
     import pl.touk.nussknacker.engine.util.copySyntax._
-    nodeData.asInstanceOf[NodeData] match {
+    def prefixId(id: String): String = (prefix :+ id).mkString("-")
+    //this casting is weird, but we want to have both exhaustiveness check and GADT behaviour with copy syntax...
+    (nodeData.asInstanceOf[NodeData] match {
       case e:RealNodeData =>
-        e.copy(id = (prefix :+ nodeData.id).mkString("-")).asInstanceOf[T]
-      case _:BranchEndData =>
-        throw new IllegalArgumentException("Currently cannot use joins inside subproces...")
-      
-    }
+        e.copy(id = prefixId(e.id))
+      case BranchEndData(BranchEndDefinition(id, joinId)) =>
+        BranchEndData(BranchEndDefinition(id, prefixId(joinId)))
+    }).asInstanceOf[T]
   }
 
   //TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|

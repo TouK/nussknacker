@@ -129,7 +129,6 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
           List(InterpretationResult(EndReference(id), valueWithModifiedContext))
         }
       case BranchEnd(e) =>
-        //FIXME: what should be here??
         Future.successful(List(InterpretationResult(e.joinReference, null, ctx)))
 
       case cust: CustomNode =>

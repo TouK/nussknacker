@@ -149,10 +149,8 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     val canonical = ProcessConverter.fromDisplayable(process)
 
     val normal = ProcessCanonizer.uncanonize(canonical).toOption.get
-    normal shouldBe processViaBuilder
     ProcessCanonizer.canonize(normal) shouldBe canonical
-
-
-
+    //here we want to check that displayable process is converted to Esp just like we'd expect using EspProcessBuilder
+    normal shouldBe processViaBuilder
   }
 }
