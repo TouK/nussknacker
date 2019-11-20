@@ -242,7 +242,11 @@ function mapState(state) {
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
-    readOnly: !state.settings.loggedUser.canWrite(processCategory) || state.graphReducer.businessView || state.graphReducer.nodeToDisplayReadonly || false,
+    readOnly: !state.settings.loggedUser.canWrite(processCategory)
+      || state.graphReducer.businessView
+      || state.graphReducer.nodeToDisplayReadonly
+      || _.get(state, 'graphReducer.fetchedProcessDetails.isArchived')
+      || false,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,
     processDefinitionData: processDefinitionData,
