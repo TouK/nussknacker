@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import java.util
 
 import io.circe.Encoder
-import pl.touk.nussknacker.engine.api.typed.dict.{DynamicTypedDictInstance, StaticTypedDictInstance}
+import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -52,32 +52,15 @@ object typing {
 
   }
 
-  sealed trait TypedDict extends SingleTypingResult {
+  case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
 
     type ValueType = SingleTypingResult
-
-    def dictId: String
-
-    def valueType: ValueType
 
     override def canHasAnyPropertyOrField: Boolean = false
 
     override def objType: TypedClass = valueType.objType
 
-  }
-
-  // FIXME: This static/dynamic api will change in near future. At the end we want to have only TypedDict in api and static/dynamic will be only an implementation details
-  case class StaticTypedDict(dictId: String, valueType: SingleTypingResult, labelByKey: Map[String, String]) extends TypedDict {
-
-    lazy val keysByLabel: Map[String, String] = labelByKey.map(_.swap)
-
-    override def display: String = labelByKey.map { case (k, v) => s"$k -> $v" }.mkString(s"static dict with id: $dictId and labels: ", ", ", "")
-
-  }
-
-  case class DynamicTypedDict(dictId: String, valueType: SingleTypingResult) extends TypedDict {
-
-    override def display: String = s"dynamic dict with id: $dictId"
+    override def display: String = s"dict with id: '$dictId'"
 
   }
 
@@ -87,7 +70,7 @@ object typing {
 
     override def objType: TypedClass = underlying.objType
 
-    override def display: String = s"tagged: ${underlying.display} by tag: $tag"
+    override def display: String = s"tagged: ${underlying.display} by tag: '$tag'"
 
   }
 
@@ -168,7 +151,7 @@ object typing {
       }
     }
 
-    def taggedDictValue(typ: SingleTypingResult, dictId: String) = tagged(typ, s"dictValue:$dictId")
+    def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 
     def tagged(typ: SingleTypingResult, tag: String) = TypedTaggedValue(typ, tag)
 
@@ -181,10 +164,8 @@ object typing {
             case (k, v) => k -> fromInstance(v)
           }
           TypedObjectTypingResult(fieldTypes, TypedClass[TypedMap])
-        case dict: StaticTypedDictInstance =>
-          StaticTypedDict(dict.dictId, dict.valueType, dict.labelByKey)
-        case dict: DynamicTypedDictInstance =>
-          DynamicTypedDict(dict.dictId, dict.valueType)
+        case dict: DictInstance =>
+          TypedDict(dict.dictId, dict.valueType)
         case other =>
           Typed(other.getClass)
       }

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process._
@@ -401,8 +402,9 @@ object ProcessCompiler {
 
   def apply(classLoader: ClassLoader,
             definitions: ProcessDefinition[ObjectWithMethodDef],
-            expressionCompilerCreate: (ClassLoader, ExpressionDefinition[ObjectWithMethodDef]) => ExpressionCompiler): ProcessCompiler = {
-    val expressionCompiler = expressionCompilerCreate(classLoader, definitions.expressionConfig)
+            dictRegistry: DictRegistry,
+            expressionCompilerCreate: (ClassLoader, DictRegistry, ExpressionDefinition[ObjectWithMethodDef]) => ExpressionCompiler): ProcessCompiler = {
+    val expressionCompiler = expressionCompilerCreate(classLoader, dictRegistry, definitions.expressionConfig)
     val sub = new PartSubGraphCompiler(classLoader, expressionCompiler, definitions.expressionConfig, definitions.services)
     new ProcessCompiler(classLoader, sub, definitions, expressionCompiler)
   }
@@ -411,8 +413,8 @@ object ProcessCompiler {
 
 object ProcessValidator {
 
-  def default(definitions: ProcessDefinition[ObjectWithMethodDef], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
-    ProcessCompiler(loader, definitions, ExpressionCompiler.withoutOptimization)
+  def default(definitions: ProcessDefinition[ObjectWithMethodDef], dictRegistry: DictRegistry, loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+    ProcessCompiler(loader, definitions, dictRegistry, ExpressionCompiler.withoutOptimization)
   }
 
 }

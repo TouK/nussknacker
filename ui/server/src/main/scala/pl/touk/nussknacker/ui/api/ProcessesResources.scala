@@ -374,7 +374,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
   private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess], businessView: Boolean): Future[ValidatedProcessDetails] = {
     val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
-      val validationResult = processValidation.processingTypeValidationWithTypingInfo(canonical, processingType)
+      val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType)
       processResolving.reverseResolveExpressions(canonical, processingType, businessView, validationResult)
     }
     Future.successful(validatedDetails)
