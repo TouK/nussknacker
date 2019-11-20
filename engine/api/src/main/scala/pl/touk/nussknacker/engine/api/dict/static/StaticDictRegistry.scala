@@ -57,7 +57,8 @@ trait StaticDictQueryService extends DictQueryService {
                                   (implicit ec: ExecutionContext): Validated[DictRegistry.DictNotDeclared, Future[List[DictEntry]]] =
     dictRegistry.labels(dictId).map {
       case Right(staticLabels) =>
-        val filteredEntries = staticLabels.filter(_.label.toLowerCase.contains(labelPattern)).sortBy(_.label).take(maxResults)
+        val lowerLabelPattern = labelPattern.toLowerCase
+        val filteredEntries = staticLabels.filter(_.label.toLowerCase.contains(lowerLabelPattern)).sortBy(_.label).take(maxResults)
         Future.successful(filteredEntries)
       case Left(nonStaticDefinition) =>
         handleNotStaticQueryEntriesByLabel(nonStaticDefinition, labelPattern)
