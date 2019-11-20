@@ -9,6 +9,9 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             languages: LanguageConfiguration = LanguageConfiguration.default,
                             optimizeCompilation: Boolean = true,
                             strictTypeChecking: Boolean = true,
+                            // TODO After moving categories on root level of all objects, we should consider replacing
+                            //      this map with list and adding dictId into DictDefinition. Then we will be sure that
+                            //      DictInstance have the same dictId as DictDefinition
                             dictionaries: Map[String, WithCategories[DictDefinition]] = Map.empty)
 
 object ExpressionConfig {

@@ -21,6 +21,7 @@ trait DictDefinition extends Serializable {
 /**
  * If this instance wil be used in global variables, will be typed to TypedDict.
  */
+// TODO: Should take only DictDefinition as a parameter to avoid dictId desynchronization - see notice in ExpressionConfig
 case class DictInstance(dictId: String, definition: DictDefinition) {
 
   def valueType: SingleTypingResult = definition.valueType(dictId)
@@ -36,6 +37,7 @@ trait ReturningKeyWithoutTransformation { self: DictDefinition =>
 
   override def value(key: String): Any = key
 
+  // TODO: Should not take dictId - see notice in ExpressionConfig
   override def valueType(dictId: String): SingleTypingResult = Typed.taggedDictValue(TypedClass[String], dictId)
 
 }
