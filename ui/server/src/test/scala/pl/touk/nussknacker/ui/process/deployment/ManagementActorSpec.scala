@@ -4,12 +4,12 @@ import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.listner.ListenerManagement
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDeploymentProcessRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
+import pl.touk.nussknacker.ui.listener.ListenerManagement
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 

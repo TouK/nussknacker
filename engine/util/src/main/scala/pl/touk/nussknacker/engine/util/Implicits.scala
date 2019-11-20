@@ -25,9 +25,9 @@ object Implicits {
   }
 
   implicit class RichFuture[A](future: Future[A]) {
-    def effect(f: () => Unit)(implicit ec: ExecutionContext): Future[A] = for {
+    def withSideEffect(f: (A) => Unit)(implicit ec: ExecutionContext): Future[A] = for {
       result <- future
-      _      = f()
+      _      = f(result)
     } yield result
   }
 }

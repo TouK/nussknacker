@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, DeploymentHistoryEntry, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -59,4 +59,7 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessRepository[
   def fetchDeploymentHistory(processId: ProcessId)(implicit ec: ExecutionContext): F[List[DeploymentHistoryEntry]]
 
   def fetchProcessingType(processId: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[ProcessingType]
+
+  def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessEntityData]]
+
 }

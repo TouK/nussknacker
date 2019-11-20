@@ -664,10 +664,10 @@ lazy val restmodel = (project in file("ui/restmodel"))
   )
   .dependsOn(api, interpreter, security, testUtil % "test")
 
-lazy val listenerApi = (project in file("ui/listner-api"))
+lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-listner-api",
+    name := "nussknacker-listener-api",
   )
   .dependsOn(restmodel, api, util, testUtil % "test")
 

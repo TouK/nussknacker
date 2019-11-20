@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
+import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
@@ -26,8 +27,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.listner.ChangeEvent._
-import pl.touk.nussknacker.listner.ListenerManagement
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
@@ -39,6 +39,10 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.listener.ListenerManagement
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
 
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          writeRepository: WriteProcessRepository,
@@ -74,7 +78,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             canWrite(processId) {
               complete {
                 writeArchive(processId.id, isArchived = false)
-                  .effect(() => listenerManagement.handler(OnUnarchived(processId.name)))
+                  .withSideEffect(_ => listenerManagement.handler(OnUnarchived(processId.id)))
               }
             }
           }
@@ -86,7 +90,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               */
               complete {
                 writeArchive(processId.id, isArchived = true)
-                  .effect(() => listenerManagement.handler(OnArchived(processId.name)))
+                  .withSideEffect(_ => listenerManagement.handler(OnArchived(processId.id)))
               }
             }
           }
@@ -183,7 +187,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             (delete & canWrite(processId)) {
               complete {
                 writeRepository.deleteProcess(processId.id).map(toResponse(StatusCodes.OK))
-                  .effect(() => listenerManagement.handler(OnDeleted(processId.name)))
+                  .withSideEffect(_ => listenerManagement.handler(OnDeleted(processId.id)))
               }
             } ~ (put & canWrite(processId)) {
               entity(as[ProcessToSave]) { processToSave =>
@@ -192,8 +196,10 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                     case true =>
                       rejectSavingArchivedProcess
                     case false =>
-                      saveProcess(processToSave, processId.id).map(toResponseEither[ValidationResult])
-                        .effect(() => listenerManagement.handler(OnSaved(processId.name)))
+                      saveProcess(processToSave, processId.id)
+                        .withSideEffect(_.toOption.flatMap(_.processVersionEntityData).foreach(p => listenerManagement.handler(OnSaved(processId.id, p.id))))
+                        .map(_.map(_.validation))
+                        .map(toResponseEither[ValidationResult])
                   }
                 }
               }
@@ -221,7 +227,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                 processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap {
                   case Some(details) if details.currentlyDeployedAt.isEmpty =>
                     writeRepository.renameProcess(processId.id, newName).map(toResponse(StatusCodes.OK))
-                      .effect(() => listenerManagement.handler(OnRenamed(processId.name, ProcessName(newName))))
+                      .withSideEffect(_ => listenerManagement.handler(OnRenamed(processId.id, processId.name, ProcessName(newName))))
                   case _ => Future.successful(espErrorToHttp(ProcessAlreadyDeployed(processName)))
                 }
               }
@@ -259,8 +265,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                         processingType = processingType,
                         isSubprocess = isSubprocess
                       )
+                        .withSideEffect(_.toOption.flatten.foreach(p => listenerManagement.handler(OnSaved(ProcessId(p.processId), p.id))))
+                        .map(_.map(_ => ()))
                         .map(toResponse(StatusCodes.Created))
-                        .effect(() => listenerManagement.handler(OnSaved(ProcessName(processName))))
                     case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
                   }
                 }
@@ -282,12 +289,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
-          (post & processId(processName)) { processId =>
+          (post & processIdWithCategory(processName)) { data =>
             hasAdminPermission(user) {
               complete {
                 // TODO: Validate that category exists at categories list
-                writeRepository.updateCategory(processId = processId.id, category = category).map(toResponse(StatusCodes.OK))
-                  .effect(() => listenerManagement.handler(OnCategoryChanged(ProcessName(processName), category)))
+                writeRepository.updateCategory(processId = data.id, category = category).map(toResponse(StatusCodes.OK))
+                  .withSideEffect(_ => listenerManagement.handler(OnCategoryChanged(data.id, oldCategory = data.category, newCategory = category)))
               }
             }
           }
@@ -336,8 +343,11 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         case Some(details) => details.isArchived
         case _ => false
       }
+
+  case class SaveProcessResult(processVersionEntityData: Option[ProcessVersionEntityData], validation: ValidationResults.ValidationResult)
+
   private def saveProcess(processToSave: ProcessToSave, processId: ProcessId)
-                         (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
+                         (implicit loggedUser: LoggedUser):Future[Either[EspError, SaveProcessResult]] = {
     val displayableProcess = processToSave.process
     (for {
       validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(displayableProcess)))
@@ -346,8 +356,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         val json = ProcessMarshaller.toJson(substituted).spaces2
         GraphProcess(json)
       }
-      _ <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
-    } yield validation.withClearedTypingInfo).value
+      updateResult <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
+    } yield SaveProcessResult(updateResult, validation.withClearedTypingInfo)).value
   }
   private def rejectSavingArchivedProcess: Future[ToResponseMarshallable]=
     Future.successful(HttpResponse(status = StatusCodes.Forbidden, entity = "Cannot save archived process"))

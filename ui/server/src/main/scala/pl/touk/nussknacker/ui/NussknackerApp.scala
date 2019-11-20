@@ -12,7 +12,6 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
-import pl.touk.nussknacker.listner.ListenerManagementFactory
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.listener.ListenerManagementFactory
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
