@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine
 import java.net.URL
 
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -13,13 +14,14 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
-object ModelData {
+object ModelData extends LazyLogging {
 
   val modelConfigResource = "model.conf"
 
   def apply(processConfig: Config, classpath: List[URL]) : ModelData = {
     //TODO: ability to generate additional classpath?
     val jarClassLoader = ModelClassLoader(classpath)
+    logger.debug("Loading model data from classpath: " + classpath)
     ClassLoaderModelData(processConfig, jarClassLoader)
   }
 
