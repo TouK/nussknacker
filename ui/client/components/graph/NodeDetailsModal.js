@@ -27,8 +27,7 @@ class NodeDetailsModal extends React.Component {
     testResults: PropTypes.object,
     processId: PropTypes.string.isRequired,
     nodeErrors: PropTypes.array.isRequired,
-    readOnly: PropTypes.bool.isRequired,
-    showValidation: PropTypes.bool.isRequired
+    readOnly: PropTypes.bool.isRequired
   }
 
   constructor(props) {

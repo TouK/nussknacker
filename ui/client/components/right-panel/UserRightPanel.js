@@ -177,14 +177,6 @@ class UserRightPanel extends Component {
             visible: !this.props.isSubprocess
           },
           {
-            name: "duplicate",
-            onClick: this.duplicateSelection,
-            icon: 'duplicate.svg',
-            //cloning groups can be tricky...
-            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
-            visible: this.props.capabilities.write
-          },
-          {
             name: "copy",
             onClick: this.props.selectionActions.copy,
             icon: 'copy.svg',
@@ -381,18 +373,6 @@ class UserRightPanel extends Component {
     if (this.props.keyActionsAvailable) {
       this.props.undoRedoActions.redo()
     }
-  }
-
-  duplicateSelection = () => {
-    const duplicateNode = nodeId => {
-      const duplicatedNodePosition = this.props.layout.find(node => node.id === nodeId) || {position: {x: 0, y: 0}}
-      const position = {x: duplicatedNodePosition.position.x -200, y: duplicatedNodePosition.position.y}
-      const node = NodeUtils.getNodeById(nodeId, this.props.processToDisplay)
-      return {node, position}
-    }
-    const duplicatedNodesWithPositions = this.props.selectionState.map(duplicateNode)
-    const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(this.props.selectionState, this.props.processToDisplay)
-    this.props.actions.nodesWithEdgesAdded(duplicatedNodesWithPositions, edgesForNodes)
   }
 
   deleteSelection = () => {

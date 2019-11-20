@@ -13,6 +13,7 @@ import ProcessUtils from "../common/ProcessUtils"
 import {nkPath} from "../config";
 import TableSelect from "../components/table/TableSelect"
 import SearchFilter from "../components/table/SearchFilter"
+import Date from "../components/common/Date"
 
 class Archive extends BaseProcesses {
   queries = {
@@ -91,7 +92,11 @@ class Archive extends BaseProcesses {
                   <Td column="subprocess" className="centered-column">
                     <Glyphicon glyph={process.isSubprocess ? 'ok' : 'remove'}/>
                   </Td>
-                  <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column">{DateUtils.formatRelatively(process.modificationDate)}</Td>
+                  <Td column="modifyDate"
+                      className="centered-column"
+                      value={process.modificationDate}>
+                    <Date date={process.modificationDate}/>
+                  </Td>
                   <Td column="view" className="edit-column">
                     <Glyphicon
                       glyph="eye-open"

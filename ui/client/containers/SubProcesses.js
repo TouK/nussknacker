@@ -15,6 +15,7 @@ import {nkPath} from "../config";
 import AddProcessButton from "../components/table/AddProcessButton"
 import TableSelect from "../components/table/TableSelect"
 import SearchFilter from "../components/table/SearchFilter"
+import Date from "../components/common/Date"
 
 class SubProcesses extends BaseProcesses {
   queries = {
@@ -86,7 +87,11 @@ class SubProcesses extends BaseProcesses {
               <Tr className="row-hover" key={index}>
                 <Td column="name">{process.name}</Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column">{DateUtils.formatRelatively(process.modificationDate)}</Td>
+                <Td column="modifyDate"
+                    className="centered-column"
+                    value={process.modificationDate}>
+                  <Date date={process.modificationDate}/>
+                </Td>
                 <Td column="edit" className="edit-column">
                   <Glyphicon glyph="edit" title="Edit subprocess" onClick={this.showProcess.bind(this, process)} />
                 </Td>

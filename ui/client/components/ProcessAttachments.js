@@ -3,11 +3,10 @@ import {connect} from "react-redux";
 import PropTypes from 'prop-types';
 import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
-import DateUtils from '../common/DateUtils'
-import ProcessUtils from '../common/ProcessUtils'
 import HttpService from "../http/HttpService";
 import Dropzone from 'react-dropzone'
 import InlinedSvgs from '../assets/icons/InlinedSvgs'
+import Date from "./common/Date"
 
 export class ProcessAttachments_ extends React.Component {
 
@@ -40,7 +39,7 @@ export class ProcessAttachments_ extends React.Component {
         <ul className="process-attachments-list">
           {_.map(this.props.attachments, (attachment, idx) => {
             return (
-              <div key={idx}>
+              <div key={idx} className={"attachment-section"}>
                 <div className="download-attachment">
                   <div
                       className="espButton download-button"
@@ -48,12 +47,13 @@ export class ProcessAttachments_ extends React.Component {
                       onClick={this.downloadAttachment.bind(this, attachment.processId, attachment.processVersionId, attachment.id)}
                   />
                 </div>
-                <div className="header">
-                  <span className="label label-info">{attachment.user}</span>
-                  <span title={DateUtils.formatAbsolutely(attachment.createDate)} className="date">{DateUtils.formatRelatively(attachment.createDate)}</span>
-                  <p>{ProcessUtils.processDisplayName(attachment.processId, attachment.processVersionId)}</p>
+                <div className={"attachment-details"}>
+                  <div className="header">
+                  <Date date={attachment.createDate}/>
+                  {<span> | v{attachment.processVersionId} | {attachment.user}</span>}
+                  </div>
+                  <p> {attachment.fileName} </p>
                 </div>
-                <p> {attachment.fileName} </p>
               </div>
             )
           })}

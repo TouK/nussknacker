@@ -20,6 +20,7 @@ import Variable from "./node-modal/Variable";
 import JoinDef from "./node-modal/JoinDef"
 import {allValid, errorValidator, notEmptyValidator} from "../../common/Validators";
 import ValidationLabels from "../modals/ValidationLabels";
+import {DEFAULT_EXPRESSION_ID} from "../../common/graph/constants";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -147,7 +148,7 @@ export class NodeDetailsContent extends React.Component {
           <div>
             {
               //TODO: this is a bit clumsy. we should use some metadata, instead of relying on what comes in diagram
-              this.props.node.endResult ? this.createExpressionField("expression", "Expression", "endResult", [notEmptyValidator, errorValidator(fieldErrors, "expression")]) : null
+              this.props.node.endResult ? this.createExpressionField("expression", "Expression", "endResult", [notEmptyValidator, errorValidator(fieldErrors, DEFAULT_EXPRESSION_ID)]) : null
             }
             {this.createField("checkbox", "Disabled", "isDisabled")}
           </div>
@@ -194,7 +195,7 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createExpressionField("expression", "Expression", "expression", [notEmptyValidator, errorValidator(fieldErrors, "expression")])}
+            {this.createExpressionField("expression", "Expression", "expression", [notEmptyValidator, errorValidator(fieldErrors, DEFAULT_EXPRESSION_ID)])}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             {this.descriptionField()}
           </div>
@@ -297,7 +298,7 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createExpressionField("expression", "Expression", "expression", [notEmptyValidator, errorValidator(fieldErrors, "expression")])}
+            {this.createExpressionField("expression", "Expression", "expression", [notEmptyValidator, errorValidator(fieldErrors, DEFAULT_EXPRESSION_ID)])}
             {this.createField("input", "exprVal", "exprVal", false, [notEmptyValidator, errorValidator(fieldErrors, "exprVal")])}
             {this.descriptionField()}
           </div>
@@ -619,7 +620,7 @@ export class NodeDetailsContent extends React.Component {
         return _.concat(commonFields, this.state.editedNode.ref.parameters.map(param => param.name))
       }
       case 'Sink': {
-        const commonFields = ["id", "expression"]
+        const commonFields = ["id", DEFAULT_EXPRESSION_ID]
         return _.concat(commonFields, this.state.editedNode.ref.parameters.map(param => param.name))
       }
       case 'SubprocessInputDefinition': {
@@ -628,7 +629,7 @@ export class NodeDetailsContent extends React.Component {
       case 'SubprocessOutputDefinition':
         return ["id", "outputName"]
       case 'Filter':
-        return ["id", "expression"]
+        return ["id", DEFAULT_EXPRESSION_ID]
       case 'Enricher':
         const commonFields = ["id", "output"]
         const paramFields = this.state.editedNode.service.parameters.map(param => param.name);
@@ -660,7 +661,7 @@ export class NodeDetailsContent extends React.Component {
       case 'Variable':
         return Variable.availableFields
       case 'Switch':
-        return ["id", "expression", "exprVal"]
+        return ["id", DEFAULT_EXPRESSION_ID, "exprVal"]
       case 'Split':
         return ["id"]
       case 'Properties': {
