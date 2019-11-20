@@ -74,9 +74,9 @@ case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Ma
     with LazyLogging {
   override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
     logger.whenDebugEnabled {
-      logger.debug(s"${processMetaData.id}: Exception: ${e.throwable.getMessage}", e.throwable)
+      logger.debug(s"${processMetaData.id}: Exception: ${e.throwable.getMessage}, params: $params", e.throwable)
     }
-    logger.warn(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName})")
+    logger.warn(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params")
   }
 }
 
