@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.example.custom.{EventsCounter, TransactionAmountAggregator}
 import pl.touk.nussknacker.engine.example.service.{AlertService, ClientService}
-import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingRestartingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingRestartingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
@@ -133,7 +133,7 @@ class LoggingExceptionHandlerFactory(config: Config) extends ExceptionHandlerFac
 
   @MethodToInvoke
   def create(metaData: MetaData, @ParamName("sampleParam") sampleParam: String): EspExceptionHandler = {
-    VerboselyLoggingRestartingExceptionHandler(metaData, config, params = Map("sampleParam" -> sampleParam))
+    BrieflyLoggingRestartingExceptionHandler(metaData, config, params = Map("sampleParam" -> sampleParam))
   }
 
 }

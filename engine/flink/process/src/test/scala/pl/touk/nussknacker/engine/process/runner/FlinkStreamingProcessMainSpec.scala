@@ -160,7 +160,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
 
   override def exceptionHandlerFactory(config: Config) =
-    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler)
+    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
   override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
 
