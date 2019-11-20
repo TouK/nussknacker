@@ -52,6 +52,10 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   protected def createServiceInvoker(obj: ObjectWithMethodDef) = ServiceInvoker(obj)
 
+  /* TODO:
+  1. Separate validation logic for expressions in nodes and expression not bounded to nodes (e.g. expressions in process properties).
+     This way we can make non-optional fieldName
+   */
   def compile(n: SplittedNode[_], ctx: ValidationContext) : CompilationResult[compiledgraph.node.Node] = {
     implicit val nodeId: NodeId = NodeId(n.id)
 
