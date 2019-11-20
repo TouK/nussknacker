@@ -33,7 +33,7 @@ import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestD
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
@@ -322,7 +322,7 @@ object AdditionalVariableTransformer extends CustomStreamTransformer {
 
 case object ParamExceptionHandler extends ExceptionHandlerFactory {
   @MethodToInvoke
-  def create(@ParamName("param1") param: String, metaData: MetaData): EspExceptionHandler = VerboselyLoggingExceptionHandler(metaData)
+  def create(@ParamName("param1") param: String, metaData: MetaData): EspExceptionHandler = BrieflyLoggingExceptionHandler(metaData)
 
 }
 

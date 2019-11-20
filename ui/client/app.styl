@@ -232,22 +232,25 @@ processActivityList()
 
 .big-blue-button
   margin: 45px 50px
-  width: 360px
+  width 360px
+  min-width: 300px
   height: 45px
   background-color: buttonBlueBkgColor
   color: buttonBlueColor
-  display: flex
+  display flex
   align-items: center
   justify-content: center
-  font open
+  font-family 'Open Sans'
   font-size: 21px
   font-weight: 600
+  border-radius: 0
   &:hover
+    color buttonBlueColor
     background: processesHoverColor
+  &:focus
+    color buttonBlueColor
   #add-icon
     width: 20px
-    height: 45px
-    margin: 10px
     margin-left: 20px
     &:hover
       background: processesHoverColor

@@ -8,12 +8,14 @@ import HealthCheck from "../../components/HealthCheck.js"
 import DialogMessages from "../../common/DialogMessages"
 import {Glyphicon} from 'react-bootstrap'
 import "../../stylesheets/processes.styl"
-import filterIcon from '../../assets/img/search.svg'
 import BaseProcesses from "./../BaseProcesses"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils";
+import SearchFilter from "../../components/table/SearchFilter"
 
 class CustomProcesses extends BaseProcesses {
+
+  page = 'custom'
 
   constructor(props) {
     super(props)
@@ -51,13 +53,9 @@ class CustomProcesses extends BaseProcesses {
       <div className="Page">
         <HealthCheck/>
         <div id="process-top-bar">
-          <div id="table-filter" className="input-group">
-            <input type="text" className="form-control" aria-describedby="basic-addon1" value={this.state.search}
-                   onChange={this.onSearchChange}/>
-            <span className="input-group-addon" id="basic-addon1">
-              <img id="search-icon" src={filterIcon}/>
-            </span>
-          </div>
+          <SearchFilter
+            value={this.state.search}
+            onChange={this.onSearchChange}/>
         </div>
 
         <LoaderSpinner show={this.state.showLoader}/>

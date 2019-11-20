@@ -15,35 +15,11 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   queries = {}
   page = ''
 
-  customSelectStyles = {
-    control: styles => ({
-      ...styles,
-      minHeight: 45,
-      fontSize: 14,
-      color: '#555555',
-    }),
-    option: styles => ({
-      ...styles,
-      fontSize: 14,
-      color: '#555555',
-    })
-  }
-
   filterIsSubprocessOptions = [
     {label: 'Show all types processes', value: undefined},
     {label: 'Show only processes', value: false},
     {label: 'Show only subprocesses', value: true},
   ]
-
-  customSelectTheme(theme) {
-    return {
-      ...theme,
-      colors: {
-        ...theme.colors,
-        primary: '#0e9ae0',
-      }
-    }
-  }
 
   prepareState(withoutCategories) {
     const query = queryString.parse(this.props.history.location.search, {
@@ -54,7 +30,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
     let state = {
       processes: [],
-      subProcesses: [],
+      clashedNames: [],
       showLoader: true,
       showAddProcess: false,
       search: query.search || "",
@@ -72,27 +48,18 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   onMount() {
-    switch (this.page) {
-      case ('processes'): {
-        this.reloadProcesses()
-        this.reloadSubProcesses(false)
-        break;
-      }
-      case ('subProcesses'): {
-        this.reloadProcesses(false)
-        this.reloadSubProcesses()
-        break;
-      }
-    }
-
+    this.reloadProcesses()
     if (this.shouldReloadStatuses) {
       this.reloadStatuses()
+    }
+
+    if (this.page === 'processes' || this.page === 'subProcesses') {
+      this.loadAllClashedNames()
     }
   }
 
   reload() {
     this.reloadProcesses(false)
-    this.reloadSubProcesses(false)
 
     if (this.shouldReloadStatuses) {
       this.reloadStatuses()
@@ -100,21 +67,12 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   reloadProcesses(shouldShowLoader, search) {
-    this.showLoader(shouldShowLoader);
-    const searchParams = this.prepareSearchParams(search, false);
+    this.showLoader(shouldShowLoader)
+
+    const searchParams = this.prepareSearchParams(search)
     HttpService.fetchProcesses(searchParams).then(response => {
       if (!this.state.showAddProcess) {
         this.setState({processes: response.data, showLoader: false})
-      }
-    }).catch(() => this.setState({showLoader: false}))
-  }
-
-  reloadSubProcesses(showLoader, search) {
-    this.showLoader(showLoader);
-    const searchParams = this.prepareSearchParams(search, true);
-    HttpService.fetchProcesses(searchParams).then(response => {
-      if (!this.state.showAddProcess) {
-        this.setState({subProcesses: response.data, showLoader: false})
       }
     }).catch(() => this.setState({showLoader: false}))
   }
@@ -123,13 +81,26 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     this.setState({showLoader: shouldShowLoader == null ? true : shouldShowLoader})
   }
 
-  prepareSearchParams(search, isSubprocess) {
-    this.queries = {
-      ...this.queries,
-      isSubprocess: isSubprocess
-    }
+  prepareSearchParams(search) {
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
-    return Object.assign(query, search, this.queries || {});
+    return Object.assign(query, search, this.queries || {})
+  }
+
+  loadAllClashedNames() {
+    this.loadClashedNames(defaultProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
+    this.loadClashedNames(defaultSubProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
+    this.loadClashedNames(defaultArchivedProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
+    this.loadClashedNames({}, () => HttpService.fetchCustomProcesses())
+  }
+
+  loadClashedNames = (searchParams, fetch) => {
+    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
+    const data = Object.assign(query, searchParams)
+    fetch(data).then(response => {
+      this.setState((prevState, props) => ({
+        clashedNames: prevState.clashedNames.concat(response.data.map(process => process.name))
+      }));
+    })
   }
 
   reloadStatuses() {
@@ -205,5 +176,9 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
 }
+
+const defaultProcessesSearchParams = {isSubprocess: false, isArchived: false}
+const defaultSubProcessesSearchParams = {isSubprocess: true}
+const defaultArchivedProcessesSearchParams = {isArchived: true}
 
 export default BaseProcesses
