@@ -6,8 +6,8 @@ import _ from 'lodash'
 import ActionsUtils from '../actions/ActionsUtils';
 import DialogMessages from '../common/DialogMessages';
 import '../stylesheets/processHistory.styl'
-import DateUtils from '../common/DateUtils'
 import ProcessUtils from '../common/ProcessUtils'
+import Date from "./common/Date"
 
 export class ProcessHistory_ extends Component {
 
@@ -74,10 +74,10 @@ export class ProcessHistory_ extends Component {
                   null
                 }
                 <br/>
-                <small><i title={DateUtils.formatAbsolutely(historyEntry.createDate)}>{DateUtils.formatRelatively(historyEntry.createDate)}</i></small>
+                <small><i><Date date={historyEntry.createDate}/></i></small>
                 <br/>
                 {historyEntry.deployments.map((deployment, index) =>
-                  <small key={index}><i title={DateUtils.formatAbsolutely(deployment.deployedAt)}>{DateUtils.formatRelatively(deployment.deployedAt)}</i> <span className="label label-info">{deployment.environment}</span></small>
+                  <small key={index}><i><Date date={deployment.deployedAt}/></i> <span className="label label-info">{deployment.environment}</span></small>
                 )}
               </li>
             )

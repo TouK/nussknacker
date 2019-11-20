@@ -3,10 +3,10 @@ import {connect} from "react-redux";
 import PropTypes from 'prop-types';
 import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
-import DateUtils from '../common/DateUtils'
 import HttpService from "../http/HttpService";
 import Dropzone from 'react-dropzone'
 import InlinedSvgs from '../assets/icons/InlinedSvgs'
+import Date from "./common/Date"
 
 export class ProcessAttachments_ extends React.Component {
 
@@ -49,9 +49,8 @@ export class ProcessAttachments_ extends React.Component {
                 </div>
                 <div className={"attachment-details"}>
                   <div className="header">
-                  <span title={DateUtils.formatAbsolutely(attachment.createDate)} className="date">
-                    {DateUtils.formatRelatively(attachment.createDate) + ` | v${attachment.processVersionId} | ${attachment.user}`}
-                  </span>
+                  <Date date={attachment.createDate}/>
+                  {<span> | v{attachment.processVersionId} | {attachment.user}</span>}
                   </div>
                   <p> {attachment.fileName} </p>
                 </div>
