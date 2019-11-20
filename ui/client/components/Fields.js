@@ -12,7 +12,7 @@ class RawField extends React.Component {
   render() {
     const markedClass = this.props.isMarked(this.props.index) ? " marked" : "";
     const opacity = this.props.isDragging ? 0 : 1;
-    const {index, field, showValidation} = this.props
+    const {index, field, showValidation, readOnly} = this.props
 
     const validators = [notEmptyValidator];
     return this.props.connectDropTarget(this.props.connectDragSource(
@@ -23,15 +23,19 @@ class RawField extends React.Component {
                  type="text"
                  value={field.name}
                  placeholder="Name"
+                 readOnly={readOnly}
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
           {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
         </div>
         <div className={"node-value field" + markedClass}>
-          {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value))}
+          {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value), readOnly)}
         </div>
         <div className="node-value fieldRemove">
           {/* TODO: add nicer buttons. Awesome font? */}
-          <button className="addRemoveButton" title="Remove field" onClick={() => this.props.removeField(index)}>-
+          <button className="addRemoveButton"
+                  title="Remove field"
+                  onClick={() => this.props.removeField(index)}
+                  disabled={readOnly}>-
           </button>
         </div>
       </div>
@@ -124,6 +128,8 @@ export default class Fields extends React.Component {
   }
 
   render() {
+    const {readOnly} = this.props
+
     const moveItem = (dragIndex, hoverIndex) => {
       this.edit(previous => {
         return update(previous, {
@@ -143,11 +149,15 @@ export default class Fields extends React.Component {
                  removeField={this.removeField.bind(this)}
                  moveItem={moveItem}
                  showValidation={this.props.showValidation}
+                 readOnly={readOnly}
                  {...this.props} />
         )
       }
       <div>
-        <button className="addRemoveButton"  title="Add field"  onClick={() => this.addField()}>+</button>
+        <button className="addRemoveButton"
+                title="Add field"
+                onClick={() => this.addField()}
+                disabled={readOnly}>+</button>
       </div>
     </div>);
   }

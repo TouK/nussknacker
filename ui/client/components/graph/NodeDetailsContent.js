@@ -163,13 +163,14 @@ export class NodeDetailsContent extends React.Component {
               <div className="node-value">
                 <Fields
                   fields={this.state.editedNode.parameters || []}
-                  fieldCreator={(field, onChange) => {
+                  fieldCreator={(field, onChange, readOnly) => {
                     const validators = [notEmptyValidator]
                     return (<React.Fragment>
                       <input type="text"
                              className={(!showValidation || allValid(validators, [field.typ.refClazzName]) ? "node-input" : "node-input node-input-with-error")}
                              value={field.typ.refClazzName}
-                             onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>
+                             onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}
+                             readOnly={readOnly}/>
                         {showValidation && <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>}
                     </React.Fragment>)
                   }}
@@ -177,6 +178,7 @@ export class NodeDetailsContent extends React.Component {
                   newValue={{name: "", typ: {refClazzName: ""}}}
                   isMarked={index => this.isMarked(`parameters[${index}].name`) || this.isMarked(`parameters[${index}].typ.refClazzName`)}
                   showValidation={showValidation}
+                  readOnly={!this.props.isEditMode}
                 />
               </div>
             </div>

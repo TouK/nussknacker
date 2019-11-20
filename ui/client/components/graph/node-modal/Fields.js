@@ -49,16 +49,17 @@ const Fields = (props) => {
                       className="addRemoveButton"
                       title="Remove field"
                       onClick={() => removeField(namespace, index)}
-                    >
-                      -
-                    </button>
+                      disabled={readOnly}>-</button>
                   </div>
                 </div>)
             }
           )
           }
           <div>
-            <button onClick={addField} className="addRemoveButton" title="Add field">+</button>
+            <button onClick={addField}
+                    className="addRemoveButton"
+                    title="Add field"
+                    disabled={readOnly}>+</button>
           </div>
         </div>
       </div>
