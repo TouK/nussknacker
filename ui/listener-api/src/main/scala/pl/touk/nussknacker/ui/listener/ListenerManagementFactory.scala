@@ -13,25 +13,24 @@ trait ListenerManagementFactory {
 
 object ListenerManagementFactory extends LazyLogging {
   def serviceLoader(classLoader: ClassLoader): ListenerManagementFactory = {
-    aggregate(ScalaServiceLoader.load[ListenerManagementFactory](classLoader): _*)
+    new ListenerAggregatingManagementFactory(ScalaServiceLoader.load[ListenerManagementFactory](classLoader): _*)
   }
+}
 
-  def aggregate(factories: ListenerManagementFactory*): ListenerManagementFactory = new ListenerManagementFactory {
-    override def create(config: Config): ListenerManagement = {
-      val listeners = factories.map(_.create(config))
-      new ListenerManagement {
-        override def handler(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: LoggedUser): Unit = {
-          def handleSafely(listener: ListenerManagement): Unit = {
-            try {
-              listener.handler(event)
-            } catch {
-              case ex: Throwable => logger.error(s"Error while handling event $event by listener ${listener.getClass.getName}", ex)
-            }
+class ListenerAggregatingManagementFactory(val factories: ListenerManagementFactory*) extends ListenerManagementFactory with LazyLogging {
+  final override def create(config: Config): ListenerManagement = {
+    val listeners = factories.map(_.create(config))
+    new ListenerManagement {
+      override def handler(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: LoggedUser): Unit = {
+        def handleSafely(listener: ListenerManagement): Unit = {
+          try {
+            listener.handler(event)
+          } catch {
+            case ex: Throwable => logger.error(s"Error while handling event $event by listener ${listener.getClass.getName}", ex)
           }
-          listeners.foreach(handleSafely)
         }
+        listeners.foreach(handleSafely)
       }
     }
   }
 }
-

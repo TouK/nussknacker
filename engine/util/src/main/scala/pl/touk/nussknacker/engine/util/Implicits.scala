@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
+import scala.util.{Failure, Success}
 
 object Implicits {
 
@@ -25,9 +26,12 @@ object Implicits {
   }
 
   implicit class RichFuture[A](future: Future[A]) {
-    def withSideEffect(f: (A) => Unit)(implicit ec: ExecutionContext): Future[A] = for {
-      result <- future
-      _      = f(result)
-    } yield result
+    def withSideEffect(f: A => Unit)(implicit ec: ExecutionContext): Future[A] = {
+      future.onComplete {
+        case Success(result) => f(result)
+        case Failure(_) => // ignoring - side effect should be applied only when success
+      }
+      future
+    }
   }
 }
