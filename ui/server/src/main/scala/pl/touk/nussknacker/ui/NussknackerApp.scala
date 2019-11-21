@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
@@ -121,8 +122,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
+    val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(config)
+
     val managementActor = system.actorOf(
-      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver), "management")
+      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver, processChangeListener), "management")
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
@@ -139,7 +142,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
           processResolving = processResolving,
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
-          processAuthorizer = processAuthorizer
+          processAuthorizer = processAuthorizer,
+          processChangeListener = processChangeListener
         ),
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, processRepository),

@@ -120,7 +120,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
               processDeploymentData = deploymentData,
               processingType = processingType,
               isSubprocess = isSubprocess
-            )
+            ).map(_.map(_ => {}))
           case Some(processId) =>
             fetchingProcessRepository.fetchLatestProcessVersion[Unit](processId).flatMap {
               case Some(version) if version.user == Initialization.nussknackerUser.id =>

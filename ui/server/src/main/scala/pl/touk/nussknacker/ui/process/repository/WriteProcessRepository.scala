@@ -43,7 +43,7 @@ object WriteProcessRepository {
 trait WriteProcessRepository {
 
   def saveNewProcess(processName: ProcessName, category: String, processDeploymentData: ProcessDeploymentData,
-                     processingType: ProcessingType, isSubprocess: Boolean)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
+                     processingType: ProcessingType, isSubprocess: Boolean)(implicit loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]]
 
   def updateProcess(action: UpdateProcessAction)
                    (implicit loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]]
@@ -65,7 +65,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
   
   def saveNewProcess(processName: ProcessName, category: String, processDeploymentData: ProcessDeploymentData,
                      processingType: ProcessingType, isSubprocess: Boolean)
-                    (implicit loggedUser: LoggedUser): F[XError[Unit]] = {
+                    (implicit loggedUser: LoggedUser): F[XError[Option[ProcessVersionEntityData]]] = {
     val processToSave = ProcessEntityData(id = -1L, name = processName.value, processCategory = category,
       description = None, processType = ProcessType.fromDeploymentData(processDeploymentData),
       processingType = processingType, isSubprocess = isSubprocess, isArchived = false)
@@ -79,7 +79,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processName.value).asLeft)
           case None => (insertNew += processToSave).flatMap(entity => updateProcessInternal(ProcessId(entity.id), processDeploymentData))
         }
-      }.map(_.map(_ => ()))
+      }
     }
 
     run(insertAction)
