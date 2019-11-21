@@ -13,7 +13,7 @@ import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.dict.static.StaticDictDefinition
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
@@ -529,18 +529,19 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[java.lang.Float](floatAddExpr, ctx) shouldBe 'valid
     parse[Double](floatAddExpr, ctx) shouldBe 'valid
   }
-  test("static dict values") {
-    val staticDictId = "staticDictId"
-    val dicts = Map(staticDictId -> StaticDictDefinition(Map("fooId" -> "fooLabel")))
-    val withObjVar = ctx.withVariable("staticDict", DictInstance(staticDictId, dicts(staticDictId)))
 
-    parseWithDicts[String]("#staticDict['fooId']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[String](withObjVar) shouldEqual "fooId"
-    parseWithDicts[String]("#staticDict['wrongId']", withObjVar, dicts) shouldBe 'invalid
+  test("embedded dict values") {
+    val embeddedDictId = "embeddedDictId"
+    val dicts = Map(embeddedDictId -> EmbeddedDictDefinition(Map("fooId" -> "fooLabel")))
+    val withObjVar = ctx.withVariable("embeddedDict", DictInstance(embeddedDictId, dicts(embeddedDictId)))
+
+    parseWithDicts[String]("#embeddedDict['fooId']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[String](withObjVar) shouldEqual "fooId"
+    parseWithDicts[String]("#embeddedDict['wrongId']", withObjVar, dicts) shouldBe 'invalid
   }
 
   test("enum dict values") {
-    val enumDictId = StaticDictDefinition.enumDictId(classOf[SimpleEnum.Value])
-    val dicts = Map(enumDictId -> StaticDictDefinition.forScalaEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.Value])
+    val enumDictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleEnum.Value])
+    val dicts = Map(enumDictId -> EmbeddedDictDefinition.forScalaEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.Value])
     val withObjVar = ctx
       .withVariable("stringValue", "one")
       .withVariable("enumValue", SimpleEnum.One)

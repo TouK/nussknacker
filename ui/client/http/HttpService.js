@@ -92,6 +92,10 @@ export default {
     return api.get("/processDefinitionData/services")
   },
 
+  fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
+    return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`)
+  },
+
   fetchUnusedComponents() {
     return api.get("/app/unusedComponents")
   },

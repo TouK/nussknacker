@@ -37,7 +37,11 @@ object ProcessConfigCreatorMapping {
         val jec = jcreator.expressionConfig(config)
         ExpressionConfig(
           globalProcessVariables = jec.getGlobalProcessVariables.asScala.toMap,
-          globalImports = jec.getGlobalImports.asScala.toList
+          globalImports = jec.getGlobalImports.asScala.toList,
+          languages = jec.getLanguages,
+          optimizeCompilation = jec.isOptimizeCompilation,
+          strictTypeChecking = jec.isStrictTypeChecking,
+          dictionaries = jec.getDictionaries.asScala.toMap
         )
       }
       override def buildInfo(): Map[String, String] = {

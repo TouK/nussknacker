@@ -12,11 +12,11 @@ class DictsSpec extends FunSuite with Matchers {
 
   import spel.Implicits._
 
-  test("use dicts in indexer with static enum values") {
+  test("use dicts in indexer with enum values") {
     checkProcess("#input.enumValue == #enum['ONE']")
   }
 
-  test("use dicts as property with static enum values") {
+  test("use dicts as property with enum values") {
     checkProcess("#input.enumValue == #enum.ONE")
   }
 

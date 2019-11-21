@@ -28,7 +28,7 @@ class ProcessDictSubstitutor(dictRegistry: DictRegistry,
         val substitutions = substitutionsCollector.collectSubstitutions(expr)
         val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
         if (substitutions.nonEmpty)
-          logger.debug(s"Found ${substitutions.size} substitutions in expression: ${process.metaData.id}>${nodeExpressionId.nodeId.id}>${nodeExpressionId.expressionId}. " +
+          logger.debug(s"Found ${substitutions.size} substitutions in expression: ${process.metaData.id} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
             s"Expression: '${expr.expression}' replaced with '$afterSubstitution'")
         afterSubstitution
       }.getOrElse(expr.expression)

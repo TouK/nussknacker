@@ -45,13 +45,21 @@ const variables = {
   "union": {union: [
       {refClazzName: "org.A"},
       {refClazzName: "org.B"},
-      {refClazzName: "org.AA"}]}
+      {refClazzName: "org.AA"}]},
+  "dict": {dict: {
+    id: "fooDict",
+    valueType: {refClazzName: "org.A"}
+  }}
 };
 
-const expressionSuggester = new ExpressionSuggester(typesInformation, variables)
-
-const suggestionsFor = (inputValue, caretPosition2d) => {
+const suggestionsFor = (inputValue, caretPosition2d, stubbedDictSuggestions) => {
   const _caretPosition2d = caretPosition2d ? caretPosition2d : { row: 0, column: inputValue.length }
+  const stubService = {
+    fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
+      return new Promise(resolve => resolve({ data: stubbedDictSuggestions }))
+    }
+  }
+  const expressionSuggester = new ExpressionSuggester(typesInformation, variables, "fooProcessingType", stubService)
   return expressionSuggester.suggestionsFor(inputValue, _caretPosition2d)
 }
 
@@ -74,7 +82,11 @@ describe("expression suggester", () => {
         { methodName: "#union", refClazz: { union: [
               { refClazzName: 'org.A' },
               { refClazzName: 'org.B' },
-              { refClazzName: 'org.AA' } ] } }
+              { refClazzName: 'org.AA' } ] } },
+        { methodName: "#dict", refClazz: { dict: {
+          id: "fooDict",
+          valueType: { refClazzName: "org.A" }
+        }}}
       ])
     }).then(done)
   })
@@ -106,6 +118,35 @@ describe("expression suggester", () => {
         { methodName: 'barB', refClazz: { refClazzName: 'org.B' } }
       ])
     }).then(done)
+  })
+
+  it("should suggest dict variable methods", (done) => {
+    let stubbedDictSuggestions = [
+      { key: "one", label: "One" },
+      { key: "two", label: "Two" }
+    ]
+    suggestionsFor("#dict.", null, stubbedDictSuggestions).then(suggestions => {
+      expect(suggestions).toEqual([
+        { methodName: 'One', refClazz: { refClazzName: 'org.A'} },
+        { methodName: 'Two', refClazz: { refClazzName: 'org.A' } }
+      ])
+    }).then(done)
+  })
+
+
+  it("should suggest dict variable methods using indexer syntax", (done) => {
+    let stubbedDictSuggestions = [
+      { key: "sentence-with-spaces-and-dots", label: "Sentence with spaces and . dots" }
+    ]
+    const correctInputs = ["#dict['", "#dict['S", "#dict['Sentence w", "#dict['Sentence with spaces and . dots"]
+    const allChecks = _.map(correctInputs, inputValue => {
+      suggestionsFor(inputValue, null, stubbedDictSuggestions).then(suggestions => {
+        expect(suggestions).toEqual([
+          { methodName: 'Sentence with spaces and . dots', refClazz: { refClazzName: 'org.A'} }
+        ])
+      })
+    })
+    Promise.all(allChecks).then(done)
   })
 
   it("should suggest filtered global variable methods", (done) => {
@@ -302,6 +343,8 @@ describe("expression suggester", () => {
 
 describe("remove finished selections from input", () => {
 
+  const expressionSuggester = new ExpressionSuggester(typesInformation, variables)
+
   it("leaves unfinished selection", () => {
     const original = "#input.one.two.?[#this."
     const removed = expressionSuggester._removeFinishedSelectionFromExpressionPart(original)
@@ -329,6 +372,9 @@ describe("remove finished selections from input", () => {
 })
 
 describe("normalize multiline input", () => {
+
+  const expressionSuggester = new ExpressionSuggester(typesInformation, variables)
+
   it("normalize multiline input #1", () => {
     const extracted = expressionSuggester._normalizeMultilineInputToSingleLine("#input\n  .barB.bazC\n  .quaxString.", {row: 1, column: "  .barB.bazC".length })
     expect(extracted).toEqual({
