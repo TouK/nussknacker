@@ -19,7 +19,7 @@ class RawField extends React.Component {
       <div className="node-row movable-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
-          <input className={!showValidation || allValid(validators, field.name) ? "node-input" : "node-input node-input-with-error"}
+          <input className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
                  type="text"
                  value={field.name}
                  placeholder="Name"
