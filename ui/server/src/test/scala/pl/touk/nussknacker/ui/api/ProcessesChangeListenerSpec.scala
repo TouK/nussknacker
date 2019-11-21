@@ -31,13 +31,13 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val newCategory = "expectedCategory"
     val processId = createProcess(processName, testCategoryName, false)
 
-    Post(s"/processes/category/${processName.value}/$newCategory") ~> routeWithAdminPermissions ~> check {
+    Post(s"/processes/category/${processName.value}/$newCategory") ~> routeWithAdminPermissions ~> checkEventually {
       TestProcessChangeListener.events.head should matchPattern { case OnCategoryChanged(`processId`, `testCategoryName`, `newCategory`) => }
     }
   }
 
   test("listen to process create") {
-    Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> checkEventually {
       TestProcessChangeListener.events.head should matchPattern { case OnSaved(_, 1L) => }
     }
   }
@@ -45,8 +45,10 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
   test("listen to process update") {
     val processId = createProcess(processName, testCategoryName, false)
 
-    updateProcess(processName, ProcessTestData.validProcess){
-      TestProcessChangeListener.events.head should matchPattern { case OnSaved(`processId`, 2L) => }
+    updateProcess(processName, ProcessTestData.validProcess) {
+      eventually {
+        TestProcessChangeListener.events.head should matchPattern { case OnSaved(`processId`, 2L) => }
+      }
     }
   }
 
@@ -54,9 +56,9 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
   test("listen to process archive / unarchive") {
     val processId = createProcess(processName, testCategoryName, false)
 
-    Post(s"/archive/${processName.value}")  ~> routeWithAllPermissions ~> check {
+    Post(s"/archive/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
       TestProcessChangeListener.events.head should matchPattern { case OnArchived(`processId`) => }
-      Post(s"/unarchive/${processName.value}") ~> routeWithAllPermissions ~> check {
+      Post(s"/unarchive/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
         TestProcessChangeListener.events.head should matchPattern { case OnUnarchived(`processId`) => }
       }
     }
@@ -66,15 +68,15 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val processId = createProcess(processName, testCategoryName, false)
     val newName = ProcessName("new_name")
 
-    Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> check {
-      TestProcessChangeListener.events.head should matchPattern { case OnRenamed(`processId`,`processName`, `newName`) => }
+    Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnRenamed(`processId`, `processName`, `newName`) => }
     }
   }
 
   test("listen to delete process") {
     val processId = createProcess(processName, testCategoryName, false)
 
-    Delete(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
+    Delete(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
       TestProcessChangeListener.events.head should matchPattern { case OnDeleted(`processId`) => }
     }
   }
@@ -83,20 +85,16 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val processId = createProcess(processName, testCategoryName, false)
     val comment = Some("deployComment")
 
-    deployProcess(processName.value, true, comment) ~> check {
-      eventually {
-        TestProcessChangeListener.events.head should matchPattern { case OnDeploySuccess(`processId`, 1L, `comment`) => }
-      }
+    deployProcess(processName.value, true, comment) ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnDeploySuccess(`processId`, 1L, `comment`) => }
     }
   }
   test("listen to deployment failure") {
     val processId = createProcess(processName, testCategoryName, false)
 
     processManager.withFailingDeployment {
-      deployProcess(processName.value) ~> check {
-        eventually {
-          TestProcessChangeListener.events.head should matchPattern { case OnDeployFailed(`processId`, _) => }
-        }
+      deployProcess(processName.value) ~> checkEventually {
+        TestProcessChangeListener.events.head should matchPattern { case OnDeployFailed(`processId`, _) => }
       }
     }
   }
@@ -105,10 +103,10 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val processId = createDeployedProcess(processName, testCategoryName, false)
     val comment = Some("deployComment")
 
-    cancelProcess(SampleProcess.process.id, true, comment) ~> check {
-      eventually {
-        TestProcessChangeListener.events.head should matchPattern { case OnDeployCancelled(`processId`, 1L, `comment`) => }
-      }
+    cancelProcess(SampleProcess.process.id, true, comment) ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployCancelled(`processId`, 1L, `comment`) => }
     }
   }
+
+  private def checkEventually[T](body: ⇒ T): RouteTestResult ⇒ T = check(eventually(body))
 }
