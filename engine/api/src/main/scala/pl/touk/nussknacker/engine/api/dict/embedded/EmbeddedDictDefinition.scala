@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api.dict.static
+package pl.touk.nussknacker.engine.api.dict.embedded
 
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, ReturningKeyWithoutTransformation}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
 /**
  * It is DictDefinition which contains embedded label <> key transformation.
  */
-trait StaticDictDefinition extends DictDefinition {
+trait EmbeddedDictDefinition extends DictDefinition {
 
   def labelByKey: Map[String, String]
 
@@ -17,9 +17,9 @@ trait StaticDictDefinition extends DictDefinition {
 
 }
 
-private[static] case class SimpleDictDefinition(labelByKey: Map[String, String]) extends StaticDictDefinition with ReturningKeyWithoutTransformation
+private[embedded] case class SimpleDictDefinition(labelByKey: Map[String, String]) extends EmbeddedDictDefinition with ReturningKeyWithoutTransformation
 
-private[static] case class EnumDictDefinition(valueClass: ClazzRef, private val enumValueByName: Map[String, Any]) extends StaticDictDefinition {
+private[embedded] case class EnumDictDefinition(valueClass: ClazzRef, private val enumValueByName: Map[String, Any]) extends EmbeddedDictDefinition {
 
   override def labelByKey: Map[String, String] = enumValueByName.keys.map(name => name -> name).toMap
 
@@ -30,9 +30,9 @@ private[static] case class EnumDictDefinition(valueClass: ClazzRef, private val 
 
 }
 
-object StaticDictDefinition {
+object EmbeddedDictDefinition {
 
-  def apply(labelByKey: Map[String, String]): StaticDictDefinition = {
+  def apply(labelByKey: Map[String, String]): EmbeddedDictDefinition = {
     checkLabelsAreUnique(labelByKey)
     SimpleDictDefinition(labelByKey)
   }
@@ -43,7 +43,7 @@ object StaticDictDefinition {
     assert(duplicatedValues.isEmpty, s"Duplicated labels for dict: $labels")
   }
 
-  def forJavaEnum[T <: Enum[_]](javaEnumClass: Class[T]): StaticDictDefinition = {
+  def forJavaEnum[T <: Enum[_]](javaEnumClass: Class[T]): EmbeddedDictDefinition = {
     val enumValueByName = javaEnumClass.getEnumConstants.map(e => e.name() -> e).toMap
     EnumDictDefinition(ClazzRef(javaEnumClass), enumValueByName)
   }
@@ -51,7 +51,7 @@ object StaticDictDefinition {
   def forScalaEnum[T <: Enumeration](scalaEnum: Enumeration): ScalaEnumTypedDictBuilder[T] = new ScalaEnumTypedDictBuilder[T](scalaEnum)
 
   class ScalaEnumTypedDictBuilder[T <: Enumeration](scalaEnum: Enumeration) {
-    def withValueClass[V <: T#Value : ClassTag]: StaticDictDefinition = {
+    def withValueClass[V <: T#Value : ClassTag]: EmbeddedDictDefinition = {
       val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
       EnumDictDefinition(ClazzRef(implicitly[ClassTag[V]].runtimeClass), enumValueByName)
     }
@@ -76,7 +76,7 @@ object StaticDictDefinition {
    * It is because Flink's `EnumValueTypeInfo` require `Class[T#Value]` but we provide `Class[SomeValue extends T#Value]`
    * and `Class[T]` is invariant in their type `T`. So it is better to use Java enums instead in this place.
    */
-  def forScalaEnum(scalaEnum: Enumeration, valueClass: Class[_]): StaticDictDefinition = {
+  def forScalaEnum(scalaEnum: Enumeration, valueClass: Class[_]): EmbeddedDictDefinition = {
     val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
     EnumDictDefinition(ClazzRef(valueClass), enumValueByName)
   }

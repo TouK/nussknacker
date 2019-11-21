@@ -16,7 +16,7 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
-import pl.touk.nussknacker.engine.api.dict.static.StaticDictDefinition
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
@@ -99,8 +99,8 @@ object ProcessTestHelpers {
 
 
       override def expressionConfig(config: Config) = {
-        val dictId = StaticDictDefinition.enumDictId(classOf[SimpleJavaEnum])
-        val dictDef = StaticDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
+        val dictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
+        val dictDef = EmbeddedDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
         val globalProcessVariables = Map(
           "processHelper" -> WithCategories(ProcessHelper),
           "enum" -> WithCategories(DictInstance(dictId, dictDef)))

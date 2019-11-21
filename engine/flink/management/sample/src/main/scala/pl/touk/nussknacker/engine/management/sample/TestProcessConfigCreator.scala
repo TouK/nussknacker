@@ -24,7 +24,7 @@ import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
-import pl.touk.nussknacker.engine.api.dict.static.StaticDictDefinition
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
@@ -216,7 +216,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def expressionConfig(config: Config) = {
     val dictId = "dict"
-    val dictDef = StaticDictDefinition(Map(
+    val dictDef = EmbeddedDictDefinition(Map(
       "foo" -> "Foo",
       "bar" -> "Bar",
       "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots"))

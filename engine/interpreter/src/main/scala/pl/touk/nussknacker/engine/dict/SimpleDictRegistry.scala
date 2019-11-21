@@ -4,27 +4,27 @@ import cats.data.Validated
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictEntryWithKeyNotExists
 import pl.touk.nussknacker.engine.api.dict._
-import pl.touk.nussknacker.engine.api.dict.static.{StaticDictQueryService, StaticDictRegistry}
+import pl.touk.nussknacker.engine.api.dict.embedded.{EmbeddedDictQueryService, EmbeddedDictRegistry}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
- * This is simple implementation of DictRegistry which handles only StaticDictDefinition
+ * This is simple implementation of DictRegistry which handles only EmbeddedDictRegistry
  */
-class SimpleDictRegistry(protected val declarations: Map[String, DictDefinition]) extends StaticDictRegistry {
+class SimpleDictRegistry(protected val declarations: Map[String, DictDefinition]) extends EmbeddedDictRegistry {
 
-  override protected def handleNotStaticKeyBeLabel(definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String] =
+  override protected def handleNotEmbeddedKeyBeLabel(definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String] =
     throw new IllegalStateException(s"Not supported dict definition: $definition")
 
-  override protected def handleNotStaticLabelByKey(definition: DictDefinition, key: String): Validated[DictEntryWithKeyNotExists, Option[String]] =
+  override protected def handleNotEmbeddedLabelByKey(definition: DictDefinition, key: String): Validated[DictEntryWithKeyNotExists, Option[String]] =
     throw new IllegalStateException(s"Not supported dict definition: $definition")
 
 }
 
-class SimpleDictQueryService(protected val dictRegistry: StaticDictRegistry, protected val maxResults: Int) extends StaticDictQueryService {
+class SimpleDictQueryService(protected val dictRegistry: EmbeddedDictRegistry, protected val maxResults: Int) extends EmbeddedDictQueryService {
 
-  override protected def handleNotStaticQueryEntriesByLabel(definition: DictDefinition, labelPattern: String)
-                                                           (implicit ec: ExecutionContext): Future[List[DictEntry]] =
+  override protected def handleNotEmbeddedQueryEntriesByLabel(definition: DictDefinition, labelPattern: String)
+                                                             (implicit ec: ExecutionContext): Future[List[DictEntry]] =
     Future.failed(new IllegalStateException(s"Not supported dict definition: $definition"))
 
 }
