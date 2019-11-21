@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictEntry, DictQuery
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait EmbeddedDictRegistry extends DictRegistry {
+abstract class EmbeddedDictRegistry extends DictRegistry {
 
   protected def declarations: Map[String, DictDefinition]
 
@@ -47,7 +47,7 @@ trait EmbeddedDictRegistry extends DictRegistry {
 }
 
 
-trait EmbeddedDictQueryService extends DictQueryService {
+abstract class EmbeddedDictQueryService extends DictQueryService {
 
   protected def dictRegistry: EmbeddedDictRegistry
 
