@@ -22,7 +22,7 @@ object aggregates {
 
     override def zero: Number = Double.MinValue
 
-    override def add: (Number, Number) => Number = (n1, n2) => Math.max(n1.doubleValue(), n2.doubleValue())
+    override def addElement(n1: Number, n2: Number): Number = Math.max(n1.doubleValue(), n2.doubleValue())
 
     override def zeroType: TypingResult = Typed[Number]
 
@@ -34,7 +34,7 @@ object aggregates {
 
     override def zero: Number = Double.MaxValue
 
-    override def add: (Number, Number) => Number = (n1, n2) => Math.min(n1.doubleValue(), n2.doubleValue())
+    override def addElement(n1: Number, n2: Number): Number = Math.min(n1.doubleValue(), n2.doubleValue())
 
     override def zeroType: TypingResult = Typed[Number]
   }
@@ -47,11 +47,11 @@ object aggregates {
 
     override def zero: Aggregate = List()
 
-    override def add: (Element, Aggregate) => Aggregate = _ :: _
+    override def addElement(el: Element, agg: Aggregate): Aggregate = el::agg
 
-    override def merge: (Aggregate, Aggregate) => Aggregate = _ ++ _
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
 
-    override def result: Aggregate => Any = _.asJava
+    override def result(finalAggregate: Aggregate): Any = finalAggregate.asJava
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(TypedClass(classOf[java.util.List[_]], List(input)))
@@ -66,18 +66,57 @@ object aggregates {
 
     override def zero: Aggregate = Set()
 
-    override def add: (Element, Aggregate) => Aggregate = (el, agg) => agg + el
+    override def addElement(el: Element, agg: Aggregate): Aggregate = agg + el
 
-    override def merge: (Aggregate, Aggregate) => Aggregate = _ ++ _
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
 
-    override def result: Aggregate => Any = _.asJava
+    override def result(finalAggregate: Aggregate): Any = finalAggregate.asJava
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(TypedClass(classOf[java.util.Set[_]], List(input)))
 
   }
 
+  object FirstAggregator extends Aggregator {
 
+    private object Marker
+
+    override type Aggregate = AnyRef
+
+    override type Element = AnyRef
+
+    override def zero: Aggregate = Marker
+
+    override def addElement(el: Element, agg: Aggregate): Aggregate = if (agg == zero) el else agg
+
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1
+
+    override def result(finalAggregate: Aggregate): Any = if (finalAggregate == zero) null else finalAggregate
+
+    override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
+      = Valid(input)
+
+  }
+
+  object LastAggregator extends Aggregator {
+
+    override type Aggregate = AnyRef
+
+    override type Element = AnyRef
+
+    override def zero: Aggregate = null
+
+    override def addElement(el: Element, agg: Aggregate): Aggregate = el
+
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg2
+
+    override def result(finalAggregate: Aggregate): Any = finalAggregate
+
+    override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
+      = Valid(input)
+
+  }
+  
   /*
     This is more complex aggregator, as it is composed from smaller ones.
     The idea is that 
@@ -92,15 +131,15 @@ object aggregates {
 
     override val zero: Aggregate = scalaFields.mapValuesNow(_.zero)
 
-    override def add: (Element, Aggregate) => Aggregate = (el, ag) => ag.map {
+    override def addElement(el: Element, agg: Aggregate): Aggregate = agg.map {
       case (field, value) => field -> scalaFields(field).add(el.get(field), value)
     }
 
-    override def merge: (Aggregate, Aggregate) => Aggregate = (ag1, ag2) => ag1.map {
-      case (field, value) => field -> scalaFields(field).merge(value, ag2(field))
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1.map {
+      case (field, value) => field -> scalaFields(field).merge(value, agg2(field))
     }
 
-    override def result: Aggregate => Any = mapAsJavaMapConverter
+    override def result(finalAggregate: Aggregate): Any = finalAggregate.asJava
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = {
       input match {
@@ -123,9 +162,9 @@ object aggregates {
 
     override type Aggregate = Element
 
-    override def merge: (Element, Element) => Element = add
+    override def mergeAggregates(aggregate: Aggregate, aggregate2: Aggregate): Element = addElement(aggregate, aggregate2)
 
-    override def result: Element => Element = identity
+    override def result(finalAggregate: Aggregate): Aggregate = finalAggregate
 
     def zeroType: TypingResult
 

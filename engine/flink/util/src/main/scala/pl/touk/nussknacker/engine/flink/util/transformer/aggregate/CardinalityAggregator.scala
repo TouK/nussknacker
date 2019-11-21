@@ -21,15 +21,15 @@ class CardinalityAggregator(zeroCardinality: () => ICardinality, wrapper: ICardi
 
   override def zero: CardinalityWrapper = wrapper(zeroCardinality())
 
-  override def add: (Any, CardinalityWrapper) => CardinalityWrapper = (el: Any, hll: CardinalityWrapper) => {
+  override def addElement(el: AnyRef, hll: Aggregate):Aggregate  = {
     hll.wrapped.offer(el)
     hll
   }
 
-  override def merge: (CardinalityWrapper, CardinalityWrapper) => CardinalityWrapper = (h1, h2) =>
+  override def mergeAggregates(h1: CardinalityWrapper, h2: CardinalityWrapper): CardinalityWrapper =
     wrapper(h1.wrapped.merge(h2.wrapped))
 
-  override def result: CardinalityWrapper => Any = (r: CardinalityWrapper) => r.wrapped.cardinality()
+  override def result(r: CardinalityWrapper): Long = r.wrapped.cardinality()
 
   override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed[Long])
 
