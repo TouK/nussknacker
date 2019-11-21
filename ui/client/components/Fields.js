@@ -30,14 +30,15 @@ class RawField extends React.Component {
         <div className={"node-value field" + markedClass}>
           {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value), readOnly)}
         </div>
-        <div className="node-value fieldRemove">
-          {/* TODO: add nicer buttons. Awesome font? */}
-          <button className="addRemoveButton"
-                  title="Remove field"
-                  onClick={() => this.props.removeField(index)}
-                  disabled={readOnly}>-
-          </button>
-        </div>
+        {
+          readOnly ? null :
+            <div className="node-value fieldRemove">
+              <button className="addRemoveButton"
+                      title="Remove field"
+                      onClick={() => this.props.removeField(index)}>-
+              </button>
+            </div>
+        }
       </div>
     ));
   }
@@ -153,12 +154,14 @@ export default class Fields extends React.Component {
                  {...this.props} />
         )
       }
-      <div>
-        <button className="addRemoveButton"
-                title="Add field"
-                onClick={() => this.addField()}
-                disabled={readOnly}>+</button>
-      </div>
+      {
+        readOnly ? null :
+          <div>
+            <button className="addRemoveButton"
+                    title="Add field"
+                    onClick={() => this.addField()}>+</button>
+          </div>
+      }
     </div>);
   }
 

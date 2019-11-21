@@ -168,7 +168,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     },
     '.disabled-node-layer': {
       display: node.isDisabled ? 'block' : 'none',
-      width: widthWithTestResults,
+      width: width,
       fill: '#b3b3b3'
     },
     '.background title': {
