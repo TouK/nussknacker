@@ -4,7 +4,6 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import cats.instances.list._
-
 import scala.collection.JavaConverters._
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
