@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.transformer.{AggregateTransformer, PreviousValueTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
@@ -61,7 +63,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     new AvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
   override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory
-    = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler(_))
+    = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
   import pl.touk.nussknacker.engine.util.functions._
 

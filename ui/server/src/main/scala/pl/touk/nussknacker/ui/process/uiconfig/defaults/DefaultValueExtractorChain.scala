@@ -16,7 +16,7 @@ object DefaultValueExtractorChain extends LazyLogging {
     )
 
     val allStrategies = userStrategies ++ nkStrategies
-    logger.info("Building DefaultValueExtractorChain with strategies: {}", allStrategies)
+    logger.debug("Building DefaultValueExtractorChain with strategies: {}", allStrategies)
     new DefaultValueExtractorChain(allStrategies)
   }
 }

@@ -29,6 +29,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     .withoutLazyVals(modelData.configCreator.expressionConfig(modelData.processConfig).globalProcessVariables.mapValues(_.value), List())
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
+    modelData.dictServices.dictRegistry,
     modelData.processDefinition.expressionConfig)
 
   private lazy val factory = new ProcessObjectFactory(evaluator)

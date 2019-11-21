@@ -103,7 +103,7 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
     val streamGraph: StreamGraph = getStreamGraph
     streamGraph.setJobName(jobName)
     val jobGraph: JobGraph = streamGraph.getJobGraph
-    logger.info("Running job on local embedded Flink flinkMiniCluster cluster")
+    logger.debug("Running job on local embedded Flink flinkMiniCluster cluster")
 
     userFlinkClusterConfig.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, false)
     userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)

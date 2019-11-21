@@ -124,7 +124,7 @@ object NodeCanonizer {
         canonicalnode.SplitNode(bare, nexts.map(canonize)) :: Nil
       case node.SubprocessNode(input, nexts) =>
         canonicalnode.Subprocess(input, nexts.mapValues(canonize)) :: Nil
-      case BranchEnd(e@BranchEndData(_, BranchEndDefinition(id, joinId))) =>
+      case BranchEnd(e:BranchEndData) =>
         canonicalnode.FlatNode(e) :: Nil
     }
 

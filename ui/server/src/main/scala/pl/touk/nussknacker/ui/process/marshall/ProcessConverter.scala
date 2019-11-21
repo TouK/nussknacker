@@ -77,7 +77,7 @@ object ProcessConverter {
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =
     nodes match {
-      case canonicalnode.FlatNode(BranchEndData(_, _)) :: _ => (List(), List())
+      case canonicalnode.FlatNode(BranchEndData(_)) :: _ => (List(), List())
       case canonicalnode.FlatNode(data) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
         (data :: tailNodes, createNextEdge(data.id, tail) ::: tailEdges)
@@ -123,7 +123,7 @@ object ProcessConverter {
 
   private def createNextEdge(id: String, tail: List[CanonicalNode], edgeType: Option[EdgeType] = None): List[displayablenode.Edge] = {
     tail.headOption.map {
-      case FlatNode(BranchEndData(_, BranchEndDefinition(_, joinId))) => displayablenode.Edge(id, joinId, None)
+      case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => displayablenode.Edge(id, joinId, None)
       case n => displayablenode.Edge(id, n.id, edgeType)
     }.toList
   }
@@ -177,7 +177,7 @@ object ProcessConverter {
         // We are using "from" node's id as a branchId because for now branchExpressions are inside Join nodes and it is convenient
         // way to connect both two things.
         val joinId = edgeConnectedToJoin.from
-        canonicalnode.FlatNode(BranchEndData(s"$$edge-${edgeConnectedToJoin.from}-${edgeConnectedToJoin.to}", BranchEndDefinition(joinId, data.id))) :: Nil
+        canonicalnode.FlatNode(BranchEndData(BranchEndDefinition(joinId, data.id))) :: Nil
 
     }
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>
