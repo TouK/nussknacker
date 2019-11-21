@@ -133,6 +133,22 @@ describe("expression suggester", () => {
     }).then(done)
   })
 
+
+  it("should suggest dict variable methods using indexer syntax", (done) => {
+    let stubbedDictSuggestions = [
+      { key: "sentence-with-spaces-and-dots", label: "Sentence with spaces and . dots" }
+    ]
+    const correctInputs = ["#dict['", "#dict['S", "#dict['Sentence w", "#dict['Sentence with spaces and . dots"]
+    const allChecks = _.map(correctInputs, inputValue => {
+      suggestionsFor(inputValue, null, stubbedDictSuggestions).then(suggestions => {
+        expect(suggestions).toEqual([
+          { methodName: 'Sentence with spaces and . dots', refClazz: { refClazzName: 'org.A'} }
+        ])
+      })
+    })
+    Promise.all(allChecks).then(done)
+  })
+
   it("should suggest filtered global variable methods", (done) => {
     suggestionsFor("#input.fo").then(suggestions => {
       expect(suggestions).toEqual([

@@ -218,7 +218,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val dictId = "dict"
     val dictDef = StaticDictDefinition(Map(
       "foo" -> "Foo",
-      "bar" -> "Bar"))
+      "bar" -> "Bar",
+      "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots"))
     val globalProcessVariables = Map(
       "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2"),
       "DICT" -> WithCategories(DictInstance(dictId, dictDef), "Category1", "Category2"))

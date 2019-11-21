@@ -81,7 +81,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val usersRoute = new UserResources(typesForCategories)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
 
-  val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
+  val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository, processResolving)
   val definitionResources = new DefinitionResources(
     Map(existingProcessingType ->  FlinkStreamingProcessManagerProvider.defaultModelData(testConfig)), subprocessRepository, typesForCategories)
 

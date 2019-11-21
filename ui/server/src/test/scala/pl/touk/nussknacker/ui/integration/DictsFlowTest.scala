@@ -8,7 +8,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
+import io.circe.{ACursor, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -76,6 +76,17 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
   }
 
+  test("export process with expression using dict") {
+    val expressionUsingDictWithLabel = s"#DICT.$Label"
+    val expressionUsingDictWithKey = s"#DICT.$Key"
+    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
+    Post(s"/api/processesExport", TestProcessUtil.toJson(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      val returnedEndResultExpression = extractEndResultExpression(responseAs[Json].hcursor)
+      returnedEndResultExpression shouldEqual expressionUsingDictWithKey
+    }
+  }
+
   private def saveProcessAndTestIt(process: EspProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
     saveProcessAndCheckIfCanBeGet(process, expressionUsingDictWithLabel)
 
@@ -110,7 +121,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       checkNoInvalidNodesInValidationResul()
-      val returnedEndResultExpression = extractEndResultExpression()
+      val returnedEndResultExpression = extractEndResultExpression(responseAs[Json].hcursor.downField("json"))
       returnedEndResultExpression shouldEqual endResultExpressionToPost
     }
   }
@@ -126,11 +137,8 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     }
   }
 
-  private def extractEndResultExpression() = {
-    val response = responseAs[Json]
-    response.hcursor
-      .downField("json")
-      .downField("nodes")
+  private def extractEndResultExpression(cursor: ACursor) = {
+      cursor.downField("nodes")
       .downAt(_.hcursor.get[String]("id").right.value == EndNodeId)
       .downField("endResult")
       .downField("expression")

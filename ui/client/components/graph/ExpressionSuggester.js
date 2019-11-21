@@ -1,5 +1,8 @@
 import _ from 'lodash';
 
+// before indexer['last indexer key
+const INDEXER_REGEX = /^(.*)\['([^\[]*)$/
+
 export default class ExpressionSuggester {
 
   constructor(typesInformation, variables, processingType, httpService) {
@@ -35,7 +38,7 @@ export default class ExpressionSuggester {
 
   _getSuggestions = (value, focusedClazz, variables) => {
     const variableNames = _.keys(variables)
-    const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) })
+    const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) || _.includes(value, `${variable}['`) })
     const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable.toLowerCase(), value.toLowerCase()) })
     if (variableAlreadySelected && focusedClazz) {
       const currentType = this._getTypeInfo(focusedClazz)
@@ -173,7 +176,20 @@ export default class ExpressionSuggester {
   }
 
   _dotSeparatedToProperties = (value) => {
-    return _.split(value, ".")
+    // TODO: Implement full SpEL support for accessing by indexer the same way as by properties - not just for last indexer
+    const indexerMatch = value.match(INDEXER_REGEX)
+    if (indexerMatch) {
+      return this._dotSeparatedToPropertiesIncludingLastIndexerKey(indexerMatch)
+    } else {
+      return _.split(value, ".")
+    }
+  }
+
+  _dotSeparatedToPropertiesIncludingLastIndexerKey = (indexerMatch) => {
+    const beforeIndexer = indexerMatch[1]
+    const indexerKey = indexerMatch[2]
+    const splittedProperties = _.split(beforeIndexer, ".")
+    return _.concat(splittedProperties, indexerKey)
   }
 
   _getAllVariables = (normalized) => {
@@ -212,7 +228,6 @@ export default class ExpressionSuggester {
   }
 
   _getSuggestionsForDict = (typ, typedProperty) => {
-
     return this._fetchDictLabelSuggestions(typ.id, typedProperty).then(result => _.map(result.data, entry => {
       return {
         methodName: entry.label,
