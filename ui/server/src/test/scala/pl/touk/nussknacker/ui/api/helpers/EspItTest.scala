@@ -22,7 +22,7 @@ import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.listener.{ListenerManagement, ProcessChangeEvent}
+import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeEvent}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -50,14 +50,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val existingProcessingType = "streaming"
 
   val processManager = new MockProcessManager
-  val listenerManagement = new TestListenerManagement()
+  val processChangeListener = new TestProcessChangeListener()
   def createManagementActorRef = {
     system.actorOf(ManagementActor.props(env,
       Map(TestProcessingTypes.Streaming -> processManager),
       processRepository,
       deploymentProcessRepository,
       TestFactory.sampleResolver,
-      listenerManagement), "management")
+      processChangeListener), "management")
   }
   val managementActor: ActorRef = createManagementActorRef
   val jobStatusService = new JobStatusService(managementActor)
@@ -79,7 +79,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     typesForCategories = typesForCategories,
     newProcessPreparer = newProcessPreparer,
     processAuthorizer = processAuthorizer,
-    listenerManagement = listenerManagement
+    processChangeListener = processChangeListener
   )
 
   val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)

@@ -41,7 +41,7 @@ import scala.util.control.NonFatal
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.listener.ListenerManagement
+import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
 
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
@@ -53,7 +53,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer,
                          val processAuthorizer:AuthorizeProcess,
-                         listenerManagement: ListenerManagement)
+                         processChangeListener: ProcessChangeListener)
                         (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -78,7 +78,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             canWrite(processId) {
               complete {
                 writeArchive(processId.id, isArchived = false)
-                  .withSideEffect(_ => listenerManagement.handler(OnUnarchived(processId.id)))
+                  .withSideEffect(_ => processChangeListener.handle(OnUnarchived(processId.id)))
               }
             }
           }
@@ -90,7 +90,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               */
               complete {
                 writeArchive(processId.id, isArchived = true)
-                  .withSideEffect(_ => listenerManagement.handler(OnArchived(processId.id)))
+                  .withSideEffect(_ => processChangeListener.handle(OnArchived(processId.id)))
               }
             }
           }
@@ -187,7 +187,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             (delete & canWrite(processId)) {
               complete {
                 writeRepository.deleteProcess(processId.id).map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => listenerManagement.handler(OnDeleted(processId.id)))
+                  .withSideEffect(_ => processChangeListener.handle(OnDeleted(processId.id)))
               }
             } ~ (put & canWrite(processId)) {
               entity(as[ProcessToSave]) { processToSave =>
@@ -197,7 +197,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                       rejectSavingArchivedProcess
                     case false =>
                       saveProcess(processToSave, processId.id)
-                        .withSideEffect(_.toOption.flatMap(_.processVersionEntityData).foreach(p => listenerManagement.handler(OnSaved(processId.id, p.id))))
+                        .withSideEffect(_.toOption.flatMap(_.processVersionEntityData).foreach(p => processChangeListener.handle(OnSaved(processId.id, p.id))))
                         .map(_.map(_.validation))
                         .map(toResponseEither[ValidationResult])
                   }
@@ -227,7 +227,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                 processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap {
                   case Some(details) if details.currentlyDeployedAt.isEmpty =>
                     writeRepository.renameProcess(processId.id, newName).map(toResponse(StatusCodes.OK))
-                      .withSideEffect(_ => listenerManagement.handler(OnRenamed(processId.id, processId.name, ProcessName(newName))))
+                      .withSideEffect(_ => processChangeListener.handle(OnRenamed(processId.id, processId.name, ProcessName(newName))))
                   case _ => Future.successful(espErrorToHttp(ProcessAlreadyDeployed(processName)))
                 }
               }
@@ -265,7 +265,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                         processingType = processingType,
                         isSubprocess = isSubprocess
                       )
-                        .withSideEffect(_.toOption.flatten.foreach(p => listenerManagement.handler(OnSaved(ProcessId(p.processId), p.id))))
+                        .withSideEffect(_.toOption.flatten.foreach(p => processChangeListener.handle(OnSaved(ProcessId(p.processId), p.id))))
                         .map(_.map(_ => ()))
                         .map(toResponse(StatusCodes.Created))
                     case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
@@ -294,7 +294,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               complete {
                 // TODO: Validate that category exists at categories list
                 writeRepository.updateCategory(processId = data.id, category = category).map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => listenerManagement.handler(OnCategoryChanged(data.id, oldCategory = data.category, newCategory = category)))
+                  .withSideEffect(_ => processChangeListener.handle(OnCategoryChanged(data.id, oldCategory = data.category, newCategory = category)))
               }
             }
           }

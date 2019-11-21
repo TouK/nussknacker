@@ -13,7 +13,7 @@ import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.listener.ListenerManagement
+import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
@@ -29,9 +29,9 @@ object ManagementActor {
             processRepository: FetchingProcessRepository[Future],
             deployedProcessRepository: DeployedProcessRepository,
             subprocessResolver: SubprocessResolver,
-            listenerManagement: ListenerManagement)
+            processChangeListener: ProcessChangeListener)
            (implicit context: ActorRefFactory): Props = {
-    Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver, listenerManagement)
+    Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver, processChangeListener)
   }
 
 }
@@ -41,7 +41,7 @@ class ManagementActor(environment: String,
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: DeployedProcessRepository,
                       subprocessResolver: SubprocessResolver,
-                      listenerManagement: ListenerManagement) extends FailurePropagatingActor with LazyLogging {
+                      processChangeListener: ProcessChangeListener) extends FailurePropagatingActor with LazyLogging {
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()
 
@@ -81,13 +81,13 @@ class ManagementActor(environment: String,
       result match {
         case Left(failure) =>
           logger.error(s"Action: ${beingDeployed.get(process.name)} of $process finished with failure", failure)
-          listenerManagement.handler(OnDeployFailed(process.id, failure))
+          processChangeListener.handle(OnDeployFailed(process.id, failure))
         case Right(details) =>
           logger.info(s"Finishing ${beingDeployed.get(process.name)} of $process")
           beingDeployed.get(process.name).foreach { deployInfo =>
             deployInfo.action match {
-              case DeploymentActionType.Deployment => listenerManagement.handler(OnDeploySuccess(process.id, details.version, details.comment))
-              case DeploymentActionType.Cancel => listenerManagement.handler(OnDeployCancelled(process.id, details.version, details.comment))
+              case DeploymentActionType.Deployment => processChangeListener.handle(OnDeploySuccess(process.id, details.version, details.comment))
+              case DeploymentActionType.Cancel => processChangeListener.handle(OnDeployCancelled(process.id, details.version, details.comment))
             }
           }
       }
