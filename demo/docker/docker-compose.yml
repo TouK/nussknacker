@@ -59,7 +59,7 @@ services:
 
   jobmanager:
     container_name: nussknacker_jobmanager
-    image: flink:${FLINK_VERSION-1.7.2-scala_2.11}
+    image: flink:${FLINK_VERSION-1.7.2}-scala_${SCALA_VERSION-2.12}
     expose:
       - "6123"
       - "8081"
@@ -71,8 +71,6 @@ services:
     links:
       - influxdb
       - zookeeper
-    environment:
-      SCALA_VERSION: 2.11
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
@@ -80,7 +78,7 @@ services:
 
   taskmanager:
     container_name: nussknacker_taskmanager
-    image: flink:${FLINK_VERSION-1.7.2-scala_2.11}
+    image: flink:${FLINK_VERSION-1.7.2}-scala_${SCALA_VERSION-2.12}
     entrypoint: /flink-entrypoint.sh
     command: taskmanager
     links:
@@ -92,8 +90,6 @@ services:
       - zookeeper
       - kafka
       - jobmanager
-    environment:
-      SCALA_VERSION: 2.11
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
@@ -167,8 +163,6 @@ services:
   app:
     container_name: nussknacker_app
     image: ${NUSSKNACKER_IMAGE-touk/nussknacker}:${NUSSKNACKER_VERSION-demo-latest}
-    entrypoint: ["/opt/nussknacker/bin/wait-for-it.sh"]
-    command: ["-h", "taskmanager", "-p", "6126", "-t", "60", "--", "/opt/nussknacker/bin/nussknacker-entrypoint.sh"]
     links:
       - taskmanager
       - jobmanager
@@ -184,7 +178,6 @@ services:
     volumes:
       - ${NUSSKNACKER_APPLICATION_CONFIG-./app/application.conf}:/opt/nussknacker/conf/docker-application.conf
       - ${NUSSKNACKER_APPLICATION_DATA-./app/data}:/opt/nussknacker/data
-      - ./bash/wait-for-it.sh:/opt/nussknacker/bin/wait-for-it.sh
       - nussknacker_storage_app:/opt/nussknacker/storage
 
   nginx:
