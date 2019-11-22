@@ -44,26 +44,33 @@ tipsPanel(bkrd-color, txt-color = undefined)
 
 .node-error-section
   display inline-flex
-  margin-bottom 10px
+  margin-bottom 5px
 
 .node-error-tips
   display inline-flex
+  white-space nowrap
+
+.error-tip-header
+  white-space nowrap
 
 .warning-tips
-  display inline-grid
+  display inline-flex
+  white-space nowrap
 
 .node-error-links
   padding-left 5px
-  display inline-flex
 
 .node-error-link
-  color #f25c6e
+  color errorColor
   font-weight 600
   &:hover
-    color lighten(#f25c6e, 25%)
+    color lighten(errorColor, 25%)
   &:focus
-    color #f25c6e
+    color errorColor
     text-decoration none
+
+.warning-links
+    margin-left 5px
 
 .node-warning-link
   color warningColor

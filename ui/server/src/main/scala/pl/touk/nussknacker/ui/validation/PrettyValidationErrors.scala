@@ -80,9 +80,7 @@ object PrettyValidationErrors {
   }
 
   def disabledNode(typ: String): NodeValidationError = {
-    NodeValidationError(typ,
-      // will be rendered on UI side
-      "${nodeId} is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
+    NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
   }
 
   def unknownProperty(typ: String, fieldName: String): NodeValidationError =

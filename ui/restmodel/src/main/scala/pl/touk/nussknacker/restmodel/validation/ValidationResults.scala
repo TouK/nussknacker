@@ -97,7 +97,6 @@ object ValidationResults {
   }
 
   @JsonCodec case class NodeValidationError(typ: String,
-                                 // TODO: should be a pattern that is rendered on UI side
                                  message: String,
                                  description: String,
                                  fieldName: Option[String],
