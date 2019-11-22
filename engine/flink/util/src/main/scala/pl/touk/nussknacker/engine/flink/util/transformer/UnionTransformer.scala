@@ -43,7 +43,7 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
             branchId -> valueByBranchId(branchId).returnType
         }.toMap + (KeyField -> Unknown))
       } else {
-        TypingUtils.typeMapDefinition(definition.asScala.toMap + (KeyField -> Unknown))
+        TypingUtils.typeMapDefinition(Map(KeyField -> Unknown) ++ definition.asScala.toMap)
       }
       Valid(ValidationContext(Map(variableName -> newType)))
     }.implementedBy(
@@ -60,10 +60,11 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
                 private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
 
                 override def map(context: Context): ValueWithContext[Any] = {
+                  import scala.collection.JavaConverters._
                   ValueWithContext(Map(
                     KeyField -> evaluateKey(context),
                     branchId -> evaluateValue(context)
-                  ), context)
+                  ).asJava, context)
                 }
               })
           }
