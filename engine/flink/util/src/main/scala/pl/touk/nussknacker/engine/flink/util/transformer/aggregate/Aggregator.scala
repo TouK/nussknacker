@@ -38,7 +38,7 @@ trait Aggregator extends AggregateFunction[Any, Any, Any] {
 
   def toContextTransformation(variableName: String, aggregateBy: LazyParameter[_])(implicit nodeId: NodeId):
     ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx => computeOutputType(aggregateBy.returnType)
-    //FIXME: better error
+    //TODO: better error?
       .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId.id)))
       .andThen(validationCtx.withVariable(variableName, _))
 }

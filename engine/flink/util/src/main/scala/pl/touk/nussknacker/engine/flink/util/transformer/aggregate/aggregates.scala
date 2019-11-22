@@ -4,6 +4,8 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import cats.instances.list._
+import pl.touk.nussknacker.engine.api.ParamName
+
 import scala.collection.JavaConverters._
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
@@ -15,6 +17,18 @@ object aggregates {
 
   private val syntax = ValidatedSyntax[String]
   import syntax._
+
+  object SumAggregator extends ReducingAggregator {
+
+    override type Element = Number
+
+    override def zero: Number = 0
+
+    override def addElement(n1: Number, n2: Number): Number = n1.doubleValue() + n2.doubleValue()
+
+    override def zeroType: TypingResult = Typed[Number]
+
+  }
 
   object MaxAggregator extends ReducingAggregator {
 
@@ -79,7 +93,7 @@ object aggregates {
 
   object FirstAggregator extends Aggregator {
 
-    private object Marker
+    private object Marker extends Serializable
 
     override type Aggregate = AnyRef
 
@@ -139,7 +153,9 @@ object aggregates {
       case (field, value) => field -> scalaFields(field).merge(value, agg2(field))
     }
 
-    override def result(finalAggregate: Aggregate): Any = finalAggregate.asJava
+    override def result(finalAggregate: Aggregate): Any = finalAggregate.map {
+      case (field, value) => field -> scalaFields(field).getResult(value)
+    }.asJava
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = {
       input match {
@@ -147,13 +163,13 @@ object aggregates {
           val validationRes = scalaFields.map { case (key, aggregator) =>
             aggregator.computeOutputType(inputFields(key))
               .map(key -> _)
-              .leftMap(m => NonEmptyList.of(s"field $key: $m"))
+              .leftMap(m => NonEmptyList.of(s"$key - $m"))
           }.toList.sequence.leftMap(list => s"Invalid fields: ${list.toList.mkString(", ")}")
           validationRes.map(fields => TypedObjectTypingResult(fields.toMap))
         case TypedObjectTypingResult(inputFields, _) =>
-          Invalid(s"Fields do not match, aggregateBy: ${inputFields.keys.mkString(", ")}), aggregator: ${scalaFields.keys.mkString(", ")}")
+          Invalid(s"Fields do not match, aggregateBy: ${inputFields.keys.mkString(", ")}, aggregator: ${scalaFields.keys.mkString(", ")}")
         case _ =>
-          Invalid("Input should be declared as fixed map")
+          Invalid("aggregateBy should be declared as fixed map")
       }
     }
   }
@@ -172,11 +188,31 @@ object aggregates {
       if (input.canBeSubclassOf(zeroType)) {
         Valid(zeroType)
       } else {
-        Invalid("Invalid type")
+        Invalid(s"Invalid aggregate type: ${input.display}, should be: ${zeroType.display}")
       }
     }
 
   }
 
+  trait AggregateHelper {
 
+    val max: Aggregator = MaxAggregator
+
+    val min: Aggregator = MinAggregator
+
+    val first: Aggregator = FirstAggregator
+
+    val last: Aggregator = LastAggregator
+
+    val sum: Aggregator = SumAggregator
+
+    val set: Aggregator = SetAggregator
+
+    val approxCardinality: Aggregator = HyperLogLogPlusAggregator()
+
+    def map(@ParamName("parts") parts: java.util.Map[String, Aggregator]): Aggregator = new MapAggregator(parts)
+
+  }
+
+  object AggregateHelper extends AggregateHelper
 }

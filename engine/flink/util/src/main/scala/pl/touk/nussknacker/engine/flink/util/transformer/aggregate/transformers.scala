@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.Duration
 
+//TODO: think aboud merging these with TransformStateFunction and/or PreviousValueFunction
 object transformers {
 
   def slidingTransformer(keyBy: LazyParameter[String],
@@ -64,6 +65,8 @@ class KeyWithValueMapper(val lazyParameterHelper: FlinkLazyParameterFunctionHelp
 }
 
 
+//This function behaves a bit like SlidingWindow with slide 1min, trigger on each event, but we
+//do reduce on each emit and store partial aggregations for each minute, instead of storing aggregates for each slide
 //TODO: figure out if it's more convenient/faster to just use SlidingWindow with 60s slide and appropriate trigger?
 class AggregatorFunction(aggregator: Aggregator, lengthInMillis: Long, nodeId: String)
   extends LatelyEvictableStateFunction[ValueWithContext[(String, AnyRef)], ValueWithContext[Any], TreeMap[Long, AnyRef]] {

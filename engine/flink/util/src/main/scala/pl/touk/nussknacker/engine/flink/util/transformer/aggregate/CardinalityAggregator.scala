@@ -13,7 +13,7 @@ case class HyperLogLogPlusAggregator(p: Int = 5, sp: Int = 10)
     override def readFromBytes(bytes: Array[Byte]): ICardinality = HyperLogLogPlus.Builder.build(bytes)
   })
 
-class CardinalityAggregator(zeroCardinality: () => ICardinality, wrapper: ICardinality => CardinalityWrapper) extends Aggregator {
+class CardinalityAggregator(zeroCardinality: () => ICardinality, wrapper: ICardinality => CardinalityWrapper) extends Aggregator with Serializable {
 
   override type Aggregate = CardinalityWrapper
 
@@ -22,12 +22,14 @@ class CardinalityAggregator(zeroCardinality: () => ICardinality, wrapper: ICardi
   override def zero: CardinalityWrapper = wrapper(zeroCardinality())
 
   override def addElement(el: AnyRef, hll: Aggregate):Aggregate  = {
-    hll.wrapped.offer(el)
-    hll
+    val newOne = zeroCardinality()
+    newOne.offer(el)
+    wrapper(newOne.merge(hll.wrapped))
   }
 
-  override def mergeAggregates(h1: CardinalityWrapper, h2: CardinalityWrapper): CardinalityWrapper =
+  override def mergeAggregates(h1: CardinalityWrapper, h2: CardinalityWrapper): CardinalityWrapper = {
     wrapper(h1.wrapped.merge(h2.wrapped))
+  }
 
   override def result(r: CardinalityWrapper): Long = r.wrapped.cardinality()
 
@@ -35,7 +37,7 @@ class CardinalityAggregator(zeroCardinality: () => ICardinality, wrapper: ICardi
 
 }
 
-private[aggregate] abstract class CardinalityWrapper extends KryoSerializable {
+private[aggregate] abstract class CardinalityWrapper extends KryoSerializable with Serializable {
 
   def readFromBytes(bytes: Array[Byte]): ICardinality
 
