@@ -133,7 +133,15 @@ object aggregates {
   
   /*
     This is more complex aggregator, as it is composed from smaller ones.
-    The idea is that 
+    The idea is that we define aggregator:
+    #AGG.map({sumField: #AGG.sum, setField: #AGG.set})
+    then aggregateBy:
+    {sumField: #input.field1, setField: #input.field2}
+    and in result we get
+    {sumField: 11, setField: ['a', 'b']}
+    - typed map with aggregations
+    See TransformersTest for usage sample
+    TODO: handling nulls more gracefully
    */
   class MapAggregator(fields: java.util.Map[String, Aggregator]) extends Aggregator {
 
