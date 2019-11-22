@@ -89,8 +89,8 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     Post("/processValidation", posting.toEntity(processWithDisabledFilterAndProcessor)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
-      validation.warnings.invalidNodes("filter1").head.message should include("Node is disabled")
-      validation.warnings.invalidNodes("proc1").head.message should include("Node is disabled")
+      validation.warnings.invalidNodes("filter1").head.message should include("${nodeId} is disabled")
+      validation.warnings.invalidNodes("proc1").head.message should include("${nodeId} is disabled")
     }
   }
 

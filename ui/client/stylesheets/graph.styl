@@ -33,7 +33,7 @@ node-highlight(strokeColor, backgroundFill)
     fill: backgroundFill
 
 .node-validation-error
-  node-highlight(#FF9A4D, #FCDCCA)
+  node-highlight(#f25c6e, #fbd2d6)
 
 .node-focused-with-validation-error
   node-highlight(#0058a9, #f2dede)
@@ -192,13 +192,13 @@ common-node-input(padding)
   font-weight: 400
   font-size: 14px
 
-modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
+modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
   background-color: modalBkgColor
   labelWidth = 20%
   .warning
     margin 15px
-    color warningColor
+    color errorColor
     .icon
       float left
       width: 30px
@@ -238,7 +238,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
           cursor pointer
     .node-block
       &.removed
-        border 1px solid warningColor
+        border 1px solid errorColor
         padding 5px
       &.added
         border 1px solid okColor
@@ -292,7 +292,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
           background-color: commentBorderColor
     .node-error
       width: 100%
-      color: warningColor
+      color: errorColor
       font-size: 14px
       font-weight: 400
       margin-bottom: 10px
@@ -341,7 +341,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       height: 20px
     &.node-editable
       .node-input-with-error
-        outline 1px solid warningColor !important
+        outline 1px solid errorColor !important
         border-radius 2px
     .testResultDownload
       padding-left: 15px
@@ -359,7 +359,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
 .modalContentDye
   modalContent(
           modalBkgColor:white,
-          warningColor:pink,
+          errorColor:pink,
           modalLabelTextColor:black,
           testResultsColor:pink,
           modalInputTextColor:black,
@@ -370,7 +370,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     border: solid 1px #ccc
 
 .modalContentDark
-  modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
+  modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
 
 .modalFooter
   margin-top: 5px
@@ -431,13 +431,13 @@ espPanelButton()
 .esp-button-warning
   espPanelButton()
   &.right-panel
-    border-color: warningColor
+    border-color: errorColor
   &.add-comment
-    border-color: warningColor
+    border-color: errorColor
   &.download-button
-    border-color: warningColor
+    border-color: errorColor
   &.attachment-button
-    border-color: warningColor
+    border-color: errorColor
 
 .modalButton
   espButtonBase()

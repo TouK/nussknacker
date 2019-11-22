@@ -1,13 +1,14 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {render} from 'react-dom';
 import {Scrollbars} from 'react-custom-scrollbars';
 import {connect} from 'react-redux';
 import ActionsUtils from '../actions/ActionsUtils';
 import ProcessUtils from '../common/ProcessUtils';
+import {v4 as uuid4} from "uuid";
+import InlinedSvgs from "../assets/icons/InlinedSvgs"
 
-import InlinedSvgs from '../assets/icons/InlinedSvgs'
-
+import NodeUtils from "./graph/NodeUtils"
+import {Link} from "react-router-dom"
 
 export class Tips extends Component {
 
@@ -18,29 +19,113 @@ export class Tips extends Component {
     testing: PropTypes.bool.isRequired
   }
 
-  constructor(props) { super(props) }
-
   tipText = () => {
     if (ProcessUtils.hasNoErrorsNorWarnings(this.props.currentProcess)) {
-      return (<div>{this.validTip()}</div>)
+      return (<div key={uuid4()}>{this.validTip()}</div>)
     } else {
       const errors = (this.props.currentProcess.validationResult || {}).errors
-      const globalErrors = (errors.globalErrors || []).map((error, idx) => this.printError(error, null, idx))
-      const invalidNodeErrors = this.customError(Object.keys(errors.invalidNodes), "Errors in nodes: " + Object.keys(errors.invalidNodes).join(', '))
-      const processPropertiesErrors = this.customError(errors.processPropertiesErrors, "Errors in process properties")
+      const errorTips = this.errorTips(errors)
+
       const warnings = (this.props.currentProcess.validationResult || {}).warnings
-      const nodesWarnings = ProcessUtils.extractInvalidNodes(warnings.invalidNodes).map((error, idx) => this.printError(error.error, error.key, idx))
-      return _.concat(globalErrors, nodesWarnings, invalidNodeErrors, processPropertiesErrors)
+      const warningTips = this.warningTips(ProcessUtils.extractInvalidNodes(warnings.invalidNodes))
+
+      return _.concat(errorTips, warningTips)
     }
   }
 
-  customError(errors, message) {
-    return (
-      errors.length > 0 ?
+  errorTips = (errors) =>
+    <div key={uuid4()} className={"error-tips"}>
+      {this.headerIcon(errors)}
+      {this.nodeErrors(errors)}
+    </div>
+
+  headerIcon = (errors) =>
+    _.isEmpty(errors.globalErrors) && _.isEmpty(errors.invalidNodes) && _.isEmpty(errors.processPropertiesErrors) ? null :
+      <div key={uuid4()} className="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsError}}/>
+
+  nodeErrors = (errors) => {
+    const globalErrors = errors.globalErrors || []
+    const nodeErrors = errors.invalidNodes || {}
+    const propertiesErrors = errors.processPropertiesErrors || []
+    const nodeIds = Object.keys(nodeErrors)
+    const separator = ', '
+
+    return _.isEmpty(nodeErrors) && _.isEmpty(propertiesErrors) && _.isEmpty(globalErrors) ? null :
+      <div key={uuid4()} className={"node-error-section"}>
         <div>
-          {message}
-        </div> : null
+          <div>
+            {
+              globalErrors.map((error, idx) => this.printGlobalError(error, null))
+            }
+          </div>
+          <div className={"node-error-tips"}>
+            {
+              _.isEmpty(nodeIds) && _.isEmpty(propertiesErrors) ? null :
+                <span>Errors in </span>
+            }
+            <div className={"node-error-links"}>
+              {
+                _.isEmpty(nodeIds) ? null :
+                  <div>
+                    {
+                      nodeIds.map((nodeId, index) =>
+                        <Link key={uuid4()}
+                              className={"node-error-link"}
+                              to={""}
+                              onClick={event => this.showDetails(event, NodeUtils.getNodeById(nodeId, this.props.currentProcess))}>
+                          {nodeId}
+                          {index < nodeIds.length - 1 ? separator : null}
+                        </Link>)
+                    }
+                  </div>
+              }
+              {
+                _.isEmpty(propertiesErrors) ? null :
+                  <Link key={uuid4()}
+                        className={"node-error-link"}
+                        to={""}
+                        onClick={event => this.showDetails(event, this.props.currentProcess.properties)}>
+                    {_.isEmpty(nodeErrors) ? null : separator}{"properties"}
+                  </Link>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+  }
+
+  printGlobalError = (error, suffix) => {
+    return (
+      <span key={uuid4()} title={error.description}>
+        {(suffix ? suffix + ": " : '') + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
+      </span>
     )
+  }
+
+  warningTips = (warnings) => {
+    return (
+      _.isEmpty(warnings) ? null :
+        <div>
+          <div key={uuid4()} className="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
+          <div className={"warning-tips"}>
+            {
+              warnings.map(warning =>
+                <div key={uuid4()} title={warning.error.description}>
+                  <Link key={uuid4()}
+                        className={"node-warning-link"}
+                        to={""}
+                        onClick={event => this.showDetails(event, NodeUtils.getNodeById(warning.key, this.props.currentProcess))}><span>{warning.key}</span></Link>
+                  <span>{warning.error.message.replace("${nodeId}", "")}</span>
+                </div>)
+            }
+          </div>
+        </div>
+    )
+  }
+
+  showDetails = (event, element) => {
+    event.preventDefault()
+    this.props.actions.displayModalNodeDetails(element)
   }
 
   validTip = () => {
@@ -53,26 +138,17 @@ export class Tips extends Component {
     }
   }
 
-  printError = (error, suffix, idx) => {
-    return (
-      <div key={idx + suffix} title={error.description}>
-      {(suffix ? suffix + ": " : '') + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
-    </div>
-    )
-  }
-
   className = () =>
     this.props.isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"
 
   render() {
-    var tipsIcon = ProcessUtils.hasNoErrorsNorWarnings(this.props.currentProcess) ? InlinedSvgs.tipsInfo : InlinedSvgs.tipsWarning
     return (
-        <div id="tipsPanel" className={this.className()}>
-          <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-          <div className="icon" title="" dangerouslySetInnerHTML={{__html: tipsIcon}} />
+      <div id="tipsPanel" className={this.className()}>
+        <Scrollbars renderThumbVertical={props => <div key={uuid4()} {...props} className="thumbVertical"/>}
+                    hideTracksWhenNotNeeded={true}>
           {this.tipText()}
-          </Scrollbars>
-        </div>
+        </Scrollbars>
+      </div>
     );
   }
 }

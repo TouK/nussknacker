@@ -50,4 +50,4 @@ Process warnings (not necessarily errors)
 
 | Error type                       | Message                              | Explanation                                                      |
 | :--------------------------------|:-------------------------------------| :----------------------------------------------------------------|
-| UIValidation                     | Node is disabled                     | Deploying process with disabled node can have unexpected consequences         |
+| UIValidation                     | {$id} is disabled                     | Deploying process with disabled node can have unexpected consequences         |

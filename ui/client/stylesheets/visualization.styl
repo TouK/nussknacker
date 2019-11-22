@@ -27,10 +27,11 @@ tipsPanel(bkrd-color, txt-color = undefined)
   font-size: 14px
   color: txt-color
   .icon
-    width: 20px
-    height: 20px
+    width: 16px
+    height: 16px
     float left
-    margin-right: 5px
+    margin-right 5px
+    margin-top 2px
 
 .tipsPanel
   tipsPanel(#4D4D4D)
@@ -38,6 +39,40 @@ tipsPanel(bkrd-color, txt-color = undefined)
 .tipsPanelHighlighted
   tipsPanel(hrColor, black)
 
+.error-tips
+  display inline-flex
+
+.node-error-section
+  display inline-flex
+  margin-bottom 10px
+
+.node-error-tips
+  display inline-flex
+
+.warning-tips
+  display inline-grid
+
+.node-error-links
+  padding-left 5px
+  display inline-flex
+
+.node-error-link
+  color #f25c6e
+  font-weight 600
+  &:hover
+    color lighten(#f25c6e, 25%)
+  &:focus
+    color #f25c6e
+    text-decoration none
+
+.node-warning-link
+  color warningColor
+  font-weight 600
+  &:hover
+    color lighten(warningColor, 25%)
+  &:focus
+    color warningColor
+    text-decoration none
 
 #graphContainer
   resize: both;
