@@ -4,12 +4,14 @@
 * [Quickstart](Quickstart.md)
 * [UI Manual](UI.md)
 * [Designing processes](DesigningProcesses.md)
+  * [Subprocesses](Subprocesses.md)
+  * [Flink custom transformers](customTransformers/FlinkCustomTransformers.md)
 * [Configuration](Configuration.md)
 * [Security](Security.md)
 
 
 * [Architecture](Architecture.md)
-* [Engines](Engines.md)
+* [Engines](Engines.md)   
 * [API](API.md)
 
 

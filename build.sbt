@@ -500,7 +500,8 @@ lazy val flinkUtil = (project in engine("flink/util")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
+        "com.clearspring.analytics" % "stream" % "2.9.8"
       )
     }
   ).dependsOn(util, flinkApi)
