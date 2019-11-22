@@ -44,22 +44,29 @@ const Fields = (props) => {
                       showValidation={showValidation}
                     />
                   </div>
-                  <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>
-                    <button
-                      className="addRemoveButton"
-                      title="Remove field"
-                      onClick={() => removeField(namespace, index)}
-                    >
-                      -
-                    </button>
-                  </div>
+                  {
+                    readOnly ? null :
+                      <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>
+                        <button
+                          className="addRemoveButton"
+                          title="Remove field"
+                          onClick={() => removeField(namespace, index)}>-
+                        </button>
+                      </div>
+                  }
                 </div>)
             }
           )
           }
-          <div>
-            <button onClick={addField} className="addRemoveButton" title="Add field">+</button>
-          </div>
+          {
+            readOnly ? null :
+              <div>
+                <button onClick={addField}
+                        className="addRemoveButton"
+                        title="Add field">+
+                </button>
+              </div>
+          }
         </div>
       </div>
     </div>

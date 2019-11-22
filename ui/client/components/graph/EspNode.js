@@ -44,6 +44,11 @@ const attrsConfig = () => {
       width: rectWidth,
       height: rectHeight,
     },
+    '.disabled-node-layer': {
+      width: rectWidth,
+      height: rectHeight,
+      zIndex: 0
+    },
     text: {
       fill: '#1E1E1E',
       pointerEvents: 'none',
@@ -160,6 +165,11 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     '.background': {
       width: width,
       opacity: node.isDisabled ? 0.4 : 1
+    },
+    '.disabled-node-layer': {
+      display: node.isDisabled ? 'block' : 'none',
+      width: width,
+      fill: '#b3b3b3'
     },
     '.background title': {
       text: description
