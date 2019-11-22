@@ -6,13 +6,12 @@ Docker images are published on each commit. You can find them at https://hub.doc
 
 Demo version
 =======
-Demo version available at: https://demo.nussknacker.io. Credentials: admin / admin. 
+Demo version available at: https://demo.nussknacker.io. You can sign in by Github
 
 Running
 =======
-* Env variable NUSSKNACKER_VERSION has to point to docker tag with model.
-  You can set it in .env file. 
-    * Sample file (.env) is provided. It assumes that jar with model is located at docker image in /opt/nussknacker/model/exampleModel.jar.
-    * ./downloadSampleAssembly.sh ([version]) script is also provided. It can build sample model or downloaded released version. 
-    * You can change model by mount downloaded version in docker-composer.yml  
-* `docker-compose up -d` or `docker-compose -f docker-compose-file.yml up -d`:)
+* Env variable NUSSKNACKER_VERSION has to point to docker tag with model. You can set it in .env file.
+* You can change each components version like kafka / flink / etc.. by setting corresponding env at .env file.
+* Full env: `docker-compose -f docker-compose.yml -f docker-compose-env.yml up -d` // Full env tests
+* App env: `docker-compose -f docker-compose.yml up -d` // Only for launch app at standalone mode
+* Dependencies envs: `docker-compose -f docker-compose-env.yml up -d` // Envs for dev integration tests
