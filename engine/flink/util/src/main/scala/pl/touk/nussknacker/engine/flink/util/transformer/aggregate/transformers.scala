@@ -23,7 +23,7 @@ object transformers {
                          aggregateBy: LazyParameter[AnyRef],
                          aggregator: Aggregator,
                          windowLength: Duration,
-                         variableName: String,
+                         variableName: String
                         )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
@@ -38,7 +38,7 @@ object transformers {
                           aggregateBy: LazyParameter[AnyRef],
                           aggregator: Aggregator,
                           windowLength: Duration,
-                          variableName: String,
+                          variableName: String
                          )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
