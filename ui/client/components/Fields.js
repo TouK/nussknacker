@@ -129,7 +129,7 @@ export default class Fields extends React.Component {
   }
 
   render() {
-    const {readOnly} = this.props
+    const {readOnly, showValidation} = this.props
 
     const moveItem = (dragIndex, hoverIndex) => {
       this.edit(previous => {
@@ -149,8 +149,6 @@ export default class Fields extends React.Component {
                  changeValue={this.changeValue.bind(this)}
                  removeField={this.removeField.bind(this)}
                  moveItem={moveItem}
-                 showValidation={this.props.showValidation}
-                 readOnly={readOnly}
                  {...this.props} />
         )
       }
