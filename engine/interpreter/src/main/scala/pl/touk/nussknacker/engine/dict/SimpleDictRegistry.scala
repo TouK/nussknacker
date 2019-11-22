@@ -13,19 +13,19 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 class SimpleDictRegistry(protected val declarations: Map[String, DictDefinition]) extends EmbeddedDictRegistry {
 
-  override protected def handleNotEmbeddedKeyBeLabel(definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String] =
-    throw new IllegalStateException(s"Not supported dict definition: $definition")
+  override protected def handleNotEmbeddedKeyBeLabel(dictId: String, definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String] =
+    throw new IllegalStateException(s"Not supported dict definition: $definition for dictId: $dictId")
 
-  override protected def handleNotEmbeddedLabelByKey(definition: DictDefinition, key: String): Validated[DictEntryWithKeyNotExists, Option[String]] =
-    throw new IllegalStateException(s"Not supported dict definition: $definition")
+  override protected def handleNotEmbeddedLabelByKey(dictId: String, definition: DictDefinition, key: String): Validated[DictEntryWithKeyNotExists, Option[String]] =
+    throw new IllegalStateException(s"Not supported dict definition: $definition for dictId: $dictId")
 
 }
 
 class SimpleDictQueryService(protected val dictRegistry: EmbeddedDictRegistry, protected val maxResults: Int) extends EmbeddedDictQueryService {
 
-  override protected def handleNotEmbeddedQueryEntriesByLabel(definition: DictDefinition, labelPattern: String)
+  override protected def handleNotEmbeddedQueryEntriesByLabel(dictId: String, definition: DictDefinition, labelPattern: String)
                                                              (implicit ec: ExecutionContext): Future[List[DictEntry]] =
-    Future.failed(new IllegalStateException(s"Not supported dict definition: $definition"))
+    Future.failed(new IllegalStateException(s"Not supported dict definition: $definition for dictId: $dictId"))
 
 }
 
