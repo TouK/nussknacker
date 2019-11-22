@@ -19,7 +19,7 @@ object sampleTransformers {
                 @ParamName("windowLengthInSeconds") length: Long,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length, TimeUnit.SECONDS)
-      transformers.tumblingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName)
+      transformers.slidingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName)
     }
 
     private def toAggregator(aggregatorType: String) = aggregatorType match {
