@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import java.util
+
 import cats.data.NonEmptyList
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
@@ -12,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener,
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.ResultsCollectingListenerHolder
+import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
@@ -23,9 +25,11 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformer
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
+
 import scala.collection.JavaConverters._
 
 class TransformersTest extends FunSuite with Matchers {
@@ -38,7 +42,7 @@ class TransformersTest extends FunSuite with Matchers {
     validateOk("#AGG.approxCardinality","#input.str",  Typed[Long])
     validateOk("#AGG.set","#input.str",  Typed.fromDetailedType[java.util.Set[String]])
     validateOk("#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
-      "{f1: #input.num, f2: #input.str}",
+      "{f1: #input.eId, f2: #input.str}",
       TypedObjectTypingResult(Map("f1" -> Typed[Number], "f2" -> Typed.fromDetailedType[java.util.Set[String]])))
 
     validateError("#AGG.sum","#input.str", "Invalid aggregate type: java.lang.String, should be: java.lang.Number")
@@ -65,16 +69,10 @@ class TransformersTest extends FunSuite with Matchers {
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
-    val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
-    val registrar = new FlinkStreamingProcessCompiler(model.configCreator, model.processConfig) {
-      override protected def listeners(): Seq[ProcessListener] = List(collectingListener) ++ super.listeners()
-    }.createFlinkProcessRegistrar()
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
-    val id = stoppableEnv.execute(testProcess.id)
-    stoppableEnv.waitForJobState(id.getJobID, testProcess.id, ExecutionState.FINISHED)()
+    runProcess(model, testProcess, collectingListener)
 
     val aggregateVariables = collectingListener.results[Any].nodeResults("end")
-      .map(_.context.variables).filter(_.get("id").contains("1")).map(_("aggregate").asInstanceOf[java.util.Map[String, Any]].asScala)
+      .map(_.context.variables).filter(_.get("id").contains("1")).map(_("aggregate").asInstanceOf[util.Map[String, Any]].asScala)
 
     //below we check that aggregates are computed correctly in 2h time window
     aggregateVariables shouldBe List(
@@ -89,8 +87,22 @@ class TransformersTest extends FunSuite with Matchers {
   }
 
 
+  private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
+    val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+    try {
+      val registrar = new FlinkStreamingProcessCompiler(model.configCreator, model.processConfig) {
+        override protected def listeners(): Seq[ProcessListener] = List(collectingListener) ++ super.listeners()
+      }.createFlinkProcessRegistrar()
+      registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
+      val id = stoppableEnv.execute(testProcess.id)
+      stoppableEnv.waitForJobState(id.getJobID, testProcess.id, ExecutionState.FINISHED)()
+    } finally {
+      stoppableEnv.stop()
+    }
+  }
+
   private def validateError(aggregator: String,
-                             aggregateBy: String, error: String): Unit = {
+                            aggregateBy: String, error: String): Unit = {
     val result = validateConfig(aggregator, aggregateBy)
     result.result shouldBe 'invalid
     result.result.swap.toOption.get shouldBe NonEmptyList.of(CannotCreateObjectError(error, "transform"))
