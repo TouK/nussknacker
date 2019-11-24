@@ -136,16 +136,12 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileSources(sources: NonEmptyList[SourcePart])(implicit meta: MetaData): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
-    val zeroAcc = CompilationResult(Valid((List[PotentiallyStartPart](), BranchEndContexts(Map(), None))))
-    val result = PartSort.sort(sources.toList).foldLeft(zeroAcc) {
-      case (acc, nextPart) =>
-        //TODO: handle invalid branch end...
-        acc.andThen {
-          case (parts, contexts) =>
-            val compiledPart = compile(nextPart, contexts)
-            compiledPart.map(part => (parts :+ part, contexts.addPart(nextPart.node, compiledPart)))
-        }
-    }.map(_._1)
+    val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), BranchEndContexts(Map(), None))
+    val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextPart) =>
+        val compiledPart = compile(nextPart, branchContexts)
+        val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
+        (nextResult, branchContexts.addPart(nextPart.node, compiledPart))
+    }
     result.map(NonEmptyList.fromListUnsafe)
   }
 
@@ -184,12 +180,6 @@ protected trait ProcessCompilerBase {
         SourceNodeCompiler.compileSourcePart(source, node, sourceData)
       case SourcePart(srcNode@splittednode.SourceNode(data: Join, _), _, _) =>
         val node = srcNode.asInstanceOf[splittednode.SourceNode[Join]]
-        //TODO JOIN: here we need to add handling ValidationContext from branches
-        val ctx = contextWithOnlyGlobalVariables
-          // This input variable is because usually join will be just after source, and there is a chance, that
-          // it will be in context. Thanks to this user can use this variable in branch parameters.
-          .withVariable(Interpreter.InputParamName, Unknown).toOption.get
-
         CustomNodeCompiler.compileCustomNodePart(source, node, data, Right(branchEndContexts))
     }
 
@@ -340,7 +330,6 @@ protected trait ProcessCompilerBase {
         case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
           // TODO JOIN: better error
           val joinNode = node.cast[Join].getOrElse(throw new IllegalArgumentException(s"Should be used join element in node ${nodeId.id}"))
-          // TODO JOIN: use correct contexts for branches
           val contexts = joinNode.branchParameters
             .groupBy(_.branchId).keys.map(k => k -> branchEndContexts.contextForId(k)).toMap
           // copying global variables because custom transformation may override them -> todo in ValidationContext

@@ -10,11 +10,8 @@ you can use most of them with `genericAssembly.jar`
 Union
 =====
 Joins multiple branches in one stream. For each incoming branch we have to define two expressions:
-- key - it's value should be `String`, can be used to detect what is source branch of given element
+- key - it's value should be of type `String`, can be used to detect what is source branch of given element
 - value - this is the output value, it should have same  
-
-Currently, due to technical limitations of joins in Nussknacker, one has also to define `type` parameter, 
-which specifies type of `value` expression
 
 Union node defines new stream which is union of all branches. In this new stream there is only one variable, it's name
 is defined by 'Output' parameter, it's value is: 
