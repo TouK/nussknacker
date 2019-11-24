@@ -345,7 +345,8 @@ protected trait ProcessCompilerBase {
             .groupBy(_.branchId).keys.map(k => k -> branchEndContexts.contextForId(k)).toMap
           // copying global variables because custom transformation may override them -> todo in ValidationContext
           transformation.transform(contexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
-        case (None, Left(validationContext)) =>
+        case (None, branchCtx) =>
+          val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
           val maybeClearedContext = if (clearsContext) validationContext.clearVariables else validationContext
 
           (node.outputVar, returnType(nodeDefinition, cNode)) match {
