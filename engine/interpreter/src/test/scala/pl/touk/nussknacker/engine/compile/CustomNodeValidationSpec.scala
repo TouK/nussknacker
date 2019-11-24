@@ -239,11 +239,13 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("invalid process using context transformation api - union") {
     val invalidProcess = processWithUnion("#outPutVar.branch2")
     val validationResult2 = validator.validate(invalidProcess).result
+    println(validationResult2)
+    println(validator.validate(invalidProcess).variablesInNodes("stringService"))
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
     errors.head should matchPattern {
       case ExpressionParseError(
-      "Bad expression type, expected: java.lang.String, found: java.lang.Integer",
+      "Bad expression type, expected: java.lang.String, found: int",
       "stringService", Some("stringParam"), _) =>
     }
   }
@@ -267,10 +269,9 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
         .branchEnd("branch2", "join1"),
       GraphBuilder
         .branch("join1", "unionTransformer", Some("outPutVar"),
-          // TODO JOIN: use branch context in expressions
           List(
-            "branch1" -> List("key" -> "'key1'", "value" -> "'ala'"),
-            "branch2" -> List("key" -> "'key2'", "value" -> "123")
+            "branch1" -> List("key" -> "'key1'", "value" -> "#input"),
+            "branch2" -> List("key" -> "'key2'", "value" -> "#input.length()")
           )
         )
         .processorEnd("stringService", "stringService" , "stringParam" -> serviceExpression)

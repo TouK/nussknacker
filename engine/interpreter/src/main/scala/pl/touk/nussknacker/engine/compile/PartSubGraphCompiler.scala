@@ -189,7 +189,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
           ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
 
         val validParams = validParamDefs.andThen { paramDefs =>
-          expressionCompiler.compileObjectParameters(paramDefs, ref.parameters, ctx)
+          expressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
         }
 
         val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
@@ -220,7 +220,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     val service = services.get(n.id).map(Valid(_)).getOrElse(invalid(MissingService(n.id))).toValidatedNel
 
     val validatedServiceWithTypingResult = service.andThen { objWithMethod =>
-      expressionCompiler.compileObjectParameters(objWithMethod.parameters, n.parameters, ctx).map { params =>
+      expressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx).map { params =>
         val invoker = createServiceInvoker(objWithMethod)
         val returnType = computeReturnType(objWithMethod, params)
         val typingResult = ServiceTypingResult(returnType, params.map(p => p.name -> p.typingInfo).toMap)
