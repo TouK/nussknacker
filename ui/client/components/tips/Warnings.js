@@ -49,5 +49,5 @@ export default class Warnings extends React.Component {
   }
 }
 
-const headerMessageByWarningMessage = new Map([["Node is disabled", "Node disabled:"]]);
+const headerMessageByWarningMessage = new Map([["Node is disabled", "Node disabled: "]]);
 

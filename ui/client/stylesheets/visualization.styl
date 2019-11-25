@@ -20,7 +20,7 @@
     margin: 0 5px 0
 
 tipsPanel(bkrd-color, txt-color = undefined)
-  height: 100px
+  height: 105px
   background-color: bkrd-color
   padding: 10px
   font-weight: light
@@ -39,42 +39,27 @@ tipsPanel(bkrd-color, txt-color = undefined)
 .tipsPanelHighlighted
   tipsPanel(hrColor, black)
 
-.error-tips
-  display inline-flex
-
 .node-error-section
-  display inline-flex
   margin-bottom 5px
-
-.node-error-tips
-  display inline-flex
-  white-space nowrap
-
-.error-tip-header
-  white-space nowrap
-
-.warning-tips
-  display inline-flex
-  white-space nowrap
-
-.node-error-links
-  padding-left 5px
 
 .node-error-link
   color errorColor
   font-weight 600
+  white-space normal!important;
   &:hover
     color lighten(errorColor, 25%)
   &:focus
     color errorColor
     text-decoration none
 
+.node-error-links
 .warning-links
-    margin-left 5px
+  display inline
 
 .node-warning-link
   color warningColor
   font-weight 600
+  white-space normal!important;
   &:hover
     color lighten(warningColor, 25%)
   &:focus
