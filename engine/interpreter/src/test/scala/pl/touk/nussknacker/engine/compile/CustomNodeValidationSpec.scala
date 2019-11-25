@@ -5,10 +5,10 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters, NoParentContext, NodeId}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -230,20 +230,23 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("valid process using context transformation api - union") {
     val validProcess = processWithUnion("#outPutVar.branch1")
 
-    val validationResult = validator.validate(validProcess).result
-    validationResult should matchPattern {
+    val validationResult = validator.validate(validProcess)
+    validationResult.result should matchPattern {
       case Valid(_) =>
     }
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(
+      Map("branch2" -> Typed[Int], "branch1" -> Typed[String]))
   }
 
   test("invalid process using context transformation api - union") {
     val invalidProcess = processWithUnion("#outPutVar.branch2")
     val validationResult2 = validator.validate(invalidProcess).result
+
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
     errors.head should matchPattern {
       case ExpressionParseError(
-      "Bad expression type, expected: java.lang.String, found: java.lang.Integer",
+      "Bad expression type, expected: java.lang.String, found: int",
       "stringService", Some("stringParam"), _) =>
     }
   }
@@ -257,6 +260,28 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
 
+  test("validate nodes after union if validation of part before fails") {
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "mySource")
+          .filter("invalidFilter", "not.a.valid.expression")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .branch("join1", "unionTransformer", Some("outPutVar"),
+            List(
+              "branch1" -> List("key" -> "'key1'", "value" -> "#input")
+            )
+          )
+          .processorEnd("stringService", "stringService" , "stringParam" -> "''")
+      ))
+    val validationResult = validator.validate(process)
+
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(Map("branch1" -> Typed[String]))
+    val errors = validationResult.result.swap.toList.flatMap(_.toList).map(_.nodeIds)
+    errors shouldBe List(Set("invalidFilter"))
+
+  }
+
   private def processWithUnion(serviceExpression: String) =
     EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
       GraphBuilder
@@ -267,10 +292,9 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
         .branchEnd("branch2", "join1"),
       GraphBuilder
         .branch("join1", "unionTransformer", Some("outPutVar"),
-          // TODO JOIN: use branch context in expressions
           List(
-            "branch1" -> List("key" -> "'key1'", "value" -> "'ala'"),
-            "branch2" -> List("key" -> "'key2'", "value" -> "123")
+            "branch1" -> List("key" -> "'key1'", "value" -> "#input"),
+            "branch2" -> List("key" -> "'key2'", "value" -> "#input.length()")
           )
         )
         .processorEnd("stringService", "stringService" , "stringParam" -> serviceExpression)

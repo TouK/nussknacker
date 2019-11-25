@@ -72,6 +72,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
                                  (implicit processMetaData: MetaData, nodeId: NodeId) = {
     val parametersToCompile = source.ref.parameters
     val ctx = contextWithOnlyGlobalVariables
-    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, ctx.clearVariables, ctx).toOption
+    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, ctx, Map.empty, eager = false).toOption
   }
 }

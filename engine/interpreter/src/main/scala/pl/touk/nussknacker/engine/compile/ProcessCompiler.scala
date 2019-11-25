@@ -19,11 +19,13 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
+import pl.touk.nussknacker.engine.compiledgraph.part.PotentiallyStartPart
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MissingOutputVariableException
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{Sink => _, Source => _, _}
@@ -32,6 +34,7 @@ import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
+import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
@@ -126,10 +129,27 @@ protected trait ProcessCompilerBase {
     CompilationResult.map3(
       CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
       CompilationResult(nodeTypingInfo, compiledExceptionHandler),
-      splittedProcess.sources.map(compile).sequence
+      compileSources(splittedProcess.sources)
     ) { (_, exceptionHandler, sources) =>
       CompiledProcessParts(splittedProcess.metaData, exceptionHandler, sources)
     }
+  }
+
+  /*
+    We need to sort SourceParts to know types of variables in branches for joins. See comment in PartSort
+    In the future we'll probably move to direct representation of process as graph and this will no longer be needed
+   */
+  private def compileSources(sources: NonEmptyList[SourcePart])(implicit meta: MetaData): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
+    val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), BranchEndContexts(Map(), None))
+    //we use fold here (and not map/sequence), because we can compile part which starts from Join only when we
+    //know compilation results (stored in BranchEndContexts) of all branches that end in this join
+    val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextSourcePart) =>
+        val compiledPart = compile(nextSourcePart, branchContexts)
+        //we don't use andThen on CompilationResult, since we don't want to stop if there are errors in part
+        val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
+        (nextResult, branchContexts.addPart(nextSourcePart.node, compiledPart))
+    }
+    result.map(NonEmptyList.fromListUnsafe)
   }
 
   private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
@@ -154,11 +174,11 @@ protected trait ProcessCompilerBase {
         override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
       }))
     } else {
-      compileProcessObject[EspExceptionHandler](exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None, contextWithOnlyGlobalVariables)
+      compileProcessObject[EspExceptionHandler](exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None, Left(contextWithOnlyGlobalVariables))
     }
   }
 
-  private def compile(source: SourcePart)
+  private def compile(source: SourcePart, branchEndContexts: BranchEndContexts)
                      (implicit metaData: MetaData): CompilationResult[compiledgraph.part.PotentiallyStartPart] = {
     implicit val nodeId: NodeId = NodeId(source.id)
 
@@ -167,13 +187,7 @@ protected trait ProcessCompilerBase {
         SourceNodeCompiler.compileSourcePart(source, node, sourceData)
       case SourcePart(srcNode@splittednode.SourceNode(data: Join, _), _, _) =>
         val node = srcNode.asInstanceOf[splittednode.SourceNode[Join]]
-        //TODO JOIN: here we need to add handling ValidationContext from branches
-        val ctx = contextWithOnlyGlobalVariables
-          // This input variable is because usually join will be just after source, and there is a chance, that
-          // it will be in context. Thanks to this user can use this variable in branch parameters.
-          .withVariable(Interpreter.InputParamName, Unknown).toOption.get
-
-        CustomNodeCompiler.compileCustomNodePart(source, node, data, ctx)
+        CustomNodeCompiler.compileCustomNodePart(source, node, data, Right(branchEndContexts))
     }
 
   }
@@ -204,7 +218,8 @@ protected trait ProcessCompilerBase {
       case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
         val validSourceFactory = sourceFactories.get(ref.typ).map(valid).getOrElse(invalid(MissingSourceFactory(ref.typ))).toValidatedNel
         val validObjectWithTypingInfo = validSourceFactory.andThen { sourceFactory =>
-          val (typingInfo, validProcessObject) = compileProcessObject[Source[Any]](sourceFactory, ref.parameters, List.empty, outputVariableNameOpt = None, contextWithOnlyGlobalVariables)
+          val (typingInfo, validProcessObject) = compileProcessObject[Source[Any]](sourceFactory, ref.parameters, List.empty, outputVariableNameOpt = None,
+            Left(contextWithOnlyGlobalVariables))
           validProcessObject.map((typingInfo, _))
         }
         (validObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), validObjectWithTypingInfo.map(_._2))
@@ -252,7 +267,7 @@ protected trait ProcessCompilerBase {
           compiledgraph.part.SinkPart(obj, node, ctx)
         )
       case CustomNodePart(node@splittednode.OneOutputSubsequentNode(data, _), _, _) =>
-        CustomNodeCompiler.compileCustomNodePart(part, node, data, ctx)
+        CustomNodeCompiler.compileCustomNodePart(part, node, data, Left(ctx))
     }
   }
 
@@ -261,7 +276,7 @@ protected trait ProcessCompilerBase {
                       metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, api.process.Sink]) = {
     val validSinkFactory = sinkFactories.get(ref.typ).map(valid).getOrElse(invalid(MissingSinkFactory(ref.typ))).toValidatedNel
     val validObjectWithTypingInfo = validSinkFactory.andThen { sinkFactory =>
-      val (typingInfo, validProcessObject) = compileProcessObject[Sink](sinkFactory._1, ref.parameters, List.empty, outputVariableNameOpt = None, ctx = ctx)
+      val (typingInfo, validProcessObject) = compileProcessObject[Sink](sinkFactory._1, ref.parameters, List.empty, outputVariableNameOpt = None, Left(ctx))
       validProcessObject.map((typingInfo, _))
     }
     (validObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), validObjectWithTypingInfo.map(_._2))
@@ -270,13 +285,13 @@ protected trait ProcessCompilerBase {
   object CustomNodeCompiler {
 
     def compileCustomNodePart(part: ProcessPart, node: splittednode.OneOutputNode[CustomNodeData], data: CustomNodeData,
-                              ctx: ValidationContext)
+                              ctx: Either[ValidationContext, BranchEndContexts])
                              (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
       val (typingInfo, validatedNextCtx, compiledNode) = compileCustomNodeObject(data, ctx)
 
-      val nextPartsValidation = sub.validate(node, validatedNextCtx.valueOr(_ => ctx))
+      val nextPartsValidation = sub.validate(node, validatedNextCtx.valueOr(_ => ctx.left.getOrElse(contextWithOnlyGlobalVariables)))
       val typesForParts = nextPartsValidation.typing.mapValues(_.inputValidationContext)
-      val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo))
+      val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx.left.getOrElse(contextWithOnlyGlobalVariables), typingInfo))
 
       CompilationResult.map4(
         CompilationResult(nodeTypingInfo, compiledNode),
@@ -288,7 +303,7 @@ protected trait ProcessCompilerBase {
       }.distinctErrors
     }
 
-    private def compileCustomNodeObject(data: CustomNodeData, ctx: ValidationContext)
+    private def compileCustomNodeObject(data: CustomNodeData, ctx: Either[ValidationContext, BranchEndContexts])
                                        (implicit metaData: MetaData, nodeId: NodeId):
     (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, ValidationContext], ValidatedNel[ProcessCompilationError, AnyRef]) = {
       val customNodeDefinition = fromOption(
@@ -297,7 +312,8 @@ protected trait ProcessCompilerBase {
       val validObjectWithTypingInfo = customNodeDefinition.andThen {
         case (nodeDefinition, _) =>
           val (typingInfo, validProcessObject) = compileProcessObject[AnyRef](nodeDefinition, data.parameters,
-            data.cast[Join].map(_.branchParameters).getOrElse(List.empty), data.outputVar, ctx)
+            data.cast[Join].map(_.branchParameters).getOrElse(List.empty),
+            data.outputVar, ctx)
           validProcessObject.map((typingInfo, _))
       }
 
@@ -311,21 +327,22 @@ protected trait ProcessCompilerBase {
     }
 
     private def contextAfterCustomNode(node: CustomNodeData, nodeDefinition: ObjectWithMethodDef, cNode: AnyRef,
-                                       validationContext: ValidationContext, clearsContext: Boolean,
+                                       validationContexts: Either[ValidationContext, BranchEndContexts], clearsContext: Boolean,
                                        contextTransformationDefOpt: Option[AbstractContextTransformationDef])
-                                      (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-      contextTransformationDefOpt match {
-        case Some(transformation: ContextTransformationDef) =>
+                                      (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+      (contextTransformationDefOpt, validationContexts) match {
+        case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
           // copying global variables because custom transformation may override them -> todo in ValidationContext
           transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
-        case Some(transformation: JoinContextTransformationDef) =>
+        case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
           // TODO JOIN: better error
           val joinNode = node.cast[Join].getOrElse(throw new IllegalArgumentException(s"Should be used join element in node ${nodeId.id}"))
-          // TODO JOIN: use correct contexts for branches
-          val contexts = joinNode.branchParameters.groupBy(_.branchId).mapValuesNow(_ => validationContext)
+          val contexts = joinNode.branchParameters
+            .groupBy(_.branchId).keys.map(k => k -> branchEndContexts.contextForId(k)).toMap
           // copying global variables because custom transformation may override them -> todo in ValidationContext
-          transformation.transform(contexts).map(_.copy(globalVariables = validationContext.globalVariables))
-        case None =>
+          transformation.transform(contexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
+        case (None, branchCtx) =>
+          val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
           val maybeClearedContext = if (clearsContext) validationContext.clearVariables else validationContext
 
           (node.outputVar, returnType(nodeDefinition, cNode)) match {
@@ -353,14 +370,18 @@ protected trait ProcessCompilerBase {
 
   private def compileProcessObject[T](nodeDefinition: ObjectWithMethodDef,
                                       parameters: List[evaluatedparam.Parameter],
-                                      branchParameters: List[evaluatedparam.BranchParameters],
+                                      branchParameters: List[BranchParameters],
                                       outputVariableNameOpt: Option[String],
-                                      ctx: ValidationContext)
+                                      ctxOrBranches: Either[ValidationContext, BranchEndContexts])
                                      (implicit nodeId: NodeId,
                                       metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
+    val ctx = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
+    val branchContexts = ctxOrBranches.right.map { ctxs =>
+      branchParameters.map(_.branchId).map(branchId => branchId -> ctxs.contextForId(branchId)).toMap
+    }.getOrElse(Map.empty)
+
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(nodeDefinition.parameters,
-      parameters,
-      branchParameters, ctx.clearVariables, ctx).andThen { compiledParameters =>
+      parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
         createObject[T](nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
           val typingInfo = compiledParameters.flatMap {
             case TypedParameter(name, TypedExpression(_, _, typingInfo)) =>
@@ -390,6 +411,19 @@ protected trait ProcessCompilerBase {
       case NonFatal(e) =>
         //TODO: better message?
         Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))
+    }
+  }
+
+  private case class BranchEndContexts(contexts: Map[String, Map[String, TypingResult]], parentContext: Option[ValidationContext]) {
+    def addPart(node: SplittedNode[_<:NodeData], result: CompilationResult[_]): BranchEndContexts = {
+      val branchEnds = SplittedNodesCollector.collectNodes(node).collect {
+        case splittednode.EndingNode(BranchEndData(definition)) => definition.id -> result.variablesInNodes(definition.artificialNodeId)
+      }.toMap
+      copy(contexts = contexts ++ branchEnds)
+    }
+
+    def contextForId(id: String)(implicit metaData: MetaData): ValidationContext = {
+      ValidationContext(contexts(id), contextWithOnlyGlobalVariables.globalVariables, parentContext)
     }
   }
 

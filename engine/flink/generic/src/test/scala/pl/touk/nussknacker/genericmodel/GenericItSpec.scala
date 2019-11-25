@@ -181,8 +181,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
             List(
               "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
               "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
-            ),
-            "type" -> """{"key": "String", "branch1":"String", "branch2":"String"}"""
+            )
           )
           .filter("always-true-filter", """#outPutVar.key != "not key1 or key2"""")
           .sink("end", "#outPutVar","kafka-json", "topic" -> s"'$topicOut'")
