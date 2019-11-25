@@ -169,6 +169,10 @@ lazy val dockerSettings = {
     dockerEnvVars := Map(
       "AUTHENTICATION_METHOD" -> "BasicAuth",
       "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
+      "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
+      "OAUTH2_RESPONSE_TYPE" -> "code",
+      "OAUTH2_GRANT_TYPE" -> "authorization_code",
+      "OAUTH2_SCOPE" -> "read:user",
     ),
     version in Docker := dockerTagName.getOrElse(version.value)
   )

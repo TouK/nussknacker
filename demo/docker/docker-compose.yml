@@ -176,7 +176,6 @@ services:
     expose:
       - "8080"
     volumes:
-      - ${NUSSKNACKER_APPLICATION_CONFIG-./app/application.conf}:/opt/nussknacker/conf/docker-application.conf
       - ${NUSSKNACKER_APPLICATION_DATA-./app/data}:/opt/nussknacker/data
       - nussknacker_storage_app:/opt/nussknacker/storage
 
