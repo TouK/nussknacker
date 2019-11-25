@@ -15,7 +15,7 @@ class ProcessUtils {
   }
 
   //fixme maybe return hasErrors flag from backend?
-  hasNoErrorsNorWarnings = (process) => {
+  hasNeitherErrorsNorWarnings = (process) => {
     return this.hasNoErrors(process) && this.hasNoWarnings(process)
   }
 

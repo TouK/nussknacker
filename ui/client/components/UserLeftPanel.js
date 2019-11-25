@@ -8,7 +8,7 @@ import ProcessHistory from './ProcessHistory'
 import ToolBox from './ToolBox'
 import ProcessComments from './ProcessComments'
 import ProcessAttachments from './ProcessAttachments'
-import Tips from './Tips.js'
+import Tips from './tips/Tips.js'
 import TogglePanel from './TogglePanel';
 import "react-treeview/react-treeview.css"
 

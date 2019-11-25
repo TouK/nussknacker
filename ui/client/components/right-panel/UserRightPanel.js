@@ -110,7 +110,7 @@ class UserRightPanel extends Component {
 
     let propertiesBtnClass
     if (hasErrors && !ProcessUtils.hasNoPropertiesErrors(this.props.processToDisplay)) {
-      propertiesBtnClass =  "esp-button-warning right-panel"
+      propertiesBtnClass =  "esp-button-error right-panel"
     }
 
     return ({
