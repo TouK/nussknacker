@@ -52,7 +52,7 @@ class PartSortSpec extends FunSuite with Matchers {
         .branchEnd("e1", "j2"),
       GraphBuilder
         .source("s2", "sourceType")
-        .branchEnd("branch2", "j1"),
+        .branchEnd("branch2", "j1")
     ))
 
     sortedIds shouldBe List("s1", "s3", "s2", "j1", "j2")
