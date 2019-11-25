@@ -68,9 +68,9 @@ jobs:
       script: ./ciRunSbt.sh clean ui/slow:test
     - name: "Management tests"
       script: ./ciRunSbt.sh clean management/it:test
-    - name: "Scala 2.11-2.12 compile"
+    - name: "Cross Scala compile"
       if: CROSS_BUILD != "true"
-      script: CROSS_BUILD=true ./ciRunSbt.sh clean test:compile
+      script: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
     - name: "EngineStandalone tests"
       script: ./ciRunSbt.sh clean engineStandalone/it:test
     - name: "Frontend tests"
@@ -94,5 +94,5 @@ jobs:
         - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:staging-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker push ${DOCKER_REPOSITORY}:staging-latest; fi
   exclude:
-    - name: "Scala 2.11-2.12 compile"
+    - name: "Cross Scala compile"
       env: CROSS_BUILD="true"
