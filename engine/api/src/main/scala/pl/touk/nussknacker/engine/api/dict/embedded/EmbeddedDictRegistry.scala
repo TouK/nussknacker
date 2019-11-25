@@ -17,7 +17,7 @@ abstract class EmbeddedDictRegistry extends DictRegistry {
         embedded.keyByLabel.get(label).map(key => Valid(key))
           .getOrElse(Invalid(DictEntryWithLabelNotExists(dictId, label, Some(embedded.keyByLabel.keys.toList))))
       case definition =>
-        handleNotEmbeddedKeyBeLabel(definition, label)
+        handleNotEmbeddedKeyBeLabel(dictId, definition, label)
     }
   }
 
@@ -27,7 +27,7 @@ abstract class EmbeddedDictRegistry extends DictRegistry {
         embedded.labelByKey.get(key).map(key => Valid(Some(key)))
           .getOrElse(Invalid(DictEntryWithKeyNotExists(dictId, key, Some(embedded.labelByKey.keys.toList))))
       case definition =>
-        handleNotEmbeddedLabelByKey(definition, key)
+        handleNotEmbeddedLabelByKey(dictId, definition, key)
     }
   }
 
@@ -40,9 +40,9 @@ abstract class EmbeddedDictRegistry extends DictRegistry {
     }
   }
 
-  protected def handleNotEmbeddedKeyBeLabel(definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String]
+  protected def handleNotEmbeddedKeyBeLabel(dictId: String, definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String]
 
-  protected def handleNotEmbeddedLabelByKey(definition: DictDefinition, key: String): Validated[DictEntryWithKeyNotExists, Option[String]]
+  protected def handleNotEmbeddedLabelByKey(dictId: String, definition: DictDefinition, key: String): Validated[DictEntryWithKeyNotExists, Option[String]]
 
 }
 
@@ -61,10 +61,10 @@ abstract class EmbeddedDictQueryService extends DictQueryService {
         val filteredEntries = embeddedLabels.filter(_.label.toLowerCase.contains(lowerLabelPattern)).sortBy(_.label).take(maxResults)
         Future.successful(filteredEntries)
       case Left(notEmbeddedDefinition) =>
-        handleNotEmbeddedQueryEntriesByLabel(notEmbeddedDefinition, labelPattern)
+        handleNotEmbeddedQueryEntriesByLabel(dictId, notEmbeddedDefinition, labelPattern)
     }
 
-  protected def handleNotEmbeddedQueryEntriesByLabel(definition: DictDefinition, labelPattern: String)
+  protected def handleNotEmbeddedQueryEntriesByLabel(dictId: String, definition: DictDefinition, labelPattern: String)
                                                     (implicit ec: ExecutionContext): Future[List[DictEntry]]
 
 }
