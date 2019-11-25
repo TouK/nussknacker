@@ -139,6 +139,7 @@ protected trait ProcessCompilerBase {
     val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), BranchEndContexts(Map(), None))
     val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextPart) =>
         val compiledPart = compile(nextPart, branchContexts)
+        //we don't use andThen on CompilationResult, since we don't want to stop if there are errors in part
         val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
         (nextResult, branchContexts.addPart(nextPart.node, compiledPart))
     }

@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters, NoParentContext, NodeId}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -239,8 +239,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("invalid process using context transformation api - union") {
     val invalidProcess = processWithUnion("#outPutVar.branch2")
     val validationResult2 = validator.validate(invalidProcess).result
-    println(validationResult2)
-    println(validator.validate(invalidProcess).variablesInNodes("stringService"))
+
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
     errors.head should matchPattern {
@@ -257,6 +256,28 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     validationResult should matchPattern {
       case Valid(_) =>
     }
+  }
+
+  test("validate nodes after union if validation of part before fails") {
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "mySource")
+          .filter("invalidFilter", "not.a.valid.expression")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .branch("join1", "unionTransformer", Some("outPutVar"),
+            List(
+              "branch1" -> List("key" -> "'key1'", "value" -> "#input")
+            )
+          )
+          .processorEnd("stringService", "stringService" , "stringParam" -> "''")
+      ))
+    val validationResult = validator.validate(process)
+
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(Map("branch1" -> Typed[String]))
+    val errors = validationResult.result.swap.toList.flatMap(_.toList).map(_.nodeIds)
+    errors shouldBe List(Set("invalidFilter"))
+
   }
 
   private def processWithUnion(serviceExpression: String) =

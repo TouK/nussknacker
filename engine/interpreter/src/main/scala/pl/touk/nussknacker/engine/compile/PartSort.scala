@@ -10,15 +10,18 @@ import scala.annotation.tailrec
 object PartSort {
 
   @tailrec
+  //this is primitive topological sort, we want to sort parts,
+  //so that for each part starting with join J1, all branches pointing to J1 are before in final list
   def sort(partsToSort: List[SourcePart], sorted: List[SourcePart] = List()): List[SourcePart] = {
     if (partsToSort.isEmpty) {
       sorted
     } else {
-      val (nextSorted, rest)
-        = partsToSort.span(part => part.node.data.isInstanceOf[SourceNodeData] || sourcePartIdNotInBranchEnds(part, partsToSort))
+      def readyPredicate(part: SourcePart): Boolean = part.node.data.isInstanceOf[SourceNodeData] || sourcePartIdNotInBranchEnds(part, partsToSort)
+      val nextSorted = partsToSort.filter(readyPredicate)
+      val rest = partsToSort.filterNot(readyPredicate)
       if (nextSorted.isEmpty) {
-        //don't want endless loops ;)
-        throw new IllegalArgumentException("Should not happen, maybe there is cycle?")
+        //don't want endless loops, this should not happen... ;)
+        throw new IllegalArgumentException(s"Should not happen, maybe there is cycle?, to sort: ${rest.map(_.id)}, sorted: ${sorted.map(_.id)}")
       }
       sort(rest, sorted ++ nextSorted)
     }
