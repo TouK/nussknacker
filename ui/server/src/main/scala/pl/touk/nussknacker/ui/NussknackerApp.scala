@@ -122,10 +122,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
-    val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(config,
-      NussknackerServices(
-        new PullProcessRepository(processRepository)
-      ))
+    val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(
+      config,
+      NussknackerServices(new PullProcessRepository(processRepository))
+    )
 
     val managementActor = system.actorOf(
       ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver, processChangeListener), "management")

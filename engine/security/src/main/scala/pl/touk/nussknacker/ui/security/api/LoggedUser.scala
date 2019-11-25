@@ -52,3 +52,14 @@ case class AdminUser(id: String) extends LoggedUser {
   override def can(category: String, permission: Permission): Boolean = true
   override val isAdmin: Boolean = true
 }
+
+case object ReadOnlyTechUser extends LoggedUser {
+  override val id: String = "tech_user"
+
+  override def can(category: String, permission: Permission): Boolean = permission match {
+    case Permission.Read => true
+    case _ => false
+  }
+
+  override val isAdmin: Boolean = false
+}
