@@ -4,8 +4,13 @@ import HeaderIcon from "./HeaderIcon"
 import React from "react"
 import {Link} from "react-router-dom"
 import {v4 as uuid4} from "uuid";
+import PropTypes from "prop-types"
 
 export default class Errors extends React.Component {
+
+  static propTypes = {
+    errors: PropTypes.object.isRequired
+  }
 
   render() {
     const {errors} = this.props
@@ -22,9 +27,9 @@ export default class Errors extends React.Component {
       <HeaderIcon icon={InlinedSvgs.tipsError}/>
 
   errorTips = (errors) => {
-    const globalErrors = errors.globalErrors || []
-    const nodeErrors = errors.invalidNodes || {}
-    const propertiesErrors = errors.processPropertiesErrors || []
+    const globalErrors = errors.globalErrors
+    const nodeErrors = errors.invalidNodes
+    const propertiesErrors = errors.processPropertiesErrors
     const nodeIds = Object.keys(nodeErrors)
     const separator = ', '
 
@@ -80,5 +85,12 @@ export default class Errors extends React.Component {
       </div>
     </div>
   }
+}
 
+Errors.defaultProps = {
+  errors : {
+    globalErrors: [],
+    invalidNodes: {},
+    processPropertiesErrors: []
+  }
 }

@@ -4,8 +4,15 @@ import HeaderIcon from "./HeaderIcon"
 import {v4 as uuid4} from "uuid";
 import {Link} from "react-router-dom"
 import NodeUtils from "../graph/NodeUtils"
+import PropTypes from "prop-types"
 
 export default class Warnings extends React.Component {
+
+  static propTypes = {
+    warnings: PropTypes.array.isRequired,
+    showDetails: PropTypes.func.isRequired,
+    currentProcess: PropTypes.object.isRequired,
+  }
 
   render() {
     const {warnings, showDetails, currentProcess} = this.props
@@ -24,17 +31,17 @@ export default class Warnings extends React.Component {
                 <span>{headerMessageByWarningMessage.get(message)}</span>
                 <div className={"warning-links"}>
                   {
-                    warnings.map((warning, index) => <Link key={uuid4()}
-                                                           className={"node-warning-link"}
-                                                           to={""}
-                                                           onClick={event => showDetails(event, NodeUtils.getNodeById(warning.key, currentProcess))}>
-                      <span>{warning.key}</span>
-                      {(index < warnings.length - 1) ? separator : null}
-                    </Link>)
+                    warnings.map((warning, index) =>
+                      <Link key={uuid4()}
+                            className={"node-warning-link"}
+                            to={""}
+                            onClick={event => showDetails(event, NodeUtils.getNodeById(warning.key, currentProcess))}>
+                        <span>{warning.key}</span>
+                        {(index < warnings.length - 1) ? separator : null}
+                      </Link>)
                   }
                 </div>
-              </div>
-            )
+              </div>)
           }
         </div>
       </div>

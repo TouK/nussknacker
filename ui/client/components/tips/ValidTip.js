@@ -1,7 +1,13 @@
 import React from 'react';
 import {v4 as uuid4} from "uuid";
+import PropTypes from "prop-types"
 
 export default class ValidTip extends React.Component {
+
+  static propTypes = {
+    grouping: PropTypes.bool.isRequired,
+    testing: PropTypes.bool.isRequired
+  }
 
   render() {
     return (
