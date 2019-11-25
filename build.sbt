@@ -166,6 +166,10 @@ lazy val dockerSettings = {
       "scala" -> scalaVersion.value,
       "flink" -> flinkV
     ),
+    dockerEnvVars := Map(
+      "AUTHENTICATION_METHOD" -> "BasicAuth",
+      "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
+    ),
     version in Docker := dockerTagName.getOrElse(version.value)
   )
 }
