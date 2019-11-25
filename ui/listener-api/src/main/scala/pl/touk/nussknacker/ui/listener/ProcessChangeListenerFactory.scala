@@ -4,11 +4,12 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 
 import scala.concurrent.ExecutionContext
 
 trait ProcessChangeListenerFactory {
-  def create(config: Config): ProcessChangeListener
+  def create(config: Config, services: NussknackerServices): ProcessChangeListener
 }
 
 object ProcessChangeListenerFactory extends LazyLogging {
@@ -18,8 +19,8 @@ object ProcessChangeListenerFactory extends LazyLogging {
 }
 
 class ProcessChangeListenerAggregatingFactory(val factories: ProcessChangeListenerFactory*) extends ProcessChangeListenerFactory with LazyLogging {
-  final override def create(config: Config): ProcessChangeListener = {
-    val listeners = factories.map(_.create(config))
+  final override def create(config: Config, services: NussknackerServices): ProcessChangeListener = {
+    val listeners = factories.map(_.create(config, services))
     new ProcessChangeListener {
       override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: LoggedUser): Unit = {
         def handleSafely(listener: ProcessChangeListener): Unit = {

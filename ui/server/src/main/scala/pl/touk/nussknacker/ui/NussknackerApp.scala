@@ -9,7 +9,6 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.dict.DictQueryService
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -25,11 +24,12 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, PullProcessRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
+import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
@@ -122,7 +122,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
-    val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(config)
+    val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(config,
+      NussknackerServices(
+        new PullProcessRepository(processRepository)
+      ))
 
     val managementActor = system.actorOf(
       ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver, processChangeListener), "management")
