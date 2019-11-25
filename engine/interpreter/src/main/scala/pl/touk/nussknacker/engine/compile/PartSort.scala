@@ -7,11 +7,16 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 
 import scala.annotation.tailrec
 
+/*
+ This is primitive topological sort, we want to sort parts, so that for each part starting with join J1,
+ all branches pointing to J1 are before in final list
+
+ We need it, because so far we represent process (which is a DAG) as a forest (set of trees), with artificial "jumps" between branches.
+ We have to make sure we compile/validate branches in order, so that when we validate join, we already know types of variables in all branches
+*/
 object PartSort {
 
   @tailrec
-  //this is primitive topological sort, we want to sort parts,
-  //so that for each part starting with join J1, all branches pointing to J1 are before in final list
   def sort(partsToSort: List[SourcePart], sorted: List[SourcePart] = List()): List[SourcePart] = {
     if (partsToSort.isEmpty) {
       sorted

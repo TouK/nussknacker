@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters, NoParentContext, NodeId}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -230,10 +230,12 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("valid process using context transformation api - union") {
     val validProcess = processWithUnion("#outPutVar.branch1")
 
-    val validationResult = validator.validate(validProcess).result
-    validationResult should matchPattern {
+    val validationResult = validator.validate(validProcess)
+    validationResult.result should matchPattern {
       case Valid(_) =>
     }
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(
+      Map("branch2" -> Typed[Int], "branch1" -> Typed[String]))
   }
 
   test("invalid process using context transformation api - union") {

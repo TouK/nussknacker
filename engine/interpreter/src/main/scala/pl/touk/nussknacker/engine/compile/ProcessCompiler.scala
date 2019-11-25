@@ -135,13 +135,19 @@ protected trait ProcessCompilerBase {
     }
   }
 
+  /*
+    We need to sort SourceParts to know types of variables in branches for joins. See comment in PartSort
+    In the future we'll probably move to direct representation of process as graph and this will no longer be needed
+   */
   private def compileSources(sources: NonEmptyList[SourcePart])(implicit meta: MetaData): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
     val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), BranchEndContexts(Map(), None))
-    val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextPart) =>
-        val compiledPart = compile(nextPart, branchContexts)
+    //we use fold here (and not map/sequence), because we can compile part which starts from Join only when we
+    //know compilation results (stored in BranchEndContexts) of all branches that end in this join
+    val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextSourcePart) =>
+        val compiledPart = compile(nextSourcePart, branchContexts)
         //we don't use andThen on CompilationResult, since we don't want to stop if there are errors in part
         val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
-        (nextResult, branchContexts.addPart(nextPart.node, compiledPart))
+        (nextResult, branchContexts.addPart(nextSourcePart.node, compiledPart))
     }
     result.map(NonEmptyList.fromListUnsafe)
   }
