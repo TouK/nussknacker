@@ -59,7 +59,7 @@ export default class Errors extends React.Component {
     return <div className={"node-error-tips"}>
       {
         _.isEmpty(nodeIds) && _.isEmpty(propertiesErrors) ? null :
-          <span className={"error-tip-header"}>Errors in</span>
+          <span className={"error-tip-header"}>Errors in </span>
       }
       <div className={"node-error-links"}>
         {
