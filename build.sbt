@@ -188,13 +188,14 @@ lazy val dist = (project in file("nussknacker-dist"))
       val exampleModel = (crossTarget in example).value / s"nussknacker-example-assembly-${version.value}.jar"
       exampleModel -> "model/exampleModel.jar"
     },
+    /* //FIXME: figure out how to filter out only for .tgz, not for docker
     mappings in Universal := {
       val universalMappings = (mappings in Universal).value
       //we don't want docker-* stuff in .tgz
       universalMappings filterNot { case (file, _) =>
         file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
       }
-    },
+    },*/
     publishArtifact := false,
     SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
   )
