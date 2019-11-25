@@ -96,11 +96,11 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
     commonSuperTypeFinder.commonSupertype(
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))) shouldEqual
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String]))
+      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed(Typed[Int], Typed[Long]), "baz" -> Typed[String], "baz2" -> Typed[String]))
 
     commonSuperTypeFinder.commonSupertype(
       TypedObjectTypingResult(Map("foo" -> Typed[String])), TypedObjectTypingResult(Map("foo" -> Typed[Long]))) shouldEqual
-      TypedObjectTypingResult(Map.empty[String, TypingResult])
+      TypedObjectTypingResult((Map("foo" -> Typed(Typed[String], Typed[Long]))))
   }
 
   test("find common supertype for complex types with inheritance in classes hierarchy") {

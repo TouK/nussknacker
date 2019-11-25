@@ -74,18 +74,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
 
   private def unionOfFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)
                            (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
-    (l.fields.toList ++ r.fields.toList).groupBy(_._1).mapValues(_.map(_._2)).flatMap {
-      case (fieldName, leftType :: rightType :: Nil) =>
-        val common = commonSupertype(leftType, rightType)
-        if (common == Typed.empty)
-          None // fields type collision - skipping this field
-        else
-          Some(fieldName -> common)
-      case (fieldName, singleType :: Nil) =>
-        Some(fieldName -> singleType)
-      case (_, longerList) =>
-        throw new IllegalArgumentException("Computing union of more than two fields: " + longerList) // shouldn't happen
-    }
+    (l.fields.toList ++ r.fields.toList).groupBy(_._1).mapValues(_.map(_._2)).mapValues(Typed(_: _*))
   }
 
   // This implementation is because TypedObjectTypingResult has underlying TypedClass instead of TypingResult
