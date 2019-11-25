@@ -378,7 +378,7 @@ protected trait ProcessCompilerBase {
     val ctx = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
     val branchContexts = ctxOrBranches.right.map { ctxs =>
       branchParameters.map(_.branchId).map(branchId => branchId -> ctxs.contextForId(branchId)).toMap
-    }.getOrElse(Map.empty)
+    }.right.getOrElse(Map.empty)
 
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(nodeDefinition.parameters,
       parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
