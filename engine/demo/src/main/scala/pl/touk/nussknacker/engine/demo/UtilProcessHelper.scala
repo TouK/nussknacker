@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.example
+package pl.touk.nussknacker.engine.demo
 
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.example
+package pl.touk.nussknacker.engine.demo
 
 import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneId}

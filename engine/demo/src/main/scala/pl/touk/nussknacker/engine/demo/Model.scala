@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.example
+package pl.touk.nussknacker.engine.demo
 
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, Documentation}
 import io.circe.generic.JsonCodec

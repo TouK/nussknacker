@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.example.custom
+package pl.touk.nussknacker.engine.demo.custom
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.scala._

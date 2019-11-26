@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.javaexample;
+package pl.touk.nussknacker.engine.javademo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

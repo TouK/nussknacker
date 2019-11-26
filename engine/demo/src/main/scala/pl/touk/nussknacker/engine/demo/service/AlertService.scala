@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.example.service
+package pl.touk.nussknacker.engine.demo.service
 
 import java.io.File
 

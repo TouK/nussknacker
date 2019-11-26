@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.javaexample;
+package pl.touk.nussknacker.engine.javademo;
 
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.java.functions.KeySelector;

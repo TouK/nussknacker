@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.javaexample;
+package pl.touk.nussknacker.engine.javademo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.process.SourceFactory;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
-import pl.touk.nussknacker.engine.example.LoggingExceptionHandlerFactory;
+import pl.touk.nussknacker.engine.demo.LoggingExceptionHandlerFactory;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 import pl.touk.nussknacker.engine.kafka.KafkaConfig;
@@ -34,7 +34,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
 import scala.Option;
 import scala.collection.JavaConverters;
 
-public class ExampleProcessConfigCreator implements ProcessConfigCreator {
+public class DemoProcessConfigCreator implements ProcessConfigCreator {
 
     private <T> WithCategories<T> all(T value) {
         final ArrayList<String> objects = new ArrayList<>();

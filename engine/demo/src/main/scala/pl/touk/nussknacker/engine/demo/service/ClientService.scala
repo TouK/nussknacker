@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.example.service
+package pl.touk.nussknacker.engine.demo.service
 
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.example.Client
+import pl.touk.nussknacker.engine.demo.Client
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 
 import scala.concurrent.{ExecutionContext, Future}

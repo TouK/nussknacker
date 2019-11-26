@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.example.custom
+package pl.touk.nussknacker.engine.demo.custom
 
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.example.Transaction
+import pl.touk.nussknacker.engine.demo.Transaction
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 
 /** Sums all-time transaction amount for each client */

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.javaexample;
+package pl.touk.nussknacker.engine.javademo;
 
 import pl.touk.nussknacker.engine.api.MethodToInvoke;
 import pl.touk.nussknacker.engine.api.ParamName;

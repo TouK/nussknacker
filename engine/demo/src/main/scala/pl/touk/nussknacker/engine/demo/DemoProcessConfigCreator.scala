@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.example
+package pl.touk.nussknacker.engine.demo
 
 import java.nio.charset.StandardCharsets
 import java.util.UUID
@@ -17,8 +17,8 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionH
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.example.custom.{EventsCounter, TransactionAmountAggregator}
-import pl.touk.nussknacker.engine.example.service.{AlertService, ClientService}
+import pl.touk.nussknacker.engine.demo.custom.{EventsCounter, TransactionAmountAggregator}
+import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingRestartingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
@@ -28,7 +28,7 @@ import CirceUtil.decodeJsonUnsafe
 import io.circe.Json
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
-class ExampleProcessConfigCreator extends ProcessConfigCreator {
+class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   def marketing[T](value: T) = WithCategories(value, "Recommendations")
   def fraud[T](value: T) = WithCategories(value, "FraudDetection")

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.example
+package pl.touk.nussknacker.engine.demo
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -6,6 +6,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{BeforeAndAfterAll, Matchers, Suite}
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.javademo
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
@@ -18,9 +19,9 @@ trait BaseITest extends KafkaSpec {
   lazy val creator = {
     creatorLang match {
       case CreatorLang.Java =>
-        ProcessConfigCreatorMapping.toProcessConfigCreator(new pl.touk.nussknacker.engine.javaexample.ExampleProcessConfigCreator)
+        ProcessConfigCreatorMapping.toProcessConfigCreator(new javademo.DemoProcessConfigCreator)
       case CreatorLang.Scala =>
-        new ExampleProcessConfigCreator
+        new DemoProcessConfigCreator
     }
   }
 
