@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 
 import scala.util.{Failure, Success, Try}
 
@@ -94,7 +95,7 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
   }
 
   private def validate(expr: String, a: Any, b: Any): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    val parser = SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = false, strictTypeChecking = true,
+    val parser = SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, strictTypeChecking = true,
       List.empty, SpelExpressionParser.Standard)
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty

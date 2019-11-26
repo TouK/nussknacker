@@ -17,10 +17,6 @@ In the beginning there is only one variable - `input`, contains single record fo
 Currently expressions in Nussknacker can be written using Spring Expression Language.
  You can find extensive documentation [here](https://docs.spring.io/spring/docs/current/spring-framework-reference/html/expressions.html). Autocomplete function (Ctrl-Space) is available in expression input boxes.
 
-
-
-
-
 #Basic nodes
 Node works with data stream. It can produce, fetch, send, collect data or organize data flow.
 
@@ -68,7 +64,6 @@ Every record from `source` go to `sink 1` and `sink 2`.
 
 ###Flow
 Have at least one output. Each output has same record as input, so all outputs are identical.
-
 
 
 ##Switch
@@ -123,7 +118,9 @@ Evaluates sql `Expression`, and assigns to `Variable Name.`
 Doesn't change records flow. Have to have exactly one output. Variable once defined cannot be overwritten.  
 
 
-
 ##Subprocesses
 Subprocesses let you abstract common used parts of process. See [subprocesses](Subprocesses.md) for more detailed description of how they work.
 
+##Custom transformations
+More complex operations like joins or aggregations are handled by custom nodes, their usage and semantics can depend on execution engine.
+Please refer to [Flink custom transformers](customTransformers/FlinkCustomTransformers.md) for examples.

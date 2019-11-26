@@ -29,7 +29,7 @@ val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 //publishArtifact := false
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
-               
+
 val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
@@ -166,6 +166,14 @@ lazy val dockerSettings = {
       "scala" -> scalaVersion.value,
       "flink" -> flinkV
     ),
+    dockerEnvVars := Map(
+      "AUTHENTICATION_METHOD" -> "BasicAuth",
+      "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
+      "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
+      "OAUTH2_RESPONSE_TYPE" -> "code",
+      "OAUTH2_GRANT_TYPE" -> "authorization_code",
+      "OAUTH2_SCOPE" -> "read:user",
+    ),
     version in Docker := dockerTagName.getOrElse(version.value)
   )
 }
@@ -179,7 +187,7 @@ lazy val dist = (project in file("nussknacker-dist"))
       (assembly in Compile) in generic,
       (assembly in Compile) in example
     ).value,
-    
+
     mappings in Universal += {
       val genericModel = (crossTarget in generic).value / "genericModel.jar"
       genericModel -> "model/genericModel.jar"
@@ -188,6 +196,14 @@ lazy val dist = (project in file("nussknacker-dist"))
       val exampleModel = (crossTarget in example).value / s"nussknacker-example-assembly-${version.value}.jar"
       exampleModel -> "model/exampleModel.jar"
     },
+    /* //FIXME: figure out how to filter out only for .tgz, not for docker
+    mappings in Universal := {
+      val universalMappings = (mappings in Universal).value
+      //we don't want docker-* stuff in .tgz
+      universalMappings filterNot { case (file, _) =>
+        file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
+      }
+    },*/
     publishArtifact := false,
     SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
   )
@@ -352,7 +368,7 @@ lazy val generic = (project in engine("flink/generic")).
       )
     },
     test in assembly := {},
-    
+
     assemblyJarName in assembly := "genericModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
@@ -500,7 +516,8 @@ lazy val flinkUtil = (project in engine("flink/util")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
+        "com.clearspring.analytics" % "stream" % "2.9.8"
       )
     }
   ).dependsOn(util, flinkApi)
@@ -662,7 +679,14 @@ lazy val restmodel = (project in file("ui/restmodel"))
       "io.circe" %% "circe-java8" % circeV
     )
   )
-  .dependsOn(interpreter, testUtil % "test")
+  .dependsOn(api, interpreter, security, testUtil % "test")
+
+lazy val listenerApi = (project in file("ui/listener-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-listener-api",
+  )
+  .dependsOn(restmodel, api, util, testUtil % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -727,7 +751,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, testUtil % "test")
+  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly")
 

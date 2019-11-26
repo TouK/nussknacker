@@ -160,6 +160,10 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(processesTable.filter(_.id === processId.value).map(_.name).result.headOption.map(_.map(ProcessName(_))))
   }
 
+  override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessEntityData]] = {
+    run(processesTable.filter(_.name === processName.value).result.headOption)
+  }
+
   override def fetchDeploymentHistory(processId: ProcessId)(implicit ec: ExecutionContext): F[List[DeploymentHistoryEntry]] =
     run(deployedProcessesTable.filter(_.processId === processId.value)
       .joinLeft(commentsTable)

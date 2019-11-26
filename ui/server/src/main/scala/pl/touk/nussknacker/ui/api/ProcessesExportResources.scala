@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
@@ -12,12 +13,14 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesExportResources(val processRepository: FetchingProcessRepository[Future],
-                               processActivityRepository: ProcessActivityRepository)
+                               processActivityRepository: ProcessActivityRepository,
+                               processResolving: UIProcessResolving)
                               (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
@@ -57,7 +60,8 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
       post {
         entity(as[DisplayableProcess]) { process =>
           complete {
-            exportProcess(process)
+            // here we gets process from UI, so we need to resolve it before we export it
+            exportResolvedProcess(process)
           }
         }
       }
@@ -72,9 +76,19 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
   }
 
   private def exportProcess(processDetails: DisplayableProcess): HttpResponse = {
-    val canonicalJson = ProcessMarshaller.toJson(ProcessConverter.fromDisplayable(processDetails)).spaces2
+    fileResponse(ProcessConverter.fromDisplayable(processDetails))
+  }
+
+  private def exportResolvedProcess(processWithDictLabels: DisplayableProcess): HttpResponse = {
+    val validationResult = processResolving.validateBeforeUiResolving(processWithDictLabels)
+    val resolvedProcess = processResolving.resolveExpressions(processWithDictLabels, validationResult.typingInfo)
+    fileResponse(resolvedProcess)
+  }
+
+  private def fileResponse(canonicalProcess: CanonicalProcess) = {
+    val canonicalJson = ProcessMarshaller.toJson(canonicalProcess).spaces2
     val entity = HttpEntity(ContentTypes.`application/json`, canonicalJson)
-    AkkaHttpResponse.asFile(entity, s"${processDetails.id}.json")
+    AkkaHttpResponse.asFile(entity, s"${canonicalProcess.metaData.id}.json")
   }
 
   private def exportProcessToPdf(svg: String, processDetails: Option[ProcessDetails], processActivity: ProcessActivity) = processDetails match {

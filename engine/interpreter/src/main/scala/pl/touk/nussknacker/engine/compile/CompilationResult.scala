@@ -46,7 +46,7 @@ object CompilationResult extends Applicative[CompilationResult] {
 
   override def pure[A](x: A): CompilationResult[A] = CompilationResult(Map(), Valid(x))
 
-  override def ap[A, B](ff: CompilationResult[(A) => B])(fa: CompilationResult[A]): CompilationResult[B] =
+  override def ap[A, B](ff: CompilationResult[A => B])(fa: CompilationResult[A]): CompilationResult[B] =
     CompilationResult(Semigroup.combine(fa.typing, ff.typing), fa.result.ap(ff.result))
 
   implicit class CompilationResultTraverseOps[T[_]: Traverse, B](traverse: T[CompilationResult[B]]) {

@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid, invalid, valid}
+import cats.data.Validated.{Valid, invalid, valid}
 import cats.data.ValidatedNel
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
@@ -20,16 +21,16 @@ import pl.touk.nussknacker.engine.{compiledgraph, graph}
 
 object ExpressionCompiler {
 
-  def withOptimization(loader: ClassLoader, expressionConfig: ExpressionDefinition[ObjectMetadata]): ExpressionCompiler
-    = default(loader, expressionConfig, expressionConfig.optimizeCompilation)
+  def withOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata]): ExpressionCompiler
+    = default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation)
 
-  def withoutOptimization(loader: ClassLoader, expressionConfig: ExpressionDefinition[ObjectMetadata]): ExpressionCompiler
-      = default(loader, expressionConfig, optimizeCompilation = false)
+  def withoutOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata]): ExpressionCompiler
+      = default(loader, dictRegistry, expressionConfig, optimizeCompilation = false)
 
-  private def default(loader: ClassLoader, expressionConfig: ExpressionDefinition[ObjectMetadata], optimizeCompilation: Boolean): ExpressionCompiler = {
+  private def default(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata], optimizeCompilation: Boolean): ExpressionCompiler = {
     val defaultParsers = Seq(
-      SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Standard),
-      SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Template),
+      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Standard),
+      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Template),
       SqlExpressionParser)
     val parsersSeq = defaultParsers  ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
@@ -46,14 +47,14 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   def compileValidatedObjectParameters(parameters: List[evaluatedparam.Parameter],
                                        ctx: ValidationContext)(implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
-    compileObjectParameters(parameters.map(p => Parameter(p.name, Unknown, classOf[Any])), parameters, ctx)
+    compileEagerObjectParameters(parameters.map(p => Parameter(p.name, Unknown, classOf[Any])), parameters, ctx)
 
-  def compileObjectParameters(parameterDefinitions: List[Parameter],
-                              parameters: List[evaluatedparam.Parameter],
-                              ctx: ValidationContext)
-                             (implicit nodeId: NodeId)
+  def compileEagerObjectParameters(parameterDefinitions: List[Parameter],
+                                   parameters: List[evaluatedparam.Parameter],
+                                   ctx: ValidationContext)
+                                  (implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
-    compileObjectParameters(parameterDefinitions, parameters, List.empty, ctx, ctx).map(_.map {
+    compileObjectParameters(parameterDefinitions, parameters, List.empty, ctx, Map.empty, eager = true).map(_.map {
       case TypedParameter(name, expr: TypedExpression) => compiledgraph.evaluatedparam.Parameter(name, expr.expression, expr.returnType, expr.typingInfo)
       case TypedParameter(name, expr: TypedExpressionMap) => throw new IllegalArgumentException("Typed expression map should not be here...")
     })
@@ -62,7 +63,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   def compileObjectParameters(parameterDefinitions: List[Parameter],
                               parameters: List[evaluatedparam.Parameter],
                               branchParameters: List[evaluatedparam.BranchParameters],
-                              ctx: ValidationContext, ctxForLazyParameters: ValidationContext)
+                              ctx: ValidationContext, branchContexts: Map[String, ValidationContext], eager: Boolean)
                              (implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.TypedParameter]] = {
     val syntax = ValidatedSyntax[PartSubGraphCompilationError]
@@ -76,7 +77,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     Validations.validateParameters(definedParamNames, usedParamNames).andThen { _ =>
       val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
 
-      def ctxToUse(pName:String) = if (paramDefMap(pName).isLazyParameter) ctxForLazyParameters else ctx
+      def ctxToUse(pName:String): ValidationContext = if (paramDefMap(pName).isLazyParameter || eager) ctx else ctx.clearVariables
 
       val compiledParams = parameters.map { p =>
         compileParam(p, ctxToUse(p.name), paramDefMap(p.name))
@@ -86,8 +87,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
         p <- branchParams.parameters
       } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.map {
         case (paramName, branchIdAndExpressions) =>
-          //TODO: handle context for branch parameters correctly...
-          compileBranchParam(branchIdAndExpressions, ctxForLazyParameters, paramDefMap(paramName))
+          compileBranchParam(branchIdAndExpressions, branchContexts, paramDefMap(paramName))
       }
       (compiledParams ++ compiledBranchParams).sequence
     }
@@ -104,16 +104,16 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   }
 
   private def compileBranchParam(branchIdAndExpressions: List[(String, expression.Expression)],
-                                 ctx: ValidationContext,
+                                 branchContexts: Map[String, ValidationContext],
                                  definition: Parameter)
                                 (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
-    enrichContext(ctx, definition).andThen { finalCtx =>
-      branchIdAndExpressions.map {
-        case (branchId, expression) =>
+    branchIdAndExpressions.map {
+      case (branchId, expression) =>
+        enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
           // TODO JOIN: branch id on error field level
           compile(expression, Some(s"${definition.name} for branch $branchId"), finalCtx, Unknown).map(branchId -> _)
-      }.sequence.map(exprByBranchId => compiledgraph.evaluatedparam.TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
-    }
+        }
+    }.sequence.map(exprByBranchId => compiledgraph.evaluatedparam.TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
   }
 
   private def enrichContext(ctx: ValidationContext,

@@ -75,16 +75,14 @@ processActivityList()
   width 100%
   font-size 10px
   float left
-  padding 10px 5px 0 0
+  padding 10px 0 0 0
   .header
     display inline-block
     span
-      margin-right 5px
+      color #808080
       &.date
         color panelTitleTextColor
         font-style italic
-      &.comment-header
-        color #808080
     p
       font-style italic
       color panelTitleTextColor
@@ -100,7 +98,7 @@ processActivityList()
   .process-comments-list
     processActivityList()
     .header
-      width 100%
+      width 90%
       .remove
         float right
         &:hover
@@ -118,6 +116,7 @@ processActivityList()
       font-weight lighter
       border 1px solid commentBorderColor
       background-color commentBkgColor
+      padding 4px
       &:focus
         outline-color: defaultTextColor
     button
@@ -130,6 +129,13 @@ processActivityList()
   display grid
   .process-attachments-list
     processActivityList()
+
+    .attachment-section
+      display inline-flex
+      width 90%
+      .attachment-details
+        margin-left 8px
+        word-break break-word
 
   .details
     display inline-block
@@ -172,7 +178,6 @@ processActivityList()
         margin-top 15px
         width 27px
         height 27px
-
 .label-info
   background-color labelBkgColor
 
@@ -232,22 +237,25 @@ processActivityList()
 
 .big-blue-button
   margin: 45px 50px
-  width: 360px
+  width 360px
+  min-width: 300px
   height: 45px
   background-color: buttonBlueBkgColor
   color: buttonBlueColor
-  display: flex
+  display flex
   align-items: center
   justify-content: center
-  font open
+  font-family 'Open Sans'
   font-size: 21px
   font-weight: 600
+  border-radius: 0
   &:hover
+    color buttonBlueColor
     background: processesHoverColor
+  &:focus
+    color buttonBlueColor
   #add-icon
     width: 20px
-    height: 45px
-    margin: 10px
     margin-left: 20px
     &:hover
       background: processesHoverColor

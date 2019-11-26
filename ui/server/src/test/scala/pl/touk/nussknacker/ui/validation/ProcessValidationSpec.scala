@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields,
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.evaluatedparam
@@ -301,7 +302,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         additionalBranches = None)
 
     val processDefinition = ProcessDefinitionBuilder.empty.withSourceFactory("processSource").withSinkFactory("processSink")
-    val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
+    val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
     val processValidation: ProcessValidation = new ProcessValidation(
       validators = Map(TestProcessingTypes.Streaming -> validator),
       Map(TestProcessingTypes.Streaming -> Map()),

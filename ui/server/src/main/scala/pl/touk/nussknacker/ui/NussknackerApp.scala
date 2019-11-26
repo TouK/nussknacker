@@ -20,14 +20,16 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, PullProcessRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
+import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
@@ -104,7 +106,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
     val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
     val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver, customProcessNodesValidators)
-    val processResolving = new UIProcessResolving(processValidation, ProcessDictSubstitutor())
+
+    val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
+    val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)
@@ -118,8 +122,13 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
+    val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(
+      config,
+      NussknackerServices(new PullProcessRepository(processRepository))
+    )
+
     val managementActor = system.actorOf(
-      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver), "management")
+      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver, processChangeListener), "management")
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
@@ -136,9 +145,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
           processResolving = processResolving,
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
-          processAuthorizer = processAuthorizer
+          processAuthorizer = processAuthorizer,
+          processChangeListener = processChangeListener
         ),
-        new ProcessesExportResources(processRepository, processActivityRepository),
+        new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository),
         ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
           processAuthorizer, processRepository, featureTogglesConfig, processResolving),

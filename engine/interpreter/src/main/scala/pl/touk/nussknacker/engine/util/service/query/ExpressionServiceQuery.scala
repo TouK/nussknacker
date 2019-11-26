@@ -70,6 +70,7 @@ object ExpressionServiceQuery {
   private def expressionCompiler(modelData: ModelData) = {
     ExpressionCompiler.withoutOptimization(
       modelData.modelClassLoader.classLoader,
+      modelData.dictServices.dictRegistry,
       modelData.processDefinition.expressionConfig)
   }
 }

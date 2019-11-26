@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
-import pl.touk.nussknacker.ui.api.{RouteWithoutUser, RouteWithUser}
+import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, _}
@@ -47,7 +47,7 @@ object TestFactory extends TestPermissions{
     sampleResolver,
     Map.empty
   )
-  val processResolving = new UIProcessResolving(processValidation, ProcessDictSubstitutor())
+  val processResolving = new UIProcessResolving(processValidation, Map.empty)
   val posting = new ProcessPosting
   val buildInfo = Map("engine-version" -> "0.1")
 

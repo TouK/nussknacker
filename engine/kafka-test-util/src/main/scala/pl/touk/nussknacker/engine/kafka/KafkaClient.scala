@@ -11,7 +11,7 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
-  val rawProducer = KafkaUtils.createRawKafkaProducer(kafkaAddress, id)
+  val rawProducer = KafkaUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
   val producer = KafkaUtils.createKafkaProducer(kafkaAddress, id)
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()

@@ -22,6 +22,7 @@ import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeEvent}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -49,9 +50,15 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val existingProcessingType = "streaming"
 
   val processManager = new MockProcessManager
-  def createManagementActorRef =
-    system.actorOf(
-      ManagementActor.props(env, Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver), "management")
+  val processChangeListener = new TestProcessChangeListener()
+  def createManagementActorRef = {
+    system.actorOf(ManagementActor.props(env,
+      Map(TestProcessingTypes.Streaming -> processManager),
+      processRepository,
+      deploymentProcessRepository,
+      TestFactory.sampleResolver,
+      processChangeListener), "management")
+  }
   val managementActor: ActorRef = createManagementActorRef
   val jobStatusService = new JobStatusService(managementActor)
   val newProcessPreparer = new NewProcessPreparer(
@@ -71,7 +78,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processResolving = processResolving,
     typesForCategories = typesForCategories,
     newProcessPreparer = newProcessPreparer,
-    processAuthorizer = processAuthorizer
+    processAuthorizer = processAuthorizer,
+    processChangeListener = processChangeListener
   )
 
   val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)
@@ -81,7 +89,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val usersRoute = new UserResources(typesForCategories)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
 
-  val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
+  val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository, processResolving)
   val definitionResources = new DefinitionResources(
     Map(existingProcessingType ->  FlinkStreamingProcessManagerProvider.defaultModelData(testConfig)), subprocessRepository, typesForCategories)
 
@@ -163,8 +171,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
   }
 
-  def deployProcess(id: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
-    Post(s"/processManagement/deploy/$id",
+  def deployProcess(processName: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
+    Post(s"/processManagement/deploy/$processName",
       HttpEntity(ContentTypes.`text/plain(UTF-8)`, comment.getOrElse(""))
     ) ~> withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
   }

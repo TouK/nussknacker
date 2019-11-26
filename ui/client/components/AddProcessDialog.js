@@ -13,7 +13,6 @@ import * as VisualizationUrl from '../common/VisualizationUrl';
 import Draggable from 'react-draggable';
 import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
 import {duplicateValue, notEmptyValidator} from "../common/Validators";
-import {v4 as uuid4} from "uuid";
 import ValidationLabels from "./modals/ValidationLabels";
 
 //TODO: Consider integrating with GenericModalDialog 
@@ -26,8 +25,7 @@ class AddProcessDialog extends React.Component {
     isSubprocess: PropTypes.bool,
     visualizationPath: PropTypes.string.isRequired,
     message: PropTypes.string.isRequired,
-    processes: PropTypes.array,
-    subProcesses: PropTypes.array
+    clashedNames: PropTypes.array
   }
 
   initialState(props) {
@@ -76,7 +74,7 @@ class AddProcessDialog extends React.Component {
                         <input autoFocus={true} type="text" id="newProcessId" className="node-input"
                                value={this.state.processId}
                                onChange={(e) => this.setState({processId: e.target.value})}/>
-                         <ValidationLabels validators={validators} values={[this.props.processes, this.props.subProcesses, this.state.processId]}/>
+                         <ValidationLabels validators={validators} values={[this.props.clashedNames, this.state.processId]}/>
                       </div>
                     </div>
                     <div className="node-row">
@@ -116,18 +114,17 @@ function mapState(state) {
   }
 }
 
-const nameAlreadyExists = (processes, subprocesses, name) => {
-  return processes.map(process => process.name).includes(name)
-    || subprocesses.map(subProcess => subProcess.name).includes(name)
+const nameAlreadyExists = (clashedNames, name) => {
+  return clashedNames.some(processName => processName === name)
 }
 
 const validators = [
   {
-    isValid: (processes, subprocesses, name) => notEmptyValidator.isValid(name),
+    isValid: (clashedNames, name) => notEmptyValidator.isValid(name),
     message: notEmptyValidator.message
   },
   {
-    isValid: (processes, subprocesses, name) => !nameAlreadyExists(processes, subprocesses, name),
+    isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),
     message: duplicateValue
   }
 ];

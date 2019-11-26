@@ -32,6 +32,6 @@ class Objects extends Serializable {
 
   def sink = WithCategories(SinkFactory.noParam(EmptySink))
 
-  def exceptionHandler: ExceptionHandlerFactory = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler)
+  def exceptionHandler: ExceptionHandlerFactory = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
 }

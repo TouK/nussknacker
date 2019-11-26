@@ -15,10 +15,11 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.dict.DictInstance
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
-import pl.touk.nussknacker.engine.api.typed.dict.StaticTypedDictInstance
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -26,7 +27,6 @@ import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.CommonTestHelpers.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -99,10 +99,12 @@ object ProcessTestHelpers {
 
 
       override def expressionConfig(config: Config) = {
+        val dictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
+        val dictDef = EmbeddedDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
         val globalProcessVariables = Map(
           "processHelper" -> WithCategories(ProcessHelper),
-          "enum" -> WithCategories(StaticTypedDictInstance.forJavaEnum(classOf[SimpleJavaEnum])))
-        ExpressionConfig(globalProcessVariables, List.empty)
+          "enum" -> WithCategories(DictInstance(dictId, dictDef)))
+        ExpressionConfig(globalProcessVariables, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
       }
 
       override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map()

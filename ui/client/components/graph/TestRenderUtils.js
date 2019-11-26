@@ -122,14 +122,12 @@ function hasTestResults(testResults) {
 
 export function testErrors(testResultsToShow) {
   if (testResultsToShow && testResultsToShow.error) {
-    var error = testResultsToShow.error
-
     return (
       <div className="node-table-body">
         <div className="node-row">
           <div className="node-label">{ ModalRenderUtils.renderWarning('Test case error')} </div>
           <div className="node-value">
-            <div className="node-error">{`${error.message} (${error.class})`}</div>
+            <div className="node-error">{testResultsToShow.error}</div>
           </div>
         </div>
       </div>

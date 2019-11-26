@@ -5,6 +5,7 @@ import ExpressionInput from "./ExpressionInput";
 import React from "react";
 import _ from "lodash";
 import {errorValidator, notEmptyValidator} from "../../../common/Validators";
+import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants";
 
 const Variable = (props) => {
 
@@ -39,7 +40,7 @@ const Variable = (props) => {
         onChange={onChange}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[notEmptyValidator, errorValidator(errors, "expression")]}
+        validators={[notEmptyValidator, errorValidator(errors, DEFAULT_EXPRESSION_ID)]}
       />
       <Textarea
         label="Description"
@@ -65,6 +66,6 @@ Variable.defaultProps = {
   readOnly: false
 };
 
-Variable.availableFields = ["id", "varName", "expression"]
+Variable.availableFields = ["id", "varName", DEFAULT_EXPRESSION_ID]
 
 export default Variable;

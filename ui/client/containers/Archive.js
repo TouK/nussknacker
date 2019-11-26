@@ -6,13 +6,14 @@ import DateUtils from "../common/DateUtils"
 import LoaderSpinner from "../components/Spinner.js"
 import * as  queryString from 'query-string'
 import "../stylesheets/processes.styl"
-import filterIcon from '../assets/img/search.svg'
 import {withRouter} from 'react-router-dom'
 import {Glyphicon} from 'react-bootstrap'
 import BaseProcesses from "./BaseProcesses"
-import Select from 'react-select'
 import ProcessUtils from "../common/ProcessUtils"
 import {nkPath} from "../config";
+import TableSelect from "../components/table/TableSelect"
+import SearchFilter from "../components/table/SearchFilter"
+import Date from "../components/common/Date"
 
 class Archive extends BaseProcesses {
   queries = {
@@ -20,6 +21,8 @@ class Archive extends BaseProcesses {
   }
 
   searchItems = ['categories', 'isSubprocess']
+
+  page = 'archive'
 
   constructor(props) {
     super(props)
@@ -35,46 +38,23 @@ class Archive extends BaseProcesses {
     return (
       <div className="Page">
         <div id="process-top-bar">
-          <div id="table-filter" className="input-group">
-            <input
-              type="text"
-              className="form-control"
-              aria-describedby="basic-addon1"
-              value={this.state.search}
-              onChange={this.onSearchChange}
-            />
-            <span className="input-group-addon" id="basic-addon1">
-              <img id="search-icon" src={filterIcon}/>
-            </span>
-          </div>
+          <SearchFilter onChange={this.onSearchChange}
+                        value={this.state.search}/>
 
-          <div id="categories-filter" className="input-group">
-            <Select
-              isMulti
-              isSearchable
-              defaultValue={this.state.selectedCategories}
-              closeMenuOnSelect={false}
-              id="categories"
-              className="form-select"
-              options={this.props.filterCategories}
-              placeholder="Select categories.."
-              onChange={this.onCategoryChange}
-              styles={this.customSelectStyles}
-              theme={this.customSelectTheme}
-            />
-          </div>
+          <TableSelect defaultValue={this.state.selectedCategories}
+                       options={this.props.filterCategories}
+                       placeholder={"Select categories.."}
+                       onChange={this.onCategoryChange}
+                       isMulti={true}
+                       isSearchable={true}/>
 
-          <div id="subprocess-types-filter" className="input-group">
-            <Select
-              className="form-select"
-              defaultValue={this.state.selectedIsSubrocess}
-              options={this.filterIsSubprocessOptions}
-              placeholder="Select process type.."
-              onChange={this.onIsSubprocessChange}
-              styles={this.customSelectStyles}
-              theme={this.customSelectTheme}
-            />
-          </div>
+          <TableSelect
+            defaultValue={this.state.selectedIsSubrocess}
+            options={this.filterIsSubprocessOptions}
+            placeholder="Select process type.."
+            onChange={this.onIsSubprocessChange}
+            isMulti={false}
+            isSearchable={false}/>
         </div>
 
         <LoaderSpinner show={this.state.showLoader}/>
@@ -112,7 +92,11 @@ class Archive extends BaseProcesses {
                   <Td column="subprocess" className="centered-column">
                     <Glyphicon glyph={process.isSubprocess ? 'ok' : 'remove'}/>
                   </Td>
-                  <Td column="modifyDate" title={DateUtils.formatAbsolutely(process.modificationDate)} className="centered-column">{DateUtils.formatRelatively(process.modificationDate)}</Td>
+                  <Td column="modifyDate"
+                      className="centered-column"
+                      value={process.modificationDate}>
+                    <Date date={process.modificationDate}/>
+                  </Td>
                   <Td column="view" className="edit-column">
                     <Glyphicon
                       glyph="eye-open"

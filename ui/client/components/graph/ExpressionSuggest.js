@@ -18,6 +18,7 @@ import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
 import ValidationLabels from "../modals/ValidationLabels";
 import {allValid} from "../../common/Validators";
+import HttpService from "../../http/HttpService"
 
 //to reconsider
 // - respect categories for global variables?
@@ -30,7 +31,8 @@ class ExpressionSuggest extends React.Component {
     inputProps: PropTypes.object.isRequired,
     fieldName: PropTypes.string,
     validators: PropTypes.array.isRequired,
-    showValidation: PropTypes.bool.isRequired
+    showValidation: PropTypes.bool.isRequired,
+    processingType: PropTypes.string
   }
 
   customAceEditorCompleter = {
@@ -93,7 +95,7 @@ class ExpressionSuggest extends React.Component {
   }
 
   createExpressionSuggester = (props) => {
-    return new ExpressionSuggester(props.typesInformation, props.variables);
+    return new ExpressionSuggester(props.typesInformation, props.variables, props.processingType, HttpService);
   }
 
   onChange = (newValue) => {
@@ -161,7 +163,8 @@ function mapState(state, props) {
   return {
     typesInformation: typesInformation,
     dataResolved: dataResolved,
-    variables: variables
+    variables: variables,
+    processingType: state.graphReducer.processToDisplay.processingType
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ExpressionSuggest);

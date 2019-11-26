@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
 import scala.util.{Failure, Success, Try}
 import PartSubGraphCompiler._
+import NodeTypingInfo.DefaultExpressionId
 
 class PartSubGraphCompiler(protected val classLoader: ClassLoader,
                            protected val expressionCompiler: ExpressionCompiler,
@@ -51,6 +52,10 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   protected def createServiceInvoker(obj: ObjectWithMethodDef) = ServiceInvoker(obj)
 
+  /* TODO:
+  1. Separate validation logic for expressions in nodes and expression not bounded to nodes (e.g. expressions in process properties).
+     This way we can make non-optional fieldName
+   */
   def compile(n: SplittedNode[_], ctx: ValidationContext) : CompilationResult[compiledgraph.node.Node] = {
     implicit val nodeId: NodeId = NodeId(n.id)
 
@@ -66,7 +71,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         compiledNexts.andThen(nx => toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx)), Map.empty))
 
       case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
-        val (expressionTyping, validatedExpression) = compile(expression, None, ctx, Typed[Boolean])
+        val (expressionTyping, validatedExpression) = compile(expression, Some(DefaultExpressionId), ctx, Typed[Boolean])
         CompilationResult.map3(toCompilationResult(validatedExpression, expressionTyping.toDefaultExpressionTypingInfoEntry.toMap), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
           (expr, next, nextFalse) =>
             compiledgraph.node.Filter(id = id,
@@ -76,7 +81,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
             isDisabled = f.isDisabled.contains(true)))
 
       case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
-        val (expressionTyping, validatedExpression) = compile(expression, None, ctx, Unknown)
+        val (expressionTyping, validatedExpression) = compile(expression, Some(DefaultExpressionId), ctx, Unknown)
         val (newCtx, combinedValidatedExpression) = withVariableCombined(ctx, exprVal, expressionTyping.typingResult, validatedExpression)
         CompilationResult.map3(toCompilationResult(combinedValidatedExpression, expressionTyping.toDefaultExpressionTypingInfoEntry.toMap), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
           (realCompiledExpression, cases, next) => {
@@ -110,7 +115,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingResult.expressionsTypingInfo)
       case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
         val (expressionTypingInfoEntry, validatedOptionalExpression) = optionalExpression.map { oe =>
-          val (expressionTyping, validatedExpression) = compile(oe, None, ctx, Unknown)
+          val (expressionTyping, validatedExpression) = compile(oe, Some(DefaultExpressionId), ctx, Unknown)
           (expressionTyping.toDefaultExpressionTypingInfoEntry, validatedExpression.map(expr => Some((expr, expressionTyping.typingResult))))
         }.getOrElse {
           (None, Valid(None))
@@ -126,7 +131,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
       //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
       //accepts this join, maybe we should also validate the graph is connected?
-      case BranchEndData(id, joinId) => toCompilationResult(Valid(compiledgraph.node.BranchEnd(id, joinId.joinId)), Map.empty)
+      case BranchEndData(definition) => toCompilationResult(Valid(compiledgraph.node.BranchEnd(definition)), Map.empty)
     }
   }
 
@@ -136,7 +141,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
     data match {
       case graph.node.Variable(id, varName, expression, _) =>
-        val (expressionTypingResult, validatedExpression) = compile(expression, None, ctx, Unknown)
+        val (expressionTypingResult, validatedExpression) = compile(expression, Some(DefaultExpressionId), ctx, Unknown)
         val (newCtx, combinedValidatedExpression) = withVariableCombined(ctx, varName, expressionTypingResult.typingResult, validatedExpression)
 
         CompilationResult.map2(toCompilationResult(combinedValidatedExpression, expressionTypingResult.toDefaultExpressionTypingInfoEntry.toMap), compile(next, newCtx)) { (compiled, compiledNext) =>
@@ -184,7 +189,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
           ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
 
         val validParams = validParamDefs.andThen { paramDefs =>
-          expressionCompiler.compileObjectParameters(paramDefs, ref.parameters, ctx)
+          expressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
         }
 
         val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
@@ -215,7 +220,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     val service = services.get(n.id).map(Valid(_)).getOrElse(invalid(MissingService(n.id))).toValidatedNel
 
     val validatedServiceWithTypingResult = service.andThen { objWithMethod =>
-      expressionCompiler.compileObjectParameters(objWithMethod.parameters, n.parameters, ctx).map { params =>
+      expressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx).map { params =>
         val invoker = createServiceInvoker(objWithMethod)
         val returnType = computeReturnType(objWithMethod, params)
         val typingResult = ServiceTypingResult(returnType, params.map(p => p.name -> p.typingInfo).toMap)
@@ -239,7 +244,8 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   private def compile(n: splittednode.Case, ctx: ValidationContext)
                      (implicit nodeId: NodeId): CompilationResult[compiledgraph.node.Case] =
-    CompilationResult.map2(CompilationResult(compile(n.expression, None, ctx, Typed[Boolean])._2), compile(n.node, ctx))((expr, next) => compiledgraph.node.Case(expr, next))
+    CompilationResult.map2(CompilationResult(compile(n.expression, Some(DefaultExpressionId), ctx, Typed[Boolean])._2), compile(n.node, ctx))((expr, next) => compiledgraph.node.Case(expr, next))
+
 
   private def compile(field: graph.variable.Field, ctx: ValidationContext)
                      (implicit nodeId: NodeId): (FieldExpressionTypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.variable.Field]) = {

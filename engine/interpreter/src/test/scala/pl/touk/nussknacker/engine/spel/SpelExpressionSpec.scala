@@ -13,11 +13,13 @@ import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
+import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.dict.StaticTypedDictInstance
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 
 import scala.collection.JavaConverters._
@@ -77,19 +79,25 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
+  private def parseWithDicts[T:TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+    val validationCtx = ValidationContext(
+      context.variables.mapValuesNow(Typed.fromInstance))
+    parse(expr, validationCtx, dictionaries, Standard)
+  }
+
   private def parse[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, flavour)
+    parse(expr, validationCtx, Map.empty, flavour)
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, Standard)
+    parse(expr, validationCtx, Map.empty, Standard)
   }
 
-  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition], flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, strictTypeChecking = true, imports, flavour)
+    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true, imports, flavour)
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
@@ -521,25 +529,29 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[java.lang.Float](floatAddExpr, ctx) shouldBe 'valid
     parse[Double](floatAddExpr, ctx) shouldBe 'valid
   }
-  test("static dict values") {
-    val staticDictId = "staticDictId"
-    val withObjVar = ctx.withVariable("staticDict", StaticTypedDictInstance(staticDictId, Map("fooId" -> "fooLabel")))
 
-    parseOrFail[String]("#staticDict['fooId']", withObjVar).evaluateSyncToValue[String](withObjVar) shouldEqual "fooId"
-    parse[String]("#staticDict['wrongId']", withObjVar) shouldBe 'invalid
+  test("embedded dict values") {
+    val embeddedDictId = "embeddedDictId"
+    val dicts = Map(embeddedDictId -> EmbeddedDictDefinition(Map("fooId" -> "fooLabel")))
+    val withObjVar = ctx.withVariable("embeddedDict", DictInstance(embeddedDictId, dicts(embeddedDictId)))
+
+    parseWithDicts[String]("#embeddedDict['fooId']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[String](withObjVar) shouldEqual "fooId"
+    parseWithDicts[String]("#embeddedDict['wrongId']", withObjVar, dicts) shouldBe 'invalid
   }
 
   test("enum dict values") {
+    val enumDictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleEnum.Value])
+    val dicts = Map(enumDictId -> EmbeddedDictDefinition.forScalaEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.Value])
     val withObjVar = ctx
       .withVariable("stringValue", "one")
       .withVariable("enumValue", SimpleEnum.One)
-      .withVariable("enum", StaticTypedDictInstance.forScalaEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.Value])
+      .withVariable("enum", DictInstance(enumDictId, dicts(enumDictId)))
 
-    parseOrFail[SimpleEnum.Value]("#enum['one']", withObjVar).evaluateSyncToValue[SimpleEnum.Value](withObjVar) shouldEqual SimpleEnum.One
-    parse[SimpleEnum.Value]("#enum['wrongId']", withObjVar) shouldBe 'invalid
+    parseWithDicts[SimpleEnum.Value]("#enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[SimpleEnum.Value](withObjVar) shouldEqual SimpleEnum.One
+    parseWithDicts[SimpleEnum.Value]("#enum['wrongId']", withObjVar, dicts) shouldBe 'invalid
 
-    parseOrFail[Boolean]("#enumValue == #enum['one']", withObjVar).evaluateSyncToValue[Boolean](withObjVar) shouldBe true
-    parse[Boolean]("#stringValue == #enum['one']", withObjVar) shouldBe 'invalid
+    parseWithDicts[Boolean]("#enumValue == #enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[Boolean](withObjVar) shouldBe true
+    parseWithDicts[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe 'invalid
   }
 
 }
