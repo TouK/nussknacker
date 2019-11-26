@@ -68,6 +68,8 @@ jobs:
       script: ./ciRunSbt.sh clean ui/slow:test
     - name: "Management tests"
       script: ./ciRunSbt.sh clean management/it:test
+    - name: "Cross Scala compile"
+      script: if [ "$CROSS_BUILD" = true ]; then echo "Skipping. Cross compilation executed in other jobs"; else CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile; fi
     - name: "EngineStandalone tests"
       script: ./ciRunSbt.sh clean engineStandalone/it:test
     - name: "Frontend tests"

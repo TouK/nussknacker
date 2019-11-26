@@ -8,4 +8,5 @@ then
 else
    ARGS="$*"
 fi
+echo "Executing: sbt $ARGS"
 sbt $ARGS
