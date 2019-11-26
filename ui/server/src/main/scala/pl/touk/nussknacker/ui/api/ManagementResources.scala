@@ -62,6 +62,7 @@ object ManagementResources {
     implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = io.circe.generic.semiauto.deriveEncoder
     implicit val mockedResult: Encoder[MockedResult[Json]] = io.circe.generic.semiauto.deriveEncoder
     implicit val resultContext: Encoder[ResultContext[Json]] = io.circe.generic.semiauto.deriveEncoder
+    //TODO: do we want more information here?
     implicit val throwable: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
     implicit val exceptionResult: Encoder[ExceptionResult[Json]] = io.circe.generic.semiauto.deriveEncoder
 
