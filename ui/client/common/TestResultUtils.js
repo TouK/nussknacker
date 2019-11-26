@@ -34,14 +34,14 @@ class TestResultUtils {
   }
 
   nodeResultsForContext = (nodeTestResults, contextId) => {
-    var context = (nodeTestResults.nodeResults.find(result => result.context.id == contextId) || {}).context
-    var expressionResults = _.fromPairs(nodeTestResults
+    const context = (nodeTestResults.nodeResults.find(result => result.context.id == contextId) || {}).context
+    const expressionResults = _.fromPairs(nodeTestResults
       .invocationResults
       .filter(result => result.contextId == contextId)
       .map(result => [result.name, result.value]))
-    var mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.contextId == contextId)
-    var mockedResultsForEveryContext = nodeTestResults.mockedResults
-    var error = ((nodeTestResults.errors || []).find((error) => error.context.id == contextId) || {}).exception
+    const mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.contextId == contextId)
+    const mockedResultsForEveryContext = nodeTestResults.mockedResults
+    const error = ((nodeTestResults.errors || []).find((error) => error.context.id === contextId) || {}).throwable
     return {
       context: context,
       expressionResults: expressionResults,
