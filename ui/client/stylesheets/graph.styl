@@ -36,13 +36,13 @@ node-highlight(strokeColor, backgroundFill)
   node-highlight(errorColor, #fbd2d6)
 
 .node-focused-with-validation-error
-  node-highlight(#0058a9, #f2dede)
+  node-highlight(focusColor, #f2dede)
 
 .node-grouping
   node-highlight(#5ba935, #caf2d6)
 
 .node-focused
-  node-highlight(#0058a9, #e6ecff)
+  node-highlight(focusColor, #e6ecff)
 
 .ReactModal__Overlay
   z-index: 100
@@ -264,8 +264,8 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
           color modalInputTextColor
           box-shadow: 0
         .node-value-select__control--is-focused
-          boder-width: 0
-          box-shadow: 0 0 0 1px gray
+          outline 2px solid focusColor!important;
+          outline-offset -1px!important;
         .node-value-select__single-value
           common-node-input(10px)
         .node-value-select__input
@@ -283,13 +283,13 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         .node-value-select__option
           common-node-input(10px)
           height: 25px
+          line-height @height
           border: 1
           border-radius: 0
         .node-value-select__option--is-selected
           background-color: modalInputBkgColor
         .node-value-select__option--is-focused
-          //TODO: better color/variable?
-          background-color: commentBorderColor
+          background-color: focusColor
     .node-error
       width: 100%
       color: errorColor
