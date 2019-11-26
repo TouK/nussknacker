@@ -96,6 +96,9 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return ([
       this.isGroup() ? this.renderGroupUngroup() : null,
+      <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
+        Close
+      </button>,
       !this.props.readOnly ?
           <LaddaButton
               key="1"
@@ -108,10 +111,7 @@ class NodeDetailsModal extends React.Component {
             Save
           </LaddaButton>
           :
-          null,
-      <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
-        Close
-      </button>
+          null
     ] );
   }
 
