@@ -12,4 +12,7 @@ trait PullProcessRepository {
 
   def fetchProcessDetailsForId(processId: ProcessId, versionId: Long)
                               (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[Unit]]]
+
+  def fetchProcesses(isSubprocess: Option[Boolean], isArchived: Option[Boolean],isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
+                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[Unit]]]
 }

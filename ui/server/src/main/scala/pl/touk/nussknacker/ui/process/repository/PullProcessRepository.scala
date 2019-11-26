@@ -16,4 +16,13 @@ class PullProcessRepository(fetchingProcessRepository: FetchingProcessRepository
   override def fetchProcessDetailsForId(processId: process.ProcessId, versionId: Long)
                                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[Unit]]] =
     fetchingProcessRepository.fetchProcessDetailsForId(processId, versionId, businessView = false)
+
+  override def fetchProcesses(isSubprocess: Option[Boolean], isArchived: Option[Boolean],isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
+                                                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[Unit]]] =
+    fetchingProcessRepository.fetchProcesses(
+      isSubprocess = isSubprocess,
+      isArchived = isArchived,
+      isDeployed = isDeployed,
+      categories = categories,
+      processingTypes = processingTypes)
 }
