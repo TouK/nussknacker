@@ -13,7 +13,7 @@ object ArgonautCirce {
       {
         case a:JsonLong => CJson.fromLong(a.value)
         case a:JsonBigDecimal => CJson.fromBigDecimal(a.value)
-        case a:JsonDecimal => CJson.fromJsonNumber(JsonNumber.fromIntegralStringUnsafe(a.value))
+        case a:JsonDecimal => CJson.fromJsonNumber(JsonNumber.fromDecimalStringUnsafe(a.value))
       },
       CJson.fromString,
       a => CJson.fromValues(a.map(toCirce)),
