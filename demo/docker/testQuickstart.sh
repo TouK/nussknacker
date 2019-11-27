@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+set -e
+
 echo "Starting containers"
 
 #just in case

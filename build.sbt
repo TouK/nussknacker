@@ -752,4 +752,4 @@ lazy val ui = (project in file("ui/server"))
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
-addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly;demo/assembly")
+addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
