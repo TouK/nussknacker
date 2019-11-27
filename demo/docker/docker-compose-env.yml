@@ -1,6 +1,7 @@
 version: '3.0'
 
 services:
+# TODO: UPGRADE INFLUXDB
   influxdb:
     container_name: nussknacker_influxdb
     image: influxdb:${INFLUXDB_VERSION-1.1.5}
@@ -12,14 +13,14 @@ services:
 
   zookeeper:
     container_name: nussknacker_zookeeper
-    image: zookeeper:${ZOOKEEPER_VERSION-3.5.5}
+    image: zookeeper:${ZOOKEEPER_VERSION-3.5}
     volumes:
       - nussknacker_storage_zookeeper_datalog:/datalog
       - nussknacker_storage_zookeeper_data:/data
 
   kafka:
     container_name: nussknacker_kafka
-    image: ${KAFKA_REPOSITORY-wurstmeister/kafka}:${KAFKA_VERSION-2.12-2.2.0}
+    image: ${KAFKA_REPOSITORY-wurstmeister/kafka}:${KAFKA_VERSION-2.12-2.3.0}
     ports:
       - "3032:9092"
     environment:
@@ -99,7 +100,7 @@ services:
 
   elasticsearch:
     container_name: nussknacker_elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.1.1}
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.4.2}
     environment:
       ES_JAVA_OPTS: -Xms128m -Xmx512m
     volumes:
@@ -113,7 +114,7 @@ services:
 
   logstash:
     container_name: nussknacker_logstash
-    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.1.1}
+    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.4.2}
     links:
       - elasticsearch
       - kafka
@@ -127,7 +128,7 @@ services:
 
   kibana:
     container_name: nussknacker_kibana
-    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.1.1}
+    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.4.2}
     links:
       - elasticsearch
     depends_on:
@@ -135,9 +136,10 @@ services:
     volumes:
       - ./kibana/config/:/usr/share/kibana/config
 
+  # TODO: UPGRADE GRAFANA
   grafana:
     container_name: nussknacker_grafana
-    image: grafana/grafana:${GRAFANA_VERSION-5.4.4}
+    image: grafana/grafana:${GRAFANA_VERSION-5.4.5}
     entrypoint: ["/runWithFlinkEspBoard.sh"]
     volumes:
       - ./grafana/runWithFlinkEspBoard.sh:/runWithFlinkEspBoard.sh
@@ -152,7 +154,7 @@ services:
 
   nginx:
     container_name: nussknacker_nginx
-    image: nginx:${NGINX_VERSION-1.16.0}
+    image: nginx:${NGINX_VERSION-1.17.6}
     ports:
       - "8081:80"
     volumes:

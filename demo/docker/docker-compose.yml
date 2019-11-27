@@ -5,7 +5,6 @@ services:
     container_name: nussknacker_app
     image: ${NUSSKNACKER_IMAGE-touk/nussknacker}:${NUSSKNACKER_VERSION-staging-latest}
     volumes:
-      - ${NUSSKNACKER_APPLICATION_DATA-./app/data}:/opt/nussknacker/data
       - nussknacker_storage_app:/opt/nussknacker/storage
 
 volumes:
