@@ -15,4 +15,4 @@ If you want run backend only for front-end development, please run `./runServer.
 * Run nussknacker by IntelliJ or `./runServer.sh`
  
 # Access to service
- Service should be available at http://localhsot:8080/api
+ Service should be available at ~~http://localhost:8080/api~~
