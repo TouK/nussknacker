@@ -438,6 +438,13 @@ espPanelButton()
     border-color: errorColor
   &.attachment-button
     border-color: errorColor
+  :first-child
+    svg
+      g
+        .a
+          fill: errorColor
+  :nth-of-type(2)
+    color: errorColor
 
 .modalButton
   espButtonBase()
