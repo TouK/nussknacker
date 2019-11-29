@@ -151,9 +151,12 @@ export default class ExpressionSuggester {
   }
 
   _lastExpressionPartWithoutMethodParens = (value) => {
+    //we have to handle cases like: #util.now(#other.quaxString.toUpperCase().__)
     const withoutNestedParenthesis = value.substring(this._lastNonClosedParenthesisIndex(value) + 1, value.length);
     const valueCleaned = withoutNestedParenthesis.replace(/\(.*\)/, "");
-    return _.isEmpty(value) ? "" : "#" + _.last(_.split(valueCleaned, '#'))
+    //handling ?. operator
+    const withSafeNavigationIgnored = valueCleaned.replace(/\?\./g, '.');
+    return _.isEmpty(value) ? "" : "#" + _.last(_.split(withSafeNavigationIgnored, '#'))
   };
 
   _lastNonClosedParenthesisIndex = (value) => {

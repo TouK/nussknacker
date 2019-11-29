@@ -338,6 +338,12 @@ describe("expression suggester", () => {
       expect(suggestions).toEqual([{methodName: "toUpperCase", refClazz: {refClazzName: "java.lang.String"}}])
     }).then(done)
   })
+
+  it("should support safe navigation", (done) => {
+    suggestionsFor("#input?.barB.bazC?.", {row: 0, column: "#input?.barB.bazC?.".length }).then(suggestions => {
+      expect(suggestions).toEqual([{methodName: "quaxString", refClazz: {refClazzName: "java.lang.String"}}])
+    }).then(done)
+  })
 })
 
 
