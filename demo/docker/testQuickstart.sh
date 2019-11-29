@@ -2,7 +2,7 @@
 
 set -e
 
-echo "Starting containers"
+echo "Starting docker containers.."
 
 #just in case
 docker-compose -f docker-compose.yml -f docker-compose-env.yml kill
@@ -17,38 +17,34 @@ waitTime=0
 sleep=10
 
 checkCode() {
-  CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://admin:admin@localhost:8081/$1")
-  echo "Checked $1 with $CODE"
-  if [[ $CODE == 200 ]]
-  then
-    return 0
-  else
-    return 1
-  fi
+ echo "$(curl -s -o /dev/null -w "%{http_code}" "http://admin:admin@localhost:8081/$1")"
 }
 
 waitForOK() {
+  echo "$2"
+
   URL_PATH=$1
-  checkCode $URL_PATH
-  local OK=$?
-  while [[ $waitTime < 80 && $OK == 1 ]]
+  STATUS_CODE=$(checkCode "$URL_PATH")
+
+  while [[ $waitTime < 60 && $STATUS_CODE != 200 ]]
   do
-    echo "Still not started..."
     sleep $sleep
-    waitTime=$(($waitTime+$sleep))
-    checkCode $URL_PATH
-    OK=$?
+    waitTime=$((waitTime+sleep))
+    STATUS_CODE=$(checkCode "$URL_PATH")
+
+    if [[ $STATUS_CODE != 200  ]]
+    then
+      echo "Service still not started within $waitTime sec and response code: $STATUS_CODE.."
+    fi
   done
-  if [[ $OK == 1 ]]
+  if [[ $STATUS_CODE != 200 ]]
   then
-    echo "$2"
+    echo "$3"
     exit 1
   fi
 }
 
-echo "Waiting for frontend to start"
-
-waitForOK "api/processes" "Frontend not started"
+waitForOK "api/processes" "Checking Frontend API response.." "Frontend not started"
 
 echo "Creating process"
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://admin:admin@localhost:8081/api/processes/DetectLargeTransactions/FraudDetection?isSubprocess=false")
@@ -61,13 +57,13 @@ else
   exit 1
 fi
 
-waitForOK "api/processes/status" "Cannot connect with Flink"
+waitForOK "api/processes/status" "Checking connect with Flink.." "Frontend not connected with flink"
 
-waitForOK "flink/" "Check for Flink response"
+waitForOK "flink/" "Checking Flink response.." "Flink not started"
 
-waitForOK "metrics" "Check for Kibana response"
+waitForOK "metrics" "Checking Grafana response.." "Grafana not started"
 
-waitForOK "search" "Check for Grafana response"
+waitForOK "search" "Checking Kibana response.." "Kibana not started"
 
 #TODO:
 #check import process
