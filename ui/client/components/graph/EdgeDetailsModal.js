@@ -57,16 +57,16 @@ class EdgeDetailsModal extends React.Component {
       return ([
         <LaddaButton
           key="1"
-          title="Save edge details"
+          title="Apply edge details"
           className='modalButton pull-right modalConfirmButton'
           loading={this.state.pendingRequest}
           data-style='zoom-in'
           onClick={this.performEdgeEdit}
         >
-          Save
+          Apply
         </LaddaButton>,
-        <button key="3" type="button" title="Close edge details" className='modalButton' onClick={this.closeModal}>
-          Close
+        <button key="3" type="button" title="Cancel edge details" className='modalButton' onClick={this.closeModal}>
+          Cancel
         </button>
       ] );
     } else {
