@@ -334,7 +334,7 @@ describe("expression suggester", () => {
   })
 
   it("should support nested method invocations", (done) => {
-    suggestionsFor("#util.now(#other.quaxString.toUpperCase().)").then(suggestions => {
+    suggestionsFor("#util.now(#other.quaxString.toUpperCase().)", {row: 0, column: "#util.now(#other.quaxString.toUpperCase().".length }).then(suggestions => {
       expect(suggestions).toEqual([{methodName: "toUpperCase", refClazz: {refClazzName: "java.lang.String"}}])
     }).then(done)
   })
