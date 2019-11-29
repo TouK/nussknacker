@@ -14,7 +14,9 @@ trait ProcessChangeListenerFactory {
 
 object ProcessChangeListenerFactory extends LazyLogging {
   def serviceLoader(classLoader: ClassLoader): ProcessChangeListenerFactory = {
-    new ProcessChangeListenerAggregatingFactory(ScalaServiceLoader.load[ProcessChangeListenerFactory](classLoader): _*)
+    val factories = ScalaServiceLoader.load[ProcessChangeListenerFactory](classLoader)
+    logger.info(s"Loading listener factories: ${factories.map(_.getClass.getCanonicalName)}")
+    new ProcessChangeListenerAggregatingFactory(factories: _*)
   }
 }
 
