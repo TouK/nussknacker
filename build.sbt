@@ -185,16 +185,15 @@ lazy val dist = (project in file("nussknacker-dist"))
     packageName in Universal := ("nussknacker" + "-" + version.value),
     Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
       (assembly in Compile) in generic,
-      (assembly in Compile) in example
+      (assembly in Compile) in demo
     ).value,
-
     mappings in Universal += {
       val genericModel = (crossTarget in generic).value / "genericModel.jar"
       genericModel -> "model/genericModel.jar"
     },
     mappings in Universal += {
-      val exampleModel = (crossTarget in example).value / s"nussknacker-example-assembly-${version.value}.jar"
-      exampleModel -> "model/exampleModel.jar"
+      val demoModel = (crossTarget in demo).value / s"demoModel.jar"
+      demoModel -> "model/demoModel.jar"
     },
     /* //FIXME: figure out how to filter out only for .tgz, not for docker
     mappings in Universal := {
@@ -337,10 +336,10 @@ lazy val managementBatchSample = (project in engine("flink/management/batch_samp
 
   ).dependsOn(flinkUtil, process % "runtime,test")
 
-lazy val example = (project in engine("example")).
+lazy val demo = (project in engine("demo")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-example",
+    name := "nussknacker-demo",
     fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
@@ -349,6 +348,7 @@ lazy val example = (project in engine("example")).
       )
     },
     test in assembly := {},
+    assemblyJarName in assembly := "demoModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))
@@ -368,7 +368,6 @@ lazy val generic = (project in engine("flink/generic")).
       )
     },
     test in assembly := {},
-
     assemblyJarName in assembly := "genericModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
@@ -753,5 +752,4 @@ lazy val ui = (project in file("ui/server"))
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
-addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly")
-
+addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")

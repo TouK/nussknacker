@@ -1,0 +1,181 @@
+version: '3.0'
+
+services:
+# TODO: UPGRADE INFLUXDB
+  influxdb:
+    container_name: nussknacker_influxdb
+    image: influxdb:${INFLUXDB_VERSION-1.1.5}
+    command: ["/runWithEspDb.sh"]
+    volumes:
+      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
+      - nussknacker_storage_influxdb:/var/lib/influxdb/data
+      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
+
+  zookeeper:
+    container_name: nussknacker_zookeeper
+    image: zookeeper:${ZOOKEEPER_VERSION-3.5}
+    volumes:
+      - nussknacker_storage_zookeeper_datalog:/datalog
+      - nussknacker_storage_zookeeper_data:/data
+
+  kafka:
+    container_name: nussknacker_kafka
+    image: ${KAFKA_REPOSITORY-wurstmeister/kafka}:${KAFKA_VERSION-2.12-2.3.0}
+    ports:
+      - "3032:9092"
+    environment:
+      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "processedEvents:1:1"
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - nussknacker_storage_kafka_data:/kafka
+    links:
+      - zookeeper
+    depends_on:
+      - zookeeper
+
+# If you want use kafka-manager uncomment this and section /kafka-manager at ./nginx/nginx.conf
+#  kafka-manager:
+#    container_name: nussknacker_kafkamanager
+#    image: hlebalbau/kafka-manager:${KAFKA_MANAGER_VERSION-stable}
+#    command: ["-Dplay.http.context=/kafka-manager/"]
+#    environment:
+#      ZK_HOSTS: "zookeeper:2181"
+#      KAFKA_MANAGER_AUTH_ENABLED: "true"
+#      KAFKA_MANAGER_USERNAME: "nussknacker"
+#      KAFKA_MANAGER_PASSWORD: "nussknacker"
+#    depends_on:
+#      - zookeeper
+#      - kafka
+
+  jobmanager:
+    container_name: nussknacker_jobmanager
+    image: flink:${FLINK_VERSION-1.7.2}-scala_${SCALA_VERSION-2.12}
+    ports:
+      - "3031:8081"
+    entrypoint: /flink-entrypoint.sh
+    command: jobmanager
+    depends_on:
+      - zookeeper
+      - kafka
+    links:
+      - influxdb
+      - zookeeper
+    volumes:
+      - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
+      - nussknacker_storage_jobmanager:/opt/flink/data
+
+  taskmanager:
+    container_name: nussknacker_taskmanager
+    image: flink:${FLINK_VERSION-1.7.2}-scala_${SCALA_VERSION-2.12}
+    ports:
+      - "3063:9069"
+    entrypoint: /flink-entrypoint.sh
+    command: taskmanager
+    links:
+      - influxdb
+      - jobmanager
+      - kafka
+      - zookeeper
+    depends_on:
+      - zookeeper
+      - kafka
+      - jobmanager
+    volumes:
+      - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
+      - nussknacker_storage_taskmanager:/opt/flink/data
+    ulimits:
+      nproc: 70000
+      nofile:
+        soft: 70000
+        hard: 70000
+
+  elasticsearch:
+    container_name: nussknacker_elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.4.2}
+    environment:
+      ES_JAVA_OPTS: -Xms128m -Xmx512m
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - nussknacker_storage_elasticsearch_data:/usr/share/elasticsearch/data
+    ulimits:
+      nproc: 70000
+      nofile:
+        soft: 70000
+        hard: 70000
+
+  logstash:
+    container_name: nussknacker_logstash
+    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.4.2}
+    links:
+      - elasticsearch
+      - kafka
+    depends_on:
+      - elasticsearch
+      - kafka
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - nussknacker_storage_logstash_data:/usr/share/logstash/data
+
+  kibana:
+    container_name: nussknacker_kibana
+    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.4.2}
+    links:
+      - elasticsearch
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./kibana/config/:/usr/share/kibana/config
+
+  # TODO: UPGRADE GRAFANA
+  grafana:
+    container_name: nussknacker_grafana
+    image: grafana/grafana:${GRAFANA_VERSION-5.4.5}
+    entrypoint: ["/runWithFlinkEspBoard.sh"]
+    volumes:
+      - ./grafana/runWithFlinkEspBoard.sh:/runWithFlinkEspBoard.sh
+      - ./grafana/Flink-ESP.json:/Flink-ESP.json
+    links:
+      - "influxdb:influxdb"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
+    depends_on:
+      - influxdb
+
+  nginx:
+    container_name: nussknacker_nginx
+    image: nginx:${NGINX_VERSION-1.17.6}
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - zookeeper
+      - influxdb
+      - kafka
+      - jobmanager
+      - taskmanager
+      - elasticsearch
+      - logstash
+      - kibana
+      - grafana
+
+volumes:
+  nussknacker_storage_zookeeper_datalog:
+  nussknacker_storage_zookeeper_data:
+  nussknacker_storage_elasticsearch_data:
+  nussknacker_storage_logstash_data:
+  nussknacker_storage_kafka_data:
+  nussknacker_storage_taskmanager:
+  nussknacker_storage_jobmanager:
+  nussknacker_storage_influxdb:

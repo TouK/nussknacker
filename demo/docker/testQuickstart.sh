@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
+
+set -e
+
 echo "Starting containers"
 
 #just in case
-docker-compose kill
-docker-compose rm -f -v
-docker-compose build
-docker-compose up -d --no-recreate
+docker-compose -f docker-compose.yml -f docker-compose-env.yml kill
+docker-compose -f docker-compose.yml -f docker-compose-env.yml rm -f -v
+docker-compose -f docker-compose.yml -f docker-compose-env.yml build
+docker-compose -f docker-compose.yml -f docker-compose-env.yml up -d --no-recreate
 
-trap 'docker-compose kill && docker-compose rm -f -v' EXIT
+trap 'docker-compose -f docker-compose.yml -f docker-compose-env.yml kill && docker-compose -f docker-compose.yml -f docker-compose-env.yml rm -f -v' EXIT
 
 #TODO: Consider rewriting below, e.g. in Python
 waitTime=0

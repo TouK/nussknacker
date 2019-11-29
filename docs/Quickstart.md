@@ -9,7 +9,7 @@
 
 * Clone Nussknacker [project](https://github.com/touk/nussknacker) from GitHub
 * Enter demo/docker folder
-* Run `docker-compose up` and wait a until all components start
+* Run `docker-compose -f docker-compose.yml -f docker-compose-env.yml up -d` and wait a until all components start
     
 > In case of containers restart please use `docker-compose stop` instead of `docker-compose kill` in order to avoid Kafka startup issues.
 
