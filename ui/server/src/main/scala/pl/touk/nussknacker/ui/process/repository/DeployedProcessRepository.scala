@@ -31,21 +31,21 @@ class DeployedProcessRepository(val dbConfig: DbConfig,
 
   def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType,
                             environment: String, comment: Option[String])
-                           (implicit ec: ExecutionContext, user: LoggedUser): Future[Unit]
+                           (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessVersionEntityData]
   = action(processId, processVersion, environment, comment.map("Deployment: " + _), DeploymentAction.Deploy,
     buildInfos.get(processingType).map(BuildInfo.writeAsJson))
 
 
   def markProcessAsCancelled(processId: ProcessId, processVersion: Long, environment: String, comment: Option[String])
-                            (implicit ec: ExecutionContext, user: LoggedUser): Future[Unit]
+                            (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessVersionEntityData]
   = action(processId, processVersion, environment, comment.map("Stop: " + _), DeploymentAction.Cancel, None)
 
   private def action(processId: ProcessId, processVersion: Long, environment: String,
                      comment: Option[String], action: DeploymentAction.Value, buildInfo: Option[String])
-                    (implicit ec: ExecutionContext, user: LoggedUser): Future[Unit] = {
+                    (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessVersionEntityData] = {
     val actionToRun = for {
       commentId <- withComment(processId, processVersion, comment)
-      _ <- deployedProcessesTable += DeployedProcessVersionEntityData(
+      deployedActionData = DeployedProcessVersionEntityData(
         processId = processId.value,
         processVersionId = Some(processVersion),
         environment = environment,
@@ -55,7 +55,8 @@ class DeployedProcessRepository(val dbConfig: DbConfig,
         commentId = commentId,
         buildInfo = buildInfo
       )
-    } yield ()
+      _ <- deployedProcessesTable += deployedActionData
+    } yield (deployedActionData)
     run(actionToRun)
   }
 
