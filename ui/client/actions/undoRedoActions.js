@@ -1,10 +1,31 @@
+import {reportEvent} from "./actions";
 
-export function undo() {
-  return {type: "UNDO"};
+export function undo(eventInfo) {
+  return (dispatch) => {
+    dispatch(reportEvent({
+      category: eventInfo.category,
+      action: eventInfo.action,
+      name: "undo"
+    }))
+
+    return dispatch({
+      type: "UNDO"
+    })
+  };
 }
 
-export function redo() {
-  return {type: "REDO"};
+export function redo(eventInfo) {
+  return (dispatch) => {
+    dispatch(reportEvent({
+      category: eventInfo.category,
+      action: eventInfo.action,
+      name: "redo"
+    }))
+
+    return dispatch({
+      type: "REDO"
+    })
+  };
 }
 
 export function clear() {

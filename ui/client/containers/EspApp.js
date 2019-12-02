@@ -24,15 +24,23 @@ import '../assets/fonts/fonts.less'
 import '../stylesheets/main.styl'
 import '../app.styl'
 import ErrorHandler from "./ErrorHandler"
+import {v4 as uuid4} from "uuid";
 
 class EspApp extends React.Component {
 
   componentDidMount() {
+    this.generateUniqueUserId()
     this.mountedHistory = this.props.history.listen((location, action) => {
       if (action === "PUSH") {
         this.props.actions.urlChange(location)
       }
     })
+  }
+
+  generateUniqueUserId() {
+    if (!localStorage.getItem(userId)) {
+      localStorage.setItem(userId, uuid4())
+    }
   }
 
   componentWillUnmount() {
@@ -157,6 +165,8 @@ function mapState(state) {
     resolved: !_.isEmpty(loggedUser)
   }
 }
+
+export const userId = "user_id"
 
 EspApp.path = `${nkPath}/`
 EspApp.header = 'ESP'
