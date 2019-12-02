@@ -56,7 +56,7 @@ class DeployedProcessRepository(val dbConfig: DbConfig,
         buildInfo = buildInfo
       )
       _ <- deployedProcessesTable += deployedActionData
-    } yield (deployedActionData)
+    } yield deployedActionData
     run(actionToRun)
   }
 
