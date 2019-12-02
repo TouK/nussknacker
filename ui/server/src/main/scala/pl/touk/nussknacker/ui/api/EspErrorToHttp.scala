@@ -67,7 +67,7 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
   }
 
   def toResponseReject(message: String): ToResponseMarshallable = {
-    val entity = JSONObject(Map("message" -> message)).toString().stripMargin
+    val entity = Encoder.encodeMap[String, String].apply(Map("message" -> message)).spaces2
     HttpResponse(status = StatusCodes.BadRequest, entity = HttpEntity(ContentTypes.`application/json`, entity))
   }
 }

@@ -70,18 +70,18 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
     usingRightClassloader(env) {
       register(env, compileProcess(process, processVersion), testRunId)
     }
-    initializeStateDescriptors(env)
+    //initializeStateDescriptors(env)
   }
 
   //When serializing process graph (StateDescriptor:233) KryoSerializer is initialized without env configuration
   //Maybe it's a bug in flink??
   //TODO: is it the only place where we should do it??
-  private def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
+  /*private def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
     val config = env.getConfig
     env.getStreamGraph.getOperators.asScala.toSet[tuple.Tuple2[Integer, StreamOperator[_]]].map(_.f1).collect {
       case window:WindowOperator[_, _, _, _, _] => window.getStateDescriptor.initializeSerializerUnlessSet(config)
     }
-  }
+  } */
 
   private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: ClassLoader => CompiledProcessWithDeps,
                        testRunId: Option[TestRunId]): Unit = {

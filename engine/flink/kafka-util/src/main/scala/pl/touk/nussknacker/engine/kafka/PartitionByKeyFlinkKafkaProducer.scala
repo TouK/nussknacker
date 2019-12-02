@@ -12,10 +12,12 @@ object PartitionByKeyFlinkKafkaProducer {
   def apply[T](kafkaAddress: String,
                topic: String,
                serializationSchema: KafkaSerializationSchema[T],
+               clientId: String,
                kafkaProperties: Option[Map[String, String]] = None,
                semantic: FlinkKafkaProducer.Semantic = FlinkKafkaProducer.Semantic.AT_LEAST_ONCE): FlinkKafkaProducer[T] = {
     val props = new Properties()
     props.setProperty("bootstrap.servers", kafkaAddress)
+    props.setProperty("client.id", clientId)
     kafkaProperties.map(_.asJava).foreach(props.putAll)
     new FlinkKafkaProducer[T](topic, serializationSchema, props, semantic)
   }

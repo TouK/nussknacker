@@ -6,7 +6,6 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.execution.ExecutionState
-import org.apache.flink.runtime.executiongraph.AccessExecutionJobVertex
 import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
 import org.apache.flink.runtime.minicluster.MiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -98,10 +97,9 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
   // see comment in waitForJobState
   protected def getMiniCluster(resource: MiniClusterResource): MiniCluster
 
-  def execute(jobName: String): JobExecutionResult = {
-    // transform the streaming program into a JobGraph
-    val streamGraph: StreamGraph = getStreamGraph
-    streamGraph.setJobName(jobName)
+
+  override def execute(streamGraph: StreamGraph): JobExecutionResult = {
+
     val jobGraph: JobGraph = streamGraph.getJobGraph
     logger.debug("Running job on local embedded Flink flinkMiniCluster cluster")
 

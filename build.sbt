@@ -87,8 +87,7 @@ val commonSettings =
       crossScalaVersions := supportedScalaVersions,
       scalaVersion  := scala212,
       resolvers ++= Seq(
-        "confluent" at "https://packages.confluent.io/maven",
-        "flink" at "https://repository.apache.org/content/repositories/orgapacheflink-1272"
+        "confluent" at "https://packages.confluent.io/maven"
       ),
       testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
       testOptions in IntegrationTest += scalaTestReports,
