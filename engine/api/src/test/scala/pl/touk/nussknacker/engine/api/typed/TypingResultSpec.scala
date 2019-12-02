@@ -72,6 +72,15 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
     Typed.fromDetailedType[Set[String]].canBeSubclassOf(Typed.fromDetailedType[Set[BigDecimal]]) shouldBe false
   }
 
+  test("determine if numbers can be converted") {
+    Typed[Int].canBeSubclassOf(Typed[Long]) shouldBe true
+    Typed[Long].canBeSubclassOf(Typed[Int]) shouldBe true
+    Typed[Long].canBeSubclassOf(Typed[Double]) shouldBe true
+    Typed[Double].canBeSubclassOf(Typed[Long]) shouldBe false
+    Typed[java.math.BigDecimal].canBeSubclassOf(Typed[Long]) shouldBe true
+    Typed[Long].canBeSubclassOf(Typed[java.math.BigDecimal]) shouldBe true
+  }
+
   test("find common supertype for simple types") {
     commonSuperTypeFinder.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
     commonSuperTypeFinder.commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
@@ -125,6 +134,14 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
     import ClassHierarchy._
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union)
     unionFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed(Typed[Dog], Typed[Cactus])
+  }
+
+  test("determine if can be subclass for tagged value") {
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[String], "tag1")) shouldBe true
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[String], "tag2")) shouldBe false
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(Typed.tagged(TypedClass[Integer], "tag1")) shouldBe false
+    Typed.tagged(TypedClass[String], "tag1").canBeSubclassOf(TypedClass[String]) shouldBe true
+    TypedClass[String].canBeSubclassOf(Typed.tagged(TypedClass[String], "tag1")) shouldBe false
   }
 
   object ClassHierarchy {

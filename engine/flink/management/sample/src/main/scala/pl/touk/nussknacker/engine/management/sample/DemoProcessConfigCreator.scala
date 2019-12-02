@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
-import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator.{Notification, PageVisit, Transaction}
@@ -129,7 +129,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   class TopicHandlerFactory extends ExceptionHandlerFactory {
 
     @MethodToInvoke
-    def create(@ParamName("topic") topic: String, metaData: MetaData) = VerboselyLoggingExceptionHandler(metaData)
+    def create(@ParamName("topic") topic: String, metaData: MetaData) = BrieflyLoggingExceptionHandler(metaData)
 
   }
 

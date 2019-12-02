@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompiler
 
 object FlinkVerificationMain extends FlinkRunner {
@@ -24,7 +24,7 @@ case class FlinkVerificationMain(modelData: ModelData, process: EspProcess, proc
   extends FlinkStubbedRunner {
   def runTest(): Unit = {
     val env = createEnv
-    val registrar: FlinkProcessRegistrar = new VerificationFlinkProcessCompiler(
+    val registrar: FlinkStreamingProcessRegistrar = new VerificationFlinkProcessCompiler(
       process, env.getConfig, modelData.configCreator,
       modelData.processConfig).createFlinkProcessRegistrar()
     registrar.register(env, process, processVersion, Option(TestRunId("dummy")))

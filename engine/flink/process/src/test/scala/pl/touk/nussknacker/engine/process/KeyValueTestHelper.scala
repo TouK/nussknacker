@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent._
@@ -53,7 +53,7 @@ object KeyValueTestHelper {
       override def listeners(config: Config) = Seq(LoggingListener)
 
       override def customStreamTransformers(config: Config) = Map()
-      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler)
+      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
       override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
 
@@ -66,7 +66,7 @@ object KeyValueTestHelper {
       val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration)
       val creator = prepareCreator(env.getConfig, List.empty, config)
       val configuration = ConfigFactory.load()
-      new StandardFlinkProcessCompiler(creator, configuration).createFlinkProcessRegistrar().register(env, process, processVersion)
+      new FlinkStreamingProcessCompiler(creator, configuration).createFlinkProcessRegistrar().register(env, process, processVersion)
       MockService.data.clear()
       env.execute()
     }

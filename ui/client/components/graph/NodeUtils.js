@@ -183,13 +183,13 @@ class NodeUtils {
   _canHaveMoreInputs = (nodeTo, nodeInputs, processDefinitionData) => {
     const edgesForNode = this.edgesForNode(nodeTo, processDefinitionData, true)
     const maxEdgesForNode = edgesForNode.edges.length
-    return nodeTo.type !== "Source" && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode)
+    return this.hasInputs(nodeTo) && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode)
   }
 
   _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData) => {
     const edgesForNode = this.edgesForNode(node, processDefinitionData, false)
     const maxEdgesForNode = edgesForNode.edges.length
-    return node.type !== "Sink" && (edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode)
+    return this.hasOutputs(node) && (edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode)
   }
 
   _nodeInputs = (nodeId, process) => {
@@ -204,6 +204,10 @@ class NodeUtils {
     return `${edge.from}-${edge.to}`
   }
 
+  //TODO: methods below should be based on backend data, e.g. Subprocess can have outputs or not - based on individual subprocess...
+  hasInputs = (node) => (node.type !== "Source" && node.type !== "SubprocessInputDefinition")
+
+  hasOutputs = (node) => (node.type !== "Sink" && node.type !== "SubprocessOutputDefinition")
 
 }
 

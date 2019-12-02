@@ -113,13 +113,13 @@ sidenavMixin()
   margin-top: 0 !important
 
 .panel-comment
+  margin-top 1px
   font-size 12px
-  a
-    color: okColor
-  a:hover
-    color: warningColor
-  a:visited
-    color: okColor
+  word-break break-word
+  p
+    width: 90%
+    margin-left: 0
+    margin-right: 0
 
 .sideNodeDetails
   padding: 0 buttonPadding 0 0 !important
@@ -147,6 +147,41 @@ sidenavMixin()
   div
     text-align center
 
-
 .thumbVertical
   background-color scrollbarColor
+
+.floating
+  position: fixed
+  top: menuBarHeight
+  transition left 0.5s ease, right 0.5s ease
+  z-index: 100
+  padding-top 10px
+
+  &.right
+    right: 0
+
+  &.is-opened
+    right: sidebarWidth
+
+  &.left
+    left: 0
+    &.is-opened
+      left: sidebarWidth
+
+.process-name
+  @extend .floating
+  font-family 'Open Sans'
+  font-size 16px
+  font-weight 600
+  color #3A3A3A
+  padding-left 15px
+
+.zoom-in-out
+  @extend .floating
+  padding-right 10px
+  padding-top 8px
+  display inline-flex
+
+.zoom
+    cursor: pointer
+    margin-left 2px

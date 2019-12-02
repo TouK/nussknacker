@@ -6,7 +6,7 @@ import java.nio.file.Files
 import java.time.Duration
 import java.util.Properties
 
-import kafka.server.{KafkaConfig, KafkaServer}
+import kafka.server.KafkaServer
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.TopicPartition
@@ -51,7 +51,7 @@ object KafkaZookeeperServer {
       properties.setProperty(key, value)
     }
 
-    val server = new KafkaServer(new KafkaConfig(properties), time = Time.SYSTEM)
+    val server = new KafkaServer(new kafka.server.KafkaConfig(properties), time = Time.SYSTEM)
     server.startup()
 
     server
@@ -72,24 +72,25 @@ case class KafkaZookeeperServer(zooKeeperServer: NIOServerCnxnFactory, kafkaServ
 
 object KafkaUtils {
 
-  def createRawKafkaProducer(kafkaAddress: String): KafkaProducer[Array[Byte], Array[Byte]] = {
-    val props: Properties = createCommonProducerProps(kafkaAddress)
+  def createRawKafkaProducer(kafkaAddress: String, id: String): KafkaProducer[Array[Byte], Array[Byte]] = {
+    val props: Properties = createCommonProducerProps(kafkaAddress, id)
     props.put("key.serializer", classOf[ByteArraySerializer].getName)
     props.put("value.serializer", classOf[ByteArraySerializer].getName)
     new KafkaProducer(props)
   }
 
-  def createKafkaProducer(kafkaAddress: String): KafkaProducer[String, String] = {
-    val props: Properties = createCommonProducerProps(kafkaAddress)
+  def createKafkaProducer(kafkaAddress: String, id: String): KafkaProducer[String, String] = {
+    val props: Properties = createCommonProducerProps(kafkaAddress, id)
     props.put("key.serializer", classOf[StringSerializer].getName)
     props.put("value.serializer", classOf[StringSerializer].getName)
     new KafkaProducer(props)
   }
 
-  private def createCommonProducerProps[K, T](kafkaAddress: String) = {
+  private def createCommonProducerProps[K, T](kafkaAddress: String, id: String) = {
     val props = new Properties()
     props.put("bootstrap.servers", kafkaAddress)
     props.put("batch.size", "100000")
+    KafkaEspUtils.setClientId(props, id)
     props
   }
 

@@ -96,6 +96,9 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return ([
       this.isGroup() ? this.renderGroupUngroup() : null,
+      <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
+        Close
+      </button>,
       !this.props.readOnly ?
           <LaddaButton
               key="1"
@@ -108,10 +111,7 @@ class NodeDetailsModal extends React.Component {
             Save
           </LaddaButton>
           :
-          null,
-      <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
-        Close
-      </button>
+          null
     ] );
   }
 
@@ -139,8 +139,12 @@ class NodeDetailsModal extends React.Component {
               </div>
             </div>
             {this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
-                                    <NodeDetailsContent isEditMode={false} node={node} nodeErrors={this.props.nodeErrors}
-                                                        onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))}
+                                    <NodeDetailsContent isEditMode={false}
+                                                        showValidation={true}
+                                                        node={node}
+                                                        nodeErrors={this.props.nodeErrors}
+                                                        onChange={() => {}}
+                                                        testResults={testResults(node.id)}/><hr/></div>))}
           </div>
         </div>
       </div>
@@ -196,7 +200,9 @@ class NodeDetailsModal extends React.Component {
                               renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
                     {
                       this.isGroup() ? this.renderGroup(testResults)
-                        : (<NodeDetailsContent isEditMode={!this.props.readOnly} node={this.state.editedNode}
+                        : (<NodeDetailsContent isEditMode={!this.props.readOnly}
+                                               showValidation={true}
+                                               node={this.state.editedNode}
                                                nodeErrors={this.props.nodeErrors}
                                                onChange={this.updateNodeState}
                                                testResults={testResults(this.state.currentNodeId)}/>)
@@ -236,7 +242,11 @@ function mapState(state) {
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
-    readOnly: !state.settings.loggedUser.canWrite(processCategory) || state.graphReducer.businessView || state.graphReducer.nodeToDisplayReadonly || false,
+    readOnly: !state.settings.loggedUser.canWrite(processCategory)
+      || state.graphReducer.businessView
+      || state.graphReducer.nodeToDisplayReadonly
+      || _.get(state, 'graphReducer.fetchedProcessDetails.isArchived')
+      || false,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,
     processDefinitionData: processDefinitionData,

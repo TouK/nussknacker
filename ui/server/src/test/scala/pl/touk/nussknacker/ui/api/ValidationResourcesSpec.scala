@@ -21,7 +21,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport {
 
-  val route = withPermissions(new ValidationResources(processValidation), testPermissionRead)
+  val route = withPermissions(new ValidationResources(processResolving), testPermissionRead)
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 

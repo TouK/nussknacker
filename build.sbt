@@ -5,7 +5,9 @@ import sbt._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
-val scalaV = "2.11.12"
+val scala211 = "2.11.12"
+val scala212 = "2.12.10"
+lazy val supportedScalaVersions = List(scala212, scala211)
 
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
@@ -26,6 +28,7 @@ val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false
 publishTo := Some(Resolver.defaultLocal)
+crossScalaVersions := Nil
 
 val publishSettings = Seq(
   publishMavenStyle := true,
@@ -81,7 +84,8 @@ val commonSettings =
     Seq(
       test in assembly := {},
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-      scalaVersion  := scalaV,
+      crossScalaVersions := supportedScalaVersions,
+      scalaVersion  := scala212,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
         "flink" at "https://repository.apache.org/content/repositories/orgapacheflink-1272"
@@ -93,7 +97,8 @@ val commonSettings =
         "-unchecked",
         "-deprecation",
         "-encoding", "utf8",
-        "-Xfatal-warnings",
+        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
+//        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
@@ -102,11 +107,15 @@ val commonSettings =
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
-        "-Xlint:unchecked"
+        "-Xlint:unchecked",
+        //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
+        "-parameters"
       ),
       assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
       coverageMinimum := 60,
-      coverageFailOnMinimum := false
+      coverageFailOnMinimum := false,
+      //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
+      scalacOptions in (Compile, doc) -= "-Xfatal-warnings"
     )
 
 val akkaV = "2.5.21" //same version as in Flink
@@ -116,7 +125,6 @@ val springV = "5.1.4.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
-val log4jV = "1.7.21"
 val argonautV = "6.2.1"
 val circeV = "0.11.1"
 val jacksonV = "2.9.2"
@@ -138,6 +146,7 @@ val hsqldbV = "2.3.4"
 val postgresV = "42.2.5"
 val flywayV = "5.2.4"
 val confluentV = "4.1.2"
+val jbcryptV = "0.4"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -154,8 +163,16 @@ lazy val dockerSettings = {
     dockerLabels := Map(
       "tag" -> dockerTagName.getOrElse(version.value),
       "version" -> version.value,
-      "scala" -> scalaV,
+      "scala" -> scalaVersion.value,
       "flink" -> flinkV
+    ),
+    dockerEnvVars := Map(
+      "AUTHENTICATION_METHOD" -> "BasicAuth",
+      "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
+      "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
+      "OAUTH2_RESPONSE_TYPE" -> "code",
+      "OAUTH2_GRANT_TYPE" -> "authorization_code",
+      "OAUTH2_SCOPE" -> "read:user",
     ),
     version in Docker := dockerTagName.getOrElse(version.value)
   )
@@ -168,16 +185,24 @@ lazy val dist = (project in file("nussknacker-dist"))
     packageName in Universal := ("nussknacker" + "-" + version.value),
     Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
       (assembly in Compile) in generic,
-      (assembly in Compile) in example
+      (assembly in Compile) in demo
     ).value,
     mappings in Universal += {
-      val genericModel = generic.base / "target" / "scala-2.11" / "genericModel.jar"
+      val genericModel = (crossTarget in generic).value / "genericModel.jar"
       genericModel -> "model/genericModel.jar"
     },
     mappings in Universal += {
-      val exampleModel = example.base / "target" / "scala-2.11" / s"nussknacker-example-assembly-${version.value}.jar"
-      exampleModel -> "model/exampleModel.jar"
+      val demoModel = (crossTarget in demo).value / s"demoModel.jar"
+      demoModel -> "model/demoModel.jar"
     },
+    /* //FIXME: figure out how to filter out only for .tgz, not for docker
+    mappings in Universal := {
+      val universalMappings = (mappings in Universal).value
+      //we don't want docker-* stuff in .tgz
+      universalMappings filterNot { case (file, _) =>
+        file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
+      }
+    },*/
     publishArtifact := false,
     SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
   )
@@ -198,13 +223,11 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
-        "ch.qos.logback" % "logback-classic" % logbackV % "it,test"
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
       )
     }
   ).
-  dependsOn(interpreter, standaloneUtil, httpUtils)
+  dependsOn(interpreter, standaloneUtil, httpUtils, testUtil % "it,test")
 
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
@@ -217,7 +240,6 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     },
     libraryDependencies ++= {
       Seq(
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
         // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
@@ -230,7 +252,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(engineStandalone)
+  dependsOn(engineStandalone, testUtil % "test")
 
 
 lazy val management = (project in engine("flink/management")).
@@ -241,7 +263,8 @@ lazy val management = (project in engine("flink/management")).
     name := "nussknacker-management",
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in managementSample,
-      (assembly in Compile) in managementJavaSample
+      (assembly in Compile) in managementJavaSample,
+      (assembly in Compile) in managementBatchSample
     ).value,
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
@@ -253,16 +276,11 @@ lazy val management = (project in engine("flink/management")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
-        "ch.qos.logback" % "logback-classic" % logbackV % "it,test",
-        "org.slf4j" % "log4j-over-slf4j" % log4jV % "it,test",
-        "ch.qos.logback" % "logback-core" % logbackV % "it,test"
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
       )
     }
-  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", securityApi)
+  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", security)
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -283,12 +301,11 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-queryable-state-runtime" % flinkV % "test",
-        "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests"
       )
     }
   ).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", securityApi)
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", security)
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -305,11 +322,25 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
     }
   ).dependsOn(flinkUtil, process % "runtime")
 
-
-lazy val example = (project in engine("example")).
+lazy val managementBatchSample = (project in engine("flink/management/batch_sample")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-example",
+    name := "nussknacker-management-batch-sample"  ,
+    assemblyJarName in assembly := "managementBatchSample.jar",
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
+    test in assembly := {},
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-scala" % flinkV % "provided",
+      )
+    }
+
+  ).dependsOn(flinkUtil, process % "runtime,test")
+
+lazy val demo = (project in engine("demo")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-demo",
     fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
@@ -321,6 +352,7 @@ lazy val example = (project in engine("example")).
       )
     },
     test in assembly := {},
+    assemblyJarName in assembly := "demoModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))
@@ -357,8 +389,7 @@ lazy val process = (project in engine("flink/process")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV
       )
     }
   ).dependsOn(flinkApi, flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
@@ -374,8 +405,6 @@ lazy val interpreter = (project in engine("interpreter")).
         "com.google.code.findbugs" % "jsr305" % "3.0.2",
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
-        "ch.qos.logback" % "logback-classic" % logbackV % "test",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test"
       )
     }
@@ -390,7 +419,7 @@ lazy val interpreter = (project in engine("interpreter")).
     buildInfoPackage := "pl.touk.nussknacker.engine.version",
     buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
   ).
-  dependsOn(util)
+  dependsOn(util, testUtil % "test")
 
 lazy val kafka = (project in engine("kafka")).
   settings(commonSettings).
@@ -398,7 +427,8 @@ lazy val kafka = (project in engine("kafka")).
     name := "nussknacker-kafka",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" % "kafka-clients" % kafkaV
+        "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "org.scalatest" %% "scalatest" % scalaTestV
       )
     }
   ).
@@ -453,13 +483,11 @@ lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "ch.qos.logback" % "logback-classic" % logbackV,
-        "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
-        "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
-        "org.scalatest" %% "scalatest" % scalaTestV
+        "org.slf4j" % "log4j-over-slf4j" % slf4jV
       )
     }
   )
+  .dependsOn(testUtil, kafka)
 
 lazy val util = (project in engine("util")).
   settings(commonSettings).
@@ -468,13 +496,23 @@ lazy val util = (project in engine("util")).
     libraryDependencies ++= {
       Seq(
         "com.iheart" %% "ficus" % ficusV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "io.circe" %% "circe-java8" % "0.11.1"
+        "io.circe" %% "circe-java8" % circeV
       )
     }
-  ).dependsOn(api)
+  ).dependsOn(api, testUtil % "test")
 
-
+lazy val testUtil = (project in engine("test-util")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-test-util",
+    libraryDependencies ++= {
+      Seq(
+        "org.scalatest" %% "scalatest" % scalaTestV,
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "ch.qos.logback" % "logback-classic" % logbackV
+      )
+    }
+  )
 
 lazy val flinkUtil = (project in engine("flink/util")).
   settings(commonSettings).
@@ -483,7 +521,8 @@ lazy val flinkUtil = (project in engine("flink/util")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
+        "com.clearspring.analytics" % "stream" % "2.9.8"
       )
     }
   ).dependsOn(util, flinkApi)
@@ -497,13 +536,10 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-test-utils" % flinkV,
         "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests",
-        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "ch.qos.logback" % "logback-classic" % logbackV,
-        "org.scalatest" %% "scalatest" % scalaTestV
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
-  ).dependsOn(queryableState)
+  ).dependsOn(testUtil, queryableState)
 
 lazy val standaloneUtil = (project in engine("standalone/util")).
   settings(commonSettings).
@@ -512,13 +548,12 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
     libraryDependencies ++= {
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
         //akka-http is only for StandaloneRequestResponseLogger
         "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force(),
         "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force()
       )
     }
-  ).dependsOn(util, standaloneApi)
+  ).dependsOn(util, standaloneApi, testUtil % "test")
 
 
 lazy val standaloneApi = (project in engine("standalone/api")).
@@ -544,27 +579,31 @@ lazy val api = (project in engine("api")).
         "org.typelevel" %% "cats-effect" % "1.1.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  )
+  ).dependsOn(testUtil % "test")
 
-lazy val securityApi = (project in engine("security-api")).
+lazy val security = (project in engine("security")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-security-api",
+    name := "nussknacker-security",
     libraryDependencies ++= {
       Seq(
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
         "com.typesafe.akka" %% "akka-stream" % akkaV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
+        "com.typesafe" % "config" % configV ,
+        "org.mindrot" % "jbcrypt" % jbcryptV,
+        //Packages below are only for plugin providers purpose
+        "io.circe" %% "circe-core" % circeV,
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
-        "com.typesafe" % "config" % configV
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
       )
     }
   )
-  .dependsOn(util)
+  .dependsOn(util, httpUtils, testUtil % "test")
 
 lazy val flinkApi = (project in engine("flink/api")).
   settings(commonSettings).
@@ -587,11 +626,10 @@ lazy val processReports = (project in engine("processReports")).
       Seq(
         "com.typesafe" % "config" % "1.3.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.iheart" %% "ficus" % ficusV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "com.iheart" %% "ficus" % ficusV
       )
     }
-  ).dependsOn(httpUtils)
+  ).dependsOn(httpUtils, testUtil % "test")
 
 lazy val httpUtils = (project in engine("httpUtils")).
   settings(commonSettings).
@@ -600,17 +638,19 @@ lazy val httpUtils = (project in engine("httpUtils")).
     libraryDependencies ++= {
       val sttpV = "2.0.0-M6"
       Seq(
+        //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
+        "io.circe" %% "circe-core" % circeV force(),
+        "io.circe" %% "circe-parser" % circeV force(),
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
         "org.asynchttpclient" % "async-http-client" % "2.10.4",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV,
-        "com.softwaremill.sttp.client" %% "circe" % sttpV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "com.softwaremill.sttp.client" %% "circe" % sttpV
       )
     }
-  ).dependsOn(api)
+  ).dependsOn(api, testUtil % "test")
 
 //osobny modul bo chcemy uzyc klienta do testowania w managementSample
 lazy val queryableState = (project in engine("queryableState")).
@@ -631,11 +671,11 @@ lazy val queryableState = (project in engine("queryableState")).
 
 lazy val buildUi = taskKey[Unit]("builds ui")
 
-def runNpm(command: String, errorMessage: String): Unit = {
+def runNpm(command: String, errorMessage: String, outputPath: File): Unit = {
   import sys.process.Process
   val path = Path.apply("ui/client").asFile
   println("Using path: " + path.getAbsolutePath)
-  val result = Process(s"npm $command", path)!;
+  val result = Process(s"npm $command", path, "OUTPUT_PATH" -> outputPath.absolutePath)!;
   if (result != 0) throw new RuntimeException(errorMessage)
 }
 
@@ -644,11 +684,17 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel",
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % scalaTestV % "test",
       "io.circe" %% "circe-java8" % circeV
     )
   )
-  .dependsOn(interpreter)
+  .dependsOn(api, interpreter, security, testUtil % "test")
+
+lazy val listenerApi = (project in file("ui/listener-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-listener-api",
+  )
+  .dependsOn(restmodel, api, util, testUtil % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -656,8 +702,8 @@ lazy val ui = (project in file("ui/server"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-ui",
-    buildUi := {
-      runNpm("run build", "Client build failed")
+    buildUi :=  {
+      runNpm("run build", "Client build failed", (crossTarget in compile).value)
     },
     parallelExecution in ThisBuild := false,
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Info),
@@ -678,7 +724,7 @@ lazy val ui = (project in file("ui/server"))
     /*
       We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and 
+      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
     packageBin in Compile := (packageBin in Compile).dependsOn(
@@ -695,7 +741,7 @@ lazy val ui = (project in file("ui/server"))
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
-        "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
+        "org.slf4j" % "log4j-over-slf4j" % slf4jV,
         "com.carrotsearch" % "java-sizeof" % "0.0.5",
 
         "com.typesafe.slick" %% "slick" % slickV,
@@ -704,20 +750,17 @@ lazy val ui = (project in file("ui/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.3",
-        "org.mindrot" % "jbcrypt" % "0.4",
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
-        
+
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test"
       )
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel)
+  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
-addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
-
+addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")

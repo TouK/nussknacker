@@ -12,7 +12,7 @@ class ServerError extends React.Component {
           <br/>
           <p>
             {
-              this.props.description || "An unexpected error seems to have occurred. Why not try refreshing your page? Or you can contact with administrators."
+              this.props.description || "An unexpected error seems to have occurred. Please contact with system administrators."
             }
           </p>
         </div>

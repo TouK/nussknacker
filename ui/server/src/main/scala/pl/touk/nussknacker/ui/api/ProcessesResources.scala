@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
+import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
@@ -26,24 +27,33 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
+import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
 
-class ProcessesResources(val processRepository: FetchingProcessRepository,
+class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          writeRepository: WriteProcessRepository,
                          jobStatusService: JobStatusService,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation,
+                         processResolving: UIProcessResolving,
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer,
-                         val processAuthorizer:AuthorizeProcess)
+                         val processAuthorizer:AuthorizeProcess,
+                         processChangeListener: ProcessChangeListener)
                         (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -55,7 +65,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
 
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
-  def route(implicit user: LoggedUser): Route = {
+  def securedRoute(implicit user: LoggedUser): Route = {
       encodeResponse {
         path("archive") {
           get {
@@ -66,7 +76,10 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
         } ~ path("unarchive" / Segment) { processName =>
           (post & processId(processName)) { processId =>
             canWrite(processId) {
-              complete(writeArchive(processId.id, isArchived = false))
+              complete {
+                writeArchive(processId.id, isArchived = false)
+                  .withSideEffect(_ => processChangeListener.handle(OnUnarchived(processId.id)))
+              }
             }
           }
         } ~ path("archive" / Segment) { processName =>
@@ -75,7 +88,10 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               /*
               should not allow to archive still used subprocess IGNORED TEST
               */
-              complete(writeArchive(processId.id, isArchived = true))
+              complete {
+                writeArchive(processId.id, isArchived = true)
+                  .withSideEffect(_ => processChangeListener.handle(OnArchived(processId.id)))
+              }
             }
           }
         }  ~ path("processes") {
@@ -108,11 +124,11 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           get {
             parameter('names.as(CsvSeq[String])) { namesToFetch =>
               complete {
-                validateAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName(_)).toList))
+                validateAndReverseResolveAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName(_)).toList))
               }
             } ~
             complete {
-              validateAll(processRepository.fetchProcessesDetails())
+              validateAndReverseResolveAll(processRepository.fetchProcessesDetails())
             }
           }
         } ~ path("processesComponents" / Segment) { componentId =>
@@ -132,7 +148,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
         } ~ path("subProcessesDetails") {
           get {
             complete {
-              validateAll(processRepository.fetchSubProcessesDetails[DisplayableProcess]())
+              validateAndReverseResolveAll(processRepository.fetchSubProcessesDetails[CanonicalProcess]())
             }
           }
         } ~ path("processes" / "status") {
@@ -171,6 +187,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
             (delete & canWrite(processId)) {
               complete {
                 writeRepository.deleteProcess(processId.id).map(toResponse(StatusCodes.OK))
+                  .withSideEffect(_ => processChangeListener.handle(OnDeleted(processId.id)))
               }
             } ~ (put & canWrite(processId)) {
               entity(as[ProcessToSave]) { processToSave =>
@@ -179,17 +196,20 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                     case true =>
                       rejectSavingArchivedProcess
                     case false =>
-                      saveProcess(processToSave, processId.id).map(toResponseEither[ValidationResult])
+                      saveProcess(processToSave, processId.id)
+                        .withSideEffect(_.toOption.flatMap(_.processVersionEntityData).foreach(p => processChangeListener.handle(OnSaved(processId.id, p.id))))
+                        .map(_.map(_.validation))
+                        .map(toResponseEither[ValidationResult])
                   }
                 }
               }
             } ~ parameter('businessView ? false) { (businessView) =>
               get {
                 complete {
-                  processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id, businessView).map[ToResponseMarshallable] {
+                  processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id, businessView).map[ToResponseMarshallable] {
                     case Some(process) =>
                       // todo: we should really clearly separate backend objects from ones returned to the front
-                      validate(process, businessView)
+                      validateAndReverseResolve(process, businessView)
                         .map { validatedProcess =>
                           val historyWithoutId = validatedProcess.history.map(_.copy(processId = processName))
                           validatedProcess.copy(id = processName, history = historyWithoutId)
@@ -207,6 +227,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                 processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap {
                   case Some(details) if details.currentlyDeployedAt.isEmpty =>
                     writeRepository.renameProcess(processId.id, newName).map(toResponse(StatusCodes.OK))
+                      .withSideEffect(_ => processChangeListener.handle(OnRenamed(processId.id, processId.name, ProcessName(newName))))
                   case _ => Future.successful(espErrorToHttp(ProcessAlreadyDeployed(processName)))
                 }
               }
@@ -216,10 +237,10 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           (get & processId(processName)) { processId =>
             parameter('businessView ? false) { businessView =>
               complete {
-                processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId, businessView).map[ToResponseMarshallable] {
+                processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId, businessView).map[ToResponseMarshallable] {
                   case Some(process) =>
                     // todo: we should really clearly separate backend objects from ones returned to the front
-                    validate(process, businessView)
+                    validateAndReverseResolve(process, businessView)
                       .map { validatedProcess =>
                         val historyWithoutId = validatedProcess.history.map(_.copy(processId = processName))
                         validatedProcess.copy(id = processName, history = historyWithoutId)
@@ -244,6 +265,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                         processingType = processingType,
                         isSubprocess = isSubprocess
                       )
+                        .withSideEffect(_.toOption.flatten.foreach(p => processChangeListener.handle(OnSaved(ProcessId(p.processId), p.id))))
+                        .map(_.map(_ => ()))
                         .map(toResponse(StatusCodes.Created))
                     case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
                   }
@@ -266,11 +289,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
-          (post & processId(processName)) { processId =>
+          (post & processIdWithCategory(processName)) { data =>
             hasAdminPermission(user) {
               complete {
                 // TODO: Validate that category exists at categories list
-                writeRepository.updateCategory(processId = processId.id, category = category).map(toResponse(StatusCodes.OK))
+                writeRepository.updateCategory(processId = data.id, category = category).map(toResponse(StatusCodes.OK))
+                  .withSideEffect(_ => processChangeListener.handle(OnCategoryChanged(data.id, oldCategory = data.category, newCategory = category)))
               }
             }
           }
@@ -319,18 +343,21 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
         case Some(details) => details.isArchived
         case _ => false
       }
+
+  case class SaveProcessResult(processVersionEntityData: Option[ProcessVersionEntityData], validation: ValidationResults.ValidationResult)
+
   private def saveProcess(processToSave: ProcessToSave, processId: ProcessId)
-                         (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
+                         (implicit loggedUser: LoggedUser):Future[Either[EspError, SaveProcessResult]] = {
     val displayableProcess = processToSave.process
     (for {
-      validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processValidation.validate(displayableProcess)))
+      validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(displayableProcess)))
       deploymentData = {
-        val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-        val json = ProcessMarshaller.toJson(canonical).spaces2
+        val substituted = processResolving.resolveExpressions(displayableProcess, validation.typingInfo)
+        val json = ProcessMarshaller.toJson(substituted).spaces2
         GraphProcess(json)
       }
-      result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
-    } yield validation).value
+      updateResult <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
+    } yield SaveProcessResult(updateResult, validation.withClearedTypingInfo)).value
   }
   private def rejectSavingArchivedProcess: Future[ToResponseMarshallable]=
     Future.successful(HttpResponse(status = StatusCodes.Forbidden, entity = "Cannot save archived process"))
@@ -365,16 +392,17 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
       }
   }
 
-  private def validate(processDetails: ProcessDetails, businessView: Boolean): Future[ValidatedProcessDetails] = {
-    if (businessView) Future.successful(processDetails.mapProcess(_.withSuccessValidation())) else validate(processDetails)
+  private def validateAndReverseResolveAll(processDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]) : Future[List[ValidatedProcessDetails]] = {
+    processDetails.flatMap(all => Future.sequence(all.map(validateAndReverseResolve(_, businessView = false))))
   }
 
-  private def validate(processDetails: ProcessDetails) : Future[ValidatedProcessDetails] = {
-    Future.successful(processDetails.mapProcess(process => new ValidatedDisplayableProcess(process, processValidation.validate(process))))
-  }
-
-  private def validateAll(processDetails: Future[List[ProcessDetails]]) : Future[List[ValidatedProcessDetails]] = {
-    processDetails.flatMap(all => Future.sequence(all.map(validate)))
+  private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess], businessView: Boolean): Future[ValidatedProcessDetails] = {
+    val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
+      val processingType = processDetails.processingType
+      val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType)
+      processResolving.reverseResolveExpressions(canonical, processingType, businessView, validationResult)
+    }
+    Future.successful(validatedDetails)
   }
 
   private implicit class ToBasicConverter(self: Future[List[BaseProcessDetails[_]]]) {

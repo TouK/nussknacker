@@ -1,10 +1,10 @@
 import PropTypes from "prop-types";
 import React from "react";
 import ValidationLabels from "../../modals/ValidationLabels";
-import {notEmptyValidator} from "../../../common/Validators";
+import {allValid} from "../../../common/Validators";
 
 const Input = (props) => {
-    const {label, path, value, onChange, isMarked, readOnly, validators} = props;
+    const {label, path, value, onChange, isMarked, readOnly, showValidation, validators} = props;
 
     return (
         <div className="node-row">
@@ -13,12 +13,12 @@ const Input = (props) => {
                 <input
                     key={label}
                     type="text"
-                    className="node-input"
+                    className={!showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"}
                     value={value}
                     onChange={(event) => onChange(path, event.target.value)}
                     readOnly={readOnly}
                 />
-                <ValidationLabels validators={[notEmptyValidator]} values={[value]}/>
+                {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
             </div>
         </div>
     );
@@ -30,7 +30,8 @@ Input.propTypes = {
     label: PropTypes.string.isRequired,
     value: PropTypes.string.isRequired,
     path: PropTypes.string.isRequired,
-    onChange: PropTypes.func.isRequired
+    onChange: PropTypes.func.isRequired,
+    showValidation: PropTypes.bool.isRequired
 };
 
 Input.defaultProps = {

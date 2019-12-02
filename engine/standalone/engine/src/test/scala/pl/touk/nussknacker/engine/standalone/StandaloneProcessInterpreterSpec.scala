@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.standalone
 
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
@@ -12,16 +10,12 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.standalone.utils.metrics.{MetricsProvider, NoOpMetricsProvider}
 import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.DropwizardMetricsProvider
+import pl.touk.nussknacker.engine.standalone.utils.metrics.{MetricsProvider, NoOpMetricsProvider}
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Eventually with ScalaFutures {
-
-  override implicit val patienceConfig = PatienceConfig(
-    timeout = Span(10, Seconds),
-    interval = Span(100, Millis)
-  )
+class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryPatientScalaFutures {
 
   import spel.Implicits._
 

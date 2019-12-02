@@ -20,7 +20,7 @@ import scala.util.Random
 
 class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLogging {
 
-  val standaloneCategory = "StandaloneCategory1"
+  val standaloneCategory = "ServerRestApi"
 
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map.empty
 

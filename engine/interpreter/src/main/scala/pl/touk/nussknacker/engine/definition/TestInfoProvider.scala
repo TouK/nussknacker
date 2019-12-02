@@ -29,6 +29,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     .withoutLazyVals(modelData.configCreator.expressionConfig(modelData.processConfig).globalProcessVariables.mapValues(_.value), List())
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
+    modelData.dictServices.dictRegistry,
     modelData.processDefinition.expressionConfig)
 
   private lazy val factory = new ProcessObjectFactory(evaluator)
@@ -71,6 +72,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
                                  (implicit processMetaData: MetaData, nodeId: NodeId) = {
     val parametersToCompile = source.ref.parameters
     val ctx = contextWithOnlyGlobalVariables
-    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, ctx.clearVariables, ctx).toOption
+    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, ctx, Map.empty, eager = false).toOption
   }
 }

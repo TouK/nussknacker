@@ -18,8 +18,7 @@ import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.security.NussknackerInternalUser
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser, Permission}
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
@@ -121,7 +120,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
               processDeploymentData = deploymentData,
               processingType = processingType,
               isSubprocess = isSubprocess
-            )
+            ).map(_.right.map(_ => ()))
           case Some(processId) =>
             fetchingProcessRepository.fetchLatestProcessVersion[Unit](processId).flatMap {
               case Some(version) if version.user == Initialization.nussknackerUser.id =>

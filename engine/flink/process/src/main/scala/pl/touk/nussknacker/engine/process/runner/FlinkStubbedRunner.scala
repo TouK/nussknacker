@@ -7,6 +7,7 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.util.MetaDataExtractor
 
@@ -22,7 +23,7 @@ trait FlinkStubbedRunner {
 
   protected def createEnv : StreamExecutionEnvironment =
     StreamExecutionEnvironment.createLocalEnvironment(
-      MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData).parallelism.getOrElse(1), configuration)
+      MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](process.metaData).parallelism.getOrElse(1), configuration)
 
   //we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
   protected def execute[T](env: StreamExecutionEnvironment, savepointRestoreSettings: SavepointRestoreSettings) : Unit = {

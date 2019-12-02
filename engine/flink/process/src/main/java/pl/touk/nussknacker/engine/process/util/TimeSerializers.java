@@ -39,7 +39,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment;
 
 /**
  * Copied from com.esotericsoftware.kryo.serializers.TimeSerializers - newer Kryo version
@@ -54,26 +53,26 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment;
 
 public class TimeSerializers {
 
-    public static void addDefaultSerializers(StreamExecutionEnvironment env) {
-        addSerializer(env, Duration.class, new DurationSerializer());
-        addSerializer(env, Instant.class, new InstantSerializer());
-        addSerializer(env, LocalDate.class, new LocalDateSerializer());
-        addSerializer(env, LocalTime.class, new LocalTimeSerializer());
-        addSerializer(env, LocalDateTime.class, new LocalDateTimeSerializer());
-        addSerializer(env, ZoneOffset.class, new ZoneOffsetSerializer());
-        addSerializer(env, ZoneId.class, new ZoneIdSerializer());
-        addSerializer(env, OffsetTime.class, new OffsetTimeSerializer());
-        addSerializer(env, OffsetDateTime.class, new OffsetDateTimeSerializer());
-        addSerializer(env, ZonedDateTime.class, new ZonedDateTimeSerializer());
-        addSerializer(env, Year.class, new YearSerializer());
-        addSerializer(env, YearMonth.class, new YearMonthSerializer());
-        addSerializer(env, MonthDay.class, new MonthDaySerializer());
-        addSerializer(env, Period.class, new PeriodSerializer());
+    public static void addDefaultSerializers(ExecutionConfig config) {
+        addSerializer(config, Duration.class, new DurationSerializer());
+        addSerializer(config, Instant.class, new InstantSerializer());
+        addSerializer(config, LocalDate.class, new LocalDateSerializer());
+        addSerializer(config, LocalTime.class, new LocalTimeSerializer());
+        addSerializer(config, LocalDateTime.class, new LocalDateTimeSerializer());
+        addSerializer(config, ZoneOffset.class, new ZoneOffsetSerializer());
+        addSerializer(config, ZoneId.class, new ZoneIdSerializer());
+        addSerializer(config, OffsetTime.class, new OffsetTimeSerializer());
+        addSerializer(config, OffsetDateTime.class, new OffsetDateTimeSerializer());
+        addSerializer(config, ZonedDateTime.class, new ZonedDateTimeSerializer());
+        addSerializer(config, Year.class, new YearSerializer());
+        addSerializer(config, YearMonth.class, new YearMonthSerializer());
+        addSerializer(config, MonthDay.class, new MonthDaySerializer());
+        addSerializer(config, Period.class, new PeriodSerializer());
     }
 
-    private static <T, Y extends Serializer<T> & Serializable> void addSerializer(StreamExecutionEnvironment env, Class<T> klass, Y serializer) {
-      env.getConfig().getRegisteredTypesWithKryoSerializers().put(klass, new ExecutionConfig.SerializableSerializer<>(serializer));
-      env.getConfig().getDefaultKryoSerializers().put(klass, new ExecutionConfig.SerializableSerializer<>(serializer));
+    private static <T, Y extends Serializer<T> & Serializable> void addSerializer(ExecutionConfig config, Class<T> klass, Y serializer) {
+      config.getRegisteredTypesWithKryoSerializers().put(klass, new ExecutionConfig.SerializableSerializer<>(serializer));
+      config.getDefaultKryoSerializers().put(klass, new ExecutionConfig.SerializableSerializer<>(serializer));
     }
 
     private static class DurationSerializer extends Serializer<Duration> implements Serializable {

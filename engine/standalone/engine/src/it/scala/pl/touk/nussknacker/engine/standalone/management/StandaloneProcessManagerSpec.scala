@@ -2,11 +2,9 @@ package pl.touk.nussknacker.engine.standalone.management
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Seconds, Span}
-import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -14,14 +12,16 @@ import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Matchers {
-
-  override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
+class StandaloneProcessManagerSpec extends FunSuite with VeryPatientScalaFutures with Matchers {
 
   test("it should parse test data and test standalone process") {
 
-    val modelData = StandaloneProcessManagerProvider.defaultTypeConfig(ConfigFactory.load()).toModelData
+    val config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("standalone.conf"))
+    val modelData = StandaloneProcessManagerProvider
+      .defaultTypeConfig(config).toModelData
 
     val manager = new StandaloneProcessManager(modelData, null)
 

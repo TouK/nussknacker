@@ -4,13 +4,10 @@ import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.streaming.api.scala._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, AbstractOneParamLazyParameterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
-import pl.touk.nussknacker.engine.util.typing.TypingUtils
-
-import scala.collection.JavaConverters._
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 
 /**
   * It creates union of joined data streams. Produced variable will be a map which looks like:
@@ -30,21 +27,16 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
   override def canHaveManyInputs: Boolean = true
 
   @MethodToInvoke
-  def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[Any]],
+  def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[String]],
               @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[Any]],
-              @ParamName("type") definition: java.util.Map[String, _],
               @OutputVariableName variableName: String): JoinContextTransformation =
     ContextTransformation
       .join.definedBy { contexts =>
-      // TODO: remove definition parameter when valueByBranchId(branchId).returnType will produce correct type
-      val newType = if (definition == null) {
-        TypedObjectTypingResult(contexts.toSeq.map {
+      val newType = TypedObjectTypingResult(contexts.map {
           case (branchId, _) =>
             branchId -> valueByBranchId(branchId).returnType
-        }.toMap + (KeyField -> Unknown))
-      } else {
-        TypingUtils.typeMapDefinition(definition.asScala.toMap + (KeyField -> Unknown))
-      }
+        } + (KeyField -> Typed[String]))
+
       Valid(ValidationContext(Map(variableName -> newType)))
     }.implementedBy(
       new FlinkCustomJoinTransformation {
@@ -60,10 +52,11 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
                 private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
 
                 override def map(context: Context): ValueWithContext[Any] = {
+                  import scala.collection.JavaConverters._
                   ValueWithContext(Map(
                     KeyField -> evaluateKey(context),
                     branchId -> evaluateValue(context)
-                  ), context)
+                  ).asJava, context)
                 }
               })
           }

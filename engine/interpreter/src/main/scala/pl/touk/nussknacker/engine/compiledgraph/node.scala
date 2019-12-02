@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
+import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 
 object node {
 
@@ -16,7 +17,9 @@ object node {
 
   case class Sink(id: String, ref: String, endResult: Option[(Expression, TypingResult)], isDisabled: Boolean) extends Node
 
-  case class BranchEnd(id: String, joinId: String) extends Node
+  case class BranchEnd(definition: BranchEndDefinition) extends Node {
+    override def id: String = definition.artificialNodeId
+  }
 
   case class VariableBuilder(id: String, varName: String, value: Either[Expression, List[Field]], next: Next) extends Node
 

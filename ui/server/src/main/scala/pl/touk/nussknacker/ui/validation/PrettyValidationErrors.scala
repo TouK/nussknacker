@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.validation
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
@@ -24,7 +25,7 @@ object PrettyValidationErrors {
       case InvalidRootNode(_) => node("Invalid root node", "Process can start only from source node")
       case InvalidTailOfBranch(_) => node("Invalid end of process", "Process branch can only end with sink or processor")
 
-      case MissingParameters(params, ProcessCompilationError.ProcessNodeId) =>
+      case MissingParameters(params, NodeTypingInfo.ExceptionHandlerNodeId) =>
         node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")

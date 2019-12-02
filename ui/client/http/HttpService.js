@@ -3,6 +3,7 @@ import React from "react"
 import FileSaver from "file-saver"
 import api from "../api"
 import * as _ from "lodash"
+import * as queryString from "query-string";
 
 let notificationActions = null
 let notificationReload = null
@@ -19,14 +20,9 @@ export default {
   },
 
   _loadNotifications() {
-    fetch(`${API_URL}/notifications`, {
-      method: 'GET',
-      credentials: 'include'
-    })
-      .then(response => response.json())
-      .then(notifications => notifications.forEach(notification => {
-        notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
-      }))
+    api.get("/notifications").then(response => response.data.forEach(notification => {
+      notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
+    }))
   },
 
   addInfo(message) {
@@ -96,6 +92,10 @@ export default {
     return api.get("/processDefinitionData/services")
   },
 
+  fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
+    return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`)
+  },
+
   fetchUnusedComponents() {
     return api.get("/app/unusedComponents")
   },
@@ -129,15 +129,7 @@ export default {
   },
 
   deploy(processId, comment) {
-    const init = {method: 'POST', body: comment, credentials: 'include'}
-
-    return fetch(API_URL + '/processManagement/deploy/' + processId, init).then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText)
-      } else {
-        return response
-      }
-    }).then(() => {
+    return api.post(`/processManagement/deploy/${processId}`, comment).then(() => {
       this.addInfo(`Process ${processId} was deployed`)
       return {isSuccess: true}
     }).catch((error) => {
@@ -151,9 +143,7 @@ export default {
   },
 
   cancel(processId, comment) {
-    const init = {method: 'POST', body: comment, credentials: 'include'}
-
-    return fetch(API_URL + '/processManagement/cancel/' + processId, init)
+    return api.post(`/processManagement/cancel/${processId}`, comment)
       .then(() => this.addInfo(`Process ${processId} was canceled`))
       .catch(error => this.addError(`Failed to cancel ${processId}`, error, true))
   },
@@ -205,33 +195,17 @@ export default {
   },
 
   exportProcess(process, versionId) {
-    const init = {
-      method: 'POST',
-      body: JSON.stringify(process),
-      credentials: 'include',
-      headers: new Headers({
-        'Content-Type': 'application/json'
-      })
-    }
-
-    return fetch(`${API_URL}/processesExport`, init)
-      .then((response) => response.blob())
-      .then((blob) => {
-        FileSaver.saveAs(blob, `${process.id}-${versionId}.json`)
-      })
+    return api.post("/processesExport", process, {responseType: "blob"})
+      .then(response => FileSaver.saveAs(response.data, `${process.id}-${versionId}.json`))
       .catch(error => this.addError(`Failed to export`, error))
   },
 
   exportProcessToPdf(processId, versionId, data, businessView) {
-    const init = {method: 'POST', body: data, credentials: 'include'}
-    const url = `${API_URL}/processesExport/pdf/${processId}/${versionId}`
+    const url = `/processesExport/pdf/${processId}/${versionId}`
     const queryParams = this.businessViewQueryParams(businessView)
 
-    return fetch(queryParams ? `${url}?${queryParams}` : url, init)
-      .then((response) => response.blob())
-      .then((blob) => {
-        FileSaver.saveAs(blob, `${processId}-${versionId}.pdf`)
-      })
+    return api.post(queryParams ? `${url}?${queryParams}` : url, data, {responseType: "blob"})
+      .then(response => FileSaver.saveAs(response.data, `${processId}-${versionId}.pdf`))
       .catch(error => this.addError(`Failed to export`, error))
   },
 
@@ -245,20 +219,9 @@ export default {
       .catch(error => this.addError(`Failed to get capabilities`, error, true))
   },
 
-  generateTestData(processId, testSampleSize, processJson) {
-    const init = {
-      method: 'POST',
-      body: JSON.stringify(processJson),
-      credentials: 'include',
-      headers: new Headers({
-        'Content-Type': 'application/json'
-      })
-    }
-
-    return fetch(`${API_URL}/testInfo/generate/${testSampleSize}`, init)
-      .then((response) => response.blob()).then((blob) => {
-        FileSaver.saveAs(blob, `${processId}-testData`)
-      })
+  generateTestData(processId, testSampleSize, data) {
+    return api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
+      .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
       .catch(error => this.addError(`Failed to generate test data`, error))
   },
 
@@ -334,6 +297,10 @@ export default {
   },
 
   businessViewQueryParams(businessView) {
-    return businessView ? {businessView} : {}
+    return businessView ? queryString.stringify({businessView}) : null
+  },
+
+  fetchOAuth2AccessToken(authorizeCode) {
+    return api.get(`/authentication/oauth2?code=${authorizeCode}`)
   }
 }

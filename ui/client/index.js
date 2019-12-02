@@ -6,7 +6,6 @@ import {Router} from 'react-router-dom'
 //https://webpack.js.org/guides/public-path/#on-the-fly
 import "./config"
 import configureStore from './store/configureStore'
-import Settings from './http/Settings'
 import EspApp from './containers/EspApp'
 import Modal from "react-modal"
 import history from "./history"
@@ -15,20 +14,20 @@ import "./stylesheets/notifications.styl"
 
 import registerServiceWorker from './registerServiceWorker'
 import Notifications from "./containers/Notifications"
+import NussknackerInitializer from "./containers/NussknackerInitializer"
 
 const store = configureStore()
-Settings.updateSettings(store)
 
 Modal.setAppElement("#root")
 ReactDOM.render(
   <AppContainer>
     <Provider store={store}>
-      <div>
-        <Notifications/>
-        <Router history={history}>
+      <Router history={history}>
+        <NussknackerInitializer>
+          <Notifications />
           <EspApp />
-        </Router>
-      </div>
+        </NussknackerInitializer>
+      </Router>
     </Provider>
   </AppContainer>,
   document.getElementById('root')

@@ -1,27 +1,26 @@
 @import "./_variables.styl"
 @import "./_mixins.styl"
 
-#categories-filter, #processing-types-filter, #subprocess-types-filter, #deployed-filter
-  margin: 45px containerPadding
-  max-width: 450px
-  flex: 1 1 auto;
-
 #table-filter
   margin: 45px containerPadding
-  max-width: 470px
+  max-width: 450px
+  min-width: 200px
+  flex: 1 1 auto
   input
     background-color: processesSearchInput
     box-shadow: none
   .input-group-addon
     background-color: buttonBlueBkgColor
     border: none
-    padding: 0px 10px
+    border-radius 0
+    padding: 0 10px
     #search-icon
       stroke: #FFFFFF
       width: 30px
   .form-control
     height: 45px
-    width: 425px
+    border-radius 0
+    color: black
 
 .table-select
   margin: 10px 0px -20px containerPadding
@@ -33,32 +32,13 @@
   color: black
 
 #process-top-bar
-  display: flex
+  display flex
   justify-content: space-between
   background-color: processesTopBar
 
-.input-group.big-blue-button
-    margin: 45px 50px
-    width: 360px
-    height: 45px
+.input-group
+  .big-blue-button
     float: right
-    background-color: buttonBlueBkgColor
-    color: buttonBlueColor
-    display: flex
-    align-items: center
-    justify-content: center
-    font open
-    font-size: 21px
-    font-weight: 600
-    &:hover
-      background: processesHoverColor
-    #add-icon
-      width: 20px
-      height: 45px
-      margin: 10px
-      margin-left: 20px
-      &:hover
-        background: processesHoverColor
 
 .esp-table
   margin-bottom 20px
@@ -80,10 +60,12 @@
     border: none
 
   th, td
-    padding: 20px 10px
+    padding: 10px 10px
     vertical-align: middle
     &:nth-child(1)
       padding-left: containerPadding
+      padding-top 20px
+      padding-bottom 20px
     &:last-child
       padding-right: containerPadding
 
@@ -194,7 +176,7 @@
 .status-notrunning
   width: 15px
   height: 15px
-  background: red
+  background: #FBB03B
   border-radius: 50%
   margin auto
 
@@ -209,4 +191,12 @@
   background-color: rgba(0, 0, 0, 0)
 
 .validation-label
-  color warningColor
+  color errorColor
+  margin-top 3px
+  font-size 12px
+
+.validation-labels
+  display inline-grid
+
+.processes-table-row-icon
+  padding 10px

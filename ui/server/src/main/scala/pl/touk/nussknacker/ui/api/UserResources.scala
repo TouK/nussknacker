@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, GlobalPermiss
 import scala.concurrent.ExecutionContext
 
 class UserResources(typesForCategories: ProcessTypesForCategories)(implicit ec: ExecutionContext) extends Directives with FailFastCirceSupport with RouteWithUser {
-  def route(implicit user: LoggedUser): Route =
+  def securedRoute(implicit user: LoggedUser): Route =
     path("user") {
       get {
         complete {
@@ -28,6 +28,7 @@ object GlobalPermissions {
   def apply(permissions: List[GlobalPermission]): GlobalPermissions = {
     permissions.foldLeft(GlobalPermissions(false)) {
       case (acc, GlobalPermission.AdminTab) => acc.copy(adminTab = true)
+      case (acc, _) => acc
     }
   }
 }

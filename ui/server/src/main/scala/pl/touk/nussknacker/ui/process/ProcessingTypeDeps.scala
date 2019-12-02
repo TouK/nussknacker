@@ -4,19 +4,20 @@ import java.net.URL
 import java.util.ServiceLoader
 
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
-import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
+import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManagerProvider
-import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 
 case class ProcessingTypeDeps(managers: Map[ProcessingType, ProcessManager],
                               modelData: Map[ProcessingType, ModelData])
 
-object ProcessingTypeDeps {
+object ProcessingTypeDeps extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
   import scala.collection.JavaConverters._
@@ -39,7 +40,7 @@ object ProcessingTypeDeps {
       config.as[Map[String, ProcessingTypeConfig]]("processTypes")
     } else {
       //TODO: this is legacy mode, should be removed in the future...
-      val str = Map("streaming" -> FlinkProcessManagerProvider.defaultTypeConfig(config))
+      val str = Map("streaming" -> FlinkStreamingProcessManagerProvider.defaultTypeConfig(config))
       if (standaloneModeEnabled) {
         str + ("request-response" -> StandaloneProcessManagerProvider.defaultTypeConfig(config))
       } else str
@@ -56,6 +57,7 @@ object ProcessingTypeDeps {
 
     configuredTypes.map {
       case (name, typeConfig) =>
+        logger.debug(s"Creating process manager: $name with config: $typeConfig")
         val managerProvider = providers.getOrElse(typeConfig.engineType,
           throw new IllegalArgumentException(s"Cannot find manager type: $name, available names: ${providers.keys}"))
         name -> ProcessingTypeData.createProcessManager(managerProvider, typeConfig)

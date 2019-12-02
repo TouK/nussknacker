@@ -1,10 +1,15 @@
 import _ from 'lodash';
 
+// before indexer['last indexer key
+const INDEXER_REGEX = /^(.*)\['([^\[]*)$/
+
 export default class ExpressionSuggester {
 
-  constructor(typesInformation, variables) {
+  constructor(typesInformation, variables, processingType, httpService) {
     this._typesInformation = typesInformation
     this._variables = _.mapKeys(variables, (value, variableName) => {return `#${variableName}`})
+    this._processingType = processingType
+    this._httpService = httpService
   }
 
   suggestionsFor = (inputValue, caretPosition2d) => {
@@ -33,21 +38,26 @@ export default class ExpressionSuggester {
 
   _getSuggestions = (value, focusedClazz, variables) => {
     const variableNames = _.keys(variables)
-    const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) })
+    const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) || _.includes(value, `${variable}['`) })
     const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable.toLowerCase(), value.toLowerCase()) })
     if (variableAlreadySelected && focusedClazz) {
       const currentType = this._getTypeInfo(focusedClazz)
       const inputValue = this._justTypedProperty(value)
-      const allowedMethodList = this._getAllowedMethods(currentType)
-      return inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
+      if (currentType.dict == null) {
+        const allowedMethodList = this._getAllowedMethods(currentType)
+        const result = inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
+        return new Promise(resolve => resolve(result))
+      } else {
+        return this._getSuggestionsForDict(currentType.dict, inputValue)
+      }
     } else if (variableNotSelected && !_.isEmpty(value)) {
       const allVariablesWithClazzRefs = _.map(variables, (val, key) => {
         return {'methodName': key, 'refClazz': val}
       })
-      return this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
-    }
-    else {
-      return []
+      const result = this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
+      return new Promise(resolve => resolve(result))
+    } else {
+      return new Promise(resolve => resolve([]))
     }
   }
 
@@ -67,9 +77,9 @@ export default class ExpressionSuggester {
     })
   }
 
-  _filterSuggestionsForInput = (methods, inputValue) => {
-    return _.filter(methods, (method) => {
-      return _.includes(method.methodName.toLowerCase(), inputValue.toLowerCase())
+  _filterSuggestionsForInput = (variables, inputValue) => {
+    return _.filter(variables, (variable) => {
+      return _.includes(variable.methodName.toLowerCase(), inputValue.toLowerCase())
     })
   }
 
@@ -141,9 +151,12 @@ export default class ExpressionSuggester {
   }
 
   _lastExpressionPartWithoutMethodParens = (value) => {
+    //we have to handle cases like: #util.now(#other.quaxString.toUpperCase().__)
     const withoutNestedParenthesis = value.substring(this._lastNonClosedParenthesisIndex(value) + 1, value.length);
     const valueCleaned = withoutNestedParenthesis.replace(/\(.*\)/, "");
-    return _.isEmpty(value) ? "" : "#" + _.last(_.split(valueCleaned, '#'))
+    //handling ?. operator
+    const withSafeNavigationIgnored = valueCleaned.replace(/\?\./g, '.');
+    return _.isEmpty(value) ? "" : "#" + _.last(_.split(withSafeNavigationIgnored, '#'))
   };
 
   _lastNonClosedParenthesisIndex = (value) => {
@@ -166,7 +179,20 @@ export default class ExpressionSuggester {
   }
 
   _dotSeparatedToProperties = (value) => {
-    return _.split(value, ".")
+    // TODO: Implement full SpEL support for accessing by indexer the same way as by properties - not just for last indexer
+    const indexerMatch = value.match(INDEXER_REGEX)
+    if (indexerMatch) {
+      return this._dotSeparatedToPropertiesIncludingLastIndexerKey(indexerMatch)
+    } else {
+      return _.split(value, ".")
+    }
+  }
+
+  _dotSeparatedToPropertiesIncludingLastIndexerKey = (indexerMatch) => {
+    const beforeIndexer = indexerMatch[1]
+    const indexerKey = indexerMatch[2]
+    const splittedProperties = _.split(beforeIndexer, ".")
+    return _.concat(splittedProperties, indexerKey)
   }
 
   _getAllVariables = (normalized) => {
@@ -202,6 +228,19 @@ export default class ExpressionSuggester {
       return null;
     }
 
+  }
+
+  _getSuggestionsForDict = (typ, typedProperty) => {
+    return this._fetchDictLabelSuggestions(typ.id, typedProperty).then(result => _.map(result.data, entry => {
+      return {
+        methodName: entry.label,
+        refClazz: typ.valueType
+      }
+    }))
+  }
+
+  _fetchDictLabelSuggestions = (dictId, labelPattern) => {
+    return this._httpService.fetchDictLabelSuggestions(this._processingType, dictId, labelPattern)
   }
 
 }

@@ -75,16 +75,14 @@ processActivityList()
   width 100%
   font-size 10px
   float left
-  padding 10px 5px 0 0
+  padding 10px 0 0 0
   .header
     display inline-block
     span
-      margin-right 5px
+      color #808080
       &.date
         color panelTitleTextColor
         font-style italic
-      &.comment-header
-        color #808080
     p
       font-style italic
       color panelTitleTextColor
@@ -100,7 +98,7 @@ processActivityList()
   .process-comments-list
     processActivityList()
     .header
-      width 100%
+      width 90%
       .remove
         float right
         &:hover
@@ -118,6 +116,7 @@ processActivityList()
       font-weight lighter
       border 1px solid commentBorderColor
       background-color commentBkgColor
+      padding 4px
       &:focus
         outline-color: defaultTextColor
     button
@@ -127,8 +126,16 @@ processActivityList()
 .process-attachments
   cursor: default
   margin-bottom 10px
+  display grid
   .process-attachments-list
     processActivityList()
+
+    .attachment-section
+      display inline-flex
+      width 90%
+      .attachment-details
+        margin-left 8px
+        word-break break-word
 
   .details
     display inline-block
@@ -141,21 +148,38 @@ processActivityList()
 
   .add-attachments
     font-size 12px
-    display inline-block
     width 90%
     height: 90px
     border 1px solid buttonBorderColor
-    .dropZone
+    &:hover .attachment-drop-zone
+      background-color lighten(#333, 5%)
+    .attachments-container
+      height 100%
+    .attachment-drop-zone
       width 100%
       height 100%
       font-size 12px
       font-weight normal
       padding 0
+      cursor: pointer
+      padding-top 6
+      margin-bottom 5
+      text-align center
+      transition: background-color 0.2s
+      background-color #333
+      svg
+        width 40px
+        margin auto
+        display inline-block
     .attachment-button-text
-      margin-top -50px
-      &:hover
-        background-color buttonBkgHover
-
+      cursor pointer
+      text-align center
+      margin-top -45px
+    .attachment-button
+      svg
+        margin-top 15px
+        width 27px
+        height 27px
 .label-info
   background-color labelBkgColor
 
@@ -171,8 +195,6 @@ processActivityList()
     font-weight lighter
     border 1px solid commentBorderColor
     background-color commentBkgColor
-    &:focus
-      outline-color: defaultTextColor
   .confirmationButtons
     float : right
     margin-right : 10
@@ -213,6 +235,31 @@ processActivityList()
     font-size 25px
     color black
 
+.big-blue-button
+  margin: 45px 50px
+  width 360px
+  min-width: 300px
+  height: 45px
+  background-color: buttonBlueBkgColor
+  color: buttonBlueColor
+  display flex
+  align-items: center
+  justify-content: center
+  font-family 'Open Sans'
+  font-size: 21px
+  font-weight: 600
+  border-radius: 0
+  &:hover
+    color buttonBlueColor
+    background: processesHoverColor
+  &:focus
+    color buttonBlueColor
+  #add-icon
+    width: 20px
+    margin-left: 20px
+    &:hover
+      background: processesHoverColor
+
 .error-template
   text-align: center
   position: absolute;
@@ -236,3 +283,5 @@ processActivityList()
   .error-details
     font-size: 24px
 
+    .big-blue-button
+      margin: 45px auto

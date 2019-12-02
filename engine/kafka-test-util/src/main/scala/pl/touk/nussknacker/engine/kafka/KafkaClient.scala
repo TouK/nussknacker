@@ -13,9 +13,9 @@ import org.apache.kafka.common.utils.Time
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class KafkaClient(kafkaAddress: String, zkAddress: String) {
-  val rawProducer = KafkaUtils.createRawKafkaProducer(kafkaAddress)
-  val producer = KafkaUtils.createKafkaProducer(kafkaAddress)
+class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
+  val rawProducer = KafkaUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
+  val producer = KafkaUtils.createKafkaProducer(kafkaAddress, id)
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
@@ -78,6 +78,7 @@ class KafkaClient(kafkaAddress: String, zkAddress: String) {
   def shutdown() = {
     consumers.foreach(_.close())
     producer.close()
+    rawProducer.close()
     zkClient.close()
   }
 

@@ -6,19 +6,26 @@ import java.{lang, util}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.Config
-import io.circe.{Encoder, Json}
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
+import io.circe.{Encoder, Json}
 import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
+import pl.touk.nussknacker.engine.api.dict.DictInstance
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
@@ -36,18 +43,31 @@ import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
+import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.sample.JavaSampleEnum
 
-class TestProcessConfigCreator extends ProcessConfigCreator {
+import scala.collection.JavaConverters._
+import scala.concurrent.{ExecutionContext, Future}
 
+object TestProcessConfigCreator {
+
+  val oneElementValue = "One element"
+
+}
+
+class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config) = {
     val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
@@ -87,7 +107,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
           override def run(ctx: SourceContext[String]) = {
             while (run) {
-              if (!emited) ctx.collect("One element")
+              if (!emited) ctx.collect(TestProcessConfigCreator.oneElementValue)
               emited = true
               Thread.sleep(1000)
             }
@@ -203,10 +223,16 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
 
   override def expressionConfig(config: Config) = {
+    val dictId = "dict"
+    val dictDef = EmbeddedDictDefinition(Map(
+      "foo" -> "Foo",
+      "bar" -> "Bar",
+      "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots"))
     val globalProcessVariables = Map(
-      "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2")
-    )
-    ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()))
+      "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2"),
+      "DICT" -> WithCategories(DictInstance(dictId, dictDef), "Category1", "Category2"))
+    ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()),
+      dictionaries = Map(dictId -> WithCategories(dictDef, "Category1", "Category2")))
   }
 
   override def buildInfo(): Map[String, String] = {
@@ -283,7 +309,7 @@ case object CustomFilter extends CustomStreamTransformer {
    = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
       start
         .filter(ctx.lazyParameterHelper.lazyFilterFunction(expression))
-        .map(ValueWithContext(null, _)))
+        .map(ValueWithContext[Any](null, _)))
 
 }
 
@@ -299,13 +325,13 @@ object AdditionalVariableTransformer extends CustomStreamTransformer {
   @MethodToInvoke(returnType = classOf[Void])
   def execute(@AdditionalVariables(Array(new AdditionalVariable(name = "additional", clazz = classOf[String]))) @ParamName("expression") expression: LazyParameter[Boolean])
    = FlinkCustomStreamTransformation((start: DataStream[Context]) =>
-      start.map(ValueWithContext("", _)))
+      start.map(ValueWithContext[Any]("", _)))
 
 }
 
 case object ParamExceptionHandler extends ExceptionHandlerFactory {
   @MethodToInvoke
-  def create(@ParamName("param1") param: String, metaData: MetaData): EspExceptionHandler = VerboselyLoggingExceptionHandler(metaData)
+  def create(@ParamName("param1") param: String, metaData: MetaData): EspExceptionHandler = BrieflyLoggingExceptionHandler(metaData)
 
 }
 

@@ -5,32 +5,40 @@ import {DragSource, DropTarget} from "react-dnd";
 import dragHandleIcon from "../assets/img/drag-handle.png";
 import update from "immutability-helper";
 import ReactDOM from "react-dom";
-import {notEmptyValidator} from "../common/Validators";
+import {allValid, notEmptyValidator} from "../common/Validators";
 import ValidationLabels from "./modals/ValidationLabels";
 
 class RawField extends React.Component {
   render() {
     const markedClass = this.props.isMarked(this.props.index) ? " marked" : "";
-    const index = this.props.index;
-    const field = this.props.field;
     const opacity = this.props.isDragging ? 0 : 1;
+    const {index, field, showValidation, readOnly} = this.props
 
+    const validators = [notEmptyValidator];
     return this.props.connectDropTarget(this.props.connectDragSource(
       <div className="node-row movable-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
-          <input className="node-input" type="text" value={field.name} placeholder="Name"
+          <input className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
+                 type="text"
+                 value={field.name}
+                 placeholder="Name"
+                 readOnly={readOnly}
                  onChange={(e) => this.props.changeName(index, e.target.value)}/>
-          <ValidationLabels validators={[notEmptyValidator]} values={[field.name]}/>
+          {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
         </div>
         <div className={"node-value field" + markedClass}>
-          {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value))}
+          {this.props.fieldCreator(field, (value) => this.props.changeValue(index, field.name, value), readOnly)}
         </div>
-        <div className="node-value fieldRemove">
-          {/* TODO: add nicer buttons. Awesome font? */}
-          <button className="addRemoveButton" title="Remove field" onClick={() => this.props.removeField(index)}>-
-          </button>
-        </div>
+        {
+          readOnly ? null :
+            <div className="node-value fieldRemove">
+              <button className="addRemoveButton"
+                      title="Remove field"
+                      onClick={() => this.props.removeField(index)}>-
+              </button>
+            </div>
+        }
       </div>
     ));
   }
@@ -103,7 +111,8 @@ export default class Fields extends React.Component {
     //function (fields)
     onChange: PropTypes.func.isRequired,
     //e.g. { name: "", value1: "" }
-    newValue: PropTypes.object.isRequired
+    newValue: PropTypes.object.isRequired,
+    showValidation: PropTypes.bool.isRequired
   }
 
   constructor(props) {
@@ -120,6 +129,8 @@ export default class Fields extends React.Component {
   }
 
   render() {
+    const {readOnly, showValidation} = this.props
+
     const moveItem = (dragIndex, hoverIndex) => {
       this.edit(previous => {
         return update(previous, {
@@ -141,9 +152,14 @@ export default class Fields extends React.Component {
                  {...this.props} />
         )
       }
-      <div>
-        <button className="addRemoveButton"  title="Add field"  onClick={() => this.addField()}>+</button>
-      </div>
+      {
+        readOnly ? null :
+          <div>
+            <button className="addRemoveButton"
+                    title="Add field"
+                    onClick={() => this.addField()}>+</button>
+          </div>
+      }
     </div>);
   }
 

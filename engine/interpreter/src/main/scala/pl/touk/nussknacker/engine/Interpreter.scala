@@ -128,8 +128,8 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
           listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
           List(InterpretationResult(EndReference(id), valueWithModifiedContext))
         }
-      case BranchEnd(id, joinId) =>
-        Future.successful(List(InterpretationResult(JoinReference(id, joinId), null, ctx)))
+      case BranchEnd(e) =>
+        Future.successful(List(InterpretationResult(e.joinReference, null, ctx)))
 
       case cust: CustomNode =>
         interpretNext(cust.next, ctx)

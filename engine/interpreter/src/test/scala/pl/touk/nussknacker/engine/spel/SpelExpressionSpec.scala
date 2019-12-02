@@ -6,17 +6,20 @@ import java.time.LocalDate
 import java.util
 import java.util.Collections
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
+import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
+import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 
 import scala.collection.JavaConverters._
@@ -25,7 +28,7 @@ import scala.concurrent.duration._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 
-class SpelExpressionSpec extends FunSuite with Matchers {
+class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private class EvaluateSync(expression: Expression) {
     def evaluateSync[T](ctx: Context = ctx, lvp: LazyValuesProvider = dumbLazyProvider) : ValueWithLazyContext[T]
@@ -76,19 +79,25 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
+  private def parseWithDicts[T:TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+    val validationCtx = ValidationContext(
+      context.variables.mapValuesNow(Typed.fromInstance))
+    parse(expr, validationCtx, dictionaries, Standard)
+  }
+
   private def parse[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, flavour)
+    parse(expr, validationCtx, Map.empty, flavour)
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, Standard)
+    parse(expr, validationCtx, Map.empty, Standard)
   }
 
-  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition], flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, strictTypeChecking = true, imports, flavour)
+    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true, imports, flavour)
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
@@ -287,11 +296,11 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("not allow unknown variables in methods") {
     parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass)) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference a"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'a'"), Nil)) =>
     }
 
     parse[Any]("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference a"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'a'"), Nil)) =>
     }
   }
 
@@ -299,6 +308,14 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Any]("nonexisting == 'ala'", ctx) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Non reference 'nonexisting' occurred. Maybe you missed '#' in front of it?"), Nil)) =>
     }
+  }
+
+  test("validate simple literals") {
+    parse[Long]("-1", ctx) shouldBe 'valid
+    parse[Float]("-1.1", ctx) shouldBe 'valid
+    parse[Long]("-1.1", ctx) should not be 'valid
+    parse[Double]("-1.1", ctx) shouldBe 'valid
+    parse[java.math.BigDecimal]("-1.1", ctx) shouldBe 'valid
   }
 
   test("validate ternary operator") {
@@ -513,6 +530,30 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Double](floatAddExpr, ctx) shouldBe 'valid
   }
 
+  test("embedded dict values") {
+    val embeddedDictId = "embeddedDictId"
+    val dicts = Map(embeddedDictId -> EmbeddedDictDefinition(Map("fooId" -> "fooLabel")))
+    val withObjVar = ctx.withVariable("embeddedDict", DictInstance(embeddedDictId, dicts(embeddedDictId)))
+
+    parseWithDicts[String]("#embeddedDict['fooId']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[String](withObjVar) shouldEqual "fooId"
+    parseWithDicts[String]("#embeddedDict['wrongId']", withObjVar, dicts) shouldBe 'invalid
+  }
+
+  test("enum dict values") {
+    val enumDictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleEnum.Value])
+    val dicts = Map(enumDictId -> EmbeddedDictDefinition.forScalaEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.Value])
+    val withObjVar = ctx
+      .withVariable("stringValue", "one")
+      .withVariable("enumValue", SimpleEnum.One)
+      .withVariable("enum", DictInstance(enumDictId, dicts(enumDictId)))
+
+    parseWithDicts[SimpleEnum.Value]("#enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[SimpleEnum.Value](withObjVar) shouldEqual SimpleEnum.One
+    parseWithDicts[SimpleEnum.Value]("#enum['wrongId']", withObjVar, dicts) shouldBe 'invalid
+
+    parseWithDicts[Boolean]("#enumValue == #enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[Boolean](withObjVar) shouldBe true
+    parseWithDicts[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe 'invalid
+  }
+
 }
 
 case class SampleObject(list: List[SampleValue])
@@ -523,6 +564,14 @@ case class SampleValue(value: Int, anyObject: Any = "") extends UsingLazyValues 
 
   val lazy2 : LazyState[Long] = lazyValue[Long]("")
 
+}
+
+object SimpleEnum extends Enumeration {
+  // we must explicitly define Value class to recognize if type is matching
+  class Value(name: String) extends Val(name)
+
+  val One: Value = new Value("one")
+  val Two: Value = new Value("two")
 }
 
 object SampleGlobalObject {

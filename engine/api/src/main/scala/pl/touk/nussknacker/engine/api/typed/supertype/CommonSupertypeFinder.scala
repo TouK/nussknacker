@@ -7,7 +7,10 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 /**
   * This class finding common supertype of two types. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
-  * It has very similar logic to CanBeSubclassDeterminer
+  *
+  * This class, like CanBeSubclassDeterminer is in spirit of "Be type safety as much as possible, but also provide some helpful
+  * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
+  * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
 class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStrategy) {
 
@@ -31,9 +34,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
                                    (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingResult =
     (left, right) match {
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
-        if (l == r) {
-          l
-        } else {
+        checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
           klassCommonSupertypeReturningTypedClass(l.objType, r.objType).map { commonSupertype =>
             // can't be sure intention of user - union of fields is more secure than intersection
             val fields = unionOfFields(l, r)
@@ -42,8 +43,34 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
         }
       case (_: TypedObjectTypingResult, _) => Typed.empty
       case (_, _: TypedObjectTypingResult) => Typed.empty
-      case (l: TypedClass, r: TypedClass) => klassCommonSupertype(l, r)
+      case (l: TypedDict, r: TypedDict) if l.dictId == r.dictId =>
+        checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
+          klassCommonSupertypeReturningTypedClass(l.objType, r.objType).map { _ =>
+            l // should we recognize static vs dynamic and compute some union?
+          }.getOrElse(Typed.empty)
+        }
+      case (_: TypedDict, _) => Typed.empty
+      case (_, _: TypedDict) => Typed.empty
+      case (l@TypedTaggedValue(leftType, leftTag), r@TypedTaggedValue(rightType, rightTag)) if leftTag == rightTag =>
+        checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
+          Option(singleCommonSupertype(leftType, rightType))
+            .collect {
+              case single: SingleTypingResult => TypedTaggedValue(single, leftTag)
+            }
+            .getOrElse(Typed.empty)
+        }
+      case (_: TypedTaggedValue, _) => Typed.empty
+      case (_, _: TypedTaggedValue) => Typed.empty
+      case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
+
+  private def checkDirectEqualityOrMorePreciseCommonSupertype[T <: SingleTypingResult](left: T, right: T)(preciseCommonSupertype: => TypingResult) = {
+    if (left == right) {
+      left
+    } else {
+      preciseCommonSupertype
+    }
+  }
 
   private def unionOfFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)
                            (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {

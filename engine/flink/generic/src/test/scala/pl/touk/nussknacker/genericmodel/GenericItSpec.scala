@@ -20,8 +20,8 @@ import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableE
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaUtils}
-import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
+import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
 class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with EitherValues with LazyLogging {
@@ -181,10 +181,9 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
             List(
               "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
               "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
-            ),
-            "type" -> """{"branch1":"String", "branch2":"String"}"""
+            )
           )
-          .filter("always-true-filter", "true")
+          .filter("always-true-filter", """#outPutVar.key != "not key1 or key2"""")
           .sink("end", "#outPutVar","kafka-json", "topic" -> s"'$topicOut'")
       ))
 
@@ -225,9 +224,9 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
     }
   }
 
-  private val stoppableEnv = new StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
   private val env = new StreamExecutionEnvironment(stoppableEnv)
-  private var registrar: FlinkProcessRegistrar = _
+  private var registrar: FlinkStreamingProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(Registry)
   private lazy val valueDeserializer = new KafkaAvroDeserializer(Registry)
 
@@ -236,8 +235,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
     val config = ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
-    env.getConfig.disableSysoutLogging()
-    registrar = new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
   }
 
   override protected def afterAll(): Unit = {

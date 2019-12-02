@@ -4,11 +4,11 @@ import * as  queryString from 'query-string'
 import {Table, Td, Tr} from "reactable"
 import "../../stylesheets/processes.styl"
 import HttpService from "../../http/HttpService"
-import filterIcon from "../../assets/img/search.svg"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import LoaderSpinner from "../../components/Spinner"
 import BaseAdminTab from "./BaseAdminTab"
 import axios from "axios"
+import SearchFilter from "../../components/table/SearchFilter"
 
 class SearchComponents extends BaseAdminTab {
   constructor(props) {
@@ -62,18 +62,10 @@ class SearchComponents extends BaseAdminTab {
             })
           }
         </select>
-        <div id="table-filter" className="input-group">
-          <input
-            type="text"
-            className="form-control"
-            aria-describedby="basic-addon1"
-            value={this.state.search}
-            onChange={this.onSearchChange}
-          />
-          <span className="input-group-addon" id="basic-addon1">
-            <img id="search-icon" src={filterIcon}/>
-          </span>
-        </div>
+
+        <SearchFilter
+          value={this.state.search}
+          onChange={this.onSearchChange}/>
 
         <LoaderSpinner show={this.state.showLoader}/>
 

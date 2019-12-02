@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import java.util
 
 import io.circe.Encoder
+import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -48,6 +49,28 @@ object typing {
     override def canHasAnyPropertyOrField: Boolean = false
 
     override def display: String = fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString("object with fields: ", ", ", "")
+
+  }
+
+  case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
+
+    type ValueType = SingleTypingResult
+
+    override def canHasAnyPropertyOrField: Boolean = false
+
+    override def objType: TypedClass = valueType.objType
+
+    override def display: String = s"dict with id: '$dictId'"
+
+  }
+
+  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends SingleTypingResult {
+
+    override def canHasAnyPropertyOrField: Boolean = underlying.canHasAnyPropertyOrField
+
+    override def objType: TypedClass = underlying.objType
+
+    override def display: String = s"tagged: ${underlying.display} by tag: '$tag'"
 
   }
 
@@ -115,7 +138,9 @@ object typing {
 
     def fromDetailedType[T: TypeTag]: TypingResult = apply(ClazzRef.fromDetailedType[T])
 
-    def apply(klass: Class[_]): TypingResult = apply(ClazzRef(klass))
+    def apply(klass: Class[_]): TypingResult = {
+      apply(ClazzRef(klass))
+    }
 
     def apply(klass: ClazzRef): TypingResult = {
       // TODO: make creating unknown type more explicit and fix places where we have Typed type instead of TypedClass | Unknown
@@ -126,6 +151,10 @@ object typing {
       }
     }
 
+    def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
+
+    def tagged(typ: SingleTypingResult, tag: String) = TypedTaggedValue(typ, tag)
+
     def fromInstance(obj: Any): TypingResult = {
       obj match {
         case null =>
@@ -135,6 +164,8 @@ object typing {
             case (k, v) => k -> fromInstance(v)
           }
           TypedObjectTypingResult(fieldTypes, TypedClass[TypedMap])
+        case dict: DictInstance =>
+          TypedDict(dict.dictId, dict.valueType)
         case other =>
           Typed(other.getClass)
       }

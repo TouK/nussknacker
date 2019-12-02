@@ -15,7 +15,7 @@ GROUP=${DAEMON_GROUP-${6-"daemon"}}
 mkdir -p ${STORAGE_DIR}/logs
 mkdir -p ${STORAGE_DIR}/db
 
-chown -R ${USER}:${GROUP} ${STORAGE_DIR}
+#chown -R ${USER}:${GROUP} ${STORAGE_DIR}
 chmod -R ug+wr ${STORAGE_DIR}
 
 echo "Nussknacker up and running with" \

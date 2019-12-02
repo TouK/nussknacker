@@ -8,6 +8,7 @@ import io.circe.generic.JsonCodec
 import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
@@ -77,7 +78,10 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
   sealed trait ProcessShapeFetchStrategy[ProcessShape]
 
   object ProcessShapeFetchStrategy {
-    implicit case object Fetch extends ProcessShapeFetchStrategy[DisplayableProcess]
+    // TODO: Find places where FetchDisplayable is used and think about replacing it with FetchCanonical. We generally should use displayable representation
+    //       only in GUI (not for deployment or exports) and in GUI it should be post processed using ProcessDictSubstitutor
+    implicit case object FetchDisplayable extends ProcessShapeFetchStrategy[DisplayableProcess]
+    implicit case object FetchCanonical extends ProcessShapeFetchStrategy[CanonicalProcess]
     // In fact Unit won't be returned inside shape and Nothing would be more verbose but it won't help in compilation because Nothing <: DisplayableProcess
     implicit case object NotFetch extends ProcessShapeFetchStrategy[Unit]
   }

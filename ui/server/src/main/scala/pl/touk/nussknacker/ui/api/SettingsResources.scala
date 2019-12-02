@@ -6,14 +6,17 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
 
-class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[ProcessingType, ProcessingTypeData])(implicit ec: ExecutionContext)
-  extends Directives with FailFastCirceSupport with RouteWithUser {
+class SettingsResources(config: FeatureTogglesConfig,
+                        typeToConfig: Map[ProcessingType, ProcessingTypeData],
+                        authenticationConfig: AuthenticationConfiguration
+                       )(implicit ec: ExecutionContext)
+  extends Directives with FailFastCirceSupport with RouteWithoutUser {
 
-  def route(implicit user: LoggedUser): Route =
+  def publicRoute(): Route =
     pathPrefix("settings") {
       get {
         complete {
@@ -29,7 +32,13 @@ class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[Processi
             signals = signalsSupported,
             attachments = config.attachments.isDefined
           )
-          UISettings(toggleOptions)
+
+          val authenticationSettings = AuthenticationSettings(
+            authenticationConfig.method.toString,
+            authenticationConfig.authorizeUrl.map(_.toString)
+          )
+
+          UISettings(toggleOptions, authenticationSettings)
         }
       }
     }
@@ -60,5 +69,6 @@ class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[Processi
                                  attachments: Boolean,
                                  signals: Boolean)
 
+@JsonCodec case class AuthenticationSettings(backend: String, authorizeUrl: Option[String])
 
-@JsonCodec case class UISettings(features: ToggleFeaturesOptions)
+@JsonCodec case class UISettings(features: ToggleFeaturesOptions, authentication: AuthenticationSettings)

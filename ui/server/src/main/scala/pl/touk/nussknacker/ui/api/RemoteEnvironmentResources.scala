@@ -23,7 +23,7 @@ import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser}
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
-                                 val processRepository: FetchingProcessRepository,
+                                 val processRepository: FetchingProcessRepository[Future],
                                  val processAuthorizer:AuthorizeProcess)
                                 (implicit val ec: ExecutionContext)
   extends Directives
@@ -32,7 +32,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  def route(implicit user: LoggedUser) : Route = {
+  def securedRoute(implicit user: LoggedUser) : Route = {
       pathPrefix("remoteEnvironment") {
           path("compare") {
             get {

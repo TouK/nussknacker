@@ -5,10 +5,7 @@
   position: absolute
   margin-left: 15px
 
-
-
 .baseEspGraph
-  height: 100%
   overflow-y: overlay
   overflow-x: auto
   background-color: graphBkgColor
@@ -19,11 +16,11 @@
     height 100%
 
 #esp-graph
+  height: 100% !important
   @extend .baseEspGraph;
-  svg
-    padding: svgGraphPaddingTop svgGraphPaddingLeft
 
 #esp-graph-subprocess
+  width: 100% !important
   @extend .baseEspGraph;
   #svg-pan-zoom-controls
     transform: translate(0, 0px) scale(0.5)
@@ -36,13 +33,16 @@ node-highlight(strokeColor, backgroundFill)
     fill: backgroundFill
 
 .node-validation-error
-  node-highlight(#a94442, #f2dede)
+  node-highlight(errorColor, #fbd2d6)
+
+.node-focused-with-validation-error
+  node-highlight(focusColor, #f2dede)
 
 .node-grouping
   node-highlight(#5ba935, #caf2d6)
 
 .node-focused
-  node-highlight(#0058a9, #e6ecff)
+  node-highlight(focusColor, #e6ecff)
 
 .ReactModal__Overlay
   z-index: 100
@@ -59,6 +59,8 @@ espCheckbox(checkboxWidth)
     display block
     position relative
     cursor pointer
+    -moz-appearance: none
+    border none
 
   input[type='checkbox']:after
     content ""
@@ -71,11 +73,11 @@ espCheckbox(checkboxWidth)
     width checkboxWidth
     font-size checkboxWidth - 6
     box-shadow inset 0px 1px 1px #000, 0px 1px 0px #444
-    background #45484d
+    background #333
 
   input[type='checkbox']:checked
     &:after
-      background #202020
+      background #333
       content '\2714'
       color #fff
 
@@ -190,26 +192,28 @@ common-node-input(padding)
   font-weight: 400
   font-size: 14px
 
-modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
+modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
   background-color: modalBkgColor
   labelWidth = 20%
   .warning
     margin 15px
-    color warningColor
+    color errorColor
     .icon
       float left
       width: 30px
       height: 30px
   .node-table
-    margin: 0 30px
+    margin: 0 25px
     .node-table-body
       clear: both
     .node-row
-      margin-bottom: 8px
-      margin-top: 7px
+      margin-bottom: 14px
+      margin-top: 14px
     .movable-row
       display flex
+      margin-top 0
+      margin-bottom 14px
       img
         padding-top 10px
         padding-bottom 25px
@@ -220,7 +224,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       width: labelWidth
       display: inline-block
       vertical-align: top
-      padding-top: 10px
+      margin-top: 9px
       font-size: 12px
       font-weight: 700
       .labelFooter
@@ -234,7 +238,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
           cursor pointer
     .node-block
       &.removed
-        border 1px solid warningColor
+        border 1px solid errorColor
         padding 5px
       &.added
         border 1px solid okColor
@@ -247,24 +251,21 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
         overflow hidden
       espCheckbox(20px)
       input[type='checkbox']
-        margin-top 10px
-        margin-bottom 10px
+        margin-top 7px
+        margin-bottom 7px
       &.partly-hidden
         textarea
           height 100px !important
-      &.marked
-        border 2px solid markColor
       &.node-value-select
         .node-value-select__control
           background-color modalInputBkgColor
           border: 0
           border-radius: 0
-          border-bottom: 1px solid gray;
           color modalInputTextColor
           box-shadow: 0
         .node-value-select__control--is-focused
-          boder-width: 0
-          box-shadow: 0 0 0 1px gray
+          outline 2px solid focusColor!important;
+          outline-offset -1px!important;
         .node-value-select__single-value
           common-node-input(10px)
         .node-value-select__input
@@ -276,24 +277,22 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
         .node-value-select__menu
           z-index: 2
           border-radius: 0
-          border-bottom: 1px solid gray;
         .node-value-select__menu-list
           padding-top: 0
           padding-bottom: 0
         .node-value-select__option
-          common-node-input(20px)
+          common-node-input(10px)
           height: 25px
+          line-height @height
           border: 1
           border-radius: 0
-          border-bottom: 1px solid gray;
         .node-value-select__option--is-selected
           background-color: modalInputBkgColor
         .node-value-select__option--is-focused
-          //TODO: better color/variable?
-          background-color: commentBorderColor
+          background-color: focusColor
     .node-error
       width: 100%
-      color: warningColor
+      color: errorColor
       font-size: 14px
       font-weight: 400
       margin-bottom: 10px
@@ -306,18 +305,18 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       border: 1px solid testResultsColor
       padding: 5px
     .node-input
+      height: 35px
+      common-node-input(10px)
+    .read-only
       height: 40px
-      common-node-input(20px)
-    .node-read-only-input
-      height: 40px
-      padding: 0 20px
+      padding: 0
       border: none
       color: modalInputTextColor
       font-weight: 400
       font-size: 14px
       display: inline-block
       vertical-align: top
-      padding-top: 10px
+      padding-top: 9px
       .labelFooter
         font-weight 500
         opacity: 0.7
@@ -336,13 +335,14 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     textarea.node-input
       resize: vertical
       line-height: 1.5
-      padding-top: 10px
-      padding-bottom: 10px
+      padding-top: 7px
+      padding-bottom: 7px
     input[type=checkbox].node-input
       height: 20px
     &.node-editable
-      .node-input
-        border-bottom: 1px solid gray
+      .node-input-with-error
+        outline 1px solid errorColor !important
+        border-radius 2px
     .testResultDownload
       padding-left: 15px
       font-size: 14
@@ -359,7 +359,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
 .modalContentDye
   modalContent(
           modalBkgColor:white,
-          warningColor:pink,
+          errorColor:pink,
           modalLabelTextColor:black,
           testResultsColor:pink,
           modalInputTextColor:black,
@@ -370,7 +370,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
     border: solid 1px #ccc
 
 .modalContentDark
-  modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
+  modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
 
 .modalFooter
   margin-top: 5px
@@ -378,7 +378,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
   height modalFooterHeight
   background-color modalFooterBkgColor
   .footerButtons
-    float right
+    text-align right
     button
       margin-right 20px
       text-transform uppercase
@@ -424,25 +424,20 @@ espPanelButton()
     width 27px
     height 27px
     border 1px solid buttonBorderColor
-  &.attachment-button
-    svg
-      margin-top 10px
-      width 27px
-      height 27px
 
 .espButton
   espPanelButton()
 
-.esp-button-warning
+.esp-button-error
   espPanelButton()
   &.right-panel
-    border-color: warningColor
+    border-color: errorColor
   &.add-comment
-    border-color: warningColor
+    border-color: errorColor
   &.download-button
-    border-color: warningColor
+    border-color: errorColor
   &.attachment-button
-    border-color: warningColor
+    border-color: errorColor
 
 .modalButton
   espButtonBase()
@@ -460,7 +455,7 @@ espPanelButton()
   outline: none
 
 .error
-  background-color: red
+  background-color: #FBB03B
 
 .element
   cursor: pointer
@@ -502,11 +497,14 @@ espPanelButton()
   float: right
 
 .testResultsSummary
-  font-size: 20
-  font-weight: bold
+  color #ccc
+  font-size 16px
+  padding 8px
 
 .testResultsPlaceholder
-  fill: buttonBorderColor
+  fill #4d4d4d
+  font-size 16px
+  padding 8px
   border: 0
 
 .nodeIcon
@@ -586,6 +584,13 @@ espPanelButton()
     font-size: 14px
     font-weight: 400
 
+.marked
+  border 2px solid markColor !important
+
+.read-only
+  background-color #444
+  font-weight 400;
+  font-size 14px;
 
 .fieldsControl
   .addRemoveButton
@@ -603,3 +608,13 @@ espPanelButton()
       margin-right 5px
     &.fieldRemove
       width: 5%
+
+.branch-parameter-row
+  margin-top 7px
+  margin-bottom 8px
+  display flex
+  & .read-only
+    color #ccc
+    font-weight 400
+    font-size 14px
+    padding 10px 20px 0 20px

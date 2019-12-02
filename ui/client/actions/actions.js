@@ -8,6 +8,7 @@ import * as UndoRedoActions from "./undoRedoActions";
 import * as VisualizationUrl from '../common/VisualizationUrl';
 import {dateFormat} from "../config";
 import history from '../history'
+import User from "../common/models/User";
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -432,6 +433,20 @@ export function toggleInfoModal(openDialog, text) {
   }
 }
 
+export function assignUser(data) {
+  return {
+    type: "LOGGED_USER",
+    user: new User(data)
+  }
+}
+
+export function assignSettings(settings) {
+  return {
+    type: "UI_SETTINGS",
+    settings: settings
+  }
+}
+
 export function testProcessFromFile(id, testDataFile, process) {
   return (dispatch) => {
     dispatch({
@@ -519,12 +534,5 @@ export function handleHTTPError(error) {
   return {
     type: "HANDLE_HTTP_ERROR",
     error: error
-  }
-}
-
-export function copySelection(selection) {
-  return {
-    type: "COPY_SELECTION",
-    selection: selection
   }
 }

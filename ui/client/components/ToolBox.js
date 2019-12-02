@@ -43,7 +43,7 @@ class ToolBox extends React.Component {
         <div>
           {this.props.nodesToAdd.map((nodeGroup, i) => {
             const label =
-              <span onClick={this.toggleGroup.bind(this, nodeGroup)}>{nodeGroup.name}</span>
+              <span className={"group-label"} onClick={this.toggleGroup.bind(this, nodeGroup)}>{nodeGroup.name}</span>
             return (
               <TreeView
                 itemClassName={this.nodeGroupIsEmpty(nodeGroup) ? "disabled" : ""}
