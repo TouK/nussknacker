@@ -77,7 +77,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "sendSms" -> WithCategories(SinkFactory.noParam(sendSmsSink), "Category1"),
       "monitor" -> WithCategories(SinkFactory.noParam(monitorSink), "Category1", "Category2"),
-      "kafka-string" -> WithCategories(new KafkaSinkFactory(kConfig, new SimpleSerializationSchema[Any](_, _.toString)), "Category1", "Category2")
+      "kafka-string" -> WithCategories(new KafkaSinkFactory(kConfig, SimpleSerializationSchema[Any](_, _.toString)), "Category1", "Category2")
     )
   }
 

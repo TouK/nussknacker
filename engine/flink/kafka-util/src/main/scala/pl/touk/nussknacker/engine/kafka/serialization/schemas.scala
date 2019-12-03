@@ -11,7 +11,18 @@ object schemas {
 
   private def safeBytes(value: String): Array[Byte] = Option(value).map(_.getBytes(StandardCharsets.UTF_8)).orNull
 
-  class SimpleSerializationSchema[T](topic: String, valueSerializer: T => String, keySerializer: T => String = (_:T) => null)
+  //trait mostly for making java version more usable (lambda <-> function serializability problems)
+  trait ToStringSerializer[T] extends Serializable with (T => String)
+
+  object SimpleSerializationSchema {
+    def apply[T](topic: String, valueSerializer: T => String, keySerializer: T => String = (_:T) => null): SimpleSerializationSchema[T] = {
+      new SimpleSerializationSchema[T](topic, valueSerializer(_), keySerializer(_))
+    }
+  }
+
+  class SimpleSerializationSchema[T](topic: String,
+                                     valueSerializer: ToStringSerializer[T],
+                                     keySerializer: ToStringSerializer[T] = (_:T) => null)
     extends KafkaSerializationSchema[T] {
 
     override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
@@ -22,6 +33,6 @@ object schemas {
   }
 
   class JsonSerializationSchema[T:Encoder](topic: String, keySerializer: T => String = (_:T)  => null)
-    extends SimpleSerializationSchema[T](topic, v => implicitly[Encoder[T]].apply(v).noSpaces, keySerializer)
+    extends SimpleSerializationSchema[T](topic, v => implicitly[Encoder[T]].apply(v).noSpaces, keySerializer(_))
 
 }

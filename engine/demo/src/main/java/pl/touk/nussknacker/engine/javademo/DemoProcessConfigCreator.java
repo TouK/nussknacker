@@ -12,7 +12,6 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
@@ -29,12 +28,10 @@ import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 import pl.touk.nussknacker.engine.kafka.KafkaConfig;
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
+import pl.touk.nussknacker.engine.kafka.serialization.SerializationSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.schemas;
-import scala.Function1;
 import scala.Option;
 import scala.collection.JavaConverters;
-
-import static scala.compat.java8.JFunction.func;
 
 public class DemoProcessConfigCreator implements ProcessConfigCreator {
 
@@ -99,15 +96,16 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     @Override
     public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config) {
         KafkaConfig kafkaConfig = getKafkaConfig(config);
-        Function1<Object, String> serializer= func( element -> {
+
+        schemas.ToStringSerializer<Object> serializer= element -> {
             if (element instanceof String) {
                 return (String) element;
             } else {
                 throw new RuntimeException("Sorry, only strings");
             }
-        });
-        Function1<String, KafkaSerializationSchema<Object>> schema =
-            func(topic -> new schemas.SimpleSerializationSchema<>(topic, serializer, null));
+        };
+        SerializationSchemaFactory<Object> schema = (topic, kafkaConfig1) ->
+            new schemas.SimpleSerializationSchema<>(topic, serializer, null);
         KafkaSinkFactory factory = new KafkaSinkFactory(kafkaConfig, schema);
         Map<String, WithCategories<SinkFactory>> m = new HashMap<>();
         m.put("kafka-stringSink", all(factory));

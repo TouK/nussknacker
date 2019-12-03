@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   *
   * @tparam T type of serialized object
   */
-trait SerializationSchemaFactory[T] {
+trait SerializationSchemaFactory[T] extends Serializable {
 
   def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T]
 
