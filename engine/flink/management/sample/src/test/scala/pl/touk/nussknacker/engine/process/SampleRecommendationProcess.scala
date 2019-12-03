@@ -14,7 +14,7 @@ class SampleRecommendationProcess extends FlatSpec with BeforeAndAfterAll with M
 
   import spel.Implicits._
 
-  private val env: StoppableExecutionEnvironment = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  private val env: StoppableExecutionEnvironment = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
 
   private val creator = new DemoProcessConfigCreator
 

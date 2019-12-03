@@ -88,7 +88,7 @@ class TransformersTest extends FunSuite with Matchers {
 
 
   private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
-    val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+    val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
     try {
       val registrar = new FlinkStreamingProcessCompiler(model.configCreator, model.processConfig) {
         override protected def listeners(): Seq[ProcessListener] = List(collectingListener) ++ super.listeners()

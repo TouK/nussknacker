@@ -26,7 +26,7 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
   before {
     StaticSource.running = true
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration)
+    val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration())
     env.enableCheckpointing(500)
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 

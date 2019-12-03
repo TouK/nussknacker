@@ -25,7 +25,7 @@ trait BaseITest extends KafkaSpec {
     }
   }
 
-  val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   val env = new StreamExecutionEnvironment(stoppableEnv)
   var registrar: FlinkStreamingProcessRegistrar = _
 

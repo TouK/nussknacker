@@ -25,15 +25,14 @@ object StoppableExecutionEnvironment {
 
   def apply(userFlinkClusterConfig: Configuration) = new StoppableExecutionEnvironment(userFlinkClusterConfig) with MiniClusterResourceFlink_1_7
 
-  def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int): Configuration = {
-    //blaaa this is needed to make queryableState work with two task manager instances
-    configuration.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, 2)
+  def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, taskManagersCount: Int): Configuration = {
+    val proxyPortHigh = proxyPortLow + taskManagersCount - 1
     configuration.setString(QueryableStateOptions.PROXY_PORT_RANGE, s"$proxyPortLow-$proxyPortHigh")
     configuration
   }
 
-  def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int) : StoppableExecutionEnvironment= {
-    StoppableExecutionEnvironment(addQueryableStateConfiguration(configuration, proxyPortLow, proxyPortHigh))
+  def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, taskManagersCount: Int) : StoppableExecutionEnvironment= {
+    StoppableExecutionEnvironment(addQueryableStateConfiguration(configuration, proxyPortLow, taskManagersCount))
   }
 
 }
@@ -130,8 +129,8 @@ trait MiniClusterResourceFlink_1_7 extends StoppableExecutionEnvironment {
 
   override def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterResource = {
     val clusterConfig: MiniClusterResourceConfiguration = new MiniClusterResourceConfiguration.Builder()
-      //TODO: what should be here?
-      .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, 2))
+      .setNumberTaskManagers(userFlinkClusterConfig.getInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, ConfigConstants.DEFAULT_LOCAL_NUMBER_TASK_MANAGER))
+      .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue()))
       .setConfiguration(userFlinkClusterConfig)
       .build
     new MiniClusterResource(clusterConfig)
