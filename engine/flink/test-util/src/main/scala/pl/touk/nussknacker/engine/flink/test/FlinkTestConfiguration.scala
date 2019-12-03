@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import org.apache.flink.configuration.{Configuration, QueryableStateOptions}
+import org.apache.flink.configuration.{ConfigConstants, Configuration, QueryableStateOptions, TaskManagerOptions}
 
 object FlinkTestConfiguration {
 //FIXME: make ports range dynamic and smaller.
@@ -11,7 +11,12 @@ object FlinkTestConfiguration {
   private val QueryStateProxyPortHigh = 9469
 
   // better to create each time because is mutable
-  def configuration: Configuration = addQueryableStatePortRanges(new Configuration)
+  def configuration(taskManagersCount: Int = 2, taskSlotsCount: Int = 8): Configuration = {
+    val config = new Configuration
+    config.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, taskManagersCount)
+    config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, taskSlotsCount)
+    addQueryableStatePortRanges(config)
+  }
 
   def setQueryableStatePortRangesBySystemProperties(): Unit = {
     System.setProperty(QueryableStateOptions.SERVER_PORT_RANGE.key(), s"$QueryStateServerPortLow-$QueryStateServerPortHigh")

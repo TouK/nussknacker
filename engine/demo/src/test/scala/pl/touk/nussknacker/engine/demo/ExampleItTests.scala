@@ -4,8 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneId}
 
 import org.apache.kafka.clients.producer.RecordMetadata
-import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers, Outcome, fixture}
+import org.scalatest.{BeforeAndAfterAll, Matchers, Outcome, fixture}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.engine.spel
 import scala.concurrent.Future
 
 //TODO: do we currently need these tests?
-trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matchers with Eventually { self: BaseITest =>
+trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matchers { self: BaseITest =>
 
   import KafkaUtils._
   import spel.Implicits._

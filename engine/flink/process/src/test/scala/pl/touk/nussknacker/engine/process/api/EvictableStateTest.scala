@@ -2,31 +2,28 @@ package pl.touk.nussknacker.engine.process.api
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.functions.{KeyedProcessFunction, ProcessFunction}
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
-import org.scalatest.concurrent.Eventually
-import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{Data, Watermark}
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with Eventually {
-
-  implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(10, Seconds)), interval = scaled(Span(1, Seconds)))
+class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with VeryPatientScalaFutures {
 
   var futureResult: Future[_] = _
 
   before {
     StaticSource.running = true
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration)
+    val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration())
     env.enableCheckpointing(500)
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 

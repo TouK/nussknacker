@@ -10,10 +10,8 @@ import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, Schem
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.scalatest.concurrent.Eventually
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
@@ -24,7 +22,7 @@ import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
-class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with EitherValues with LazyLogging {
+class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
   import KafkaUtils._
   import MockSchemaRegistry._
@@ -224,7 +222,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
     }
   }
 
-  private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(Registry)

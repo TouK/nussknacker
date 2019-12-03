@@ -63,7 +63,7 @@ object KeyValueTestHelper {
     }
 
     def invokeWithKafka(process: EspProcess, config: KafkaConfig, processVersion: ProcessVersion = ProcessVersion.empty) = {
-      val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration)
+      val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration())
       val creator = prepareCreator(env.getConfig, List.empty, config)
       val configuration = ConfigFactory.load()
       new FlinkStreamingProcessCompiler(creator, configuration).createFlinkProcessRegistrar().register(env, process, processVersion)
