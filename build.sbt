@@ -30,6 +30,10 @@ val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
 
+
+//have some problems with force() - e.g. with forcing circe version in httpUtils...
+ThisBuild / useCoursier := false
+
 val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
