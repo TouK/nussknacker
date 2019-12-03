@@ -1,26 +1,22 @@
 package pl.touk.nussknacker.engine.management
 
-import sttp.client.Response
-import sttp.client.testing.SttpBackendStub
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.Json.fromString
 import org.apache.flink.runtime.jobgraph.JobStatus
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, JobConfig, JobOverview, JobsResponse}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
+import pl.touk.nussknacker.test.PatientScalaFutures
+import sttp.client.Response
+import sttp.client.testing.SttpBackendStub
 
 import scala.concurrent.duration._
 
-class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
-
-  //on travis this test sometimes can take a bit longer...
-  override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(500, Millis)))
+class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
 
   private val config = FlinkConfig(10 minute, None, None, None, "http://test.pl", None)
 

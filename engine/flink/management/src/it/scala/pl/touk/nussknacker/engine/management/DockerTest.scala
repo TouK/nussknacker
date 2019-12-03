@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.{Files, Path}
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
+import java.nio.file.{Files, Path}
 import java.util.Collections
 
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
@@ -15,24 +14,17 @@ import com.whisk.docker.scalatest.DockerTestKit
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver, VolumeMapping}
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.Suite
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 
 import scala.concurrent.duration._
 
-trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
+trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with LazyLogging {
   self: Suite =>
 
   private val flinkEsp = s"flinkesp:1.7.2-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
-
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(
-    timeout = Span(90, Seconds),
-    interval = Span(1, Millis)
-  )
 
   override implicit val dockerFactory: DockerFactory = new SpotifyDockerFactory(client)
 

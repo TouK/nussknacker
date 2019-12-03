@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.concurrent.Eventually
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.WithCategories
@@ -16,8 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ServiceQueryOpenCloseSpec
   extends FunSuite
     with Matchers
-    with PatientScalaFutures
-    with Eventually {
+    with PatientScalaFutures {
 
   import ServiceQueryOpenCloseSpec._
 

@@ -4,7 +4,6 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
@@ -26,7 +25,6 @@ class FlinkStreamingProcessRegistrarKafkaSpec
     with KafkaSpec
     with Matchers
     with VeryPatientScalaFutures
-    with Eventually
     with LazyLogging {
 
   import spel.Implicits._

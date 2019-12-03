@@ -3,17 +3,16 @@ package pl.touk.nussknacker.engine.definition
 import java.util.concurrent.Executor
 import java.util.function.Supplier
 
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.process.WithCategories
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues with Matchers {
+class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionValues with Matchers {
 
   implicit val metadata = MetaData("proc1", StreamMetaData())
   val jobData = JobData(metadata, ProcessVersion.empty)

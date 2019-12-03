@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.Service
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.engine.util.service.query.QueryServiceTesting.CreateQuery
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuerySpec.ConcatService
+import pl.touk.nussknacker.test.PatientScalaFutures
 
-class ExpressionServiceQuerySpec extends FlatSpec with Matchers with ScalaFutures {
+class ExpressionServiceQuerySpec extends FlatSpec with Matchers with PatientScalaFutures {
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   override def spanScaleFactor: Double = 2

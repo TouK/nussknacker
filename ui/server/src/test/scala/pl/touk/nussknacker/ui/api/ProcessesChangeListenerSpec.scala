@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
-import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.language.higherKinds
 
 class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with Eventually with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+  with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private val routeWithAllPermissions = withAllPermissions(processesRoute)
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)

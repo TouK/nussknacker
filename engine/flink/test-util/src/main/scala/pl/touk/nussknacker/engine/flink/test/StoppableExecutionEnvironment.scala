@@ -6,7 +6,6 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.execution.ExecutionState
-import org.apache.flink.runtime.executiongraph.AccessExecutionJobVertex
 import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
 import org.apache.flink.runtime.minicluster.MiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -15,8 +14,8 @@ import org.apache.flink.test.util.{MiniClusterResource, MiniClusterResourceConfi
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
 import org.scalatest.Matchers
-import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.collection.JavaConverters._
 
@@ -38,7 +37,7 @@ object StoppableExecutionEnvironment {
 }
 
 abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment
-  with LazyLogging with Eventually with Matchers {
+  with LazyLogging with PatientScalaFutures with Matchers {
 
   // For backward compatibility with Flink 1.6 we have here MiniClusterResource intstead of MiniClusterWithClientResource
   // TODO after breaking compatibility with 1.6, replace MiniClusterResource with MiniClusterWithClientResource

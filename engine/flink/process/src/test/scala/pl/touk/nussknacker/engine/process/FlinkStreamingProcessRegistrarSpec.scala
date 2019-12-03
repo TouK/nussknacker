@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process
 import java.util.Date
 
 import cats.data.NonEmptyList
-import org.scalatest.concurrent.Eventually
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.GraphBuilder
@@ -11,8 +10,9 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.test.PatientScalaFutures
 
-class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
+class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with PatientScalaFutures {
 
   import spel.Implicits._
 
