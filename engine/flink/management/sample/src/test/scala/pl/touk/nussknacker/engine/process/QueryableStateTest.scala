@@ -8,7 +8,6 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -23,7 +22,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with LazyLogging with VeryPatientScalaFutures {
+class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with KafkaSpec with LazyLogging with VeryPatientScalaFutures {
 
   private val QueryStateProxyPortLow = AvailablePortFinder.findAvailablePorts(1).head
 

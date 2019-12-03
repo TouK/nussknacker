@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
@@ -13,7 +12,7 @@ import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
-class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with StreamingDockerTest {
+class JavaConfigProcessManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
 
   override protected def classPath: String = s"./engine/flink/management/java_sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementJavaSample.jar"
 

@@ -4,17 +4,17 @@ import java.sql.Timestamp
 import java.time.{LocalDateTime, ZoneId}
 import java.util
 
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.collection.JavaConverters._
 
-class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
+class SqlExpressionTest extends FunSuite with Matchers with PatientScalaFutures {
 
   private val validationContext = ValidationContext(Map[String, TypingResult](
     "var" -> Typed[String],

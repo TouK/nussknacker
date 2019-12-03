@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
-import org.scalatest.concurrent.Eventually
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -14,9 +13,10 @@ import pl.touk.nussknacker.engine.spel
 
 import scala.util.Try
 
-class SqlProcessItTests extends FunSuite with BeforeAndAfterAll with Matchers with Eventually {
+class SqlProcessItTests extends FunSuite with BeforeAndAfterAll with Matchers {
 
   import spel.Implicits._
+
   import scala.collection.JavaConverters._
 
   private implicit class SqlExpression(expression: String) {
