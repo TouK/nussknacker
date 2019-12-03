@@ -33,6 +33,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas;
 import scala.Function1;
 import scala.Option;
 import scala.collection.JavaConverters;
+
 import static scala.compat.java8.JFunction.func;
 
 public class DemoProcessConfigCreator implements ProcessConfigCreator {
@@ -98,7 +99,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     @Override
     public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config) {
         KafkaConfig kafkaConfig = getKafkaConfig(config);
-        Function1<Object, String> serializer= func(element -> {
+        Function1<Object, String> serializer= func( element -> {
             if (element instanceof String) {
                 return (String) element;
             } else {
