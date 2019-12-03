@@ -8,9 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalactic.source.Position
 import org.scalatest.concurrent.Eventually
-import org.scalatest.time.{Milliseconds, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -20,7 +18,7 @@ import pl.touk.nussknacker.engine.kafka.{AvailablePortFinder, KafkaSpec, KafkaZo
 import pl.touk.nussknacker.engine.management.sample.TestProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.test.{PatientScalaFutures, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,8 +31,9 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
   private val creator = new TestProcessConfigCreator
 
-  private val config: Configuration = FlinkTestConfiguration.configuration
-  private val stoppableEnv: StoppableExecutionEnvironment = StoppableExecutionEnvironment.withQueryableStateEnabled(config, QueryStateProxyPortLow, QueryStateProxyPortLow + 1)
+  private val taskManagersCount = 2
+  private val config: Configuration = FlinkTestConfiguration.configuration(taskManagersCount = taskManagersCount)
+  private val stoppableEnv: StoppableExecutionEnvironment = StoppableExecutionEnvironment.withQueryableStateEnabled(config, QueryStateProxyPortLow, taskManagersCount)
   private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
 

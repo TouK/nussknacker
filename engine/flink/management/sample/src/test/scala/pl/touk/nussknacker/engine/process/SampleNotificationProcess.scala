@@ -15,7 +15,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers {
   import spel.Implicits._
 
   val creator = new DemoProcessConfigCreator
-  val env = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  val env = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
 
   it should "serialize and run" in {
     val process =
