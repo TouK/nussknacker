@@ -10,7 +10,6 @@ import ModalRenderUtils from "./ModalRenderUtils";
 import * as TestRenderUtils from "./TestRenderUtils";
 import ProcessUtils from '../../common/ProcessUtils';
 import * as JsonUtils from '../../common/JsonUtils';
-import Fields from "../Fields";
 import ParameterList from "./ParameterList";
 import ExpressionWithFixedValues from "./ExpressionWithFixedValues";
 import {v4 as uuid4} from "uuid";
@@ -21,6 +20,7 @@ import JoinDef from "./node-modal/JoinDef"
 import {allValid, errorValidator, notEmptyValidator} from "../../common/Validators";
 import ValidationLabels from "../modals/ValidationLabels";
 import {DEFAULT_EXPRESSION_ID} from "../../common/graph/constants";
+import SubprocessInputDefinition from "./node-modal/subprocessinputdefinition/SubprocessInputDefinition"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -43,7 +43,7 @@ export class NodeDetailsContent extends React.Component {
     let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || (hasNoReturn === true && this.state.editedNode.outputVar)
 
-    this.generateUUID("fields");
+    this.generateUUID("fields", "parameters")
   }
 
   prepareNodeDef(node, nodeObjectDetails, processToDisplay) {
@@ -154,36 +154,18 @@ export class NodeDetailsContent extends React.Component {
           </div>
         return this.sourceSinkCommon(toAppend, fieldErrors)
       case 'SubprocessInputDefinition':
-        //FIXME: currently there is no way to add new parameters or display them correctly
         return (
-          <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "Id")])}
-            <div className="node-row">
-              {this.renderFieldLabel("Parameters")}
-              <div className="node-value">
-                <Fields
-                  fields={this.state.editedNode.parameters || []}
-                  fieldCreator={(field, onChange, readOnly) => {
-                    const validators = [notEmptyValidator]
-                    return (<React.Fragment>
-                      <input type="text"
-                             className={(!showValidation || allValid(validators, [field.typ.refClazzName]) ? "node-input" : "node-input node-input-with-error")}
-                             value={field.typ.refClazzName}
-                             onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}
-                             readOnly={readOnly}/>
-                        {showValidation && <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>}
-                    </React.Fragment>)
-                  }}
-                  onChange={(fields) => this.setNodeDataAt("parameters", fields)}
-                  newValue={{name: "", typ: {refClazzName: ""}}}
-                  isMarked={index => this.isMarked(`parameters[${index}].name`) || this.isMarked(`parameters[${index}].typ.refClazzName`)}
-                  showValidation={showValidation}
-                  readOnly={!this.props.isEditMode}
-                />
-              </div>
-            </div>
-            {this.descriptionField()}
-          </div>
+          <SubprocessInputDefinition
+            addElement={this.addElement}
+            onChange={this.setNodeDataAt}
+            node={this.state.editedNode}
+            isMarked={this.isMarked}
+            readOnly={!this.props.isEditMode}
+            removeElement={this.removeElement}
+            toogleCloseOnEsc={this.props.toogleCloseOnEsc}
+            showValidation={showValidation}
+            errors={fieldErrors}
+          />
         )
       case 'SubprocessOutputDefinition':
         return (
