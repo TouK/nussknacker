@@ -5,15 +5,15 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig,
                         typeToConfig: Map[ProcessingType, ProcessingTypeData],
-                        authenticationConfig: AuthenticationConfiguration
-                       )(implicit ec: ExecutionContext)
+                        authenticationConfig: AuthenticationConfiguration,
+                        analyticsConfig: Option[AnalyticsConfig])(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
 
   def publicRoute(): Route =
@@ -35,10 +35,12 @@ class SettingsResources(config: FeatureTogglesConfig,
 
           val authenticationSettings = AuthenticationSettings(
             authenticationConfig.method.toString,
-            authenticationConfig.authorizeUrl.map(_.toString)
+            authenticationConfig.authorizeUrl.map(_.toString),
           )
 
-          UISettings(toggleOptions, authenticationSettings)
+          val analyticsSettings = analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId.toString))
+
+          UISettings(toggleOptions, authenticationSettings, analyticsSettings)
         }
       }
     }
@@ -69,6 +71,9 @@ class SettingsResources(config: FeatureTogglesConfig,
                                  attachments: Boolean,
                                  signals: Boolean)
 
+
+@JsonCodec case class AnalyticsSettings(engine: String, url: String)
+
 @JsonCodec case class AuthenticationSettings(backend: String, authorizeUrl: Option[String])
 
-@JsonCodec case class UISettings(features: ToggleFeaturesOptions, authentication: AuthenticationSettings)
+@JsonCodec case class UISettings(features: ToggleFeaturesOptions, authentication: AuthenticationSettings, analytics: Option[AnalyticsSettings])
