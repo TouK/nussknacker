@@ -7,16 +7,14 @@ import "ladda/dist/ladda.min.css"
 import ActionsUtils from '../../../actions/ActionsUtils';
 import NodeUtils from '../NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
-import EspModalStyles from '../../../common/EspModalStyles'
+import NodeDetailsModalHeader from './NodeDetailsModalHeader'
 import TestResultUtils from '../../../common/TestResultUtils'
 import {Scrollbars} from "react-custom-scrollbars";
 import cssVariables from "../../../stylesheets/_variables.styl";
 import {BareGraph} from "../Graph";
 import HttpService from "../../../http/HttpService";
-import SvgDiv from "../../SvgDiv"
 import ProcessUtils from "../../../common/ProcessUtils";
 import PropTypes from 'prop-types';
-import nodeAttributes from "../../../assets/json/nodeAttributes"
 import Draggable from "react-draggable";
 import {preventFromMoveSelectors} from "../../modals/GenericModalDialog";
 
@@ -84,10 +82,6 @@ class NodeDetailsModal extends React.Component {
         this.closeModal()
       }, () => this.setState( { pendingRequest: false})
     )
-  }
-
-  nodeAttributes = () => {
-    return nodeAttributes[NodeUtils.nodeType(this.props.nodeToDisplay)];
   }
 
   updateNodeState = (newNodeState) => {
@@ -162,18 +156,6 @@ class NodeDetailsModal extends React.Component {
     return (<BareGraph processCounts={subprocessCounts} processToDisplay={this.state.subprocessContent}/>)
   }
 
-  renderDocumentationIcon() {
-    const docsUrl = this.props.nodeSetting.docsUrl
-    return docsUrl ?
-      <a className="docsIcon" target="_blank" href={docsUrl} title="Documentation">
-        <SvgDiv svgFile={'documentation.svg'}/>
-      </a> : null
-  }
-
-  variableLanguage = (node) => {
-    return _.get(node, 'value.language')
-  }
-
   toogleCloseModalOnEsc = () => {
     this.setState({
       shouldCloseOnEsc: !this.state.shouldCloseOnEsc,
@@ -181,11 +163,9 @@ class NodeDetailsModal extends React.Component {
   }
 
   render() {
-    const isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
-    const titleStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
-    const testResults = (id) => TestResultUtils.resultsForNode(this.props.testResults, id)
-    const variableLanguage = this.variableLanguage(this.props.nodeToDisplay)
-    const modelHeader = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + this.nodeAttributes().name
+    const {nodeErrors, nodeToDisplay, nodeSetting, readOnly, showNodeDetailsModal, testResults} = this.props
+    const isOpen = !_.isEmpty(nodeToDisplay) && showNodeDetailsModal
+    const nodeTestResults = (id) => TestResultUtils.resultsForNode(testResults, id)
 
     return (
       <div className="objectModal">
@@ -196,25 +176,20 @@ class NodeDetailsModal extends React.Component {
           <div className="draggable-container">
             <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
               <div className="espModal">
-                <div className="modalHeader">
-                  <div className="modal-title" style={titleStyles}>
-                    <span>{modelHeader}</span>
-                  </div>
-                  {this.renderDocumentationIcon()}
-                </div>
+                <NodeDetailsModalHeader node={nodeToDisplay} docsUrl={nodeSetting.docsUrl}/>
                 <div className="modalContentDark" id="modal-content">
                   <Scrollbars hideTracksWhenNotNeeded={true} autoHeight
                               autoHeightMax={cssVariables.modalContentMaxHeight}
                               renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
                     {
-                      this.isGroup() ? this.renderGroup(testResults)
-                        : (<NodeDetailsContent isEditMode={!this.props.readOnly}
+                      this.isGroup() ? this.renderGroup(nodeTestResults)
+                        : (<NodeDetailsContent isEditMode={!readOnly}
                                                showValidation={true}
                                                node={this.state.editedNode}
-                                               nodeErrors={this.props.nodeErrors}
+                                               nodeErrors={nodeErrors}
                                                onChange={this.updateNodeState}
                                                toogleCloseOnEsc={this.toogleCloseModalOnEsc}
-                                               testResults={testResults(this.state.currentNodeId)}/>)
+                                               testResults={nodeTestResults(this.state.currentNodeId)}/>)
                     }
                     {
                       //FIXME: adjust height of modal with subprocess in some reasonable way :|

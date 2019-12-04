@@ -193,7 +193,6 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
@@ -210,7 +209,6 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createReadonlyField("input", "Subprocess Id", "ref.id")}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
               processDefinitionData={this.props.processDefinitionData}
@@ -241,7 +239,6 @@ export class NodeDetailsContent extends React.Component {
             {
               this.showOutputVar && this.createField("input", "Output", "outputVar", false, [notEmptyValidator, errorValidator(fieldErrors, "outputVar")], "outputVar", false, null)
             }
-            {this.createReadonlyField("input", "Node type", "nodeType")}
             {NodeUtils.nodeType(this.props.node) === 'Join' &&
             <BranchParameters
               onChange={this.setNodeDataAt}
@@ -389,7 +386,6 @@ export class NodeDetailsContent extends React.Component {
     return (
       <div className="node-table-body">
         {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "Id")])}
-        {this.createReadonlyField("input", "Ref Type", "ref.typ")}
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
