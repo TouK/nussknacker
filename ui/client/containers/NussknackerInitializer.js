@@ -54,26 +54,31 @@ class NussknackerInitializer extends React.Component {
   componentDidMount() {
     //It looks like callback hell.. Can we do it better?
     HttpService.fetchSettings().then(settingsResponse => {
-      this.props.actions.assignSettings(settingsResponse.data)
-      this.authenticationStrategy(settingsResponse.data.authentication).then(response => {
+      const settings = settingsResponse.data
+      this.props.actions.assignSettings(settings)
+
+      this.authenticationStrategy(settings.authentication).then(response => {
         HttpService.fetchLoggedUser().then(userResponse => {
           this.props.actions.assignUser(userResponse.data)
           this.setState({initialized: true})
-        }).catch(this.httpErrorHandler)
+        }).catch(this.httpErrorHandler, _.isEqual(settings.backend, OAUTH2_BACKEND))
       })
     }).catch(this.httpErrorHandler)
   }
 
-  httpErrorHandler = (error) => {
+  httpErrorHandler = (error, redirect) => {
+    const code = _.get(error, 'response.status')
+    const showError = _.isEqual(redirect, true) === false || _.eq(code, HTTP_UNAUTHORIZED_CODE) === false
+
     this.setState({
-      error: _.get(this.errors, _.get(error, 'response.status'), this.errors[HTTP_APPLICATION_CODE])
+      error: showError ? _.get(this.errors, code, this.errors[HTTP_APPLICATION_CODE]) : null
     })
   }
 
   authenticationStrategy = (settings) => {
     // Automatically redirect user when he is not authenticated and backend is OAUTH2
     api.interceptors.response.use(response => response, (error) => {
-      if (error.response.status === HTTP_UNAUTHORIZED_CODE && settings.backend === OAUTH2_BACKEND) {
+      if (_.eq(error.response.status, HTTP_UNAUTHORIZED_CODE) && _.isEqual(settings.backend, OAUTH2_BACKEND)) {
         window.location.replace(settings.authorizeUrl)
       }
 
