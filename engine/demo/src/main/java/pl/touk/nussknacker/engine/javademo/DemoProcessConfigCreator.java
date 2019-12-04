@@ -97,7 +97,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config) {
         KafkaConfig kafkaConfig = getKafkaConfig(config);
 
-        schemas.ToStringSerializer<Object> serializer= element -> {
+        schemas.ToStringSerializer<Object> serializer = element -> {
             if (element instanceof String) {
                 return (String) element;
             } else {

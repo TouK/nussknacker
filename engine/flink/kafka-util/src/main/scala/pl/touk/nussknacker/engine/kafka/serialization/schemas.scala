@@ -7,32 +7,42 @@ import io.circe.Encoder
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 
+import scala.language.implicitConversions
+
 object schemas {
 
   private def safeBytes(value: String): Array[Byte] = Option(value).map(_.getBytes(StandardCharsets.UTF_8)).orNull
 
-  //trait mostly for making java version more usable (lambda <-> function serializability problems)
-  trait ToStringSerializer[T] extends Serializable with (T => String)
+  //trait mostly for making java version more usable (lambda <-> function serializability problems,
+  // the fact we cross compile to 2.11 only makes it worse...)
+  trait ToStringSerializer[T] extends Serializable {
+    def serialize(value: T): String
+  }
 
-  object SimpleSerializationSchema {
-    def apply[T](topic: String, valueSerializer: T => String, keySerializer: T => String = (_:T) => null): SimpleSerializationSchema[T] = {
-      new SimpleSerializationSchema[T](topic, valueSerializer(_), keySerializer(_))
+  object ToStringSerializer {
+    def apply[T](fun: T => String): ToStringSerializer[T] = new ToStringSerializer[T] {
+      override def serialize(value: T): String = fun(value)
     }
   }
 
   class SimpleSerializationSchema[T](topic: String,
                                      valueSerializer: ToStringSerializer[T],
-                                     keySerializer: ToStringSerializer[T] = (_:T) => null)
+                                     keySerializer: ToStringSerializer[T])
     extends KafkaSerializationSchema[T] {
 
+    def this(topic: String, valueSerializer: T => String, keySerializer: T => String = (_: T) => null) = {
+      this(topic, ToStringSerializer(valueSerializer), ToStringSerializer(keySerializer))
+    }
+
     override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-      val value = valueSerializer(element)
-      val key = Option(keySerializer).map(_.apply(element)).orNull
+      val value = valueSerializer.serialize(element)
+      val key = Option(keySerializer).map(_.serialize(element)).orNull
       new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestamp, safeBytes(key), safeBytes(value))
     }
   }
 
-  class JsonSerializationSchema[T:Encoder](topic: String, keySerializer: T => String = (_:T)  => null)
-    extends SimpleSerializationSchema[T](topic, v => implicitly[Encoder[T]].apply(v).noSpaces, keySerializer(_))
+  class JsonSerializationSchema[T: Encoder](topic: String, keySerializer: T => String = (_: T) => null)
+    extends SimpleSerializationSchema[T](topic, ToStringSerializer[T](v => implicitly[Encoder[T]].apply(v).noSpaces), ToStringSerializer[T](keySerializer))
+
 
 }

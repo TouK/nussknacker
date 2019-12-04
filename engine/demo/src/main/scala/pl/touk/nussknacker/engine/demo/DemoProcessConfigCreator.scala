@@ -78,7 +78,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
-    val stringOrJsonSink = kafkaSink(kafkaConfig, SimpleSerializationSchema[Any](_, {
+    val stringOrJsonSink = kafkaSink(kafkaConfig, new SimpleSerializationSchema[Any](_, {
       case a: DisplayJson => a.asJson.noSpaces
       case a: Json => a.noSpaces
       case a: String => a
