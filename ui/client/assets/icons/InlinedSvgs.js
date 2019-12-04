@@ -55,6 +55,10 @@ InlinedSvgs.tipsWarning = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
 
 InlinedSvgs.tipsError = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.cls-error{fill:#f25c6e;}</style></defs><title>errors</title><g id="Layer_2"><g id="Layer_1-2"><path class="cls-error" d="M5.33,0h5.34L16,5.33v5.34L10.67,16H5.33L0,10.67V5.33ZM3.15,11,5,12.85l3-3,3,3L12.85,11l-3-3,3-3L11,3.15l-3,3-3-3L3.15,5l3,3Z"/></g></g></svg>`
 
+InlinedSvgs.groupingMode = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.cls-grouping{fill:#b3b3b3;}.cls-grouping-2{fill:none;}</style></defs><title>grouping-mode</title><g id="Layer_2"><g id="Layer_1-2"><path class="cls-grouping" d="M15,5V15H5V5H15m1-1H4V16H16V4Z"/><rect class="cls-grouping" width="12" height="12"/><rect class="cls-grouping-2" width="16" height="16"/></g></g></svg>`
+
+InlinedSvgs.testingMode = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.cls-testing{fill:#b3b3b3;}.cls-testing-2{fill:none;}</style></defs><title>testing-mode</title><g id="Layer_2"><g id="Layer_1-2"><path class="cls-testing" d="M15.71,12.42l-5-8.06V1.94h1.45V.24H3.88v1.7H5.33V4.36l-5,8.06A2.52,2.52,0,0,0,0,13.58,2.43,2.43,0,0,0,2.42,16H13.58A2.43,2.43,0,0,0,16,13.58,2.52,2.52,0,0,0,15.71,12.42Zm-11.56-3L7,4.85V1.94H9V4.85l2.88,4.6Z"/><rect class="cls-testing-2" width="16" height="16"/></g></g></svg>`
+
 // from https://github.com/encharm/Font-Awesome-SVG-PNG/tree/master/black/svg
 InlinedSvgs.buttonDelete = `<svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><defs> <style>.a {fill: #999}</style> </defs><path class="a" d="M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z"/><rect class="b" width="32" height="32"/></svg>`
 
