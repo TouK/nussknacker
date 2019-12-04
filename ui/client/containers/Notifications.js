@@ -11,7 +11,8 @@ class Notifications extends React.Component {
   }
 
   render() {
-    return <ReactNotifications notifications={this.props.notifications} style={false}/>
+    return <ReactNotifications notifications={this.props.notifications}
+                               style={false}/>
   }
 }
 

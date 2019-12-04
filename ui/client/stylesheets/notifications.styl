@@ -2,35 +2,47 @@
 
 .notifications-wrapper
   position absolute
-  top 10
-  right 20
+  top 78
+  right 310
   z-index 1000
 
   .notification
     background-color: #4D4D4D
-    width: 320px
-    minimal-height: 60px
-    padding: 10px
-    margin: 2px
-    font-size: 18
-    text-align: center;
-    display: flex
-    flex-wrap: wrap
+    cursor pointer
+    width: 300px
+    max-height 400px
+    font-family "Open Sans"
+    font-size: 16
+    margin 2px
+    display flex
+    color #b3b3b3
     .notification-dismiss
-      display: none
-    .notification-message
-      order: 0
+      display none
     &.notification-hidden
       display none
     &.notification-success
-      border: solid 2px okColor
+      border-bottom: solid 2px sucessColor
     &.notification-error
-      border: solid 2px errorColor
+      border-bottom: solid 2px errorColor
     .icon
+      min-width 16px
+      min-height 16px
+      margin-top 5px
       order: -1
-      width: 20px
-      height: 20px
-      margin-right: 10px
-    .details
-      width: 100%
-      font-size: 14px
+      width: 16px
+      height: 16px
+      margin-right 10px
+      margin-left 10px
+      margin-bottom 5px
+    .notification-details
+      padding-top 2px
+    .notification-text
+      display block
+      max-width 234px
+      overflow hidden
+      word-wrap break-word
+    .dismiss-icon
+      fill #cccccc
+      background-color #3a3a3a
+      width 16px
+      height 16px

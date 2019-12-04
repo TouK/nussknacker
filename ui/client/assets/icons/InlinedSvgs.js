@@ -47,6 +47,10 @@ InlinedSvgs.creatorFolder = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 
 
 InlinedSvgs.tipsInfo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"> <defs> <style>.a { fill: #b3b3b3; } .b { fill: none; } </style> </defs> <title>tips-info</title> <g> <path class="a" d="M8,0A8,8,0,1,1,0,8,8,8,0,0,1,8,0ZM6,6V7.33H7.33V12H6v1.33h4.67V12H9.33V6ZM8.33,2.67a1,1,0,1,0,1,1A1,1,0,0,0,8.33,2.67Z"/> <rect class="b" width="16" height="16"/> </g> </svg>`
 
+InlinedSvgs.tipsSuccess = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.cls-success{fill:#64d864;}</style></defs><title>success</title><g id="Layer_2"><g><path class="cls-success" d="M8,0a8,8,0,1,0,8,8A8,8,0,0,0,8,0ZM7.15,12.61,5.56,11,2.82,8.28,4.41,6.7,7,9.26l4.38-5.48,1.83,1.64Z"/></g></g></svg>`
+
+InlinedSvgs.tipsClose = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.5 -2.5 13 13"><defs><style>.cls-close{fill:#cccccc;}</style></defs><title>close</title><g id="Layer_2"><g><path class="cls-close" d="M1.18,0,4,2.76,6.71,0,7.89,1.18,5.13,4,7.89,6.71,6.71,7.89,4,5.13,1.18,7.89,0,6.71,2.76,4,0,1.18Z"/></g></g></svg>`
+
 InlinedSvgs.tipsWarning = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"> <defs> <style>.warning { fill: #FF9A4D; } .b { fill: none; } </style> </defs> <title>tips-warning</title> <g> <path class="warning" d="M15.49,15.46H.51A1.73,1.73,0,0,1,.51,13L7,1A1.73,1.73,0,0,1,9.43,1l6.07,12A1.73,1.73,0,0,1,15.49,15.46ZM6.56,4.65l.72,5.91H8.72l.72-5.91ZM8,11.42a1.15,1.15,0,1,0,1.15,1.15A1.15,1.15,0,0,0,8,11.42Z"/> <rect class="b" width="16" height="16"/> </g> </svg>`
 
 InlinedSvgs.tipsError = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.cls-error{fill:#f25c6e;}</style></defs><title>errors</title><g id="Layer_2"><g id="Layer_1-2"><path class="cls-error" d="M5.33,0h5.34L16,5.33v5.34L10.67,16H5.33L0,10.67V5.33ZM3.15,11,5,12.85l3-3,3,3L12.85,11l-3-3,3-3L11,3.15l-3,3-3-3L3.15,5l3,3Z"/></g></g></svg>`
