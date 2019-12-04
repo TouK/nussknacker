@@ -54,19 +54,23 @@ class NussknackerInitializer extends React.Component {
   componentDidMount() {
     //It looks like callback hell.. Can we do it better?
     HttpService.fetchSettings().then(settingsResponse => {
-      this.props.actions.assignSettings(settingsResponse.data)
-      this.authenticationStrategy(settingsResponse.data.authentication).then(response => {
+      const settings = settingsResponse.data
+      this.props.actions.assignSettings(settings)
+
+      this.authenticationStrategy(settings.authentication).then(response => {
         HttpService.fetchLoggedUser().then(userResponse => {
           this.props.actions.assignUser(userResponse.data)
           this.setState({initialized: true})
-        }).catch(this.httpErrorHandler)
+        }).catch(err => this.httpErrorHandler(err, settings.authentication.backend === OAUTH2_BACKEND))
       })
     }).catch(this.httpErrorHandler)
   }
 
-  httpErrorHandler = (error) => {
+  httpErrorHandler = (error, redirect) => {
+    const code = _.get(error, 'response.status')
+    const showError = (code !== HTTP_UNAUTHORIZED_CODE || !redirect)
     this.setState({
-      error: _.get(this.errors, _.get(error, 'response.status'), this.errors[HTTP_APPLICATION_CODE])
+      error: showError ? _.get(this.errors, code, this.errors[HTTP_APPLICATION_CODE]) : null
     })
   }
 
