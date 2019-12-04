@@ -61,15 +61,14 @@ class NussknackerInitializer extends React.Component {
         HttpService.fetchLoggedUser().then(userResponse => {
           this.props.actions.assignUser(userResponse.data)
           this.setState({initialized: true})
-        }).catch(this.httpErrorHandler, _.isEqual(settings.backend, OAUTH2_BACKEND))
+        }).catch(err => this.httpErrorHandler(err, settings.authentication.backend === OAUTH2_BACKEND))
       })
     }).catch(this.httpErrorHandler)
   }
 
   httpErrorHandler = (error, redirect) => {
     const code = _.get(error, 'response.status')
-    const showError = _.isEqual(redirect, true) === false || _.eq(code, HTTP_UNAUTHORIZED_CODE) === false
-
+    const showError = (code !== HTTP_UNAUTHORIZED_CODE || !redirect)
     this.setState({
       error: showError ? _.get(this.errors, code, this.errors[HTTP_APPLICATION_CODE]) : null
     })
@@ -78,7 +77,7 @@ class NussknackerInitializer extends React.Component {
   authenticationStrategy = (settings) => {
     // Automatically redirect user when he is not authenticated and backend is OAUTH2
     api.interceptors.response.use(response => response, (error) => {
-      if (_.eq(error.response.status, HTTP_UNAUTHORIZED_CODE) && _.isEqual(settings.backend, OAUTH2_BACKEND)) {
+      if (error.response.status === HTTP_UNAUTHORIZED_CODE && settings.backend === OAUTH2_BACKEND) {
         window.location.replace(settings.authorizeUrl)
       }
 
