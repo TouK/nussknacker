@@ -24,7 +24,7 @@ export default class Errors extends React.Component {
 
   headerIcon = (errors) =>
     _.isEmpty(errors.globalErrors) && _.isEmpty(errors.invalidNodes) && _.isEmpty(errors.processPropertiesErrors) ? null :
-      <HeaderIcon icon={InlinedSvgs.tipsError}/>
+      <HeaderIcon className={"icon"} icon={InlinedSvgs.tipsError}/>
 
   errorTips = (errors) => {
     const globalErrors = errors.globalErrors

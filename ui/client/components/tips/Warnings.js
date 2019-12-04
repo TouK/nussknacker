@@ -21,7 +21,7 @@ export default class Warnings extends React.Component {
 
     return (
       <div key={uuid4()}>
-        {warnings.length > 0 && <HeaderIcon icon={InlinedSvgs.tipsWarning}/>}
+        {warnings.length > 0 && <HeaderIcon className={"icon"} icon={InlinedSvgs.tipsWarning}/>}
         <div>
           {
             Object.entries(groupedByMessage).map(([message, warnings]) =>

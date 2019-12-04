@@ -4,13 +4,14 @@ import PropTypes from "prop-types"
 export default class HeaderIcon extends React.Component {
 
   static propTypes = {
-    icon: PropTypes.string.isRequired
+    icon: PropTypes.string.isRequired,
+    className: PropTypes.string
   }
 
   render() {
-    const icon = this.props
+    const {icon, className} = this.props
     return (
-      <div className="icon" title="icon" dangerouslySetInnerHTML={{__html: icon.icon}}/>
+      <div className={className} title="icon" dangerouslySetInnerHTML={{__html: icon}}/>
     )
   }
 }

@@ -1,6 +1,9 @@
 import React from 'react';
 import {v4 as uuid4} from "uuid";
 import PropTypes from "prop-types"
+import InlinedSvgs from "../../assets/icons/InlinedSvgs";
+import HeaderTitle from "./HeaderTitle";
+import HeaderIcon from "./HeaderIcon";
 
 export default class ValidTip extends React.Component {
 
@@ -11,7 +14,7 @@ export default class ValidTip extends React.Component {
 
   render() {
     return (
-      <div key={uuid4()}><span>{this.validTip()}</span></div>
+      <div key={uuid4()}>{this.validTip()}</div>
     )
   }
 
@@ -19,11 +22,14 @@ export default class ValidTip extends React.Component {
     const {grouping, testing} = this.props
 
     if (testing) {
-      return "Testing mode enabled"
+      return <HeaderTitle message={"Testing mode enabled"}/>
     } else if (grouping) {
-      return "Grouping mode enabled"
+      return <HeaderTitle message={"Grouping mode enabled"}/>
     } else {
-      return "Everything seems to be OK"
+      return <React.Fragment>
+               <HeaderIcon className={"icon"} icon={InlinedSvgs.tipsSuccess}/>
+               <HeaderTitle message={"Everything seems to be OK"}/>
+             </React.Fragment>
     }
   }
 }
