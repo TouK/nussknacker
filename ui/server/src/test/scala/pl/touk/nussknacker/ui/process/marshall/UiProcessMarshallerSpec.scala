@@ -14,7 +14,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
   val processWithPartialAdditionalFields =
     s"""
        |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}, "additionalFields": {"description": "$someProcessDescription"}},
+       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "splitStateToDisk" : true }, "additionalFields": {"description": "$someProcessDescription"}},
        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
        |    "nodes" : [
        |        {
@@ -30,7 +30,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
   val processWithFullAdditionalFields =
     s"""
        |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}, "isSubprocess": false, "subprocessVersions": {}, "additionalFields": { "description": "$someProcessDescription", "groups": [], "properties": {}} },
+       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "splitStateToDisk" : true }, "isSubprocess": false, "subprocessVersions": {}, "additionalFields": { "description": "$someProcessDescription", "groups": [], "properties": {}} },
        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
        |    "nodes" : [
        |        {
