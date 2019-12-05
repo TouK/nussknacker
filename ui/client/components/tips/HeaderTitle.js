@@ -1,16 +1,14 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-export default class HeaderTitle extends React.Component {
+export default function HeaderTitle(props) {
+  const {message} = props
 
-  static propTypes = {
-    message: PropTypes.string.isRequired
-  }
+  return (
+    <span>{message}</span>
+  )
+}
 
-  render() {
-    const {message} = this.props
-    return (
-      <span>{message}</span>
-    )
-  }
+HeaderTitle.propTypes = {
+  message: PropTypes.string.isRequired
 }

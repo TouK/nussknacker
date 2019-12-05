@@ -3,21 +3,19 @@ import PropTypes from "prop-types"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs";
 import ValidTip from "./ValidTip";
 
-export default class ValidTips extends React.Component {
+export default function ValidTips(props) {
+  const {grouping, testing} = props
 
-  static propTypes = {
-    grouping: PropTypes.bool.isRequired,
-    testing: PropTypes.bool.isRequired
-  }
+  return (
+    <React.Fragment>
+      <ValidTip icon={InlinedSvgs.tipsSuccess} message={"Everything seems to be OK"}/>
+      {testing && <ValidTip icon={InlinedSvgs.testingMode} message={"Testing mode enabled"}/>}
+      {grouping && <ValidTip icon={InlinedSvgs.groupingMode} message={"Grouping mode enabled"}/>}
+    </React.Fragment>
+  )
+}
 
-  render() {
-    const {grouping, testing} = this.props
-    return (
-      <React.Fragment>
-        <ValidTip icon={InlinedSvgs.tipsSuccess} message={"Everything seems to be OK"}/>
-        {testing && <ValidTip icon={InlinedSvgs.testingMode} message={"Testing mode enabled"}/>}
-        {grouping && <ValidTip icon={InlinedSvgs.groupingMode} message={"Grouping mode enabled"}/>}
-      </React.Fragment>
-    )
-  }
+ValidTips.propTypes = {
+  grouping: PropTypes.bool.isRequired,
+  testing: PropTypes.bool.isRequired
 }
