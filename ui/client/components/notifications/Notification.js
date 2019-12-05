@@ -6,7 +6,7 @@ export default function Notification(props) {
   const {icon, message, details} = props
 
   return (
-    <div className={"notification"}>
+    <div className={"notification notification-container"}>
       <div className="icon" dangerouslySetInnerHTML={{__html: icon}}/>
       <div className={"notification-details"}>
         {!_.isEmpty(message) && <span className={"notification-text"}>{message}</span>}

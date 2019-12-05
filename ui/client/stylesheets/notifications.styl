@@ -2,7 +2,7 @@
 
 .notifications-wrapper
   position absolute
-  top 78
+  top 79
   right 310
   z-index 1000
 
@@ -13,7 +13,6 @@
     max-height 400px
     font-family "Open Sans"
     font-size: 16
-    margin 2px
     display flex
     color #b3b3b3
     .notification-dismiss
@@ -22,8 +21,10 @@
       display none
     &.notification-success
       border-bottom: solid 2px sucessColor
+      margin-bottom 10px
     &.notification-error
       border-bottom: solid 2px errorColor
+      margin-bottom 10px
     .icon
       min-width 16px
       min-height 16px
@@ -35,7 +36,7 @@
       margin-left 10px
       margin-bottom 5px
     .notification-details
-      padding-top 2px
+      padding-top 1px
     .notification-text
       display block
       max-width 234px
@@ -44,5 +45,7 @@
     .dismiss-icon
       fill #cccccc
       background-color #3a3a3a
-      width 16px
+      min-width 16px
       height 16px
+  .notification-container
+    padding 5px 0
