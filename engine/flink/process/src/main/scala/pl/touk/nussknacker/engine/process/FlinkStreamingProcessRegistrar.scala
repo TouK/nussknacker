@@ -100,7 +100,8 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
     val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
 
     diskStateBackend match {
-      case Some(backend) if streamMetaData.splitStateToDisk.getOrElse(false) =>
+      //we assume it's safer to split state to disk and fix performance than to fix heap problems...
+      case Some(backend) if streamMetaData.splitStateToDisk.getOrElse(true) =>
         logger.debug("Using disk state backend")
         env.setStateBackend(backend)
       case _ => logger.debug("Using default state backend")
