@@ -10,7 +10,7 @@ import {dateFormat} from "../config";
 import history from '../history'
 import User from "../common/models/User";
 import Metrics from "../containers/Metrics"
-import {events} from "../tracking/TrackingEvents"
+import {events} from "../analytics/matomo/TrackingEvents"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {

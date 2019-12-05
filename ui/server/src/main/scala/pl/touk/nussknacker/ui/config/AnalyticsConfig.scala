@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.ui.config.AnalyticsConfig.AnalyticsEngine.AnalyticsEngine
 
-case class AnalyticsConfig(engine: AnalyticsEngine, url: URI)
+case class AnalyticsConfig(engine: AnalyticsEngine, url: URI, siteId: String)
 
 object AnalyticsConfig {
   import net.ceedubs.ficus.Ficus._
@@ -22,7 +22,6 @@ object AnalyticsConfig {
   object AnalyticsEngine extends Enumeration {
     type AnalyticsEngine = Value
 
-    val GoogleAnalytics = Value("GoogleAnalytics")
     val Matomo = Value("Matomo")
   }
 

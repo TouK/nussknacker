@@ -14,7 +14,7 @@ import SpinnerWrapper from "../components/SpinnerWrapper";
 import * as JsonUtils from "../common/JsonUtils";
 import RouteLeavingGuard from "../components/RouteLeavingGuard";
 import ClipboardUtils from "../common/ClipboardUtils";
-import {events} from "../tracking/TrackingEvents"
+import {events} from "../analytics/matomo/TrackingEvents"
 
 class Visualization extends React.Component {
 

@@ -21,7 +21,7 @@ import Archive from "../../containers/Archive";
 import SpinnerWrapper from "../SpinnerWrapper";
 import PropTypes from 'prop-types';
 import Dropzone from 'react-dropzone'
-import {events} from "../../tracking/TrackingEvents"
+import {events} from "../../analytics/matomo/TrackingEvents"
 
 class UserRightPanel extends Component {
 

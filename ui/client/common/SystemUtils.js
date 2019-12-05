@@ -1,7 +1,9 @@
 import api from "../api";
+import {v4 as uuid4} from "uuid";
 
 const ACCESS_TOKEN_NAMESPACE = "accessToken"
 const BEARER_CASE = 'Bearer'
+const userId = "user_id"
 
 class SystemUtils {
   authorizationToken = () => {
@@ -38,6 +40,17 @@ class SystemUtils {
       return config;
     });
   }
+
+  generateUniqueUserId() {
+    if (!localStorage.getItem(userId)) {
+      localStorage.setItem(userId, uuid4())
+    }
+  }
+
+  getUserId() {
+    return localStorage.getItem(userId)
+  }
 }
+
 
 export default new SystemUtils()
