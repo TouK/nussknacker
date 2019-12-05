@@ -8,5 +8,7 @@ then
 else
    ARGS="$*"
 fi
-echo "Executing: sbt $ARGS"
-sbt $ARGS
+# tuning of sbt test to prevent travis OOM from killing java
+SBT_OPTS="-J-Xmx2G -J-XX:ReservedCodeCacheSize=256M -J-Xss6M -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled"
+echo "Executing: sbt $SBT_OPTS $ARGS"
+sbt $SBT_OPTS $ARGS
