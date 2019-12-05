@@ -12,7 +12,7 @@ import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
-import org.apache.flink.runtime.state.AbstractStateBackend
+import org.apache.flink.runtime.state.{AbstractStateBackend, StateBackend}
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
@@ -56,7 +56,7 @@ import scala.util.{Failure, Success}
 class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
                                      eventTimeMetricDuration: FiniteDuration,
                                      checkpointInterval: FiniteDuration,
-                                     enableObjectReuse: Boolean, diskStateBackend: Option[AbstractStateBackend])
+                                     enableObjectReuse: Boolean, diskStateBackend: Option[StateBackend])
   extends FlinkProcessRegistrar[StreamExecutionEnvironment] {
 
   import FlinkProcessRegistrar._
