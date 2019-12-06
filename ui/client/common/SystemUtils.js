@@ -3,7 +3,7 @@ import {v4 as uuid4} from "uuid";
 
 const ACCESS_TOKEN_NAMESPACE = "accessToken"
 const BEARER_CASE = 'Bearer'
-const userId = "user_id"
+const userId = "userId"
 
 class SystemUtils {
   authorizationToken = () => {
