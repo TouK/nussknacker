@@ -182,7 +182,7 @@ lazy val dockerSettings = {
   )
 }
 
-lazy val dist = (project in file("nussknacker-dist"))
+def distModule(addDevModel: Boolean) = Project("dist", file("nussknacker-dist"))
   .settings(commonSettings)
   .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
   .settings(
@@ -212,6 +212,10 @@ lazy val dist = (project in file("nussknacker-dist"))
   )
   .settings(dockerSettings)
   .dependsOn(ui)
+
+lazy val dist = distModule(addDevModel = false)
+
+lazy val distDev = distModule(addDevModel = true)
 
 def engine(name: String) = file(s"engine/$name")
 

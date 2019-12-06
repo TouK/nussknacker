@@ -13,5 +13,5 @@ Running
 * Env variable NUSSKNACKER_VERSION has to point to docker tag with model. You can set it in .env file
 * You can change each components version like kafka / flink / etc.. by setting corresponding env at .env file
 * Full env: `docker-compose -f docker-compose.yml -f docker-compose-env.yml up -d` // Full env tests
-* App env: `docker-compose -f docker-compose.yml up -d` // Only launch standalone application
-* Dependencies envs: `docker-compose -f docker-compose-env.yml up -d` // Envs for dev integration tests
+* App env: `docker-compose up -d` // Only launch standalone application
+* App env: `NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/application.conf docker-compose up -d` // Launch standalone application with generic model

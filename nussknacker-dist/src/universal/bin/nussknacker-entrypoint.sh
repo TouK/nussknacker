@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
-STORAGE_DIR="$NUSSKNACKER_DIR/storage"
+export STORAGE_DIR="$NUSSKNACKER_DIR/storage"
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 
