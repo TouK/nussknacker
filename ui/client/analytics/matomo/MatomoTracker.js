@@ -1,4 +1,5 @@
 import SystemUtils from "../../common/SystemUtils";
+import * as MatomoTracker from "matomo-tracker";
 
 export function matomoConfigured(analyticsSettings) {
   return !_.isEmpty(analyticsSettings)
@@ -8,8 +9,7 @@ export function matomoConfigured(analyticsSettings) {
 }
 
 export function track(event, analyticsSettings) {
-  const MatomoTracker = require('matomo-tracker');
-  MatomoTracker(Number(analyticsSettings.siteId), analyticsSettings.url).track({
+  new MatomoTracker(Number(analyticsSettings.siteId), analyticsSettings.url).track({
     _id: SystemUtils.getUserId(),
     url: window.location.href,
     ...event.event
