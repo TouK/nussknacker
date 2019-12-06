@@ -2,41 +2,49 @@
 
 .notifications-wrapper
   position absolute
-  top 79
-  right 310
+  bottom 25
+  right 25
   z-index 1000
 
   .notification
-    background-color: #4D4D4D
     cursor pointer
     width: 300px
     max-height 400px
     font-family "Open Sans"
     font-size: 16
     display flex
-    color #b3b3b3
+    border 1px solid #3a3a3a
+    color #333333
     .notification-dismiss
       display none
     &.notification-hidden
       display none
     &.notification-success
-      border-bottom: solid 2px sucessColor
-      margin-bottom 10px
+      background-color sucessColor
+      margin-top 10px
+      .cls-success
+        fill #3a3a3a
     &.notification-error
-      border-bottom: solid 2px errorColor
-      margin-bottom 10px
+      background-color errorColor
+      margin-top 10px
+      svg
+        background none
+      .cls-error
+        fill #3a3a3a
     .icon
       min-width 16px
       min-height 16px
-      margin-top 5px
+      margin-top 6px
       order: -1
       width: 16px
       height: 16px
-      margin-right 10px
-      margin-left 10px
+      margin-right 5px
+      margin-left 5px
       margin-bottom 5px
     .notification-details
-      padding-top 1px
+      padding 1 1 1 0
+      margin-top 1px
+      margin-bottom 2px
     .notification-text
       display block
       max-width 234px
@@ -44,9 +52,15 @@
       word-wrap break-word
     .dismiss-icon
       fill #cccccc
-      background-color #3a3a3a
       width 16px
       min-width 16px
       height 16px
-  .notification-container
-    padding 5px 0
+      margin-left auto
+  .cls-close-2
+    opacity 0.5
+  :hover .cls-close-2
+    opacity 1
+
+.notification:hover .cls-close-2 {
+  opacity 1
+}

@@ -1,12 +1,14 @@
 import React from 'react'
 import Dotdotdot from "react-dotdotdot";
 import PropTypes from "prop-types";
+import InlinedSvgs from "../../assets/icons/InlinedSvgs";
+import HeaderIcon from "../tips/HeaderIcon";
 
 export default function Notification(props) {
   const {icon, message, details} = props
 
   return (
-    <div className={"notification notification-container"}>
+    <div className={"notification"}>
       <div className="icon" dangerouslySetInnerHTML={{__html: icon}}/>
       <div className={"notification-details"}>
         {!_.isEmpty(message) && <span className={"notification-text"}>{message}</span>}
@@ -15,6 +17,7 @@ export default function Notification(props) {
           <span className={"notification-text"}>{details}</span>
         </Dotdotdot>}
       </div>
+      <HeaderIcon className={"dismiss-icon"} icon={InlinedSvgs.tipsClose}/>
     </div>
   )
 }

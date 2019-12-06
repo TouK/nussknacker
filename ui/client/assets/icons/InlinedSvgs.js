@@ -49,7 +49,7 @@ InlinedSvgs.tipsInfo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 
 
 InlinedSvgs.tipsSuccess = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.cls-success{fill:#64d864;}</style></defs><title>success</title><g id="Layer_2"><g><path class="cls-success" d="M8,0a8,8,0,1,0,8,8A8,8,0,0,0,8,0ZM7.15,12.61,5.56,11,2.82,8.28,4.41,6.7,7,9.26l4.38-5.48,1.83,1.64Z"/></g></g></svg>`
 
-InlinedSvgs.tipsClose = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.5 -2.5 13 13"><defs><style>.cls-close{fill:#cccccc;}</style></defs><title>close</title><g id="Layer_2"><g><path class="cls-close" d="M1.18,0,4,2.76,6.71,0,7.89,1.18,5.13,4,7.89,6.71,6.71,7.89,4,5.13,1.18,7.89,0,6.71,2.76,4,0,1.18Z"/></g></g></svg>`
+InlinedSvgs.tipsClose = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.cls-close-1{fill:none;}.cls-close-2{fill:#333;}</style></defs><title>close</title><g id="Layer_2"><g id="Layer_1-2"><rect class="cls-close-1" width="16" height="16"/><path class="cls-close-2" d="M5.24,4.05,8,6.82l2.76-2.77L12,5.24,9.18,8,12,10.76,10.76,12,8,9.18,5.24,12,4.05,10.76,6.82,8,4.05,5.24Z"/></g></g></svg>`
 
 InlinedSvgs.tipsWarning = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"> <defs> <style>.warning { fill: #FF9A4D; } .b { fill: none; } </style> </defs> <title>tips-warning</title> <g> <path class="warning" d="M15.49,15.46H.51A1.73,1.73,0,0,1,.51,13L7,1A1.73,1.73,0,0,1,9.43,1l6.07,12A1.73,1.73,0,0,1,15.49,15.46ZM6.56,4.65l.72,5.91H8.72l.72-5.91ZM8,11.42a1.15,1.15,0,1,0,1.15,1.15A1.15,1.15,0,0,0,8,11.42Z"/> <rect class="b" width="16" height="16"/> </g> </svg>`
 
