@@ -48,6 +48,8 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
   }
 
   it should "fetch queryable state for all keys" in {
+    kafkaClient.createTopic("esp.signals")
+
     val lockProcess = EspProcessBuilder
       .id("queryableStateProc1")
       .parallelism(1)
@@ -57,11 +59,12 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
       .emptySink("sink", "sendSms")
 
     registrar.register(env, lockProcess, ProcessVersion.empty)
-    val jobId = stoppableEnv.execute().getJobID
+    val jobId = stoppableEnv.execute(lockProcess.id).getJobID
+    stoppableEnv.waitForStart(jobId, lockProcess.id)()
 
     //this port should not exist...
     val strangePort = 12345
-    val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$QueryStateProxyPortLow")
+    val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$QueryStateProxyPortLow, localhost:${QueryStateProxyPortLow+1}")
 
     def queryState(jobId: String): Future[Boolean] = client.fetchState[java.lang.Boolean](
       jobId = jobId,
@@ -70,6 +73,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
     //we have to be sure the job is *really* working
     eventually {
+      stoppableEnv.runningJobs().toList should contain (jobId)
       queryState(jobId.toString).futureValue shouldBe true
     }
     creator.signals(TestConfig(kafkaZookeeperServer)).values

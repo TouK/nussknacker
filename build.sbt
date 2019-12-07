@@ -537,6 +537,8 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        //intellij has some problems with provided...
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV,
         "org.apache.flink" %% "flink-test-utils" % flinkV,
         "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
