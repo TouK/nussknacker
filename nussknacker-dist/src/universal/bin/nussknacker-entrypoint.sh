@@ -5,7 +5,6 @@ export STORAGE_DIR="$NUSSKNACKER_DIR/storage"
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 
-APPLICATION_PORT=${NUSSKNACKER_APPLICATION_PORT-${1-"8080"}}
 CONFIG_FILE=${NUSSKNACKER_CONFIG_FILE-${2-"$CONF_DIR/docker-application.conf"}}
 LOG_FILE=${NUSSKNACKER_LOG_FILE-${3-"$CONF_DIR/docker-logback.xml"}}
 APPLICATION_APP=${NUSSKNACKER_APPLICATION_APP-${4-"pl.touk.nussknacker.ui.NussknackerApp"}}
@@ -19,7 +18,6 @@ mkdir -p ${STORAGE_DIR}/db
 chmod -R ug+wr ${STORAGE_DIR}
 
 echo "Nussknacker up and running with" \
-     "PORT: $APPLICATION_PORT" \
      "CONFIG: $CONFIG_FILE," \
      "LOG: $LOG_FILE," \
      "APP: $APPLICATION_APP," \
@@ -28,5 +26,4 @@ echo "Nussknacker up and running with" \
 
 exec java -Dlogback.configurationFile="$LOG_FILE" \
           -Dconfig.file="$CONFIG_FILE" \
-          -cp "$LIB_DIR/*" \
-          "$APPLICATION_APP" "$APPLICATION_PORT"
+          -cp "$LIB_DIR/*" "$APPLICATION_APP"

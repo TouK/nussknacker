@@ -23,6 +23,7 @@ val dockerPort = System.getProperty("dockerPort", "8080").toInt
 val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
 val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
 val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
+val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -121,6 +122,17 @@ val commonSettings =
       scalacOptions in (Compile, doc) -= "-Xfatal-warnings"
     )
 
+val forkSettings = Seq(
+  fork := true,
+  javaOptions := Seq(
+    "-Xmx512M",
+    "-XX:ReservedCodeCacheSize=128M",
+    "-Xss4M",
+    "-XX:+UseConcMarkSweepGC",
+    "-XX:+CMSClassUnloadingEnabled"
+  )
+)
+
 val akkaV = "2.4.20" //same version as in Flink
 val flinkV = "1.7.2"
 val kafkaMajorV = "0.11"
@@ -182,40 +194,57 @@ lazy val dockerSettings = {
   )
 }
 
-def distModule(addDevModel: Boolean) = Project("dist", file("nussknacker-dist"))
-  .settings(commonSettings)
-  .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
-  .settings(
-    packageName in Universal := ("nussknacker" + "-" + version.value),
-    Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
-      (assembly in Compile) in generic,
-      (assembly in Compile) in demo
-    ).value,
-    mappings in Universal += {
-      val genericModel = (crossTarget in generic).value / "genericModel.jar"
-      genericModel -> "model/genericModel.jar"
-    },
-    mappings in Universal += {
-      val demoModel = (crossTarget in demo).value / s"demoModel.jar"
-      demoModel -> "model/demoModel.jar"
-    },
-    /* //FIXME: figure out how to filter out only for .tgz, not for docker
-    mappings in Universal := {
-      val universalMappings = (mappings in Universal).value
-      //we don't want docker-* stuff in .tgz
-      universalMappings filterNot { case (file, _) =>
-        file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
-      }
-    },*/
-    publishArtifact := false,
-    SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
-  )
-  .settings(dockerSettings)
-  .dependsOn(ui)
-
-lazy val dist = distModule(addDevModel = false)
-
-lazy val distDev = distModule(addDevModel = true)
+lazy val dist = {
+  val module = sbt.Project("dist", file("nussknacker-dist"))
+    .settings(commonSettings)
+    .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
+    .settings(
+      packageName in Universal := ("nussknacker" + "-" + version.value),
+      Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
+        (assembly in Compile) in generic,
+        (assembly in Compile) in demo
+      ).value,
+      mappings in Universal += {
+        val genericModel = (crossTarget in generic).value / "genericModel.jar"
+        genericModel -> "model/genericModel.jar"
+      },
+      mappings in Universal += {
+        val demoModel = (crossTarget in demo).value / s"demoModel.jar"
+        demoModel -> "model/demoModel.jar"
+      },
+      /* //FIXME: figure out how to filter out only for .tgz, not for docker
+      mappings in Universal := {
+        val universalMappings = (mappings in Universal).value
+        //we don't want docker-* stuff in .tgz
+        universalMappings filterNot { case (file, _) =>
+          file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
+        }
+      },*/
+      publishArtifact := false,
+      SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
+    )
+    .settings(dockerSettings)
+    .dependsOn(ui)
+  if (addDevModel) {
+    module
+      .settings(
+        Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
+          (assembly in Compile) in managementSample,
+          (assembly in Compile) in standaloneSample
+        ).value,
+        mappings in Universal += {
+          val genericModel = (crossTarget in managementSample).value / "managementSample.jar"
+          genericModel -> "model/managementSample.jar"
+        },
+        mappings in Universal += {
+          val demoModel = (crossTarget in standaloneSample).value / s"standaloneSample.jar"
+          demoModel -> "model/standaloneSample.jar"
+        }
+      )
+  } else {
+    module
+  }
+}
 
 def engine(name: String) = file(s"engine/$name")
 
@@ -346,9 +375,9 @@ lazy val managementBatchSample = (project in engine("flink/management/batch_samp
 
 lazy val demo = (project in engine("demo")).
   settings(commonSettings).
+  settings(forkSettings). // without this there are some classloading issues
   settings(
     name := "nussknacker-demo",
-    fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
@@ -386,9 +415,9 @@ lazy val generic = (project in engine("flink/generic")).
 
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
+  settings(forkSettings).
   settings(
     name := "nussknacker-process",
-    fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",

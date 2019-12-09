@@ -153,6 +153,10 @@ services:
       - influxdb
 
   nginx:
+    container_name: nussknacker_nginx
+    image: nginx:${NGINX_VERSION-1.17.6}
+    ports:
+      - "8081:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:

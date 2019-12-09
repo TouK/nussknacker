@@ -84,7 +84,7 @@ authentication: {
     response_type: "code"
   }
 
-  usersFile: "./develConf/tests/oauth2-users.conf"
+  usersFile: "./src/test/resources/oauth2-users.conf"
 }
 
 ```

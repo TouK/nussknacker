@@ -35,6 +35,7 @@ env:
     - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true"`
     #We do cross build in tests only for staging/master
     - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true"`
+    - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true"`
 
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
@@ -83,7 +84,7 @@ jobs:
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
-        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal --add-dev-model=$ADD_DEV_MODEL
         - cd ./demo/docker && echo "NUSSKNACKER_VERSION=$BUILD_VERSION" > .env && ./testQuickstart.sh
         - docker push ${DOCKER_SOURCE_TAG}
         - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:latest; fi

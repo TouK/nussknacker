@@ -9,6 +9,6 @@ else
    ARGS="$*"
 fi
 # tuning of sbt test to prevent travis OOM from killing java
-SBT_OPTS="-J-Xmx2G -J-XX:ReservedCodeCacheSize=256M -J-Xss6M -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled"
-echo "Executing: sbt $SBT_OPTS $ARGS"
-sbt $SBT_OPTS $ARGS
+JAVA_OPTS_VAL="-Xmx2G -XX:ReservedCodeCacheSize=256M -Xss6M -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
+echo "Executing: JAVA_OPTS=\"$JAVA_OPTS_VAL\" sbt $ARGS"
+JAVA_OPTS="$JAVA_OPTS_VAL" sbt $ARGS
