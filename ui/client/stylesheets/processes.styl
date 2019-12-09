@@ -6,20 +6,34 @@
   max-width: 450px
   min-width: 200px
   flex: 1 1 auto
-  input
-    background-color: processesSearchInput
-    box-shadow: none
-  .input-group-addon
-    background-color: buttonBlueBkgColor
-    border: none
-    border-radius 0
-    padding: 0 10px
-    #search-icon
-      stroke: #FFFFFF
-      width: 30px
+  .search-container
+    border 1px solid #CCC
+    height 45px
+    input
+      height: 43px
+      width 90%
+      background-color: processesSearchInput
+      border none
+      &:focus
+        outline 0px!important
+        box-shadow none
+    &:focus-within
+      outline 2px solid focusColor
+      box-shadow none
+    .search-icon
+      width: 25px
+      margin-left 10px
+      margin-top 8px
+      float left
+      display inline-block
+    .search-icon-fill
+      .icon-fill
+        fill #CCC
+    .search-icon-fill-filter
+      .icon-fill
+        fill buttonBlueBkgColor
   .form-control
     height: 45px
-    border-radius 0
     color: black
 
 .table-select

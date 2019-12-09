@@ -1,22 +1,22 @@
-import filterIcon from "../../assets/img/search.svg"
 import React from "react"
+import SvgDiv from "../SvgDiv";
 
 export default class SearchFilter extends React.Component {
   render() {
     const {value, onChange} = this.props
-
+    const fillIconClass = _.isEmpty(value) ? "search-icon-fill" : "search-icon-fill-filter"
     return (
       <div id="table-filter" className="input-group">
-        <input
-          type="text"
-          placeholder="Filter by text.."
-          className="form-control"
-          aria-describedby="basic-addon1"
-          value={value}
-          onChange={onChange}/>
-        <span className="input-group-addon" id="basic-addon1">
-              <img id="search-icon" src={filterIcon}/>
-        </span>
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Filter by text.."
+            className="form-control"
+            value={value}
+            onChange={onChange}
+          />
+          <SvgDiv className={"search-icon " + fillIconClass} svgFile="search.svg"/>
+        </div>
       </div>
     )
   }
