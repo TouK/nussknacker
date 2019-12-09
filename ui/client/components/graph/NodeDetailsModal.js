@@ -96,19 +96,19 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return ([
       this.isGroup() ? this.renderGroupUngroup() : null,
-      <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
-        Close
+      <button key="2" type="button" title="Cancel node details" className='modalButton' onClick={this.closeModal}>
+        Cancel
       </button>,
       !this.props.readOnly ?
           <LaddaButton
               key="1"
-              title="Save node details"
+              title="Apply node details"
               className='modalButton pull-right modalConfirmButton'
               loading={this.state.pendingRequest}
               data-style='zoom-in'
               onClick={this.performNodeEdit}
           >
-            Save
+            Apply
           </LaddaButton>
           :
           null
