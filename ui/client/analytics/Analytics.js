@@ -1,16 +1,12 @@
-import {matomoConfigured, track} from "./matomo/MatomoTracker";
+import MatomoAnalytics from "./MatomoAnalytics";
 
-export const analytics = (store) => next => action => {
-  const state = !_.isEmpty(store) ? store.getState() : null
-  const analyticsSettings = !_.isEmpty(state) ? state.settings.analyticsSettings : null
+export default class Analytics {
 
-  if (actionTracked(action) && matomoConfigured(analyticsSettings)) {
-    track(action.tracking, analyticsSettings)
+  constructor(analyticsSettings) {
+    if (analyticsSettings.engine === 'Matomo') {
+      this.engine = new MatomoAnalytics(analyticsSettings)
+    }
   }
 
-  return next(action)
-};
-
-function actionTracked(action) {
-  return !_.isEmpty(action.tracking);
+  sendEvent = (event) => this.engine.sendEvent(event)
 }

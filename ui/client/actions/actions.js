@@ -1,4 +1,3 @@
-
 import HttpService from "../http/HttpService";
 import * as GraphUtils from "../components/graph/GraphUtils";
 import NodeUtils from "../components/graph/NodeUtils";
@@ -10,7 +9,7 @@ import {dateFormat} from "../config";
 import history from '../history'
 import User from "../common/models/User";
 import Metrics from "../containers/Metrics"
-import {events} from "../analytics/matomo/TrackingEvents"
+import {events} from "../analytics/TrackingEvents"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {

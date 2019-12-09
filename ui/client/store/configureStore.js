@@ -3,14 +3,14 @@ import {composeWithDevTools} from 'redux-devtools-extension';
 import thunk from 'redux-thunk';
 
 import {reducer} from '../reducers';
-import {analytics} from "../analytics/Analytics";
+import {analyticsMiddleware} from "../analytics/AnalyticsMiddleware";
 
 export default function configureStore() {
 
   const store = createStore(
     reducer,
     composeWithDevTools(
-      applyMiddleware(analytics, thunk)
+      applyMiddleware(analyticsMiddleware, thunk)
     ),
   );
 
