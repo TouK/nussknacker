@@ -1,6 +1,5 @@
 import React from 'react';
 import HeaderIcon from "./HeaderIcon";
-import HeaderTitle from "./HeaderTitle";
 import PropTypes from "prop-types";
 
 export default function ValidTip(props) {
@@ -9,7 +8,7 @@ export default function ValidTip(props) {
   return (
     <div className={"valid-tip"}>
       <HeaderIcon className={"icon"} icon={icon}/>
-      <HeaderTitle message={message}/>
+      <span>{message}</span>
     </div>
   )
 }
