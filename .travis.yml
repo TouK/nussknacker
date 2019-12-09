@@ -34,7 +34,7 @@ env:
     - DOCKER_REPOSITORY=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}`
     - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true"`
     #We do cross build in tests only for staging/master
-    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] ) && echo "true"`
+    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true"`
 
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
