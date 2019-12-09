@@ -4,7 +4,7 @@ import Textarea from "./Textarea";
 import {v4 as uuid4} from "uuid";
 import React from "react";
 import _ from "lodash";
-import Fields from "./Fields";
+import Map from "./editors/map/Map";
 import {errorValidator, notEmptyValidator} from "../../../common/Validators";
 
 const MapVariable = (props) => {
@@ -37,7 +37,7 @@ const MapVariable = (props) => {
         showValidation={showValidation}
         validators={[notEmptyValidator, errorValidator(errors, "varName")]}
       />
-      <Fields
+      <Map
         label="Fields"
         onChange={onChange}
         fields={node.fields}
