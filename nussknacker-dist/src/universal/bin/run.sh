@@ -34,10 +34,6 @@ fi
 
 export AUTHENTICATION_METHOD="BasicAuth"
 export AUTHENTICATION_USERS_FILE="$NUSSKNACKER_DIR/conf/users.conf"
-export AUTHENTICATION_HEADERS_ACCEPT="application/json"
-export OAUTH2_RESPONSE_TYPE="code"
-export OAUTH2_GRANT_TYPE="authorization_code"
-export OAUTH2_SCOPE="read:user"
 
 if [ -a $PID_FILE ]
 then

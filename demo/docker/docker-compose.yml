@@ -4,20 +4,12 @@ services:
   app:
     container_name: nussknacker_app
     image: ${NUSSKNACKER_IMAGE-touk/nussknacker}:${NUSSKNACKER_VERSION-staging-latest}
+    ports:
+      - "3081:8080"
     environment:
       NUSSKNACKER_CONFIG_FILE: ${NUSSKNACKER_CONFIG_FILE:-/opt/nussknacker/conf/docker-application.conf}
     volumes:
       - nussknacker_storage_app:/opt/nussknacker/storage
-
-  nginx:
-    container_name: nussknacker_nginx
-    image: nginx:${NGINX_VERSION-1.17.6}
-    ports:
-      - "8081:80"
-    volumes:
-      - ./nginx/nginx-nk-only.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - app
 
 volumes:
   nussknacker_storage_app:
