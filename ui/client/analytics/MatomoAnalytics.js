@@ -6,8 +6,7 @@ export default class MatomoAnalytics extends AnalyticsEngine {
 
   constructor(analyticsSettings) {
     super();
-    this.siteId = analyticsSettings.siteId
-    this.url = analyticsSettings.url
+    _.assign(this, _.pick(analyticsSettings, ["siteId", "url"]))
   }
 
   sendEvent = (event) => {

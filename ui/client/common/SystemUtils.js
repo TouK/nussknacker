@@ -41,13 +41,10 @@ class SystemUtils {
     });
   }
 
-  generateUniqueUserId() {
-    if (!localStorage.getItem(userId)) {
+  getUserId() {
+    if (_.isEmpty(localStorage.getItem(userId))) {
       localStorage.setItem(userId, uuid4())
     }
-  }
-
-  getUserId() {
     return localStorage.getItem(userId)
   }
 }

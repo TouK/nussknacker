@@ -24,12 +24,10 @@ import '../assets/fonts/fonts.less'
 import '../stylesheets/main.styl'
 import '../app.styl'
 import ErrorHandler from "./ErrorHandler"
-import SystemUtils from "../common/SystemUtils";
 
 class EspApp extends React.Component {
 
   componentDidMount() {
-    SystemUtils.generateUniqueUserId()
     this.mountedHistory = this.props.history.listen((location, action) => {
       if (action === "PUSH") {
         this.props.actions.urlChange(location)
