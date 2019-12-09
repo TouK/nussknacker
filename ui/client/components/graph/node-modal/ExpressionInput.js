@@ -1,4 +1,4 @@
-import ExpressionSuggest from "../ExpressionSuggest";
+import ExpressionSuggest from "./ExpressionSuggest";
 import PropTypes from "prop-types";
 import React from "react";
 

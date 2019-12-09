@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React from 'react';
-import InlinedSvgs from "../../assets/icons/InlinedSvgs"
+import InlinedSvgs from "../../../assets/icons/InlinedSvgs"
 
 class ModalRenderUtils {
 

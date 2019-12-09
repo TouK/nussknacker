@@ -1,11 +1,10 @@
 import PropTypes from "prop-types"
 import React from "react"
-import {notEmptyValidator} from "../../../../../common/Validators";
-import MapRow from "./MapRow";
+import MapRow from "./MapRow"
 
 const Map = (props) => {
 
-  const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation, expressionValue, errors} = props
+  const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation, expressionValue} = props
 
   return (
     <div className="node-row">
@@ -13,8 +12,8 @@ const Map = (props) => {
       <div className="node-value">
         <div className="fieldsControl">
           {
-            fields.map((field, index) => (<MapRow field={field}
-                                                  validators={[notEmptyValidator]}
+            fields.map((field, index) => (<MapRow key={field.uuid}
+                                                  field={field}
                                                   showValidation={showValidation}
                                                   readOnly={readOnly}
                                                   paths={`${namespace}[${index}]`}

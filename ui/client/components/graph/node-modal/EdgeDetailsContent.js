@@ -4,7 +4,7 @@ import _ from 'lodash'
 import "ladda/dist/ladda.min.css"
 import ExpressionSuggest from './ExpressionSuggest'
 import ModalRenderUtils from "./ModalRenderUtils"
-import {notEmptyValidator} from "../../common/Validators";
+import {notEmptyValidator} from "../../../common/Validators";
 
 export default class EdgeDetailsContent extends React.Component {
   static propTypes = {

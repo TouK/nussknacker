@@ -1,4 +1,4 @@
-import ExpressionSuggest from "../../../ExpressionSuggest";
+import ExpressionSuggest from "../../ExpressionSuggest";
 import React from "react";
 import PropTypes from "prop-types";
 
@@ -17,8 +17,7 @@ export default function MapValue(props) {
         }}
         validators={validators}
         isMarked={isMarked}
-        showValidation={showValidation}
-      />
+        showValidation={showValidation}/>
     </div>
   )
 }
