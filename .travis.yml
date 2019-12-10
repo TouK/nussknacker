@@ -70,7 +70,9 @@ jobs:
     - name: "Management tests"
       script: ./ciRunSbt.sh clean management/it:test
     - name: "Cross Scala compile"
-      script: if [ "$CROSS_BUILD" = true ]; then echo "Skipping. Cross compilation executed in other jobs"; else CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile; fi
+      script: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
+      # We can't use env(CROSS_BUILD) here because of some bug in travis - there is raw, not evaluated script body in env(CROSS_BUILD)
+      if: type = pull_request
     - name: "EngineStandalone tests"
       script: ./ciRunSbt.sh clean engineStandalone/it:test
     - name: "Frontend tests"
