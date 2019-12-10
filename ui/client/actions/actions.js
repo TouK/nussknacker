@@ -1,4 +1,3 @@
-
 import HttpService from "../http/HttpService";
 import * as GraphUtils from "../components/graph/GraphUtils";
 import NodeUtils from "../components/graph/NodeUtils";
@@ -9,6 +8,8 @@ import * as VisualizationUrl from '../common/VisualizationUrl';
 import {dateFormat} from "../config";
 import history from '../history'
 import User from "../common/models/User";
+import Metrics from "../containers/Metrics"
+import {events} from "../analytics/TrackingEvents"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -132,20 +133,28 @@ export function clearProcess() {
   }
 }
 
-export function displayModalNodeDetails(node, readonly) {
-  history.replace({
-    pathname: window.location.pathname,
-    search: VisualizationUrl.setAndPreserveLocationParams({
-      nodeId: node.id,
-      edgeId: null
+export function displayModalNodeDetails(node, readonly, eventInfo) {
+  return (dispatch) => {
+    history.replace({
+      pathname: window.location.pathname,
+      search: VisualizationUrl.setAndPreserveLocationParams({
+        nodeId: node.id,
+        edgeId: null
+      })
     })
-  })
 
-  return {
-    type: "DISPLAY_MODAL_NODE_DETAILS",
-    nodeToDisplay: node,
-    nodeToDisplayReadonly: readonly
-  };
+    !_.isEmpty(eventInfo) && dispatch(reportEvent({
+      category: eventInfo.eventCategory,
+      action: events.actions.buttonClick,
+      name: eventInfo.name
+    }))
+
+    return dispatch({
+      type: "DISPLAY_MODAL_NODE_DETAILS",
+      nodeToDisplay: node,
+      nodeToDisplayReadonly: readonly
+    })
+  }
 }
 
 export function displayModalEdgeDetails(edge) {
@@ -192,15 +201,45 @@ export function deleteNodes(ids) {
 }
 
 export function startGrouping() {
-  return { type: "START_GROUPING"}
+  return (dispatch) => {
+    dispatch(reportEvent({
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "start"
+    }))
+
+    return dispatch({
+      type: "START_GROUPING"
+    })
+  }
 }
 
 export function cancelGrouping() {
-  return { type: "CANCEL_GROUPING"}
+  return (dispatch) => {
+    dispatch(reportEvent({
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "cancel"
+    }))
+
+    return dispatch({
+      type: "CANCEL_GROUPING"
+    })
+  }
 }
 
 export function finishGrouping() {
-  return { type: "FINISH_GROUPING"}
+  return (dispatch) => {
+    dispatch(reportEvent({
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "finish"
+    }))
+
+    return dispatch({
+      type: "FINISH_GROUPING"
+    })
+  }
 }
 
 export function addToGroup(nodeId) {
@@ -208,7 +247,18 @@ export function addToGroup(nodeId) {
 }
 
 export function ungroup(node) {
-  return { type: "UNGROUP", groupToRemove: node.id}
+  return (dispatch) => {
+    dispatch(reportEvent({
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "ungroup"
+    }))
+
+    return dispatch({
+      type: "UNGROUP",
+      groupToRemove: node.id
+    })
+  }
 }
 
 export function expandSelection(nodeId) {
@@ -378,8 +428,16 @@ export function toggleLeftPanel() {
 }
 
 export function toggleRightPanel() {
-  return {
-    type: "TOGGLE_RIGHT_PANEL",
+  return (dispatch) => {
+    dispatch({
+      type: "TOGGLE_RIGHT_PANEL",
+    })
+
+    dispatch(reportEvent({
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "toggle_right_panel"
+    }))
   }
 }
 
@@ -397,31 +455,58 @@ export function disableToolTipsHighlight() {
   }
 }
 
-export function toggleConfirmDialog(isOpen, text, action, confirmText="Yes", denyText="No") {
-  return {
-    type: "TOGGLE_CONFIRM_DIALOG",
-    isOpen: isOpen,
-    text: text,
-    confirmText: confirmText,
-    denyText: denyText,
-    onConfirmCallback: action
+export function toggleConfirmDialog(isOpen, text, action, confirmText = "Yes", denyText = "No", event) {
+  return (dispatch) => {
+    !_.isEmpty(event) && dispatch(reportEvent(
+      {
+        category: event.category,
+        action: event.action,
+        name: event.name
+      }
+    ))
+
+    return dispatch({
+      type: "TOGGLE_CONFIRM_DIALOG",
+      isOpen: isOpen,
+      text: text,
+      confirmText: confirmText,
+      denyText: denyText,
+      onConfirmCallback: action
+    })
   }
 }
 
 export function toggleProcessActionDialog(message, action, displayWarnings) {
-  return {
-    type: "TOGGLE_PROCESS_ACTION_MODAL",
-    message: message,
-    action: action,
-    displayWarnings: displayWarnings
+  return (dispatch) => {
+    dispatch(reportEvent({
+      category: "right_panel",
+      action: "button_click",
+      name: message
+    }))
+
+    return dispatch({
+      type: "TOGGLE_PROCESS_ACTION_MODAL",
+      message: message,
+      action: action,
+      displayWarnings: displayWarnings
+    })
   }
 }
 
 
 export function toggleModalDialog(openDialog) {
-  return {
-    type: "TOGGLE_MODAL_DIALOG",
-    openDialog: openDialog
+  return (dispatch) => {
+    openDialog != null && dispatch(reportEvent({
+        category: "right_panel",
+        action: "button_click",
+        name: openDialog.toLowerCase()
+      }
+    ))
+
+    return dispatch({
+      type: "TOGGLE_MODAL_DIALOG",
+      openDialog: openDialog
+    })
   }
 }
 
@@ -452,6 +537,13 @@ export function testProcessFromFile(id, testDataFile, process) {
     dispatch({
       type: "PROCESS_LOADING"
     })
+
+    dispatch(reportEvent({
+        category: events.categories.rightPanel,
+        action: events.actions.buttonClick,
+        name: "from file"
+      }
+    ))
 
     HttpService.testProcess(id, testDataFile, process)
       .then(response => dispatch(displayTestResults(response.data)))
@@ -502,7 +594,18 @@ export function fetchAndDisplayProcessCounts(processName, from, to) {
 }
 
 export function hideRunProcessDetails() {
-  return {type: "HIDE_RUN_PROCESS_DETAILS"}
+  return (dispatch) => {
+    dispatch(reportEvent({
+        category: events.categories.rightPanel,
+        action: events.actions.buttonClick,
+        name: "hide"
+      }
+    ))
+
+    return dispatch({
+      type: "HIDE_RUN_PROCESS_DETAILS"
+    })
+  }
 }
 
 export function expandGroup(id) {
@@ -534,5 +637,190 @@ export function handleHTTPError(error) {
   return {
     type: "HANDLE_HTTP_ERROR",
     error: error
+  }
+}
+
+export function showMetrics(processId) {
+  return (dispatch) => {
+    history.push(Metrics.pathForProcess(processId))
+
+    dispatch(reportEvent({
+      category: "right_panel",
+      action: "button_click",
+      name: "metrics"
+    }))
+
+    return dispatch({
+      type: "SHOW_METRICS",
+      processId: processId
+    })
+  }
+}
+
+export function reportEvent(eventInfo) {
+  return (dispatch) => {
+    return dispatch({
+      type: "USER_TRACKING",
+      tracking: {
+        event: {
+          e_c: eventInfo.category,
+          e_a: eventInfo.action,
+          e_n: eventInfo.name
+        }
+      }
+    })
+  }
+}
+
+
+export function importFiles(files, processId) {
+  return (dispatch) => {
+    return dispatch(
+      files.forEach((file) => importProcess(processId, file))
+    )
+  }
+}
+
+export function exportProcessToJSON(process, versionId) {
+  return (dispatch) => {
+    HttpService.exportProcess(process, versionId)
+
+    dispatch(reportEvent({
+      category: "right_panel",
+      action: "button_click",
+      name: "export_to_json"
+    }))
+
+    return dispatch({
+      type: "EXPORT_PROCESS_TO_JSON"
+    })
+  }
+}
+
+export function exportProcessToPdf(processId, versionId, data, businessView) {
+  return (dispatch) => {
+    HttpService.exportProcessToPdf(processId, versionId, data, businessView)
+
+    dispatch(reportEvent({
+      category: "right_panel",
+      action: "button_click",
+      name: "export_to_pdf"
+    }))
+
+    return dispatch({
+      type: "EXPORT_PROCESS_TO_PDF"
+    })
+  }
+}
+
+export function layout(graphLayoutFunction) {
+  return (dispatch) => {
+    graphLayoutFunction()
+
+    dispatch(reportEvent({
+      category: "right_panel",
+      action: "button_click",
+      name: "layout"
+    }))
+
+    return dispatch({
+      type: "LAYOUT"
+    })
+  }
+}
+
+export function copySelection(copyFunction, event) {
+  return (dispatch) => {
+    copyFunction()
+
+    dispatch(reportEvent({
+      category: event.category,
+      action: event.action,
+      name: "copy"
+    }))
+
+    return dispatch({
+      type: "COPY_SELECTION",
+    })
+  }
+}
+
+export function cutSelection(cutFunction, event) {
+  return (dispatch) => {
+    cutFunction()
+
+    dispatch(reportEvent({
+      category: event.category,
+      action: event.action,
+      name: "cut"
+    }))
+
+    return dispatch({
+      type: "CUT_SELECTION"
+    })
+  }
+}
+
+export function pasteSelection(pasteFunction, event) {
+  return (dispatch) => {
+    pasteFunction()
+
+    dispatch(reportEvent({
+      category: event.category,
+      action: event.action,
+      name: "paste"
+    }))
+
+    return dispatch({
+      type: "PASTE_SELECTION",
+    })
+  }
+}
+
+export function deleteSelection(selectionState, event) {
+  return (dispatch) => {
+    dispatch(deleteNodes(selectionState))
+
+    dispatch(reportEvent({
+      category: event.category,
+      action: event.action,
+      name: "delete"
+    }))
+
+    return dispatch({
+      type: "DELETE_SELECTION"
+    })
+  }
+}
+
+export function zoomIn(graph) {
+  return (dispatch) => {
+    graph.zoomIn();
+
+    dispatch(reportEvent({
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "zoom in"
+    }))
+
+    return dispatch({
+      type: "ZOOM_IN"
+    })
+  }
+}
+
+export function zoomOut(graph) {
+  return (dispatch) => {
+    graph.zoomOut();
+
+    dispatch(reportEvent({
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "zoom out"
+    }))
+
+    return dispatch({
+      type: "ZOOM_OUT"
+    })
   }
 }

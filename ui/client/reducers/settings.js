@@ -16,7 +16,8 @@ export function reducer(state = initialState, action) {
       return {
         ...state,
         featuresSettings: action.settings.features,
-        authenticationSettings: action.settings.authentication
+        authenticationSettings: action.settings.authentication,
+        analyticsSettings: action.settings.analytics
       }
     }
     case "PROCESS_DEFINITION_DATA": {
