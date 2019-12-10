@@ -33,7 +33,8 @@ class NodeDetailsModal extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      pendingRequest: false
+      pendingRequest: false,
+      shouldCloseOnEsc: true,
     };
   }
 
@@ -96,19 +97,19 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return ([
       this.isGroup() ? this.renderGroupUngroup() : null,
-      <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
-        Close
+      <button key="2" type="button" title="Cancel node details" className='modalButton' onClick={this.closeModal}>
+        Cancel
       </button>,
       !this.props.readOnly ?
           <LaddaButton
               key="1"
-              title="Save node details"
+              title="Apply node details"
               className='modalButton pull-right modalConfirmButton'
               loading={this.state.pendingRequest}
               data-style='zoom-in'
               onClick={this.performNodeEdit}
           >
-            Save
+            Apply
           </LaddaButton>
           :
           null
@@ -173,6 +174,12 @@ class NodeDetailsModal extends React.Component {
     return _.get(node, 'value.language')
   }
 
+  toogleCloseModalOnEsc = () => {
+    this.setState({
+      shouldCloseOnEsc: !this.state.shouldCloseOnEsc,
+    })
+  }
+
   render() {
     const isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
     const titleStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
@@ -183,6 +190,7 @@ class NodeDetailsModal extends React.Component {
     return (
       <div className="objectModal">
         <Modal shouldCloseOnOverlayClick={false}
+               shouldCloseOnEsc={this.state.shouldCloseOnEsc}
                isOpen={isOpen}
                onRequestClose={this.closeModal}>
           <div className="draggable-container">
@@ -205,6 +213,7 @@ class NodeDetailsModal extends React.Component {
                                                node={this.state.editedNode}
                                                nodeErrors={this.props.nodeErrors}
                                                onChange={this.updateNodeState}
+                                               toogleCloseOnEsc={this.toogleCloseModalOnEsc}
                                                testResults={testResults(this.state.currentNodeId)}/>)
                     }
                     {
