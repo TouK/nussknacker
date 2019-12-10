@@ -15,6 +15,7 @@ dist/
 dbFiles/*
 *.jar
 ui/server/src/main/resources/web
+ui/server/work
 **/npm-debug.log
 ui/develConf/*.jar
 _book/

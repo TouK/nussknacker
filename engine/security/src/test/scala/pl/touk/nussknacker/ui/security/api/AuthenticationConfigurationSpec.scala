@@ -10,7 +10,7 @@ class AuthenticationConfigurationSpec extends FlatSpec with Matchers with Scalat
     val config = ConfigFactory.parseString(
       """
         authentication: {
-         usersFile: "./develConf/tests/oauth2-users.conf"
+         usersFile: "./src/test/resources/oauth2-users.conf"
         }
       """.stripMargin)
 
