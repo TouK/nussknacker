@@ -675,9 +675,13 @@ export function reportEvent(eventInfo) {
 
 export function importFiles(files, processId) {
   return (dispatch) => {
-    return dispatch(
-      files.forEach((file) => importProcess(processId, file))
+    files.forEach(
+      file => dispatch(importProcess(processId, file))
     )
+
+    return ({
+      type: "IMPORT_FILES"
+    })
   }
 }
 
