@@ -163,25 +163,52 @@ espCheckbox(checkboxWidth)
   height: modalHeaderHeight
   span
     display inline-block
-    margin-left 15px
-    margin-top 3px
-  span::after
-    content: "\00a0\00a0"
-  .docsIcon
+    margin-top 5px
+    margin-left 5px
+    margin-right 5px
+  .docsLink
+    color #FFFFFF
     height: modalHeaderHeight
-    background-color modalBkgColor
-    float right
-    fill: docsIconColor
+    display inline-block
     svg
-      width 26px
-      height 26px
-      &:hover
-        fill: modalLabelTextColor
+      width 22px
+      height 22px
+      padding-top 8px
+
 .modal-title
-  min-width modalHeaderWidth
+  height modalHeaderHeight
+  float left
+  display inline-block
+  padding-left 7px
+  padding-right 10px
+  svg
+    width 18px
+    height 18px
+    display inline-block
+
+.modal-title-icon
+  display inline-block
+  float left
+  padding-top 6px
+
+.modal-subtype-header
+  height modalHeaderHeight
+  background #3a3a3a
   display inline-block
   padding-left 10px
   padding-right 10px
+
+.modal-subtype-header-docs
+  @extend .modal-subtype-header
+  &:hover
+    background lighten(#3a3a3a, 15%)
+  .docsIcon
+    float  right
+
+.modal-docs-link
+  @extend .modal-subtype-header-docs
+  padding-left 6px
+  padding-right 6px
 
 common-node-input(padding)
   width: 100%
