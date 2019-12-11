@@ -2,18 +2,17 @@ import React from "react"
 import {Table, Td, Tr} from "reactable"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
-import DateUtils from "../common/DateUtils"
-import LoaderSpinner from "../components/Spinner.js"
+import LoaderSpinner from "Components/Spinner.js"
 import * as  queryString from 'query-string'
 import "../stylesheets/processes.styl"
 import {withRouter} from 'react-router-dom'
 import {Glyphicon} from 'react-bootstrap'
 import BaseProcesses from "./BaseProcesses"
-import ProcessUtils from "../common/ProcessUtils"
-import {nkPath} from "../config";
-import TableSelect from "../components/table/TableSelect"
-import SearchFilter from "../components/table/SearchFilter"
-import Date from "../components/common/Date"
+import ProcessUtils from "Common/ProcessUtils"
+import {nkPath} from "../config"
+import TableSelect from "Components/table/TableSelect"
+import SearchFilter from "Components/table/SearchFilter"
+import Date from "Components/common/Date"
 
 class Archive extends BaseProcesses {
   queries = {

@@ -1,4 +1,4 @@
-import DateUtils from "../../common/DateUtils"
+import DateUtils from "Common/DateUtils"
 import React from "react"
 
 export default class Date extends React.Component {

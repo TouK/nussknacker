@@ -1,5 +1,5 @@
 import React from "react"
-import * as VisualizationUrl from "../../common/VisualizationUrl"
+import * as VisualizationUrl from "Common/VisualizationUrl"
 import * as  queryString from 'query-string'
 
 class BaseAdminTab extends React.Component {

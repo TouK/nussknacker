@@ -2,10 +2,10 @@ import React from 'react'
 import {connect} from "react-redux";
 import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
-import DialogMessages from '../common/DialogMessages'
+import DialogMessages from 'Common/DialogMessages'
 import CommentContent from "./CommentContent";
 import CommentInput from "./CommentInput";
-import Date from "./common/Date"
+import Date from "Components/common/Date"
 
 class ProcessComments extends React.Component {
 

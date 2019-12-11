@@ -1,13 +1,12 @@
 import React from 'react'
-import {render} from "react-dom";
-import PropTypes from 'prop-types';
-import {connect} from "react-redux";
+import PropTypes from 'prop-types'
+import {connect} from "react-redux"
 import _ from 'lodash'
-import "../stylesheets/toolBox.styl";
+import "../stylesheets/toolBox.styl"
 import Tool from "./Tool"
 
 import TreeView from 'react-treeview'
-import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils";
+import * as ProcessDefitionUtils from "Common/ProcessDefinitionUtils"
 
 class ToolBox extends React.Component {
 

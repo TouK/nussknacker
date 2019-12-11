@@ -7,7 +7,7 @@ import "../../stylesheets/visualization.styl";
 import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs"
 import CommentInput from "../CommentInput";
-import ProcessUtils from "../../common/ProcessUtils";
+import ProcessUtils from "Common/ProcessUtils";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 import ValidateDeployComment from "../ValidateDeployComment";
 

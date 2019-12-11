@@ -7,8 +7,8 @@ import HttpService from "../http/HttpService";
 import InitializeError from "./errors/InitializeError";
 import api from "../api";
 import * as queryString from "query-string";
-import LoaderSpinner from "../components/Spinner";
-import SystemUtils from "../common/SystemUtils";
+import LoaderSpinner from "Components/Spinner";
+import SystemUtils from "Common/SystemUtils";
 
 const OAUTH2_BACKEND = "OAuth2"
 const HTTP_UNAUTHORIZED_CODE = 401

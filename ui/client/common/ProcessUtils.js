@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import NodeUtils from "../components/graph/NodeUtils";
+import NodeUtils from "Components/graph/NodeUtils";
 
 class ProcessUtils {
 

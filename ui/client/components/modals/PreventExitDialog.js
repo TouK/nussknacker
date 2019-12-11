@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
-import DialogMessages from "../../common/DialogMessages";
+import DialogMessages from "Common/DialogMessages";
 import PropTypes from 'prop-types';
 import Draggable from "react-draggable";
 import {preventFromMoveSelectors} from "./GenericModalDialog";

@@ -2,7 +2,7 @@ import PropTypes from "prop-types"
 import React from "react"
 import MapKey from "./MapKey"
 import MapValue from "./MapValue"
-import {notEmptyValidator} from "../../../../../common/Validators"
+import {notEmptyValidator} from "Common/Validators"
 
 export default function MapRow(props) {
   const {field, validators, showValidation, readOnly, paths, isMarked, onChange, onRemoveField} = props

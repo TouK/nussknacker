@@ -1,4 +1,4 @@
-import SystemUtils from "../common/SystemUtils";
+import SystemUtils from "Common/SystemUtils";
 import * as MatomoTracker from "matomo-tracker";
 import AnalyticsEngine from "./AnalyticsEngine";
 

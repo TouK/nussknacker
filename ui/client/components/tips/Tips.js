@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import {Scrollbars} from 'react-custom-scrollbars';
 import {connect} from 'react-redux';
 import ActionsUtils from '../../actions/ActionsUtils';
-import ProcessUtils from '../../common/ProcessUtils';
+import ProcessUtils from 'Common/ProcessUtils';
 import {v4 as uuid4} from "uuid";
 import Errors from "./Errors"
 import Warnings from "./Warnings"

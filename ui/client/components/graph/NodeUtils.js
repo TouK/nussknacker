@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import fp from 'lodash/fp'
-import ProcessUtils from '../../common/ProcessUtils.js'
-import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
+import ProcessUtils from 'Common/ProcessUtils.js'
+import * as ProcessDefinitionUtils from "Common/ProcessDefinitionUtils";
 
 class NodeUtils {
 

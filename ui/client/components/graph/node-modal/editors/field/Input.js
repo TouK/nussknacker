@@ -1,5 +1,5 @@
 import React from "react"
-import {allValid} from "../../../../../common/Validators"
+import {allValid} from "Common/Validators"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import PropTypes from "prop-types"
 

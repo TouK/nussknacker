@@ -4,7 +4,7 @@ import ReactDOMServer from 'react-dom/server'
 import {connect} from 'react-redux';
 import _ from 'lodash';
 import ActionsUtils from '../../../actions/ActionsUtils';
-import ProcessUtils from '../../../common/ProcessUtils';
+import ProcessUtils from 'Common/ProcessUtils';
 import ExpressionSuggester from './ExpressionSuggester'
 
 import AceEditor from 'react-ace';
@@ -17,7 +17,7 @@ import '../../../brace/mode/spel'
 import '../../../brace/mode/sql'
 import '../../../brace/theme/nussknacker'
 import ValidationLabels from "../../modals/ValidationLabels";
-import {allValid} from "../../../common/Validators";
+import {allValid} from "Common/Validators";
 import HttpService from "../../../http/HttpService";
 
 //to reconsider

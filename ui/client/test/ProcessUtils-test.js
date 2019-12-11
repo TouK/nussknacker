@@ -1,4 +1,4 @@
-import ProcessUtils from '../common/ProcessUtils'
+import ProcessUtils from 'Common/ProcessUtils'
 import _ from 'lodash'
 
 describe("process available variables finder", () => {

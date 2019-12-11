@@ -1,11 +1,11 @@
 import React from "react"
-import * as VisualizationUrl from "../common/VisualizationUrl"
+import * as VisualizationUrl from "Common/VisualizationUrl"
 import * as _ from "lodash"
 import * as  queryString from 'query-string'
-import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
+import PeriodicallyReloadingComponent from "Components/PeriodicallyReloadingComponent"
 import history from "../history"
 import HttpService from "../http/HttpService"
-import * as ProcessStateUtils from "../common/ProcessStateUtils"
+import * as ProcessStateUtils from "Common/ProcessStateUtils"
 import Metrics from "./Metrics";
 
 class BaseProcesses extends PeriodicallyReloadingComponent {

@@ -2,7 +2,7 @@ import React from 'react';
 
 import Enzyme, {mount} from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
-import {ProcessHistory_} from '../components/ProcessHistory'; //import redux-independent component
+import {ProcessHistory_} from 'Components/ProcessHistory'; //import redux-independent component
 
 describe("ProcessHistory suite", () => {
   it("should mark latest history entry as current and other as past", () => {

@@ -1,4 +1,4 @@
-import CommentContent from "../components/CommentContent";
+import CommentContent from "Components/CommentContent";
 
 describe("CommentContent#newContent", () => {
   const content = "This is a BUG-123"

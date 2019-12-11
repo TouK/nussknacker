@@ -11,7 +11,7 @@ import NodeDetailsModal from './node-modal/NodeDetailsModal'
 import EdgeDetailsModal from './node-modal/EdgeDetailsModal'
 import {DropTarget} from 'react-dnd'
 import '../../stylesheets/graph.styl'
-import SVGUtils from '../../common/SVGUtils';
+import SVGUtils from 'Common/SVGUtils';
 import NodeUtils from './NodeUtils.js'
 import cssVariables from "../../stylesheets/_variables.styl"
 import * as GraphUtils from "./GraphUtils"

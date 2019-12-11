@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import Dialogs from "../components/modals/Dialogs";
+import Dialogs from "Components/modals/Dialogs";
 
 const emptyUiState = {
   leftPanelIsOpened: true,

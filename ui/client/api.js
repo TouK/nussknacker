@@ -1,6 +1,6 @@
 import {API_URL} from "./config"
 import axios from 'axios'
-import SystemUtils from "./common/SystemUtils";
+import SystemUtils from "Common/SystemUtils";
 
 let headers = {}
 if (SystemUtils.hasAccessToken()) {

@@ -6,7 +6,7 @@ import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
 import Dropzone from 'react-dropzone'
 import InlinedSvgs from '../assets/icons/InlinedSvgs'
-import Date from "./common/Date"
+import Date from "Components/common/Date"
 
 export class ProcessAttachments_ extends React.Component {
 

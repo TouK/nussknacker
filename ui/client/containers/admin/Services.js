@@ -4,9 +4,9 @@ import "../../stylesheets/processes.styl"
 import {connect} from "react-redux"
 import JSONTree from 'react-json-tree'
 import ActionsUtils from "../../actions/ActionsUtils"
-import ProcessUtils from "../../common/ProcessUtils"
+import ProcessUtils from "Common/ProcessUtils"
 import HttpService from "../../http/HttpService"
-import * as JsonUtils from "../../common/JsonUtils"
+import * as JsonUtils from "Common/JsonUtils"
 import BaseAdminTab from "./BaseAdminTab"
 
 class Services extends BaseAdminTab {

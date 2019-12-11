@@ -6,13 +6,13 @@ import Modal from "react-modal";
 import {connect} from "react-redux";
 import _ from 'lodash';
 import ActionsUtils from "../actions/ActionsUtils";
-import EspModalStyles from "../common/EspModalStyles";
+import EspModalStyles from "Common/EspModalStyles";
 import "../stylesheets/visualization.styl";
 import HttpService from "../http/HttpService";
-import * as VisualizationUrl from '../common/VisualizationUrl';
+import * as VisualizationUrl from 'Common/VisualizationUrl';
 import Draggable from 'react-draggable';
 import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
-import {duplicateValue, notEmptyValidator} from "../common/Validators";
+import {duplicateValue, notEmptyValidator} from "Common/Validators";
 import ValidationLabels from "./modals/ValidationLabels";
 
 //TODO: Consider integrating with GenericModalDialog 

@@ -6,9 +6,9 @@ import {v4 as uuid4} from "uuid"
 import LabeledInput from "../editors/field/LabeledInput"
 import LabeledTextarea from "../editors/field/LabeledTextarea"
 import FieldsSelect from "./FieldsSelect"
-import ProcessUtils from "../../../../common/ProcessUtils"
+import ProcessUtils from "Common/ProcessUtils"
 import ActionsUtils from "../../../../actions/ActionsUtils"
-import {errorValidator, notEmptyValidator} from "../../../../common/Validators"
+import {errorValidator, notEmptyValidator} from "Common/Validators"
 
 class SubprocessInputDefinition extends React.Component {
 

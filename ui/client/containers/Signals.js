@@ -2,7 +2,7 @@ import React from 'react'
 import {connect} from 'react-redux';
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
-import QueriedStateTable from "../components/QueriedStateTable";
+import QueriedStateTable from "Components/QueriedStateTable";
 import _ from "lodash";
 import {nkPath} from "../config";
 

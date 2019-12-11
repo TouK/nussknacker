@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import * as LoaderUtils from '../common/LoaderUtils'
+import * as LoaderUtils from 'Common/LoaderUtils'
 
 export default class SvgDiv extends React.Component {
 

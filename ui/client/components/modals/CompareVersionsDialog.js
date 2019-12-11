@@ -6,11 +6,11 @@ import "../../stylesheets/visualization.styl";
 import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs";
 import HttpService from "../../http/HttpService";
-import * as JsonUtils from "../../common/JsonUtils";
+import * as JsonUtils from "Common/JsonUtils";
 import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent";
 import EdgeDetailsContent from "../graph/node-modal/EdgeDetailsContent";
 import Scrollbars from "react-custom-scrollbars";
-import DateUtils from "../../common/DateUtils";
+import DateUtils from "Common/DateUtils";
 
 //TODO: handle displaying groups
 //TODO: handle different textarea heights

@@ -1,13 +1,13 @@
-import HttpService from "../http/HttpService";
-import * as GraphUtils from "../components/graph/GraphUtils";
-import NodeUtils from "../components/graph/NodeUtils";
-import * as SubprocessSchemaAligner from "../components/graph/SubprocessSchemaAligner";
-import _ from "lodash";
-import * as UndoRedoActions from "./undoRedoActions";
-import * as VisualizationUrl from '../common/VisualizationUrl';
-import {dateFormat} from "../config";
+import HttpService from "../http/HttpService"
+import * as GraphUtils from "Components/graph/GraphUtils"
+import NodeUtils from "Components/graph/NodeUtils"
+import * as SubprocessSchemaAligner from "Components/graph/SubprocessSchemaAligner"
+import _ from "lodash"
+import * as UndoRedoActions from "./undoRedoActions"
+import * as VisualizationUrl from 'Common/VisualizationUrl'
+import {dateFormat} from "../config"
 import history from '../history'
-import User from "../common/models/User";
+import User from "Common/models/User"
 import Metrics from "../containers/Metrics"
 import {events} from "../analytics/TrackingEvents"
 

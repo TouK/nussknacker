@@ -1,7 +1,7 @@
 import React from "react"
 import Notifications from 'react-notification-system-redux'
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
-import Notification from "../components/notifications/Notification"
+import Notification from "Components/notifications/Notification"
 import {v4 as uuid4} from "uuid"
 
 export function success(message) {

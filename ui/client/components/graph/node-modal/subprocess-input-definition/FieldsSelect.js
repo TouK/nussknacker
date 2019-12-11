@@ -3,7 +3,7 @@ import PropTypes from "prop-types"
 import update from "immutability-helper"
 import _ from "lodash"
 import MovableRow from "./MovableRow"
-import {notEmptyValidator} from "../../../../common/Validators"
+import {notEmptyValidator} from "Common/Validators"
 
 const FieldsSelect = (props) => {
 

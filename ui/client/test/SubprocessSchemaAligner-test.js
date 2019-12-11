@@ -1,4 +1,4 @@
-import * as SubprocessSchemaAligner from '../components/graph/SubprocessSchemaAligner'
+import * as SubprocessSchemaAligner from 'Components/graph/SubprocessSchemaAligner'
 import _ from 'lodash'
 
 const subprocessProcessDefinitionData = {

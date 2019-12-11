@@ -10,11 +10,11 @@ import Metrics from "./Metrics"
 import Search from "./Search"
 import Signals from "./Signals"
 import AdminPage from "./AdminPage"
-import DragArea from "../components/DragArea"
+import DragArea from "Components/DragArea"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
-import Dialogs from "../components/modals/Dialogs"
-import * as VisualizationUrl from '../common/VisualizationUrl'
+import Dialogs from "Components/modals/Dialogs"
+import * as VisualizationUrl from 'Common/VisualizationUrl'
 import Archive from "./Archive"
 import Visualization from "./Visualization"
 

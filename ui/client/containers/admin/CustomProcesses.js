@@ -2,17 +2,17 @@ import React from "react"
 import {Table, Td, Tr} from "reactable"
 import {withRouter} from 'react-router-dom'
 import HttpService from "../../http/HttpService"
-import DateUtils from "../../common/DateUtils"
-import LoaderSpinner from "../../components/Spinner.js"
-import HealthCheck from "../../components/HealthCheck.js"
-import DialogMessages from "../../common/DialogMessages"
+import DateUtils from "Common/DateUtils"
+import LoaderSpinner from "Components/Spinner.js"
+import HealthCheck from "Components/HealthCheck.js"
+import DialogMessages from "Common/DialogMessages"
 import {Glyphicon} from 'react-bootstrap'
 import "../../stylesheets/processes.styl"
 import BaseProcesses from "./../BaseProcesses"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils";
-import SearchFilter from "../../components/table/SearchFilter"
-import Date from "../../components/common/Date"
+import SearchFilter from "Components/table/SearchFilter"
+import Date from "Components/common/Date"
 
 class CustomProcesses extends BaseProcesses {
 

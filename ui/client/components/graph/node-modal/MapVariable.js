@@ -4,7 +4,7 @@ import {v4 as uuid4} from "uuid"
 import React from "react"
 import _ from "lodash"
 import Map from "./editors/map/Map"
-import {errorValidator, notEmptyValidator} from "../../../common/Validators"
+import {errorValidator, notEmptyValidator} from "Common/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
 
 const MapVariable = (props) => {

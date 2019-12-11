@@ -52,7 +52,9 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'react-dom': '@hot-loader/react-dom'
+      'react-dom': '@hot-loader/react-dom',
+      'Components': path.join(__dirname, '/components'),
+      'Common': path.join(__dirname, '/common')
     }
   },
   entry: entry,

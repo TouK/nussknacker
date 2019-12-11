@@ -1,5 +1,5 @@
 import defaultReducer from '../reducers/index'
-import NodeUtils from '../components/graph/NodeUtils'
+import NodeUtils from 'Components/graph/NodeUtils'
 
 import _ from 'lodash'
 

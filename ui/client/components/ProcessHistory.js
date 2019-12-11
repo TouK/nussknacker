@@ -4,10 +4,10 @@ import {Scrollbars} from 'react-custom-scrollbars';
 import {connect} from 'react-redux';
 import _ from 'lodash'
 import ActionsUtils from '../actions/ActionsUtils';
-import DialogMessages from '../common/DialogMessages';
+import DialogMessages from 'Common/DialogMessages';
 import '../stylesheets/processHistory.styl'
-import ProcessUtils from '../common/ProcessUtils'
-import Date from "./common/Date"
+import ProcessUtils from 'Common/ProcessUtils'
+import Date from "Components/common/Date"
 
 export class ProcessHistory_ extends Component {
 

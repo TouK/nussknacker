@@ -3,8 +3,8 @@ import LabeledTextarea from "./editors/field/LabeledTextarea"
 import ExpressionInput from "./ExpressionInput"
 import React from "react"
 import _ from "lodash"
-import {errorValidator, notEmptyValidator} from "../../../common/Validators"
-import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
+import {errorValidator, notEmptyValidator} from "Common/Validators"
+import {DEFAULT_EXPRESSION_ID} from "Common/graph/constants"
 import LabeledInput from "./editors/field/LabeledInput"
 
 const Variable = (props) => {

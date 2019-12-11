@@ -3,8 +3,8 @@ import _ from "lodash"
 import NodeUtils from "../NodeUtils"
 import ExpressionSuggest from "./ExpressionSuggest"
 import * as TestRenderUtils from "./../TestRenderUtils"
-import ProcessUtils from '../../../common/ProcessUtils'
-import * as JsonUtils from '../../../common/JsonUtils'
+import ProcessUtils from 'Common/ProcessUtils'
+import * as JsonUtils from 'Common/JsonUtils'
 import ParameterList from "./ParameterList"
 import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
 import {v4 as uuid4} from "uuid"
@@ -12,8 +12,8 @@ import MapVariable from "./../node-modal/MapVariable"
 import BranchParameters from "./../node-modal/BranchParameters"
 import Variable from "./../node-modal/Variable"
 import JoinDef from "./JoinDef"
-import {allValid, errorValidator, notEmptyValidator} from "../../../common/Validators"
-import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
+import {allValid, errorValidator, notEmptyValidator} from "Common/Validators"
+import {DEFAULT_EXPRESSION_ID} from "Common/graph/constants"
 import LabeledInput from "./editors/field/LabeledInput"
 import Checkbox from "./editors/field/Checkbox"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"

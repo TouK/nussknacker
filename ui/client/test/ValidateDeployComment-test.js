@@ -1,4 +1,4 @@
-import ValidateDeployComment from "../components/ValidateDeployComment"
+import ValidateDeployComment from "Components/ValidateDeployComment"
 
 describe("validating comments on deploy", () => {
   const pattern = "(jira-[0-9]*)"

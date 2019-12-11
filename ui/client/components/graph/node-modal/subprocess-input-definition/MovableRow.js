@@ -1,7 +1,7 @@
 import React from "react"
 import {DragSource, DropTarget} from "react-dnd"
 import ReactDOM from "react-dom"
-import {allValid} from "../../../../common/Validators"
+import {allValid} from "Common/Validators"
 import ValidationLabels from "../../../modals/ValidationLabels"
 import Select from "react-select"
 

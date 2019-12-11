@@ -7,8 +7,8 @@ import cn from "classnames";
 
 import ActionsUtils from "../../actions/ActionsUtils";
 import HttpService from "../../http/HttpService";
-import DialogMessages from "../../common/DialogMessages";
-import ProcessUtils from "../../common/ProcessUtils";
+import DialogMessages from "Common/DialogMessages";
+import ProcessUtils from "Common/ProcessUtils";
 import SideNodeDetails from "./SideNodeDetails";
 import NodeUtils from '../graph/NodeUtils'
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"

@@ -7,7 +7,7 @@ import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
 import ActionsUtils from '../../../actions/ActionsUtils';
 import NodeUtils from '../NodeUtils';
-import EspModalStyles from '../../../common/EspModalStyles'
+import EspModalStyles from 'Common/EspModalStyles'
 import EdgeDetailsContent from "./EdgeDetailsContent";
 import Draggable from "react-draggable";
 import {preventFromMoveSelectors} from "../../modals/GenericModalDialog";

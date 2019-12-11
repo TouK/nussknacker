@@ -1,4 +1,4 @@
-import * as ProcessDefinitionUtils from "../common/ProcessDefinitionUtils";
+import * as ProcessDefinitionUtils from "Common/ProcessDefinitionUtils";
 
 describe("getNodesToAddInCategory", () => {
 

@@ -2,20 +2,20 @@ import React from "react"
 import {Table, Td, Tr} from "reactable"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
-import DateUtils from "../common/DateUtils"
-import LoaderSpinner from "../components/Spinner.js"
-import AddProcessDialog from "../components/AddProcessDialog.js"
-import HealthCheck from "../components/HealthCheck.js"
+import DateUtils from "Common/DateUtils"
+import LoaderSpinner from "Components/Spinner.js"
+import AddProcessDialog from "Components/AddProcessDialog.js"
+import HealthCheck from "Components/HealthCheck.js"
 import "../stylesheets/processes.styl"
 import {withRouter} from 'react-router-dom'
 import BaseProcesses from "./BaseProcesses"
 import {Glyphicon} from 'react-bootstrap'
-import ProcessUtils from "../common/ProcessUtils"
+import ProcessUtils from "Common/ProcessUtils"
 import {nkPath} from "../config";
-import AddProcessButton from "../components/table/AddProcessButton"
-import TableSelect from "../components/table/TableSelect"
-import SearchFilter from "../components/table/SearchFilter"
-import Date from "../components/common/Date"
+import AddProcessButton from "Components/table/AddProcessButton"
+import TableSelect from "Components/table/TableSelect"
+import SearchFilter from "Components/table/SearchFilter"
+import Date from "Components/common/Date"
 
 class SubProcesses extends BaseProcesses {
   queries = {

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
-import * as GraphUtils from '../components/graph/GraphUtils'
-import NodeUtils from '../components/graph/NodeUtils'
+import * as GraphUtils from 'Components/graph/GraphUtils'
+import NodeUtils from 'Components/graph/NodeUtils'
 
 const emptyGraphState = {
   graphLoading: false,

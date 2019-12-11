@@ -4,11 +4,11 @@ import * as  queryString from 'query-string'
 import {Table, Td, Tr} from "reactable"
 import "../../stylesheets/processes.styl"
 import HttpService from "../../http/HttpService"
-import * as VisualizationUrl from "../../common/VisualizationUrl"
-import LoaderSpinner from "../../components/Spinner"
+import * as VisualizationUrl from "Common/VisualizationUrl"
+import LoaderSpinner from "Components/Spinner"
 import BaseAdminTab from "./BaseAdminTab"
 import axios from "axios"
-import SearchFilter from "../../components/table/SearchFilter"
+import SearchFilter from "Components/table/SearchFilter"
 
 class SearchComponents extends BaseAdminTab {
   constructor(props) {

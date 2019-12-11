@@ -2,8 +2,8 @@ import * as joint from 'jointjs/index'
 import _ from 'lodash'
 import NodeUtils from './NodeUtils'
 import * as GraphUtils from './GraphUtils'
-import ProcessUtils from '../../common/ProcessUtils';
-import * as LoaderUtils from '../../common/LoaderUtils'
+import ProcessUtils from 'Common/ProcessUtils';
+import * as LoaderUtils from 'Common/LoaderUtils'
 
 import nodeMarkup from './markups/node.html';
 import boundingMarkup from './markups/bounding.html';
@@ -12,7 +12,7 @@ import collapseIcon from '../../assets/img/collapse.svg'
 
 import customAttrs from '../../assets/json/nodeAttributes.json'
 
-import SVGUtils from "../../common/SVGUtils";
+import SVGUtils from "Common/SVGUtils";
 
 const rectWidth = 300
 const rectHeight = 60

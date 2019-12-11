@@ -1,19 +1,19 @@
-import React from 'react';
-import Graph from '../components/graph/Graph';
-import UserRightPanel from '../components/right-panel/UserRightPanel';
-import UserLeftPanel from '../components/UserLeftPanel';
+import React from 'react'
+import Graph from 'Components/graph/Graph'
+import UserRightPanel from 'Components/right-panel/UserRightPanel'
+import UserLeftPanel from 'Components/UserLeftPanel'
 import HttpService from '../http/HttpService'
-import _ from 'lodash';
-import {connect} from 'react-redux';
-import ActionsUtils from '../actions/ActionsUtils';
-import ProcessUtils from '../common/ProcessUtils';
-import '../stylesheets/visualization.styl';
-import NodeUtils from '../components/graph/NodeUtils';
-import * as VisualizationUrl from '../common/VisualizationUrl'
-import SpinnerWrapper from "../components/SpinnerWrapper";
-import * as JsonUtils from "../common/JsonUtils";
-import RouteLeavingGuard from "../components/RouteLeavingGuard";
-import ClipboardUtils from "../common/ClipboardUtils";
+import _ from 'lodash'
+import {connect} from 'react-redux'
+import ActionsUtils from '../actions/ActionsUtils'
+import ProcessUtils from 'Common/ProcessUtils'
+import '../stylesheets/visualization.styl'
+import NodeUtils from 'Components/graph/NodeUtils'
+import * as VisualizationUrl from 'Common/VisualizationUrl'
+import SpinnerWrapper from "Components/SpinnerWrapper"
+import * as JsonUtils from "Common/JsonUtils"
+import RouteLeavingGuard from "Components/RouteLeavingGuard"
+import ClipboardUtils from "Common/ClipboardUtils"
 import {events} from "../analytics/TrackingEvents"
 
 class Visualization extends React.Component {
