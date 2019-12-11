@@ -15,11 +15,13 @@ const MapVariable = (props) => {
     addElement("fields", {"name": "", "uuid": uuid4(), "expression": {"expression": "", "language": "spel"}})
   }
 
+  const onInputChange = (path, event) => onChange(path, event.target.value)
+
   return (
     <div className="node-table-body node-variable-builder-body">
       <LabeledInput renderFieldLabel={() => renderFieldLabel("Id")}
                     value={node.id}
-                    onChange={(event) => onChange("id", event.target.value)}
+                    onChange={(event) => onInputChange("id", event)}
                     isMarked={isMarked("id")}
                     readOnly={readOnly}
                     showValidation={showValidation}
@@ -27,7 +29,7 @@ const MapVariable = (props) => {
 
       <LabeledInput renderFieldLabel={() => renderFieldLabel("Variable Name")}
                     value={node.varName}
-                    onChange={(event) => onChange("varName", event.target.value)}
+                    onChange={(event) => onInputChange("varName", event)}
                     isMarked={isMarked("varName")}
                     readOnly={readOnly}
                     showValidation={showValidation}
@@ -45,7 +47,7 @@ const MapVariable = (props) => {
 
       <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
                        value={_.get(props.node, "additionalFields.description", "")}
-                       onChange={(event) => onChange("additionalFields.description", event.target.value)}
+                       onChange={(event) => onInputChange("additionalFields.description", event)}
                        isMarked={isMarked("additionalFields.description")}
                        readOnly={readOnly}
                        className={"node-input"}/>

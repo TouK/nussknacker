@@ -9,14 +9,14 @@ export const LabeledTextarea = (props) => {
     <div className="node-row">
       {renderFieldLabel()}
       <div className={"node-value" + (isMarked ? " marked" : "")}>
-                <textarea
-                  rows={rows}
-                  cols={cols}
-                  className={className}
-                  value={value}
-                  onChange={(e) => onChange(e.target.value)}
-                  readOnly={readOnly}
-                  autoFocus={autoFocus}/>
+        <textarea
+          rows={rows}
+          cols={cols}
+          className={className}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          readOnly={readOnly}
+          autoFocus={autoFocus}/>
         {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
       </div>
     </div>
