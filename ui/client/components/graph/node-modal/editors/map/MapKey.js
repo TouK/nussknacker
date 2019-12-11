@@ -1,22 +1,21 @@
-import React from "react";
-import PropTypes from 'prop-types';
-import ValidationLabels from "../../../../modals/ValidationLabels";
-import {allValid} from "../../../../../common/Validators";
+import React from "react"
+import PropTypes from 'prop-types'
+import Field from "../field/Field"
 
 export default function MapKey(props) {
-  const {rowKey, isMarked, paths, showValidation, validators, readOnly, onChange} = props
+  const {rowKey, autofocus, isMarked, paths, showValidation, validators, readOnly, onChange} = props
 
   return (
     <div className={"node-value fieldName" + (isMarked ? " marked" : "")}>
-      <input
-        className={!showValidation || allValid(validators, [rowKey.name]) ? "node-input" : "node-input node-input-with-error"}
-        type="text"
-        value={rowKey.name}
-        placeholder="Field name"
-        onChange={((e) => onChange(`${paths}.name`, e.target.value))}
-        readOnly={readOnly}
-      />
-      {showValidation && <ValidationLabels validators={validators} values={[rowKey.name]}/>}
+      <Field fieldType={"unlabeled-input"}
+             isMarked={isMarked}
+             readOnly={readOnly}
+             value={rowKey.name}
+             placeholder="Field name"
+             autofocus={autofocus}
+             showValidation={showValidation}
+             validators={validators}
+             onChange={(e) => onChange(`${paths}.name`, e.target.value)}/>
     </div>
   )
 }

@@ -3,8 +3,8 @@ import _ from "lodash"
 import PropTypes from "prop-types"
 import {connect} from "react-redux"
 import {v4 as uuid4} from "uuid"
-import Input from "../Input"
-import Textarea from "../Textarea"
+import LabeledInput from "../editors/field/LabeledInput"
+import LabeledTextarea from "../editors/field/LabeledTextarea"
 import FieldsSelect from "./FieldsSelect"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import ActionsUtils from "../../../../actions/ActionsUtils"
@@ -39,7 +39,7 @@ class SubprocessInputDefinition extends React.Component {
   }
 
   render() {
-    const {addElement, isMarked, node, onChange, readOnly, removeElement, showValidation, errors} = this.props
+    const {addElement, isMarked, node, onChange, readOnly, removeElement, showValidation, errors, renderFieldLabel} = this.props
 
     const addField = () => {
       addElement("parameters", {"name": "", "uuid": uuid4(), typ: {refClazzName: this.defaultTypeOption.value}})
@@ -47,37 +47,35 @@ class SubprocessInputDefinition extends React.Component {
 
     return (
       <div className="node-table-body">
-        <Input
-          label="Id"
-          value={node.id}
-          path="id"
-          onChange={onChange}
-          isMarked={isMarked("id")}
-          readOnly={readOnly}
-          showValidation={showValidation}
-          validators={[notEmptyValidator, errorValidator(errors, "Id")]}
-        />
-        <FieldsSelect
-          label="Parameters"
-          onChange={onChange}
-          addField={addField}
-          removeField={removeElement}
-          namespace={"parameters"}
-          fields={node.parameters || []}
-          options={this.typeOptions}
-          isMarked={index => isMarked(`parameters[${index}].name`) || isMarked(`parameters[${index}].typ.refClazzName`)}
-          toogleCloseOnEsc={this.props.toogleCloseOnEsc}
-          showValidation={showValidation}
-          readOnly={readOnly}
-        />
-        <Textarea
-          label="Description"
-          value={_.get(node, "additionalFields.description", "")}
-          path="additionalFields.description"
-          onChange={onChange}
-          isMarked={isMarked("additionalFields.description")}
-          readOnly={readOnly}
-        />
+        <LabeledInput renderFieldLabel={() => renderFieldLabel("Id")}
+                      value={node.id}
+                      path="id"
+                      onChange={onChange}
+                      isMarked={isMarked("id")}
+                      readOnly={readOnly}
+                      showValidation={showValidation}
+                      validators={[notEmptyValidator, errorValidator(errors, "Id")]}/>
+
+        <FieldsSelect label="Parameters"
+                      onChange={onChange}
+                      addField={addField}
+                      removeField={removeElement}
+                      namespace={"parameters"}
+                      fields={node.parameters || []}
+                      options={this.typeOptions}
+                      isMarked={index => isMarked(`parameters[${index}].name`) || isMarked(`parameters[${index}].typ.refClazzName`)}
+                      toogleCloseOnEsc={this.props.toogleCloseOnEsc}
+                      showValidation={showValidation}
+                      readOnly={readOnly}/>
+
+        <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
+                         value={_.get(node, "additionalFields.description", "")}
+                         path="additionalFields.description"
+                         className={"node-input"}
+                         onChange={onChange}
+                         isMarked={isMarked("additionalFields.description")}
+                         readOnly={readOnly}/>
+
         {/*placeholder for Select drop-down menu*/}
         <div className="drop-down-menu-placeholder"/>
       </div>

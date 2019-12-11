@@ -5,12 +5,12 @@ import Modal from 'react-modal';
 import _ from 'lodash';
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import ActionsUtils from '../../actions/ActionsUtils';
-import NodeUtils from './NodeUtils';
-import EspModalStyles from '../../common/EspModalStyles'
+import ActionsUtils from '../../../actions/ActionsUtils';
+import NodeUtils from '../NodeUtils';
+import EspModalStyles from '../../../common/EspModalStyles'
 import EdgeDetailsContent from "./EdgeDetailsContent";
 import Draggable from "react-draggable";
-import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
+import {preventFromMoveSelectors} from "../../modals/GenericModalDialog";
 
 //TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {

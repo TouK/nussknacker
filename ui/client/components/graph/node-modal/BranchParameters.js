@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
-import ExpressionSuggest from "../ExpressionSuggest"
+import ExpressionSuggest from "./ExpressionSuggest"
 import {errorValidator, notEmptyValidator} from "../../../common/Validators";
 
 const BranchParameters = (props) => {

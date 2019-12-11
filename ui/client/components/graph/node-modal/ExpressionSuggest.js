@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import ReactDOMServer from 'react-dom/server'
 import {connect} from 'react-redux';
 import _ from 'lodash';
-import ActionsUtils from '../../actions/ActionsUtils';
-import ProcessUtils from '../../common/ProcessUtils';
+import ActionsUtils from '../../../actions/ActionsUtils';
+import ProcessUtils from '../../../common/ProcessUtils';
 import ExpressionSuggester from './ExpressionSuggester'
 
 import AceEditor from 'react-ace';
@@ -13,12 +13,12 @@ import 'brace/mode/jsx';
 import 'brace/ext/language_tools'
 import 'brace/ext/searchbox';
 
-import '../../brace/mode/spel'
-import '../../brace/mode/sql'
-import '../../brace/theme/nussknacker'
-import ValidationLabels from "../modals/ValidationLabels";
-import {allValid} from "../../common/Validators";
-import HttpService from "../../http/HttpService"
+import '../../../brace/mode/spel'
+import '../../../brace/mode/sql'
+import '../../../brace/theme/nussknacker'
+import ValidationLabels from "../../modals/ValidationLabels";
+import {allValid} from "../../../common/Validators";
+import HttpService from "../../../http/HttpService";
 
 //to reconsider
 // - respect categories for global variables?

@@ -2,7 +2,7 @@ import React from 'react';
 import Textarea from "react-textarea-autosize";
 import _ from "lodash";
 
-import ModalRenderUtils from "./ModalRenderUtils";
+import ModalRenderUtils from "./node-modal/ModalRenderUtils";
 import TestResultUtils from "../../common/TestResultUtils";
 
 export function wrapWithTestResult(fieldName, testResultsToShow, testResultsToHide, toggleTestResult, field) {

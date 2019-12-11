@@ -1,8 +1,8 @@
 import React from 'react'
-import Dotdotdot from "react-dotdotdot";
-import PropTypes from "prop-types";
-import InlinedSvgs from "../../assets/icons/InlinedSvgs";
-import HeaderIcon from "../tips/HeaderIcon";
+import Dotdotdot from "react-dotdotdot"
+import PropTypes from "prop-types"
+import InlinedSvgs from "../../assets/icons/InlinedSvgs"
+import HeaderIcon from "../tips/HeaderIcon"
 
 export default function Notification(props) {
   const {icon, message, details} = props

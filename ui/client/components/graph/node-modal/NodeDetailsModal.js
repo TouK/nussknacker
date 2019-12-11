@@ -4,21 +4,21 @@ import Modal from 'react-modal';
 import _ from 'lodash';
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import ActionsUtils from '../../actions/ActionsUtils';
-import NodeUtils from './NodeUtils';
+import ActionsUtils from '../../../actions/ActionsUtils';
+import NodeUtils from '../NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
-import EspModalStyles from '../../common/EspModalStyles'
-import TestResultUtils from '../../common/TestResultUtils'
+import EspModalStyles from '../../../common/EspModalStyles'
+import TestResultUtils from '../../../common/TestResultUtils'
 import {Scrollbars} from "react-custom-scrollbars";
-import cssVariables from "../../stylesheets/_variables.styl";
-import {BareGraph} from "./Graph";
-import HttpService from "../../http/HttpService";
-import SvgDiv from "../SvgDiv"
-import ProcessUtils from "../../common/ProcessUtils";
+import cssVariables from "../../../stylesheets/_variables.styl";
+import {BareGraph} from "../Graph";
+import HttpService from "../../../http/HttpService";
+import SvgDiv from "../../SvgDiv"
+import ProcessUtils from "../../../common/ProcessUtils";
 import PropTypes from 'prop-types';
-import nodeAttributes from "../../assets/json/nodeAttributes"
+import nodeAttributes from "../../../assets/json/nodeAttributes"
 import Draggable from "react-draggable";
-import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
+import {preventFromMoveSelectors} from "../../modals/GenericModalDialog";
 
 class NodeDetailsModal extends React.Component {
 
