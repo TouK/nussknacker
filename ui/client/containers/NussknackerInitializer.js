@@ -77,7 +77,7 @@ class NussknackerInitializer extends React.Component {
   authenticationStrategy = (settings) => {
     // Automatically redirect user when he is not authenticated and backend is OAUTH2
     api.interceptors.response.use(response => response, (error) => {
-      if (error.response.status === HTTP_UNAUTHORIZED_CODE && settings.backend === OAUTH2_BACKEND) {
+      if ( _.get(error, 'response.status') === HTTP_UNAUTHORIZED_CODE && settings.backend === OAUTH2_BACKEND) {
         window.location.replace(settings.authorizeUrl)
       }
 
