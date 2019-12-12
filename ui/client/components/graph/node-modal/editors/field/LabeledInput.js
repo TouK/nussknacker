@@ -23,14 +23,14 @@ export const LabeledInput = (props) => {
 
 LabeledInput.propTypes = {
   renderFieldLabel: PropTypes.func.isRequired,
-  placeholder: PropTypes.string,
   isMarked: PropTypes.bool,
   readOnly: PropTypes.bool,
+  value: PropTypes.string,
   autofocus: PropTypes.bool,
   showValidation: PropTypes.bool,
   validators: PropTypes.array,
-  value: PropTypes.string,
   onChange: PropTypes.func,
+  placeholder: PropTypes.string
 }
 
 export default LabeledInput

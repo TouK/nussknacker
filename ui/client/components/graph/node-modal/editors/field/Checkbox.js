@@ -22,10 +22,10 @@ export const Checkbox = (props) => {
 
 Checkbox.propTypes = {
   renderFieldLabel: PropTypes.func,
-  autoFocus: PropTypes.bool,
   isMarked: PropTypes.bool,
-  onChange: PropTypes.func,
-  readOnly: PropTypes.bool
+  readOnly: PropTypes.bool,
+  autoFocus: PropTypes.bool,
+  onChange: PropTypes.func
 }
 
 export default Checkbox
