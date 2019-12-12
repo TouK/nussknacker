@@ -1,29 +1,33 @@
-import React from "react";
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from 'prop-types'
 import ReactDOMServer from 'react-dom/server'
-import {connect} from 'react-redux';
-import _ from 'lodash';
-import ActionsUtils from '../../../actions/ActionsUtils';
-import ProcessUtils from '../../../common/ProcessUtils';
+import {connect} from 'react-redux'
+import _ from 'lodash'
+import ActionsUtils from '../../../actions/ActionsUtils'
+import ProcessUtils from '../../../common/ProcessUtils'
 import ExpressionSuggester from './ExpressionSuggester'
 
-import AceEditor from 'react-ace';
-import 'ace-builds/src-noconflict/mode-jsx';
+import AceEditor from 'react-ace'
+import 'ace-builds/src-noconflict/mode-jsx'
 import 'ace-builds/src-noconflict/ext-language_tools'
-import 'ace-builds/src-noconflict/ext-searchbox';
+import 'ace-builds/src-noconflict/ext-searchbox'
 
 import '../../../brace/mode/spel'
 import '../../../brace/mode/sql'
 import '../../../brace/theme/nussknacker'
-import ValidationLabels from "../../modals/ValidationLabels";
-import {allValid} from "../../../common/Validators";
-import HttpService from "../../../http/HttpService";
+import ValidationLabels from "../../modals/ValidationLabels"
+import {allValid} from "../../../common/Validators"
+import HttpService from "../../../http/HttpService"
 
 //to reconsider
 // - respect categories for global variables?
 // - maybe ESC should be allowed to hide suggestions but leave modal open?
 
 var inputExprIdCounter = 0
+
+const identifierRegexpsWithoutDot = [/[#a-z0-9-_]/]
+const identifierRegexpsIncludingDot = [/[#a-z0-9-_.]/]
+
 class ExpressionSuggest extends React.Component {
 
   static propTypes = {
@@ -34,8 +38,6 @@ class ExpressionSuggest extends React.Component {
     processingType: PropTypes.string
   }
 
-  static identifierRegexpsWithoutDot = [/[#a-z0-9-_]/]
-  static identifierRegexpsIncludingDot = [/[#a-z0-9-_.]/]
 
   customAceEditorCompleter = {
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
@@ -44,7 +46,7 @@ class ExpressionSuggest extends React.Component {
         editor.completer.activated = false
         // We have dot in identifier pattern to enable live autocompletion after dots, but also we remove it from pattern just before callback, because
         // otherwise our results lists will be filtered out (because entries not matches '#full.property.path' but only 'path')
-        this.customAceEditorCompleter.identifierRegexps = ExpressionSuggest.identifierRegexpsWithoutDot
+        this.customAceEditorCompleter.identifierRegexps = identifierRegexpsWithoutDot
         try {
           callback(null, _.map(suggestions, (s) => {
             const methodName = s.methodName
@@ -60,12 +62,12 @@ class ExpressionSuggest extends React.Component {
             }
           }))
         } finally {
-          this.customAceEditorCompleter.identifierRegexps = ExpressionSuggest.identifierRegexpsIncludingDot
+          this.customAceEditorCompleter.identifierRegexps = identifierRegexpsIncludingDot
         }
       })
     },
     // We adds hash to identifier pattern to start suggestions just after hash is typed
-    identifierRegexps: ExpressionSuggest.identifierRegexpsIncludingDot,
+    identifierRegexps: identifierRegexpsIncludingDot,
     getDocTooltip: (item) => {
       if (item.description || !_.isEmpty(item.parameters)) {
         const paramsSignature = item.parameters.map(p => ProcessUtils.humanReadableType(p.refClazz) + " " + p.name).join(", ")
