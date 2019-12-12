@@ -66,16 +66,16 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     val sendSmsSink = EmptySink
     val monitorSink = EmptySink
     Map(
-      "sendSms" -> WithCategories(SinkFactory.noParam(sendSmsSink), "Category1"),
-      "monitor" -> WithCategories(SinkFactory.noParam(monitorSink), "Category1", "Category2"),
-      "kafka-string" -> WithCategories(new KafkaSinkFactory(kConfig,
+      "sendSms" -> all(SinkFactory.noParam(sendSmsSink)),
+      "monitor" -> all(SinkFactory.noParam(monitorSink)),
+      "kafka-string" -> all(new KafkaSinkFactory(kConfig,
         new KeyedSerializationSchema[Any] {
           override def serializeValue(element: Any) = element.toString.getBytes(StandardCharsets.UTF_8)
 
           override def serializeKey(element: Any) = null
 
           override def getTargetTopic(element: Any) = null
-        }), "Category1", "Category2")
+        }))
     )
   }
 
@@ -85,11 +85,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
 
     Map(
-      "real-kafka" -> WithCategories(new KafkaSourceFactory[String](kConfig,
-        new SimpleStringSchema, None, TestParsingUtils.newLineSplit), "Category1", "Category2"),
-      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource), "Category1", "Category2"),
-      "boundedSource" -> WithCategories(BoundedSource, "Category1", "Category2"),
-      "oneSource" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[String] {
+      "real-kafka" -> all(new KafkaSourceFactory[String](kConfig,
+        new SimpleStringSchema, None, TestParsingUtils.newLineSplit)),
+      "kafka-transaction" -> all(FlinkSourceFactory.noParam(prepareNotEndingSource)),
+      "boundedSource" -> all(BoundedSource),
+      "oneSource" -> all(FlinkSourceFactory.noParam(new FlinkSource[String] {
 
         override def timestampAssigner = None
 
@@ -113,8 +113,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         }
 
         override def typeInformation = implicitly[TypeInformation[String]]
-      }), "Category1", "Category2"),
-      "csv-source" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord]
+      })),
+      "csv-source" -> all(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord]
         with TestDataParserProvider[CsvRecord] with TestDataGenerator {
 
         override def typeInformation = implicitly[TypeInformation[CsvRecord]]
@@ -134,7 +134,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
         override def timestampAssigner = None
 
-      }), "Category1", "Category2")
+      }))
     )
 
   }
@@ -179,18 +179,18 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(config: Config) = {
     Map(
-      "accountService" -> WithCategories(EmptyService, "Category1").withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
-      "componentService" -> WithCategories(EmptyService, "Category1", "Category2"),
-      "transactionService" -> WithCategories(EmptyService, "Category1"),
-      "serviceModelService" -> WithCategories(EmptyService, "Category1", "Category2"),
-      "paramService" -> WithCategories(OneParamService, "Category1"),
-      "enricher" -> WithCategories(Enricher, "Category1", "Category2"),
-      "multipleParamsService" -> WithCategories(MultipleParamsService, "Category1", "Category2"),
-      "complexReturnObjectService" -> WithCategories(ComplexReturnObjectService, "Category1", "Category2"),
-      "unionReturnObjectService" -> WithCategories(UnionReturnObjectService, "Category1", "Category2"),
-      "listReturnObjectService" -> WithCategories(ListReturnObjectService, "Category1", "Category2"),
-      "clientHttpService" -> WithCategories(new ClientFakeHttpService(), "Category1", "Category2"),
-      "echoEnumService" -> WithCategories(EchoEnumService, "Category1", "Category2"),
+      "accountService" -> all(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
+      "componentService" -> all(EmptyService),
+      "transactionService" -> all(EmptyService),
+      "serviceModelService" -> all(EmptyService),
+      "paramService" -> all(OneParamService),
+      "enricher" -> all(Enricher),
+      "multipleParamsService" -> all(MultipleParamsService),
+      "complexReturnObjectService" -> all(ComplexReturnObjectService),
+      "unionReturnObjectService" -> all(UnionReturnObjectService),
+      "listReturnObjectService" -> all(ListReturnObjectService),
+      "clientHttpService" -> all(new ClientFakeHttpService()),
+      "echoEnumService" -> all(EchoEnumService),
       // types
       "simpleTypesService"  -> all(new SimpleTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
       "optionalTypesService"  -> all(new OptionalTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
@@ -204,16 +204,16 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     val signalsTopic = config.getString("signals.topic")
     Map(
       "noneReturnTypeTransformer" -> WithCategories(NoneReturnTypeTransformer, "TESTCAT"),
-      "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
-      "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2"),
-      "constantStateTransformer" -> WithCategories(ConstantStateTransformer[String](Encoder[ConstantState].apply(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3"))).noSpaces), "Category1", "Category2"),
-      "constantStateTransformerLongValue" -> WithCategories(ConstantStateTransformer[Long](12333), "Category1", "Category2"),
-      "additionalVariable" -> WithCategories(AdditionalVariableTransformer, "Category1", "Category2"),
-      "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2"),
-      "union" -> WithCategories(UnionTransformer, "Category1", "Category2"),
-      "state" -> WithCategories(TransformStateTransformer, "Category1", "Category2"),
+      "stateful" -> all(StatefulTransformer),
+      "customFilter" -> all(CustomFilter),
+      "constantStateTransformer" -> all(ConstantStateTransformer[String](Encoder[ConstantState].apply(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3"))).noSpaces)),
+      "constantStateTransformerLongValue" -> all(ConstantStateTransformer[Long](12333)),
+      "additionalVariable" -> all(AdditionalVariableTransformer),
+      "lockStreamTransformer" -> all(new SampleSignalHandlingTransformer.LockStreamTransformer()),
+      "union" -> all(UnionTransformer),
+      "state" -> all(TransformStateTransformer),
       // types
-      "simpleTypesCustomNode" -> all(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+      "simpleTypesCustomNode" -> all(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types")))
     )
   }
 
@@ -221,7 +221,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
     val signalsTopic = config.getString("signals.topic")
     Map(
-      "removeLockSignal" -> WithCategories(new RemoveLockProcessSignalFactory(kConfig, signalsTopic), "Category1", "Category2")
+      "removeLockSignal" -> all(new RemoveLockProcessSignalFactory(kConfig, signalsTopic))
     )
   }
 
@@ -234,10 +234,10 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "bar" -> "Bar",
       "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots"))
     val globalProcessVariables = Map(
-      "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2"),
-      "DICT" -> WithCategories(DictInstance(dictId, dictDef), "Category1", "Category2"))
+      "DATE" -> all(DateProcessHelper),
+      "DICT" -> all(DictInstance(dictId, dictDef)))
     ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()),
-      dictionaries = Map(dictId -> WithCategories(dictDef, "Category1", "Category2")))
+      dictionaries = Map(dictId -> all(dictDef)))
   }
 
   private def all[T](value: T) = WithCategories(value, "Category1", "Category2")
