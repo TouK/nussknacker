@@ -83,7 +83,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
       relevant shouldBe underTest
-      other.values.forall(_ == SingleNodeConfig.zero) shouldBe true
+      other.values.forall(_.docsUrl.isEmpty) shouldBe true
     }
   }
 

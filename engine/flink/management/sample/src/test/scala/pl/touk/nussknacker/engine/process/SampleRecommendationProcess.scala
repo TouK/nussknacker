@@ -6,7 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
-import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator
+import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
@@ -16,7 +16,7 @@ class SampleRecommendationProcess extends FlatSpec with BeforeAndAfterAll with M
 
   private val env: StoppableExecutionEnvironment = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
 
-  private val creator = new DemoProcessConfigCreator
+  private val creator = new UnitTestsProcessConfigCreator
 
   override protected def afterAll(): Unit = {
     super.afterAll()

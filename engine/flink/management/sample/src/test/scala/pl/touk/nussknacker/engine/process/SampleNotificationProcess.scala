@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
-import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator
+import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
@@ -14,7 +14,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers {
 
   import spel.Implicits._
 
-  val creator = new DemoProcessConfigCreator
+  val creator = new UnitTestsProcessConfigCreator
   val env = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
 
   it should "serialize and run" in {
