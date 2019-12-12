@@ -1,30 +1,33 @@
-import React from "react";
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from 'prop-types'
 import ReactDOMServer from 'react-dom/server'
-import {connect} from 'react-redux';
-import _ from 'lodash';
-import ActionsUtils from '../../../actions/ActionsUtils';
-import ProcessUtils from '../../../common/ProcessUtils';
+import {connect} from 'react-redux'
+import _ from 'lodash'
+import ActionsUtils from '../../../actions/ActionsUtils'
+import ProcessUtils from '../../../common/ProcessUtils'
 import ExpressionSuggester from './ExpressionSuggester'
 
-import AceEditor from 'react-ace';
-import 'brace/mode/jsx';
-
-import 'brace/ext/language_tools'
-import 'brace/ext/searchbox';
+import AceEditor from 'react-ace'
+import 'ace-builds/src-noconflict/mode-jsx'
+import 'ace-builds/src-noconflict/ext-language_tools'
+import 'ace-builds/src-noconflict/ext-searchbox'
 
 import '../../../brace/mode/spel'
 import '../../../brace/mode/sql'
 import '../../../brace/theme/nussknacker'
-import ValidationLabels from "../../modals/ValidationLabels";
-import {allValid} from "../../../common/Validators";
-import HttpService from "../../../http/HttpService";
+import ValidationLabels from "../../modals/ValidationLabels"
+import {allValid} from "../../../common/Validators"
+import HttpService from "../../../http/HttpService"
 
 //to reconsider
 // - respect categories for global variables?
 // - maybe ESC should be allowed to hide suggestions but leave modal open?
 
 var inputExprIdCounter = 0
+
+const identifierRegexpsWithoutDot = [/[#a-z0-9-_]/]
+const identifierRegexpsIncludingDot = [/[#a-z0-9-_.]/]
+
 class ExpressionSuggest extends React.Component {
 
   static propTypes = {
@@ -35,26 +38,36 @@ class ExpressionSuggest extends React.Component {
     processingType: PropTypes.string
   }
 
+
   customAceEditorCompleter = {
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
       this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d).then(suggestions => {
-        callback(null, _.map(suggestions, (s) => {
-          //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
-          //maybe it depends on language mode?
-          const methodName = s.methodName.replace("#", "")
-          const returnType = ProcessUtils.humanReadableType(s.refClazz)
-          return {
-            name: methodName,
-            value: methodName,
-            score: 1,
-            meta: returnType,
-            description: s.description,
-            parameters: s.parameters,
-            returnType: returnType
-          }
-        }))
+        // This trick enforce autocompletion to invoke getCompletions even if some result found before - in case if list of suggestions will change during typing
+        editor.completer.activated = false
+        // We have dot in identifier pattern to enable live autocompletion after dots, but also we remove it from pattern just before callback, because
+        // otherwise our results lists will be filtered out (because entries not matches '#full.property.path' but only 'path')
+        this.customAceEditorCompleter.identifierRegexps = identifierRegexpsWithoutDot
+        try {
+          callback(null, _.map(suggestions, (s) => {
+            const methodName = s.methodName
+            const returnType = ProcessUtils.humanReadableType(s.refClazz)
+            return {
+              name: methodName,
+              value: methodName,
+              score: 1,
+              meta: returnType,
+              description: s.description,
+              parameters: s.parameters,
+              returnType: returnType
+            }
+          }))
+        } finally {
+          this.customAceEditorCompleter.identifierRegexps = identifierRegexpsIncludingDot
+        }
       })
     },
+    // We adds hash to identifier pattern to start suggestions just after hash is typed
+    identifierRegexps: identifierRegexpsIncludingDot,
     getDocTooltip: (item) => {
       if (item.description || !_.isEmpty(item.parameters)) {
         const paramsSignature = item.parameters.map(p => ProcessUtils.humanReadableType(p.refClazz) + " " + p.name).join(", ")
