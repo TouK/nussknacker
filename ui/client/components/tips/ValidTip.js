@@ -1,29 +1,19 @@
 import React from 'react';
-import {v4 as uuid4} from "uuid";
-import PropTypes from "prop-types"
+import HeaderIcon from "./HeaderIcon";
+import PropTypes from "prop-types";
 
-export default class ValidTip extends React.Component {
+export default function ValidTip(props) {
+  const {icon, message} = props
 
-  static propTypes = {
-    grouping: PropTypes.bool.isRequired,
-    testing: PropTypes.bool.isRequired
-  }
+  return (
+    <div className={"valid-tip"}>
+      <HeaderIcon className={"icon"} icon={icon}/>
+      <span>{message}</span>
+    </div>
+  )
+}
 
-  render() {
-    return (
-      <div key={uuid4()}><span>{this.validTip()}</span></div>
-    )
-  }
-
-  validTip = () => {
-    const {grouping, testing} = this.props
-
-    if (testing) {
-      return "Testing mode enabled"
-    } else if (grouping) {
-      return "Grouping mode enabled"
-    } else {
-      return "Everything seems to be OK"
-    }
-  }
+ValidTip.propTypes = {
+  icon: PropTypes.string.isRequired,
+  message: PropTypes.string.isRequired
 }

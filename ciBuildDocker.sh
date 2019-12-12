@@ -9,6 +9,7 @@ dockerUpdateLatest=${DOCKER_UPDATE_LATEST-"true"}
 dockerUsername=${DOCKER_PACKAGE_USERNAME-"touk"}
 dockerPort=${DOCKER_PORT-"8080"}
 dockerPublishType=${DOCKER_PUBLISH_TYPE-"publish"}
+addDevModel=${ADD_DEV_MODEL-"false"}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,6 +34,9 @@ while [[ $# -gt 0 ]]; do
   --docker-update-latest=*)
       dockerUpdateLatest="${1#*=}"
       ;;
+  --add-dev-model=*)
+      addDevModel="${1#*=}"
+      ;;
     *)
       printf " Error: Invalid argument: $1."
       exit 1
@@ -56,6 +60,7 @@ if [[ -n "$version" ]]; then
                  -DdockerPort=${dockerPort} \
                  -DdockerUpLatest=${dockerUpdateLatest} \
                  -DdockerTagName=${dockerTagName} \
+                 -DaddDevModel=${addDevModel} \
                  "set version in ThisBuild := \"$version\"" \
                  dist/docker:"$dockerPublishType"
 else

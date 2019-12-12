@@ -84,7 +84,7 @@ object ExampleOAuth2ServiceFactory {
   def testConfig: OAuth2Configuration =
     OAuth2Configuration(
       AuthenticationMethod.OAuth2,
-      "ui/server/develConf/tests/oauth2-users.conf",
+      "ui/server/src/test/resources/oauth2-users.conf",
       URI.create("https://github.com/login/oauth/authorize"),
       "clientSecret",
       "clientId",

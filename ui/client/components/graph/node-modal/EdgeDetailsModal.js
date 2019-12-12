@@ -5,19 +5,18 @@ import Modal from 'react-modal';
 import _ from 'lodash';
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import ActionsUtils from '../../actions/ActionsUtils';
-import NodeUtils from './NodeUtils';
-import EspModalStyles from '../../common/EspModalStyles'
+import ActionsUtils from '../../../actions/ActionsUtils';
+import NodeUtils from '../NodeUtils';
+import EspModalStyles from '../../../common/EspModalStyles'
 import EdgeDetailsContent from "./EdgeDetailsContent";
 import Draggable from "react-draggable";
-import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
+import {preventFromMoveSelectors} from "../../modals/GenericModalDialog";
 
 //TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {
 
   static propTypes = {
-    edgeToDisplay: PropTypes.object.isRequired,
-    showValidation: PropTypes.bool.isRequired
+    edgeToDisplay: PropTypes.object.isRequired
   }
 
   constructor(props) {
@@ -57,16 +56,16 @@ class EdgeDetailsModal extends React.Component {
       return ([
         <LaddaButton
           key="1"
-          title="Save edge details"
+          title="Apply edge details"
           className='modalButton pull-right modalConfirmButton'
           loading={this.state.pendingRequest}
           data-style='zoom-in'
           onClick={this.performEdgeEdit}
         >
-          Save
+          Apply
         </LaddaButton>,
-        <button key="3" type="button" title="Close edge details" className='modalButton' onClick={this.closeModal}>
-          Close
+        <button key="3" type="button" title="Cancel edge details" className='modalButton' onClick={this.closeModal}>
+          Cancel
         </button>
       ] );
     } else {

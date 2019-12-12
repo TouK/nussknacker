@@ -34,7 +34,8 @@ env:
     - DOCKER_REPOSITORY=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}`
     - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true"`
     #We do cross build in tests only for staging/master
-    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] ) && echo "true"`
+    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true"`
+    - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true"`
 
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
@@ -69,7 +70,9 @@ jobs:
     - name: "Management tests"
       script: ./ciRunSbt.sh clean management/it:test
     - name: "Cross Scala compile"
-      script: if [ "$CROSS_BUILD" = true ]; then echo "Skipping. Cross compilation executed in other jobs"; else CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile; fi
+      script: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
+      # We can't use env(CROSS_BUILD) here because of some bug in travis - there is raw, not evaluated script body in env(CROSS_BUILD)
+      if: type = pull_request
     - name: "EngineStandalone tests"
       script: ./ciRunSbt.sh clean engineStandalone/it:test
     - name: "Frontend tests"
@@ -83,11 +86,11 @@ jobs:
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
-        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal --add-dev-model=$ADD_DEV_MODEL
         - cd ./demo/docker && echo "NUSSKNACKER_VERSION=$BUILD_VERSION" > .env && ./testQuickstart.sh
         - docker push ${DOCKER_SOURCE_TAG}
-        - docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:latest
-        - docker push ${DOCKER_REPOSITORY}:latest
+        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker push ${DOCKER_REPOSITORY}:latest; fi
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:staging-latest; fi

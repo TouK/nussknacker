@@ -16,6 +16,7 @@ dbFiles/*
 *.jar
 ui/server/src/main/resources/web
 **/npm-debug.log
+ui/server/work
 ui/develConf/*.jar
 _book/
 # Ignore Mac DS_Store files

@@ -1,26 +1,29 @@
-import React from "react";
-import {connect} from "react-redux";
-import classNames from "classnames";
-import _ from "lodash";
-import ActionsUtils from "../../actions/ActionsUtils";
-import Textarea from "react-textarea-autosize";
-import NodeUtils from "./NodeUtils";
-import ExpressionSuggest from "./ExpressionSuggest";
+import React from "react"
+import _ from "lodash"
+import NodeUtils from "../NodeUtils"
+import ExpressionSuggest from "./ExpressionSuggest"
+import * as TestRenderUtils from "./../TestRenderUtils"
+import ProcessUtils from '../../../common/ProcessUtils'
+import * as JsonUtils from '../../../common/JsonUtils'
+import ParameterList from "./ParameterList"
+import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
+import {v4 as uuid4} from "uuid"
+import MapVariable from "./../node-modal/MapVariable"
+import BranchParameters from "./../node-modal/BranchParameters"
+import Variable from "./../node-modal/Variable"
+import JoinDef from "./JoinDef"
+import {allValid, errorValidator, notEmptyValidator} from "../../../common/Validators"
+import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
+import LabeledInput from "./editors/field/LabeledInput"
+import Checkbox from "./editors/field/Checkbox"
+import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
+import LabeledTextarea from "./editors/field/LabeledTextarea"
+import {connect} from "react-redux"
+import ActionsUtils from "../../../actions/ActionsUtils"
+import classNames from "classnames"
 import ModalRenderUtils from "./ModalRenderUtils";
-import * as TestRenderUtils from "./TestRenderUtils";
-import ProcessUtils from '../../common/ProcessUtils';
-import * as JsonUtils from '../../common/JsonUtils';
-import Fields from "../Fields";
-import ParameterList from "./ParameterList";
-import ExpressionWithFixedValues from "./ExpressionWithFixedValues";
-import {v4 as uuid4} from "uuid";
-import MapVariable from "./node-modal/MapVariable";
-import BranchParameters, {branchErrorFieldName} from "./node-modal/BranchParameters";
-import Variable from "./node-modal/Variable";
-import JoinDef from "./node-modal/JoinDef"
-import {allValid, errorValidator, notEmptyValidator} from "../../common/Validators";
-import ValidationLabels from "../modals/ValidationLabels";
-import {DEFAULT_EXPRESSION_ID} from "../../common/graph/constants";
+import {branchErrorFieldName} from "./BranchParameters"
+import Field from "./editors/field/Field"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -43,7 +46,7 @@ export class NodeDetailsContent extends React.Component {
     let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || (hasNoReturn === true && this.state.editedNode.outputVar)
 
-    this.generateUUID("fields");
+    this.generateUUID("fields", "parameters")
   }
 
   prepareNodeDef(node, nodeObjectDetails, processToDisplay) {
@@ -154,36 +157,19 @@ export class NodeDetailsContent extends React.Component {
           </div>
         return this.sourceSinkCommon(toAppend, fieldErrors)
       case 'SubprocessInputDefinition':
-        //FIXME: currently there is no way to add new parameters or display them correctly
         return (
-          <div className="node-table-body">
-            {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "Id")])}
-            <div className="node-row">
-              {this.renderFieldLabel("Parameters")}
-              <div className="node-value">
-                <Fields
-                  fields={this.state.editedNode.parameters || []}
-                  fieldCreator={(field, onChange, readOnly) => {
-                    const validators = [notEmptyValidator]
-                    return (<React.Fragment>
-                      <input type="text"
-                             className={(!showValidation || allValid(validators, [field.typ.refClazzName]) ? "node-input" : "node-input node-input-with-error")}
-                             value={field.typ.refClazzName}
-                             onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}
-                             readOnly={readOnly}/>
-                        {showValidation && <ValidationLabels validators={validators} values={[field.typ.refClazzName]}/>}
-                    </React.Fragment>)
-                  }}
-                  onChange={(fields) => this.setNodeDataAt("parameters", fields)}
-                  newValue={{name: "", typ: {refClazzName: ""}}}
-                  isMarked={index => this.isMarked(`parameters[${index}].name`) || this.isMarked(`parameters[${index}].typ.refClazzName`)}
-                  showValidation={showValidation}
-                  readOnly={!this.props.isEditMode}
-                />
-              </div>
-            </div>
-            {this.descriptionField()}
-          </div>
+          <SubprocessInputDefinition
+            addElement={this.addElement}
+            onChange={this.setNodeDataAt}
+            node={this.state.editedNode}
+            isMarked={this.isMarked}
+            readOnly={!this.props.isEditMode}
+            removeElement={this.removeElement}
+            toogleCloseOnEsc={this.props.toogleCloseOnEsc}
+            showValidation={showValidation}
+            errors={fieldErrors}
+            renderFieldLabel={this.renderFieldLabel}
+          />
         )
       case 'SubprocessOutputDefinition':
         return (
@@ -207,7 +193,6 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
@@ -224,7 +209,6 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
-            {this.createReadonlyField("input", "Subprocess Id", "ref.id")}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
               processDefinitionData={this.props.processDefinitionData}
@@ -255,7 +239,6 @@ export class NodeDetailsContent extends React.Component {
             {
               this.showOutputVar && this.createField("input", "Output", "outputVar", false, [notEmptyValidator, errorValidator(fieldErrors, "outputVar")], "outputVar", false, null)
             }
-            {this.createReadonlyField("input", "Node type", "nodeType")}
             {NodeUtils.nodeType(this.props.node) === 'Join' &&
             <BranchParameters
               onChange={this.setNodeDataAt}
@@ -278,6 +261,7 @@ export class NodeDetailsContent extends React.Component {
         )
       case 'VariableBuilder':
         return <MapVariable
+          renderFieldLabel={this.renderFieldLabel}
           removeElement={this.removeElement}
           onChange={this.setNodeDataAt}
           node={this.state.editedNode}
@@ -289,6 +273,7 @@ export class NodeDetailsContent extends React.Component {
         />;
       case 'Variable':
         return <Variable
+          renderFieldLabel={this.renderFieldLabel}
           onChange={this.setNodeDataAt}
           node={this.state.editedNode}
           isMarked={this.isMarked}
@@ -401,7 +386,6 @@ export class NodeDetailsContent extends React.Component {
     return (
       <div className="node-table-body">
         {this.createField("input", "Id", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "Id")])}
-        {this.createReadonlyField("input", "Ref Type", "ref.typ")}
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
@@ -506,70 +490,17 @@ export class NodeDetailsContent extends React.Component {
   doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked, key, autofocus = false, validators = []) => {
     const readOnly = !this.props.isEditMode || forceReadonly
     const showValidation = this.props.showValidation
-    switch (fieldType) {
-      case 'input':
-        return (
-          <div className="node-row" key={key}>
-            {this.renderFieldLabel(fieldLabel)}
-            <div className={"node-value"}>
-              <div className={isMarked ? " marked" : ""}>
-                {
-                  readOnly ?
-                    <div className="read-only" title={fieldValue}>{fieldValue}</div> :
-                    <input
-                      autoFocus={autofocus}
-                      type="text"
-                      className={!showValidation || allValid(validators, [fieldValue]) ? "node-input" : "node-input node-input-with-error"}
-                      value={fieldValue || ""}
-                      onChange={(e) => handleChange(e.target.value)}
-                    />
-                }
-              </div>
-              {showValidation && <ValidationLabels validators={validators} values={[fieldValue]}/>}
-            </div>
-          </div>
-        )
-      case 'checkbox': {
-        return (
-          <div className="node-row" key={key}>
-            {this.renderFieldLabel(fieldLabel)}
-            <div className={"node-value" + (isMarked ? " marked" : "")}>
-              <input
-                  autoFocus={autofocus}
-                  type="checkbox"
-                  checked={fieldValue || false}
-                  onChange={(e) => handleChange(e.target.checked)}
-                  disabled={readOnly ? 'disabled' : ''}
-              />
-            </div>
-          </div>
-        )
-      }
-      case 'plain-textarea':
-        return (
-          <div className="node-row" key={key}>
-            {this.renderFieldLabel(fieldLabel)}
-            <div className={"node-value" + (isMarked ? " marked" : "")}>
-              <Textarea
-                autoFocus={autofocus}
-                rows={1}
-                cols={50}
-                className={(!showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
-                value={fieldValue || ""}
-                onChange={(e) => handleChange(e.target.value)}
-                readOnly={readOnly}
-              />
-            </div>
-            {showValidation && <ValidationLabels validators={validators} values={[fieldValue]}/>}
-          </div>
-        )
-      default:
-        return (
-          <div key={key}>
-            Field type not known...
-          </div>
-        )
-    }
+
+    return <Field fieldType={fieldType}
+                  renderFieldLabel={() => this.renderFieldLabel(fieldLabel)}
+                  isMarked={isMarked}
+                  readOnly={readOnly}
+                  value={fieldValue || ""}
+                  autofocus={autofocus}
+                  showValidation={showValidation}
+                  validators={validators}
+                  onChange={handleChange}
+                  className={(!showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}/>
   }
 
   getRestriction = (fieldName) => {

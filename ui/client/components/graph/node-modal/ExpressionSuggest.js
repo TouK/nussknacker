@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import ReactDOMServer from 'react-dom/server'
 import {connect} from 'react-redux';
 import _ from 'lodash';
-import ActionsUtils from '../../actions/ActionsUtils';
-import ProcessUtils from '../../common/ProcessUtils';
+import ActionsUtils from '../../../actions/ActionsUtils';
+import ProcessUtils from '../../../common/ProcessUtils';
 import ExpressionSuggester from './ExpressionSuggester'
 
 import AceEditor from 'react-ace';
@@ -13,12 +13,12 @@ import 'brace/mode/jsx';
 import 'brace/ext/language_tools'
 import 'brace/ext/searchbox';
 
-import '../../brace/mode/spel'
-import '../../brace/mode/sql'
-import '../../brace/theme/nussknacker'
-import ValidationLabels from "../modals/ValidationLabels";
-import {allValid} from "../../common/Validators";
-import HttpService from "../../http/HttpService"
+import '../../../brace/mode/spel'
+import '../../../brace/mode/sql'
+import '../../../brace/theme/nussknacker'
+import ValidationLabels from "../../modals/ValidationLabels";
+import {allValid} from "../../../common/Validators";
+import HttpService from "../../../http/HttpService";
 
 //to reconsider
 // - respect categories for global variables?
@@ -105,18 +105,12 @@ class ExpressionSuggest extends React.Component {
   }
 
   render() {
-    const {isMarked} = this.props
     if (this.props.dataResolved) {
-      const showValidation = this.props.showValidation;
+      const {isMarked, showValidation, inputProps, validators} = this.props
       return (
         <div>
-          <div style={{paddingTop: 8,
-                       paddingBottom: 8,
-                       paddingLeft: 10,
-                       paddingRight: 10,
-                       backgroundColor: '#333'}}
-               className={(!showValidation || allValid(this.props.validators, [this.state.value]) ? "" : "node-input-with-error ") + (isMarked ? " marked" : "")}>
-            <AceEditor mode={this.props.inputProps.language}
+          <div className={"row-ace-editor" + (!showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error ") + (isMarked ? " marked" : "")}>
+            <AceEditor mode={inputProps.language}
                        width={"100%"}
                        minLines={1}
                        maxLines={50}
@@ -140,10 +134,10 @@ class ExpressionSuggest extends React.Component {
                          showLineNumbers: false,
                          fontSize: 16,
                          fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
-                         readOnly: this.props.inputProps.readOnly
+                         readOnly: inputProps.readOnly
                        }}/>
           </div>
-          {showValidation && <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
+          {showValidation && <ValidationLabels validators={validators} values={[this.state.value]}/>}
         </div>
       )
     } else {
@@ -154,11 +148,12 @@ class ExpressionSuggest extends React.Component {
 }
 
 function mapState(state, props) {
+  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, 'processCategory')
   const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: {typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation
   const variablesForNode = state.graphReducer.nodeToDisplay.id || _.get(state.graphReducer, ".edgeToDisplay.to") || null
-  const variables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition, props.fieldName)
+  const variables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition, props.fieldName, processCategory)
 
   return {
     typesInformation: typesInformation,

@@ -4,21 +4,19 @@ import Modal from 'react-modal';
 import _ from 'lodash';
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import ActionsUtils from '../../actions/ActionsUtils';
-import NodeUtils from './NodeUtils';
+import ActionsUtils from '../../../actions/ActionsUtils';
+import NodeUtils from '../NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
-import EspModalStyles from '../../common/EspModalStyles'
-import TestResultUtils from '../../common/TestResultUtils'
+import NodeDetailsModalHeader from './NodeDetailsModalHeader'
+import TestResultUtils from '../../../common/TestResultUtils'
 import {Scrollbars} from "react-custom-scrollbars";
-import cssVariables from "../../stylesheets/_variables.styl";
-import {BareGraph} from "./Graph";
-import HttpService from "../../http/HttpService";
-import SvgDiv from "../SvgDiv"
-import ProcessUtils from "../../common/ProcessUtils";
+import cssVariables from "../../../stylesheets/_variables.styl";
+import {BareGraph} from "../Graph";
+import HttpService from "../../../http/HttpService";
+import ProcessUtils from "../../../common/ProcessUtils";
 import PropTypes from 'prop-types';
-import nodeAttributes from "../../assets/json/nodeAttributes"
 import Draggable from "react-draggable";
-import {preventFromMoveSelectors} from "../modals/GenericModalDialog";
+import {preventFromMoveSelectors} from "../../modals/GenericModalDialog";
 
 class NodeDetailsModal extends React.Component {
 
@@ -33,7 +31,8 @@ class NodeDetailsModal extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      pendingRequest: false
+      pendingRequest: false,
+      shouldCloseOnEsc: true,
     };
   }
 
@@ -85,10 +84,6 @@ class NodeDetailsModal extends React.Component {
     )
   }
 
-  nodeAttributes = () => {
-    return nodeAttributes[NodeUtils.nodeType(this.props.nodeToDisplay)];
-  }
-
   updateNodeState = (newNodeState) => {
     this.setState( { editedNode: newNodeState})
   }
@@ -96,19 +91,19 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return ([
       this.isGroup() ? this.renderGroupUngroup() : null,
-      <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
-        Close
+      <button key="2" type="button" title="Cancel node details" className='modalButton' onClick={this.closeModal}>
+        Cancel
       </button>,
       !this.props.readOnly ?
           <LaddaButton
               key="1"
-              title="Save node details"
+              title="Apply node details"
               className='modalButton pull-right modalConfirmButton'
               loading={this.state.pendingRequest}
               data-style='zoom-in'
               onClick={this.performNodeEdit}
           >
-            Save
+            Apply
           </LaddaButton>
           :
           null
@@ -161,51 +156,40 @@ class NodeDetailsModal extends React.Component {
     return (<BareGraph processCounts={subprocessCounts} processToDisplay={this.state.subprocessContent}/>)
   }
 
-  renderDocumentationIcon() {
-    const docsUrl = this.props.nodeSetting.docsUrl
-    return docsUrl ?
-      <a className="docsIcon" target="_blank" href={docsUrl} title="Documentation">
-        <SvgDiv svgFile={'documentation.svg'}/>
-      </a> : null
-  }
-
-  variableLanguage = (node) => {
-    return _.get(node, 'value.language')
+  toogleCloseModalOnEsc = () => {
+    this.setState({
+      shouldCloseOnEsc: !this.state.shouldCloseOnEsc,
+    })
   }
 
   render() {
-    const isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
-    const titleStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
-    const testResults = (id) => TestResultUtils.resultsForNode(this.props.testResults, id)
-    const variableLanguage = this.variableLanguage(this.props.nodeToDisplay)
-    const modelHeader = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + this.nodeAttributes().name
+    const {nodeErrors, nodeToDisplay, nodeSetting, readOnly, showNodeDetailsModal, testResults} = this.props
+    const isOpen = !_.isEmpty(nodeToDisplay) && showNodeDetailsModal
+    const nodeTestResults = (id) => TestResultUtils.resultsForNode(testResults, id)
 
     return (
       <div className="objectModal">
         <Modal shouldCloseOnOverlayClick={false}
+               shouldCloseOnEsc={this.state.shouldCloseOnEsc}
                isOpen={isOpen}
                onRequestClose={this.closeModal}>
           <div className="draggable-container">
             <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
               <div className="espModal">
-                <div className="modalHeader">
-                  <div className="modal-title" style={titleStyles}>
-                    <span>{modelHeader}</span>
-                  </div>
-                  {this.renderDocumentationIcon()}
-                </div>
+                <NodeDetailsModalHeader node={nodeToDisplay} docsUrl={nodeSetting.docsUrl}/>
                 <div className="modalContentDark" id="modal-content">
                   <Scrollbars hideTracksWhenNotNeeded={true} autoHeight
                               autoHeightMax={cssVariables.modalContentMaxHeight}
                               renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
                     {
-                      this.isGroup() ? this.renderGroup(testResults)
-                        : (<NodeDetailsContent isEditMode={!this.props.readOnly}
+                      this.isGroup() ? this.renderGroup(nodeTestResults)
+                        : (<NodeDetailsContent isEditMode={!readOnly}
                                                showValidation={true}
                                                node={this.state.editedNode}
-                                               nodeErrors={this.props.nodeErrors}
+                                               nodeErrors={nodeErrors}
                                                onChange={this.updateNodeState}
-                                               testResults={testResults(this.state.currentNodeId)}/>)
+                                               toogleCloseOnEsc={this.toogleCloseModalOnEsc}
+                                               testResults={nodeTestResults(this.state.currentNodeId)}/>)
                     }
                     {
                       //FIXME: adjust height of modal with subprocess in some reasonable way :|

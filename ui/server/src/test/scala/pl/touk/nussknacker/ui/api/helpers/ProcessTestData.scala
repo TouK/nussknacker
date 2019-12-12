@@ -186,7 +186,7 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", StreamMetaData(None, None, None), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List(), None)
+    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List(), None)
   }
 
   val sampleSubprocessOneOut = {
