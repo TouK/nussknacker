@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime, LocalTime, Period, ZonedDateTime}
 import java.util
+import java.util.Optional
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.{Encoder, Json}
+import javax.annotation.Nullable
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
@@ -44,15 +46,19 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.sample.JavaSampleEnum
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-object TestProcessConfigCreator {
+object DevProcessConfigCreator {
 
   val oneElementValue = "One element"
 
 }
 
-class TestProcessConfigCreator extends ProcessConfigCreator {
+/**
+ * This config creator is for purpose of development, for end-to-end tests
+ */
+class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config) = {
     val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
@@ -99,7 +105,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
           override def run(ctx: SourceContext[String]) = {
             while (run) {
-              if (!emited) ctx.collect(TestProcessConfigCreator.oneElementValue)
+              if (!emited) ctx.collect(DevProcessConfigCreator.oneElementValue)
               emited = true
               Thread.sleep(1000)
             }
@@ -184,7 +190,12 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "unionReturnObjectService" -> WithCategories(UnionReturnObjectService, "Category1", "Category2"),
       "listReturnObjectService" -> WithCategories(ListReturnObjectService, "Category1", "Category2"),
       "clientHttpService" -> WithCategories(new ClientFakeHttpService(), "Category1", "Category2"),
-      "echoEnumService" -> WithCategories(EchoEnumService, "Category1", "Category2")
+      "echoEnumService" -> WithCategories(EchoEnumService, "Category1", "Category2"),
+      // types
+      "simpleTypesService"  -> all(new SimpleTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+      "optionalTypesService"  -> all(new OptionalTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+      "collectionTypesService"  -> all(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+      "datesTypesService"  -> all(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types")))
     )
   }
 
@@ -200,7 +211,9 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "additionalVariable" -> WithCategories(AdditionalVariableTransformer, "Category1", "Category2"),
       "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2"),
       "union" -> WithCategories(UnionTransformer, "Category1", "Category2"),
-      "state" -> WithCategories(TransformStateTransformer, "Category1", "Category2")
+      "state" -> WithCategories(TransformStateTransformer, "Category1", "Category2"),
+      // types
+      "simpleTypesCustomNode" -> all(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
     )
   }
 
@@ -226,6 +239,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()),
       dictionaries = Map(dictId -> WithCategories(dictDef, "Category1", "Category2")))
   }
+
+  private def all[T](value: T) = WithCategories(value, "Category1", "Category2")
 
   override def buildInfo(): Map[String, String] = {
     Map(
@@ -449,3 +464,58 @@ object EchoEnumService extends Service {
 }
 
 @JsonCodec case class ConstantState(id: String, transactionId: Int, elements: List[String])
+
+// In custom stream by default all parameters are eagerly evaluated, you need to define type LazyParameter to make it lazy
+class SimpleTypesCustomStreamTransformer extends CustomStreamTransformer with Serializable {
+  @MethodToInvoke(returnType = classOf[Void])
+  def invoke(@ParamName("booleanParam") booleanParam: Boolean,
+             @ParamName("lazyBooleanParam") lazyBooleanParam: LazyParameter[Boolean],
+             @ParamName("stringParam") string: String,
+             @ParamName("intParam") intParam: Int,
+             @ParamName("bigDecimalParam") bigDecimalParam: java.math.BigDecimal,
+             @ParamName("bigIntegerParam") bigIntegerParam: java.math.BigInteger): Unit = {
+  }
+}
+
+// In services all parameters are lazy evaluated
+class SimpleTypesService extends Service with Serializable {
+  @MethodToInvoke
+  def invoke(@ParamName("booleanParam") booleanParam: Boolean,
+             @ParamName("stringParam") string: String,
+             @ParamName("intParam") intParam: Int,
+             @ParamName("bigDecimalParam") bigDecimalParam: java.math.BigDecimal,
+             @ParamName("bigIntegerParam") bigIntegerParam: java.math.BigInteger): Future[Unit] = {
+    ???
+  }
+}
+
+class OptionalTypesService extends Service with Serializable {
+  @MethodToInvoke
+  def invoke(@ParamName("scalaOptionParam") scalaOptionParam: Option[Int],
+             @ParamName("javaOptionalParam") javaOptionalParam: Optional[Int],
+             @ParamName("nullableParam") @Nullable nullableParam: Int): Future[Unit] = {
+    ???
+  }
+}
+
+class CollectionTypesService extends Service with Serializable {
+  @MethodToInvoke
+  def invoke(@ParamName("listParam") listParam: java.util.List[Int],
+             @ParamName("mapParam") mapParam: java.util.Map[String, Int]): Future[Unit] = {
+    ???
+  }
+}
+
+class DatesTypesService extends Service with Serializable {
+  @MethodToInvoke
+  def invoke(@ParamName("dateTimeParam") dateTimeParam: LocalDateTime,
+             @ParamName("dateParam") dateParam: LocalDate,
+             @ParamName("timeParam") timeParam: LocalTime,
+             @ParamName("zonedDataTimeParam") zonedDataTimeParam: ZonedDateTime,
+             @ParamName("durationParam") duration: Duration,
+             @ParamName("periodParam") period: Period,
+             @ParamName("cronScheduleParam") cronScheduleParam: String // TODO: add @Editor("cronSchedule")
+            ): Future[Unit] = {
+    ???
+  }
+}

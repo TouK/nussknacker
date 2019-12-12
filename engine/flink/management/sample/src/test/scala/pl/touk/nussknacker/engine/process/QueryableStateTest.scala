@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.{AvailablePortFinder, KafkaSpec, KafkaZookeeperServer}
-import pl.touk.nussknacker.engine.management.sample.TestProcessConfigCreator
+import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -28,7 +28,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
   private implicit val booleanTypeInfo: TypeInformation[lang.Boolean] = TypeInformation.of(classOf[java.lang.Boolean])
 
-  private val creator = new TestProcessConfigCreator
+  private val creator = new DevProcessConfigCreator
 
   private val taskManagersCount = 2
   private val config: Configuration = FlinkTestConfiguration.configuration(taskManagersCount = taskManagersCount)
@@ -66,14 +66,14 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
     def queryState(jobId: String): Future[Boolean] = client.fetchState[java.lang.Boolean](
       jobId = jobId,
       queryName = "single-lock-state",
-      key = TestProcessConfigCreator.oneElementValue).map(Boolean.box(_))
+      key = DevProcessConfigCreator.oneElementValue).map(Boolean.box(_))
 
     //we have to be sure the job is *really* working
     eventually {
       queryState(jobId.toString).futureValue shouldBe true
     }
     creator.signals(TestConfig(kafkaZookeeperServer)).values
-      .head.value.sendSignal(TestProcessConfigCreator.oneElementValue)(lockProcess.id)
+      .head.value.sendSignal(DevProcessConfigCreator.oneElementValue)(lockProcess.id)
 
     eventually {
       queryState(jobId.toString).futureValue shouldBe false

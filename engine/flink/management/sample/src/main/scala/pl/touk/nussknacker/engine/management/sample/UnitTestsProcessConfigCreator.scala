@@ -24,7 +24,10 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class DemoProcessConfigCreator extends ProcessConfigCreator {
+/**
+ * This config creator is for purpose of unit testing... maybe we should merge it with DevProcessConfigCreator?
+ */
+class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   val fraudDetection = "FraudDetection"
 
