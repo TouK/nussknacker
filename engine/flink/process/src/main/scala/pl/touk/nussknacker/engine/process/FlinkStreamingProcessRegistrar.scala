@@ -17,7 +17,7 @@ import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, ProcessFunction}
-import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator}
+import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator, StreamOperatorFactory}
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -70,18 +70,18 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
     usingRightClassloader(env) {
       register(env, compileProcess(process, processVersion), testRunId)
     }
-    //initializeStateDescriptors(env)
+    initializeStateDescriptors(env)
   }
 
+  //TODO: check if it's still valid in Flink 1.9
   //When serializing process graph (StateDescriptor:233) KryoSerializer is initialized without env configuration
   //Maybe it's a bug in flink??
-  //TODO: is it the only place where we should do it??
-  /*private def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
+  private def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
     val config = env.getConfig
-    env.getStreamGraph.getOperators.asScala.toSet[tuple.Tuple2[Integer, StreamOperator[_]]].map(_.f1).collect {
+    env.getStreamGraph.getAllOperatorFactory.asScala.toSet[tuple.Tuple2[Integer, StreamOperatorFactory[_]]].map(_.f1).collect {
       case window:WindowOperator[_, _, _, _, _] => window.getStateDescriptor.initializeSerializerUnlessSet(config)
     }
-  } */
+  }
 
   private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: ClassLoader => CompiledProcessWithDeps,
                        testRunId: Option[TestRunId]): Unit = {

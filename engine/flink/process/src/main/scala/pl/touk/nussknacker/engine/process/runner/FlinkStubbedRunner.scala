@@ -38,9 +38,6 @@ trait FlinkStubbedRunner {
     configuration.addAll(jobGraph.getJobConfiguration)
     configuration.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, env.getParallelism)
 
-    configuration.setInteger(JobManagerOptions.PORT, 0)
-    configuration.setString(RestOptions.BIND_PORT, "0")
-
     //FIXME: reversing flink default order
     configuration.setString(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
 
