@@ -29,13 +29,13 @@ export const Input = (props) => {
 
 Input.propTypes = {
   isMarked: PropTypes.bool,
-  readOnly: PropTypes.bool,
   value: PropTypes.string,
+  readOnly: PropTypes.bool,
   autoFocus: PropTypes.bool,
-  placeholder: PropTypes.string,
   showValidation: PropTypes.bool,
   validators: PropTypes.array,
-  onChange: PropTypes.func
+  onChange: PropTypes.func,
+  placeholder: PropTypes.string
 }
 
 
