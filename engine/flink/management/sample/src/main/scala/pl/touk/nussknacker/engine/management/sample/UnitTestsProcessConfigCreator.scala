@@ -20,12 +20,15 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFac
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
-import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator.{Notification, PageVisit, Transaction}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
+import UnitTestsProcessConfigCreator._
 
-object DemoProcessConfigCreator {
+/**
+ * This config creator is for purpose of unit testing... maybe we should merge it with DevProcessConfigCreator?
+ */
+object UnitTestsProcessConfigCreator {
 
   case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends WithFields {
     override def fields = List(msisdn, notificationType, finalCharge, tariffId, timestamp)
@@ -63,7 +66,7 @@ object DemoProcessConfigCreator {
 
 }
 
-class DemoProcessConfigCreator extends ProcessConfigCreator {
+class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   val fraudDetection = "FraudDetection"
 

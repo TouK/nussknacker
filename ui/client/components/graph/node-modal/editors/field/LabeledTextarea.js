@@ -24,16 +24,16 @@ export const LabeledTextarea = (props) => {
 }
 
 LabeledTextarea.propTypes = {
-  autoFocus: PropTypes.bool,
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  className: PropTypes.string,
+  renderFieldLabel: PropTypes.func.isRequired,
   isMarked: PropTypes.bool,
   readOnly: PropTypes.bool,
+  value: PropTypes.string.isRequired,
+  autoFocus: PropTypes.bool,
+  showValidation: PropTypes.bool,
+  onChange: PropTypes.func.isRequired,
+  className: PropTypes.string,
   rows: PropTypes.number,
-  cols: PropTypes.number,
-  renderFieldLabel: PropTypes.func.isRequired,
-  showValidation: PropTypes.bool
+  cols: PropTypes.number
 }
 
 LabeledTextarea.defaultProps = {

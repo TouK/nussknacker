@@ -500,7 +500,9 @@ export class NodeDetailsContent extends React.Component {
                   showValidation={showValidation}
                   validators={validators}
                   onChange={handleChange}
-                  className={(!showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}/>
+                  className={(!showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
+                  placeholder={""} // FIXME: what should be here?
+    />
   }
 
   getRestriction = (fieldName) => {
