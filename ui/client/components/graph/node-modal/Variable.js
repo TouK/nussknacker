@@ -13,7 +13,7 @@ const Variable = (props) => {
 
   return (
     <div className="node-table-body node-variable-builder-body">
-      <LabeledInput renderFieldLabel={() => renderFieldLabel("Id")}
+      <LabeledInput renderFieldLabel={() => renderFieldLabel("Name")}
                     value={node.id}
                     onChange={(event) => onChange("id", event.target.value)}
                     isMarked={isMarked("id")} readOnly={readOnly}

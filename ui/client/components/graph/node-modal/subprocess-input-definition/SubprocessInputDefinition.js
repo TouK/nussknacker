@@ -47,7 +47,7 @@ class SubprocessInputDefinition extends React.Component {
 
     return (
       <div className="node-table-body">
-        <LabeledInput renderFieldLabel={() => renderFieldLabel("Id")}
+        <LabeledInput renderFieldLabel={() => renderFieldLabel("Name")}
                       value={node.id}
                       path="id"
                       onChange={onChange}
