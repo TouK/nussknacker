@@ -237,15 +237,11 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
     .node-row
       margin-bottom: 14px
       margin-top: 14px
+      display flex
     .movable-row
       display flex
       margin-top 0
       margin-bottom 14px
-      img
-        padding-top 10px
-        padding-bottom 25px
-        margin-top auto
-        margin-bottom auto
     .node-label
       color: modalLabelTextColor
       width: labelWidth
@@ -271,7 +267,7 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         border 1px solid okColor
         padding 5px
     .node-value
-      width: 100% - labelWidth
+      width: 95% - labelWidth
       display: inline-block
       color: #686868
       textarea
@@ -547,6 +543,23 @@ espPanelButton()
   padding-left: 10px
   padding-right: 10px
   background-color: #333
+  min-height 35px
+
+.inlined
+  display inline-block
+
+.switch-icon
+  height 24px
+  width 24px
+  margin-top 5px
+  margin-left 5px
+  cursor pointer
+  background-color modalBkgColor
+  border none
+  padding 0
+  &:hover
+    .cls-switch
+      fill lighten(#999, 15%)
 
 .testResultsSummary
   color #ccc
@@ -662,14 +675,38 @@ espPanelButton()
       width: 7%
 
 .branch-parameter-row
-  margin-top 7px
-  margin-bottom 8px
+  margin-top 0
+  margin-bottom 0
   display flex
-  & .read-only
+  & .branch-param-label
     color #ccc
     font-weight 400
     font-size 14px
-    padding 10px 20px 0 20px
+    padding 8px 10px 8px 10px
+    width 30%
+
+.branch-parameter-expr-container
+  width 100%
+
+.branch-parameter-expr
+  display inline-flex
+  width 100%
+  .node-value
+    width 100% !important
+
+.branch-parameter-expr-value
+  width 100%
+  display inline-block
+
+.branch-param-select
+  width 100%
+  padding 0 10px
+  border none
+  background-color #333
+  color #ccc
+  font-weight 400
+  font-size 16px
+
 
 .drop-down-menu-placeholder
   height 100px

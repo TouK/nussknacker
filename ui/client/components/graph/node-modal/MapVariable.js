@@ -43,7 +43,8 @@ const MapVariable = (props) => {
            addField={addField}
            isMarked={isMarked}
            readOnly={readOnly}
-           showValidation={showValidation}/>
+           showValidation={showValidation}
+           showSwitch={false}/>
 
       <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
                        value={_.get(props.node, "additionalFields.description", "")}
@@ -62,7 +63,8 @@ MapVariable.propTypes = {
   addElement: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
-  showValidation: PropTypes.bool.isRequired
+  showValidation: PropTypes.bool.isRequired,
+  showSwitch: PropTypes.bool
 }
 
 MapVariable.defaultProps = {

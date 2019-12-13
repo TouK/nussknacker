@@ -1,11 +1,11 @@
 import PropTypes from "prop-types"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
-import ExpressionInput from "./ExpressionInput"
 import React from "react"
 import _ from "lodash"
 import {errorValidator, notEmptyValidator} from "../../../common/Validators"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import LabeledInput from "./editors/field/LabeledInput"
+import EditableExpression, {rawEditor} from "./editors/expression/EditableExpression"
 
 const Variable = (props) => {
 
@@ -26,14 +26,16 @@ const Variable = (props) => {
                     readOnly={readOnly}
                     showValidation={showValidation}
                     validators={[notEmptyValidator, errorValidator(errors, "varName")]}/>
-      <ExpressionInput
-        name="expression"
-        label="Expression"
-        value={node.value}
-        path="value.expression"
-        onChange={onChange}
+      <EditableExpression
+        fieldType={rawEditor}
+        fieldName="Expression"
+        fieldLabel={"Expression"}
+        renderFieldLabel={renderFieldLabel}
+        expressionObj={node.value}
+        onValueChange={((value) => onChange("value.expression", value))}
         readOnly={readOnly}
         showValidation={showValidation}
+        showSwitch={false}
         validators={[notEmptyValidator, errorValidator(errors, DEFAULT_EXPRESSION_ID)]}
       />
       <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
@@ -52,7 +54,8 @@ Variable.propTypes = {
   isMarked: PropTypes.func.isRequired,
   node: PropTypes.object.isRequired,
   onChange: PropTypes.func.isRequired,
-  showValidation: PropTypes.bool.isRequired
+  showValidation: PropTypes.bool.isRequired,
+  showSwitch: PropTypes.bool
 }
 
 Variable.defaultProps = {

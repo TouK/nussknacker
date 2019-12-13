@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _ from 'lodash'
 import "ladda/dist/ladda.min.css"
-import ExpressionSuggest from './ExpressionSuggest'
 import ModalRenderUtils from "./ModalRenderUtils"
-import {notEmptyValidator} from "../../../common/Validators";
+import {notEmptyValidator} from "../../../common/Validators"
+import EditableExpression from "./editors/expression/EditableExpression"
 
 export default class EdgeDetailsContent extends React.Component {
   static propTypes = {
@@ -13,7 +13,8 @@ export default class EdgeDetailsContent extends React.Component {
     updateEdgeProp: PropTypes.func.isRequired,
     changeEdgeTypeValue: PropTypes.func.isRequired,
     pathsToMark: PropTypes.array,
-    showValidation: PropTypes.bool.isRequired
+    showValidation: PropTypes.bool.isRequired,
+    showSwitch: PropTypes.bool.isRequired
   }
 
   isMarked = (path) => {
@@ -57,7 +58,7 @@ export default class EdgeDetailsContent extends React.Component {
   }
 
   render() {
-    const { edge, readOnly, updateEdgeProp, showValidation} = this.props
+    const {edge, readOnly, updateEdgeProp, showValidation, showSwitch} = this.props
 
     switch (_.get(edge.edgeType, 'type')) {
       case "SwitchDefault": {
@@ -65,29 +66,26 @@ export default class EdgeDetailsContent extends React.Component {
       }
       case "NextSwitch": {
         return this.baseModalContent(
-          <div className="node-row">
-            <div className="node-label">Expression</div>
-            <div className={"node-value"}>
-              <ExpressionSuggest
-                inputProps={{
-                  rows: 1,
-                  cols: 50,
-                  className: "node-input",
-                  value: edge.edgeType.condition.expression,
-                  onValueChange: (newValue) => updateEdgeProp("edgeType.condition.expression", newValue),
-                  language: edge.edgeType.condition.language, readOnly: readOnly}}
-                validators={[notEmptyValidator]}
-                isMarked={this.isMarked("edgeType.condition.expression")}
-                showValidation={showValidation}
-              />
-            </div>
-          </div>
+          <EditableExpression
+            fieldType={"expression"}
+            fieldLabel={"Expression"}
+            renderFieldLabel={this.renderFieldLabel}
+            expressionObj={{expression: edge.edgeType.condition.expression, language: edge.edgeType.condition.language}}
+            readOnly={readOnly}
+            validators={[notEmptyValidator]}
+            isMarked={this.isMarked("edgeType.condition.expression")}
+            showValidation={showValidation}
+            showSwitch={showSwitch}
+            onValueChange={(newValue) => updateEdgeProp("edgeType.condition.expression", newValue)}
+          />
         )
       }
       default:
         return ''
     }
   }
+
+  renderFieldLabel = (label) => <div className="node-label">{label}</div>
 }
 
 const edgeName = (edge) => edge.from + "-" + edge.to
