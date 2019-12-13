@@ -8,6 +8,19 @@ import HttpService from "../http/HttpService"
 import * as ProcessStateUtils from "../common/ProcessStateUtils"
 import Metrics from "./Metrics";
 
+const DeploymentAction = {
+  CANCEL: "CANCEL",
+  DEPLOY: "CANCEL",
+
+  isDeployed: (action) => {
+    return action != null && action.upperCase === DeploymentAction.DEPLOY
+  },
+
+  isCanceled: (action) => {
+    return action != null && action.upperCase === DeploymentAction.CANCEL
+  }
+}
+
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
   shouldReloadStatuses = false
@@ -161,20 +174,19 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   processStatusClass = (process) => {
     const processName = process.name
-    const shouldRun = process.currentlyDeployedAt.length > 0
+    const shouldRun = !_.isNull(process.deploymentInfo)
     return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
   processStatusTitle = (process) => {
     const processName = process.name
-    const shouldRun = process.currentlyDeployedAt.length > 0
+    const shouldRun = DeploymentAction.isDeployed(_.get(process, 'deployment.action'))
     return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
   getIntervalTime() {
     return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
   }
-
 }
 
 const defaultProcessesSearchParams = {isSubprocess: false, isArchived: false}

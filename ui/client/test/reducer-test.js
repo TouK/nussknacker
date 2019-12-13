@@ -180,6 +180,8 @@ const baseProcessState = {
   "processType": "graph",
   "processCategory": "Category1",
   "modificationDate": "2017-02-14T11:16:56.686",
+  "createdAt": "2017-02-14T11:16:56.686",
+  "createdBy": "admin",
   "tags": [],
   "currentlyDeployedAt": [
     "test"

@@ -123,13 +123,15 @@ class Processes extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={['name', 'category', 'modifyDate']}
+          sortable={['name', 'category', 'modifyDate', 'createDate', 'createdBy']}
           filterable={['name', 'category']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
             {key: 'name', label: 'Name'},
             {key: 'category', label: 'Category'},
+            {key: 'createdBy', label: 'Created By'},
+            {key: 'createdAt', label: 'Created at'},
             {key: 'modifyDate', label: 'Last modification'},
             {key: 'status', label: 'Status'},
             {key: 'edit', label: 'Edit'},
@@ -149,9 +151,11 @@ class Processes extends BaseProcesses {
                   />
                 </Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate"
-                    className="centered-column"
-                    value={process.modificationDate}>
+                <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>
+                <Td column="createdAt" className="centered-column" value={process.createdAt}>
+                  <Date date={process.createdAt}/>
+                </Td>
+                <Td column="modifyDate" className="centered-column" value={process.modificationDate}>
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="status" className="status-column">

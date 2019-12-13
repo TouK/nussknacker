@@ -119,7 +119,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
       process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
       _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value.toString)))
       processesVersionCount <- rightT(processVersionsTableNoJson.filter(p => p.processId === processId.value).length.result)
-      latestProcessVersion <- rightT(latestProcessVersions(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)
+      latestProcessVersion <- rightT(fetchProcessLatestVersions(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)
       newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType)))
       _ <- EitherT.right[EspError](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield newProcessVersion

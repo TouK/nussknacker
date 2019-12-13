@@ -157,11 +157,11 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Query(("businessView", businessView.toString)))
   }
 
-  private def fetchProcessesDetails(names: List[String])(implicit ec: ExecutionContext) = EitherT {
+  private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
     invokeJson[List[ValidatedProcessDetails]](
       HttpMethods.GET,
       "processesDetails" :: Nil,
-      Query(("names", names.map(URLEncoder.encode(_, StandardCharsets.UTF_8.displayName())).mkString(",")))
+      Query(("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8.displayName())).mkString(",")))
     )
   }
 

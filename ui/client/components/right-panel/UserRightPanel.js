@@ -369,7 +369,7 @@ class UserRightPanel extends Component {
     )
   }
 
-  isRunning = () => this.props.fetchedProcessDetails && (this.props.fetchedProcessDetails.currentlyDeployedAt || []).length > 0
+  isRunning = () => _.get(this.props.fetchedProcessDetails, "deployment") !== null
 
   showProperties = () => {
     this.props.actions.displayModalNodeDetails(

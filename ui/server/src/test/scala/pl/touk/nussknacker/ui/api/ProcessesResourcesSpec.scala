@@ -216,14 +216,14 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     Get(s"/processes?isDeployed=true") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val data =responseAs[List[BasicProcess]]
-      data.map{proc => proc.name}.contains(thirdProcessor.value) shouldBe true
+      data.map{proc => proc.name}.contains(thirdProcessor) shouldBe true
       data.size shouldBe 1
     }
 
     Get(s"/processes?isDeployed=false") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val data =responseAs[List[BasicProcess]]
-      data.map{proc => proc.name}.contains(thirdProcessor.value) shouldBe false
+      data.map{proc => proc.name}.contains(thirdProcessor) shouldBe false
       data.size shouldBe 2
     }
   }
@@ -285,7 +285,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
       val resp =responseAs[List[BasicProcess]]
       withClue(resp) {
-        resp.count(_.name == SampleProcess.process.id) shouldBe 1
+        resp.count(_.name.value == SampleProcess.process.id) shouldBe 1
       }
     }
   }
@@ -305,7 +305,6 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
       responseAs[String] should include(SampleProcess.process.id)
     }
-
   }
 
   test("not return processes not in user categories") {

@@ -73,13 +73,14 @@ class CustomProcesses extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={['name', 'category', 'modifyDate']}
+          sortable={['name', 'category', 'modifyDate', 'createDate']}
           filterable={['name', 'category']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
             {key: 'name', label: 'Process name'},
             {key: 'category', label: 'Category'},
+            {key: 'createdAt', label: 'Created at'},
             {key: 'modifyDate', label: 'Last modification'},
             {key: 'status', label: 'Status'},
             {key: 'deploy', label: 'Deploy'},
@@ -92,9 +93,10 @@ class CustomProcesses extends BaseProcesses {
                 <Tr className="row-hover" key={index}>
                   <Td column="name">{process.name}</Td>
                   <Td column="category">{process.processCategory}</Td>
-                  <Td column="modifyDate"
-                      className="centered-column"
-                      value={process.modificationDate}>
+                  <Td column="createdAt" className="centered-column" value={process.createdAt}>
+                    <Date date={process.createdAt}/>
+                  </Td>
+                  <Td column="modifyDate" className="centered-column" value={process.modificationDate}>
                     <Date date={process.modificationDate}/>
                   </Td>
                   <Td column="status" className="status-column">

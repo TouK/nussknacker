@@ -99,9 +99,10 @@ object ProcessTestData {
       processingType = TestProcessingTypes.Streaming,
       processCategory = "Category",
       modificationDate = LocalDateTime.now(),
+      createdAt = LocalDateTime.now(),
+      createdBy = "user1",
       tags = List(),
-      currentlyDeployedAt = List(),
-      currentDeployment = None,
+      deployment = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None
@@ -120,15 +121,14 @@ object ProcessTestData {
       processingType = TestProcessingTypes.Streaming,
       processCategory = "Category",
       modificationDate = LocalDateTime.now(),
+      createdAt = LocalDateTime.now(),
+      createdBy = "user1",
       tags = List(),
-      currentlyDeployedAt = List(),
-      currentDeployment = None,
+      deployment = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None
     )
-
-
 
   import spel.Implicits._
 
