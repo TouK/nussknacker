@@ -130,7 +130,7 @@ class Processes extends BaseProcesses {
           columns={[
             {key: 'name', label: 'Name'},
             {key: 'category', label: 'Category'},
-            {key: 'createdBy', label: 'Created By'},
+            {key: 'createdBy', label: 'Created by'},
             {key: 'createdAt', label: 'Created at'},
             {key: 'modifyDate', label: 'Last modification'},
             {key: 'status', label: 'Status'},
@@ -159,10 +159,7 @@ class Processes extends BaseProcesses {
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  <div
-                    className={this.processStatusClass(process)}
-                    title={this.processStatusTitle(process)}
-                  />
+                  <div className={this.processStatusClass(process)} title={this.processStatusTitle(process)} />
                 </Td>
                 <Td column="edit" className="edit-column">
                   <Glyphicon glyph="edit"

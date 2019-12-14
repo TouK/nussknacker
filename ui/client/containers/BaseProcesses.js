@@ -6,18 +6,18 @@ import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingC
 import history from "../history"
 import HttpService from "../http/HttpService"
 import * as ProcessStateUtils from "../common/ProcessStateUtils"
-import Metrics from "./Metrics";
+import Metrics from "./Metrics"
 
 const DeploymentAction = {
   CANCEL: "CANCEL",
-  DEPLOY: "CANCEL",
+  DEPLOY: "DEPLOY",
 
   isDeployed: (action) => {
-    return action != null && action.upperCase === DeploymentAction.DEPLOY
+    return action != null && action.toUpperCase() === DeploymentAction.DEPLOY
   },
 
   isCanceled: (action) => {
-    return action != null && action.upperCase === DeploymentAction.CANCEL
+    return action != null && action.toUpperCase() === DeploymentAction.CANCEL
   }
 }
 
@@ -100,9 +100,9 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   loadAllClashedNames() {
-    this.loadClashedNames(defaultProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
-    this.loadClashedNames(defaultSubProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
-    this.loadClashedNames(defaultArchivedProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
+    this.loadClashedNames(defaultProcessesSearchParams, (data) => HttpService.fetchProcesses(data))
+    this.loadClashedNames(defaultSubProcessesSearchParams, (data) => HttpService.fetchProcesses(data))
+    this.loadClashedNames(defaultArchivedProcessesSearchParams, (data) => HttpService.fetchProcesses(data))
     this.loadClashedNames({}, () => HttpService.fetchCustomProcesses())
   }
 
@@ -112,7 +112,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     fetch(data).then(response => {
       this.setState((prevState, props) => ({
         clashedNames: prevState.clashedNames.concat(response.data.map(process => process.name))
-      }));
+      }))
     })
   }
 
@@ -174,7 +174,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   processStatusClass = (process) => {
     const processName = process.name
-    const shouldRun = !_.isNull(process.deploymentInfo)
+    const shouldRun = DeploymentAction.isDeployed(_.get(process, 'deployment.action'))
     return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 

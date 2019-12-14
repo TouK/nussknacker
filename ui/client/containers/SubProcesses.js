@@ -78,8 +78,8 @@ class SubProcesses extends BaseProcesses {
           columns={[
             {key: 'name', label: 'Process name'},
             {key: 'category', label: 'Category'},
-            {key: 'createdBy', label: 'Created By'},
-            {key: 'createdAt', label: 'Created at'},
+            {key: 'createdBy', label: 'Created by'},
+            {key: 'createdAt', label: 'Created'},
             {key: 'modifyDate', label: 'Last modification'},
             {key: 'edit', label: 'Edit'}
           ]}

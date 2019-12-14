@@ -29,7 +29,7 @@ trait ProcessDeploymentInfoEntityFactory {
   class ProcessDeploymentInfoEntity(tag: Tag) extends Table[DeployedProcessInfoEntityData](tag, "process_deployment_info") {
     def processId: Rep[Long] = column[Long]("process_id", NotNull)
 
-    def processVersionId: Rep[Option[Long]] = column[Option[Long]]("process_version_id", Nullable)
+    def processVersionId: Rep[Long] = column[Long]("process_version_id", Nullable)
 
     def deployedAt: Rep[Timestamp] = column[Timestamp]("deploy_at", NotNull)
 
@@ -46,7 +46,7 @@ trait ProcessDeploymentInfoEntityFactory {
     def pk = primaryKey("pk_deployed_process_version", (processId, processVersionId, environment, deployedAt))
 
     def processes_fk: ForeignKeyQuery[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData] = foreignKey("proc_ver_in_deployed_proc_fk", (processId, processVersionId), processVersionsTable)(
-      procV => (procV.processId, procV.id.?),
+      procV => (procV.processId, procV.id),
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.NoAction
     )
@@ -69,7 +69,7 @@ trait ProcessDeploymentInfoEntityFactory {
 }
 
 case class DeployedProcessInfoEntityData(processId: Long,
-                                         processVersionId: Option[Long],
+                                         processVersionId: Long,
                                          environment: String,
                                          user: String,
                                          deployedAt: Timestamp,

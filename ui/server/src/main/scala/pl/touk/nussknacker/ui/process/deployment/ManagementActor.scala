@@ -122,7 +122,7 @@ class ManagementActor(environment: String,
                                  actionFuture: => Future[DeployedProcessInfoEntityData]): Future[DeployedProcessInfoEntityData] = {
     beingDeployed += id.name -> DeployInfo(user.id, System.currentTimeMillis(), action)
     actionFuture.onComplete {
-      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId.get, comment,details.deployedAtTime, details.deploymentAction)))
+      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, comment,details.deployedAtTime, details.deploymentAction)))
       case Failure(ex) => self ! DeploymentActionFinished(id, user, Left(ex))
     }
     actionFuture

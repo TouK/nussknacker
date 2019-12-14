@@ -95,18 +95,15 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       deploymentsPerEnv <- deploymentsInfoPerEnvironment.result
       latestProcesses <- fetchLatestProcesses(query, deploymentsPerEnv, isDeployed).result
     } yield
-      latestProcesses.map { case ((_, processVersion), process) =>
-        val processDetails = createFullDetails(
-          process,
-          processVersion,
-          versionsPerProcess.collectFirst { case (processId, versionData) if processId == process.id => versionData }.getOrElse(throw new  IllegalStateException("Process without version shouldn't exist")),
-          deploymentsPerEnv.filter(_._1 == process.id).map(_._2),
-          tags = List.empty,
-          history = List.empty,
-          isLatestVersion = true
-        )
-        processDetails
-      }).map(_.toList)
+      latestProcesses.map { case ((_, processVersion), process) => createFullDetails(
+        process,
+        processVersion,
+        versionsPerProcess.collectFirst { case (processId, versionData) if processId == process.id => versionData }.getOrElse(throw new  IllegalStateException("Process without version shouldn't exist")),
+        deploymentsPerEnv.filter(_._1 == process.id).map(_._2),
+        tags = List.empty,
+        history = List.empty,
+        isLatestVersion = true
+      )}).map(_.toList)
   }
 
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean)
@@ -148,7 +145,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       .on { case (deployment, comment) => deployment.commentId === comment.id }
       .sortBy(_._1.deployedAt.desc)
       .result.map(_.map { case (de, comment) => DeploymentHistoryEntry(
-        processVersionId = de.processVersionId.getOrElse(0),
+        processVersionId = de.processVersionId,
         time = de.deployedAtTime,
         user = de.user,
         deploymentAction = de.deploymentAction,

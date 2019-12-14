@@ -84,12 +84,12 @@ object ProcessRepository {
     createDate = DateUtils.toLocalDateTime(processVersion.createDate),
     user = processVersion.user,
     deployments = allDeployments.collect {
-      case deployedVersion if deployedVersion.processVersionId.contains(processVersion.id) => toDeploymentEntry(deployedVersion)
+      case deployedVersion if deployedVersion.processVersionId.equals(processVersion.id) => toDeploymentEntry(deployedVersion)
     }
   )
 
   def toDeploymentEntry(deployedProcessInfoEntityData: DeployedProcessInfoEntityData): ProcessDeployment = ProcessDeployment(
-    processVersionId = deployedProcessInfoEntityData.processVersionId.getOrElse(0),
+    processVersionId = deployedProcessInfoEntityData.processVersionId,
     deployedAt = deployedProcessInfoEntityData.deployedAtTime,
     user = deployedProcessInfoEntityData.user,
     action = deployedProcessInfoEntityData.deploymentAction,

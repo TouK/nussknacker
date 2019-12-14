@@ -14,8 +14,7 @@ package object process {
     implicit val encoder: Encoder[ProcessId] = Encoder.encodeLong.contramap(_.value)
     implicit val decoder: Decoder[ProcessId] = Decoder.decodeLong.map(ProcessId(_))
 
-    def apply(value: Long): ProcessId = new ProcessId(value)
-    def apply(value: String): ProcessId = new ProcessId(Integer.valueOf(value).toLong)
+    def apply(value: String): ProcessId = ProcessId(Integer.valueOf(value).toLong)
   }
 
   final case class ProcessId(value: Long) extends AnyVal

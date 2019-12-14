@@ -47,7 +47,7 @@ class DeployedProcessRepository(val dbConfig: DbConfig,
       commentId <- withComment(processId, processVersion, comment)
       deployedActionData = DeployedProcessInfoEntityData(
         processId = processId.value,
-        processVersionId = Some(processVersion),
+        processVersionId = processVersion,
         environment = environment,
         user = user.id,
         deployedAt = Timestamp.valueOf(LocalDateTime.now()),
