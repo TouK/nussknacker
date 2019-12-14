@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import java.sql.Timestamp
+
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
@@ -36,7 +38,11 @@ trait ProcessEntityFactory {
 
     def isArchived: Rep[Boolean] = column[Boolean]("is_archived", NotNull)
 
-    def * : ProvenShape[ProcessEntityData] = (id, name, description, processType, processCategory, processingType, isSubprocess, isArchived) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
+    def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
+
+    def createdBy: Rep[String] = column[String]("created_by", NotNull)
+
+    def * : ProvenShape[ProcessEntityData] = (id, name, description, processType, processCategory, processingType, isSubprocess, isArchived, createdAt, createdBy) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
   }
 }
 
@@ -47,4 +53,6 @@ case class ProcessEntityData(id: Long,
                              processCategory: String,
                              processingType: ProcessingType,
                              isSubprocess: Boolean,
-                             isArchived: Boolean)
+                             isArchived: Boolean,
+                             createdAt: Timestamp,
+                             createdBy: String)

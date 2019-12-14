@@ -48,12 +48,12 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       processingTypes.map(arg => process => process.processingType.inSet(arg))
     )
 
-    run(fetchProcessDetailsByQueryAction ({ process =>
+    run(fetchProcessDetailsByQueryAction({ process =>
       expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
     }, isDeployed))
   }
 
-  override def fetchCustomProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]= {
+  override def fetchCustomProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Custom))
   }
 
@@ -91,17 +91,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                                                               isDeployed: Option[Boolean])(implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
-      versionsPerProcess <- fetchInitialVersionPerProcess.result //TODO: Replace this by migration createdBy and createdAt from initialVersion to process instance
-      deploymentsPerEnv <- deploymentsInfoPerEnvironment.result
-      latestProcesses <- fetchLatestProcesses(query, deploymentsPerEnv, isDeployed).result
+      deployments <- fetchDeploymentsPerProcess.result
+      latestProcesses <- fetchLatestProcesses(query, deployments, isDeployed).result
     } yield
       latestProcesses.map { case ((_, processVersion), process) => createFullDetails(
         process,
         processVersion,
-        versionsPerProcess.collectFirst { case (processId, versionData) if processId == process.id => versionData }.getOrElse(throw new  IllegalStateException("Process without version shouldn't exist")),
-        deploymentsPerEnv.filter(_._1 == process.id).map(_._2),
-        tags = List.empty,
-        history = List.empty,
+        deployments.filter(_._1 == process.id).map(_._2),
         isLatestVersion = true
       )}).map(_.toList)
   }
@@ -145,14 +141,14 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       .on { case (deployment, comment) => deployment.commentId === comment.id }
       .sortBy(_._1.deployedAt.desc)
       .result.map(_.map { case (de, comment) => DeploymentHistoryEntry(
-        processVersionId = de.processVersionId,
-        time = de.deployedAtTime,
-        user = de.user,
-        deploymentAction = de.deploymentAction,
-        commentId = de.commentId,
-        comment = comment.map(_.content),
-        buildInfo = de.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
-      )
+      processVersionId = de.processVersionId,
+      time = de.deployedAtTime,
+      user = de.user,
+      deploymentAction = de.deploymentAction,
+      commentId = de.commentId,
+      comment = comment.map(_.content),
+      buildInfo = de.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
+    )
     }.toList))
 
   override def fetchProcessingType(processId: ProcessId)(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
@@ -233,14 +229,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     }
   }
 
-  private def processDeploymentsInfoPerEnvironment(processId: Long): Query[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity, DeployedProcessInfoEntityData, Seq] = {
-    deploymentsInfoPerEnvironment.filter(_._1 === processId).map(_._2)
-  }
-
-  private def deploymentsInfoPerEnvironment: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] = {
-    deployedProcessesTable.groupBy(e => (e.processId, e.environment)).map { case (processIdEnv, group) => (processIdEnv, group.map(_.deployedAt).max) }
-      .join(deployedProcessesTable).on { case ((processIdEnv, maxDeployedAtForEnv), deplProc) =>
-      deplProc.processId === processIdEnv._1 && deplProc.environment === processIdEnv._2 && deplProc.deployedAt === maxDeployedAtForEnv
-    }.map { case ((env, _), deployedVersion) => env._1 -> deployedVersion }
-  }
+  private def processDeploymentsInfoPerEnvironment(processId: Long): Query[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity, DeployedProcessInfoEntityData, Seq] =
+    fetchDeploymentsPerProcess.filter(_._1 === processId).map(_._2)
 }
