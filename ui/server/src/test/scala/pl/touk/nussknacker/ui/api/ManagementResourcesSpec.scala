@@ -53,7 +53,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             decodeDetails.deployment shouldBe deployedWithVersions(2)
 
             val currentDeployments = getHistoryDeployments
-            currentDeployments.size shouldBe 1
+            currentDeployments.size shouldBe 2
             currentDeployments.head.deployedAt should not be oldDeployments.head.deployedAt
             val buildInfo = currentDeployments.head.buildInfo
             buildInfo("engine-version") should not be empty
