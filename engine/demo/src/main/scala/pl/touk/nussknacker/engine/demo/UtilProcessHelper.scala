@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.demo
 
 import io.circe.Encoder
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import scala.util.Random
 
-object UtilProcessHelper {
+object UtilProcessHelper extends HideToString {
 
   import scala.collection.JavaConverters._
 
