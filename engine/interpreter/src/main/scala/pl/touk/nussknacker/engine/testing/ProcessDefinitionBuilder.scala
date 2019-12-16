@@ -47,6 +47,9 @@ object ProcessDefinitionBuilder {
   }
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
+    def withService(id: String, returnType: Class[_], params: Parameter*): ProcessDefinition[ObjectDefinition] =
+      definition.copy(services = definition.services + (id -> ObjectDefinition(params.toList, ClazzRef(returnType), List.empty)))
+
     def withService(id: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(services = definition.services + (id -> ObjectDefinition.withParams(params.toList)))
 

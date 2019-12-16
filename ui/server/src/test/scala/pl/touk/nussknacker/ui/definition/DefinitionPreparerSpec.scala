@@ -18,11 +18,11 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
   private val processTypesForCategories = new ProcessTypesForCategories(ConfigWithScalaVersion.config)
 
-  test("return groups sorted by name") {
+  test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
 
     val groups = prepareGroups(Map(), Map("custom" -> "CUSTOM", "sinks"->"BAR"))
 
-    groups.map(_.name) shouldBe List("BAR","base", "CUSTOM", "enrichers", "sources")
+    groups.map(_.name) shouldBe List("sources", "base", "CUSTOM", "enrichers", "BAR", "services")
   }
 
   test("return objects sorted by label case insensitive") {
@@ -54,7 +54,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   test("return objects sorted by label with mapped categories") {
     val groups = prepareGroups(Map(), Map("custom" -> "base"))
 
-    validateGroups(groups, 4)
+    validateGroups(groups, 5)
 
     groups.exists(_.name == "custom") shouldBe false
 
@@ -75,7 +75,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       Map("barService" -> "foo", "barSource" -> "fooBar"),
       Map("custom" -> "base"))
 
-    validateGroups(groups, 5)
+    validateGroups(groups, 6)
 
     groups.exists(_.name == "custom") shouldBe false
 
@@ -109,7 +109,6 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   }
 
   private def validateGroups(groups: List[NodeGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
-    groups.map(_.name) shouldBe sorted
     groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
