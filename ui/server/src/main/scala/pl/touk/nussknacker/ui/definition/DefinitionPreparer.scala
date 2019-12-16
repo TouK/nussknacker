@@ -35,7 +35,7 @@ object DefinitionPreparer {
                         subprocessInputs: Map[String, ObjectDefinition],
                         extractorFactory: ParameterDefaultValueExtractorStrategy,
                         nodesConfig: Map[String, SingleNodeConfig],
-                        nodeCategoryMapping: Map[String, String],
+                        nodeCategoryMapping: Map[String, Option[String]],
                         typesForCategories: ProcessTypesForCategories
                        ): List[NodeGroup] = {
     val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
@@ -128,8 +128,10 @@ object DefinitionPreparer {
       List.empty
     }
 
-    def getNodeCategory(nodeName: String, category: String): String = {
-      nodesConfig.get(nodeName).flatMap(_.category).orElse(nodeCategoryMapping.get(category)).getOrElse(category)
+    // return none if category should be hidden
+    def getNodeCategory(nodeName: String, initialCategory: String): Option[String] = {
+      val category = nodesConfig.get(nodeName).flatMap(_.category).getOrElse(initialCategory)
+      nodeCategoryMapping.getOrElse(category, Some(category))
     }
 
     val virtualGroups = List(
@@ -142,11 +144,14 @@ object DefinitionPreparer {
       .zipWithIndex
       .flatMap {
         case (groups, virtualGroupIndex) =>
-          groups.flatMap(group =>
-            group.possibleNodes.map(n => (group.name, virtualGroupIndex, n)))
+          for {
+            group <- groups
+            node <- group.possibleNodes
+            notHiddenCategory <- getNodeCategory(node.label, group.name)
+          } yield (virtualGroupIndex, notHiddenCategory, node)
       }
       .groupBy {
-        case (groupName, virtualGroupIndex, node) => (virtualGroupIndex, getNodeCategory(node.label, groupName))
+        case (virtualGroupIndex, categoryName, _) => (virtualGroupIndex, categoryName)
       }
       .mapValues(v => v.map(e => e._3))
       .toList

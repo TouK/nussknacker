@@ -20,9 +20,16 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
 
-    val groups = prepareGroups(Map(), Map("custom" -> "CUSTOM", "sinks"->"BAR"))
+    val groups = prepareGroups(Map(), Map("custom" -> Some("CUSTOM"), "sinks"->Some("BAR")))
 
     groups.map(_.name) shouldBe List("sources", "base", "CUSTOM", "enrichers", "BAR", "services")
+  }
+
+  test("return groups with hidden base group") {
+
+    val groups = prepareGroups(Map.empty, Map("base" -> None))
+
+    groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "services", "sinks")
   }
 
   test("return objects sorted by label case insensitive") {
@@ -52,7 +59,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   }
 
   test("return objects sorted by label with mapped categories") {
-    val groups = prepareGroups(Map(), Map("custom" -> "base"))
+    val groups = prepareGroups(Map(), Map("custom" -> Some("base")))
 
     validateGroups(groups, 5)
 
@@ -73,7 +80,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
     val groups = prepareGroups(
       Map("barService" -> "foo", "barSource" -> "fooBar"),
-      Map("custom" -> "base"))
+      Map("custom" -> Some("base")))
 
     validateGroups(groups, 6)
 
@@ -112,7 +119,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
-  private def prepareGroups(fixedNodesConfig: Map[String, String], nodeCategoryMapping: Map[String, String],
+  private def prepareGroups(fixedNodesConfig: Map[String, String], nodeCategoryMapping: Map[String, Option[String]],
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[NodeGroup] = {
     // TODO: this is a copy paste from UIProcessObjects.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
