@@ -16,7 +16,6 @@ import HttpService from "../../../http/HttpService"
 import ProcessUtils from "../../../common/ProcessUtils"
 import PropTypes from "prop-types"
 import Draggable from "react-draggable"
-import {preventFromMoveSelectors} from "../../modals/GenericModalDialog"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
 
 class NodeDetailsModal extends React.Component {
@@ -149,7 +148,7 @@ class NodeDetailsModal extends React.Component {
                isOpen={isOpen}
                onRequestClose={this.closeModal}>
           <div className="draggable-container">
-            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+            <Draggable bounds="parent" handle=".modal-draggable-handle">
               <div className="espModal">
                 <NodeDetailsModalHeader node={nodeToDisplay} docsUrl={nodeSetting.docsUrl}/>
                 <div className="modalContentDark" id="modal-content">

@@ -56,9 +56,9 @@ class GenericModalDialog extends React.Component {
              shouldCloseOnOverlayClick={false}
              onRequestClose={this.closeDialog}>
         <div className="draggable-container">
-          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+          <Draggable bounds="parent" handle=".modal-draggable-handle">
             <div className={style}>
-              {this.props.header ? (<div className="modal-title" style={{color: "white", backgroundColor: "#70c6ce"}}>
+              {this.props.header ? (<div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70c6ce"}}>
                 <span>{this.props.header}</span>
               </div>) : null}
               <div className="modalContentDark">
@@ -86,8 +86,6 @@ function mapState(state) {
     modalDialog: state.ui.modalDialog || {},
   }
 }
-
-export const preventFromMoveSelectors = "input, textarea, #brace-editor, .datePickerContainer, svg, img, .node-value-select, #ace-editor, .row-ace-editor"
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(GenericModalDialog);
 
