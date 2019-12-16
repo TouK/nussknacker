@@ -32,6 +32,7 @@ import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModel
 
 import scala.collection.JavaConverters._
 
+//TODO: move TransformersTest to some util module...
 class TransformersTest extends FunSuite with Matchers {
 
   def modelData(list: List[TestRecord] = List()) = LocalModelData(ConfigFactory.empty(), new Creator(list))
