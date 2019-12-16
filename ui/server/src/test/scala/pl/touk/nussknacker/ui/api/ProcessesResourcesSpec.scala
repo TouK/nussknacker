@@ -37,7 +37,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   val routeWithAllPermissions = withAllPermissions(processesRoute)
   val routeWithAdminPermissions = withAdminPermissions(processesRoute)
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
-  implicit val loggedUser = LoggedUser("lu", testCategory)
+  implicit val loggedUser = LoggedUser("1", Option.apply("lu"), testCategory)
 
   private val processName = ProcessName(SampleProcess.process.id)
 
@@ -479,6 +479,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
         status shouldEqual StatusCodes.OK
         val loadedProcess = responseAs[ProcessDetails]
         loadedProcess.processCategory shouldBe testCategoryName
+        loadedProcess.createdAt should not be null
       }
     }
   }

@@ -72,19 +72,19 @@ object TestFactory extends TestPermissions{
   }
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
-    route.securedRoute(user("userId", permissions))
+    route.securedRoute(user(permissions = permissions))
 
   //FIXME: update
   def withAllPermissions(route: RouteWithUser): Route = withPermissions(route, testPermissionAll)
 
-  def withAdminPermissions(route: RouteWithUser): Route = route.securedRoute(adminUser("adminId"))
+  def withAdminPermissions(route: RouteWithUser): Route = route.securedRoute(adminUser())
 
   def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
   //FIXME: update
-  def user(userName: String = "userId", testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(userName, testPermissions)
+  def user(id: String = "1", userName: String = "user", permissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(id, Option.apply(userName), permissions)
 
-  def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, Nil, isAdmin = true)
+  def adminUser(id: String = "1", userName: String = "admin") = LoggedUser(id, Option.apply(userName), Map.empty, Nil, isAdmin = true)
 
   class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
