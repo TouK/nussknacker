@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
@@ -93,21 +94,40 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
   }
 
+  test("return custom nodes with correct group") {
+    val initialDefinition = ProcessTestData.processDefinition
+    val definitionWithCustomNodesInSomeCategory = initialDefinition.copy(
+      customStreamTransformers = initialDefinition.customStreamTransformers.map {
+        case (name, (objectDef, additionalData)) =>
+          (name, (objectDef.copy(nodeConfig = objectDef.nodeConfig.copy(category = Some("cat1"))), additionalData))
+      }
+    )
+    val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
+
+    groups.exists(_.name == "custom") shouldBe false
+    groups.exists(_.name == "cat1") shouldBe true
+  }
+
   private def validateGroups(groups: List[NodeGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
     groups.map(_.name) shouldBe sorted
     groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
-  private def prepareGroups(nodesConfig: Map[String, String], nodeCategoryMapping: Map[String, String]): List[NodeGroup] = {
+  private def prepareGroups(fixedNodesConfig: Map[String, String], nodeCategoryMapping: Map[String, String],
+                            processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[NodeGroup] = {
+    // TODO: this is a copy paste from UIProcessObjects.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
+    val uiProcessDefinition = UIProcessDefinition(processDefinition, subprocessInputs)
+    val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
+    val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))), dynamicNodesConfig)
 
     val groups = DefinitionPreparer.prepareNodesToAdd(
       user = TestFactory.adminUser("aa"),
-      processDefinition = ProcessTestData.processDefinition,
+      processDefinition = processDefinition,
       isSubprocess = false,
       subprocessInputs = subprocessInputs,
       extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
-      nodesConfig = nodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))),
+      nodesConfig = nodesConfig,
       nodeCategoryMapping = nodeCategoryMapping,
       typesForCategories = processTypesForCategories
     )
