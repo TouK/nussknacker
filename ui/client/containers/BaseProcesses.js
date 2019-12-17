@@ -12,11 +12,13 @@ const DeploymentAction = {
   CANCEL: "CANCEL",
   DEPLOY: "DEPLOY",
 
-  isDeployed: (action) => {
+  isDeployed: (deployment) => {
+    const action = _.get(deployment, 'action')
     return action != null && action.toUpperCase() === DeploymentAction.DEPLOY
   },
 
-  isCanceled: (action) => {
+  isCanceled: (deployment) => {
+    const action = _.get(deployment, 'action')
     return action != null && action.toUpperCase() === DeploymentAction.CANCEL
   }
 }
@@ -174,13 +176,13 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   processStatusClass = (process) => {
     const processName = process.name
-    const shouldRun = DeploymentAction.isDeployed(_.get(process, 'deployment.action'))
+    const shouldRun = DeploymentAction.isDeployed(process.deployment)
     return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
   processStatusTitle = (process) => {
     const processName = process.name
-    const shouldRun = DeploymentAction.isDeployed(_.get(process, 'deployment.action'))
+    const shouldRun = DeploymentAction.isDeployed(process.deployment)
     return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
