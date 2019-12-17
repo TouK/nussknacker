@@ -48,6 +48,8 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
   }
 
   it should "fetch queryable state for all keys" in {
+    kafkaClient.createTopic("esp.signals")
+
     val lockProcess = EspProcessBuilder
       .id("queryableStateProc1")
       .parallelism(1)
