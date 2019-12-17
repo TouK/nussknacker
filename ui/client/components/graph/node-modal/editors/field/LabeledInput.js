@@ -16,7 +16,7 @@ export const LabeledInput = (props) => {
              placeholder={placeholder}
              showValidation={showValidation}
              validators={validators}
-             onChange={(e) => onChange(e.target.value)}/>
+             onChange={onChange}/>
     </div>
   )
 }

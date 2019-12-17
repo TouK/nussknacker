@@ -14,7 +14,7 @@ export const LabeledTextarea = (props) => {
           cols={cols}
           className={className}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={onChange}
           readOnly={readOnly}
           autoFocus={autoFocus}/>
         {showValidation && <ValidationLabels validators={validators} values={[value]}/>}

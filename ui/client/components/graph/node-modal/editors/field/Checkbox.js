@@ -12,7 +12,7 @@ export const Checkbox = (props) => {
           autoFocus={autofocus}
           type="checkbox"
           checked={value || false}
-          onChange={(e) => onChange(e.target.checked)}
+          onChange={onChange}
           disabled={readOnly ? 'disabled' : ''}
         />
       </div>

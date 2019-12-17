@@ -16,8 +16,8 @@ export default function MapValue(props) {
         showSwitch={showSwitch}
         onValueChange={(value) => onChange(`${paths}.expression.expression`, value)}
         expressionObj={value}
-        rowClassName={""}
-        valueClassName={""}
+        rowClassName={null}
+        valueClassName={null}
       />
     </div>
   )

@@ -5,7 +5,8 @@ import _ from "lodash"
 import {errorValidator, notEmptyValidator} from "../../../common/Validators"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import LabeledInput from "./editors/field/LabeledInput"
-import EditableExpression, {rawEditor} from "./editors/expression/EditableExpression"
+import EditableExpression from "./editors/expression/EditableExpression"
+import {Types} from "./editors/expression/EditorType"
 
 const Variable = (props) => {
 
@@ -27,7 +28,7 @@ const Variable = (props) => {
                     showValidation={showValidation}
                     validators={[notEmptyValidator, errorValidator(errors, "varName")]}/>
       <EditableExpression
-        fieldType={rawEditor}
+        fieldType={Types.RAW_EDITOR}
         fieldName="Expression"
         fieldLabel={"Expression"}
         renderFieldLabel={renderFieldLabel}

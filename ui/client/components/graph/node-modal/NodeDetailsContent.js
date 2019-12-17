@@ -20,7 +20,7 @@ import ModalRenderUtils from "./ModalRenderUtils"
 import {branchErrorFieldName} from "./BranchParameters"
 import Field from "./editors/field/Field"
 import EditableExpression from "./editors/expression/EditableExpression"
-import RawEditor from "./editors/expression/RawEditor"
+import ExpressionField from "./editors/expression/ExpressionField"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -444,47 +444,24 @@ export class NodeDetailsContent extends React.Component {
     this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`, validators);
 
   doCreateExpressionField = (fieldName, fieldLabel, exprPath, validators) => {
-    const readOnly = !this.props.isEditMode
-    const exprTextPath = `${exprPath}.expression`
-    const expressionObj = _.get(this.state.editedNode, exprPath)
-    const isMarked = this.isMarked(exprTextPath)
-    const restriction = this.getRestriction(fieldName)
-    const {showValidation, showSwitch} = this.props
-
-    if (restriction.hasFixedValues)
-      return (
-        <EditableExpression
-          fieldType={"expressionWithFixedValues"}
-          fieldLabel={fieldLabel}
-          expressionObj={expressionObj}
-          renderFieldLabel={this.renderFieldLabel}
-          values={restriction.values}
-          isMarked={isMarked}
-          showSwitch={showSwitch}
-          readOnly={readOnly}
-          onValueChange={(newValue) => this.setNodeDataAt(exprTextPath, newValue)}
-        />
-      )
-
-    const param = this.findParamByName(fieldLabel)
-    return TestRenderUtils.wrapWithTestResult(
-      fieldName,
-      this.state.testResultsToShow,
-      this.state.testResultsToHide,
-      this.toggleTestResult,
-      <EditableExpression
-        fieldType={param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression"}
-        editorName={"RawEditor"}
-        renderFieldLabel={this.renderFieldLabel}
-        fieldLabel={fieldLabel}
+    const {showValidation, showSwitch, isEditMode} = this.props
+    return (
+      <ExpressionField
         fieldName={fieldName}
-        expressionObj={expressionObj}
+        fieldLabel={fieldLabel}
+        exprPath={exprPath}
         validators={validators}
-        isMarked={isMarked}
+        isEditMode={isEditMode}
+        editedNode={this.state.editedNode}
+        isMarked={this.isMarked}
         showValidation={showValidation}
         showSwitch={showSwitch}
-        readOnly={readOnly}
-        onValueChange={(newValue) => this.setNodeDataAt(exprTextPath, newValue)}
+        nodeObjectDetails={this.nodeObjectDetails}
+        setNodeDataAt={this.setNodeDataAt}
+        testResultsToShow={this.state.testResultsToShow}
+        testResultsToHide={this.state.testResultsToHide}
+        toggleTestResult={this.toggleTestResult}
+        renderFieldLabel={this.renderFieldLabel}
       />
     )
   }
@@ -513,17 +490,8 @@ export class NodeDetailsContent extends React.Component {
                   validators={validators}
                   onChange={handleChange}
                   className={(!showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
-                  placeholder={""} // FIXME: what should be here?
     />
   }
-
-  getRestriction = (fieldName) => {
-    const restriction = (this.findParamByName(fieldName) || {}).restriction;
-    return {
-      hasFixedValues: restriction && restriction.type === "FixedExpressionValues",
-      values: restriction && restriction.values
-    }
-  };
 
   setNodeDataAt = (propToMutate, newValue, defaultValue) => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue

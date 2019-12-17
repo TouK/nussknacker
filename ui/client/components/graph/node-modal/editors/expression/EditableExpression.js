@@ -1,8 +1,7 @@
-import RawEditor from "./RawEditor"
-import BoolEditor from "./BoolEditor"
 import React from "react"
-import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
 import {parseableBoolean} from "./ExpressionParser"
+
+import {editorType, Types} from "./EditorType"
 
 export default class EditableExpression extends React.Component {
 
@@ -15,8 +14,8 @@ export default class EditableExpression extends React.Component {
 
   render() {
     const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch} = this.props
-    const editorName = resolveEditorName(fieldType, expressionObj, this.state.displayRawEditor)
-    const Editor = editorTypes[editorName]
+    const editorName = editorType.editorName(fieldType, expressionObj, this.state.displayRawEditor)
+    const Editor = editorType.editor(editorName)
     return <Editor toggleEditor={this.toggleEditor}
                    switchable={this.switchable(editorName, expressionObj)}
                    shouldShowSwitch={this.showSwitch(fieldType, showSwitch)}
@@ -31,46 +30,14 @@ export default class EditableExpression extends React.Component {
 
   switchable = (editorName, expressionObj) => {
     switch (editorName) {
-      case boolEditor:
+      case Types.BOOL_EDITOR:
         return true
-      case rawEditor:
+      case Types.RAW_EDITOR:
         return parseableBoolean(expressionObj)
       default:
         return false
     }
   }
 
-  showSwitch = (fieldType, showSwitch) =>
-    showSwitch &&
-    (!(fieldType === "VariableBuilder" || fieldType === "Variable")
-      && (fieldType === "expression" || fieldType === "Boolean"))
+  showSwitch = (fieldType, showSwitch) => showSwitch && editorType.isSupported(fieldType)
 }
-
-const resolveEditorName = (fieldType, expressionObj, displayRawEditor) => {
-  if (displayRawEditor) {
-    return rawEditor
-  }
-
-  switch (fieldType) {
-    case "expression":
-      return parseableBoolean(expressionObj) ? boolEditor : rawEditor
-    case "Boolean":
-      return parseableBoolean(expressionObj) ? boolEditor : rawEditor
-    case expressionWithFixedValuesEditor:
-      return fieldType
-    case rawEditor:
-      return fieldType
-    default:
-      return rawEditor
-  }
-}
-
-const editorTypes = {
-  rawEditor: RawEditor,
-  boolEditor: BoolEditor,
-  expressionWithFixedValues: ExpressionWithFixedValues
-}
-
-export const boolEditor = "boolEditor"
-export const rawEditor = "rawEditor"
-export const expressionWithFixedValuesEditor = "expressionWithFixedValues"
