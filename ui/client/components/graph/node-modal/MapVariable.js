@@ -19,7 +19,7 @@ const MapVariable = (props) => {
 
   return (
     <div className="node-table-body node-variable-builder-body">
-      <LabeledInput renderFieldLabel={() => renderFieldLabel("Id")}
+      <LabeledInput renderFieldLabel={() => renderFieldLabel("Name")}
                     value={node.id}
                     onChange={(event) => onInputChange("id", event)}
                     isMarked={isMarked("id")}
