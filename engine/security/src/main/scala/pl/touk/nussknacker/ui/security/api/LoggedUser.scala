@@ -5,17 +5,14 @@ import pl.touk.nussknacker.ui.security.api.Permission.Permission
 
 sealed trait LoggedUser {
   val id: String
-  val username: Option[String]
+  val username: String
   val isAdmin: Boolean
   def can(category: String, permission: Permission): Boolean
-  def getName: String = username.getOrElse(id)
 }
 
 object LoggedUser {
-  def apply(id: String, isAdmin: Boolean): LoggedUser = LoggedUser(id=id, isAdmin=isAdmin, username = Option.empty)
-
    def apply(id: String,
-             username: Option[String],
+             username: String,
              categoryPermissions: Map[String, Set[Permission]] = Map.empty,
              globalPermissions: List[GlobalPermission] = Nil,
              isAdmin: Boolean = false): LoggedUser = {
@@ -26,7 +23,7 @@ object LoggedUser {
      }
   }
 
-  def apply(id: String, username: Option[String], rulesSet: RulesSet): LoggedUser = {
+  def apply(id: String, username: String, rulesSet: RulesSet): LoggedUser = {
     if (rulesSet.isAdmin) {
       LoggedUser(id = id, username = username, isAdmin = true)
     } else {
@@ -41,7 +38,7 @@ object LoggedUser {
 }
 
 case class CommonUser(id: String,
-                      username: Option[String],
+                      username: String,
                       categoryPermissions: Map[String, Set[Permission]] = Map.empty,
                       globalPermissions: List[GlobalPermission] = Nil) extends LoggedUser {
   def categories(permission: Permission): Set[String] = categoryPermissions.collect {
@@ -55,7 +52,7 @@ case class CommonUser(id: String,
   override val isAdmin: Boolean = false
 }
 
-case class AdminUser(id: String, username: Option[String]) extends LoggedUser {
+case class AdminUser(id: String, username: String) extends LoggedUser {
   override def can(category: String, permission: Permission): Boolean = true
   override val isAdmin: Boolean = true
 }

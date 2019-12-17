@@ -44,18 +44,18 @@ object DisplayableUser {
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def apply(user: LoggedUser, allCategories: List[String]): DisplayableUser = user match {
-    case CommonUser(id, _, categoryPermissions, globalPermissions) => new DisplayableUser(
+    case CommonUser(id, username, categoryPermissions, globalPermissions) => new DisplayableUser(
       id = id,
       isAdmin = false,
-      username = user.getName,
+      username = username,
       categories = allCategories.sorted,
       categoryPermissions = categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted),
       globalPermissions = GlobalPermissions(globalPermissions)
     )
-    case AdminUser(id, _) => new DisplayableUser(
+    case AdminUser(id, username) => new DisplayableUser(
       id = id,
       isAdmin = true,
-      username = user.getName,
+      username = username,
       categories = allCategories.sorted,
       categoryPermissions = allCategories.map(category => category -> Permission.ALL_PERMISSIONS.map(_.toString).toList.sorted).toMap,
       globalPermissions = GlobalPermissions.ALL

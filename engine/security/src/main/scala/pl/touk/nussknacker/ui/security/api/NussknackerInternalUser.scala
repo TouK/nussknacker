@@ -1,3 +1,3 @@
 package pl.touk.nussknacker.ui.security.api
 
-object NussknackerInternalUser extends AdminUser("Nussknacker", Option.empty)
+object NussknackerInternalUser extends AdminUser("Nussknacker", "Nussknacker")

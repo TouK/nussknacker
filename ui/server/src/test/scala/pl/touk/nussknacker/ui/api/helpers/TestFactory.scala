@@ -82,9 +82,9 @@ object TestFactory extends TestPermissions{
   def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
   //FIXME: update
-  def user(id: String = "1", userName: String = "user", permissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(id, Option.apply(userName), permissions)
+  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(id, username, permissions)
 
-  def adminUser(id: String = "1", userName: String = "admin") = LoggedUser(id, Option.apply(userName), Map.empty, Nil, isAdmin = true)
+  def adminUser(id: String = "1", username: String = "admin") = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
   class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 

@@ -70,7 +70,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
       id = -1L, name = processName.value, processCategory = category,
       description = None, processType = ProcessType.fromDeploymentData(processDeploymentData),
       processingType = processingType, isSubprocess = isSubprocess, isArchived = false,
-      createdAt = DateUtils.toTimestamp(now), createdBy = loggedUser.getName)
+      createdAt = DateUtils.toTimestamp(now), createdBy = loggedUser.username)
 
     val insertNew = processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
 
@@ -109,7 +109,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
       case Some(version) if version.json == maybeJson && version.mainClass == maybeMainClass => None
       case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId.value,
         json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
-        user = loggedUser.getName, modelVersion = modelVersion.get(processingType)))
+        user = loggedUser.username, modelVersion = modelVersion.get(processingType)))
     }
 
     //TODO: why EitherT.right doesn't infere properly here?

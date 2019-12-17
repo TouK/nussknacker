@@ -78,8 +78,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             val deploymentHistory = responseAs[List[DeploymentHistoryEntry]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
-              DeploymentHistoryEntry(2, curTime, user().getName, DeploymentAction.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
-              DeploymentHistoryEntry(2, curTime, user().getName, DeploymentAction.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
+              DeploymentHistoryEntry(2, curTime, user().username, DeploymentAction.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
+              DeploymentHistoryEntry(2, curTime, user().username, DeploymentAction.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
             )
           }
         }
