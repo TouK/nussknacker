@@ -71,7 +71,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ObjectDefinition.noParam,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ClazzRef(ProcessHelper.getClass)), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty
+      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false
     ),
     TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleEnricher], Typed[SimpleRecord], Typed(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
   )
@@ -749,6 +749,24 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(process, baseDefinition).result should matchPattern {
       case Valid(_) =>
+    }
+  }
+
+  test("hide meta variable using feature flag") {
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .buildSimpleVariable("var1", "var1", "#meta.processName")
+        .emptySink("sink", "sink")
+
+    validate(process, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+
+    validate(process, baseDefinition.copy(expressionConfig = baseDefinition.expressionConfig.copy(hideMetaVariable = true))).result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'meta'", _, _, _), Nil)) =>
     }
   }
 

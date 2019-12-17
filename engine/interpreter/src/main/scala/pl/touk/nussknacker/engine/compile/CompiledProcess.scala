@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -36,12 +37,12 @@ object CompiledProcess {
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions, objectParametersExpressionCompiler)
 
     processCompiler.compile(process).result.map { compiledProcess =>
-      val globalVariables = definitions.expressionConfig.globalVariables.mapValues(_.obj)
+      val globalVariablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
 
       val expressionEvaluator = if (process.metaData.typeSpecificData.allowLazyVars) {
-        ExpressionEvaluator.withLazyVals(globalVariables, listeners, servicesDefs)
+        ExpressionEvaluator.withLazyVals(globalVariablesPreparer, listeners, servicesDefs)
       } else {
-        ExpressionEvaluator.withoutLazyVals(globalVariables, listeners)
+        ExpressionEvaluator.withoutLazyVals(globalVariablesPreparer, listeners)
       }
 
       val interpreter = Interpreter(listeners, expressionEvaluator)
