@@ -34,10 +34,9 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   private val fixedTime = LocalDateTime.now()
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeployment]] =
-    BeMatcher(
-      equal(Option.apply(
-        ProcessDeployment(versionId, fixedTime, user("userId").id, DeploymentAction.Deploy, buildInfo)
-      )).matcher[Option[ProcessDeployment]]
+    BeMatcher(equal(
+        Option(ProcessDeployment(versionId, fixedTime, user().id, DeploymentAction.Deploy, buildInfo))
+      ).matcher[Option[ProcessDeployment]]
     ).compose[Option[ProcessDeployment]](_.map(_.copy(deployedAt = fixedTime)))
 
   test("process deployment should be visible in process history") {

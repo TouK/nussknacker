@@ -183,7 +183,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
-      currentVersion = processVersion,
+      processVersion = processVersion,
       initialVersion = processVersions.headOption.getOrElse(throw new  IllegalStateException("Process without version shouldn't exist")),
       deployments = deployments,
       tags = tags,
@@ -195,7 +195,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
 
   //TODO: Replace initialVersion by migration createdBy and createdAt to process instance
   private def createFullDetails[PS: ProcessShapeFetchStrategy](process: ProcessEntityData,
-                                                               currentVersion: ProcessVersionEntityData,
+                                                               processVersion: ProcessVersionEntityData,
                                                                initialVersion: ProcessVersionEntityData,
                                                                deployments: Seq[DeployedProcessInfoEntityData],
                                                                tags: Seq[TagsEntityData],
@@ -205,7 +205,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     BaseProcessDetails[PS](
       id = process.id.toString,
       name = process.name,
-      processVersionId = currentVersion.id,
+      processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,
       isSubprocess = process.isSubprocess,
@@ -215,12 +215,12 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       processCategory = process.processCategory,
       deployment = deployments.headOption.map(ProcessRepository.toDeploymentEntry),
       tags = tags.map(_.name).toList,
-      modificationDate = DateUtils.toLocalDateTime(currentVersion.createDate),
+      modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       createdAt = DateUtils.toLocalDateTime(initialVersion.createDate),
       createdBy = initialVersion.user,
-      json = currentVersion.json.map(jsonString => convertToTargetShape(jsonString, process, businessView)),
+      json = processVersion.json.map(jsonString => convertToTargetShape(jsonString, process, businessView)),
       history = history.toList,
-      modelVersion = currentVersion.modelVersion
+      modelVersion = processVersion.modelVersion
     )
   }
 

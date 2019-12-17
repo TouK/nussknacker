@@ -124,7 +124,7 @@ class Processes extends BaseProcesses {
           previousPageLabel="<"
           nextPageLabel=">"
           sortable={['name', 'category', 'modifyDate', 'createDate', 'createdBy']}
-          filterable={['name', 'category']}
+          filterable={['name', 'category', 'createdBy']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[

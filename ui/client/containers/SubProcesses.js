@@ -71,8 +71,8 @@ class SubProcesses extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={['id', 'name', 'category', 'modifyDate', 'createDate', 'createdBy']}
-          filterable={['id', 'name', 'category']}
+          sortable={['name', 'category', 'modifyDate', 'createDate', 'createdBy']}
+          filterable={['name', 'category', 'createdBy']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
