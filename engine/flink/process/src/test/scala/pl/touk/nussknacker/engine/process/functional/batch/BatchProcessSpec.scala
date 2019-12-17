@@ -6,8 +6,7 @@ import java.util.Date
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.{BatchProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.node.Case
-import pl.touk.nussknacker.engine.process.BatchProcessTestHelpers
-import pl.touk.nussknacker.engine.process.BatchProcessTestHelpers.{RecordingExceptionHandler, SimpleRecord, SinkForStrings, processInvoker}
+import pl.touk.nussknacker.engine.process.helpers.BatchProcessTestHelpers.{RecordingExceptionHandler, SimpleRecord, SinkForStrings, processInvoker}
 import pl.touk.nussknacker.engine.spel
 
 class BatchProcessSpec extends FunSuite with Matchers with BeforeAndAfter {

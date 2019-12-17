@@ -4,7 +4,8 @@ import java.util.Date
 
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 
 class StateProcessSpec extends FlatSpec with Matchers {
@@ -24,7 +25,7 @@ class StateProcessSpec extends FlatSpec with Matchers {
       SimpleRecord("1", 23, "d", new Date(4000))
     )
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     MockService.data shouldNot be('empty)
     MockService.data(0) shouldBe Set("a", "b")

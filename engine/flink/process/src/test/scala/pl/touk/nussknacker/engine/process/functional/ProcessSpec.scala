@@ -6,13 +6,13 @@ import cats.data.NonEmptyList
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{EndingNode, Sink, Source, SourceNode}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 
 class ProcessSpec extends FunSuite with Matchers {
@@ -38,7 +38,7 @@ class ProcessSpec extends FunSuite with Matchers {
 
     )
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     MockService.data should have size 5
 
@@ -55,7 +55,7 @@ class ProcessSpec extends FunSuite with Matchers {
       SimpleRecord("1", 3, "a", new Date(0))
     )
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     MockService.data should have size 0
   }
@@ -70,11 +70,9 @@ class ProcessSpec extends FunSuite with Matchers {
 
     val data = List()
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     MockService.data shouldBe List(5)
-
-
   }
 
   test("should do simple join") {
@@ -90,7 +88,7 @@ class ProcessSpec extends FunSuite with Matchers {
     val rec = SimpleRecord("1", 3, "a", new Date(0))
     val data = List(rec)
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     MockService.data.toSet shouldBe Set(5, rec)
 
@@ -113,7 +111,7 @@ class ProcessSpec extends FunSuite with Matchers {
     val rec = SimpleRecord("1", 3, "a", new Date(0))
     val data = List(rec)
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     MockService.data.toSet shouldBe Set(5, rec)
   }
