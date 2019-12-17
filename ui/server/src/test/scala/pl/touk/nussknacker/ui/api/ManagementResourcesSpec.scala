@@ -35,7 +35,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeployment]] =
     BeMatcher(equal(
-        Option(ProcessDeployment(versionId, "test", fixedTime, user().id, DeploymentAction.Deploy, buildInfo))
+        Option(ProcessDeployment(versionId, "test", fixedTime, user().username, DeploymentAction.Deploy, buildInfo))
       ).matcher[Option[ProcessDeployment]]
     ).compose[Option[ProcessDeployment]](_.map(_.copy(deployedAt = fixedTime)))
 
