@@ -5,7 +5,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -98,6 +98,23 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
       .flatMap(_.possibleNodes.find(_.label == "enricher"))
       .map(_.node.asInstanceOf[SubprocessInput].ref.parameters) shouldBe Some(List(Parameter("param", Expression("spel", "'default value'"))))
 
+  }
+
+  test("should hide node in hidden category") {
+
+    val model : ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator() {
+      override def services(config: Config): Map[String, WithCategories[Service]] =
+        Map(
+          "enricher" -> WithCategories(TestService),
+          "hiddenEnricher" -> WithCategories(TestService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("hiddenCategory")))
+        )
+    })
+
+    val processObjects =
+      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false,
+        new ProcessTypesForCategories(ConfigWithScalaVersion.config))
+
+    processObjects.nodesToAdd.filter(_.name == "hiddenCategory") shouldBe empty
   }
 
 }

@@ -97,9 +97,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   test("should find unused components") {
     val table = Table(
       ("processes", "unusedComponents"),
-      (List(invalidProcessWithAllObjects), List()),
-      (List(process1, process4), List("barService", "fooService")),
-      (List(process1), List("barService", "fooService", "subProcess1"))
+      (List(invalidProcessWithAllObjects), List("fooProcessor")),
+      (List(process1, process4), List("barService", "fooProcessor", "fooService")),
+      (List(process1), List("barService", "fooProcessor", "fooService", "subProcess1"))
     )
     forAll(table) { (processes, unusedComponents) =>
       val result = ProcessObjectsFinder.findUnusedComponents(processes ++ List(subprocessDetails), List(processDefinition))

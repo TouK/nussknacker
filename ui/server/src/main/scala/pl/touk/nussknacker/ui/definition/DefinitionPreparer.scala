@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 
+import scala.collection.immutable.ListMap
 import scala.runtime.BoxedUnit
 
 //TODO: some refactoring?
@@ -34,7 +35,7 @@ object DefinitionPreparer {
                         subprocessInputs: Map[String, ObjectDefinition],
                         extractorFactory: ParameterDefaultValueExtractorStrategy,
                         nodesConfig: Map[String, SingleNodeConfig],
-                        nodeCategoryMapping: Map[String, String],
+                        nodeCategoryMapping: Map[String, Option[String]],
                         typesForCategories: ProcessTypesForCategories
                        ): List[NodeGroup] = {
     val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
@@ -51,7 +52,7 @@ object DefinitionPreparer {
     def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
     val returnsUnit = ((_: String, objectDefinition: ObjectDefinition)
-      => objectDefinition.returnType == Typed[BoxedUnit]).tupled
+    => objectDefinition.hasNoReturn).tupled
 
     //TODO: make it possible to configure other defaults here.
     val base = NodeGroup("base", List(
@@ -99,42 +100,74 @@ object DefinitionPreparer {
         )
       }.toList)
 
-    val subprocessDependent = if (!isSubprocess) {
-      List(
+    val inputs = if (!isSubprocess) {
       NodeGroup("sources",
         processDefinition.sourceFactories.map {
           case (id, objDefinition) => NodeToAdd("source", id,
             Source("", SourceRef(id, objDefParams(id, objDefinition))),
             filterCategories(objDefinition)
           )
-        }.toList),
-      //so far we don't allow nested subprocesses...
-      NodeGroup("subprocesses",
-        subprocessInputs.map {
-          case (id, definition) =>
-            val nodes = evaluator.evaluateParameters(NodeDefinition(id, definition.parameters))
-            NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
-        }.toList))
+        }.toList)
     } else {
-      List(
       NodeGroup("subprocessDefinition", List(
         NodeToAdd("input", "input", SubprocessInputDefinition("", List()), readCategories),
         NodeToAdd("output", "output", SubprocessOutputDefinition("", "output"), readCategories)
-      )))
+      ))
     }
 
-    def getNodeCategory(nodeName: String, category: String): String ={
-      nodesConfig.get(nodeName).flatMap(_.category).orElse(nodeCategoryMapping.get(category)).getOrElse(category)
+    //so far we don't allow nested subprocesses...
+    val subprocesses = if (!isSubprocess) {
+      List(
+        NodeGroup("subprocesses",
+          subprocessInputs.map {
+            case (id, definition) =>
+              val nodes = evaluator.evaluateParameters(NodeDefinition(id, definition.parameters))
+              NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
+          }.toList))
+    } else {
+      List.empty
     }
 
-    (List(base, services, enrichers, customTransformers, sinks) ++ subprocessDependent)
-      .flatMap(e => e.possibleNodes.map(n => (e.name, n)))
-      .groupBy(e => getNodeCategory(e._2.label, e._1))
-      .mapValues(v => v.map(e => e._2))
-      .map { case (name: String, elements: List[NodeToAdd]) => SortedNodeGroup(name, elements) }
+    // return none if category should be hidden
+    def getNodeCategory(nodeName: String, initialCategory: String): Option[String] = {
+      val category = nodesConfig.get(nodeName).flatMap(_.category).getOrElse(initialCategory)
+      nodeCategoryMapping.getOrElse(category, Some(category))
+    }
+
+    val virtualGroups = List(
+      List(inputs),
+      List(base),
+      List(enrichers, customTransformers) ++ subprocesses,
+      List(services, sinks))
+
+    virtualGroups
+      .zipWithIndex
+      .flatMap {
+        case (groups, virtualGroupIndex) =>
+          for {
+            group <- groups
+            node <- group.possibleNodes
+            notHiddenCategory <- getNodeCategory(node.label, group.name)
+          } yield (virtualGroupIndex, notHiddenCategory, node)
+      }
+      .groupBy {
+        case (virtualGroupIndex, categoryName, _) => (virtualGroupIndex, categoryName)
+      }
+      .mapValues(v => v.map(e => e._3))
       .toList
-      .sortBy(_.name.toLowerCase)
-
+      .sortBy {
+        case ((virtualGroupIndex, categoryName), _) => (virtualGroupIndex, categoryName.toLowerCase)
+      }
+      // we need to merge nodes in the same category but in other virtual group
+      .foldLeft(ListMap.empty[String, List[NodeToAdd]]) {
+        case (acc, ((_, categoryName), elements)) =>
+          val accElements = acc.getOrElse(categoryName, List.empty) ++ elements
+          acc + (categoryName -> accElements)
+      }
+      .toList
+      .map {
+        case (categoryName, elements: List[NodeToAdd]) => SortedNodeGroup(categoryName, elements)
+      }
   }
 
   def prepareEdgeTypes(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
