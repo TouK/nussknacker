@@ -9,7 +9,7 @@ import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName, Hidden}
+import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
@@ -71,9 +71,12 @@ object EspTypeUtils {
 
   private def publicMethods(clazz: Class[_])
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
+    val shouldHideToString = classOf[HideToString].isAssignableFrom(clazz)
+
     val filteredMethods = clazz.getMethods
       .filterNot(m => Modifier.isStatic(m.getModifiers))
       .filter(_.getAnnotation(classOf[Hidden]) == null)
+      .filterNot(m => shouldHideToString && m.getName == "toString" && m.getParameterCount == 0)
       .filterNot(settings.isBlacklisted)
       .filter(m =>
         !blacklistedMethods.contains(m.getName) && !m.getName.contains("$")

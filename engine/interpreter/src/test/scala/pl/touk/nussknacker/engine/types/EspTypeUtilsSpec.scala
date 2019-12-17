@@ -4,7 +4,7 @@ import java.util.regex.Pattern
 
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.{Documentation, Hidden, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodI
 
 import scala.annotation.meta.{field, getter}
 import scala.concurrent.Future
-
 import scala.reflect.runtime.universe._
 
 class EspTypeUtilsSpec extends FunSuite with Matchers {
@@ -132,6 +131,14 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     )))
   }
 
+  test("should skip toString method when HideToString implemented") {
+    val hiddenToStringClasses = Table("class", classOf[JavaBannedToStringClass], classOf[BannedToStringClass])
+    forAll(hiddenToStringClasses) { EspTypeUtils.clazzDefinition(_)(ClassExtractionSettings.Default)
+      .methods.keys shouldNot contain("toString")
+    }
+  }
+
+  class BannedToStringClass extends HideToString
 
   case class ScalaSampleDocumentedClass() {
 
