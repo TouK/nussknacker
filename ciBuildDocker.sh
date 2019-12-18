@@ -55,14 +55,14 @@ if [[ -n "$version" ]]; then
          "user: $dockerUsername, package: $dockerPackageName, update: $dockerUpdateLatest," \
          "publishType: $dockerPublishType."
 
-    ./sbtwrapper -DdockerUserName=${dockerUsername} \
-                 -DdockerPackageName${dockerPackageName} \
-                 -DdockerPort=${dockerPort} \
-                 -DdockerUpLatest=${dockerUpdateLatest} \
-                 -DdockerTagName=${dockerTagName} \
-                 -DaddDevModel=${addDevModel} \
-                 "set version in ThisBuild := \"$version\"" \
-                 dist/docker:"$dockerPublishType"
+    ./ciRunSbt.sh -DdockerUserName=${dockerUsername} \
+                  -DdockerPackageName=${dockerPackageName} \
+                  -DdockerPort=${dockerPort} \
+                  -DdockerUpLatest=${dockerUpdateLatest} \
+                  -DdockerTagName=${dockerTagName} \
+                  -DaddDevModel=${addDevModel} \
+                  "set version in ThisBuild := \"$version\"" \
+                  dist/docker:"$dockerPublishType"
 else
     echo "Missing version param!"
 fi
