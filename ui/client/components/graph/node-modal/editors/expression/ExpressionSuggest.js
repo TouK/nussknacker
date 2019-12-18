@@ -120,13 +120,13 @@ class ExpressionSuggest extends React.Component {
 
   render() {
     if (this.props.dataResolved) {
-      const {isMarked, showValidation, inputProps, validators, switchable} = this.props
+      const {isMarked, showValidation, inputProps, validators, shouldShowSwitch} = this.props
       return (
         <React.Fragment>
           <div className={"row-ace-editor" +
           (!showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error ") +
           (isMarked ? " marked" : "") +
-          (switchable ? "inlined" : "")}>
+          (shouldShowSwitch ? " switchable" : "")}>
             <AceEditor mode={inputProps.language}
                        width={"100%"}
                        minLines={1}

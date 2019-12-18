@@ -8,10 +8,12 @@ export default function TestValue(props) {
 
   return (
     <div className={"node-value" + hiddenClassPart}>
-      {(testValue || {}).original ?
-        <Textarea className="node-input"
-                  readOnly={true}
-                  value={testValue.original}/> : null}
+      {
+        _.get(testValue, "original") ?
+          <Textarea className="node-input"
+                    readOnly={true}
+                    value={testValue.original}/> : null
+      }
       <Textarea
         className="node-input"
         readOnly={true}

@@ -7,13 +7,13 @@ export default function RawEditor(props) {
 
   const {
     renderFieldLabel, fieldLabel, fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows, cols, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName
+    onValueChange, rows, cols, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor
   } = props
 
   return (
     <div className={rowClassName}>
       {fieldLabel && renderFieldLabel(fieldLabel)}
-      <div className={valueClassName}>
+      <div className={(shouldShowSwitch ? " switchable " : "") + valueClassName}>
         <ExpressionSuggest
           fieldName={fieldName}
           inputProps={{
@@ -28,9 +28,15 @@ export default function RawEditor(props) {
           validators={validators}
           isMarked={isMarked}
           showValidation={showValidation}
+          shouldShowSwitch={shouldShowSwitch}
         />
       </div>
-      <SwitchIcon switchable={switchable} onClick={toggleEditor} shouldShowSwitch={shouldShowSwitch}/>
+      <SwitchIcon
+        switchable={switchable}
+        onClick={toggleEditor}
+        shouldShowSwitch={shouldShowSwitch}
+        displayRawEditor={displayRawEditor}
+      />
     </div>
   )
 }

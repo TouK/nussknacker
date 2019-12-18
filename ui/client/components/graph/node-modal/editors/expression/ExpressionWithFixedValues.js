@@ -23,8 +23,8 @@ export default class ExpressionWithFixedValues extends React.Component {
 
   render() {
     const {
-      expressionObj, fieldLabel, readOnly, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName,
-      renderFieldLabel, onValueChange
+      expressionObj, fieldLabel, readOnly, toggleEditor, shouldShowSwitch, switchable, rowClassName, valueClassName,
+      renderFieldLabel, onValueChange, displayRawEditor
     } = this.props
     const option = this.currentOption(expressionObj)
 
@@ -32,7 +32,7 @@ export default class ExpressionWithFixedValues extends React.Component {
       <div className={rowClassName ? rowClassName : " node-row"}>
         {fieldLabel && renderFieldLabel(fieldLabel)}
         <Creatable
-          className="node-value node-value-select"
+          className={"node-value-select node-value " + (shouldShowSwitch ? " switchable" : "")}
           classNamePrefix="node-value-select"
           value={option}
           onChange={(newValue) => onValueChange(newValue.value)}
@@ -40,7 +40,12 @@ export default class ExpressionWithFixedValues extends React.Component {
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
         />
-        <SwitchIcon switchable={switchable} onClick={toggleEditor} shouldShowSwitch={shouldShowSwitch}/>
+        <SwitchIcon
+          switchable={switchable}
+          onClick={toggleEditor}
+          shouldShowSwitch={shouldShowSwitch}
+          active={displayRawEditor}
+        />
       </div>
     )
   }

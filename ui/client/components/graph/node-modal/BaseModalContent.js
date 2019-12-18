@@ -34,7 +34,7 @@ export default function BaseModalContent(props) {
             </select>
           </div>
         </div>
-        {this.props.children}
+        {props.children}
       </div>
     </div>
   )

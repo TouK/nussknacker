@@ -6,7 +6,7 @@ export default function BoolEditor(props) {
 
   const {
     renderFieldLabel, fieldLabel, fieldName, expressionObj, isMarked, readOnly, onValueChange, switchable, toggleEditor,
-    shouldShowSwitch, rowClassName, valueClassName
+    shouldShowSwitch, rowClassName, valueClassName, displayRawEditor
   } = props
 
   return (
@@ -25,6 +25,7 @@ export default function BoolEditor(props) {
       shouldShowSwitch={shouldShowSwitch}
       rowClassName={rowClassName}
       valueClassName={valueClassName}
+      displayRawEditor={displayRawEditor}
     />
   )
 }

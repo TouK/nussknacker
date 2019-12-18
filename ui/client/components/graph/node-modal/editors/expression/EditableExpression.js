@@ -21,6 +21,7 @@ export default class EditableExpression extends React.Component {
                    shouldShowSwitch={this.showSwitch(fieldType, showSwitch)}
                    rowClassName={rowClassName ? rowClassName : "node-row"}
                    valueClassName={valueClassName ? valueClassName : "node-value"}
+                   displayRawEditor={this.state.displayRawEditor}
                    {...this.props}/>
   }
 
