@@ -6,16 +6,16 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
@@ -23,12 +23,12 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -37,7 +37,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
   val validation: ProcessValidation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam,
-      ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, Map.empty), Set.empty)
+      ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, Map.empty, hideMetaVariable = false), Set.empty)
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
     new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator), Map(TestProcessingTypes.Streaming -> Map()), sampleResolver, Map.empty)
   }
