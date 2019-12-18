@@ -104,8 +104,10 @@ abstract class KafkaKeyValueSerializationSchemaFactoryBase[T] extends Serializat
       override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         val key = extractKey(element, topic)
         val value = extractValue(element, topic)
+        //Kafka timestamp has to be >= 0, while Flink can use Long.MinValue
+        val timestampForKafka = Math.max(0, timestamp)
 
-        new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestamp,
+        new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestampForKafka,
           keySerializer.serialize(topic, key),
           valueSerializer.serialize(topic, value)
         )
