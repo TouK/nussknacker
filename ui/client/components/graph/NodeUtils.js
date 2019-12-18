@@ -136,7 +136,7 @@ class NodeUtils {
     const data =  (processDefinitionData.edgesForNodes
       .filter(e => !forInput || e.isForInputDefinition === forInput)
       //here we use == in second comparison, as we sometimes compare null to undefined :|
-      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition)) || {edges: [null], canChooseNodes: false}
+      .find(e => e.nodeId.type === _.get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition)) || { edges: [null], canChooseNodes: false}
     return data
   }
 
@@ -204,10 +204,20 @@ class NodeUtils {
     return `${edge.from}-${edge.to}`
   }
 
-  //TODO: methods below should be based on backend data, e.g. Subprocess can have outputs or not - based on individual subprocess...
-  hasInputs = (node) => (node.type !== "Source" && node.type !== "SubprocessInputDefinition")
+  groupIncludesOneOfNodes = (nodeGroup, nodeIds)  => _.some(nodeGroup.nodes, (node) => _.includes(nodeIds, _.get(node, "id") || node))
 
-  hasOutputs = (node) => (node.type !== "Sink" && node.type !== "SubprocessOutputDefinition")
+  groupIncludesAllOfNodes = (nodeGroup, nodeIds) => _.every(nodeGroup.nodes, (node) => _.includes(nodeIds, _.get(node, "id") || node))
+
+  nodesAreInOneGroup = (process, nodeIds) => _.some(this.getAllGroups(process), (group) => this.groupIncludesAllOfNodes(group, nodeIds))
+
+  noInputNodeTypes = ["Source", "SubprocessInputDefinition"]
+
+  noOutputNodeTypes = ["Sink", "SubprocessOutputDefinition"]
+
+  //TODO: methods below should be based on backend data, e.g. Subprocess can have outputs or not - based on individual subprocess...
+  hasInputs = (node) => !_.some(this.noInputNodeTypes, (nodeType) => _.isEqual(nodeType, _.get(node, "type")))
+
+  hasOutputs = (node) => !_.some(this.noOutputNodeTypes, (nodeType) => _.isEqual(nodeType, _.get(node, "type")))
 
 }
 

@@ -159,7 +159,7 @@ class ProcessUtils {
 
   //TODO: this should be done without these switches..
   findNodeDefinitionId = (node) => {
-    switch (node.type) {
+    switch (_.get(node, "type")) {
       case "Source":
       case "Sink": {
         return node.ref.typ
