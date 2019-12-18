@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.process
+package pl.touk.nussknacker.engine.process.helpers
 
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -22,7 +22,7 @@ object CommonTestHelpers {
   }
 }
 
-trait WithDataList[T] {
+trait WithDataList[T] extends Serializable {
 
   private val dataList = new CopyOnWriteArrayList[T]
 

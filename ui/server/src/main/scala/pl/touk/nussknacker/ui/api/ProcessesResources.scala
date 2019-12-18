@@ -353,7 +353,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
       validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(displayableProcess)))
       deploymentData = {
         val substituted = processResolving.resolveExpressions(displayableProcess, validation.typingInfo)
-        val json = ProcessMarshaller.toJson(substituted).spaces2
+        val json = ProcessMarshaller.toJson(substituted).noSpaces
         GraphProcess(json)
       }
       updateResult <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
@@ -380,7 +380,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(ProcessMarshaller.toJson(emptyCanonical).spaces2)
+    GraphProcess(ProcessMarshaller.toJson(emptyCanonical).noSpaces)
   }
 
   private def withJson(processId: ProcessId, version: Long, businessView: Boolean)

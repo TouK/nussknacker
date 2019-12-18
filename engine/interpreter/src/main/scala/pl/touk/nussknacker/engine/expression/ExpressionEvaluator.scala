@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.expression
 
 import cats.effect.IO
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ServiceInvoker
-import pl.touk.nussknacker.engine.variables.MetaVariables
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 /* We have 3 different places where expressions can be evaluated:
   - Interpreter - evaluation of service parameters and variable definitions
@@ -20,11 +20,11 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 */
 object ExpressionEvaluator {
 
-  def withLazyVals(globalVariables: Map[String, Any], listeners: Seq[ProcessListener], services: Map[String, ObjectWithMethodDef]) =
-      new ExpressionEvaluator(globalVariables, listeners, realLazyValuesProvider(services))
+  def withLazyVals(globalVariablesPreparer: GlobalVariablesPreparer, listeners: Seq[ProcessListener], services: Map[String, ObjectWithMethodDef]) =
+      new ExpressionEvaluator(globalVariablesPreparer, listeners, realLazyValuesProvider(services))
 
-  def withoutLazyVals(globalVariables: Map[String, Any], listeners: Seq[ProcessListener]) =
-    new ExpressionEvaluator(globalVariables, listeners, (_, _, _) => ThrowingLazyValuesProvider)
+  def withoutLazyVals(globalVariablesPreparer: GlobalVariablesPreparer, listeners: Seq[ProcessListener]) =
+    new ExpressionEvaluator(globalVariablesPreparer, listeners, (_, _, _) => ThrowingLazyValuesProvider)
 
 
   private object ThrowingLazyValuesProvider extends LazyValuesProvider {
@@ -61,7 +61,7 @@ object ExpressionEvaluator {
 
 }
 
-class ExpressionEvaluator(globalVariables: Map[String, Any],
+class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
                           listeners: Seq[ProcessListener], lazyValuesProviderCreator: (ExecutionContext, MetaData, String) => LazyValuesProvider) {
 
 
@@ -78,12 +78,11 @@ class ExpressionEvaluator(globalVariables: Map[String, Any],
   }
 
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
-                         (implicit ec: ExecutionContext, metaData: MetaData): Future[ValueWithContext[R]] = {
+                 (implicit ec: ExecutionContext, metaData: MetaData): Future[ValueWithContext[R]] = {
     val lazyValuesProvider = lazyValuesProviderCreator(ec, metaData, nodeId)
-    val ctxWithGlobals = ctx.withVariables(globalVariables)
-    val ctxWithMeta = MetaVariables.withVariable(ctxWithGlobals)
+    val ctxWithGlobals = ctx.withVariables(globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj))
 
-    expr.evaluate[R](ctxWithMeta, lazyValuesProvider).map { valueWithLazyContext =>
+    expr.evaluate[R](ctxWithGlobals, lazyValuesProvider).map { valueWithLazyContext =>
       listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
       ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
     }

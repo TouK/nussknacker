@@ -446,7 +446,7 @@ case object MultipleParamsService extends Service {
              @ParamName("quax") quax: String) = Future.successful(Unit)
 }
 
-object DateProcessHelper {
+object DateProcessHelper extends HideToString {
   @Documentation(
     description = "Returns current time in milliseconds"
   )

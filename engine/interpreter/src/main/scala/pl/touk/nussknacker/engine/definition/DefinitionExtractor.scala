@@ -65,6 +65,8 @@ object DefinitionExtractor {
 
   }
 
+  case class ObjectWithType(obj: Any, typ: TypingResult)
+
   case class ObjectWithMethodDef(obj: Any,
                                  methodDef: MethodDefinition,
                                  objectDefinition: ObjectDefinition) extends ObjectMetadata with LazyLogging {

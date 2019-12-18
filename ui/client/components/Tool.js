@@ -27,8 +27,12 @@ class Tool extends React.Component {
 }
 
 var spec = {
-  beginDrag: (props, monitor, component) => props.nodeModel
-};
+  beginDrag: (props, monitor, component) => {
+    const nodeModel = _.cloneDeep(props.nodeModel)
+    _.set(nodeModel, 'id', props.label)
+    return nodeModel
+  }
+}
 
 export default DragSource("element", spec, (connect, monitor) => ({
   connectDragSource: connect.dragSource()

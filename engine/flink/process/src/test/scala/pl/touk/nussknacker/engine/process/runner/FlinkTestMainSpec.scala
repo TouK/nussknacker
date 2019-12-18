@@ -12,9 +12,9 @@ import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ClassLoaderModelData, spel}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

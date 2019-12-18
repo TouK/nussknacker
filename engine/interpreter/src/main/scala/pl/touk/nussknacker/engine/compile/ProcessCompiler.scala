@@ -38,7 +38,7 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-import pl.touk.nussknacker.engine.variables.MetaVariables
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -52,10 +52,8 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
                      ) extends ProcessCompilerBase with ProcessValidator {
 
   //FIXME: should it be here?
-  private val expressionEvaluator = {
-    val globalVars = expressionConfig.globalVariables.mapValuesNow(_.obj)
-    ExpressionEvaluator.withoutLazyVals(globalVars, List())
-  }
+  private val expressionEvaluator =
+    ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(expressionConfig), List.empty)
 
   override def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
@@ -109,11 +107,12 @@ protected trait ProcessCompilerBase {
 
   protected def objectParametersExpressionCompiler: ExpressionCompiler
 
-  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext = {
-    val globalTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType)
-    val typesWithMeta = MetaVariables.withType(globalTypes)
+  private lazy val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
 
-    ValidationContext(Map.empty, typesWithMeta)
+  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext = {
+    val globalTypes = globalVariablesPreparer.prepareGlobalVariables(metaData).mapValuesNow(_.typ)
+
+    ValidationContext(Map.empty, globalTypes)
   }
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {

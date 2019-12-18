@@ -12,8 +12,6 @@ class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaS
 
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
-  private lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
-
   private val part0 = List("a", "c")
   private val part1 = List("b", "d")
 

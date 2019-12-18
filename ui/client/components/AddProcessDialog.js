@@ -69,7 +69,7 @@ class AddProcessDialog extends React.Component {
                 <div className="node-table">
                   <div className="node-table-body">
                     <div className="node-row">
-                      <div className="node-label">Id</div>
+                      <div className="node-label">Name</div>
                       <div className="node-value">
                         <input autoFocus={true} type="text" id="newProcessId" className="node-input"
                                value={this.state.processId}

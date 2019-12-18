@@ -41,6 +41,7 @@ object ProcessTestData {
   val otherExistingSinkFactory = "barSink"
   val existingServiceId = "barService"
   val otherExistingServiceId = "fooService"
+  val processorId = "fooProcessor"
 
   val existingStreamTransformer = "transformer"
   val otherExistingStreamTransformer = "otherTransformer"
@@ -52,6 +53,7 @@ object ProcessTestData {
         .withSinkFactory(existingSinkFactory)
         .withService(existingServiceId)
         .withService(otherExistingServiceId)
+        .withService(processorId, classOf[Void])
         .withCustomStreamTransformer(existingStreamTransformer, classOf[String],  CustomTransformerAdditionalData(Set("query1", "query2"),
           clearsContext = false, manyInputs = false))
         .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),

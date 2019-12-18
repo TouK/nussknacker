@@ -12,7 +12,6 @@ import history from "./history"
 
 import "./stylesheets/notifications.styl"
 
-import registerServiceWorker from './registerServiceWorker'
 import Notifications from "./containers/Notifications"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
 
@@ -32,5 +31,3 @@ ReactDOM.render(
   </AppContainer>,
   document.getElementById('root')
 )
-
-registerServiceWorker()

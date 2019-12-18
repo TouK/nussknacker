@@ -21,7 +21,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   import collection.JavaConverters._
 
   // schema.registry.url have to be defined even for MockSchemaRegistryClient
-  private lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.kafkaAddress,
+  override lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.kafkaAddress,
     Some(Map("schema.registry.url" -> "not_used")), None)
 
   private lazy val keySerializer = {

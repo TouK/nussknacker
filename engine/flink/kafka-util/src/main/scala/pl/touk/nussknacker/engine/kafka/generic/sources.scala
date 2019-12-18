@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import java.nio.charset.StandardCharsets
 
-import io.circe.{Json, JsonObject}
+import io.circe.{Decoder, Json, JsonObject}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
@@ -27,7 +28,7 @@ object sources {
     @MethodToInvoke
     def create(processMetaData: MetaData,  @ParamName("topic") topic: String,
                @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
-      val schema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserializaion)
+      val schema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
       new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema, None) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }
@@ -58,6 +59,9 @@ object sources {
 
   object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](m => deserializeToMap(m).asJava)
 
-  object JsonTypedMapDeserializaion extends EspDeserializationSchema[TypedMap](m => TypedMap(deserializeToMap(m)))
+  object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](m => TypedMap(deserializeToMap(m)))
+
+  //TOOD: better error handling?
+  class JsonDecoderDeserialization[T:Decoder:TypeInformation] extends EspDeserializationSchema[T](ba => CirceUtil.decodeJsonUnsafe(ba))
 
 }
