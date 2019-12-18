@@ -90,6 +90,7 @@ object ProcessRepository {
 
   def toDeploymentEntry(deployedProcessInfoEntityData: DeployedProcessInfoEntityData): ProcessDeployment = ProcessDeployment(
     processVersionId = deployedProcessInfoEntityData.processVersionId,
+    environment = deployedProcessInfoEntityData.environment,
     deployedAt = deployedProcessInfoEntityData.deployedAtTime,
     user = deployedProcessInfoEntityData.user,
     action = deployedProcessInfoEntityData.deploymentAction,

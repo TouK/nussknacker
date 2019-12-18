@@ -113,6 +113,7 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                                buildInfo: Map[String, String])
 
   @JsonCodec case class ProcessDeployment(processVersionId: Long,
+                                          @Deprecated environment: String, //TODO: remove it in future..
                                           deployedAt: LocalDateTime,
                                           user: String,
                                           action: DeploymentAction,
