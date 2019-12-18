@@ -53,16 +53,16 @@ if [[ -n "$version" ]]; then
 
     echo "Prepare docker build for version: $version, tag: $dockerTagName, port: $dockerPort," \
          "user: $dockerUsername, package: $dockerPackageName, update: $dockerUpdateLatest," \
-         "publishType: $dockerPublishType."
+         "publishType: $dockerPublishType, "addDevModel": $addDevModel."
 
-    ./ciRunSbt.sh -DdockerUserName=${dockerUsername} \
-                  -DdockerPackageName=${dockerPackageName} \
-                  -DdockerPort=${dockerPort} \
-                  -DdockerUpLatest=${dockerUpdateLatest} \
-                  -DdockerTagName=${dockerTagName} \
-                  -DaddDevModel=${addDevModel} \
-                  "set version in ThisBuild := \"$version\"" \
-                  dist/docker:"$dockerPublishType"
+    ./sbtwrapper -DdockerUserName=${dockerUsername} \
+                -DdockerPackageName=${dockerPackageName} \
+                -DdockerPort=${dockerPort} \
+                -DdockerUpLatest=${dockerUpdateLatest} \
+                -DdockerTagName=${dockerTagName} \
+                -DaddDevModel=${addDevModel} \
+                "set version in ThisBuild := \"$version\"" \
+                dist/docker:"$dockerPublishType"
 else
     echo "Missing version param!"
 fi
