@@ -2,6 +2,7 @@ import React from "react"
 import {parseableBoolean} from "./ExpressionParser"
 
 import {editorType, Types} from "./EditorType"
+import ProcessUtils from "../../../../../common/ProcessUtils"
 
 export default class EditableExpression extends React.Component {
 
@@ -13,16 +14,19 @@ export default class EditableExpression extends React.Component {
   }
 
   render() {
-    const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch} = this.props
-    const editorName = editorType.editorName(fieldType, expressionObj, this.state.displayRawEditor)
+    const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param} = this.props
+    const type = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression")
+    const editorName = editorType.editorName(type, expressionObj, this.state.displayRawEditor)
     const Editor = editorType.editor(editorName)
     return <Editor toggleEditor={this.toggleEditor}
                    switchable={this.switchable(editorName, expressionObj)}
-                   shouldShowSwitch={this.showSwitch(fieldType, showSwitch)}
+                   shouldShowSwitch={this.showSwitch(type, showSwitch)}
                    rowClassName={rowClassName ? rowClassName : "node-row"}
                    valueClassName={valueClassName ? valueClassName : "node-value"}
                    displayRawEditor={this.state.displayRawEditor}
-                   {...this.props}/>
+                   {...this.props}
+                   fieldType={type}
+    />
   }
 
   toggleEditor = (_) => this.setState({

@@ -320,7 +320,7 @@ export class NodeDetailsContent extends React.Component {
                   {this.state.editedNode.exceptionHandler.parameters.map((param, index) => {
                     return (
                       <div className="node-block" key={this.props.node.id + param.name + index}>
-                        {this.createExpressionListField(param.name, "expression", `exceptionHandler.parameters[${index}]`, [notEmptyValidator, errorValidator(fieldErrors, param.name)])}
+                        {this.createExpressionListField(param.name, "expression", `exceptionHandler.parameters[${index}]`, [notEmptyValidator, errorValidator(fieldErrors, param.name)], "String")}
                       </div>
                     )
                   })}
@@ -440,15 +440,16 @@ export class NodeDetailsContent extends React.Component {
   createExpressionField = (fieldName, fieldLabel, expressionProperty, validators) =>
     this.doCreateExpressionField(fieldName, fieldLabel, `${expressionProperty}`, validators);
 
-  createExpressionListField = (fieldName, expressionProperty, listFieldPath, validators) =>
-    this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`, validators);
+  createExpressionListField = (fieldName, expressionProperty, listFieldPath, validators, fieldType) =>
+    this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`, validators, fieldType);
 
-  doCreateExpressionField = (fieldName, fieldLabel, exprPath, validators) => {
+  doCreateExpressionField = (fieldName, fieldLabel, exprPath, validators, fieldType) => {
     const {showValidation, showSwitch, isEditMode} = this.props
     return (
       <ExpressionField
         fieldName={fieldName}
         fieldLabel={fieldLabel}
+        fieldType={fieldType}
         exprPath={exprPath}
         validators={validators}
         isEditMode={isEditMode}

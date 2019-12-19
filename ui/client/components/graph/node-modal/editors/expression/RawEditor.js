@@ -36,6 +36,7 @@ export default function RawEditor(props) {
         onClick={toggleEditor}
         shouldShowSwitch={shouldShowSwitch}
         displayRawEditor={displayRawEditor}
+        readOnly={readOnly}
       />
     </div>
   )

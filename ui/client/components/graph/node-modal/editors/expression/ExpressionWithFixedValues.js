@@ -44,7 +44,8 @@ export default class ExpressionWithFixedValues extends React.Component {
           switchable={switchable}
           onClick={toggleEditor}
           shouldShowSwitch={shouldShowSwitch}
-          active={displayRawEditor}
+          displayRawEditor={displayRawEditor}
+          readOnly={readOnly}
         />
       </div>
     )

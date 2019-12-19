@@ -32,8 +32,8 @@ export default class EdgeDetailsContent extends React.Component {
             edgeErrors={edgeErrors}
             readOnly={readOnly}
             isMarked={this.isMarked}
-            changeEdgeTypeValue={changeEdgeTypeValue}>
-          </BaseModalContent>
+            changeEdgeTypeValue={changeEdgeTypeValue}
+          />
         )
       }
       case "NextSwitch": {
@@ -41,21 +41,6 @@ export default class EdgeDetailsContent extends React.Component {
           expression: edge.edgeType.condition.expression,
           language: edge.edgeType.condition.language
         }
-
-        const editableExpression =
-          <EditableExpression
-            fieldType={"expression"}
-            fieldLabel={"Expression"}
-            renderFieldLabel={this.renderFieldLabel}
-            expressionObj={expressionObj}
-            readOnly={readOnly}
-            validators={[notEmptyValidator]}
-            isMarked={this.isMarked("edgeType.condition.expression")}
-            showValidation={showValidation}
-            showSwitch={showSwitch}
-            onValueChange={(newValue) => updateEdgeProp("edgeType.condition.expression", newValue)}
-          />
-
         return (
           <BaseModalContent
             edge={edge}
@@ -63,7 +48,18 @@ export default class EdgeDetailsContent extends React.Component {
             readOnly={readOnly}
             isMarked={this.isMarked}
             changeEdgeTypeValue={changeEdgeTypeValue}>
-            {editableExpression}
+            <EditableExpression
+              fieldType={"expression"}
+              fieldLabel={"Expression"}
+              renderFieldLabel={this.renderFieldLabel}
+              expressionObj={expressionObj}
+              readOnly={readOnly}
+              validators={[notEmptyValidator]}
+              isMarked={this.isMarked("edgeType.condition.expression")}
+              showValidation={showValidation}
+              showSwitch={showSwitch}
+              onValueChange={(newValue) => updateEdgeProp("edgeType.condition.expression", newValue)}
+            />
           </BaseModalContent>
         )
       }

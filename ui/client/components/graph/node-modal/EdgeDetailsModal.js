@@ -111,7 +111,7 @@ class EdgeDetailsModal extends React.Component {
                     <span>edge</span>
                   </div>
                 </div>
-                <div className="modalContentDark">
+                <div className="modalContentDark edge-details">
                   <EdgeDetailsContent
                     changeEdgeTypeValue={this.changeEdgeTypeValue}
                     updateEdgeProp={this.updateEdgeProp}
