@@ -181,7 +181,7 @@ class Visualization extends React.Component {
     const isNotThisCopyEvent = this.isNotThisCopyEvent(event, copyNodeElementId)
 
     isNotThisCopyEvent && this.canCopySelection() ? this.copyToClipboard(shouldCreateNotification) :
-      this.props.notificationActions.error("Can not copy selected content. It should contains only plain nodes without groups")
+      this.props.notificationActions.error("Can not copy selected content. It should contain only plain nodes without groups")
   }
 
   copyToClipboard(shouldCreateNotification) {
