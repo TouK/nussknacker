@@ -1,7 +1,7 @@
 import React from "react"
 import TestValue from "./TestValue"
-import InlinedSvgs from "../../../../../../assets/icons/InlinedSvgs"
-import NodeTip from "../../../NodeTip"
+import NodeTip from "../NodeTip"
+import InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 
 export default function ExpressionTestResults(props) {
   const {fieldName, resultsToShow, resultsToHide, toggleResult} = props

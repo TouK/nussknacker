@@ -1,7 +1,8 @@
 import _ from "lodash"
-import ModalRenderUtils from "../ModalRenderUtils"
 import TestValue from "./TestValue"
 import React from "react"
+import NodeTip from "../NodeTip"
+import InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 
 export default function TestResults(props) {
   const {nodeId, resultsToShow} = props
@@ -10,7 +11,9 @@ export default function TestResults(props) {
     resultsToShow && !_.isEmpty(resultsToShow.context.variables) ?
       <div className="node-table-body node-test-results">
         <div className="node-row">
-          <div className="node-label">{ModalRenderUtils.renderInfo('Variables in test case')}</div>
+          <div className="node-label">
+            <NodeTip title={'Variables in test case'} icon={InlinedSvgs.tipsInfo}/>
+          </div>
         </div>
         {
           Object.keys(resultsToShow.context.variables).map((key, ikey) =>
