@@ -1,6 +1,7 @@
 import React from "react"
-import ModalRenderUtils from "../../../ModalRenderUtils"
 import TestValue from "./TestValue"
+import InlinedSvgs from "../../../../../../assets/icons/InlinedSvgs"
+import NodeTip from "../../../NodeTip"
 
 export default function ExpressionTestResults(props) {
   const {fieldName, testResultsToShow, testResultsToHide, toggleTestResult} = props
@@ -13,7 +14,8 @@ export default function ExpressionTestResults(props) {
       <div>
         {props.children}
         <div className="node-row node-test-results">
-          <div className="node-label">{ModalRenderUtils.renderInfo('Value evaluated in test case')}
+          <div className="node-label">
+            <NodeTip title={'Value evaluated in test case'} icon={InlinedSvgs.tipsInfo}/>
             {testValue.pretty ? <span className={showIconClass} onClick={e => toggleTestResult(fieldName)}/> : null}
           </div>
           <TestValue testValue={testValue} shouldHideTestResults={shouldHideTestResults}/>

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from "prop-types"
-import ModalRenderUtils from "./ModalRenderUtils"
+import NodeErrors from "./NodeErrors"
 
 export default function BaseModalContent(props) {
 
@@ -8,7 +8,7 @@ export default function BaseModalContent(props) {
 
   return (
     <div className="node-table">
-      {ModalRenderUtils.renderOtherErrors(edgeErrors, "Edge has errors")}
+      <NodeErrors errors={edgeErrors} message={"Edge has errors"}/>
       <div className="node-table-body">
         <div className="node-row">
           <div className="node-label">From</div>
