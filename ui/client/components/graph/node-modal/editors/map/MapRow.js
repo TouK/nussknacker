@@ -5,7 +5,7 @@ import MapValue from "./MapValue"
 import {notEmptyValidator} from "../../../../../common/Validators"
 
 export default function MapRow(props) {
-  const {field, validators, showValidation, readOnly, paths, isMarked, onChange, onRemoveField} = props
+  const {field, validators, showValidation, readOnly, paths, isMarked, onChange, onRemoveField, showSwitch} = props
 
   return (
     <div className="node-row movable-row">
@@ -24,6 +24,7 @@ export default function MapRow(props) {
                 paths={paths}
                 validators={[notEmptyValidator]}
                 showValidation={showValidation}
+                showSwitch={showSwitch}
                 readOnly={readOnly}
                 onChange={onChange}/>
 
@@ -45,5 +46,6 @@ MapRow.propTypes = {
   field: PropTypes.object.isRequired,
   paths: PropTypes.string.isRequired,
   validators: PropTypes.array,
-  onChange: PropTypes.func
+  onChange: PropTypes.func,
+  showSwitch: PropTypes.bool
 }

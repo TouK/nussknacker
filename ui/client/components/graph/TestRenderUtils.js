@@ -1,44 +1,9 @@
-import React from 'react';
-import Textarea from "react-textarea-autosize";
-import _ from "lodash";
+import React from 'react'
+import _ from "lodash"
 
-import ModalRenderUtils from "./node-modal/ModalRenderUtils";
-import TestResultUtils from "../../common/TestResultUtils";
-
-export function wrapWithTestResult(fieldName, testResultsToShow, testResultsToHide, toggleTestResult, field) {
-  const testValue = fieldName ? (testResultsToShow && testResultsToShow.expressionResults[fieldName]) : null
-  const shouldHideTestResults = testResultsToHide.has(fieldName)
-  const showIconClass = shouldHideTestResults ? "glyphicon glyphicon-eye-close" : "glyphicon glyphicon-eye-open"
-  if (testValue) {
-    return (
-      <div >
-        {field}
-        <div className="node-row node-test-results">
-          <div className="node-label">{ModalRenderUtils.renderInfo('Value evaluated in test case')}
-            {testValue.pretty ? <span className={showIconClass} onClick={e => toggleTestResult(fieldName)}/> : null}
-          </div>
-          {showTestValue(testValue, shouldHideTestResults)}
-        </div>
-      </div>
-    )
-  } else {
-    return field
-  }
-}
-
-function prettyPrint(obj) {
-  return JSON.stringify(obj, null, 2);
-}
-
-function showTestValue(testValue, shouldHideTestResults) {
-  const hiddenClassPart = (shouldHideTestResults ? " partly-hidden" : "");
-  return (<div className={"node-value" + hiddenClassPart}>
-    {(testValue || {}).original ? <Textarea className="node-input" readOnly={true} value={testValue.original}/> : null}
-    <Textarea className="node-input" readOnly={true}
-              value={testValue !== null ? prettyPrint(testValue.pretty) : "null"}/>
-    {shouldHideTestResults ? <div className="fadeout"></div> : null}
-  </div>);
-}
+import ModalRenderUtils from "./node-modal/ModalRenderUtils"
+import TestResultUtils from "../../common/TestResultUtils"
+import TestValue from "./node-modal/editors/expression/tests/TestValue"
 
 export function testResults(nodeId, testResultsToShow) {
   if (testResultsToShow && !_.isEmpty(testResultsToShow.context.variables)) {
@@ -52,7 +17,7 @@ export function testResults(nodeId, testResultsToShow) {
         {Object.keys(ctx).map((key, ikey) =>
           <div className="node-row" key={ikey}>
             <div className="node-label">{key}:</div>
-            {showTestValue(ctx[key], false)}
+            <TestValue testValue={ctx[key]} shouldHideTestResults={false}/>
           </div>
         )}
         {testResultsToShow && !_.isEmpty(testResultsToShow.mockedResultsForCurrentContext) ?
