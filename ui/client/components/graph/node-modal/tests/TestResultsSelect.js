@@ -3,17 +3,17 @@ import TestResultUtils from "../../../../common/TestResultUtils"
 
 export default function TestResultsSelect(props) {
 
-  const {testResults, testResultsIdToShow, selectTestResults} = props
+  const {results, resultsIdToShow, selectResults} = props
 
-  return TestResultUtils.hasTestResults(testResults) ?
+  return TestResultUtils.hasTestResults(results) ?
     <div className="node-row">
       <div className="node-label">Test case:</div>
       <div className="node-value">
-        <select className="node-input selectTestResults"
-                onChange={(e) => selectTestResults(e.target.value, testResults)}
-                value={testResultsIdToShow}>
+        <select className="node-input selectResults"
+                onChange={(e) => selectResults(e.target.value, results)}
+                value={resultsIdToShow}>
           {
-            TestResultUtils.availableContexts(testResults).map((ctx, idx) => (
+            TestResultUtils.availableContexts(results).map((ctx, idx) => (
               <option key={idx} value={ctx.id}>{ctx.id} ({ctx.display})</option>)
             )
           }

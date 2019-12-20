@@ -4,9 +4,9 @@ import InlinedSvgs from "../../../../../../assets/icons/InlinedSvgs"
 import NodeTip from "../../../NodeTip"
 
 export default function ExpressionTestResults(props) {
-  const {fieldName, testResultsToShow, testResultsToHide, toggleTestResult} = props
-  const testValue = fieldName ? (testResultsToShow && testResultsToShow.expressionResults[fieldName]) : null
-  const shouldHideTestResults = testResultsToHide.has(fieldName)
+  const {fieldName, resultsToShow, resultsToHide, toggleResult} = props
+  const testValue = fieldName ? (resultsToShow && resultsToShow.expressionResults[fieldName]) : null
+  const shouldHideTestResults = resultsToHide.has(fieldName)
   const showIconClass = shouldHideTestResults ? "glyphicon glyphicon-eye-close" : "glyphicon glyphicon-eye-open"
 
   return (
@@ -16,9 +16,9 @@ export default function ExpressionTestResults(props) {
         <div className="node-row node-test-results">
           <div className="node-label">
             <NodeTip title={'Value evaluated in test case'} icon={InlinedSvgs.tipsInfo}/>
-            {testValue.pretty ? <span className={showIconClass} onClick={e => toggleTestResult(fieldName)}/> : null}
+            {testValue.pretty ? <span className={showIconClass} onClick={e => toggleResult(fieldName)}/> : null}
           </div>
-          <TestValue testValue={testValue} shouldHideTestResults={shouldHideTestResults}/>
+          <TestValue value={testValue} shouldHideTestResults={shouldHideTestResults}/>
         </div>
       </div>
     ) : props.children

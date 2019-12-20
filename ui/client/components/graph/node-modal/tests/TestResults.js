@@ -4,34 +4,34 @@ import TestValue from "./TestValue"
 import React from "react"
 
 export default function TestResults(props) {
-  const {nodeId, testResultsToShow} = props
+  const {nodeId, resultsToShow} = props
 
   return (
-    testResultsToShow && !_.isEmpty(testResultsToShow.context.variables) ?
+    resultsToShow && !_.isEmpty(resultsToShow.context.variables) ?
       <div className="node-table-body node-test-results">
         <div className="node-row">
           <div className="node-label">{ModalRenderUtils.renderInfo('Variables in test case')}</div>
         </div>
         {
-          Object.keys(testResultsToShow.context.variables).map((key, ikey) =>
+          Object.keys(resultsToShow.context.variables).map((key, ikey) =>
             <div className="node-row" key={ikey}>
               <div className="node-label">{key}:</div>
-              <TestValue testValue={testResultsToShow.context.variables[key]} shouldHideTestResults={false}/>
+              <TestValue value={resultsToShow.context.variables[key]} shouldHideTestResults={false}/>
             </div>)
         }
         {
-          testResultsToShow && !_.isEmpty(testResultsToShow.mockedResultsForCurrentContext) ?
-            (testResultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
+          resultsToShow && !_.isEmpty(resultsToShow.mockedResultsForCurrentContext) ?
+            (resultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
                 <span className="testResultDownload">
             <a download={nodeId + "-single-input"} key={index} href={downloadableHref(mockedValue.value.pretty)}>
               <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
             ) : null
         }
         {
-          testResultsToShow && !_.isEmpty(testResultsToShow.mockedResultsForEveryContext) ?
+          resultsToShow && !_.isEmpty(resultsToShow.mockedResultsForEveryContext) ?
             <span className="testResultDownload">
             <a download={nodeId + "-all-inputs"}
-               href={downloadableHref(mergedMockedResults(testResultsToShow.mockedResultsForEveryContext))}>
+               href={downloadableHref(mergedMockedResults(resultsToShow.mockedResultsForEveryContext))}>
             <span className="glyphicon glyphicon-download"/> Results for all inputs</a></span>
             : null
         }

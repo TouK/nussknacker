@@ -35,9 +35,9 @@ export default class ExpressionField extends React.Component {
     return (
       <ExpressionTestResults
         fieldName={fieldName}
-        testResultsToShow={testResultsToShow}
-        testResultsToHide={testResultsToHide}
-        toggleTestResult={toggleTestResult}>
+        resultsToShow={testResultsToShow}
+        resultsToHide={testResultsToHide}
+        toggleResult={toggleTestResult}>
         <EditableExpression
           fieldType={fieldType}
           param={this.findParamByName(fieldLabel)}

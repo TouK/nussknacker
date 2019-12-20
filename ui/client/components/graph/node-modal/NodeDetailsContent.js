@@ -604,13 +604,13 @@ export class NodeDetailsContent extends React.Component {
       <div className={nodeClass}>
         <NodeErrors errors={otherErrors} message={'Node has errors'}/>
         <TestResultsSelect
-          testResults={this.props.testResults}
-          testResultsIdToShow={this.state.testResultsIdToShow}
-          selectTestResults={this.selectTestResults}
+          results={this.props.testResults}
+          resultsIdToShow={this.state.testResultsIdToShow}
+          selectResults={this.selectTestResults}
         />
-        <TestErrors testResultsToShow={this.state.testResultsToShow}/>
+        <TestErrors resultsToShow={this.state.testResultsToShow}/>
         {this.customNode(fieldErrors)}
-        <TestResults nodeId={this.props.node.id} testResultsToShow={this.state.testResultsToShow}/>
+        <TestResults nodeId={this.props.node.id} resultsToShow={this.state.testResultsToShow}/>
       </div>
     )
   }
