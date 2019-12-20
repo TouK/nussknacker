@@ -2,9 +2,9 @@ import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import NodeUtils from "../graph/NodeUtils"
 import HeaderIcon from "./HeaderIcon"
 import React from "react"
-import {Link} from "react-router-dom"
-import {v4 as uuid4} from "uuid";
+import {v4 as uuid4} from "uuid"
 import PropTypes from "prop-types"
+import {Link} from "react-router-dom"
 
 export default class Errors extends React.Component {
 
@@ -30,14 +30,12 @@ export default class Errors extends React.Component {
     const globalErrors = errors.globalErrors
     const nodeErrors = errors.invalidNodes
     const propertiesErrors = errors.processPropertiesErrors
-    const nodeIds = Object.keys(nodeErrors)
-    const separator = ', '
 
     return _.isEmpty(nodeErrors) && _.isEmpty(propertiesErrors) && _.isEmpty(globalErrors) ? null :
       <div className={"node-error-section"}>
         <div>
           {this.globalErrorsTips(globalErrors)}
-          {this.nodeErrorsTips(nodeIds, propertiesErrors, separator, nodeErrors)}
+          {this.nodeErrorsTips(propertiesErrors, nodeErrors)}
         </div>
       </div>
   }
@@ -54,43 +52,76 @@ export default class Errors extends React.Component {
         {(suffix ? suffix + ": " : '') + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
     </span>
 
-  nodeErrorsTips = (nodeIds, propertiesErrors, separator, nodeErrors) => {
+  nodeErrorsTips = (propertiesErrors, nodeErrors) => {
     const {showDetails, currentProcess} = this.props
-    return <div className={"node-error-tips"}>
-      {
-        _.isEmpty(nodeIds) && _.isEmpty(propertiesErrors) ? null :
-          <span className={"error-tip-header"}>Errors in </span>
-      }
-      <div className={"node-error-links"}>
-        {
-          _.isEmpty(nodeIds) ? null :
-            nodeIds.map((nodeId, index) =>
-              <Link key={uuid4()}
-                    className={"node-error-link"}
-                    to={""}
-                    onClick={event => showDetails(event, NodeUtils.getNodeById(nodeId, currentProcess))}>
-                {nodeId}
-                {(index < nodeIds.length - 1) || !_.isEmpty(propertiesErrors) ? separator : null}
-              </Link>)
-        }
-        {
-          _.isEmpty(propertiesErrors) ? null :
-            <Link key={uuid4()}
-                  className={"node-error-link"}
-                  to={""}
-                  onClick={event => showDetails(event, currentProcess.properties)}>
-              {"properties"}
-            </Link>
-        }
+    const nodeIds = Object.keys(nodeErrors)
+    const looseNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Loose node"))
+    const otherNodeErrorIds = _.difference(nodeIds, looseNodeIds)
+
+    return (
+      <div className={"node-error-tips"}>
+        {_.isEmpty(otherNodeErrorIds) && _.isEmpty(propertiesErrors) ? null : <ErrorHeader message={"Errors in: "}/>}
+        <div className={"node-error-links"}>
+          {
+            !_.isEmpty(nodeIds) && otherNodeErrorIds.map((nodeId, index) =>
+              <NodeErrorLink
+                nodeId={nodeId}
+                onClick={event => showDetails(event, NodeUtils.getNodeById(nodeId, currentProcess))}
+                addSeparator={(index < nodeIds.length - 1) || !_.isEmpty(propertiesErrors)}
+              />
+            )
+          }
+          {
+            !_.isEmpty(propertiesErrors) &&
+            <NodeErrorLink
+              onClick={event => showDetails(event, currentProcess.properties)}
+              nodeId={"properties"}
+            />
+          }
+          {
+            !_.isEmpty(looseNodeIds) &&
+            <React.Fragment>
+              <ErrorHeader message={"Loose nodes: "}/>
+              {
+                looseNodeIds.map((nodeId, index) =>
+                  <NodeErrorLink
+                    onClick={event => showDetails(event, NodeUtils.getNodeById(nodeId, currentProcess))}
+                    nodeId={nodeId}
+                    addSeparator={index < (looseNodeIds.length - 1)}
+                  />
+                )
+              }
+            </React.Fragment>
+          }
+        </div>
       </div>
-    </div>
+    )
   }
 }
 
 Errors.defaultProps = {
-  errors : {
+  errors: {
     globalErrors: [],
     invalidNodes: {},
     processPropertiesErrors: []
   }
+}
+
+const ErrorHeader = (props) => {
+  const {message} = props
+
+  return <span className={"error-tip-header"}>{message}</span>
+}
+
+const NodeErrorLink = (props) => {
+  const {onClick, nodeId, addSeparator} = props
+
+  const separator = ', '
+
+  return (
+    <Link key={uuid4()} className={"node-error-link"} to={""} onClick={onClick}>
+      {nodeId}
+      {addSeparator ? separator : null}
+    </Link>
+  )
 }
