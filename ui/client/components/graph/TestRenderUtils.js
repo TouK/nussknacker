@@ -1,18 +1,21 @@
 import React from 'react'
 import _ from "lodash"
 
-import ModalRenderUtils from "./node-modal/ModalRenderUtils"
 import TestResultUtils from "../../common/TestResultUtils"
 import TestValue from "./node-modal/editors/expression/tests/TestValue"
+import InlinedSvgs from "../../assets/icons/InlinedSvgs"
+import NodeTip from "./node-modal/NodeTip"
 
 export function testResults(nodeId, testResultsToShow) {
   if (testResultsToShow && !_.isEmpty(testResultsToShow.context.variables)) {
-    const ctx = testResultsToShow.context.variables;
+    const ctx = testResultsToShow.context.variables
     return (
 
       <div className="node-table-body node-test-results">
         <div className="node-row">
-          <div className="node-label">{ModalRenderUtils.renderInfo('Variables in test case')}</div>
+          <div className="node-label">
+            <NodeTip title={'Variables in test case'} icon={InlinedSvgs.tipsInfo}/>
+          </div>
         </div>
         {Object.keys(ctx).map((key, ikey) =>
           <div className="node-row" key={ikey}>
@@ -36,7 +39,7 @@ export function testResults(nodeId, testResultsToShow) {
         }
       </div>)
   } else {
-    return null;
+    return null
   }
 }
 
@@ -54,9 +57,10 @@ export function testResultsSelect(testResults, testResultsIdToShow, selectTestRe
       <div className="node-row">
         <div className="node-label">Test case:</div>
         <div className="node-value">
-          <select className="node-input selectTestResults" onChange={(e) => selectTestResults(e.target.value, testResults)}
+          <select className="node-input selectTestResults"
+                  onChange={(e) => selectTestResults(e.target.value, testResults)}
                   value={testResultsIdToShow}>
-            { TestResultUtils.availableContexts(testResults).map((ctx, idx) =>
+            {TestResultUtils.availableContexts(testResults).map((ctx, idx) =>
               (<option key={idx} value={ctx.id}>{ctx.id} ({ctx.display})</option>)
             )}
           </select>
@@ -64,7 +68,7 @@ export function testResultsSelect(testResults, testResultsIdToShow, selectTestRe
       </div>
     )
   } else {
-    return null;
+    return null
   }
 
 }
@@ -77,7 +81,7 @@ export function stateForSelectTestResults(id, testResults) {
       testResultsIdToShow: chosenId
     }
   } else {
-    return null;
+    return null
   }
 }
 
@@ -90,15 +94,17 @@ export function testErrors(testResultsToShow) {
     return (
       <div className="node-table-body">
         <div className="node-row">
-          <div className="node-label">{ ModalRenderUtils.renderWarning('Test case error')} </div>
+          <div className="node-label">
+            <NodeTip title={'Test case error'} icon={InlinedSvgs.tipsWarning}/>
+          </div>
           <div className="node-value">
             <div className="node-error">{testResultsToShow.error}</div>
           </div>
         </div>
       </div>
-    );
+    )
   } else {
-    return null;
+    return null
   }
 }
 

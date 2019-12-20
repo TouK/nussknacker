@@ -16,11 +16,11 @@ import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessI
 import {connect} from "react-redux"
 import ActionsUtils from "../../../actions/ActionsUtils"
 import classNames from "classnames"
-import ModalRenderUtils from "./ModalRenderUtils"
 import {branchErrorFieldName} from "./BranchParameters"
 import Field from "./editors/field/Field"
 import EditableExpression from "./editors/expression/EditableExpression"
 import ExpressionField from "./editors/expression/ExpressionField"
+import NodeErrors from "./NodeErrors"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -599,7 +599,7 @@ export class NodeDetailsContent extends React.Component {
     const otherErrors = this.props.nodeErrors ? this.props.nodeErrors.filter(error => !fieldErrors.includes(error)) : []
     return (
       <div className={nodeClass}>
-        {ModalRenderUtils.renderOtherErrors(otherErrors, 'Node has errors')}
+        <NodeErrors errors={otherErrors} message={'Node has errors'}/>
         {TestRenderUtils.testResultsSelect(this.props.testResults, this.state.testResultsIdToShow, this.selectTestResults)}
         {TestRenderUtils.testErrors(this.state.testResultsToShow)}
         {this.customNode(fieldErrors)}
