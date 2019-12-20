@@ -2,7 +2,7 @@ import React from "react"
 import _ from "lodash"
 import EditableExpression from "./EditableExpression"
 import {Types} from "./EditorType"
-import ExpressionTestResults from "./tests/ExpressionTestResults"
+import ExpressionTestResults from "../../tests/ExpressionTestResults"
 
 export default class ExpressionField extends React.Component {
 
@@ -35,9 +35,9 @@ export default class ExpressionField extends React.Component {
     return (
       <ExpressionTestResults
         fieldName={fieldName}
-        testResultsToShow={testResultsToShow}
-        testResultsToHide={testResultsToHide}
-        toggleTestResult={toggleTestResult}>
+        resultsToShow={testResultsToShow}
+        resultsToHide={testResultsToHide}
+        toggleResult={toggleTestResult}>
         <EditableExpression
           fieldType={fieldType}
           param={this.findParamByName(fieldLabel)}

@@ -344,10 +344,12 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       margin-bottom: 10px
       margin-top: 10px
     .node-tip
-      margin-right 10px
+      margin-left 10px
       width 15px
       height 15px
-      float right
+      &.node-error-tip
+        margin-right 10px
+        float right
     .node-test-results
       border: 1px solid testResultsColor
       padding: 5px

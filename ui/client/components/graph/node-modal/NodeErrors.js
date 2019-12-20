@@ -10,7 +10,7 @@ export default class NodeErrors extends React.Component {
     return !_.isEmpty(errors) ?
       <div className="node-table-body">
         <div className="node-label">
-          <NodeTip title={errorMessage} icon={InlinedSvgs.tipsError}/>
+          <NodeTip title={errorMessage} icon={InlinedSvgs.tipsError} className={"node-error-tip"}/>
         </div>
         <div className="node-value">
           <div>

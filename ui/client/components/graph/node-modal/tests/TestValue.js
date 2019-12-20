@@ -3,21 +3,21 @@ import React from "react"
 
 export default function TestValue(props) {
 
-  const {testValue, shouldHideTestResults} = props
+  const {value, shouldHideTestResults} = props
   const hiddenClassPart = (shouldHideTestResults ? " partly-hidden" : "")
 
   return (
     <div className={"node-value" + hiddenClassPart}>
       {
-        _.get(testValue, "original") ?
+        _.get(value, "original") ?
           <Textarea className="node-input"
                     readOnly={true}
-                    value={testValue.original}/> : null
+                    value={value.original}/> : null
       }
       <Textarea
         className="node-input"
         readOnly={true}
-        value={testValue !== null ? prettyPrint(testValue.pretty) : "null"}
+        value={value !== null ? prettyPrint(value.pretty) : "null"}
       />
       {shouldHideTestResults ? <div className="fadeout"/> : null}
     </div>

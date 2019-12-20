@@ -1,7 +1,6 @@
 import React from "react"
 import _ from "lodash"
 import NodeUtils from "../NodeUtils"
-import * as TestRenderUtils from "./../TestRenderUtils"
 import ProcessUtils from '../../../common/ProcessUtils'
 import * as JsonUtils from '../../../common/JsonUtils'
 import ParameterList from "./ParameterList"
@@ -20,6 +19,10 @@ import {branchErrorFieldName} from "./BranchParameters"
 import Field from "./editors/field/Field"
 import EditableExpression from "./editors/expression/EditableExpression"
 import ExpressionField from "./editors/expression/ExpressionField"
+import TestResults from "./tests/TestResults"
+import TestResultsSelect from "./tests/TestResultsSelect"
+import TestErrors from "./tests/TestErrors"
+import TestResultUtils from "../../../common/TestResultUtils"
 import NodeErrors from "./NodeErrors"
 
 //move state to redux?
@@ -34,7 +37,7 @@ export class NodeDetailsContent extends React.Component {
     this.nodeDef = this.prepareNodeDef(props.node, this.nodeObjectDetails, props.processToDisplay)
 
     this.state = {
-      ...TestRenderUtils.stateForSelectTestResults(null, this.props.testResults),
+      ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
       editedNode: this.enrichNodeWithProcessDependentData(_.cloneDeep(props.node)),
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
@@ -509,7 +512,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   selectTestResults = (id, testResults) => {
-    const stateForSelect = TestRenderUtils.stateForSelectTestResults(id, testResults)
+    const stateForSelect = TestResultUtils.stateForSelectTestResults(id, testResults)
     if (stateForSelect) {
       this.setState(stateForSelect)
     }
@@ -594,16 +597,20 @@ export class NodeDetailsContent extends React.Component {
   }
 
   render() {
-    const nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode});
+    const nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
     const fieldErrors = this.fieldErrors(this.props.nodeErrors || [])
     const otherErrors = this.props.nodeErrors ? this.props.nodeErrors.filter(error => !fieldErrors.includes(error)) : []
     return (
       <div className={nodeClass}>
         <NodeErrors errors={otherErrors} message={'Node has errors'}/>
-        {TestRenderUtils.testResultsSelect(this.props.testResults, this.state.testResultsIdToShow, this.selectTestResults)}
-        {TestRenderUtils.testErrors(this.state.testResultsToShow)}
+        <TestResultsSelect
+          results={this.props.testResults}
+          resultsIdToShow={this.state.testResultsIdToShow}
+          selectResults={this.selectTestResults}
+        />
+        <TestErrors resultsToShow={this.state.testResultsToShow}/>
         {this.customNode(fieldErrors)}
-        {TestRenderUtils.testResults(this.props.node.id, this.state.testResultsToShow)}
+        <TestResults nodeId={this.props.node.id} resultsToShow={this.state.testResultsToShow}/>
       </div>
     )
   }

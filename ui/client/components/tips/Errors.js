@@ -65,6 +65,7 @@ export default class Errors extends React.Component {
           {
             !_.isEmpty(nodeIds) && otherNodeErrorIds.map((nodeId, index) =>
               <NodeErrorLink
+                key={uuid4()}
                 nodeId={nodeId}
                 onClick={event => showDetails(event, NodeUtils.getNodeById(nodeId, currentProcess))}
                 addSeparator={(index < nodeIds.length - 1) || !_.isEmpty(propertiesErrors)}
@@ -85,6 +86,7 @@ export default class Errors extends React.Component {
               {
                 looseNodeIds.map((nodeId, index) =>
                   <NodeErrorLink
+                    key={uuid4()}
                     onClick={event => showDetails(event, NodeUtils.getNodeById(nodeId, currentProcess))}
                     nodeId={nodeId}
                     addSeparator={index < (looseNodeIds.length - 1)}
