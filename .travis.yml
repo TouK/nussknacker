@@ -32,10 +32,10 @@ env:
     - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${FORMATTED_DATE}-${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
     - DOCKER_SOURCE_TAG=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}:${BUILD_VERSION}`
     - DOCKER_REPOSITORY=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}`
-    - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true"`
+    - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true" || echo "false"`
     #We do cross build in tests only for staging/master
-    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true"`
-    - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true"`
+    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true" || echo "false"`
+    - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true" || echo "false"`
 
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:

@@ -5,23 +5,8 @@ import * as  queryString from 'query-string'
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
 import history from "../history"
 import HttpService from "../http/HttpService"
-import * as ProcessStateUtils from "../common/ProcessStateUtils"
+import ProcessStateUtils from "../common/ProcessStateUtils"
 import Metrics from "./Metrics"
-
-const DeploymentAction = {
-  CANCEL: "CANCEL",
-  DEPLOY: "DEPLOY",
-
-  isDeployed: (deployment) => {
-    const action = _.get(deployment, 'action')
-    return action != null && action.toUpperCase() === DeploymentAction.DEPLOY
-  },
-
-  isCanceled: (deployment) => {
-    const action = _.get(deployment, 'action')
-    return action != null && action.toUpperCase() === DeploymentAction.CANCEL
-  }
-}
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
@@ -176,13 +161,13 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   processStatusClass = (process) => {
     const processName = process.name
-    const shouldRun = DeploymentAction.isDeployed(process.deployment)
+    const shouldRun = ProcessStateUtils.isDeployed(process)
     return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
   processStatusTitle = (process) => {
     const processName = process.name
-    const shouldRun = DeploymentAction.isDeployed(process.deployment)
+    const shouldRun = ProcessStateUtils.isDeployed(process)
     return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 

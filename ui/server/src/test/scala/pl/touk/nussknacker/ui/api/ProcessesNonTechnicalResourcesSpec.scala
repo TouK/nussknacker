@@ -17,7 +17,7 @@ class ProcessesNonTechnicalResourcesSpec extends FlatSpec with ScalatestRouteTes
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   val routeWithAllPermissions = withAllPermissions(processesRoute)
-  implicit val loggedUser = LoggedUser("lu", testPermissionEmpty)
+  implicit val loggedUser = LoggedUser("1", "lu", testPermissionEmpty)
 
   it should "return simplified version of process for non technical user" in {
     val processToSave = ProcessTestData.technicalValidProcess

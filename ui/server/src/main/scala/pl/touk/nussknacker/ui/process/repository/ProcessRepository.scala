@@ -30,13 +30,18 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
       .filter(_.processId === processId.value)
       .sortBy(_.createDate.desc)
 
-  protected def fetchInitialVersionPerProcess(implicit fetchShape: ProcessShapeFetchStrategy[_], ec: ExecutionContext): Query[(Rep[Long], ProcessVersionEntityFactory#BaseProcessVersionEntity), (Long, ProcessVersionEntityData), Seq] =
-    processVersionsTableQuery
+  protected def fetchLastDeploymentActionPerProcess: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
+    deployedProcessesTable
       .groupBy(_.processId)
-      .map { case (processId, group) => (processId, group.map(_.createDate).min) }
-      .join(processVersionsTableQuery)
-      .on { case ((processId, latestVersionDate), processVersion) => processVersion.processId === processId && processVersion.createDate === latestVersionDate }
-      .map{ case ((processId, _), processVersion) => processId -> processVersion}
+      .map { case (processId, group) => (processId, group.map(_.deployedAt).max) }
+      .join(deployedProcessesTable)
+      .on { case ((processId, latestDeployedAt), deployAction) => deployAction.processId === processId && deployAction.deployedAt === latestDeployedAt } //We fetch exactly this one  with max deployment
+      .map { case ((processId, _), deployAction) => processId -> deployAction }
+
+  protected def fetchProcessLatestDeployActions(processId: Long): Query[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity, DeployedProcessInfoEntityData, Seq] =
+    deployedProcessesTable
+      .filter(_.processId === processId)
+      .sortBy(_.deployedAt.desc)
 
   protected def fetchLatestProcesses(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                      deploymentsPerEnv: Seq[(Long, DeployedProcessInfoEntityData)],

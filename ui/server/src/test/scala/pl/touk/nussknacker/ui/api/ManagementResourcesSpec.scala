@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.security.api.Permission
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
@@ -35,7 +35,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeployment]] =
     BeMatcher(equal(
-        Option(ProcessDeployment(versionId, "test", fixedTime, user().id, DeploymentAction.Deploy, buildInfo))
+        Option(ProcessDeployment(versionId, "test", fixedTime, user().username, DeploymentAction.Deploy, buildInfo))
       ).matcher[Option[ProcessDeployment]]
     ).compose[Option[ProcessDeployment]](_.map(_.copy(deployedAt = fixedTime)))
 
@@ -53,7 +53,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             decodeDetails.deployment shouldBe deployedWithVersions(2)
 
             val currentDeployments = getHistoryDeployments
-            currentDeployments.size shouldBe 1
+            currentDeployments.size shouldBe 2
             currentDeployments.head.deployedAt should not be oldDeployments.head.deployedAt
             val buildInfo = currentDeployments.head.buildInfo
             buildInfo("engine-version") should not be empty
@@ -78,8 +78,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             val deploymentHistory = responseAs[List[DeploymentHistoryEntry]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
-              DeploymentHistoryEntry(2, curTime, user("userId").id, DeploymentAction.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
-              DeploymentHistoryEntry(2, curTime, user("userId").id, DeploymentAction.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
+              DeploymentHistoryEntry(2, curTime, user().username, DeploymentAction.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
+              DeploymentHistoryEntry(2, curTime, user().username, DeploymentAction.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
             )
           }
         }
@@ -95,7 +95,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("deploy technical process and mark it as deployed") {
-    implicit val loggedUser = user("userId", Map(testCategoryName->Set(Permission.Write, Permission.Deploy, Permission.Read)))
+    implicit val loggedUser: LoggedUser = user(permissions = Map(testCategoryName->Set(Permission.Write, Permission.Deploy, Permission.Read)))
     val processId = "Process1"
     whenReady(writeProcessRepository.saveNewProcess(ProcessName(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }

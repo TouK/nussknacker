@@ -27,7 +27,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   import akka.http.scaladsl.server.RouteConcatenation._
   private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
-  private implicit val loggedUser: LoggedUser = LoggedUser("lu", testPermissionEmpty)
+  private implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testPermissionEmpty)
 
   test("export process from displayable") {
     val processToExport = ProcessTestData.sampleDisplayableProcess

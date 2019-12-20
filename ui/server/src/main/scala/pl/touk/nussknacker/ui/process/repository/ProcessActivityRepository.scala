@@ -58,7 +58,7 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
         processVersionId = attachmentToAdd.processVersionId,
         fileName = attachmentToAdd.fileName,
         filePath = attachmentToAdd.relativeFilePath,
-        user = loggedUser.id,
+        user = loggedUser.username,
         createDate = Timestamp.valueOf(LocalDateTime.now())
       )
     } yield ()

@@ -120,7 +120,7 @@ class ManagementActor(environment: String,
 
   private def withDeploymentInfo(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, comment: Option[String],
                                  actionFuture: => Future[DeployedProcessInfoEntityData]): Future[DeployedProcessInfoEntityData] = {
-    beingDeployed += id.name -> DeployInfo(user.id, System.currentTimeMillis(), action)
+    beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete {
       case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, comment,details.deployedAtTime, details.deploymentAction)))
       case Failure(ex) => self ! DeploymentActionFinished(id, user, Left(ex))
