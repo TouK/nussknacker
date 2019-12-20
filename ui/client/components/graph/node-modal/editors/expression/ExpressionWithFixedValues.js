@@ -16,17 +16,20 @@ export default class ExpressionWithFixedValues extends React.Component {
     this.options = getOptions(props.values)
   }
 
-  currentOption = (expressionObj) => {
-    const defaultOption = {value: expressionObj.expression || "", label: expressionObj.expression || ""}
+  currentOption = (expressionObj, defaultValue) => {
+    const defaultOption = {
+      value: expressionObj.expression || defaultValue.expression || "",
+      label: expressionObj.expression || defaultValue.expression || ""
+    }
     return this.options.find((option) => option.value === expressionObj.expression) || defaultOption
   }
 
   render() {
     const {
       expressionObj, fieldLabel, readOnly, toggleEditor, shouldShowSwitch, switchable, rowClassName, valueClassName,
-      renderFieldLabel, onValueChange, displayRawEditor
+      renderFieldLabel, onValueChange, displayRawEditor, defaultValue
     } = this.props
-    const option = this.currentOption(expressionObj)
+    const option = this.currentOption(expressionObj, defaultValue)
 
     return (
       <div className={rowClassName ? rowClassName : " node-row"}>

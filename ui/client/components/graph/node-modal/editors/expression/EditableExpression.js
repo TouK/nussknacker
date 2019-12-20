@@ -1,5 +1,4 @@
 import React from "react"
-import {parseableBoolean} from "./ExpressionParser"
 
 import {editorType, Types} from "./EditorType"
 import ProcessUtils from "../../../../../common/ProcessUtils"
@@ -38,7 +37,7 @@ export default class EditableExpression extends React.Component {
       case Types.BOOL_EDITOR:
         return true
       case Types.RAW_EDITOR:
-        return parseableBoolean(expressionObj)
+        return editorType.switchableToBooleanEditor(expressionObj)
       default:
         return false
     }

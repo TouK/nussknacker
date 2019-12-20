@@ -9,12 +9,16 @@ export default function BoolEditor(props) {
     shouldShowSwitch, rowClassName, valueClassName, displayRawEditor
   } = props
 
+  const trueValue = {expression: "true", label: "true"}
+  const falseValue = {expression: "false", label: "false"}
+
   return (
     <ExpressionWithFixedValues
       values={[
-        {expression: "true", label: "true"},
-        {expression: "false", label: "false"}
+        trueValue,
+        falseValue
       ]}
+      defaultValue={trueValue}
       renderFieldLabel={renderFieldLabel}
       fieldLabel={fieldLabel}
       expressionObj={expressionObj}

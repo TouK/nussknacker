@@ -10,15 +10,17 @@ class EditorType {
   editorName = (fieldType, expressionObj, displayRawEditor) => {
     switch (fieldType) {
       case Types.EXPRESSION:
-        return !displayRawEditor && parseableBoolean(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
+        return !displayRawEditor && this.switchableToBooleanEditor(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
       case Types.BOOLEAN:
-        return !displayRawEditor && parseableBoolean(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
+        return !displayRawEditor && this.switchableToBooleanEditor(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
       case Types.EXPRESSION_WITH_FIXED_VALUES || Types.RAW_EDITOR:
         return fieldType
       default:
         return Types.RAW_EDITOR
     }
   }
+
+  switchableToBooleanEditor = (expressionObj) => parseableBoolean(expressionObj) || _.isEmpty(expressionObj.expression)
 
   editor = (editorName) => _.get(editorTypes, editorName, editorTypes[Types.RAW_EDITOR])
 }

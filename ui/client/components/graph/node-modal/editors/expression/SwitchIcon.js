@@ -12,7 +12,7 @@ export default function SwitchIcon(props) {
     } else {
       return !displayRawEditor ? "Switch to expression mode" :
         (switchable ? "Switch to basic mode" :
-          "Expression must be equal to true or false to switch to basic mode")
+          "Expression must be equal to true, false or be empty to switch to basic mode")
     }
   }
 
