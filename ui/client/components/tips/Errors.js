@@ -4,8 +4,7 @@ import HeaderIcon from "./HeaderIcon"
 import React from "react"
 import {v4 as uuid4} from "uuid"
 import PropTypes from "prop-types"
-import {ErrorHeader} from "./ErrorhHeader"
-import NodeErrorLink from "./NodeErrorLink"
+import {Link} from "react-router-dom"
 
 export default class Errors extends React.Component {
 
@@ -58,7 +57,7 @@ export default class Errors extends React.Component {
     const nodeIds = Object.keys(nodeErrors)
     const looseNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Loose node"))
     const otherNodeErrorIds = _.difference(nodeIds, looseNodeIds)
-    
+
     return (
       <div className={"node-error-tips"}>
         {_.isEmpty(otherNodeErrorIds) && _.isEmpty(propertiesErrors) ? null : <ErrorHeader message={"Errors in: "}/>}
@@ -106,4 +105,23 @@ Errors.defaultProps = {
     invalidNodes: {},
     processPropertiesErrors: []
   }
+}
+
+const ErrorHeader = (props) => {
+  const {message} = props
+
+  return <span className={"error-tip-header"}>{message}</span>
+}
+
+const NodeErrorLink = (props) => {
+  const {onClick, nodeId, addSeparator} = props
+
+  const separator = ', '
+
+  return (
+    <Link key={uuid4()} className={"node-error-link"} to={""} onClick={onClick}>
+      {nodeId}
+      {addSeparator ? separator : null}
+    </Link>
+  )
 }
