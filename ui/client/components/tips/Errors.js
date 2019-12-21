@@ -1,10 +1,9 @@
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
-import NodeUtils from "../graph/NodeUtils"
 import HeaderIcon from "./HeaderIcon"
 import React from "react"
 import {v4 as uuid4} from "uuid"
 import PropTypes from "prop-types"
-import {Link} from "react-router-dom"
+import NodeErrorsLinkSection from "./NodeErrorsSection"
 
 export default class Errors extends React.Component {
 
@@ -56,48 +55,40 @@ export default class Errors extends React.Component {
     const {showDetails, currentProcess} = this.props
     const nodeIds = Object.keys(nodeErrors)
     const looseNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Loose node"))
-    const otherNodeErrorIds = _.difference(nodeIds, looseNodeIds)
+    const invalidEndNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Invalid end of process"))
+    const otherNodeErrorIds = _.difference(nodeIds, _.concat(looseNodeIds, invalidEndNodeIds))
+    const errorsOnTop = this.errorsOnTopPresent(otherNodeErrorIds, propertiesErrors)
 
     return (
       <div className={"node-error-tips"}>
-        {_.isEmpty(otherNodeErrorIds) && _.isEmpty(propertiesErrors) ? null : <ErrorHeader message={"Errors in: "}/>}
         <div className={"node-error-links"}>
-          {
-            !_.isEmpty(nodeIds) && otherNodeErrorIds.map((nodeId, index) =>
-              <NodeErrorLink
-                key={uuid4()}
-                nodeId={nodeId}
-                onClick={event => showDetails(event, NodeUtils.getNodeById(nodeId, currentProcess))}
-                addSeparator={(index < nodeIds.length - 1) || !_.isEmpty(propertiesErrors)}
-              />
-            )
-          }
-          {
-            !_.isEmpty(propertiesErrors) &&
-            <NodeErrorLink
-              onClick={event => showDetails(event, currentProcess.properties)}
-              nodeId={"properties"}
-            />
-          }
-          {
-            !_.isEmpty(looseNodeIds) &&
-            <React.Fragment>
-              <ErrorHeader message={"Loose nodes: "}/>
-              {
-                looseNodeIds.map((nodeId, index) =>
-                  <NodeErrorLink
-                    key={uuid4()}
-                    onClick={event => showDetails(event, NodeUtils.getNodeById(nodeId, currentProcess))}
-                    nodeId={nodeId}
-                    addSeparator={index < (looseNodeIds.length - 1)}
-                  />
-                )
-              }
-            </React.Fragment>
-          }
+          <NodeErrorsLinkSection
+            nodeIds={_.concat(otherNodeErrorIds, _.isEmpty(propertiesErrors) ? [] : "properties")}
+            message={"Errors in: "}
+            showDetails={showDetails}
+            currentProcess={currentProcess}
+          />
+          <NodeErrorsLinkSection
+            nodeIds={looseNodeIds}
+            message={"Loose nodes: "}
+            showDetails={showDetails}
+            currentProcess={currentProcess}
+            className={errorsOnTop ? "error-secondary-container" : null}
+          />
+          <NodeErrorsLinkSection
+            nodeIds={invalidEndNodeIds}
+            message={"Invalid end of process: "}
+            showDetails={showDetails}
+            currentProcess={currentProcess}
+            className={errorsOnTop ? "error-secondary-container" : null}
+          />
         </div>
       </div>
     )
+  }
+
+  errorsOnTopPresent(otherNodeErrorIds, propertiesErrors) {
+    return !_.isEmpty(otherNodeErrorIds) || !_.isEmpty(propertiesErrors)
   }
 }
 
@@ -107,23 +98,4 @@ Errors.defaultProps = {
     invalidNodes: {},
     processPropertiesErrors: []
   }
-}
-
-const ErrorHeader = (props) => {
-  const {message} = props
-
-  return <span className={"error-tip-header"}>{message}</span>
-}
-
-const NodeErrorLink = (props) => {
-  const {onClick, nodeId, addSeparator} = props
-
-  const separator = ', '
-
-  return (
-    <Link key={uuid4()} className={"node-error-link"} to={""} onClick={onClick}>
-      {nodeId}
-      {addSeparator ? separator : null}
-    </Link>
-  )
 }
