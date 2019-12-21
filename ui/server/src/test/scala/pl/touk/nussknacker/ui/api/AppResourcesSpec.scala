@@ -16,7 +16,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.ui.db.entity.DeployedProcessVersionEntityData
+import pl.touk.nussknacker.ui.db.entity.DeployedProcessInfoEntityData
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.security.api.LoggedUser

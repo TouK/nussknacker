@@ -23,7 +23,8 @@ class DefaultOAuth2Service(clientApi: OAuth2ClientApi[DefaultProfileResponse, De
     clientApi.profileRequest(token).map { profile =>
       val userRoles = DefaultOAuth2ServiceFactory.getUserRoles(profile.email, configuration)
       val rulesSet = RulesSet.getOnlyMatchingRules(userRoles, configuration.rules, allCategories)
-      LoggedUser(profile.id.toString, rulesSet)
+      val username = profile.login.getOrElse(profile.id.toString)
+      LoggedUser(id = profile.id.toString, username = username, rulesSet=rulesSet)
     }
   }
 }

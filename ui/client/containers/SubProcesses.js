@@ -71,13 +71,15 @@ class SubProcesses extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={['id', 'name', 'category', 'modifyDate']}
-          filterable={['id', 'name', 'category']}
+          sortable={['name', 'category', 'modifyDate', 'createDate', 'createdBy']}
+          filterable={['name', 'category', 'createdBy']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
             {key: 'name', label: 'Process name'},
             {key: 'category', label: 'Category'},
+            {key: 'createdBy', label: 'Created by'},
+            {key: 'createdAt', label: 'Created'},
             {key: 'modifyDate', label: 'Last modification'},
             {key: 'edit', label: 'Edit'}
           ]}
@@ -87,9 +89,11 @@ class SubProcesses extends BaseProcesses {
               <Tr className="row-hover" key={index}>
                 <Td column="name">{process.name}</Td>
                 <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate"
-                    className="centered-column"
-                    value={process.modificationDate}>
+                <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>
+                <Td column="createdAt" className="centered-column" value={process.createdAt}>
+                  <Date date={process.createdAt}/>
+                </Td>
+                <Td column="modifyDate" className="centered-column" value={process.modificationDate}>
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="edit" className="edit-column">

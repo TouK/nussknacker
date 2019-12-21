@@ -21,7 +21,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
 
   implicit val system = ActorSystem("nussknacker-ui")
 
-  implicit val user = LoggedUser("test")
+  implicit val user = LoggedUser("1", "test")
 
   trait MockRemoteEnvironment extends StandardRemoteEnvironment {
     override def environmentId = "testEnv"

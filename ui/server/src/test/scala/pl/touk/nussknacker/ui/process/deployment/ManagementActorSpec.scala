@@ -39,14 +39,15 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id: process.ProcessId = prepareDeployedProcess(processName)
 
     jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.isOkForDeployed) shouldBe Some(true)
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.currentlyDeployedAt should have length 1
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.deployment should not be None
 
     processManager.withProcessFinished {
       jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.isOkForDeployed) shouldBe Some(false)
     }
 
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.currentlyDeployedAt shouldBe List()
-
+    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    processDetails.deployment should not be None
+    processDetails.isCanceled shouldBe true
   }
 
   private def prepareDeployedProcess(processName: ProcessName) = {

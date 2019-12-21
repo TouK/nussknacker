@@ -10,8 +10,8 @@ class ProcessUtils {
   }
 
   canExport = (state) => {
-      const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
-      return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
+    const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
+    return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
   }
 
   //fixme maybe return hasErrors flag from backend?
@@ -67,7 +67,9 @@ class ProcessUtils {
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
   _findVariablesBasedOnGraph = (nodeId, process, processDefinition) => {
     const filteredGlobalVariables = _.pickBy(processDefinition.globalVariables, variable => variable.returnType !== null)
-    const globalVariables = _.mapValues(filteredGlobalVariables, (v) => {return v.returnType})
+    const globalVariables = _.mapValues(filteredGlobalVariables, (v) => {
+      return v.returnType
+    })
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
     return {
       ...globalVariables,
@@ -84,7 +86,9 @@ class ProcessUtils {
   }
 
   _listOfObjectsToObject = (list) => {
-    return _.reduce(list, (memo, current) => { return {...memo, ...current}},  {})
+    return _.reduce(list, (memo, current) => {
+      return {...memo, ...current}
+    }, {})
   }
 
   _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
@@ -96,7 +100,7 @@ class ProcessUtils {
         return [{"input": clazzName}]
       }
       case "SubprocessInputDefinition": {
-        return node.parameters.map(param => ({[param.name]: param.typ }))
+        return node.parameters.map(param => ({[param.name]: param.typ}))
       }
       case "Enricher": {
         return [{[node.output]: clazzName}]
@@ -105,7 +109,7 @@ class ProcessUtils {
       case "Join": {
         const outputVariableName = node.outputVar
         const outputClazz = clazzName
-        return _.isEmpty(outputClazz) ? [] : [ {[outputVariableName]: outputClazz} ]
+        return _.isEmpty(outputClazz) ? [] : [{[outputVariableName]: outputClazz}]
       }
       case "VariableBuilder": {
         return [{[node.varName]: {refClazzName: "java.lang.Object"}}]
@@ -181,7 +185,7 @@ class ProcessUtils {
     this.findNodeDefinitionId(node) || node.type || null
 
   findNodeConfigName = (node) => {
-      return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
+    return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
   }
 
   humanReadableType = (refClazzOrName) => {

@@ -39,7 +39,6 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
@@ -225,7 +224,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             canWrite(processId) {
               complete {
                 processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap {
-                  case Some(details) if details.currentlyDeployedAt.isEmpty =>
+                  case Some(details) if details.deployment.isEmpty =>
                     writeRepository.renameProcess(processId.id, newName).map(toResponse(StatusCodes.OK))
                       .withSideEffect(_ => processChangeListener.handle(OnRenamed(processId.id, processId.name, ProcessName(newName))))
                   case _ => Future.successful(espErrorToHttp(ProcessAlreadyDeployed(processName)))
@@ -406,11 +405,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
   }
 
   private implicit class ToBasicConverter(self: Future[List[BaseProcessDetails[_]]]) {
-    def toBasicProcess: Future[List[BasicProcess]] = self.map {
-      _.map {
-        _.toBasicProcess
-      }
-    }
+    def toBasicProcess: Future[List[BasicProcess]] = self.map(f => f.map(bpd => BasicProcess(bpd)))
   }
 }
 
