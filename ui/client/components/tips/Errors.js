@@ -3,7 +3,7 @@ import HeaderIcon from "./HeaderIcon"
 import React from "react"
 import {v4 as uuid4} from "uuid"
 import PropTypes from "prop-types"
-import NodeErrorsLinkSection from "./NodeErrorsSection"
+import NodeErrorsLinkSection from "./NodeErrorsLinkSection"
 
 export default class Errors extends React.Component {
 
