@@ -28,9 +28,17 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   private val processRepository = newProcessRepository(db)
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val deploymentProcessRepository = newDeploymentProcessRepository(db)
-  private val managementActor =
-    system.actorOf(
-      ManagementActor.props(env, Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver, ProcessChangeListener.noop), "management")
+  private val managementActor = system.actorOf(
+      ManagementActor.props(
+        env,
+        Map(TestProcessingTypes.Streaming -> processManager),
+        processRepository,
+        deploymentProcessRepository,
+        TestFactory.sampleResolver,
+        ProcessChangeListener.noop
+      ),
+    "management"
+  )
 
   private val jobStatusService = new JobStatusService(managementActor)
 

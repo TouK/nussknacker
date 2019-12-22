@@ -16,5 +16,4 @@ object ProcessType extends Enumeration {
     case _: GraphProcess => ProcessType.Graph
     case _: CustomProcess => ProcessType.Custom
   }
-
 }

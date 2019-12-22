@@ -6,7 +6,8 @@ import io.circe.Json.fromString
 import org.apache.flink.runtime.jobgraph.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, RunningState}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, JobConfig, JobOverview, JobsResponse}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
@@ -40,8 +41,17 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     Response.ok(Right(toReturn))
   })
 
-  test("refuse to deploy if process is failing") {
+  def processState(manager: FlinkProcessManager,
+                   deploymentId: DeploymentId,
+                   status: StateStatus,
+                   version: Option[ProcessVersion] = Option.empty,
+                   startTime: Option[Long] = Option.empty,
+                   errorMessage: Option[String] = Option.empty): ProcessState = {
 
+    ProcessState.custom(deploymentId, status, manager.processStatePresenter, version, startTime = startTime, errorMessage = errorMessage)
+  }
+
+  test("refuse to deploy if process is failing") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING))
 
     manager.deploy(ProcessVersion(1, ProcessName("p1"), "user", None),
@@ -49,19 +59,19 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("return failed status if two jobs running") {
-
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING))
 
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(ProcessState(DeploymentId("1111"), RunningState.Error,
-      "INCONSISTENT", 30L, None, Some("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")))
+    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+      manager, DeploymentId("1111"), StateStatus.Failed, startTime = Some(30L), errorMessage = Some("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
+    ))
   }
 
   test("return last terminal state if not running") {
-    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED),
-      JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED))
+    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED), JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED))
 
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(ProcessState(DeploymentId("2343"), RunningState.Finished,
-      "FINISHED", 10L, None))
+    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+      manager, DeploymentId("2343"), StateStatus.Finished, startTime = Some(10L)
+    ))
   }
 
   test("return process version if in config") {
@@ -75,9 +85,8 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     //Flink seems to be using strings also for Configuration.setLong
     configs = Map(jid -> Map("versionId" -> fromString(version.toString), "user" -> fromString(user)))
 
-    manager.findJobStatus(processName).futureValue shouldBe Some(ProcessState(DeploymentId("2343"), RunningState.Finished,
-      "FINISHED", 10L, Some(ProcessVersion(version, processName, user, None))))
+    manager.findJobStatus(processName).futureValue shouldBe Some(processState(
+      manager, DeploymentId("2343"), StateStatus.Finished, Some(ProcessVersion(version, processName, user, None)), Some(10L)
+    ))
   }
-
-
 }

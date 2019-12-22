@@ -8,6 +8,8 @@ import HttpService from "../http/HttpService"
 import ProcessStateUtils from "../common/ProcessStateUtils"
 import Metrics from "./Metrics"
 
+import icon from '../assets/img/states/running.svg'
+
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
   shouldReloadStatuses = false

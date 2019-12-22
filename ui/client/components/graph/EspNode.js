@@ -9,8 +9,8 @@ import nodeMarkup from './markups/node.html';
 import boundingMarkup from './markups/bounding.html';
 import expandIcon from '../../assets/img/expand.svg'
 import collapseIcon from '../../assets/img/collapse.svg'
-
 import customAttrs from '../../assets/json/nodeAttributes.json'
+
 
 import SVGUtils from "../../common/SVGUtils";
 

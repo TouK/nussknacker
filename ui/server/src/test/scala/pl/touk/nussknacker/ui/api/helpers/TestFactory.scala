@@ -4,12 +4,11 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
-import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
@@ -89,7 +88,8 @@ object TestFactory extends TestPermissions{
   class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
-      Some(ProcessState(DeploymentId("1"), runningState = managerProcessState.get(), "RUNNING", 0, None)))
+      Some(ProcessState(DeploymentId("1"), managerProcessState.get(), processStatePresenter, None))
+    )
 
     import ExecutionContext.Implicits.global
 
@@ -104,7 +104,7 @@ object TestFactory extends TestPermissions{
 
     private val sleepBeforeAnswer = new AtomicLong(0)
     private val failDeployment = new AtomicBoolean(false)
-    private val managerProcessState = new AtomicReference[RunningState.Value](RunningState.Running)
+    private val managerProcessState = new AtomicReference[StateStatus](StateStatus.Running)
 
     def withLongerSleepBeforeAnswer[T](action: => T): T = {
       try {
@@ -126,10 +126,10 @@ object TestFactory extends TestPermissions{
 
     def withProcessFinished[T](action: => T): T = {
       try {
-        managerProcessState.set(RunningState.Finished)
+        managerProcessState.set(StateStatus.Finished)
         action
       } finally {
-        managerProcessState.set(RunningState.Running)
+        managerProcessState.set(StateStatus.Running)
       }
     }
 

@@ -12,5 +12,6 @@ object ProcessVersion {
   val empty = ProcessVersion(versionId = 1,
     processName = ProcessName(""),
     user = "",
-    modelVersion = None)
+    modelVersion = None
+  )
 }

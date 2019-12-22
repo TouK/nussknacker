@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import java.time.LocalDateTime
 
-import akka.actor.{Actor, ActorRefFactory, Props, Status}
+import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
@@ -35,7 +35,6 @@ object ManagementActor {
            (implicit context: ActorRefFactory): Props = {
     Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver, processChangeListener)
   }
-
 }
 
 class ManagementActor(environment: String,
@@ -65,7 +64,14 @@ class ManagementActor(environment: String,
       }
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
       val info = beingDeployed(id.name)
-      sender() ! Some(ProcessStatus(None, s"${info.action} IN PROGRESS", info.time, false, true))
+      sender() ! Some(ProcessStatus(
+        deploymentId = None,
+        status = StateStatus.DuringDeploy.toString(),
+        tooltip = ProcessStateCustomPresenter.presentTooltipMessage(StateStatus.DuringDeploy),
+        icon = ProcessStateCustomPresenter.presentIcon(StateStatus.DuringDeploy),
+        allowedActions = ProcessStateCustoms.getStatusActions(StateStatus.DuringDeploy),
+        startTime = Some(info.time)
+      ))
     case CheckStatus(id, user) =>
       implicit val loggedUser: LoggedUser = user
 
@@ -108,7 +114,7 @@ class ManagementActor(environment: String,
   private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
-      case Some(state) if state.runningState == RunningState.Finished =>
+      case Some(state) if StateStatus.isFinished(state) =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
             deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, environment, Some("Process finished")).map(_ => ())
@@ -214,7 +220,6 @@ class ManagementActor(environment: String,
     }
   }
 }
-
 
 trait DeploymentAction {
   def id: ProcessIdWithName

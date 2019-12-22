@@ -141,6 +141,11 @@ module.exports = {
         test: /\.(eot|svg|png|ttf|woff|woff2)$/,
         loader: 'file-loader?name=assets/fonts/[name].[ext]',
         include: __dirname
+      },
+      {
+        test: /\.(svg)$/,
+        loader: 'file-loader?name=assets/img/states/[name].[ext]',
+        include: path.resolve(__dirname, './assets/img/states')
       }
     ]
   }
