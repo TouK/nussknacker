@@ -1,12 +1,16 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.concurrent.Future
 
 trait ProcessManager {
+
+  def statusActions: Map[StateStatus, List[StateAction]]
 
   //TODO: savepointPath is very flink specific, how can we handle that differently?
   def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) : Future[Unit]
@@ -19,5 +23,7 @@ trait ProcessManager {
   def savepoint(name: ProcessName, savepointDir: String): Future[String]
 
   def cancel(name: ProcessName) : Future[Unit]
+
+  def processStatePresenter: ProcessStatePresenter
 
 }

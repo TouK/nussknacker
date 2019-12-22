@@ -124,8 +124,8 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       Get(s"/checkStatus/${procId.value}") ~> managementRoute ~> check {
         status shouldBe StatusCodes.OK
         val processState = responseAs[ProcessState]
-        processState.id shouldBe DeploymentId(procId.value)
-        processState.startTime shouldBe testEpoch
+        processState.deploymentId shouldBe DeploymentId(procId.value)
+        processState.startTime shouldBe Some(testEpoch)
 
         processState.status shouldBe "RUNNING"
       }

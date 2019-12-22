@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
+import java.time.Instant
 
 import sttp.client._
 import com.typesafe.scalalogging.LazyLogging
@@ -98,13 +99,22 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       runningOrFinished match {
         case Nil => Future.successful(None)
         case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
-          Future.successful(Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`, None,
-            Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))))
+          Future.successful(Some(ProcessState(
+            DeploymentId(duplicates.head.jid),
+            StateStatus.Failed,
+            processStatePresenter,
+            allowedActions = getStatusActions(StateStatus.Failed),
+            version = Option.empty,
+            startTime = Some(duplicates.head.`start-time`),
+            //durationMillis = Some(Instant.now().minusMillis(duplicates.head.`start-time`).toEpochMilli),
+            errorMessage = Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
+          ))
         case one::_ =>
-          val runningState = one.state match {
-            case JobStatus.RUNNING => RunningState.Running
-            case JobStatus.FINISHED => RunningState.Finished
-            case _ => RunningState.Error
+          val stateStatus = one.state match {
+            case JobStatus.RUNNING => StateStatus.Running
+            case JobStatus.FINISHED => StateStatus.Finished
+            case JobStatus.RESTARTING => StateStatus.Restarting
+            case _ => StateStatus.Failed
           }
           checkVersion(one.jid, name).map { version =>
             //TODO: return error when there's no correct version in process
@@ -113,7 +123,15 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
             if (version.isEmpty) {
               logger.debug(s"No correct version in deployed process: ${one.name}")
             }
-            Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`, version))
+            Some(ProcessState(
+              DeploymentId(one.jid),
+              stateStatus,
+              processStatePresenter,
+              version = version,
+              allowedActions = getStatusActions(stateStatus),
+              startTime = Some(one.`start-time`),
+              //durationMillis = Some(Instant.now().minusMillis(one.`start-time`).toEpochMilli)
+            ))
           }
       }
     }
@@ -121,7 +139,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   //TODO: cache by jobId?
   private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
-
     basicRequest
       .get(flinkUrl.path("jobs", jobId, "config"))
       .response(asJson[JobConfig])
@@ -134,9 +151,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         user <- userConfig.get("user").map(_.asString.getOrElse(""))
         modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
       } yield ProcessVersion(version, name, user, modelVersion)
-
     }
-
   }
 
   //FIXME: get rid of sleep, refactor?
@@ -168,20 +183,20 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   override protected def cancel(job: ProcessState): Future[Unit] = {
     basicRequest
-      .patch(flinkUrl.path("jobs", job.id.value))
+      .patch(flinkUrl.path("jobs", job.deploymentId.value))
       .send()
       .flatMap(handleUnitResponse)
   }
 
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
     basicRequest
-      .post(flinkUrl.path("jobs", job.id.value, "savepoints"))
+      .post(flinkUrl.path("jobs", job.deploymentId.value, "savepoints"))
       .body("""{"cancel-job": false}""")
       .response(asJson[SavepointTriggerResponse])
       .send()
       .flatMap(SttpJson.failureToFuture)
       .flatMap { response =>
-        waitForSavepoint(job.id, response.`request-id`)
+        waitForSavepoint(job.deploymentId, response.`request-id`)
       }
   }
 

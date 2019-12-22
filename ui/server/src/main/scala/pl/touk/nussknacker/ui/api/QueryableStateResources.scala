@@ -63,7 +63,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
 
     val fetchedJsonState = for {
       status <- EitherT(jobStatusService.retrieveJobStatus(processId).map(Either.fromOption(_, noJob(processId.name.value))))
-      jobId <- EitherT.fromEither(Either.fromOption(status.deploymentId, if (status.isDeployInProgress) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
+      jobId <- EitherT.fromEither(Either.fromOption(status.deploymentId, if (status.isDuringDeploy) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
       processingType <- EitherT.liftF(processRepository.fetchProcessingType(processId.id))
       jsonString <- EitherT.right(fetchState(processingType, jobId, queryName, key))
       json <- EitherT.fromEither(parse(jsonString).leftMap(msg => wrongJson(msg.message, jsonString)))
