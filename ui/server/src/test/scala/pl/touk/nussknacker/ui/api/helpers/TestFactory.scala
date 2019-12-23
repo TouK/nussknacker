@@ -88,7 +88,7 @@ object TestFactory extends TestPermissions{
   class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
-      Some(ProcessState(DeploymentId("1"), managerProcessState.get(), processStatePresenter, None))
+      Some(ProcessState(DeploymentId("1"), managerProcessState.get(), None))
     )
 
     import ExecutionContext.Implicits.global

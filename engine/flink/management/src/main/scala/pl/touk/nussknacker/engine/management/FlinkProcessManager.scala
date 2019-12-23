@@ -6,8 +6,6 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -127,9 +125,5 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit]
 
-  override def statusActions: Map[StateStatus, List[StateAction]] = ProcessStateCustoms.statusActions
-
-  override def processStatePresenter: ProcessStatePresenter = ProcessStateCustomPresenter
-
-  def getStatusActions(stateStatus: StateStatus): List[StateAction] = statusActions.getOrElse(stateStatus, List.empty)
+  override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
 }

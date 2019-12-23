@@ -16,6 +16,7 @@ import AddProcessButton from "../components/table/AddProcessButton"
 import TableSelect from "../components/table/TableSelect"
 import SearchFilter from "../components/table/SearchFilter"
 import Date from "../components/common/Date"
+import ListState from "../components/Process/ListState"
 import TableRowIcon from "../components/table/TableRowIcon"
 
 class Processes extends BaseProcesses {
@@ -54,19 +55,19 @@ class Processes extends BaseProcesses {
   }
 
   processNameChanged = (name, e) => {
-    const newName = e.target.value;
+    const newName = e.target.value
     this.updateProcess(name, process => process.editedName = newName)
   }
 
   changeProcessName = (process, e) => {
-    e.persist();
+    e.persist()
     if (e.key === "Enter" && process.editedName !== process.name) {
       HttpService.changeProcessName(process.name, process.editedName).then((isSuccess) => {
         if (isSuccess) {
           this.updateProcess(process.name, (process) => process.name = process.editedName)
-          e.target.blur();
+          e.target.blur()
         }
-      });
+      })
     }
   }
 
@@ -122,7 +123,7 @@ class Processes extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={["name", "category", "modifyDate", "createDate", "createdBy"]}
+          sortable={["name", "category", "modifyDate", "createdAt", "createdBy"]}
           filterable={["name", "category", "createdBy"]}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
@@ -158,7 +159,11 @@ class Processes extends BaseProcesses {
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  <div className={this.processStatusClass(process)} title={this.processStatusTitle(process)}/>
+                  <ListState
+                    process={process}
+                    state={this.getProcessState(process)}
+                    isStateLoaded={this.state.statusesLoaded}
+                  />
                 </Td>
                 <Td column="edit" className="edit-column">
                   <TableRowIcon

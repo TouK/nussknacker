@@ -48,7 +48,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
                    startTime: Option[Long] = Option.empty,
                    errorMessage: Option[String] = Option.empty): ProcessState = {
 
-    ProcessState.custom(deploymentId, status, manager.processStatePresenter, version, startTime = startTime, errorMessage = errorMessage)
+    ProcessState.custom(deploymentId, status, version, startTime = startTime, errorMessage = errorMessage)
   }
 
   test("refuse to deploy if process is failing") {

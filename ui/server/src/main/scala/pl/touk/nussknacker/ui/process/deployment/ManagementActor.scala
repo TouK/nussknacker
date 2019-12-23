@@ -63,15 +63,19 @@ class ManagementActor(environment: String,
         reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, comment, cancelRes))
       }
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
+      implicit val loggedUser: LoggedUser = user
       val info = beingDeployed(id.name)
-      sender() ! Some(ProcessStatus(
+
+      val processStatus = for {
+        manager <- processManager(id.id)
+      } yield sender() ! Some(ProcessStatus(
         deploymentId = None,
-        status = StateStatus.DuringDeploy.toString(),
-        tooltip = ProcessStateCustomPresenter.presentTooltipMessage(StateStatus.DuringDeploy),
-        icon = ProcessStateCustomPresenter.presentIcon(StateStatus.DuringDeploy),
-        allowedActions = ProcessStateCustoms.getStatusActions(StateStatus.DuringDeploy),
+        status = StateStatus.DuringDeploy,
+        allowedActions = manager.processStateConfigurator.getStatusActions(StateStatus.DuringDeploy),
         startTime = Some(info.time)
       ))
+      reply(processStatus)
+
     case CheckStatus(id, user) =>
       implicit val loggedUser: LoggedUser = user
 

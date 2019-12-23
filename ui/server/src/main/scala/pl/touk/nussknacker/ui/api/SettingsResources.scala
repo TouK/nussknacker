@@ -5,7 +5,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, ProcessStateConfig}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
@@ -33,14 +33,18 @@ class SettingsResources(config: FeatureTogglesConfig,
             attachments = config.attachments.isDefined
           )
 
+          val processStateSettings = ProcessStateSettings(
+            ProcessStateConfig.managersIcons(typeToConfig),
+            ProcessStateConfig.managersTooltips(typeToConfig)
+          )
+
           val authenticationSettings = AuthenticationSettings(
             authenticationConfig.method.toString,
             authenticationConfig.authorizeUrl.map(_.toString)
           )
 
           val analyticsSettings = analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
-
-          UISettings(toggleOptions, authenticationSettings, analyticsSettings)
+          UISettings(toggleOptions, authenticationSettings, analyticsSettings, processStateSettings)
         }
       }
     }
@@ -71,9 +75,13 @@ class SettingsResources(config: FeatureTogglesConfig,
                                  attachments: Boolean,
                                  signals: Boolean)
 
-
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 
 @JsonCodec case class AuthenticationSettings(backend: String, authorizeUrl: Option[String])
 
-@JsonCodec case class UISettings(features: ToggleFeaturesOptions, authentication: AuthenticationSettings, analytics: Option[AnalyticsSettings])
+@JsonCodec case class ProcessStateSettings(icons: Map[String, Option[Map[String, String]]], tooltips: Map[String, Option[Map[String, String]]])
+
+@JsonCodec case class UISettings(features: ToggleFeaturesOptions,
+                                 authentication: AuthenticationSettings,
+                                 analytics: Option[AnalyticsSettings],
+                                 processStates: ProcessStateSettings)

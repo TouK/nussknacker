@@ -5,10 +5,7 @@ import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateCustomPresenter, ProcessStateCustoms, ProcessStatePresenter, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateConfigurator, ProcessStateCustomConfigurator, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import sttp.client.circe._
@@ -38,7 +35,8 @@ trait StandaloneProcessClient {
 
   def findStatus(name: ProcessName): Future[Option[ProcessState]]
 
-  def processStatePresenter: ProcessStatePresenter
+  def processStateConfigurator: ProcessStateConfigurator
+
 }
 
 //this is v. simple approach - we accept inconsistent state on different nodes,
@@ -46,7 +44,6 @@ trait StandaloneProcessClient {
 class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient]) extends StandaloneProcessClient with LazyLogging {
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-
 
   override def deploy(deploymentData: DeploymentData): Future[Unit] = {
     Future.sequence(clients.map(_.deploy(deploymentData))).map(_ => ())
@@ -71,15 +68,14 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
           Some(ProcessState(
             DeploymentId(name.value),
             StateStatus.Failed,
-            processStatePresenter,
-            allowedActions = ProcessStateCustoms.getStatusActions(StateStatus.Failed),
+            allowedActions = processStateConfigurator.getStatusActions(StateStatus.Failed),
             errorMessage = Some(s"Inconsistent states between servers: $warningMessage")
           ))
       }
     }
   }
 
-  override def processStatePresenter: ProcessStatePresenter = ProcessStateCustomPresenter
+  override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
 }
 
 class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
@@ -111,6 +107,6 @@ class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: S
       .flatMap(SttpJson.failureToFuture)
   }
 
-  override def processStatePresenter: ProcessStatePresenter = ProcessStateCustomPresenter
+  override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
 }
 
