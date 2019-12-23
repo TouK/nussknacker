@@ -1,0 +1,1 @@
+ALTER TABLE "process_deployment_info" ALTER COLUMN "process_version_id" set not null;

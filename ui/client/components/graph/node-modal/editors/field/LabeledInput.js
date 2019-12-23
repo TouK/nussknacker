@@ -16,7 +16,7 @@ export const LabeledInput = (props) => {
              placeholder={placeholder}
              showValidation={showValidation}
              validators={validators}
-             onChange={(e) => onChange(e.target.value)}/>
+             onChange={onChange}/>
     </div>
   )
 }
@@ -25,7 +25,7 @@ LabeledInput.propTypes = {
   renderFieldLabel: PropTypes.func.isRequired,
   isMarked: PropTypes.bool,
   readOnly: PropTypes.bool,
-  value: PropTypes.string,
+  value: PropTypes.string || PropTypes.number,
   autofocus: PropTypes.bool,
   showValidation: PropTypes.bool,
   validators: PropTypes.array,

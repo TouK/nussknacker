@@ -37,7 +37,7 @@ class DBFetchingProcessRepositorySpec
 
   private val fetching = DBFetchingProcessRepository.create(db)
 
-  private implicit val user = TestFactory.adminUser("userId")
+  private implicit val user = TestFactory.adminUser()
 
   test("fetch processes for category") {
 
@@ -51,7 +51,7 @@ class DBFetchingProcessRepositorySpec
         category = cat
       )
     }
-    val c1Reader = TestFactory.user("userId", "c1"->Permission.Read)
+    val c1Reader = TestFactory.user(permissions = "c1"->Permission.Read)
 
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")

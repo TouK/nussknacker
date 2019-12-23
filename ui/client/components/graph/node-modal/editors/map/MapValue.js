@@ -1,23 +1,24 @@
-import ExpressionSuggest from "../../ExpressionSuggest";
-import React from "react";
-import PropTypes from "prop-types";
+import React from "react"
+import PropTypes from "prop-types"
+import EditableExpression from "../expression/EditableExpression"
 
 export default function MapValue(props) {
-  const {rowKey, value, isMarked, paths, validators, showValidation, readOnly, onChange} = props
+  const {rowKey, value, isMarked, paths, validators, showValidation, readOnly, onChange, showSwitch} = props
 
   return (
     <div className={"node-value field"}>
-      <ExpressionSuggest
+      <EditableExpression
         fieldName={`value-${rowKey.uuid}`}
-        inputProps={{
-          onValueChange: (value) => onChange(`${paths}.expression.expression`, value),
-          value: value.expression,
-          language: value.language,
-          readOnly
-        }}
         validators={validators}
         isMarked={isMarked}
-        showValidation={showValidation}/>
+        readOnly={readOnly}
+        showValidation={showValidation}
+        showSwitch={showSwitch}
+        onValueChange={(value) => onChange(`${paths}.expression.expression`, value)}
+        expressionObj={value}
+        rowClassName={null}
+        valueClassName={null}
+      />
     </div>
   )
 }
@@ -29,6 +30,7 @@ MapValue.propTypes = {
   readOnly: PropTypes.bool,
   isMarked: PropTypes.bool,
   onChange: PropTypes.func,
-  paths: PropTypes.string
+  paths: PropTypes.string,
+  showSwitch: PropTypes.bool
 }
 

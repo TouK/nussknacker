@@ -62,6 +62,20 @@ class TestResultUtils {
     const varToInclude = context.variables["input"] || _.head(_.values(context.variables)) || {};
     return (varToInclude.original || "").toString().substring(0, 50)
   }
+
+  stateForSelectTestResults = (id, testResults) => {
+    if (this.hasTestResults(testResults)) {
+      const chosenId = id || _.get(_.head(this.availableContexts(testResults)), "id")
+      return {
+        testResultsToShow: this.nodeResultsForContext(testResults, chosenId),
+        testResultsIdToShow: chosenId
+      }
+    } else {
+      return null
+    }
+  }
+
+  hasTestResults = (testResults) => testResults && this.availableContexts(testResults).length > 0
 }
 //TODO this pattern is not necessary, just export every public function as in actions.js
 export default new TestResultUtils()

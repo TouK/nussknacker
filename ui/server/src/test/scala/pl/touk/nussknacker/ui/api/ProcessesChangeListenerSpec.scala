@@ -18,7 +18,7 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
 
   private val routeWithAllPermissions = withAllPermissions(processesRoute)
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
-  implicit val loggedUser = LoggedUser("lu", testCategory)
+  implicit val loggedUser = LoggedUser("1", "lu", testCategory)
 
   private val processName = ProcessName(SampleProcess.process.id)
 

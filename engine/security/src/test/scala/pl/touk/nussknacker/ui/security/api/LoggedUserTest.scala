@@ -8,7 +8,7 @@ import org.scalatest.prop.{TableFor3, TableFor4}
 class LoggedUserTest extends FunSuite with Matchers {
 
   test("Admin permission grants other permissions") {
-    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("admin", cp, Nil, true)
+    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("1", "admin", cp, Nil, true)
 
     val perms: TableFor3[LoggedUser, Permission, String] = Table(
       ("user", "permission", "category"),
@@ -20,11 +20,12 @@ class LoggedUserTest extends FunSuite with Matchers {
 
     forAll(perms) { (user: LoggedUser, p: Permission, c: String) =>
       user.can(c, p) shouldEqual true
+      user.username shouldBe "admin"
     }
   }
 
   test("check user permission in category") {
-    def u(m: Map[String, Set[Permission]]) = LoggedUser("", categoryPermissions = m)
+    def u(m: Map[String, Set[Permission]]) = LoggedUser("user", "user", categoryPermissions = m)
 
     val perms: TableFor4[LoggedUser, Permission, String, Boolean] = Table(
       ("categoryPermissions", "permission", "category", "result"),
@@ -34,6 +35,7 @@ class LoggedUserTest extends FunSuite with Matchers {
     )
     forAll(perms) { (u: LoggedUser, p: Permission, c: String, r:Boolean) =>
       u.can(c,p) shouldEqual r
+      u.username shouldBe "user"
     }
   }
 }

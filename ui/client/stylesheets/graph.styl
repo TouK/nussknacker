@@ -237,23 +237,19 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
     .node-row
       margin-bottom: 14px
       margin-top: 14px
+      display flex
     .movable-row
       display flex
       margin-top 0
       margin-bottom 14px
-      img
-        padding-top 10px
-        padding-bottom 25px
-        margin-top auto
-        margin-bottom auto
     .node-label
-      color: modalLabelTextColor
-      width: labelWidth
-      display: inline-block
-      vertical-align: top
-      margin-top: 9px
-      font-size: 12px
-      font-weight: 700
+      color modalLabelTextColor
+      width labelWidth
+      display inline-block
+      vertical-align sub
+      margin-top 9px
+      font-size 12px
+      font-weight 700
       .labelFooter
         font-weight 500
         opacity: 0.7
@@ -271,7 +267,7 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         border 1px solid okColor
         padding 5px
     .node-value
-      width: 100% - labelWidth
+      width: 95% - labelWidth
       display: inline-block
       color: #686868
       textarea
@@ -297,6 +293,8 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
           outline-offset -1px!important;
         .node-value-select__single-value
           common-node-input(10px)
+        .switchable
+          width: 100% - 40px
         .node-value-select__input
           //TODO: input hides partially due to padding...
           common-node-input(10px)
@@ -333,6 +331,10 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       &.node-value-type-select
         width: 100%
         max-height: 35
+        &.switchable
+          width: 70%
+      &.switchable
+        width: 70%
 
     .node-error
       width: 100%
@@ -342,9 +344,12 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       margin-bottom: 10px
       margin-top: 10px
     .node-tip
-      margin-left: 10px
-      width: 15px
-      height: 15px
+      margin-left 10px
+      width 15px
+      height 15px
+      &.node-error-tip
+        margin-right 10px
+        float right
     .node-test-results
       border: 1px solid testResultsColor
       padding: 5px
@@ -399,6 +404,9 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
     border-top 1px solid hrColor
     margin-top 10px
     margin-bottom 10px
+
+  &.edge-details
+    height 270px
 
 .modalContentDye
   modalContent(
@@ -547,6 +555,19 @@ espPanelButton()
   padding-left: 10px
   padding-right: 10px
   background-color: #333
+  min-height 35px
+
+.switch-icon
+  height 35px
+  width 35px
+  margin-left 5px
+  cursor pointer
+  background-color modalInputBkgColor
+  border none
+  padding 0
+  &.active
+    .cls-switch-1
+      fill #8fad60
 
 .testResultsSummary
   color #ccc
@@ -662,14 +683,38 @@ espPanelButton()
       width: 7%
 
 .branch-parameter-row
-  margin-top 7px
-  margin-bottom 8px
+  margin-top 0
+  margin-bottom 0
   display flex
-  & .read-only
+  & .branch-param-label
     color #ccc
     font-weight 400
     font-size 14px
-    padding 10px 20px 0 20px
+    padding 8px 10px 8px 10px
+    width 30%
+
+.branch-parameter-expr-container
+  width 100%
+
+.branch-parameter-expr
+  display inline-flex
+  width 100%
+  .node-value
+    width 100% !important
+
+.branch-parameter-expr-value
+  width 100%
+  display inline-block
+
+.branch-param-select
+  width 100%
+  padding 0 10px
+  border none
+  background-color #333
+  color #ccc
+  font-weight 400
+  font-size 16px
+
 
 .drop-down-menu-placeholder
   height 100px

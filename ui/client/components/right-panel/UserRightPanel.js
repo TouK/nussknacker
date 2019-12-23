@@ -22,6 +22,7 @@ import SpinnerWrapper from "../SpinnerWrapper";
 import PropTypes from 'prop-types';
 import Dropzone from 'react-dropzone'
 import {events} from "../../analytics/TrackingEvents"
+import ProcessStateUtils from "../../common/ProcessStateUtils";
 
 class UserRightPanel extends Component {
 
@@ -369,7 +370,7 @@ class UserRightPanel extends Component {
     )
   }
 
-  isRunning = () => this.props.fetchedProcessDetails && (this.props.fetchedProcessDetails.currentlyDeployedAt || []).length > 0
+  isRunning = () => ProcessStateUtils.isDeployed(this.props.fetchedProcessDetails)
 
   showProperties = () => {
     this.props.actions.displayModalNodeDetails(

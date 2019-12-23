@@ -64,7 +64,7 @@ trait CommentActions {
           processId = processId.value,
           processVersionId = processVersionId,
           content = comment,
-          user = loggedUser.id,
+          user = loggedUser.username,
           createDate = Timestamp.valueOf(LocalDateTime.now())
         )
       } yield Some(newId)

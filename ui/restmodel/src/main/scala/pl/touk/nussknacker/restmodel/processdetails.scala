@@ -7,7 +7,7 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.generic.JsonCodec
 import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
@@ -16,60 +16,66 @@ import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction.DeploymentA
 
 object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
 
-
-  // todo: id -> ProcessName, name -> ProcessName
-  @JsonCodec case class BasicProcess(name: String,
-                          processCategory: String,
-                          processType: ProcessType,
-                          processingType: ProcessingType,
-                          isArchived:Boolean,
-                          modificationDate: LocalDateTime,
-                          currentDeployment: Option[DeploymentEntry],
-                         //TODO: remove
-                          currentlyDeployedAt: List[DeploymentEntry],
-                          isSubprocess: Boolean)
-
-  object BaseProcessDetails {
-
-    implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveEncoder
-
-    implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveDecoder
-
+  object BasicProcess {
+    def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(
+      id = ApiProcessId(baseProcessDetails.id),
+      name = ProcessName(baseProcessDetails.name),
+      processVersionId = baseProcessDetails.processVersionId,
+      isSubprocess = baseProcessDetails.isSubprocess,
+      isArchived = baseProcessDetails.isArchived,
+      processCategory = baseProcessDetails.processCategory,
+      processType = baseProcessDetails.processType,
+      processingType = baseProcessDetails.processingType,
+      modificationDate = baseProcessDetails.modificationDate,
+      createdAt = baseProcessDetails.createdAt,
+      createdBy = baseProcessDetails.createdBy,
+      deployment = baseProcessDetails.deployment
+    )
   }
 
-  // todo: name -> ProcessName
+  @JsonCodec case class BasicProcess(id: ApiProcessId,
+                                     name: ProcessName,
+                                     processVersionId: Long,
+                                     isArchived: Boolean,
+                                     isSubprocess: Boolean,
+                                     processCategory: String,
+                                     processType: ProcessType,
+                                     processingType: ProcessingType,
+                                     modificationDate: LocalDateTime,
+                                     createdAt: LocalDateTime,
+                                     createdBy: String,
+                                     deployment: Option[ProcessDeployment]) {
+    def isDeployed: Boolean = deployment.exists(_.isDeployed)
+    def isCanceled: Boolean = deployment.exists(_.isCanceled)
+  }
+
+  object BaseProcessDetails {
+    implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveEncoder
+    implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveDecoder
+  }
+
   case class BaseProcessDetails[ProcessShape](id: String,
                                               name: String,
                                               processVersionId: Long,
                                               isLatestVersion: Boolean,
                                               description: Option[String],
-                                              isArchived:Boolean,
+                                              isArchived: Boolean,
                                               isSubprocess: Boolean,
                                               processType: ProcessType,
                                               processingType: ProcessingType,
                                               processCategory: String,
                                               modificationDate: LocalDateTime,
+                                              createdAt: LocalDateTime,
+                                              createdBy: String,
                                               tags: List[String],
-                                              currentDeployment: Option[DeploymentEntry],
-                                             //TODO: remove
-                                              currentlyDeployedAt: List[DeploymentEntry],
+                                              deployment: Option[ProcessDeployment],
                                               json: Option[ProcessShape],
                                               history: List[ProcessHistoryEntry],
                                               modelVersion: Option[Int]) {
+
+    def isDeployed: Boolean = deployment.exists(_.isDeployed)
+    def isCanceled: Boolean = deployment.exists(_.isCanceled)
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
-
-    def toBasicProcess: BasicProcess = BasicProcess(
-      name = name,
-      processCategory = processCategory,
-      processType = processType,
-      processingType = processingType,
-      isArchived = isArchived,
-      modificationDate = modificationDate,
-      currentDeployment = currentlyDeployedAt.headOption,
-      currentlyDeployedAt = currentlyDeployedAt,
-      isSubprocess = isSubprocess
-    )
-
     // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes
     def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(id.toLong), ProcessName(name))
   }
@@ -90,22 +96,13 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
 
   type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
-
   @JsonCodec case class ProcessHistoryEntry(processId: String,
                                             processName: String,
                                             processVersionId: Long,
                                             createDate: LocalDateTime,
                                             user: String,
                                             //TODO: remove, replace with 'currentDeployments'
-                                            deployments: List[DeploymentEntry])
-
-
-  @JsonCodec case class DeploymentEntry(processVersionId: Long,
-                                        //TODO: remove, in current usage it's not really needed
-                                        environment: String,
-                                        deployedAt: LocalDateTime,
-                                        user: String,
-                                        buildInfo: Map[String, String])
+                                            deployments: List[ProcessDeployment])
 
   @JsonCodec case class DeploymentHistoryEntry(processVersionId: Long,
                                                time: LocalDateTime,
@@ -115,9 +112,17 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                                comment: Option[String],
                                                buildInfo: Map[String, String])
 
+  @JsonCodec case class ProcessDeployment(processVersionId: Long,
+                                          @Deprecated environment: String, //TODO: remove it in future..
+                                          deployedAt: LocalDateTime,
+                                          user: String,
+                                          action: DeploymentAction,
+                                          buildInfo: Map[String, String]) {
+    def isDeployed: Boolean = action.equals(DeploymentAction.Deploy)
+    def isCanceled: Boolean = action.equals(DeploymentAction.Cancel)
+  }
 
   object DeploymentAction extends Enumeration {
-
     implicit val typeEncoder: Encoder[DeploymentAction.Value] = Encoder.enumEncoder(DeploymentAction)
     implicit val typeDecoder: Decoder[DeploymentAction.Value] = Decoder.enumDecoder(DeploymentAction)
 
@@ -125,7 +130,4 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
     val Deploy: Value = Value("DEPLOY")
     val Cancel: Value = Value("CANCEL")
   }
-
-
-
 }

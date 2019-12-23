@@ -29,6 +29,7 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
     clientApi.profileRequest(token).map{ prf =>
       LoggedUser(
         id = prf.uid,
+        username = prf.email,
         isAdmin = ExampleOAuth2ServiceFactory.isAdmin(prf.clearance.roles),
         categoryPermissions = ExampleOAuth2ServiceFactory.getPermissions(prf.clearance.roles, prf.clearance.portals),
         globalPermissions = ExampleOAuth2ServiceFactory.getGlobalPermissions(prf.clearance.roles)
