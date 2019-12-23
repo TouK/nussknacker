@@ -453,7 +453,7 @@ class Graph extends React.Component {
 
         this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
 
-        if (evt.ctrlKey) {
+        if (evt.ctrlKey || evt.metaKey) {
           this.props.actions.expandSelection(nodeData.id)
         } else {
           this.props.actions.resetSelection(nodeData.id)
