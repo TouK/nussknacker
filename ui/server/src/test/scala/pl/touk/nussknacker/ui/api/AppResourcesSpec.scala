@@ -10,7 +10,7 @@ import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessStateCustomPresenter, ProcessStateCustoms, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessStateCustomConfigurator, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
@@ -27,13 +27,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   def processStatus(deploymentId: Option[String], status: StateStatus): ProcessStatus =
-    ProcessStatus(
-      deploymentId,
-      status.toString(),
-      ProcessStateCustomPresenter.presentIcon(status),
-      ProcessStateCustomPresenter.presentTooltipMessage(status),
-      allowedActions = ProcessStateCustoms.getStatusActions(status)
-    )
+    ProcessStatus(deploymentId, status, allowedActions = ProcessStateCustomConfigurator.getStatusActions(status))
 
   test("it should return healthcheck also if cannot retrieve statuses") {
 

@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.engine.standalone.deployment
 
-import java.time.{Duration, Instant, LocalDateTime}
-
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateCustomPresenter, ProcessStateCustoms, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateCustomConfigurator, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -83,8 +81,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
     processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion)) => ProcessState(
         deploymentId = DeploymentId(processName.value),
         status = StateStatus.Running,
-        statePresenter = ProcessStateCustomPresenter,
-        allowedActions = ProcessStateCustoms.getStatusActions(StateStatus.Running),
+        allowedActions = ProcessStateCustomConfigurator.getStatusActions(StateStatus.Running),
         version = Option(processVersion),
         startTime = Some(deploymentTime)
       )

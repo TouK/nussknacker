@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.standalone.management
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateCustomPresenter, ProcessStateCustoms, ProcessStatePresenter, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -29,14 +29,14 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       Future.failed(failure)
     }
 
-    override def processStatePresenter: ProcessStatePresenter = ProcessStateCustomPresenter
+    override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
   }
   private val failure = new Exception("Fail")
 
   def processVersion(versionId: Option[Long]): Option[ProcessVersion] = versionId.map(id => ProcessVersion(id, ProcessName(""), "", None))
 
   def processState(deploymentId: DeploymentId, status: StateStatus, client: StandaloneProcessClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errorMessage: Option[String] = Option.empty): ProcessState =
-    ProcessState.custom(deploymentId, status, client.processStatePresenter, processVersion(versionId), startTime = startTime, errorMessage = errorMessage)
+    ProcessState.custom(deploymentId, status, processVersion(versionId), startTime = startTime, errorMessage = errorMessage)
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
@@ -110,6 +110,6 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       Future.successful(status)
     }
 
-    override def processStatePresenter: ProcessStatePresenter = ProcessStateCustomPresenter
+    override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
   }
 }

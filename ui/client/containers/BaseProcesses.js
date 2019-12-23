@@ -3,12 +3,10 @@ import * as VisualizationUrl from "../common/VisualizationUrl"
 import * as _ from "lodash"
 import * as  queryString from 'query-string'
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
-import history from "../history"
 import HttpService from "../http/HttpService"
-import ProcessStateUtils from "../common/ProcessStateUtils"
+import history from "../history"
 import Metrics from "./Metrics"
-
-import icon from '../assets/img/states/running.svg'
+import ProcessStateUtils from "../common/ProcessStateUtils";
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
@@ -31,6 +29,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     })
 
     let state = {
+      statuses: null,
       processes: [],
       clashedNames: [],
       showLoader: true,
@@ -96,7 +95,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   loadClashedNames = (searchParams, fetch) => {
-    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
+    const query = _.pick(queryString.parse(window.location.search), this.searchItems || []);
     const data = Object.assign(query, searchParams)
     fetch(data).then(response => {
       this.setState((prevState, props) => ({
@@ -161,20 +160,21 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     history.push(VisualizationUrl.visualizationUrl(process.name))
   }
 
-  processStatusClass = (process) => {
-    const processName = process.name
-    const shouldRun = ProcessStateUtils.isDeployed(process)
-    return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
-  }
-
-  processStatusTitle = (process) => {
-    const processName = process.name
-    const shouldRun = ProcessStateUtils.isDeployed(process)
-    return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
-  }
-
   getIntervalTime() {
     return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
+  }
+
+  getProcessState = (process) => {
+    if (this.state.statuses == null) {
+      return null
+    }
+
+    return _.get(this.state.statuses, process.name, undefined) //Unknown means that process hasn't found
+  }
+
+  isRunning = (process) => {
+    const loadedStateStatus = _.get(this.getProcessState(process), 'status')
+    return ProcessStateUtils.isDeployed(process) && loadedStateStatus === ProcessStateUtils.STATE_STATUS_RUNNING
   }
 }
 

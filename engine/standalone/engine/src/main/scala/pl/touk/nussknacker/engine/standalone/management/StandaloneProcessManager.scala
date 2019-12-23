@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
 import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessStateCustomPresenter, _}
+import pl.touk.nussknacker.engine.api.deployment.{_}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
@@ -81,9 +81,7 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
     client.cancel(name)
   }
 
-  override def statusActions: Map[StateStatus, List[StateAction]] = ProcessStateCustoms.statusActions
-
-  override def processStatePresenter: ProcessStatePresenter = ProcessStateCustomPresenter
+  override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
 }
 
 object StandaloneTestMain {

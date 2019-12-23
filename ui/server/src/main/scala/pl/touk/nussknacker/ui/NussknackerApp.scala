@@ -16,7 +16,7 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, ProcessStateConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization

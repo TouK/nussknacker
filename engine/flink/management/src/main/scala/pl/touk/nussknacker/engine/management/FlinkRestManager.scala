@@ -102,11 +102,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
           Future.successful(Some(ProcessState(
             DeploymentId(duplicates.head.jid),
             StateStatus.Failed,
-            processStatePresenter,
-            allowedActions = getStatusActions(StateStatus.Failed),
+            allowedActions = processStateConfigurator.getStatusActions(StateStatus.Failed),
             version = Option.empty,
             startTime = Some(duplicates.head.`start-time`),
-            //durationMillis = Some(Instant.now().minusMillis(duplicates.head.`start-time`).toEpochMilli),
             errorMessage = Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
           ))
         case one::_ =>
@@ -126,11 +124,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
             Some(ProcessState(
               DeploymentId(one.jid),
               stateStatus,
-              processStatePresenter,
               version = version,
-              allowedActions = getStatusActions(stateStatus),
-              startTime = Some(one.`start-time`),
-              //durationMillis = Some(Instant.now().minusMillis(one.`start-time`).toEpochMilli)
+              allowedActions = processStateConfigurator.getStatusActions(stateStatus),
+              startTime = Some(one.`start-time`)
             ))
           }
       }

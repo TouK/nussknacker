@@ -6,24 +6,24 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
 
-trait ProcessStatePresenter{
-  def presentTooltipMessage(status: StateStatus): String
-  def presentIcon(status: StateStatus): String
+
+trait ProcessStateConfigurator {
+  def getStatusActions(status: StateStatus): List[StateAction]
+  def statusMessages: Option[Map[StateStatus, String]]
+  def statusIcons: Option[Map[StateStatus, String]]
 }
 
 object ProcessState {
   def apply(deploymentId: DeploymentId,
             status: StateStatus,
-            statePresenter: ProcessStatePresenter,
             version: Option[ProcessVersion] = Option.empty,
             allowedActions: List[StateAction] = List.empty,
             startTime: Option[Long] = Option.empty,
             attributes: Option[Json] = Option.empty,
-            errorMessage: Option[String] = Option.empty): ProcessState = new ProcessState(
+            errorMessage: Option[String] = Option.empty): ProcessState =
+    new ProcessState(
       deploymentId,
       status.toString,
-      statePresenter.presentTooltipMessage(status),
-      statePresenter.presentIcon(status),
       allowedActions,
       version,
       startTime,
@@ -33,26 +33,23 @@ object ProcessState {
 
   def custom(deploymentId: DeploymentId,
              status: StateStatus,
-             statePresenter: ProcessStatePresenter = ProcessStateCustomPresenter,
              version: Option[ProcessVersion] = Option.empty,
              startTime: Option[Long] = Option.empty,
              attributes: Option[Json] = Option.empty,
-             errorMessage: Option[String] = Option.empty) = ProcessState(
-    deploymentId = deploymentId,
-    status = status,
-    statePresenter = statePresenter,
-    version = version,
-    allowedActions = ProcessStateCustoms.getStatusActions(status),
-    startTime = startTime,
-    attributes = attributes,
-    errorMessage = errorMessage
-  )
+             errorMessage: Option[String] = Option.empty): ProcessState =
+    ProcessState(
+      deploymentId = deploymentId,
+      status = status,
+      version = version,
+      allowedActions = ProcessStateCustomConfigurator.getStatusActions(status),
+      startTime = startTime,
+      attributes = attributes,
+      errorMessage = errorMessage
+    )
 }
 
 @JsonCodec case class ProcessState(deploymentId: DeploymentId,
                                    status: String,
-                                   tooltip: String,
-                                   icon: String,
                                    allowedActions: List[StateAction],
                                    version: Option[ProcessVersion],
                                    startTime: Option[Long],
