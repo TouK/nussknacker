@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.helpers
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.{ExecutionConfig, JobExecutionResult}
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.dict.DictInstance
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
+import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -28,23 +29,36 @@ object ProcessTestHelpers {
     def invokeWithSampleData(process: EspProcess, data: List[SimpleRecord],
                              config: Configuration = new Configuration(),
                              processVersion: ProcessVersion = ProcessVersion.empty,
-                             parallelism: Int = 1): JobExecutionResult = {
+                             parallelism: Int = 1): Unit = {
 
       val creator: ProcessConfigCreator = prepareCreator(data, KafkaConfig("http://notexist.pl", None, None))
-      invoke(process, creator, config, processVersion, parallelism)
+
+      val env = StoppableExecutionEnvironment(config)
+      try {
+        new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(
+          new StreamExecutionEnvironment(env), process, processVersion)
+        MockService.clear()
+        val id = env.execute(process.id)
+        env.waitForJobState(id.getJobID, process.id, ExecutionState.FINISHED)()
+      } finally {
+        env.stop()
+      }
     }
 
     def invoke(process: EspProcess, creator: ProcessConfigCreator,
-               config: Configuration = new Configuration(),
-               processVersion: ProcessVersion = ProcessVersion.empty,
-               parallelism: Int = 1): JobExecutionResult = {
-      FlinkTestConfiguration.addQueryableStatePortRanges(config)
-      val env = StreamExecutionEnvironment.createLocalEnvironment(parallelism, config)
-      env.getConfig.disableSysoutLogging
-      new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process, processVersion)
+               config: Configuration,
+               processVersion: ProcessVersion,
+               parallelism: Int, action: => Unit): Unit = {
+      val env = StoppableExecutionEnvironment(config)
+      try {
+        new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(
+          new StreamExecutionEnvironment(env), process, processVersion)
 
-      MockService.clear()
-      env.execute(process.id)
+        MockService.clear()
+        env.withJobRunning(process.id)(action)
+      } finally {
+        env.stop()
+      }
     }
 
     def prepareCreator(data: List[SimpleRecord], kafkaConfig: KafkaConfig): ProcessConfigCreator = new ProcessConfigCreator {
@@ -101,10 +115,10 @@ object ProcessTestHelpers {
     def invokeWithKafka(process: EspProcess, kafkaConfig: KafkaConfig,
                         config: Configuration = new Configuration(),
                         processVersion: ProcessVersion = ProcessVersion.empty,
-                        parallelism: Int = 1): JobExecutionResult = {
+                        parallelism: Int = 1)(action: => Unit): Unit = {
 
       val creator: ProcessConfigCreator = prepareCreator(Nil, kafkaConfig)
-      invoke(process, creator, config, processVersion, parallelism)
+      invoke(process, creator, config, processVersion, parallelism, action)
     }
   }
 

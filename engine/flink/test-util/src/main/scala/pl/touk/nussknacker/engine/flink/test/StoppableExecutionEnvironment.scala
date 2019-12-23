@@ -67,6 +67,7 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
       action
     } finally {
       cancel(executionResult.getJobID)
+      waitForJobState(executionResult.getJobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
     }
   }
 
@@ -79,16 +80,16 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
   }
 
   def waitForStart(jobID: JobID, name: String)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
-    waitForJobState(jobID, name, expectedState = ExecutionState.RUNNING)(patience)
+    waitForJobState(jobID, name, ExecutionState.RUNNING, ExecutionState.FINISHED)(patience)
   }
 
-  def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
+  def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState*)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
     eventually {
       // We access miniCluster because ClusterClient doesn't expose getExecutionGraph and getJobStatus doesn't satisfy us
       // It returns RUNNING even when some vertices are not started yet
       val executionGraph = getMiniCluster(flinkMiniCluster).getExecutionGraph(jobID).get()
       val executionVertices = executionGraph.getAllExecutionVertices.asScala
-      val notRunning = executionVertices.filterNot(_.getExecutionState == expectedState)
+      val notRunning = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
     }(patience, implicitly[Position])
   }

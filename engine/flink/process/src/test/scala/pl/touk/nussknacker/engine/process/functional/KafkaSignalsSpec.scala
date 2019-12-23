@@ -27,6 +27,7 @@ class KafkaSignalsSpec extends FunSuite with Matchers with BeforeAndAfterAll wit
 
   test("signals don't cause watermarks to stop") {
     kafkaClient.createTopic(ProcessTestHelpers.signalTopic)
+    MockService.clear()
 
     val process =
       EspProcessBuilder

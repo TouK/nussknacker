@@ -75,6 +75,8 @@ object KafkaUtils {
     val props: Properties = createCommonProducerProps(kafkaAddress, id)
     props.put("key.serializer", classOf[ByteArraySerializer].getName)
     props.put("value.serializer", classOf[ByteArraySerializer].getName)
+    props.put("retries", 3.toString)
+    props.put("acks", "all")
     new KafkaProducer(props)
   }
 
@@ -82,6 +84,8 @@ object KafkaUtils {
     val props: Properties = createCommonProducerProps(kafkaAddress, id)
     props.put("key.serializer", classOf[StringSerializer].getName)
     props.put("value.serializer", classOf[StringSerializer].getName)
+    props.put("retries", 3.toString)
+    props.put("acks", "all")
     new KafkaProducer(props)
   }
 
