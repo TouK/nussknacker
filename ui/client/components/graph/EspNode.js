@@ -71,7 +71,8 @@ const attrsConfig = () => {
       fontSize: nodeLabelFontSize,
       ref: '.nodeIconPlaceholder',
       refX: rectHeight + 10,
-      refY: rectHeight/2 - nodeLabelFontSize/2
+      refY: rectHeight/2,
+      textVerticalAnchor: 'middle'
     },
     '.testResultsPlaceholder': {
       ref: '.nodeIconPlaceholder',
