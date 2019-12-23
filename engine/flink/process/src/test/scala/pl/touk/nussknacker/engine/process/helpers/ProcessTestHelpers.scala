@@ -21,6 +21,8 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 
 object ProcessTestHelpers {
 
+  val signalTopic = "signals1"
+
   object processInvoker {
 
     def invokeWithSampleData(process: EspProcess, data: List[SimpleRecord],
@@ -70,7 +72,9 @@ object ProcessTestHelpers {
         "customFilterContextTransformation" -> WithCategories(CustomFilterContextTransformation),
         "customContextClear" -> WithCategories(CustomContextClear),
         "sampleJoin" -> WithCategories(CustomJoin),
-        "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions)
+        "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions),
+        "signalReader" -> WithCategories(CustomSignalReader),
+        "transformWithTime" -> WithCategories(TransformerWithTime)
       )
 
       override def listeners(config: Config) = List()
@@ -88,8 +92,9 @@ object ProcessTestHelpers {
         ExpressionConfig(globalProcessVariables, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
       }
 
-      override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map()
-
+      override def signals(config: Config): Map[String, WithCategories[TestProcessSignalFactory]] = Map("sig1" ->
+        WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
+      
       override def buildInfo(): Map[String, String] = Map.empty
     }
 

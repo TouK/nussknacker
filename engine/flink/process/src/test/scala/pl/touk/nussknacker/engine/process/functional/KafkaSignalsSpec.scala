@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord}
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -25,6 +26,8 @@ class KafkaSignalsSpec extends FunSuite with Matchers with BeforeAndAfterAll wit
   }
 
   test("signals don't cause watermarks to stop") {
+    kafkaClient.createTopic(ProcessTestHelpers.signalTopic)
+
     val process =
       EspProcessBuilder
         .id("proc1")
