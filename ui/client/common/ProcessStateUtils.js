@@ -5,12 +5,12 @@ export default {
   ACTION_CANCEL: "CANCEL",
 
   isDeployed(process) {
-    const action = _.get(process, 'process.action')
+    const action = _.get(process, 'deployment.action')
     return action != null && action.toUpperCase() === this.ACTION_DEPLOY
   },
 
   isCanceled(deployment) {
-    const action = _.get(deployment, 'process.action')
+    const action = _.get(deployment, 'deployment.action')
     return action != null && action.toUpperCase() === this.ACTION_CANCEL
   },
 
