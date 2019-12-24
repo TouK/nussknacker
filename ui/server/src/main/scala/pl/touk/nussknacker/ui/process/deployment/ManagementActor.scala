@@ -14,7 +14,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.db.entity.{DeployedProcessVersionEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{DeployedProcessInfoEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
@@ -119,10 +119,10 @@ class ManagementActor(environment: String,
   }
 
   private def withDeploymentInfo(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, comment: Option[String],
-                                 actionFuture: => Future[DeployedProcessVersionEntityData]): Future[DeployedProcessVersionEntityData] = {
-    beingDeployed += id.name -> DeployInfo(user.id, System.currentTimeMillis(), action)
+                                 actionFuture: => Future[DeployedProcessInfoEntityData]): Future[DeployedProcessInfoEntityData] = {
+    beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete {
-      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId.get, comment,details.deployedAtTime, details.deploymentAction)))
+      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, comment,details.deployedAtTime, details.deploymentAction)))
       case Failure(ex) => self ! DeploymentActionFinished(id, user, Left(ex))
     }
     actionFuture
@@ -138,7 +138,7 @@ class ManagementActor(environment: String,
 
   private def isBeingDeployed(id: ProcessName) = beingDeployed.contains(id)
 
-  private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[DeployedProcessVersionEntityData] = {
+  private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
     for {
       manager <- processManager(processId.id)
       _ <- manager.cancel(processId.name)
@@ -153,13 +153,12 @@ class ManagementActor(environment: String,
 
   private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser) : Future[Option[Long]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-    deployedAt = process
-      .flatMap(_.currentlyDeployedAt.find(_.environment == environment))
-  } yield (deployedAt.map(_.processVersionId))
+    currentDeploymentInfo = process.flatMap(_.deployment)
+  } yield (currentDeploymentInfo.map(_.processVersionId))
 
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])
-                           (implicit user: LoggedUser): Future[DeployedProcessVersionEntityData] = {
+                           (implicit user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
     for {
       processingType <- processRepository.fetchProcessingType(processId)
       latestProcessEntity <- processRepository.fetchLatestProcessVersion[DisplayableProcess](processId)
@@ -171,7 +170,7 @@ class ManagementActor(environment: String,
   }
 
   private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData,
-                                   savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[DeployedProcessVersionEntityData] = {
+                                   savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
     val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
     val processManagerValue = managers(processingType)
 

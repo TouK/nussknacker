@@ -113,7 +113,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       validation <- EitherT(validateProcess(localProcess))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
       _ <- createRemoteProcessIfNotExist(localProcess, category)
-      _ <- EitherT.right[EspError](saveProcess(localProcess, comment = s"Process migrated from $environmentId by ${loggedUser.id}"))
+      _ <- EitherT.right[EspError](saveProcess(localProcess, comment = s"Process migrated from $environmentId by ${loggedUser.username}"))
     } yield ()).value
   }
 
@@ -157,11 +157,11 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Query(("businessView", businessView.toString)))
   }
 
-  private def fetchProcessesDetails(names: List[String])(implicit ec: ExecutionContext) = EitherT {
+  private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
     invokeJson[List[ValidatedProcessDetails]](
       HttpMethods.GET,
       "processesDetails" :: Nil,
-      Query(("names", names.map(URLEncoder.encode(_, StandardCharsets.UTF_8.displayName())).mkString(",")))
+      Query(("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8.displayName())).mkString(",")))
     )
   }
 

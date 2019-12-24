@@ -1,19 +1,19 @@
-import React from 'react';
-import Graph from '../components/graph/Graph';
-import UserRightPanel from '../components/right-panel/UserRightPanel';
-import UserLeftPanel from '../components/UserLeftPanel';
+import React from 'react'
+import Graph from '../components/graph/Graph'
+import UserRightPanel from '../components/right-panel/UserRightPanel'
+import UserLeftPanel from '../components/UserLeftPanel'
 import HttpService from '../http/HttpService'
-import _ from 'lodash';
-import {connect} from 'react-redux';
-import ActionsUtils from '../actions/ActionsUtils';
-import ProcessUtils from '../common/ProcessUtils';
-import '../stylesheets/visualization.styl';
-import NodeUtils from '../components/graph/NodeUtils';
+import _ from 'lodash'
+import {connect} from 'react-redux'
+import ActionsUtils from '../actions/ActionsUtils'
+import ProcessUtils from '../common/ProcessUtils'
+import '../stylesheets/visualization.styl'
+import NodeUtils from '../components/graph/NodeUtils'
 import * as VisualizationUrl from '../common/VisualizationUrl'
-import SpinnerWrapper from "../components/SpinnerWrapper";
-import * as JsonUtils from "../common/JsonUtils";
-import RouteLeavingGuard from "../components/RouteLeavingGuard";
-import ClipboardUtils from "../common/ClipboardUtils";
+import SpinnerWrapper from "../components/SpinnerWrapper"
+import * as JsonUtils from "../common/JsonUtils"
+import RouteLeavingGuard from "../components/RouteLeavingGuard"
+import ClipboardUtils from "../common/ClipboardUtils"
 import {events} from "../analytics/TrackingEvents"
 
 class Visualization extends React.Component {
@@ -179,19 +179,23 @@ class Visualization extends React.Component {
   copySelection = (event, shouldCreateNotification) => {
     // Skip event triggered by writing selection to the clipboard.
     const isNotThisCopyEvent = this.isNotThisCopyEvent(event, copyNodeElementId)
-    if (isNotThisCopyEvent && this.canCopySelection()) {
-      let nodeIds = this.props.selectionState;
-      let process = this.props.processToDisplay;
-      const selectedNodes = NodeUtils.getAllNodesById(nodeIds, process)
-      const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(nodeIds, process)
-      const selection = {
-        nodes: selectedNodes,
-        edges: edgesForNodes
-      }
-      ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId);
-      if (shouldCreateNotification) {
-        this.props.notificationActions.success(this.successMessage('Copied', selectedNodes))
-      }
+
+    isNotThisCopyEvent && this.canCopySelection() ? this.copyToClipboard(shouldCreateNotification) :
+      this.props.notificationActions.error("Can not copy selected content. It should contain only plain nodes without groups")
+  }
+
+  copyToClipboard(shouldCreateNotification) {
+    let nodeIds = this.props.selectionState
+    let process = this.props.processToDisplay
+    const selectedNodes = NodeUtils.getAllNodesById(nodeIds, process)
+    const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(nodeIds, process)
+    const selection = {
+      nodes: selectedNodes,
+      edges: edgesForNodes
+    }
+    ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
+    if (shouldCreateNotification) {
+      this.props.notificationActions.success(this.successMessage('Copied', selectedNodes))
     }
   }
 

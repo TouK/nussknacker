@@ -10,9 +10,9 @@ class TestProcessChangeListener extends ProcessChangeListener {
 }
 
 object TestProcessChangeListener {
-  var events: List[ProcessChangeEvent] = Nil
+  var events: List[ProcessChangeEvent] = List.empty
   def clear(): Unit = {
-    events = Nil
+    events = List.empty
   }
   def add(event: ProcessChangeEvent): Unit = {
     events = event :: events

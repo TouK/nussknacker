@@ -136,6 +136,7 @@ class NodeDetailsModal extends React.Component {
             {this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
                                     <NodeDetailsContent isEditMode={false}
                                                         showValidation={true}
+                                                        showSwitch={true}
                                                         node={node}
                                                         nodeErrors={this.props.nodeErrors}
                                                         onChange={() => {}}
@@ -185,6 +186,7 @@ class NodeDetailsModal extends React.Component {
                       this.isGroup() ? this.renderGroup(nodeTestResults)
                         : (<NodeDetailsContent isEditMode={!readOnly}
                                                showValidation={true}
+                                               showSwitch={true}
                                                node={this.state.editedNode}
                                                nodeErrors={nodeErrors}
                                                onChange={this.updateNodeState}

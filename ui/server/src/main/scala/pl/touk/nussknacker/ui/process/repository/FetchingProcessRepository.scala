@@ -35,8 +35,11 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessRepository[
 
   def fetchProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
 
-  def fetchProcesses[PS: ProcessShapeFetchStrategy](isSubprocess: Option[Boolean], isArchived: Option[Boolean],
-                                                    isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
+  def fetchProcesses[PS: ProcessShapeFetchStrategy](isSubprocess: Option[Boolean],
+                                                    isArchived: Option[Boolean],
+                                                    isDeployed: Option[Boolean],
+                                                    categories: Option[Seq[String]],
+                                                    processingTypes: Option[Seq[String]])
                                                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
 
   def fetchCustomProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]

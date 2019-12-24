@@ -1,4 +1,4 @@
-import ExpressionSuggester from '../components/graph/node-modal/ExpressionSuggester'
+import ExpressionSuggester from '../components/graph/node-modal/editors/expression/ExpressionSuggester'
 
 const typesInformation = [
   {

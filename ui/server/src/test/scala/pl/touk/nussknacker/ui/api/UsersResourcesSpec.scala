@@ -16,7 +16,8 @@ class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastC
     getUser(isAdmin = false) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[Json] shouldBe Json.obj(
-        "id" -> Json.fromString("userId"),
+        "id" -> Json.fromString("1"),
+        "username" -> Json.fromString("user"),
         "isAdmin" -> Json.fromBoolean(false),
         "categories" -> Json.arr(
           List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(Json.fromString): _*
@@ -40,7 +41,8 @@ class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastC
     getUser(isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[Json] shouldBe Json.obj(
-        "id" -> Json.fromString("adminId"),
+        "id" -> Json.fromString("1"),
+        "username" -> Json.fromString("admin"),
         "isAdmin" -> Json.fromBoolean(true),
         "categories" -> Json.arr(
           List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(Json.fromString): _*

@@ -4,7 +4,7 @@ import MapRow from "./MapRow"
 
 const Map = (props) => {
 
-  const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation, expressionValue} = props
+  const {label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation, expressionValue, showSwitch} = props
 
   return (
     <div className="node-row">
@@ -15,6 +15,7 @@ const Map = (props) => {
             fields.map((field, index) => (<MapRow key={field.uuid}
                                                   field={field}
                                                   showValidation={showValidation}
+                                                  showSwitch={showSwitch}
                                                   readOnly={readOnly}
                                                   paths={`${namespace}[${index}]`}
                                                   isMarked={isMarked}
@@ -46,7 +47,8 @@ Map.propTypes = {
   removeField: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
   expressionValue: PropTypes.bool,
-  showValidation: PropTypes.bool.isRequired
+  showValidation: PropTypes.bool.isRequired,
+  showSwitch: PropTypes.bool
 }
 
 Map.defaultProps = {

@@ -5,8 +5,8 @@ import * as  queryString from 'query-string'
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
 import history from "../history"
 import HttpService from "../http/HttpService"
-import * as ProcessStateUtils from "../common/ProcessStateUtils"
-import Metrics from "./Metrics";
+import ProcessStateUtils from "../common/ProcessStateUtils"
+import Metrics from "./Metrics"
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
@@ -87,9 +87,9 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   loadAllClashedNames() {
-    this.loadClashedNames(defaultProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
-    this.loadClashedNames(defaultSubProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
-    this.loadClashedNames(defaultArchivedProcessesSearchParams, (data) => HttpService.fetchProcesses(data));
+    this.loadClashedNames(defaultProcessesSearchParams, (data) => HttpService.fetchProcesses(data))
+    this.loadClashedNames(defaultSubProcessesSearchParams, (data) => HttpService.fetchProcesses(data))
+    this.loadClashedNames(defaultArchivedProcessesSearchParams, (data) => HttpService.fetchProcesses(data))
     this.loadClashedNames({}, () => HttpService.fetchCustomProcesses())
   }
 
@@ -99,7 +99,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     fetch(data).then(response => {
       this.setState((prevState, props) => ({
         clashedNames: prevState.clashedNames.concat(response.data.map(process => process.name))
-      }));
+      }))
     })
   }
 
@@ -161,20 +161,19 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   processStatusClass = (process) => {
     const processName = process.name
-    const shouldRun = process.currentlyDeployedAt.length > 0
+    const shouldRun = ProcessStateUtils.isDeployed(process)
     return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
   processStatusTitle = (process) => {
     const processName = process.name
-    const shouldRun = process.currentlyDeployedAt.length > 0
+    const shouldRun = ProcessStateUtils.isDeployed(process)
     return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
   getIntervalTime() {
     return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
   }
-
 }
 
 const defaultProcessesSearchParams = {isSubprocess: false, isArchived: false}

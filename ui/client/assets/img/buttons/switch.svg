@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35">
+    <defs>
+        <style>.cls-switch-1{fill:#4d4d4d;}.cls-switch-2{fill:none;}</style>
+    </defs>
+    <g id="Layer_2">
+        <g id="modal">
+            <polygon class="cls-switch-1"
+                     points="12.14 20.73 13.18 21.78 17.44 17.52 13.16 13.24 12.12 14.28 15.37 17.52 12.14 20.73"/>
+            <rect class="cls-switch-1" x="17.9" y="21.11" width="4.95" height="1.74"/>
+            <path class="cls-switch-1" d="M28.44,7.68H6.56V27.32H28.44ZM26.7,25.58H8.3V9.42H26.7Z"/>
+            <rect class="cls-switch-2" width="35" height="35"/>
+        </g>
+    </g>
+</svg>

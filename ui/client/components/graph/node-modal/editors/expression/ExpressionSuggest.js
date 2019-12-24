@@ -3,8 +3,8 @@ import PropTypes from 'prop-types'
 import ReactDOMServer from 'react-dom/server'
 import {connect} from 'react-redux'
 import _ from 'lodash'
-import ActionsUtils from '../../../actions/ActionsUtils'
-import ProcessUtils from '../../../common/ProcessUtils'
+import ActionsUtils from '../../../../../actions/ActionsUtils'
+import ProcessUtils from '../../../../../common/ProcessUtils'
 import ExpressionSuggester from './ExpressionSuggester'
 
 import AceEditor from 'react-ace'
@@ -12,12 +12,13 @@ import 'ace-builds/src-noconflict/mode-jsx'
 import 'ace-builds/src-noconflict/ext-language_tools'
 import 'ace-builds/src-noconflict/ext-searchbox'
 
-import '../../../brace/mode/spel'
-import '../../../brace/mode/sql'
-import '../../../brace/theme/nussknacker'
-import ValidationLabels from "../../modals/ValidationLabels"
-import {allValid} from "../../../common/Validators"
-import HttpService from "../../../http/HttpService"
+import '../../../../../brace/mode/spel'
+import '../../../../../brace/mode/sql'
+import '../../../../../brace/theme/nussknacker'
+import ValidationLabels from "../../../../modals/ValidationLabels"
+import HttpService from "../../../../../http/HttpService"
+import {allValid} from "../../../../../common/Validators"
+
 
 //to reconsider
 // - respect categories for global variables?
@@ -33,8 +34,8 @@ class ExpressionSuggest extends React.Component {
   static propTypes = {
     inputProps: PropTypes.object.isRequired,
     fieldName: PropTypes.string,
-    validators: PropTypes.array.isRequired,
-    showValidation: PropTypes.bool.isRequired,
+    validators: PropTypes.array,
+    showValidation: PropTypes.bool,
     processingType: PropTypes.string
   }
 
@@ -119,10 +120,13 @@ class ExpressionSuggest extends React.Component {
 
   render() {
     if (this.props.dataResolved) {
-      const {isMarked, showValidation, inputProps, validators} = this.props
+      const {isMarked, showValidation, inputProps, validators, shouldShowSwitch} = this.props
       return (
-        <div>
-          <div className={"row-ace-editor" + (!showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error ") + (isMarked ? " marked" : "")}>
+        <React.Fragment>
+          <div className={"row-ace-editor" +
+          (!showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error ") +
+          (isMarked ? " marked" : "") +
+          (shouldShowSwitch ? " switchable" : "")}>
             <AceEditor mode={inputProps.language}
                        width={"100%"}
                        minLines={1}
@@ -151,7 +155,7 @@ class ExpressionSuggest extends React.Component {
                        }}/>
           </div>
           {showValidation && <ValidationLabels validators={validators} values={[this.state.value]}/>}
-        </div>
+        </React.Fragment>
       )
     } else {
       return null
@@ -173,6 +177,7 @@ function mapState(state, props) {
     dataResolved: dataResolved,
     variables: variables,
     processingType: state.graphReducer.processToDisplay.processingType
-  };
+  }
 }
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ExpressionSuggest);
+
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ExpressionSuggest)

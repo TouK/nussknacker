@@ -50,7 +50,7 @@ object ProcessObjectsFinder {
           processName = processDetails.name,
           nodeId = node.id,
           processCategory = processDetails.processCategory,
-          isDeployed = processDetails.currentlyDeployedAt.nonEmpty //TODO use the same logic that is used to display Status column on Procesess screen??
+          isDeployed = processDetails.isDeployed
         )
       }
       case None => Nil
