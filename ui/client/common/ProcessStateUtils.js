@@ -21,14 +21,14 @@ export default {
   },
 
   TOOLTIPS: {
-    UNKNOWN: "Unknown state of process.",
-    NOT_DEPLOYED: "Process has been never deployed.",
-    DURING_DEPLOY: "Process has been already started and currently is during deploying.",
-    RUNNING: "Process successful deployed and currently is running.",
-    CANCELED: "Process is successfully canceled.",
-    RESTARTING: "Process is restarting...",
+    UNKNOWN: "Unknown state of the process..",
+    NOT_DEPLOYED: "The process has never been deployed.",
+    DURING_DEPLOY: "The process has been already started and currently is being deployed.",
+    RUNNING: "The process is running.",
+    CANCELED: "The process has been successfully cancelled.",
+    RESTARTING: "The process is restarting...",
     FAILED: "There are some problems with process..",
-    FINISHED: "Process completed successfully.",
+    FINISHED: "The process completed successfully.",
   },
 
   STATUS_ICONS: {
@@ -83,19 +83,19 @@ export default {
   },
 
   getProcessTooltip(process, isStateLoaded) {
-    const pendingTitle = (title) => title + (isStateLoaded === false ? " Loading actually state of process..." : "")
+    const pendingTitle = (title) => title + (isStateLoaded === false ? " Loading current state of the process..." : "")
 
     const action = _.get(process, 'deployment.action', null)
 
     switch (action) {
       case this.ACTIONS.DEPLOY:
-        return pendingTitle("Process was successfully deployed.")
+        return pendingTitle("The process has been successfully deployed.")
       case this.ACTIONS.CANCEL:
-        return pendingTitle("Process was successfully canceled.")
+        return pendingTitle("The process has been successfully canceled.")
       case this.ACTIONS.NOT_DEPLOYED:
-        return pendingTitle("Process was never deployed.")
+        return pendingTitle("The process has never been deployed.")
       default:
-        return pendingTitle("Unknown state of process.")
+        return pendingTitle("Unknown state of the process..")
     }
   },
 
