@@ -268,8 +268,9 @@ object FlinkStreamingProcessRegistrar {
 
   private final val EndId = "$end"
 
-  def apply(compiler: FlinkProcessCompiler, config: Config) : FlinkStreamingProcessRegistrar = {
+  def apply(compiler: FlinkProcessCompiler) : FlinkStreamingProcessRegistrar = {
 
+    val config = compiler.config
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
     val checkpointInterval = config.as[FiniteDuration]("checkpointInterval")

@@ -100,7 +100,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   private def prepareProgramArgs(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
-    val configPart = modelData.processConfig.root().render()
+    val configPart = modelData.processConfigFromConfiguration.root().render()
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
         List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson)

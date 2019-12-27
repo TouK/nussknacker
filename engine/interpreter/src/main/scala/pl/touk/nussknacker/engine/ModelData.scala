@@ -84,7 +84,7 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   protected def modelConfigResource: String = ModelData.modelConfigResource
 
-  override val processConfig: Config = {
+  override lazy val processConfig: Config = {
     /*
       We want to be able to embed config in model jar, to avoid excessive config files
       For most cases using reference.conf would work, however there are subtle problems with substitution:

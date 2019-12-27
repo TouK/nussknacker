@@ -6,11 +6,10 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.client.program.OptimizerPlanEnvironment.ProgramAbortException
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.util.loader.ProcessConfigCreatorLoader
 
 import scala.util.control.NonFatal
 
@@ -25,10 +24,10 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val processVersion = parseProcessVersion(args(1))
       val config: Config = readConfigFromArgs(args)
       val buildInfo = if (args.length > 3) args(3) else ""
-      val configCreator = ProcessConfigCreatorLoader.justOne(Thread.currentThread().getContextClassLoader)
+      val modelData = ModelData(config, List())
       val env = getExecutionEnvironment
       setBuildInfo(buildInfo, processVersion, getConfig(env))
-      runProcess(env, configCreator, config, process, processVersion)
+      runProcess(env, modelData, process, processVersion)
     } catch {
       // marker exception for graph optimalization
       case ex: ProgramAbortException =>
@@ -44,8 +43,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
   protected def getConfig(env: Env): ExecutionConfig
 
   protected def runProcess(env: Env,
-                           configCreator: ProcessConfigCreator,
-                           config: Config,
+                           modelData: ModelData,
                            process: EspProcess,
                            processVersion: ProcessVersion): Unit
 
@@ -64,7 +62,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       case Some(string) =>
         ConfigFactory.parseString(string)
       case None =>
-        ConfigFactory.load()
+        ConfigFactory.empty()
     }
 
   private def setBuildInfo(buildInfo: String, processVersion: ProcessVersion, config: ExecutionConfig): Unit = {

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableE
 import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class SampleNotificationProcess extends FlatSpec with Matchers {
 
@@ -28,7 +29,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers {
 
     val config = ConfigFactory.load()
 
-    new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    new FlinkStreamingProcessCompiler(LocalModelData(config, creator)).createFlinkProcessRegistrar()
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
     val result = env.execute(process.id)

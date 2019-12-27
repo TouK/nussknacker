@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -21,13 +21,14 @@ import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.duration.FiniteDuration
 
-abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Config, val diskStateBackendSupport: Boolean) extends Serializable {
+abstract class FlinkProcessCompiler(modelData: ModelData, val diskStateBackendSupport: Boolean) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def compileProcess(process: EspProcess, processVersion: ProcessVersion)(userCodeClassLoader: ClassLoader): CompiledProcessWithDeps = {
+    val creator = modelData.configCreator
 
     //TODO: this should be somewhere else?
     val timeout = config.as[FiniteDuration]("timeout")
@@ -62,13 +63,13 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
   }
 
   protected def definitions(): ProcessDefinition[ObjectWithMethodDef] = {
-    ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
+    ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, config)
   }
 
   protected def listeners(): Seq[ProcessListener] = {
     //TODO: should this be configurable somehow?
     //if it's configurable, it also has to affect NodeCountMetricFunction!
-    List(LoggingListener, new NodeCountMetricListener) ++ creator.listeners(config)
+    List(LoggingListener, new NodeCountMetricListener) ++ modelData.configCreator.listeners(config)
   }
 
   protected def signalSenders: Map[SignalSenderKey, FlinkProcessSignalSender]
@@ -84,4 +85,6 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
       delegate.handle(exceptionInfo)
     }
   }
+
+  def config: Config = modelData.processConfig
 }

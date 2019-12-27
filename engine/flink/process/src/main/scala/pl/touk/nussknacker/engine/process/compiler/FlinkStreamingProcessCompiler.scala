@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 
-class FlinkStreamingProcessCompiler(creator: ProcessConfigCreator, config: Config, diskStateBackendSupport: Boolean = true)
-  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport) {
+class FlinkStreamingProcessCompiler(modelData: ModelData, diskStateBackendSupport: Boolean = true)
+  extends FlinkProcessCompiler(modelData, diskStateBackendSupport) {
 
-  def createFlinkProcessRegistrar() = FlinkStreamingProcessRegistrar(this, config)
+  def createFlinkProcessRegistrar() = FlinkStreamingProcessRegistrar(this)
 }

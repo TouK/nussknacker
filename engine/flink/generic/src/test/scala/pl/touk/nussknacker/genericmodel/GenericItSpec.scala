@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaUtils}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
@@ -233,7 +234,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     val config = ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
-    registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    registrar = new FlinkStreamingProcessCompiler(LocalModelData(config, creator)).createFlinkProcessRegistrar()
   }
 
   override protected def afterAll(): Unit = {

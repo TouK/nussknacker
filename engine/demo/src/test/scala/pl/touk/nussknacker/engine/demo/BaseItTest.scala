@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.javademo
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 trait BaseITest extends KafkaSpec {
   self: Suite with BeforeAndAfterAll with Matchers =>
@@ -32,7 +33,7 @@ trait BaseITest extends KafkaSpec {
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val config = TestConfig(kafkaZookeeperServer)
-    registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    registrar = new FlinkStreamingProcessCompiler(LocalModelData(config, creator)).createFlinkProcessRegistrar()
   }
 
   override protected def afterAll(): Unit = {

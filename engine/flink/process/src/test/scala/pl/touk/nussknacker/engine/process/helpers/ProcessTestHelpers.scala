@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 object ProcessTestHelpers {
 
@@ -39,7 +40,7 @@ object ProcessTestHelpers {
       FlinkTestConfiguration.addQueryableStatePortRanges(config)
       val env = StreamExecutionEnvironment.createLocalEnvironment(parallelism, config)
       env.getConfig.disableSysoutLogging
-      new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process, processVersion)
+      new FlinkStreamingProcessCompiler(LocalModelData(ConfigFactory.load(), creator)).createFlinkProcessRegistrar().register(env, process, processVersion)
 
       MockService.clear()
       env.execute(process.id)
