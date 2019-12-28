@@ -5,8 +5,9 @@ import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateConfigurator, ProcessStateCustomConfigurator, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateConfigurator}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.customs.deployment.{CustomStateStatus, ProcessStateCustomConfigurator}
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import sttp.client.circe._
 import pl.touk.nussknacker.engine.sttp.SttpJson
@@ -67,8 +68,8 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
           }.mkString("; ")
           Some(ProcessState(
             DeploymentId(name.value),
-            StateStatus.Failed,
-            allowedActions = processStateConfigurator.getStatusActions(StateStatus.Failed),
+            CustomStateStatus.Failed,
+            allowedActions = processStateConfigurator.getStatusActions(CustomStateStatus.Failed),
             errorMessage = Some(s"Inconsistent states between servers: $warningMessage")
           ))
       }

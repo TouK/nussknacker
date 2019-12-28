@@ -7,17 +7,16 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
-import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
 import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.deployment.{_}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessName, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion, StandaloneMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.customs.deployment.ProcessStateCustomConfigurator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition._

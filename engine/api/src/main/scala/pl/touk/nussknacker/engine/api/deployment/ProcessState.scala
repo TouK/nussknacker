@@ -4,8 +4,8 @@ import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
-
+import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
+import pl.touk.nussknacker.engine.customs.deployment.ProcessStateCustomConfigurator
 
 trait ProcessStateConfigurator {
   def getStatusActions(status: StateStatus): List[StateAction]
@@ -66,23 +66,32 @@ object StateAction extends Enumeration {
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 }
 
-object StateStatus extends Enumeration {
+object StatusState extends Enumeration {
   class Value(name: String) extends Val(name)
-
   type StateStatus = Value
-  val Unknown = new Value("UNKNOWN")
-  val NotDeployed = new Value("NOT_DEPLOYED")
-  val DuringDeploy = new Value("DURING_DEPLOY")
-  val Running = new Value("RUNNING")
-  val Restarting = new Value("RESTARTING")
-  val Failed = new Value("FAILED")
-  val DuringCancel = new Value("DURING_CANCEL")
-  val Canceled = new Value("CANCELED")
-  val Finished = new Value("FINISHED")
+
+  val Running = new StateStatus("RUNNING")
+  val Finished = new StateStatus("FINISHED")
+  val DuringDeploy = new StateStatus("DURING_DEPLOY")
 
   def verify(status: String, excepted: StateStatus): Boolean = status.equals(excepted.toString())
+  def verify(status: StateStatus, excepted: StateStatus): Boolean = status.equals(excepted)
 
   def isFinished(state: ProcessState): Boolean = verify(state.status, Finished)
 
   def isRunning(state: ProcessState): Boolean = verify(state.status, Running)
+
+  def isDuringDeploy(state: ProcessState): Boolean = verify(state.status, DuringDeploy)
+
+  def isDuringDeploy(status: String): Boolean = verify(status,DuringDeploy)
+
+  def isRunning(status: String): Boolean = verify(status, Running)
+}
+
+// Each own StateStatus enum implementation should extends from StateStatusEnumeration because it has to implement
+// base three statuses: Running / Finished / DuringDeploy
+trait StateStatusEnumeration extends Enumeration {
+  val Running = StatusState.Running
+  val Finished = StatusState.Finished
+  val DuringDeploy = StatusState.DuringDeploy
 }

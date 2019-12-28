@@ -8,8 +8,9 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.customs.deployment.CustomStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionSuccess, OnDeployActionFailed}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
@@ -70,8 +71,8 @@ class ManagementActor(environment: String,
         manager <- processManager(id.id)
       } yield sender() ! Some(ProcessStatus(
         deploymentId = None,
-        status = StateStatus.DuringDeploy,
-        allowedActions = manager.processStateConfigurator.getStatusActions(StateStatus.DuringDeploy),
+        status = CustomStateStatus.DuringDeploy,
+        allowedActions = manager.processStateConfigurator.getStatusActions(CustomStateStatus.DuringDeploy),
         startTime = Some(info.time)
       ))
       reply(processStatus)
@@ -118,7 +119,7 @@ class ManagementActor(environment: String,
   private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
-      case Some(state) if StateStatus.isFinished(state) =>
+      case Some(state) if StatusState.isFinished(state) =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
             deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, environment, Some("Process finished")).map(_ => ())

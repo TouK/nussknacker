@@ -3,8 +3,9 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import io.circe.Json
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateCustomConfigurator, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StatusState}
+import pl.touk.nussknacker.engine.customs.deployment.{CustomStateStatus, ProcessStateCustomConfigurator}
 
 @JsonCodec case class ProcessStatus(deploymentId: Option[String],
                                     status: String,
@@ -13,8 +14,8 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateCust
                                     attributes: Option[Json],
                                     errorMessage: Option[String]) {
 
-  def isDuringDeploy: Boolean = StateStatus.verify(status, StateStatus.DuringDeploy)
-  def isRunning: Boolean = StateStatus.verify(status, StateStatus.Running)
+  def isDuringDeploy: Boolean = StatusState.isDuringDeploy(status)
+  def isRunning: Boolean = StatusState.isRunning(status)
   def isOkForDeployed: Boolean =  isRunning || isDuringDeploy
 }
 
@@ -54,15 +55,15 @@ object ProcessStatus {
 
   val notFound: ProcessStatus = ProcessStatus(
     None,
-    StateStatus.Unknown,
-    ProcessStateCustomConfigurator.getStatusActions(StateStatus.Unknown),
+    CustomStateStatus.Unknown,
+    ProcessStateCustomConfigurator.getStatusActions(CustomStateStatus.Unknown),
     errorMessage = Some("Process not found in engine.")
   )
 
   val failedToGet: ProcessStatus = ProcessStatus(
     None,
-    StateStatus.Unknown,
-    ProcessStateCustomConfigurator.getStatusActions(StateStatus.Unknown),
+    CustomStateStatus.Unknown,
+    ProcessStateCustomConfigurator.getStatusActions(CustomStateStatus.Unknown),
     errorMessage = Some("Failed to obtain status.")
   )
 }
