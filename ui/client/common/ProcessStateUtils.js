@@ -20,13 +20,13 @@ export default {
     FINISHED: "FINISHED",
   },
 
-  TOOLTIPS: {
+  STATUS_TOOLTIPS: {
     UNKNOWN: "Unknown state of the process..",
     NOT_DEPLOYED: "The process has never been deployed.",
     DURING_DEPLOY: "The process has been already started and currently is being deployed.",
     RUNNING: "The process is running.",
     CANCELED: "The process has been successfully cancelled.",
-    RESTARTING: "The process is restarting...",
+    RESTARTING: "The process is restarting..",
     FAILED: "There are some problems with process..",
     FINISHED: "The process completed successfully.",
   },
@@ -46,23 +46,14 @@ export default {
     return state != null && state.status.toUpperCase() === this.STATUSES.RUNNING
   },
 
-  isStopped(state) {
-    return state != null && state.status.toUpperCase() === this.STATUSES.CANCELED
-  },
-
   isDeployed(process) {
     const action = _.get(process, 'deployment.action')
     return action != null && action.toUpperCase() === this.ACTIONS.DEPLOY
   },
 
-  isCanceled(process) {
-    const action = _.get(process, 'deployment.action')
-    return action != null && action.toUpperCase() === this.ACTIONS.CANCEL
-  },
-
   getStateTooltip(state) {
     const status = this.getStateStatus(state)
-    return _.get(this.TOOLTIPS, status, this.TOOLTIPS[this.STATUSES.UNKNOWN])
+    return _.get(this.STATUS_TOOLTIPS, status, this.STATUS_TOOLTIPS[this.STATUSES.UNKNOWN])
   },
 
   getStateIcon(state) {
@@ -79,7 +70,7 @@ export default {
       return this.STATUSES.CANCELED
     }
 
-    return state.status
+    return state.status.toUpperCase()
   },
 
   getProcessTooltip(process, isStateLoaded) {

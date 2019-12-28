@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.customs.deployment.ProcessStateCustomConfigurator
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +36,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
     val stoppingResult = for {
       oldJob <- OptionT(findStatusIgnoringTerminal(processName))
-      _ <- OptionT[Future, Unit](if (!StateStatus.isRunning(oldJob))
+      _ <- OptionT[Future, Unit](if (!StatusState.isRunning(oldJob))
         Future.failed(new IllegalStateException(s"Job ${processName.value} is not running, status: ${oldJob.status}")) else Future.successful(Some(())))
       maybeSavePoint <- {
         { logger.debug(s"Deploying $processName. Status: $oldJob") }
@@ -57,7 +58,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   override def savepoint(processName: ProcessName, savepointDir: String): Future[String] = {
     val name = processName.value
     findStatusIgnoringTerminal(processName).flatMap {
-      case Some(state) if StateStatus.isRunning(state) =>
+      case Some(state) if StatusState.isRunning(state) =>
         makeSavepoint(state, Option(savepointDir))
       case Some(state) =>
         Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status}"))
@@ -72,7 +73,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def cancel(processName: ProcessName): Future[Unit] = {
     findStatusIgnoringTerminal(processName).flatMap {
-      case Some(state) if StateStatus.isRunning(state)=>
+      case Some(state) if StatusState.isRunning(state)=>
         cancel(state)
       case state =>
         logger.warn(s"Trying to cancel ${processName.value} which is not running but in status: $state")
@@ -81,7 +82,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   private def findStatusIgnoringTerminal(processName: ProcessName): Future[Option[ProcessState]] =
-    findJobStatus(processName).map(_.filterNot(StateStatus.isFinished))
+    findJobStatus(processName).map(_.filterNot(StatusState.isFinished))
 
   private def checkIfJobIsCompatible(savepointPath: String, processDeploymentData: ProcessDeploymentData, processVersion: ProcessVersion): Future[Unit] =
     processDeploymentData match {

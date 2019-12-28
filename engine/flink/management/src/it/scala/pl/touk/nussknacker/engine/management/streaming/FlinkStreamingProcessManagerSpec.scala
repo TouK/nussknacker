@@ -8,7 +8,7 @@ import com.typesafe.config.ConfigValueFactory
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, StatusState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -222,7 +222,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   private def cancel(processId: String): Unit = {
     assert(processManager.cancel(ProcessName(processId)).isReadyWithin(10 seconds))
     eventually {
-      val jobStatusCanceled = processManager.findJobStatus(ProcessName(processId)).futureValue.filterNot(StateStatus.isFinished)
+      val jobStatusCanceled = processManager.findJobStatus(ProcessName(processId)).futureValue.filterNot(StatusState.isFinished)
       if (jobStatusCanceled.nonEmpty)
         throw new IllegalStateException("Job still exists")
     }
