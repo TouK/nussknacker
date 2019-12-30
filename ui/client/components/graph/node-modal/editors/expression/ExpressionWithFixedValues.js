@@ -28,7 +28,7 @@ export default class ExpressionWithFixedValues extends React.Component {
   render() {
     const {
       expressionObj, fieldLabel, readOnly, toggleEditor, shouldShowSwitch, switchable, rowClassName, valueClassName,
-      renderFieldLabel, onValueChange, displayRawEditor, defaultValue
+      renderFieldLabel, onValueChange, displayRawEditor, defaultValue, fieldType
     } = this.props
     const option = this.currentOption(expressionObj, defaultValue)
 
@@ -50,6 +50,7 @@ export default class ExpressionWithFixedValues extends React.Component {
           shouldShowSwitch={shouldShowSwitch}
           displayRawEditor={displayRawEditor}
           readOnly={readOnly}
+          fieldType={fieldType}
         />
       </div>
     )

@@ -14,11 +14,11 @@ export default class EditableExpression extends React.Component {
 
   render() {
     const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param} = this.props
-    const type = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression")
+    const type = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : Types.EXPRESSION)
     const editorName = editorType.editorName(type, expressionObj, this.state.displayRawEditor)
     const Editor = editorType.editor(editorName)
     return <Editor toggleEditor={this.toggleEditor}
-                   switchable={this.switchable(editorName, expressionObj)}
+                   switchable={editorType.switchable(editorName, expressionObj, type)}
                    shouldShowSwitch={this.showSwitch(type, showSwitch)}
                    rowClassName={rowClassName ? rowClassName : "node-row"}
                    valueClassName={valueClassName ? valueClassName : "node-value"}
@@ -31,17 +31,6 @@ export default class EditableExpression extends React.Component {
   toggleEditor = (_) => this.setState({
     displayRawEditor: !this.state.displayRawEditor
   })
-
-  switchable = (editorName, expressionObj) => {
-    switch (editorName) {
-      case Types.BOOL_EDITOR:
-        return true
-      case Types.RAW_EDITOR:
-        return editorType.switchableToBooleanEditor(expressionObj)
-      default:
-        return false
-    }
-  }
 
   showSwitch = (fieldType, showSwitch) => showSwitch && editorType.isSupported(fieldType)
 }

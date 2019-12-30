@@ -7,7 +7,8 @@ export default function RawEditor(props) {
 
   const {
     renderFieldLabel, fieldLabel, fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows, cols, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor
+    onValueChange, rows, cols, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor,
+    fieldType
   } = props
 
   return (
@@ -37,6 +38,7 @@ export default function RawEditor(props) {
         shouldShowSwitch={shouldShowSwitch}
         displayRawEditor={displayRawEditor}
         readOnly={readOnly}
+        fieldType={fieldType}
       />
     </div>
   )
