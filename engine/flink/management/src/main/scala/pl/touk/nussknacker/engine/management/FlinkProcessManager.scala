@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.customs.deployment.ProcessStateCustomConfigurator
+import pl.touk.nussknacker.engine.defaults.deployment.DefaultStateCustomConfigurator
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -126,5 +126,5 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit]
 
-  override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
+  override def processStateConfigurator: ProcessStateConfigurator = DefaultStateCustomConfigurator
 }

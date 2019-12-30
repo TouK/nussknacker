@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.customs.deployment
+package pl.touk.nussknacker.engine.defaults.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.StatusState
 
-object CustomStateStatus extends Enumeration {
+object DefaultStateStatus extends Enumeration {
   import StatusState._
 
   val Running = StatusState.Running

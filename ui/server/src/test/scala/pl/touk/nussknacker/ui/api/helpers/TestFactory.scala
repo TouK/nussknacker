@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.customs.deployment.CustomStateStatus
+import pl.touk.nussknacker.engine.defaults.deployment.DefaultStateStatus
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
@@ -105,7 +105,7 @@ object TestFactory extends TestPermissions{
 
     private val sleepBeforeAnswer = new AtomicLong(0)
     private val failDeployment = new AtomicBoolean(false)
-    private val managerProcessState = new AtomicReference[StateStatus](CustomStateStatus.Running)
+    private val managerProcessState = new AtomicReference[StateStatus](DefaultStateStatus.Running)
 
     def withLongerSleepBeforeAnswer[T](action: => T): T = {
       try {
@@ -127,10 +127,10 @@ object TestFactory extends TestPermissions{
 
     def withProcessFinished[T](action: => T): T = {
       try {
-        managerProcessState.set(CustomStateStatus.Finished)
+        managerProcessState.set(DefaultStateStatus.Finished)
         action
       } finally {
-        managerProcessState.set(CustomStateStatus.Running)
+        managerProcessState.set(DefaultStateStatus.Running)
       }
     }
 

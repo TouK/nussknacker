@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.customs.deployment.{CustomStateStatus, ProcessStateCustomConfigurator}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultProcessState, DefaultStateCustomConfigurator, DefaultStateStatus}
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -30,14 +30,14 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       Future.failed(failure)
     }
 
-    override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
+    override def processStateConfigurator: ProcessStateConfigurator = DefaultStateCustomConfigurator
   }
   private val failure = new Exception("Fail")
 
   def processVersion(versionId: Option[Long]): Option[ProcessVersion] = versionId.map(id => ProcessVersion(id, ProcessName(""), "", None))
 
   def processState(deploymentId: DeploymentId, status: StateStatus, client: StandaloneProcessClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errorMessage: Option[String] = Option.empty): ProcessState =
-    ProcessState.custom(deploymentId, status, processVersion(versionId), startTime = startTime, errorMessage = errorMessage)
+    DefaultProcessState(deploymentId, status, processVersion(versionId), startTime = startTime, errorMessage = errorMessage)
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
@@ -55,7 +55,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   }
 
   test("Status should be RUNNING if all clients running") {
-    val consistentState = processState(jobId, CustomStateStatus.Running, okClient(), Some(1), Some(10000L))
+    val consistentState = processState(jobId, DefaultStateStatus.Running, okClient(), Some(1), Some(10000L))
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(Some(consistentState)),
       okClient(Some(consistentState))
@@ -67,20 +67,20 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   test("Status should be INCONSISTENT if one status unknown") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(),
-      okClient(Some(processState(jobId, CustomStateStatus.Running, okClient(), Some(1))))
+      okClient(Some(processState(jobId, DefaultStateStatus.Running, okClient(), Some(1))))
     ))
 
-    val excepted = processState(jobId, CustomStateStatus.Failed, multiClient, errorMessage = Some("Inconsistent states between servers: empty; state: RUNNING, startTime: None"))
+    val excepted = processState(jobId, DefaultStateStatus.Failed, multiClient, errorMessage = Some("Inconsistent states between servers: empty; state: RUNNING, startTime: None"))
     multiClient.findStatus(id).futureValue shouldBe Some(excepted)
   }
 
   test("Status should be INCONSISTENT if status differ") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
-      okClient(Some(processState(jobId, CustomStateStatus.Running, okClient(), Some(1), Some(5000L)))),
-      okClient(Some(processState(jobId, CustomStateStatus.Running, okClient(), Some(1))))
+      okClient(Some(processState(jobId, DefaultStateStatus.Running, okClient(), Some(1), Some(5000L)))),
+      okClient(Some(processState(jobId, DefaultStateStatus.Running, okClient(), Some(1))))
     ))
 
-    val excepted = processState(jobId, CustomStateStatus.Failed, multiClient, errorMessage = Some("Inconsistent states between servers: state: RUNNING, startTime: 5000; state: RUNNING, startTime: None"))
+    val excepted = processState(jobId, DefaultStateStatus.Failed, multiClient, errorMessage = Some("Inconsistent states between servers: state: RUNNING, startTime: 5000; state: RUNNING, startTime: None"))
     multiClient.findStatus(id).futureValue shouldBe Some(excepted)
   }
 
@@ -111,6 +111,6 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       Future.successful(status)
     }
 
-    override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
+    override def processStateConfigurator: ProcessStateConfigurator = DefaultStateCustomConfigurator
   }
 }

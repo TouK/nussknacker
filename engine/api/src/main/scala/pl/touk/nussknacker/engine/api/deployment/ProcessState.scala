@@ -5,7 +5,7 @@ import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
-import pl.touk.nussknacker.engine.customs.deployment.ProcessStateCustomConfigurator
+import pl.touk.nussknacker.engine.defaults.deployment.DefaultStateCustomConfigurator
 
 trait ProcessStateConfigurator {
   def getStatusActions(status: StateStatus): List[StateAction]
@@ -29,22 +29,6 @@ object ProcessState {
       startTime,
       attributes,
       errorMessage
-    )
-
-  def custom(deploymentId: DeploymentId,
-             status: StateStatus,
-             version: Option[ProcessVersion] = Option.empty,
-             startTime: Option[Long] = Option.empty,
-             attributes: Option[Json] = Option.empty,
-             errorMessage: Option[String] = Option.empty): ProcessState =
-    ProcessState(
-      deploymentId = deploymentId,
-      status = status,
-      version = version,
-      allowedActions = ProcessStateCustomConfigurator.getStatusActions(status),
-      startTime = startTime,
-      attributes = attributes,
-      errorMessage = errorMessage
     )
 }
 
@@ -75,6 +59,7 @@ object StatusState extends Enumeration {
   val DuringDeploy = new StateStatus("DURING_DEPLOY")
 
   def verify(status: String, excepted: StateStatus): Boolean = status.equals(excepted.toString())
+
   def verify(status: StateStatus, excepted: StateStatus): Boolean = status.equals(excepted)
 
   def isFinished(state: ProcessState): Boolean = verify(state.status, Finished)

@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateConfigurator}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.customs.deployment.{CustomStateStatus, ProcessStateCustomConfigurator}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultStateCustomConfigurator}
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import sttp.client.circe._
 import pl.touk.nussknacker.engine.sttp.SttpJson
@@ -68,15 +68,15 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
           }.mkString("; ")
           Some(ProcessState(
             DeploymentId(name.value),
-            CustomStateStatus.Failed,
-            allowedActions = processStateConfigurator.getStatusActions(CustomStateStatus.Failed),
+            DefaultStateStatus.Failed,
+            allowedActions = processStateConfigurator.getStatusActions(DefaultStateStatus.Failed),
             errorMessage = Some(s"Inconsistent states between servers: $warningMessage")
           ))
       }
     }
   }
 
-  override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
+  override def processStateConfigurator: ProcessStateConfigurator = DefaultStateCustomConfigurator
 }
 
 class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
@@ -108,6 +108,6 @@ class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: S
       .flatMap(SttpJson.failureToFuture)
   }
 
-  override def processStateConfigurator: ProcessStateConfigurator = ProcessStateCustomConfigurator
+  override def processStateConfigurator: ProcessStateConfigurator = DefaultStateCustomConfigurator
 }
 
