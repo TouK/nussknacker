@@ -428,6 +428,10 @@ class Graph extends React.Component {
 
   changeNodeDetailsOnClick() {
     this.processGraphPaper.on('cell:pointerdblclick', (cellView, evt, x, y) => {
+      if (this.props.groupingState) {
+        return;
+      }
+
       const nodeData = cellView.model.attributes.nodeData;
       if (nodeData) {
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeData.id
@@ -449,7 +453,7 @@ class Graph extends React.Component {
 
         this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
 
-        if (evt.ctrlKey) {
+        if (evt.ctrlKey || evt.metaKey) {
           this.props.actions.expandSelection(nodeData.id)
         } else {
           this.props.actions.resetSelection(nodeData.id)
