@@ -79,7 +79,7 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class AuthenticationSettings(backend: String, authorizeUrl: Option[String])
 
-@JsonCodec case class ProcessStateSettings(icons: Map[String, Option[Map[String, String]]], tooltips: Map[String, Option[Map[String, String]]])
+@JsonCodec case class ProcessStateSettings(icons: Map[String, Map[String, String]], tooltips: Map[String, Map[String, String]])
 
 @JsonCodec case class UISettings(features: ToggleFeaturesOptions,
                                  authentication: AuthenticationSettings,
