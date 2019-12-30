@@ -34,7 +34,7 @@ export class ListStateComponent extends React.Component {
 
     //TODO: are we sure that?
     if (ProcessStateUtils.isDeployed(process) && !ProcessStateUtils.isRunning(state)) {
-      return this.getTooltip(process, {'status': ProcessStateUtils.STATUSES.FAILED}, true)
+      return this.getTooltip(process, {'status': ProcessStateUtils.STATUSES.ERROR}, true)
     }
 
     return this.getTooltip(process, state, true)
@@ -52,7 +52,7 @@ export class ListStateComponent extends React.Component {
 
     //TODO: are we sure that?
     if (ProcessStateUtils.isDeployed(process) && !ProcessStateUtils.isRunning(state)) {
-      return this.getIcon(process, {'status': ProcessStateUtils.STATUSES.FAILED})
+      return this.getIcon(process, {'status': ProcessStateUtils.STATUSES.ERROR})
     }
 
     return this.getIcon(process, state)
