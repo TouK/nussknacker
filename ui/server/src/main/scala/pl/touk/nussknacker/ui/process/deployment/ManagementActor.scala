@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.customs.deployment.CustomStateStatus
+import pl.touk.nussknacker.engine.defaults.deployment.DefaultStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
@@ -71,8 +71,8 @@ class ManagementActor(environment: String,
         manager <- processManager(id.id)
       } yield sender() ! Some(ProcessStatus(
         deploymentId = None,
-        status = CustomStateStatus.DuringDeploy,
-        allowedActions = manager.processStateConfigurator.getStatusActions(CustomStateStatus.DuringDeploy),
+        status = DefaultStateStatus.DuringDeploy,
+        allowedActions = manager.processStateConfigurator.getStatusActions(DefaultStateStatus.DuringDeploy),
         startTime = Some(info.time)
       ))
       reply(processStatus)

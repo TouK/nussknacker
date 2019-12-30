@@ -5,7 +5,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StatusState}
-import pl.touk.nussknacker.engine.customs.deployment.{CustomStateStatus, ProcessStateCustomConfigurator}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultStateCustomConfigurator}
 
 @JsonCodec case class ProcessStatus(deploymentId: Option[String],
                                     status: String,
@@ -55,15 +55,15 @@ object ProcessStatus {
 
   val notFound: ProcessStatus = ProcessStatus(
     None,
-    CustomStateStatus.Unknown,
-    ProcessStateCustomConfigurator.getStatusActions(CustomStateStatus.Unknown),
+    DefaultStateStatus.Unknown,
+    DefaultStateCustomConfigurator.getStatusActions(DefaultStateStatus.Unknown),
     errorMessage = Some("Process not found in engine.")
   )
 
   val failedToGet: ProcessStatus = ProcessStatus(
     None,
-    CustomStateStatus.Unknown,
-    ProcessStateCustomConfigurator.getStatusActions(CustomStateStatus.Unknown),
+    DefaultStateStatus.Unknown,
+    DefaultStateCustomConfigurator.getStatusActions(DefaultStateStatus.Unknown),
     errorMessage = Some("Failed to obtain status.")
   )
 }

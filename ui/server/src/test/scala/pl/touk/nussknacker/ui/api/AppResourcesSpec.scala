@@ -10,9 +10,9 @@ import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess}
+import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.customs.deployment.{CustomStateStatus, ProcessStateCustomConfigurator}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultStateCustomConfigurator}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -28,7 +28,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   def processStatus(deploymentId: Option[String], status: StateStatus): ProcessStatus =
-    ProcessStatus(deploymentId, status, allowedActions = ProcessStateCustomConfigurator.getStatusActions(status))
+    ProcessStatus(deploymentId, status, allowedActions = DefaultStateCustomConfigurator.getStatusActions(status))
 
   test("it should return healthcheck also if cannot retrieve statuses") {
 
@@ -47,7 +47,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     statusCheck.reply(akka.actor.Status.Failure(new Exception("Failed to check status")))
 
     val second = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(None, CustomStateStatus.Running)))
+    statusCheck.reply(Some(processStatus(None, DefaultStateStatus.Running)))
 
     val third = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(None)
@@ -71,9 +71,9 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(None, CustomStateStatus.Running)))
+    statusCheck.reply(Some(processStatus(None, DefaultStateStatus.Running)))
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(None, CustomStateStatus.Running)))
+    statusCheck.reply(Some(processStatus(None, DefaultStateStatus.Running)))
 
     result ~> check {
       status shouldBe StatusCodes.OK
@@ -94,7 +94,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(None, CustomStateStatus.Running)))
+    statusCheck.reply(Some(processStatus(None, DefaultStateStatus.Running)))
 
     result ~> check {
       status shouldBe StatusCodes.OK
