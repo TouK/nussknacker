@@ -13,6 +13,7 @@ export default {
     UNKNOWN: "UNKNOWN",
     NOT_DEPLOYED: "NOT_DEPLOYED",
     DURING_DEPLOY: "DURING_DEPLOY",
+    DEPLOYED: "DEPLOYED",
     RUNNING: "RUNNING",
     CANCELED: "CANCELED",
     RESTARTING: "RESTARTING",
@@ -24,10 +25,11 @@ export default {
     UNKNOWN: "Unknown state of the process..",
     NOT_DEPLOYED: "The process has never been deployed.",
     DURING_DEPLOY: "The process has been already started and currently is being deployed.",
+    DEPLOYED: "The process has been successfully deployed.",
     RUNNING: "The process is running.",
     CANCELED: "The process has been successfully cancelled.",
     RESTARTING: "The process is restarting..",
-    FAILED: "There are some problems with process..",
+    FAILED: "There are some problems with checking state of process..",
     FINISHED: "The process completed successfully.",
   },
 
@@ -35,37 +37,46 @@ export default {
     UNKNOWN: InlinedSvgs.iconUnknown,
     NOT_DEPLOYED: InlinedSvgs.iconNotDeployed,
     DURING_DEPLOY: InlinedSvgs.iconDeployRunningAnimated,
+    DEPLOYED: InlinedSvgs.iconDeploySuccess,
     RUNNING: InlinedSvgs.iconRunningAnimated,
     CANCELED: InlinedSvgs.iconStoppingSuccess,
     RESTARTING: InlinedSvgs.iconStoppedWorking,
-    FAILED: InlinedSvgs.iconFailed,
+    FAILED: InlinedSvgs.iconStoppedWorking,
     FINISHED: InlinedSvgs.iconSuccess,
   },
 
   isRunning(state) {
-    return state != null && state.status.toUpperCase() === this.STATUSES.RUNNING
+    return this.getStateStatus(state) === this.STATUSES.RUNNING
   },
 
   isDeployed(process) {
-    const action = _.get(process, 'deployment.action')
-    return action != null && action.toUpperCase() === this.ACTIONS.DEPLOY
+    return this.getProcessAction(process) === this.ACTIONS.DEPLOY
   },
 
   getStateTooltip(state) {
-    const status = this.getStateStatus(state)
+    return this.getStatusTooltip(this.getStateStatus(state))
+  },
+
+  getStatusTooltip(status) {
     return _.get(this.STATUS_TOOLTIPS, status, this.STATUS_TOOLTIPS[this.STATUSES.UNKNOWN])
   },
 
   getStateIcon(state) {
-    const status = this.getStateStatus(state)
-    return _.get(this.STATUS_ICONS, status, InlinedSvgs.iconUnknown)
+    return this.getStatusIcon(this.getStateStatus(state))
+  },
+
+  getStatusIcon(status) {
+    return _.get(this.STATUS_ICONS, status, this.STATUS_ICONS[this.STATUSES.UNKNOWN])
   },
 
   getStateStatus(state) {
-    if (_.isUndefined(state)) {
+    const status = _.get(state, 'status', null)
+
+    if (_.isUndefined(state) || (state && status === null)) {
       return this.STATUSES.UNKNOWN
     }
 
+    //TODO: In future it will be nice when API return state with status CANCELED
     if (_.isNull(state)) {
       return this.STATUSES.CANCELED
     }
@@ -73,35 +84,38 @@ export default {
     return state.status.toUpperCase()
   },
 
-  getProcessTooltip(process, isStateLoaded) {
-    const pendingTitle = (title) => title + (isStateLoaded === false ? " Loading current state of the process..." : "")
+  getProcessStateStatus(process, state) {
+    if (state == null) {
+      return this.getProcessStatus(process)
+    }
 
-    const action = _.get(process, 'deployment.action', null)
+    return this.getStateStatus(state)
+  },
 
-    switch (action) {
+  getProcessAction(process) {
+    return _.get(process, 'deployment.action', null)
+  },
+
+  getProcessTooltip(process) {
+    return this.getStatusTooltip(this.getProcessStatus(process))
+  },
+
+  getProcessStatus(process) {
+    const action = this.getProcessAction(process)
+
+    switch(action) {
       case this.ACTIONS.DEPLOY:
-        return pendingTitle("The process has been successfully deployed.")
+        return this.STATUSES.DEPLOYED
       case this.ACTIONS.CANCEL:
-        return pendingTitle("The process has been successfully canceled.")
+        return this.STATUSES.CANCELED
       case this.ACTIONS.NOT_DEPLOYED:
-        return pendingTitle("The process has never been deployed.")
+        return this.STATUSES.NOT_DEPLOYED
       default:
-        return pendingTitle("Unknown state of the process..")
+        return this.STATUSES.UNKNOWN
     }
   },
 
   getProcessIcon(process) {
-    const action = _.get(process, 'deployment.action', null)
-
-    switch(action) {
-      case this.ACTIONS.DEPLOY:
-        return InlinedSvgs.iconDeploySuccess
-      case this.ACTIONS.CANCEL:
-        return InlinedSvgs.iconStoppingSuccess
-      case this.ACTIONS.NOT_DEPLOYED:
-        return InlinedSvgs.iconNotDeployed
-      default:
-        return InlinedSvgs.iconUnknown
-    }
+    return this.getStatusIcon(this.getProcessStatus(process))
   }
 }

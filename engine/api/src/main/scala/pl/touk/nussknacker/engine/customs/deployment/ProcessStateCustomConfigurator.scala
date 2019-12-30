@@ -21,6 +21,6 @@ object ProcessStateCustomConfigurator extends ProcessStateConfigurator {
   override def getStatusActions(status: StateStatus): List[StateAction] =
     statusActions.getOrElse(status, defaultActions)
 
-  override def statusMessages: Option[Map[StateStatus, String]] = Option.empty
-  override def statusIcons: Option[Map[StateStatus, String]] = Option.empty
+  override def statusTooltips: Map[StateStatus, String] = Map.empty
+  override def statusIcons: Map[StateStatus, String] = Map.empty
 }

@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.customs.deployment.ProcessStateCustomConfigura
 
 trait ProcessStateConfigurator {
   def getStatusActions(status: StateStatus): List[StateAction]
-  def statusMessages: Option[Map[StateStatus, String]]
-  def statusIcons: Option[Map[StateStatus, String]]
+  def statusTooltips: Map[StateStatus, String]
+  def statusIcons: Map[StateStatus, String]
 }
 
 object ProcessState {
@@ -86,12 +86,4 @@ object StatusState extends Enumeration {
   def isDuringDeploy(status: String): Boolean = verify(status,DuringDeploy)
 
   def isRunning(status: String): Boolean = verify(status, Running)
-}
-
-// Each own StateStatus enum implementation should extends from StateStatusEnumeration because it has to implement
-// base three statuses: Running / Finished / DuringDeploy
-trait StateStatusEnumeration extends Enumeration {
-  val Running = StatusState.Running
-  val Finished = StatusState.Finished
-  val DuringDeploy = StatusState.DuringDeploy
 }
