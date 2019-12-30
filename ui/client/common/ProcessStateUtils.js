@@ -18,6 +18,7 @@ export default {
     CANCELED: "CANCELED",
     RESTARTING: "RESTARTING",
     FAILED: "FAILED",
+    ERROR: "ERROR",
     FINISHED: "FINISHED",
   },
 
@@ -30,6 +31,7 @@ export default {
     CANCELED: "The process has been successfully cancelled.",
     RESTARTING: "The process is restarting..",
     FAILED: "There are some problems with checking state of process..",
+    ERROR: "There are some errors with state of process..",
     FINISHED: "The process completed successfully.",
   },
 
@@ -41,7 +43,8 @@ export default {
     RUNNING: InlinedSvgs.iconRunningAnimated,
     CANCELED: InlinedSvgs.iconStoppingSuccess,
     RESTARTING: InlinedSvgs.iconStoppedWorking,
-    FAILED: InlinedSvgs.iconStoppedWorking,
+    FAILED: InlinedSvgs.iconFailed,
+    ERROR: InlinedSvgs.iconStoppedWorking,
     FINISHED: InlinedSvgs.iconSuccess,
   },
 
