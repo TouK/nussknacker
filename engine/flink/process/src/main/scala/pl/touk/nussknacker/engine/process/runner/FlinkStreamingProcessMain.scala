@@ -5,7 +5,8 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 
 object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnvironment] {
 
@@ -17,8 +18,8 @@ object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnviron
                                     modelData: ModelData,
                                     process: EspProcess,
                                     processVersion: ProcessVersion): Unit = {
-    val compiler = new FlinkStreamingProcessCompiler(modelData)
-    val registrar = compiler.createFlinkProcessRegistrar()
+    val compiler = new FlinkProcessCompiler(modelData)
+    val registrar = FlinkStreamingProcessRegistrar(compiler, modelData.processConfig)
     registrar.register(env, process, processVersion)
     env.execute(process.id)
   }

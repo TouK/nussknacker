@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableE
 import pl.touk.nussknacker.engine.javademo
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
-import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 trait BaseITest extends KafkaSpec {
@@ -33,7 +33,7 @@ trait BaseITest extends KafkaSpec {
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val config = TestConfig(kafkaZookeeperServer)
-    registrar = new FlinkStreamingProcessCompiler(LocalModelData(config, creator)).createFlinkProcessRegistrar()
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
   }
 
   override protected def afterAll(): Unit = {
