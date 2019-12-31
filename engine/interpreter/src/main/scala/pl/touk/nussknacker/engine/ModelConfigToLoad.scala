@@ -8,6 +8,13 @@ object ModelConfigToLoad {
 
 }
 
+/* Config of model can come from following locations:
+   - part of main config file of nussknacker (in path processTypes.{type_name}.modelConfig
+   - model.conf from model jar
+   - reference.conf from model jar
+   This class stores configs only from first location (i.e. from main config file), as it's only part that has to be e.g.
+   passed to Flink. We separate it from the rest of config to keep it small (see e.g. FlinkProcessCompiler)
+ */
 case class ModelConfigToLoad(config: Config) {
 
   def loadConfig(classLoader: ClassLoader): Config = {
@@ -20,7 +27,7 @@ case class ModelConfigToLoad(config: Config) {
       service1Url: ${baseUrl}/service1
       and have baseUrl taken from application config
      */
-    val configFallbackFromModel = ConfigFactory.parseResources(classLoader, ModelConfigToLoad.modelConfigResource)
+    val configFallbackFromModel = ConfigFactory.parseResources(classLoader, modelConfigResource)
     config
       .withFallback(configFallbackFromModel)
       //this is for reference.conf resources from model jar
@@ -29,5 +36,8 @@ case class ModelConfigToLoad(config: Config) {
   }
 
   def render(): String = config.root().render(ConfigRenderOptions.concise())
+
+  //only for testing
+  private[engine] def modelConfigResource: String = ModelConfigToLoad.modelConfigResource
 
 }

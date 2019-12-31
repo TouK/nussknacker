@@ -22,6 +22,8 @@ import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.duration.FiniteDuration
 
+//This class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
+//and we have ModelConfigToLoad and not whole config
 class FlinkProcessCompiler(creator: ProcessConfigCreator, configToLoad: ModelConfigToLoad, val diskStateBackendSupport: Boolean) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
