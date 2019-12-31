@@ -17,10 +17,12 @@ export default class CommentContent extends React.Component {
     }
   }
 
+
   render() {
+    //TODO: replace dangerouslySetInnerHTML with something safer
      return(
        <div className={"panel-comment"}>
-         <p>{this.newContent()}</p>
+         <p dangerouslySetInnerHTML={{__html: this.newContent()}}/>
        </div>
      )
   }
