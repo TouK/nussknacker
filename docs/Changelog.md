@@ -7,6 +7,16 @@ under active development, so some parts of the API may change in the future.
 Nussknacker versions
 ====================
 
+0.0.12 (26 Oct 2019)
+--------------------
+* Cross builds with Scala 2.11 and 2.12
+* First version of join nodes
+* OAuth2 authentication capabilities
+* Migration of Argonaut to Circe
+* Preliminary version of dictionaries in expressions
+* Major upgrade of frontend libraries (React, Redux, etc)
+* Various usability improvements
+
 0.0.11 (1 Apr 2019)
 ---------
 
@@ -68,10 +78,11 @@ Table below contains versions of libraries/apps that can be used with Nussknacke
 
 |Nussknacker| Flink | Kafka  | InfluxDB | Grafana |
 |-----------|-------|--------|----------|---------|
-| master    |**1.7.2**|0.11.0.2| ?    | ?   |
-| 0.0.11    |1.6.1  |0.11.0.2| ?    | ?   |
-| 0.0.10    |**1.6.1**  |0.11.0.2| ?    | ?   |
-| 0.0.9     |1.4.2  |0.11.0.2| ?        | ?       |
+| master    |**1.7.2**|0.11.0.2|1.2.0     | 5.4.0   |
+| 0.0.12    |1.7.2  |0.11.0.2| 1.2.0    | 5.4.0   |
+| 0.0.11    |1.6.1  |0.11.0.2| 1.2.0   | 5.4.0  |
+| 0.0.10    |**1.6.1**  |0.11.0.2| 1.2.0    | 5.4.0   |
+| 0.0.9     |1.4.2  |0.11.0.2| 1.2.0        | 5.4.0       |
 | 0.0.8     |1.4.2  |0.11.0.2| 1.2.0    | 4.0.1   |
 | 0.0.7     |1.3.1  |0.9.0.1 | 1.2.0    | 4.0.1   |
 | 0.0.6     |1.3.1  |0.9.0.1 | 1.2.0    | 4.0.1   |
