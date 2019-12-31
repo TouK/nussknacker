@@ -22,6 +22,11 @@ import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessI
 import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
+import {EditorType} from "./editors/expression/Editor"
+import HttpService from "../../../http/HttpService";
+import "../../../stylesheets/markdown.styl"
+
+const ReactMarkdown = require("react-markdown/with-html")
 import AdditionalProperty from "./AdditionalProperty"
 
 //move state to redux?
@@ -46,6 +51,8 @@ export class NodeDetailsContent extends React.Component {
     this.showOutputVar = hasNoReturn === false || (hasNoReturn === true && this.state.editedNode.outputVar)
 
     this.generateUUID("fields", "parameters")
+
+    this.fetchAdditionalData()
   }
 
   prepareNodeDef(node, nodeObjectDetails, processToDisplay) {
@@ -105,6 +112,15 @@ export class NodeDetailsContent extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     if (!_.isEqual(prevProps.node, this.props.node) || !_.isEqual(prevProps.testResults, this.props.testResults)) {
       this.selectTestResults()
+    }
+    if (!_.isEqual(prevProps.node, this.props.node)) {
+      this.fetchAdditionalData()
+    }
+  }
+
+  fetchAdditionalData() {
+    if (this.state.editedNode.type) {
+      HttpService.getNodeData(this.props.processToDisplay.id, this.state.editedNode).then(res => this.setState(() => ({additionalData: res.data})))
     }
   }
 
@@ -713,6 +729,12 @@ export class NodeDetailsContent extends React.Component {
           <TestErrors resultsToShow={this.state.testResultsToShow} />
           {this.customNode(fieldErrors)}
           <TestResults nodeId={this.props.node.id} resultsToShow={this.state.testResultsToShow} />
+          {
+            this.state.additionalData ?
+                <ReactMarkdown source={this.state.additionalData.content} className="markdownDisplay"
+                  linkTarget="_blank" escapeHtml={false} />
+            : null
+          }
         </div>
     )
   }

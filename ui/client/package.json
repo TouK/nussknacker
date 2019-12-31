@@ -71,6 +71,7 @@
     "react-textarea-autosize": "~7.1.0",
     "react-transition-group": "~4.3.0",
     "react-treeview": "~0.4.7",
+    "react-markdown": "~4.2.2",
     "reactable": "~1.1.0",
     "redux": "^4.0.5",
     "redux-devtools-extension": "~2.13.8",
