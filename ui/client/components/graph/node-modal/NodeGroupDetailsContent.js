@@ -22,8 +22,6 @@ export default function NodeGroupDetailsContent(props) {
                                   showSwitch={true}
                                   node={node}
                                   nodeErrors={props.nodeErrors}
-                                  onChange={() => {
-                                  }}
                                   testResults={testResults(node.id)}/>
               <hr/>
             </div>

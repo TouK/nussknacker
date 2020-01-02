@@ -126,9 +126,6 @@ class NodeDetailsModal extends React.Component {
          : (<button type="button" title="Expand group" key="0" className='modalButton' onClick={expand}>Expand</button>)
   }
 
-  renderGroup(testResults) {
-  }
-
   isGroup() {
     return NodeUtils.nodeIsGroup(this.state.editedNode)
   }
