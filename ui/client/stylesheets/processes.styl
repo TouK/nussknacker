@@ -64,6 +64,8 @@
     span
       font-size: 20px
       cursor: pointer
+      &:focus
+        outline 2px solid focusColor
 
   width: 100%
   border-collapse: initial
@@ -95,6 +97,8 @@
       width: 10%
     &.reactable-th-status, &.reactable-th-edit, &.reactable-th-metrics, &.reactable-th-subprocess
       width: 5%
+    &:focus
+      outline 2px solid focusColor
   tr:nth-child(even)
     background-color: processesTableEvenColor
   tr:nth-child(odd)

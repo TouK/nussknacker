@@ -3,7 +3,6 @@ import {Table, Td, Tr} from "reactable"
 import {connect} from "react-redux"
 import HttpService from "../http/HttpService"
 import ActionsUtils from "../actions/ActionsUtils"
-import DateUtils from "../common/DateUtils"
 import LoaderSpinner from "../components/Spinner.js"
 import AddProcessDialog from "../components/AddProcessDialog.js"
 import HealthCheck from "../components/HealthCheck.js"
@@ -11,13 +10,13 @@ import "../stylesheets/processes.styl"
 import {withRouter} from 'react-router-dom'
 import ProcessUtils from "../common/ProcessUtils"
 import BaseProcesses from "./BaseProcesses"
-import {Glyphicon} from 'react-bootstrap'
 import * as  queryString from 'query-string'
-import {nkPath} from "../config";
+import {nkPath} from "../config"
 import AddProcessButton from "../components/table/AddProcessButton"
 import TableSelect from "../components/table/TableSelect"
 import SearchFilter from "../components/table/SearchFilter"
 import Date from "../components/common/Date"
+import TableRowIcon from "../components/table/TableRowIcon"
 
 class Processes extends BaseProcesses {
   queries = {
@@ -159,20 +158,20 @@ class Processes extends BaseProcesses {
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  <div className={this.processStatusClass(process)} title={this.processStatusTitle(process)} />
+                  <div className={this.processStatusClass(process)} title={this.processStatusTitle(process)}/>
                 </Td>
                 <Td column="edit" className="edit-column">
-                  <Glyphicon glyph="edit"
-                             title="Edit process"
-                             onClick={this.showProcess.bind(this, process)}
-                             className={"processes-table-row-icon"}
+                  <TableRowIcon
+                    glyph="edit"
+                    title="Edit process"
+                    onClick={this.showProcess(process)}
                   />
                 </Td>
                 <Td column="metrics" className="metrics-column">
-                  <Glyphicon glyph="stats"
-                             title="Show metrics"
-                             onClick={this.showMetrics.bind(this, process)}
-                             className={"processes-table-row-icon"}
+                  <TableRowIcon
+                    glyph={"stats"}
+                    title="Show metrics"
+                    onClick={this.showMetrics(process)}
                   />
                 </Td>
               </Tr>
