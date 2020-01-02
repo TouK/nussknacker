@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -22,6 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppResources(config: Config,
+                   typeToConfig: Map[ProcessingType, ProcessingTypeData],
                    modelData: Map[ProcessingType, ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
@@ -101,7 +102,11 @@ class AppResources(config: Config,
       processes <- processRepository.fetchDeployedProcessesDetails[Unit]()
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
     } yield {
-      statusMap.filter { case (_, status) => !status.exists(_.isOkForDeployed) }.keySet
+      statusMap.filterNot{
+        case (_, status) => status.exists(st => st.status.isDuringDeploy || st.status.isRunning)
+      }.map{
+        case (process, status) => (process.name, status)
+      }.keySet
     }
   }
 

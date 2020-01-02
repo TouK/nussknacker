@@ -222,7 +222,10 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   private def cancel(processId: String): Unit = {
     assert(processManager.cancel(ProcessName(processId)).isReadyWithin(10 seconds))
     eventually {
-      val jobStatusCanceled = processManager.findJobStatus(ProcessName(processId)).futureValue.filterNot(StatusState.isFinished)
+      val jobStatusCanceled = processManager
+        .findJobStatus(ProcessName(processId))
+        .futureValue
+        .filterNot(ps => processManager.processStateConfigurator.isFinished(ps.status))
       if (jobStatusCanceled.nonEmpty)
         throw new IllegalStateException("Job still exists")
     }

@@ -38,7 +38,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
     val statusCheck = TestProbe()
 
-    val resources = new AppResources(ConfigFactory.empty(), Map(), processRepository, TestFactory.processValidation,
+    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
       new JobStatusService(statusCheck.ref))
 
     createDeployedProcess("id1")
@@ -86,7 +86,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
     val statusCheck = TestProbe()
 
-    val resources = new AppResources(ConfigFactory.empty(), Map(), processRepository, TestFactory.processValidation,
+    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
       new JobStatusService(statusCheck.ref))
 
     createDeployedProcess("id1")
@@ -108,6 +108,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val statusCheck = TestProbe()
 
     val resources = new AppResources(ConfigFactory.empty(),
+      typeToConfig,
       Map(), processRepository,
       TestFactory.processValidation,
       new JobStatusService(statusCheck.ref)
@@ -135,7 +136,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
-      Map("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
+      typeToConfig, Map("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
 
     val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
     result ~> check {

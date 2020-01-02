@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateConfigurator}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultStateCustomConfigurator}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultProcessStateConfigurator}
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import sttp.client.circe._
 import pl.touk.nussknacker.engine.sttp.SttpJson
@@ -76,7 +76,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
     }
   }
 
-  override def processStateConfigurator: ProcessStateConfigurator = DefaultStateCustomConfigurator
+  override def processStateConfigurator: ProcessStateConfigurator = DefaultProcessStateConfigurator
 }
 
 class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
@@ -108,6 +108,6 @@ class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: S
       .flatMap(SttpJson.failureToFuture)
   }
 
-  override def processStateConfigurator: ProcessStateConfigurator = DefaultStateCustomConfigurator
+  override def processStateConfigurator: ProcessStateConfigurator = DefaultProcessStateConfigurator
 }
 

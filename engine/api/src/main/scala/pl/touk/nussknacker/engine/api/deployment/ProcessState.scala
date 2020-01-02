@@ -5,12 +5,16 @@ import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
-import pl.touk.nussknacker.engine.defaults.deployment.DefaultStateCustomConfigurator
+import pl.touk.nussknacker.engine.defaults.deployment.DefaultProcessStateConfigurator
 
 trait ProcessStateConfigurator {
-  def getStatusActions(status: StateStatus): List[StateAction]
+  def processStateStatus: Enumeration
   def statusTooltips: Map[StateStatus, String]
   def statusIcons: Map[StateStatus, String]
+  def isRunning(statusState: String): Boolean
+  def isDuringDeploy(statusState: String): Boolean
+  def isFinished(statusState: String): Boolean
+  def getStatusActions(status: StateStatus): List[StateAction]
 }
 
 object ProcessState {
@@ -54,21 +58,7 @@ object StatusState extends Enumeration {
   class Value(name: String) extends Val(name)
   type StateStatus = Value
 
-  val Running = new StateStatus("RUNNING")
-  val Finished = new StateStatus("FINISHED")
-  val DuringDeploy = new StateStatus("DURING_DEPLOY")
-
   def verify(status: String, excepted: StateStatus): Boolean = status.equals(excepted.toString())
 
   def verify(status: StateStatus, excepted: StateStatus): Boolean = status.equals(excepted)
-
-  def isFinished(state: ProcessState): Boolean = verify(state.status, Finished)
-
-  def isRunning(state: ProcessState): Boolean = verify(state.status, Running)
-
-  def isDuringDeploy(state: ProcessState): Boolean = verify(state.status, DuringDeploy)
-
-  def isDuringDeploy(status: String): Boolean = verify(status,DuringDeploy)
-
-  def isRunning(status: String): Boolean = verify(status, Running)
 }

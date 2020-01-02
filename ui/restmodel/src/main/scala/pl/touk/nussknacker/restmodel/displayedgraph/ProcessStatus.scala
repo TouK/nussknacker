@@ -5,19 +5,14 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StatusState}
-import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultStateCustomConfigurator}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultProcessStateConfigurator}
 
 @JsonCodec case class ProcessStatus(deploymentId: Option[String],
                                     status: String,
                                     allowedActions: List[StateAction],
                                     startTime: Option[Long],
                                     attributes: Option[Json],
-                                    errorMessage: Option[String]) {
-
-  def isDuringDeploy: Boolean = StatusState.isDuringDeploy(status)
-  def isRunning: Boolean = StatusState.isRunning(status)
-  def isOkForDeployed: Boolean =  isRunning || isDuringDeploy
-}
+                                    errorMessage: Option[String])
 
 object ProcessStatus {
   def apply(deploymentId: Option[String],
@@ -56,14 +51,14 @@ object ProcessStatus {
   val notFound: ProcessStatus = ProcessStatus(
     None,
     DefaultStateStatus.Unknown,
-    DefaultStateCustomConfigurator.getStatusActions(DefaultStateStatus.Unknown),
+    DefaultProcessStateConfigurator.getStatusActions(DefaultStateStatus.Unknown),
     errorMessage = Some("Process not found in engine.")
   )
 
   val failedToGet: ProcessStatus = ProcessStatus(
     None,
     DefaultStateStatus.Unknown,
-    DefaultStateCustomConfigurator.getStatusActions(DefaultStateStatus.Unknown),
+    DefaultProcessStateConfigurator.getStatusActions(DefaultStateStatus.Unknown),
     errorMessage = Some("Failed to obtain status.")
   )
 }

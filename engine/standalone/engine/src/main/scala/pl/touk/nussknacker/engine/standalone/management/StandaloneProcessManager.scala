@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCo
 import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion, StandaloneMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.defaults.deployment.DefaultStateCustomConfigurator
+import pl.touk.nussknacker.engine.defaults.deployment.DefaultProcessStateConfigurator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition._
@@ -80,7 +80,7 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
     client.cancel(name)
   }
 
-  override def processStateConfigurator: ProcessStateConfigurator = DefaultStateCustomConfigurator
+  override def processStateConfigurator: ProcessStateConfigurator = DefaultProcessStateConfigurator
 }
 
 object StandaloneTestMain {

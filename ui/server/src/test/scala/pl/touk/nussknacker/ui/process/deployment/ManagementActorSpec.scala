@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -46,17 +47,20 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
     val id: process.ProcessId = prepareDeployedProcess(processName)
 
-    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.isOkForDeployed) shouldBe Some(true)
+    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(true)
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.deployment should not be None
 
     processManager.withProcessFinished {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.isOkForDeployed) shouldBe Some(false)
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(false)
     }
 
     val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.deployment should not be None
     processDetails.isCanceled shouldBe true
   }
+
+  private def isOkForDeployed(processStatus: ProcessStatus): Boolean =
+    processManager.processStateConfigurator.isRunning(processStatus.status) || processManager.processStateConfigurator.isDuringDeploy(processStatus.status)
 
   private def prepareDeployedProcess(processName: ProcessName) = {
     (for {
