@@ -52,8 +52,8 @@ describe("ListState tests", () => {
   it("should show defaults for loaded undefined state and no settings configuration", () => {
     const process = {"processingType":"streaming","deployment":{"action":"DEPLOY"}}
     const listState = mount(<ListStateComponent process={process} state={{}} isStateLoaded={true} processStatesSettings={noSettings} />)
-    expect(listState.find('div').prop('title')).toBe(ProcessStateUtils.getStatusTooltip(ProcessStateUtils.STATUSES.FAILED))
-    expect(contains(listState.find('div').text(), ProcessStateUtils.getStatusIcon(ProcessStateUtils.STATUSES.FAILED))).toBe(true)
+    expect(listState.find('div').prop('title')).toBe(ProcessStateUtils.getStatusTooltip(ProcessStateUtils.STATUSES.ERROR))
+    expect(contains(listState.find('div').text(), ProcessStateUtils.getStatusIcon(ProcessStateUtils.STATUSES.ERROR))).toBe(true)
   })
 
   it("should show defaults for never deployed process", () => {
