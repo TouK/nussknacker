@@ -5,9 +5,9 @@ import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessStateConfigurator}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultProcessStateConfigurator}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultProcessState, DefaultStateStatus}
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import sttp.client.circe._
 import pl.touk.nussknacker.engine.sttp.SttpJson
@@ -35,8 +35,6 @@ trait StandaloneProcessClient {
   def cancel(name: ProcessName): Future[Unit]
 
   def findStatus(name: ProcessName): Future[Option[ProcessState]]
-
-  def processStateConfigurator: ProcessStateConfigurator
 
 }
 
@@ -66,17 +64,14 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
             case None => "empty"
             case Some(state) => s"state: ${state.status}, startTime: ${state.startTime.getOrElse(None)}"
           }.mkString("; ")
-          Some(ProcessState(
+          Some(DefaultProcessState(
             DeploymentId(name.value),
             DefaultStateStatus.Failed,
-            allowedActions = processStateConfigurator.getStatusActions(DefaultStateStatus.Failed),
             errorMessage = Some(s"Inconsistent states between servers: $warningMessage")
           ))
       }
     }
   }
-
-  override def processStateConfigurator: ProcessStateConfigurator = DefaultProcessStateConfigurator
 }
 
 class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
@@ -107,7 +102,5 @@ class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: S
       .send()
       .flatMap(SttpJson.failureToFuture)
   }
-
-  override def processStateConfigurator: ProcessStateConfigurator = DefaultProcessStateConfigurator
 }
 

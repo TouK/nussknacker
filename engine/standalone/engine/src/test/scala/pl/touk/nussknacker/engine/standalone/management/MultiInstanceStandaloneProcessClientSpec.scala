@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.defaults.deployment.{DefaultProcessState, DefaultProcessStateConfigurator, DefaultStateStatus}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultProcessState, DefaultStateStatus}
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -29,8 +29,6 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       name shouldBe id
       Future.failed(failure)
     }
-
-    override def processStateConfigurator: ProcessStateConfigurator = DefaultProcessStateConfigurator
   }
   private val failure = new Exception("Fail")
 
@@ -110,7 +108,5 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       name shouldBe id
       Future.successful(status)
     }
-
-    override def processStateConfigurator: ProcessStateConfigurator = DefaultProcessStateConfigurator
   }
 }
