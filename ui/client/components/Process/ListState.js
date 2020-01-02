@@ -5,12 +5,6 @@ import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 
 export class ListStateComponent extends React.Component {
-  iconStyles = {
-    width: 24,
-    height: 24,
-    margin: '0 auto'
-  }
-
   properties = {
     TOOLTIPS: "tooltips",
     ICONS: "icons"
@@ -65,8 +59,7 @@ export class ListStateComponent extends React.Component {
     return <div
       dangerouslySetInnerHTML={{__html: this.prepareIcon(process, state, isStateLoaded) }}
       title={this.prepareTooltip(process, state, isStateLoaded)}
-      style={this.iconStyles}
-      className={isStateLoaded ? 'list-state centered-column' : 'status-pending list-state centered-column'}
+      className={'state-list' + (isStateLoaded === false ? ' state-pending' : '')}
     />
   }
 }
