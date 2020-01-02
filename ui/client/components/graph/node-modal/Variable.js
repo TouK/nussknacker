@@ -42,7 +42,7 @@ const Variable = (props) => {
       <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
                        value={_.get(node, "additionalFields.description", "")}
                        path="additionalFields.description"
-                       onChange={props.onChange}
+                       onChange={(event) => onChange("additionalFields.description", event.target.value)}
                        isMarked={isMarked("additionalFields.description")}
                        readOnly={readOnly}
                        className={"node-input"}/>
