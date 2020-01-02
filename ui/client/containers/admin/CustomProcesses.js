@@ -37,13 +37,13 @@ class CustomProcesses extends BaseProcesses {
     }).catch(() => this.setState({showLoader: false}))
   }
 
-  deploy = (process) => {
+  deploy = (process) => () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.name), () => {
       return HttpService.deploy(process.name).then(() => this.reload())
     })
   }
 
-  cancel = (process) => {
+  cancel = (process) => () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.name), () => {
       return HttpService.cancel(process.name).then(() => this.reload())
     })
@@ -107,12 +107,12 @@ class CustomProcesses extends BaseProcesses {
                     />
                   </Td>
                   <Td column="deploy" className="deploy-column">
-                    <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy.bind(this, process)} />
+                    <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)} />
                   </Td>
                   {
                     this.isRunning(process) ? (
                       <Td column="cancel" className="cancel-column">
-                        <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel.bind(this, process)} />
+                        <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)} />
                       </Td>
                     ): null
                   }
@@ -132,4 +132,5 @@ const mapState = state => ({
   loggedUser: state.settings.loggedUser,
   featuresSettings: state.settings.featuresSettings
 })
+
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CustomProcesses))
