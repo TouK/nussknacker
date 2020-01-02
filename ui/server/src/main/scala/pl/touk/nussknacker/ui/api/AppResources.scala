@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -22,6 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppResources(config: Config,
+                   typeToConfig: Map[ProcessingType, ProcessingTypeData],
                    modelData: Map[ProcessingType, ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
@@ -101,7 +102,11 @@ class AppResources(config: Config,
       processes <- processRepository.fetchProcessesDetails[Unit]()
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
     } yield {
-      statusMap.filter { case (_, status) => !status.exists(_.isOkForDeployed) }.keySet
+      statusMap.filter{
+        case (process, status) => !status.exists(isStatusOkForDeployed(_, process))
+      }.map{
+        case (process, status) => (process.name, status)
+      }.keySet
     }
   }
 
@@ -114,10 +119,15 @@ class AppResources(config: Config,
     }
   }
 
-  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] = {
+  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(BaseProcessDetails[_], Option[ProcessStatus])]] = {
     processes
-      .filter(_.isDeployed)
-      .map(process => findJobStatus(process.idWithName, process.processingType).map((process.name, _)))
+      .filterNot(_.deployment.isEmpty)
+      .map(process => findJobStatus(process.idWithName, process.processingType).map((process, _)))
+  }
+
+  private def isStatusOkForDeployed(status: ProcessStatus, process: BaseProcessDetails[_]): Boolean = {
+    val processStateConfigurator = typeToConfig(process.processingType).processManager.processStateConfigurator
+    processStateConfigurator.isDuringDeploy(status.status) || processStateConfigurator.isRunning(status.status)
   }
 
   private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {

@@ -16,7 +16,7 @@ object DefaultProcessState {
       deploymentId = deploymentId,
       status = status,
       version = version,
-      allowedActions = DefaultStateCustomConfigurator.getStatusActions(status),
+      allowedActions = DefaultProcessStateConfigurator.getStatusActions(status),
       startTime = startTime,
       attributes = attributes,
       errorMessage = errorMessage

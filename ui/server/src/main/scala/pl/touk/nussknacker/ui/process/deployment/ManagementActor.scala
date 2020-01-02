@@ -85,7 +85,7 @@ class ManagementActor(environment: String,
         deployedVersion = deployedVersions.headOption.filter(_.deploymentAction == DeploymentAction.Deploy)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
-        _ <- handleFinishedProcess(id, state)
+        _ <- handleFinishedProcess(id, state, manager.processStateConfigurator)
       } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
       reply(processStatus)
 
@@ -116,10 +116,10 @@ class ManagementActor(environment: String,
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
+  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState], processStateConfigurator: ProcessStateConfigurator): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
-      case Some(state) if StatusState.isFinished(state) =>
+      case Some(state) if processStateConfigurator.isFinished(state.status) =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
             deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, environment, Some("Process finished")).map(_ => ())
