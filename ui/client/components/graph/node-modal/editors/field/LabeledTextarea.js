@@ -3,14 +3,16 @@ import React from "react"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 
 export const LabeledTextarea = (props) => {
-  const {autoFocus, value, onChange, className, isMarked, readOnly, rows = 1, cols = 50, renderFieldLabel, showValidation, validators} = props
+  const {autoFocus, value, onChange, className, isMarked, readOnly, rows, cols, renderFieldLabel, showValidation, validators} = props
+
+  const lineEndPattern = /\r\n|\r|\n/
 
   return (
     <div className="node-row">
       {renderFieldLabel()}
       <div className={"node-value" + (isMarked ? " marked" : "")}>
         <textarea
-          rows={rows}
+          rows={!_.isEmpty(value) ? value.split(lineEndPattern).length : rows}
           cols={cols}
           className={className}
           value={value}
