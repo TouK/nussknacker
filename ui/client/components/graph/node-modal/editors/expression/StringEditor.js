@@ -4,7 +4,7 @@ import PropTypes from "prop-types"
 
 export default function StringEditor(props) {
 
-  const {fieldLabel, renderFieldLabel, expressionObj, onValueChange} = props
+  const {fieldLabel, renderFieldLabel, expressionObj, onValueChange, readOnly} = props
 
   const defaultQuotationMark = "'"
   const expressionQuotationMark = expressionObj.expression.charAt(0)
@@ -19,6 +19,9 @@ export default function StringEditor(props) {
     renderFieldLabel={() => props.renderFieldLabel(props.fieldLabel)}
     onChange={(event) => onValueChange(format(event.target.value))}
     value={trim(expressionObj.expression)}
+    formattedValue={expressionObj.expression}
+    switchable={true}
+    hint={"Switch to expression mode"}
   />
 
 }
@@ -29,7 +32,8 @@ export const parseableString = (expressionObj) => {
   return stringPattern.test(expression) && language === "spel"
 }
 
-const stringPattern = /(^['].*'$)|(^".*"$)/
+//TODO handle expressions with escaped '/"
+const stringPattern = /(^'.*'$)|(^".*"$)/
 
 StringEditor.propTypes = {
   fieldLabel: PropTypes.string,
@@ -37,3 +41,7 @@ StringEditor.propTypes = {
   expressionObj: PropTypes.object,
   onValueChange: PropTypes.func
 }
+
+export const switchableToStringEditor = (expressionObj) => parseableString(expressionObj)
+
+export const nonSwitchableToStringEditorHint = "Expression must be a simple string literal i.e. text surrounded by single or double quotation marks to switch to basic mode"

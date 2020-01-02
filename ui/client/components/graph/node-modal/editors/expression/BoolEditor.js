@@ -24,7 +24,8 @@ export default function BoolEditor(props) {
       expressionObj={expressionObj}
       onValueChange={onValueChange}
       readOnly={readOnly}
-      switchable={switchable}
+      switchable={true}
+      hint={"Switch to expression mode"}
       toggleEditor={toggleEditor}
       shouldShowSwitch={shouldShowSwitch}
       rowClassName={rowClassName}
@@ -52,3 +53,8 @@ export const parseableBoolean = (expressionObj) => {
   const language = expressionObj.language
   return (expression === "true" || expression === "false") && language === "spel"
 }
+
+export const switchableToBoolEditor = (expressionObj) => parseableBoolean(expressionObj)
+  || _.isEmpty(expressionObj.expression)
+
+export const nonSwitchableToBoolEditorHint = "Expression must be equal to true or false to switch to basic mode"

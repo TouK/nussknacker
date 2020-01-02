@@ -2,14 +2,32 @@ import React from "react"
 import ExpressionSuggest from "./ExpressionSuggest"
 import PropTypes from "prop-types"
 import SwitchIcon from "./SwitchIcon"
+import {Types} from "./EditorType"
+import {nonSwitchableToBoolEditorHint, switchableToBoolEditor} from "./BoolEditor"
+import {nonSwitchableToStringEditorHint, switchableToStringEditor} from "./StringEditor"
 
 export default function RawEditor(props) {
 
   const {
     renderFieldLabel, fieldLabel, fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
     onValueChange, rows, cols, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor,
-    fieldType
+    fieldType, editorName
   } = props
+
+  const switchableToBasicEditor = (editorName, expressionObj, fieldType) =>
+    (fieldType === Types.BOOLEAN && switchableToBoolEditor(expressionObj))
+    || (fieldType === Types.EXPRESSION && switchableToBoolEditor(expressionObj))
+    || (fieldType === Types.STRING && switchableToStringEditor(expressionObj))
+
+  const switchToBasicEditorHint = () => {
+    if (switchableToBasicEditor(editorName, expressionObj, fieldType)) {
+      return "Switch to basic mode"
+    } else if (fieldType === Types.BOOLEAN || fieldType === Types.EXPRESSION) {
+      return nonSwitchableToBoolEditorHint
+    } else if (fieldType === Types.STRING) {
+      return nonSwitchableToStringEditorHint
+    }
+  }
 
   return (
     <div className={rowClassName}>
@@ -33,7 +51,8 @@ export default function RawEditor(props) {
         />
       </div>
       <SwitchIcon
-        switchable={switchable}
+        switchable={switchableToBasicEditor(editorName, expressionObj, fieldType)}
+        hint={switchToBasicEditorHint()}
         onClick={toggleEditor}
         shouldShowSwitch={shouldShowSwitch}
         displayRawEditor={displayRawEditor}
