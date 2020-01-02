@@ -151,11 +151,11 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     this.afterElementChange({isDeployed: element.value, page: 0}, true)
   }
 
-  showMetrics = (process) => {
+  showMetrics = (process) => () => {
     history.push(Metrics.pathForProcess(process.name))
   }
 
-  showProcess = (process) => {
+  showProcess = (process) => () => {
     history.push(VisualizationUrl.visualizationUrl(process.name))
   }
 

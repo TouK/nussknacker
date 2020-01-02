@@ -99,7 +99,7 @@ class SubProcesses extends BaseProcesses {
                   <TableRowIcon
                     glyph="edit"
                     title="Edit subprocess"
-                    onClick={(_) => this.showProcess(process)}
+                    onClick={this.showProcess(process)}
                   />
                 </Td>
               </Tr>

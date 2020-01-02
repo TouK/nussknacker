@@ -155,8 +155,8 @@ class ExpressionSuggest extends React.Component {
                          fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
                          readOnly: inputProps.readOnly
                        }}
-                       onFocus={(_) => this.setEditorFocus(true)}
-                       onBlur={(_) => this.setEditorFocus(false)}/>
+                       onFocus={this.setEditorFocus(true)}
+                       onBlur={this.setEditorFocus(false)}/>
           </div>
           {showValidation && <ValidationLabels validators={validators} values={[this.state.value]}/>}
         </React.Fragment>
@@ -167,7 +167,7 @@ class ExpressionSuggest extends React.Component {
 
   }
 
-  setEditorFocus = (focus) => this.setState({editorFocused: focus})
+  setEditorFocus = (focus) => () => this.setState({editorFocused: focus})
 }
 
 function mapState(state, props) {

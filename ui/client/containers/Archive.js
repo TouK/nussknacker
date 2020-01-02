@@ -101,7 +101,7 @@ class Archive extends BaseProcesses {
                     <TableRowIcon
                       glyph="eye-open"
                       title={"Show " + (process.isSubprocess ? "subprocess" : "process")}
-                      onClick={(_) => this.showProcess(process)}
+                      onClick={this.showProcess(process)}
                     />
                   </Td>
                 </Tr>

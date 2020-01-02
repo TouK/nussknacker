@@ -164,14 +164,14 @@ class Processes extends BaseProcesses {
                   <TableRowIcon
                     glyph="edit"
                     title="Edit process"
-                    onClick={(_) => this.showProcess(process)}
+                    onClick={this.showProcess(process)}
                   />
                 </Td>
                 <Td column="metrics" className="metrics-column">
                   <TableRowIcon
                     glyph={"stats"}
                     title="Show metrics"
-                    onClick={(_) => this.showMetrics(process)}
+                    onClick={this.showMetrics(process)}
                   />
                 </Td>
               </Tr>
