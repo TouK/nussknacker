@@ -44,7 +44,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
         clazzDefinitions.flatMap(_.methods.get(methodReference.getName)) match {
           //Static method can be invoked - we cannot find them ATM
           case Nil if isClass => Right(Unknown)
-          case Nil  => Left(s"Unknown method ${methodReference.getName}")
+          case Nil  => Left(s"Unknown method '${methodReference.getName}'")
           case methodInfoes => typeFromMethodInfoes(methodInfoes)
         }
     }

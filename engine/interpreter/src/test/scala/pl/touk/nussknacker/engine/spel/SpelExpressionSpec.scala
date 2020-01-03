@@ -163,6 +163,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("validate MethodReference") {
     val parsed = parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal)
     parsed.isValid shouldBe true
+
+    val invalid = parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT'")))
+
   }
 
   test("return invalid type for MethodReference with invalid arity ") {
