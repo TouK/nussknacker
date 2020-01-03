@@ -40,8 +40,11 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
       case Nil =>
         Right(Unknown)
       case _ =>
+        val isClass = clazzDefinitions.map(k => Typed(k.clazzName)).exists(_.canBeSubclassOf(Typed[Class[_]]))
         clazzDefinitions.flatMap(_.methods.get(methodReference.getName)) match {
-          case Nil => Left(s"Unknown method ${methodReference.getName}")
+          //Static method can be invoked - we cannot find them ATM
+          case Nil if isClass => Right(Unknown)
+          case Nil  => Left(s"Unknown method ${methodReference.getName}")
           case methodInfoes => typeFromMethodInfoes(methodInfoes)
         }
     }
