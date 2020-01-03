@@ -9,8 +9,6 @@ class EditorType {
 
   editorName = (fieldType, expressionObj, displayRawEditor) => {
     switch (fieldType) {
-      case Types.EXPRESSION:
-        return !displayRawEditor && this.switchableToBooleanEditor(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
       case Types.BOOLEAN:
         return !displayRawEditor && this.switchableToBooleanEditor(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
       case Types.EXPRESSION_WITH_FIXED_VALUES || Types.RAW_EDITOR:
@@ -28,12 +26,11 @@ class EditorType {
 export const Types = {
   BOOL_EDITOR: "boolEditor",
   RAW_EDITOR: "rawEditor",
-  EXPRESSION: "expression",
   BOOLEAN: "Boolean",
   EXPRESSION_WITH_FIXED_VALUES: "expressionWithFixedValues",
 }
 
-const supportedFieldType = [Types.EXPRESSION, Types.BOOLEAN]
+const supportedFieldType = [Types.BOOLEAN]
 
 const editorTypes = {
   [Types.RAW_EDITOR]: RawEditor,
