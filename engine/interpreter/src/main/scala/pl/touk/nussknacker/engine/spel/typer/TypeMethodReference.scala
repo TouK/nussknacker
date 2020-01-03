@@ -41,7 +41,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
         Right(Unknown)
       case _ =>
         clazzDefinitions.flatMap(_.methods.get(methodReference.getName)) match {
-          case Nil => Right(Unknown)
+          case Nil => Left(s"Unknown method ${methodReference.getName}")
           case methodInfoes => typeFromMethodInfoes(methodInfoes)
         }
     }
