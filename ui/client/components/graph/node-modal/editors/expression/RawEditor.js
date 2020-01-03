@@ -3,30 +3,16 @@ import ExpressionSuggest from "./ExpressionSuggest"
 import PropTypes from "prop-types"
 import SwitchIcon from "./SwitchIcon"
 import {Types} from "./EditorType"
-import {nonSwitchableToBoolEditorHint, switchableToBoolEditor} from "./BoolEditor"
-import {nonSwitchableToStringEditorHint, switchableToStringEditor} from "./StringEditor"
+import BoolEditor from "./BoolEditor"
+import StringEditor from "./StringEditor"
 
 export default function RawEditor(props) {
 
   const {
     renderFieldLabel, fieldLabel, fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
     onValueChange, rows, cols, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor,
-    fieldType, editorName
+    fieldType, editorName, switchableHint
   } = props
-
-  const switchableToBasicEditor = (editorName, expressionObj, fieldType) =>
-    (fieldType === Types.BOOLEAN && switchableToBoolEditor(expressionObj))
-    || (fieldType === Types.STRING && switchableToStringEditor(expressionObj))
-
-  const switchToBasicEditorHint = () => {
-    if (switchableToBasicEditor(editorName, expressionObj, fieldType)) {
-      return "Switch to basic mode"
-    } else if (fieldType === Types.BOOLEAN) {
-      return nonSwitchableToBoolEditorHint
-    } else if (fieldType === Types.STRING) {
-      return nonSwitchableToStringEditorHint
-    }
-  }
 
   return (
     <div className={rowClassName}>
@@ -50,8 +36,8 @@ export default function RawEditor(props) {
         />
       </div>
       <SwitchIcon
-        switchable={switchableToBasicEditor(editorName, expressionObj, fieldType)}
-        hint={switchToBasicEditorHint()}
+        switchable={switchable(editorName, expressionObj, fieldType)}
+        hint={switchableHint(editorName, expressionObj, fieldType)}
         onClick={toggleEditor}
         shouldShowSwitch={shouldShowSwitch}
         displayRawEditor={displayRawEditor}
@@ -75,7 +61,7 @@ RawEditor.propTypes = {
   validators: PropTypes.array,
   isMarked: PropTypes.bool,
   showValidation: PropTypes.bool,
-  switchable: PropTypes.bool,
+  switchable: PropTypes.func,
   toggleEditor: PropTypes.func,
   shouldShowSwitch: PropTypes.bool
 }
@@ -84,3 +70,19 @@ RawEditor.defaultProps = {
   rows: 1,
   cols: 50
 }
+
+RawEditor.switchableFromHint = (editorName, expressionObj, fieldType) => {
+  if (RawEditor.switchableFrom(editorName, expressionObj, fieldType)) {
+    return "Switch to basic mode"
+  } else if (fieldType === Types.BOOLEAN) {
+    return BoolEditor.nonSwitchableOntoHint
+  } else if (fieldType === Types.STRING) {
+    return StringEditor.nonSwitchableOntoHint
+  }
+}
+
+RawEditor.switchableFrom = (editorName, expressionObj, fieldType) =>
+  (fieldType === Types.BOOLEAN && BoolEditor.switchableOnto(expressionObj))
+  || (fieldType === Types.STRING && StringEditor.switchableOnto(expressionObj))
+
+RawEditor.switchableOnto = (_) => true

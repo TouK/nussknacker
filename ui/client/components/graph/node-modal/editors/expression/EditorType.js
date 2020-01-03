@@ -1,13 +1,13 @@
 import RawEditor from "./RawEditor"
 import BoolEditor from "./BoolEditor"
-import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
 import StringEditor from "./StringEditor"
+import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
 
 class EditorType {
 
-  isSupported = (filedType) => supportedFieldType.includes(filedType)
+  isSupported = (fieldType) => Object.values(editors).map(value => value.supportedFieldType).includes(fieldType)
 
-  editor = (editorName) => _.get(editorTypes, editorName, editorTypes[Types.RAW_EDITOR])
+  editor = (editorName) => _.get(editors, editorName, editors[Types.RAW_EDITOR])
 }
 
 export const Types = {
@@ -20,13 +20,29 @@ export const Types = {
   EXPRESSION_WITH_FIXED_VALUES: "expressionWithFixedValues",
 }
 
-const supportedFieldType = [Types.BOOLEAN, Types.STRING]
-
-const editorTypes = {
-  [Types.RAW_EDITOR]: RawEditor,
-  [Types.BOOL_EDITOR]: BoolEditor,
-  [Types.EXPRESSION_WITH_FIXED_VALUES]: ExpressionWithFixedValues,
-  [Types.STRING_EDITOR]: StringEditor
+const editors = {
+  [Types.RAW_EDITOR]: {
+    editor: RawEditor,
+    switchable: (editorName, expressionObj, fieldType) => RawEditor.switchableFrom(editorName, expressionObj, fieldType),
+    switchableHint: (editorName, expressionObj, fieldType) => RawEditor.switchableFromHint(editorName, expressionObj, fieldType),
+    supportedFieldType: Types.BOOLEAN
+  },
+  [Types.BOOL_EDITOR]: {
+    editor: BoolEditor,
+    switchable: BoolEditor.switchableFrom(),
+    switchableHint: (_) => BoolEditor.switchableFromHint,
+  },
+  [Types.STRING_EDITOR]: {
+    editor: StringEditor,
+    switchable: BoolEditor.switchableFrom(),
+    switchableHint: (_) => StringEditor.switchableFromHint,
+    supportedFieldType: Types.STRING
+  },
+  [Types.EXPRESSION_WITH_FIXED_VALUES]: {
+    editor: ExpressionWithFixedValues,
+    switchable: false,
+    switchableHint: null
+  }
 }
 
 export const editorType = new EditorType()

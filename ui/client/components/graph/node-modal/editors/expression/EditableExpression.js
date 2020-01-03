@@ -1,8 +1,8 @@
 import React from "react"
 import {editorType, Types} from "./EditorType"
 import ProcessUtils from "../../../../../common/ProcessUtils"
-import {switchableToStringEditor} from "./StringEditor"
-import {switchableToBoolEditor} from "./BoolEditor"
+import StringEditor from "./StringEditor"
+import BoolEditor from "./BoolEditor"
 
 export default class EditableExpression extends React.Component {
 
@@ -17,8 +17,12 @@ export default class EditableExpression extends React.Component {
     const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param} = this.props
     const type = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : Types.EXPRESSION)
     const editorName = this.editorName(type, expressionObj, this.state.displayRawEditor)
-    const Editor = editorType.editor(editorName)
+    const editorObject = editorType.editor(editorName)
+    const Editor = editorObject.editor
+
     return <Editor toggleEditor={this.toggleEditor}
+                   switchable={editorObject.switchable}
+                   switchableHint={editorObject.switchableHint}
                    editorName={editorName}
                    shouldShowSwitch={this.showSwitch(type, showSwitch)}
                    rowClassName={rowClassName ? rowClassName : "node-row"}
@@ -32,10 +36,10 @@ export default class EditableExpression extends React.Component {
   editorName = (fieldType, expressionObj, displayRawEditor) => {
     switch (fieldType) {
       case Types.BOOLEAN:
-        return !displayRawEditor && switchableToBoolEditor(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
+        return !displayRawEditor && BoolEditor.switchableOnto(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
       case Types.STRING:
-        return !displayRawEditor && switchableToStringEditor(expressionObj) ? Types.STRING_EDITOR : Types.RAW_EDITOR
-      case Types.EXPRESSION_WITH_FIXED_VALUES || Types.RAW_EDITOR:
+        return !displayRawEditor && StringEditor.switchableOnto(expressionObj) ? Types.STRING_EDITOR : Types.RAW_EDITOR
+      case Types.EXPRESSION_WITH_FIXED_VALUES:
         return fieldType
       default:
         return Types.RAW_EDITOR
