@@ -16,13 +16,12 @@ export default function RawEditor(props) {
 
   const switchableToBasicEditor = (editorName, expressionObj, fieldType) =>
     (fieldType === Types.BOOLEAN && switchableToBoolEditor(expressionObj))
-    || (fieldType === Types.EXPRESSION && switchableToBoolEditor(expressionObj))
     || (fieldType === Types.STRING && switchableToStringEditor(expressionObj))
 
   const switchToBasicEditorHint = () => {
     if (switchableToBasicEditor(editorName, expressionObj, fieldType)) {
       return "Switch to basic mode"
-    } else if (fieldType === Types.BOOLEAN || fieldType === Types.EXPRESSION) {
+    } else if (fieldType === Types.BOOLEAN) {
       return nonSwitchableToBoolEditorHint
     } else if (fieldType === Types.STRING) {
       return nonSwitchableToStringEditorHint

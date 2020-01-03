@@ -31,8 +31,6 @@ export default class EditableExpression extends React.Component {
 
   editorName = (fieldType, expressionObj, displayRawEditor) => {
     switch (fieldType) {
-      case Types.EXPRESSION:
-        return !displayRawEditor && switchableToBoolEditor(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
       case Types.BOOLEAN:
         return !displayRawEditor && switchableToBoolEditor(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
       case Types.STRING:

@@ -14,6 +14,7 @@ export const Types = {
   BOOL_EDITOR: "boolEditor",
   STRING_EDITOR: "stringEditor",
   RAW_EDITOR: "rawEditor",
+  EXPRESSION: "expression",
   BOOLEAN: "Boolean",
   STRING: "String",
   EXPRESSION_WITH_FIXED_VALUES: "expressionWithFixedValues",
