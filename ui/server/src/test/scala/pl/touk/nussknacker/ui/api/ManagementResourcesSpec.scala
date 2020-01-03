@@ -195,7 +195,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
         EspProcessBuilder
           .id("sampleProcess")
           .parallelism(1)
-          .exceptionHandler("param1" -> "'ala'")
+          .exceptionHandler()
           .source("startProcess", "csv-source")
           .filter("input", "new java.math.BigDecimal(null) == 0")
           .emptySink("end", "kafka-string", "topic" -> "'end.topic'")

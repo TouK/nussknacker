@@ -31,6 +31,8 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
   def exceptionHandler(params: (String, Expression)*) =
     new ProcessExceptionHandlerBuilder(ExceptionHandlerRef(params.map(evaluatedparam.Parameter.tupled).toList))
 
+  def exceptionHandlerNoParams() = new ProcessExceptionHandlerBuilder(ExceptionHandlerRef(List.empty))
+
   class ProcessExceptionHandlerBuilder private[ProcessMetaDataBuilder](exceptionHandlerRef: ExceptionHandlerRef) {
 
     def source(id: String, typ: String, params: (String, Expression)*): ProcessGraphBuilder =

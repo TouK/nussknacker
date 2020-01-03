@@ -125,7 +125,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     val process = EspProcessBuilder
       .id(processId)
-      .exceptionHandler("param1" -> "''")
+      .exceptionHandler()
       .source("source", "csv-source")
       .enricher("enricher", "out", "complexReturnObjectService")
       .sink("end", "#input", "sendSms")
