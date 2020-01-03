@@ -105,9 +105,8 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     Seq(LoggingListener)
   }
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory = {
+  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
     new LoggingExceptionHandlerFactory(config)
-  }
 
   override def expressionConfig(config: Config): ExpressionConfig = {
     val globalProcessVariables = Map(
@@ -132,8 +131,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 class LoggingExceptionHandlerFactory(config: Config) extends ExceptionHandlerFactory {
 
   @MethodToInvoke
-  def create(metaData: MetaData, @ParamName("sampleParam") sampleParam: String): EspExceptionHandler = {
-    BrieflyLoggingRestartingExceptionHandler(metaData, config, params = Map("sampleParam" -> sampleParam))
-  }
+  def create(metaData: MetaData): EspExceptionHandler =
+    BrieflyLoggingRestartingExceptionHandler(metaData, config)
 
 }

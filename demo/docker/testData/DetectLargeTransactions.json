@@ -11,13 +11,6 @@
   },
   "exceptionHandlerRef" : {
     "parameters" : [
-      {
-        "name" : "sampleParam",
-        "expression" : {
-          "language" : "spel",
-          "expression" : "'1'"
-        }
-      }
     ]
   },
   "nodes" : [
