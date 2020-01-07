@@ -9,7 +9,7 @@ import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultProcessStateConfigurator}

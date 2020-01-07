@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.defaults.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StatusState.{StateStatus, verify}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessStateConfigurator, StateAction}
 
 object DefaultProcessStateConfigurator extends ProcessStateConfigurator {
@@ -18,20 +18,18 @@ object DefaultProcessStateConfigurator extends ProcessStateConfigurator {
     DefaultStateStatus.Finished -> List(StateAction.Deploy)
   )
 
-  override def processStateStatus: Enumeration = DefaultStateStatus
-
   override def statusTooltips: Map[StateStatus, String] = Map.empty
 
   override def statusIcons: Map[StateStatus, String] = Map.empty
 
-  override def isFinished(stateStatus: String): Boolean =
-    verify(stateStatus, DefaultStateStatus.Finished)
+  override def isFinished(stateStatus: StateStatus): Boolean =
+    stateStatus == DefaultStateStatus.Finished
 
-  override def isRunning(stateStatus: String): Boolean =
-    verify(stateStatus, DefaultStateStatus.Running)
+  override def isRunning(stateStatus: StateStatus): Boolean =
+    stateStatus == DefaultStateStatus.Running
 
-  override def isDuringDeploy(stateStatus: String): Boolean =
-    verify(stateStatus, DefaultStateStatus.DuringDeploy)
+  override def isDuringDeploy(stateStatus: StateStatus): Boolean =
+    stateStatus == DefaultStateStatus.DuringDeploy
 
   override def getStatusActions(status: StateStatus): List[StateAction] =
     statusActions.getOrElse(status, defaultActions)

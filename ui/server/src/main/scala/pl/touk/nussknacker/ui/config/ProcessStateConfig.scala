@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.config
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 
 object ProcessStateConfig {
   def managersIcons(managers: Map[ProcessingType, ProcessingTypeData]): Map[String, Map[ProcessingType, String]] =

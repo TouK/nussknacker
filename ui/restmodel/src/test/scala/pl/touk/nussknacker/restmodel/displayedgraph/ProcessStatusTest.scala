@@ -3,7 +3,7 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, StateAction}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultProcessState}
@@ -19,7 +19,7 @@ class ProcessStatusTest extends FunSuite with Matchers {
 
   private def sampleStatus(status: StateStatus, allowedActions: List[StateAction] = List.empty, errorMessage: Option[String] = Option.empty) = ProcessStatus(
     deploymentId = Some("12345"),
-    status = status.toString(),
+    status = status,
     allowedActions = allowedActions,
     startTime = Option.empty,
     attributes = Option.empty,

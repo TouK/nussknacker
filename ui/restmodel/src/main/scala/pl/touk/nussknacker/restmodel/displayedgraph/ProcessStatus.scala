@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
-import io.circe.Json
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StatusState}
-import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultProcessStateConfigurator}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
+import pl.touk.nussknacker.engine.defaults.deployment.{DefaultProcessStateConfigurator, DefaultStateStatus}
 
-@JsonCodec case class ProcessStatus(deploymentId: Option[String],
-                                    status: String,
+@JsonCodec(encodeOnly = true) case class ProcessStatus(deploymentId: Option[String],
+                                    status: StateStatus,
                                     allowedActions: List[StateAction],
                                     startTime: Option[Long],
                                     attributes: Option[Json],
                                     errorMessage: Option[String])
 
 object ProcessStatus {
+
   def apply(deploymentId: Option[String],
             status: StateStatus,
             allowedActions: List[StateAction],
@@ -22,7 +22,7 @@ object ProcessStatus {
             attributes: Option[Json] = Option.empty,
             errorMessage: Option[String] = Option.empty) = new ProcessStatus(
     deploymentId = deploymentId,
-    status = status.toString(),
+    status = status,
     allowedActions = allowedActions,
     startTime = startTime,
     attributes = attributes,

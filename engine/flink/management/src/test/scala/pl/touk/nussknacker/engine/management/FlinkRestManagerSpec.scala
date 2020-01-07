@@ -6,7 +6,7 @@ import io.circe.Json.fromString
 import org.apache.flink.runtime.jobgraph.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.defaults.deployment.{DefaultProcessState, DefaultStateStatus}

@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.defaults.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.StatusState
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 
 object DefaultStateStatus extends Enumeration {
-  import StatusState._
 
   val Running = new StateStatus("RUNNING")
   val Finished = new StateStatus("FINISHED")

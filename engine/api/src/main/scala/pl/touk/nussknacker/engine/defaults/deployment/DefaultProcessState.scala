@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.defaults.deployment
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 
 object DefaultProcessState {
   def apply(deploymentId: DeploymentId,

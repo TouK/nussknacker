@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.defaults.deployment
 
 import org.scalatest.{FunSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, StateAction, StatusState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, StateAction, StateStatus}
 
 import scala.collection.immutable.List
 
