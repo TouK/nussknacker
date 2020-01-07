@@ -41,7 +41,6 @@ const editors = {
   [Types.EXPRESSION_WITH_FIXED_VALUES]: {
     editor: ExpressionWithFixedValues,
     switchable: false,
-    switchableHint: null
   }
 }
 

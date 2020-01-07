@@ -51,8 +51,10 @@ BoolEditor.propTypes = {
 const parseable = (expressionObj) => {
   const expression = expressionObj.expression
   const language = expressionObj.language
-  return (expression === "true" || expression === "false") && language === "spel"
+  return (expression === "true" || expression === "false") && language === supportedLanguage
 }
+
+const supportedLanguage = "spel"
 
 BoolEditor.switchableOnto = (expressionObj) => parseable(expressionObj) || _.isEmpty(expressionObj.expression)
 BoolEditor.nonSwitchableOntoHint = "Expression must be equal to true or false to switch to basic mode"
