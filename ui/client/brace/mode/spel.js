@@ -297,7 +297,7 @@ var propertyMap = {
     "-webkit-box-shadow": 1,
     "transform": {"rotate($00deg)": 1, "skew($00deg)": 1},
     "-moz-transform": {"rotate($00deg)": 1, "skew($00deg)": 1},
-    "-webkit-transform": {"rotate($00deg)": 1, "skew($00deg)": 1 }
+    "-webkit-transform": {"rotate($00deg)": 1, "skew($00deg)": 1}
 };
 
 var CssCompletions = function() {

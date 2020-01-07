@@ -1,4 +1,4 @@
-import { bindActionCreators } from "redux"
+import {bindActionCreators} from "redux"
 import * as EspActions from "./actions"
 import * as UndoRedoActions from "./undoRedoActions"
 import * as NotificationActions from "./notificationActions"

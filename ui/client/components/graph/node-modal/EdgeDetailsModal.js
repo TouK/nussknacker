@@ -44,9 +44,9 @@ class EdgeDetailsModal extends React.Component {
   }
 
   performEdgeEdit = () => {
-    this.setState( { pendingRequest: true});
+    this.setState( {pendingRequest: true});
     this.props.actions.editEdge(this.props.processToDisplay, this.props.edgeToDisplay, this.state.editedEdge).then (() => {
-      this.setState( { pendingRequest: false});
+      this.setState( {pendingRequest: false});
       this.closeModal()
     })
   }
@@ -76,7 +76,7 @@ class EdgeDetailsModal extends React.Component {
   updateEdgeProp = (prop, value) => {
     const editedEdge = _.cloneDeep(this.state.editedEdge)
     const newEdge = _.set(editedEdge, prop, value)
-    this.setState({ editedEdge: newEdge })
+    this.setState({editedEdge: newEdge})
   }
 
   changeEdgeTypeValue = (edgeTypeValue) => {

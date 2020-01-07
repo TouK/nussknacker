@@ -99,58 +99,58 @@ describe("process available variables finder", () => {
 })
 
 const processDefinition = {
-  "services" : { "transactionParser": { "parameters": [], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": ["Category1"]},},
-  "sourceFactories" : { "kafka-transaction": { "parameters": [ { "name": "topic", "typ": { "refClazzName": "java.lang.String"} }], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": [ "Category1" ]} },
-  "sinkFactories" : { "endTransaction" : { "parameters": [ { "name": "topic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "pl.touk.esp.engine.kafka.KafkaSinkFactory"}, "categories" : [ "Category1", "Category2", "Category3"]}},
+  "services" : {"transactionParser": {"parameters": [], "returnType": {"refClazzName": "org.nussknacker.model.Transaction"}, "categories": ["Category1"]},},
+  "sourceFactories" : {"kafka-transaction": {"parameters": [ {"name": "topic", "typ": {"refClazzName": "java.lang.String"}}], "returnType": {"refClazzName": "org.nussknacker.model.Transaction"}, "categories": [ "Category1" ]}},
+  "sinkFactories" : {"endTransaction" : {"parameters": [ {"name": "topic", "typ": {"refClazzName": "java.lang.String"}}], "returnType" : {"refClazzName": "pl.touk.esp.engine.kafka.KafkaSinkFactory"}, "categories" : [ "Category1", "Category2", "Category3"]}},
   "customStreamTransformers" : {
     "transactionAggregator" : {
       "parameters": [
-        {name: "withAdditional", additionalVariables: {"additional1": { "refClazzName": "java.lang.String"}}}
+        {name: "withAdditional", additionalVariables: {"additional1": {"refClazzName": "java.lang.String"}}}
       ],
       "returnType": {"refClazzName": "java.lang.String"}, "categories": [ "Category12"]}},
-  "exceptionHandlerFactory" : { "parameters" : [ { "name": "errorsTopic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "org.nussknacker.process.espExceptionHandlerFactory"}, "categories" : []},
+  "exceptionHandlerFactory" : {"parameters" : [ {"name": "errorsTopic", "typ": {"refClazzName": "java.lang.String"}}], "returnType" : {"refClazzName": "org.nussknacker.process.espExceptionHandlerFactory"}, "categories" : []},
   "globalVariables" : {
-    "date": { "returnType": { "refClazzName": "java.time.LocalDate"}, "categories" : [ "Category1", "Category2"]},
-    "wrong1": { "returnType": null, "categories" : [ "Category1", "Category2"]},
-    "date2": { "returnType": { "refClazzName": "java.time.Date"}, "categories" : [ "Category3"]},
-    "date3": { "returnType": { "refClazzName": "java.time.Date"}, "categories" : []}
+    "date": {"returnType": {"refClazzName": "java.time.LocalDate"}, "categories" : [ "Category1", "Category2"]},
+    "wrong1": {"returnType": null, "categories" : [ "Category1", "Category2"]},
+    "date2": {"returnType": {"refClazzName": "java.time.Date"}, "categories" : [ "Category3"]},
+    "date3": {"returnType": {"refClazzName": "java.time.Date"}, "categories" : []}
   },
   "typesInformation" : [
-    { "clazzName": { "refClazzName": "org.nussknacker.model.Transaction"}, "methods": { "CUSTOMER_ID": { "refClazz" : {"refClazzName": "java.lang.String"}}}},
-    { "clazzName": { "refClazzName": "pl.touk.nussknacker.model.Account"}, "methods": { "ACCOUNT_NO": { "refClazz" : { "refClazzName": "java.lang.String"}}}},
-    { "clazzName": { "refClazzName": "java.time.LocalDate"}, "methods": { "atStartOfDay": { "refClazz" : { "refClazzName": "java.time.ZonedDateTime"}}}}
+    {"clazzName": {"refClazzName": "org.nussknacker.model.Transaction"}, "methods": {"CUSTOMER_ID": {"refClazz" : {"refClazzName": "java.lang.String"}}}},
+    {"clazzName": {"refClazzName": "pl.touk.nussknacker.model.Account"}, "methods": {"ACCOUNT_NO": {"refClazz" : {"refClazzName": "java.lang.String"}}}},
+    {"clazzName": {"refClazzName": "java.time.LocalDate"}, "methods": {"atStartOfDay": {"refClazz" : {"refClazzName": "java.time.ZonedDateTime"}}}}
   ]
 }
 
 
 const process = {
   "id": "transactionStart",
-  "properties": { "parallelism": 2, "exceptionHandler": { "parameters": [{ "name": "errorsTopic", "value": "transaction.errors"}]}},
+  "properties": {"parallelism": 2, "exceptionHandler": {"parameters": [{"name": "errorsTopic", "value": "transaction.errors"}]}},
   "nodes": [
-    { "type": "Source", "id": "start", "ref": { "typ": "kafka-transaction", "parameters": [{ "name": "topic", "value": "transaction.topic"}]}},
-    { "type": "VariableBuilder", "id": "processVariables", "varName": "processVariables", "fields": [{ "name": "processingStartTime", "expression": { "language": "spel", "expression": "#now()"}}]},
-    { "type": "Variable", "id": "variableNode", "varName": "someVariableName", "value": { "language": "spel", "expression": "'value'"}},
-    { "type": "Filter", "id": "anonymousUserFilter", "expression": { "language": "spel", "expression": "#input.PATH != 'Anonymous'"}},
-    { "type": "Enricher", "id": "decodeHtml", "service": { "id": "transactionParser", "parameters": [{ "name": "transaction", "expression": { "language": "spel", "expression": "#input"}}]}, "output": "parsedTransaction"},
-    { "type": "Filter", "id": "someFilterNode", "expression": { "language": "spel", "expression": "true"}},
-    { "type": "CustomNode", "id": "aggregateId", "outputVar": "aggregateResult", "nodeType": "transactionAggregator", "parameters": [{"name": "withAdditional", "value": "''"}]},
-    { "type": "Sink", "id": "endEnriched", "ref": { "typ": "transactionSink", "parameters": [{ "name": "topic", "value": "transaction.errors"}]}, "endResult": { "language": "spel", "expression": "#finalTransaction.toJson()"}}
+    {"type": "Source", "id": "start", "ref": {"typ": "kafka-transaction", "parameters": [{"name": "topic", "value": "transaction.topic"}]}},
+    {"type": "VariableBuilder", "id": "processVariables", "varName": "processVariables", "fields": [{"name": "processingStartTime", "expression": {"language": "spel", "expression": "#now()"}}]},
+    {"type": "Variable", "id": "variableNode", "varName": "someVariableName", "value": {"language": "spel", "expression": "'value'"}},
+    {"type": "Filter", "id": "anonymousUserFilter", "expression": {"language": "spel", "expression": "#input.PATH != 'Anonymous'"}},
+    {"type": "Enricher", "id": "decodeHtml", "service": {"id": "transactionParser", "parameters": [{"name": "transaction", "expression": {"language": "spel", "expression": "#input"}}]}, "output": "parsedTransaction"},
+    {"type": "Filter", "id": "someFilterNode", "expression": {"language": "spel", "expression": "true"}},
+    {"type": "CustomNode", "id": "aggregateId", "outputVar": "aggregateResult", "nodeType": "transactionAggregator", "parameters": [{"name": "withAdditional", "value": "''"}]},
+    {"type": "Sink", "id": "endEnriched", "ref": {"typ": "transactionSink", "parameters": [{"name": "topic", "value": "transaction.errors"}]}, "endResult": {"language": "spel", "expression": "#finalTransaction.toJson()"}}
   ],
   "edges": [
-    { "from": "start", "to": "processVariables"},
-    { "from": "processVariables", "to": "variableNode"},
-    { "from": "variableNode", "to": "anonymousUserFilter"},
-    { "from": "anonymousUserFilter", "to": "decodeHtml"},
-    { "from": "decodeHtml", "to": "someFilterNode"},
-    { "from": "someFilterNode", "to": "aggregateId"},
-    { "from": "aggregateId", "to": "endEnriched"}
+    {"from": "start", "to": "processVariables"},
+    {"from": "processVariables", "to": "variableNode"},
+    {"from": "variableNode", "to": "anonymousUserFilter"},
+    {"from": "anonymousUserFilter", "to": "decodeHtml"},
+    {"from": "decodeHtml", "to": "someFilterNode"},
+    {"from": "someFilterNode", "to": "aggregateId"},
+    {"from": "aggregateId", "to": "endEnriched"}
   ],
-  "validationResult": { "errors": {"invalidNodes": {}}}
+  "validationResult": {"errors": {"invalidNodes": {}}}
 }
 
 const processWithVariableTypes = {
   ...process,
-  "validationResult": { "errors": {"invalidNodes": {}}, variableTypes: {
+  "validationResult": {"errors": {"invalidNodes": {}}, variableTypes: {
       "start": {},
       "processVariables": {"input": {refClazzName:"java.lang.String"}},
       "variableNode": {"input": {refClazzName:"java.lang.String"}, "processVariables": {refClazzName:"java.util.Map", fields: {field1: {refClazzName: "java.lang.String"}}}}
@@ -160,17 +160,17 @@ const processWithVariableTypes = {
 
 const subprocess = {
   "id": "subprocess1",
-  "properties": { "parallelism": 2, "exceptionHandler": { "parameters": [{ "name": "errorsTopic", "value": "transaction.errors"}]}},
+  "properties": {"parallelism": 2, "exceptionHandler": {"parameters": [{"name": "errorsTopic", "value": "transaction.errors"}]}},
   "nodes": [
-    { "type": "SubprocessInputDefinition", "id": "start", "parameters": [{ "name": "subprocessParam", "typ":{ "refClazzName": "java.lang.String"}}]},
-    { "type": "Filter", "id": "filter1", "expression": { "language": "spel", "expression": "#input.PATH != 'Anonymous'"}},
-    { "type": "Sink", "id": "endEnriched", "ref": { "typ": "transactionSink", "parameters": [{ "name": "topic", "value": "transaction.errors"}]}, "endResult": { "language": "spel", "expression": "#finalTransaction.toJson()"}}
+    {"type": "SubprocessInputDefinition", "id": "start", "parameters": [{"name": "subprocessParam", "typ":{"refClazzName": "java.lang.String"}}]},
+    {"type": "Filter", "id": "filter1", "expression": {"language": "spel", "expression": "#input.PATH != 'Anonymous'"}},
+    {"type": "Sink", "id": "endEnriched", "ref": {"typ": "transactionSink", "parameters": [{"name": "topic", "value": "transaction.errors"}]}, "endResult": {"language": "spel", "expression": "#finalTransaction.toJson()"}}
   ],
   "edges": [
-    { "from": "start", "to": "filter1"},
-    { "from": "filter1", "to": "endEnriched"}
+    {"from": "start", "to": "filter1"},
+    {"from": "filter1", "to": "endEnriched"}
   ],
-  "validationResult": { "errors": {"invalidNodes": {}}}
+  "validationResult": {"errors": {"invalidNodes": {}}}
 }
 
 

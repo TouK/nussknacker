@@ -25,10 +25,10 @@ export default class UserLeftPanel extends Component {
   }
 
   render() {
-    const { isOpened, onToggle, isReady, processName} = this.props;
+    const {isOpened, onToggle, isReady, processName} = this.props;
     return (
-        <div id="espLeftNav" className={cn("sidenav", { "is-opened": isOpened })}>
-          <span className={cn("process-name", "left", { "is-opened": isOpened})}>{processName}</span>
+        <div id="espLeftNav" className={cn("sidenav", {"is-opened": isOpened})}>
+          <span className={cn("process-name", "left", {"is-opened": isOpened})}>{processName}</span>
             <SpinnerWrapper isReady={isReady}>
                 <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
                     <Tips />

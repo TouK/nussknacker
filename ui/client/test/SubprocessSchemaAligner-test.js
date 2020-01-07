@@ -40,8 +40,8 @@ describe("subprocess schema aligner test", () => {
     const alignedSubprocess = SubprocessSchemaAligner.alignSubprocessWithSchema(subprocessProcessDefinitionData, subprocessNode)
 
     expect(alignedSubprocess.ref.parameters).toEqual([
-      { name: "param1", expression: { language: "spel", expression: "''"}},
-      { name: "param2", expression: { language: "spel", expression: "'cde'"}}
+      {name: "param1", expression: {language: "spel", expression: "''"}},
+      {name: "param2", expression: {language: "spel", expression: "'cde'"}}
     ])
     expect(_.omit(alignedSubprocess, "ref")).toEqual(_.omit(subprocessNode, "ref"))
   })

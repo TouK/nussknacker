@@ -151,7 +151,7 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
 
 export function makeElement(node, processCounts, forExport, nodesSettings){
   const description = _.get(node.additionalFields, "description", null)
-  const { text: bodyContent, multiline } = getBodyContent(node);
+  const {text: bodyContent, multiline} = getBodyContent(node);
   const hasCounts = !_.isEmpty(processCounts);
   const width = rectWidth;
   const height = rectHeight;
@@ -229,7 +229,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
 }
 
 function getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight) {
-  const { breakPoint, fontSizeStep, maxExtraDigits, defaultFontSize } = summaryCountConfig;
+  const {breakPoint, fontSizeStep, maxExtraDigits, defaultFontSize} = summaryCountConfig;
 
   const hasCounts = !_.isEmpty(processCounts);
   const hasErrors = hasCounts && processCounts && processCounts.errors > 0;
@@ -306,10 +306,10 @@ export function boundingRect(nodes, expandedGroup, layout, group) {
   return new joint.shapes.basic.Rect({
     id: group.id,
     markup: boundingMarkup,
-    position: { x: boundingRect.x, y: boundingRect.y },
+    position: {x: boundingRect.x, y: boundingRect.y},
     backgroundObject: true,
     nodeData: group,
-    size: { width: boundingRect.width, height: boundingRect.height },
+    size: {width: boundingRect.width, height: boundingRect.height},
     attrs: {
       rect: {
         fill: "green", opacity: 0.1
@@ -353,7 +353,7 @@ export function makeLink(edge, forExport) {
           cursor: "pointer"
         },
         text: {
-          text: joint.util.breakText(label, { width: rectWidth }),
+          text: joint.util.breakText(label, {width: rectWidth}),
           fontWeight: 300,
           fontSize: 10,
           fill: "#686868",
@@ -374,9 +374,9 @@ export function makeLink(edge, forExport) {
       line: {
         connection: true,
       },
-      ".link-tools": forExport ? { display: "none"} : {},
-      ".connection": forExport ? { stroke: edgeStroke, "stroke-width": 2, fill: edgeStroke } : { stroke: "white", "stroke-width": 2, fill: "none" },
-      ".marker-target": { "stroke-width": forExport ? 1 : 0, stroke: forExport ? edgeStroke : "white", fill: "white", d: "M 10 0 L 0 5 L 10 10 L 8 5 z" },
+      ".link-tools": forExport ? {display: "none"} : {},
+      ".connection": forExport ? {stroke: edgeStroke, "stroke-width": 2, fill: edgeStroke} : {stroke: "white", "stroke-width": 2, fill: "none"},
+      ".marker-target": {"stroke-width": forExport ? 1 : 0, stroke: forExport ? edgeStroke : "white", fill: "white", d: "M 10 0 L 0 5 L 10 10 L 8 5 z"},
       minLen: label ? 20 : 10
     },
     edgeData: edge,

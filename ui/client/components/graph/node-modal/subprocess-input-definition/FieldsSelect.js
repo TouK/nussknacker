@@ -27,7 +27,7 @@ const FieldsSelect = (props) => {
           {
             fields.map((field, index) => {
               const paths = `${namespace}[${index}]`
-              const currentOption = _.find(options, (item) => _.isEqual(field.typ.refClazzName, item.value)) || { label: field.typ.refClazzName, value: field.typ.refClazzName }
+              const currentOption = _.find(options, (item) => _.isEqual(field.typ.refClazzName, item.value)) || {label: field.typ.refClazzName, value: field.typ.refClazzName}
               return (
                 <MovableRow
                   id={field.uuid}

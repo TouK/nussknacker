@@ -14,11 +14,11 @@ export default class TogglePanel extends React.Component {
   }
 
   render() {
-    const { isOpened, onToggle, type } = this.props;
+    const {isOpened, onToggle, type} = this.props;
     const left = type === "left" ?  isOpened : !isOpened;
     const iconFile = `arrows/arrow-${left ? "left" : "right"}.svg`
     return (
-      <SvgDiv className={cn("togglePanel", type, { "is-opened": isOpened})} onClick={onToggle} svgFile={iconFile}/>
+      <SvgDiv className={cn("togglePanel", type, {"is-opened": isOpened})} onClick={onToggle} svgFile={iconFile}/>
     );
   }
 }

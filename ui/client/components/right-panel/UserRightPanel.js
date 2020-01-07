@@ -46,12 +46,12 @@ class UserRightPanel extends Component {
   };
 
   render() {
-    const { isOpened, actions, isReady } = this.props;
+    const {isOpened, actions, isReady} = this.props;
     const config = this.getConfig();
 
     return (
-      <div id="espRightNav" className={cn("rightSidenav", { "is-opened": isOpened })}>
-        <div className={cn("zoom-in-out", "right", { "is-opened": isOpened})}>
+      <div id="espRightNav" className={cn("rightSidenav", {"is-opened": isOpened})}>
+        <div className={cn("zoom-in-out", "right", {"is-opened": isOpened})}>
           <SvgDiv className={"zoom"} title={"zoom-in"} svgFile={"buttons/zoomin.svg"} onClick={this.props.zoomIn}/>
           <SvgDiv className={"zoom"} title={"zoom-out"} svgFile={"buttons/zoomout.svg"} onClick={this.props.zoomOut}/>
         </div>

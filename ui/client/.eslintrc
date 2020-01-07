@@ -27,6 +27,7 @@
     "prefer-template": "error",
     "no-useless-concat": "error",
     "no-template-curly-in-string": "error",
+    "object-curly-spacing": ["error", "never"],
     "i18next/no-literal-string": ["warn", {
       "ignore": [
         "-icon", "glyphicon"

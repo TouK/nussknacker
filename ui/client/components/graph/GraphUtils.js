@@ -72,6 +72,6 @@ export function computeBoundingRect(expandedGroup, layout, nodes, nodeHeight, ma
   const y =  _.min(widthsHeights.map(wh => wh.y)) - margin
   const width = _.max(widthsHeights.map((wh) => wh.x + wh.width - x)) + margin
   const height = _.max(widthsHeights.map((wh) => wh.y + wh.height - y)) + margin
-  return { x, y, width, height}
+  return {x, y, width, height}
 
 }

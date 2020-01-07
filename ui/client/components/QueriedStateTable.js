@@ -1,5 +1,5 @@
 import React from "react"
-import { connect } from "react-redux";
+import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
 import _ from "lodash";

@@ -20,11 +20,11 @@ class HealthCheck extends PeriodicallyReloadingComponent {
   }
 
   reload() {
-    HttpService.fetchHealthCheck().then((check) => this.setState({ healthCheck: check }))
+    HttpService.fetchHealthCheck().then((check) => this.setState({healthCheck: check}))
   }
 
   render() {
-    const { healthCheck } = this.state
+    const {healthCheck} = this.state
     if (!healthCheck || healthCheck.state === "ok") {
       return null
     }

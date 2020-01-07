@@ -53,44 +53,44 @@ describe("edges grouped", () => {
   it("should group nodes in line", () => {
     const process = createProcess([{id: "group1", nodes: ["node1", "node2"]}])
     expect(NodeUtils.edgesFromProcess(process)).toEqual([
-      { "from": "group1", "to": "node3"},
-      { "from": "node3", "to": "node4"},
-      { "from": "node3", "to": "node5"},
-      { "from": "node4", "to": "node6"},
-      { "from": "node5", "to": "node7"},
-      { "from": "node6", "to": "node8"}
+      {"from": "group1", "to": "node3"},
+      {"from": "node3", "to": "node4"},
+      {"from": "node3", "to": "node5"},
+      {"from": "node4", "to": "node6"},
+      {"from": "node5", "to": "node7"},
+      {"from": "node6", "to": "node8"}
     ])
   })
 
   it("should handle two groups", () => {
     const process = createProcess([{id: "group1", nodes: ["node1", "node2"]}, {id: "group2", nodes: ["node6", "node8"]}])
     expect(NodeUtils.edgesFromProcess(process)).toEqual([
-      { "from": "group1", "to": "node3"},
-      { "from": "node3", "to": "node4"},
-      { "from": "node3", "to": "node5"},
-      { "from": "node4", "to": "group2"},
-      { "from": "node5", "to": "node7"}
+      {"from": "group1", "to": "node3"},
+      {"from": "node3", "to": "node4"},
+      {"from": "node3", "to": "node5"},
+      {"from": "node4", "to": "group2"},
+      {"from": "node5", "to": "node7"}
     ])
   })
 
   it("should handle group with split", () => {
     const process = createProcess([{id: "bigGroup", nodes: ["node3", "node4", "node5", "node6"]}])
     expect(NodeUtils.edgesFromProcess(process)).toEqual([
-      { "from": "node1", "to": "node2"},
-      { "from": "node2", "to": "bigGroup"},
-      { "from": "bigGroup", "to": "node7"},
-      { "from": "bigGroup", "to": "node8"}
+      {"from": "node1", "to": "node2"},
+      {"from": "node2", "to": "bigGroup"},
+      {"from": "bigGroup", "to": "node7"},
+      {"from": "bigGroup", "to": "node8"}
     ])
   })
 
   it("should handle group ending with split", () => {
     const process = createProcess([{id: "bigGroup", nodes: ["node1", "node2", "node3"]}])
     expect(NodeUtils.edgesFromProcess(process)).toEqual([
-      { "from": "bigGroup", "to": "node4"},
-      { "from": "bigGroup", "to": "node5"},
-      { "from": "node4", "to": "node6"},
-      { "from": "node5", "to": "node7"},
-      { "from": "node6", "to": "node8"}
+      {"from": "bigGroup", "to": "node4"},
+      {"from": "bigGroup", "to": "node5"},
+      {"from": "node4", "to": "node6"},
+      {"from": "node5", "to": "node7"},
+      {"from": "node6", "to": "node8"}
     ])
   })
 
@@ -148,19 +148,19 @@ describe("edgeType retrieved", () => {
 
 
   it("should choose unused edge type", () => {
-    expect(NodeUtils.edgeType([{ from: "node1", edgeType: {type: "edge1"}}], {id: "node1", type: "Filter"}, processDefinitionData))
-      .toEqual({ type: "edge2"})
+    expect(NodeUtils.edgeType([{from: "node1", edgeType: {type: "edge1"}}], {id: "node1", type: "Filter"}, processDefinitionData))
+      .toEqual({type: "edge2"})
 
   })
 
   it("should get edge types for node", () => {
     expect(NodeUtils.edgesForNode({id: "node1", type: "SubprocessInput", ref: {id: "sub1"}}, processDefinitionData)).toEqual({
-          nodeId: { type: "SubprocessInput", id: "sub1"},
-          edges: [{ type: "edge3"}]
+          nodeId: {type: "SubprocessInput", id: "sub1"},
+          edges: [{type: "edge3"}]
     })
     expect(NodeUtils.edgesForNode({id: "node1", type: "Filter"}, processDefinitionData)).toEqual({
-      nodeId: { type: "Filter"},
-      edges: [{ type: "edge1"}, { type: "edge2"}]
+      nodeId: {type: "Filter"},
+      edges: [{type: "edge1"}, {type: "edge2"}]
     })
 
   })
@@ -176,22 +176,22 @@ describe("edgeType retrieved", () => {
 describe("can make link", () => {
 
   it("cannot make link from non-last node to sink", () => {
-    expect(NodeUtils.canMakeLink("source1", "sink", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
+    expect(NodeUtils.canMakeLink("source1", "sink", createSimpleProcess([{"from": "source1", "to": "variable"}]), simpleProcessDefinition()))
       .toEqual(false)
   })
 
   it("cannot connect from sink to any node", () => {
-    expect(NodeUtils.canMakeLink("sink", "variable", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
+    expect(NodeUtils.canMakeLink("sink", "variable", createSimpleProcess([{"from": "source1", "to": "variable"}]), simpleProcessDefinition()))
       .toEqual(false)
   })
 
   it("can connect from variable to sink", () => {
-    expect(NodeUtils.canMakeLink("variable", "sink", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
+    expect(NodeUtils.canMakeLink("variable", "sink", createSimpleProcess([{"from": "source1", "to": "variable"}]), simpleProcessDefinition()))
       .toEqual(true)
   })
 
   it("cannot connect to source", () => {
-    expect(NodeUtils.canMakeLink("variable", "source2", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
+    expect(NodeUtils.canMakeLink("variable", "source2", createSimpleProcess([{"from": "source1", "to": "variable"}]), simpleProcessDefinition()))
       .toEqual(false)
   })
 })
@@ -308,19 +308,19 @@ describe("isAvailable", () => {
 const processDefinitionData = {
   edgesForNodes: [
     {
-      nodeId: { type: "Filter"},
-      edges: [{ type: "edge1"}, {type: "edge2"}]
+      nodeId: {type: "Filter"},
+      edges: [{type: "edge1"}, {type: "edge2"}]
     },
     {
-      nodeId: { type: "SubprocessInput", id: "sub1"},
-      edges: [{ type: "edge3"}]
+      nodeId: {type: "SubprocessInput", id: "sub1"},
+      edges: [{type: "edge3"}]
     },
   ]
 
 }
 
 const createProcess = (groups) => ({
-  "properties": { additionalFields: { groups: groups || []}},
+  "properties": {additionalFields: {groups: groups || []}},
   "nodes": [
     {id: "node1"},
     {id: "node2"},
@@ -333,13 +333,13 @@ const createProcess = (groups) => ({
 
   ],
   "edges": [
-    { "from": "node1", "to": "node2"},
-    { "from": "node2", "to": "node3"},
-    { "from": "node3", "to": "node4"},
-    { "from": "node3", "to": "node5"},
-    { "from": "node4", "to": "node6"},
-    { "from": "node5", "to": "node7"},
-    { "from": "node6", "to": "node8"}
+    {"from": "node1", "to": "node2"},
+    {"from": "node2", "to": "node3"},
+    {"from": "node3", "to": "node4"},
+    {"from": "node3", "to": "node5"},
+    {"from": "node4", "to": "node6"},
+    {"from": "node5", "to": "node7"},
+    {"from": "node6", "to": "node8"}
   ]
 })
 
@@ -355,7 +355,7 @@ const simpleProcessDefinition = () => {
 
 
 const createSimpleProcess = (edges) => ({
-  "properties": { additionalFields: { groups: []}},
+  "properties": {additionalFields: {groups: []}},
   "nodes": [
     {"type": "Source", "id": "source1", "ref": {"typ": "csv-source", "parameters": []}},
     {"type": "Source", "id": "source2", "ref": {"typ": "csv-source", "parameters": []}},

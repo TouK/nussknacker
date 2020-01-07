@@ -25,7 +25,7 @@ export default class ExpressionSuggester {
     const rows = inputValue.split("\n")
     const trimmedRows = _.map(rows, (row) => {
       const trimmedAtStartRow = _.dropWhile(row, (c) => c === " ").join("")
-      return { trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length }
+      return {trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length}
     })
     const beforeCaretInputLength = _.sum(_.map(_.take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length));
     const normalizedCaretPosition = caretPosition2d.column - trimmedRows[caretPosition2d.row].trimmedCount + beforeCaretInputLength
@@ -123,7 +123,7 @@ export default class ExpressionSuggester {
 
   _getTypeInfoFromClass = (clazz) => {
     const methodsFromInfo = this._getMethodsFromGlobalTypeInfo(clazz);
-    const methodsFromFields = _.mapValues((clazz.fields || []), (field) => ({ refClazz: field }));
+    const methodsFromFields = _.mapValues((clazz.fields || []), (field) => ({refClazz: field}));
     const allMethods = _.merge(methodsFromFields, methodsFromInfo);
 
     return {
@@ -133,7 +133,7 @@ export default class ExpressionSuggester {
   }
 
   _getMethodsFromGlobalTypeInfo = (clazz) => {
-    const foundData = _.find(this._typesInformation, { clazzName: { refClazzName: clazz.refClazzName }})
+    const foundData = _.find(this._typesInformation, {clazzName: {refClazzName: clazz.refClazzName}})
     return !_.isEmpty(foundData) ? foundData.methods : []
   }
 
@@ -197,7 +197,7 @@ export default class ExpressionSuggester {
 
   _getAllVariables = (normalized) => {
     const thisClazz = this._findProjectionOrSelectionRootClazz(normalized)
-    const data = thisClazz ? { "#this" : thisClazz } : {};
+    const data = thisClazz ? {"#this" : thisClazz} : {};
     return _.merge(data, this._variables)
   }
 

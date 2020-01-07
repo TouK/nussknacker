@@ -243,7 +243,7 @@ export function finishGrouping() {
 }
 
 export function addToGroup(nodeId) {
-  return { type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
+  return {type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
 }
 
 export function ungroup(node) {
@@ -262,11 +262,11 @@ export function ungroup(node) {
 }
 
 export function expandSelection(nodeId) {
-  return { type: "EXPAND_SELECTION", nodeId }
+  return {type: "EXPAND_SELECTION", nodeId}
 }
 
 export function resetSelection(nodeId) {
-  return { type: "RESET_SELECTION", nodeId }
+  return {type: "RESET_SELECTION", nodeId}
 }
 
 //TODO: is it ok how we process validations here? first we *simulate* reducer on

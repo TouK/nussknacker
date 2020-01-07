@@ -31,7 +31,7 @@ class ProcessActionDialog extends React.Component {
   }
 
   deploy = (closeDialog) => {
-    const { actions, processId } = this.props
+    const {actions, processId} = this.props
     const comment = this.state.comment
 
     closeDialog()
@@ -50,7 +50,7 @@ class ProcessActionDialog extends React.Component {
     const validated =
       ValidateDeployComment(this.state.comment, this.props.settings)
 
-    return { disabled: !validated.isValid, title: validated.toolTip }
+    return {disabled: !validated.isValid, title: validated.toolTip}
   }
 
   onInputChange = (e) => {

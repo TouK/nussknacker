@@ -20,7 +20,7 @@ class ProcessComments extends React.Component {
   }
 
   addComment = () => {
-    this.setState({ pendingRequest: true})
+    this.setState({pendingRequest: true})
     this.props.actions.addComment(this.props.processId, this.props.processVersionId, this.state.comment).then((response) => {
       this.setState(this.initState)
     })
@@ -28,7 +28,7 @@ class ProcessComments extends React.Component {
 
   deleteComment = (comment) => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deleteComment(), () => {
-      this.setState({ pendingRequest: true})
+      this.setState({pendingRequest: true})
       this.props.actions.deleteComment(this.props.processId, comment.id).then((response) => {
         this.setState(this.initState)
       })

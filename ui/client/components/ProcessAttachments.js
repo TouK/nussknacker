@@ -16,12 +16,12 @@ export class ProcessAttachments_ extends React.Component {
 
   constructor(props) {
     super(props);
-    this.initState = { pendingRequest: false }
+    this.initState = {pendingRequest: false}
     this.state = this.initState
   }
 
   addAttachment = (files) => {
-    this.setState({ pendingRequest: true})
+    this.setState({pendingRequest: true})
     Promise.all(files.map((file)=>
       this.props.actions.addAttachment(this.props.processId, this.props.processVersionId, file)
     )).then ((resp) => {

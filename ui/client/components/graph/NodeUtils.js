@@ -136,7 +136,7 @@ class NodeUtils {
     const data =  (processDefinitionData.edgesForNodes
       .filter(e => !forInput || e.isForInputDefinition === forInput)
       //here we use == in second comparison, as we sometimes compare null to undefined :|
-      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition)) || { edges: [null], canChooseNodes: false}
+      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition)) || {edges: [null], canChooseNodes: false}
     return data
   }
 

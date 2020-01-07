@@ -67,21 +67,21 @@ class NodeDetailsModal extends React.Component {
   }
 
   performNodeEdit = () => {
-    this.setState( { pendingRequest: true})
+    this.setState( {pendingRequest: true})
 
     const actionResult = this.isGroup() ?
       this.props.actions.editGroup(this.props.processToDisplay, this.props.nodeToDisplay.id, this.state.editedNode)
       : this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode)
 
     actionResult.then (() => {
-        this.setState( { pendingRequest: false})
+        this.setState( {pendingRequest: false})
         this.closeModal()
-      }, () => this.setState( { pendingRequest: false})
+      }, () => this.setState( {pendingRequest: false})
     )
   }
 
   updateNodeState = (newNodeState) => {
-    this.setState( { editedNode: newNodeState})
+    this.setState( {editedNode: newNodeState})
   }
 
   onNodeGroupChange = (event) => {

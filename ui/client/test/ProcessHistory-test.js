@@ -6,7 +6,7 @@ import {ProcessHistory_} from "../components/ProcessHistory"; //import redux-ind
 
 describe("ProcessHistory suite", () => {
   it("should mark latest history entry as current and other as past", () => {
-    Enzyme.configure({ adapter: new Adapter() });
+    Enzyme.configure({adapter: new Adapter()});
     //given
     const processHistory = [processEntry(3), processEntry(2), processEntry(1)]
     //when
