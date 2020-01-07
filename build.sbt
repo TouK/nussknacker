@@ -381,7 +381,8 @@ lazy val demo = (project in engine("demo")).
     libraryDependencies ++= {
       Seq(
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     },
     test in assembly := {},
@@ -401,7 +402,8 @@ lazy val generic = (project in engine("flink/generic")).
     name := "nussknacker-generic-model",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     },
     test in assembly := {},
