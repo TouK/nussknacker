@@ -28,7 +28,7 @@ var CssHighlightRules = function() {
     }, "text", true);
 
     this.$rules = {
-        start : [{
+        "start" : [{
             include : ["strings", "url", "comments"]
         }, {
             token: "string",
@@ -56,7 +56,7 @@ var CssHighlightRules = function() {
             caseInsensitive: true
         }],
 
-        media: [{
+        "media": [{
             include : ["strings", "url", "comments"]
         }, {
             token: "string",
@@ -69,7 +69,7 @@ var CssHighlightRules = function() {
                 + "|swash|ornaments|annotation|stylistic|styleset|character-variant)"
         }],
 
-        comments : [{
+        "comments" : [{
             token: "comment", // multi line comment
             regex: "\\/\\*",
             push: [{
@@ -81,14 +81,14 @@ var CssHighlightRules = function() {
             }]
         }],
 
-        ruleset : [{
+        "ruleset" : [{
             regex : "-(webkit|ms|moz|o)-",
             token : "text"
         }, {
             include : ["strings", "url", "comments"]
         }, {
             token : ["constant.numeric", "keyword"],
-            regex : `(${  numRe  })(ch|cm|deg|em|ex|fr|gd|grad|Hz|in|kHz|mm|ms|pc|pt|px|rad|rem|s|turn|vh|vm|vw|%)`
+            regex : "(" + numRe + ")(ch|cm|deg|em|ex|fr|gd|grad|Hz|in|kHz|mm|ms|pc|pt|px|rad|rem|s|turn|vh|vm|vw|%)"
         }, {
             token : "constant.numeric",
             regex : numRe
@@ -218,71 +218,71 @@ ace.define("ace/mode/spel_completions",["require","exports","module"], function(
 "use strict";
 
 var propertyMap = {
-    background: {"#$0": 1},
-    "background-color": {"#$0": 1, transparent: 1, fixed: 1},
+    "background": {"#$0": 1},
+    "background-color": {"#$0": 1, "transparent": 1, "fixed": 1},
     "background-image": {"url('/$0')": 1},
-    "background-repeat": {repeat: 1, "repeat-x": 1, "repeat-y": 1, "no-repeat": 1, inherit: 1},
-    "background-position": {bottom:2, center:2, left:2, right:2, top:2, inherit:2},
-    "background-attachment": {scroll: 1, fixed: 1},
-    "background-size": {cover: 1, contain: 1},
+    "background-repeat": {"repeat": 1, "repeat-x": 1, "repeat-y": 1, "no-repeat": 1, "inherit": 1},
+    "background-position": {"bottom":2, "center":2, "left":2, "right":2, "top":2, "inherit":2},
+    "background-attachment": {"scroll": 1, "fixed": 1},
+    "background-size": {"cover": 1, "contain": 1},
     "background-clip": {"border-box": 1, "padding-box": 1, "content-box": 1},
     "background-origin": {"border-box": 1, "padding-box": 1, "content-box": 1},
-    border: {"solid $0": 1, "dashed $0": 1, "dotted $0": 1, "#$0": 1},
+    "border": {"solid $0": 1, "dashed $0": 1, "dotted $0": 1, "#$0": 1},
     "border-color": {"#$0": 1},
-    "border-style": {solid:2, dashed:2, dotted:2, double:2, groove:2, hidden:2, inherit:2, inset:2, none:2, outset:2, ridged:2},
-    "border-collapse": {collapse: 1, separate: 1},
-    bottom: {px: 1, em: 1, "%": 1},
-    clear: {left: 1, right: 1, both: 1, none: 1},
-    color: {"#$0": 1, "rgb(#$00,0,0)": 1},
-    cursor: {default: 1, pointer: 1, move: 1, text: 1, wait: 1, help: 1, progress: 1, "n-resize": 1, "ne-resize": 1, "e-resize": 1, "se-resize": 1, "s-resize": 1, "sw-resize": 1, "w-resize": 1, "nw-resize": 1},
-    display: {none: 1, block: 1, inline: 1, "inline-block": 1, "table-cell": 1},
-    "empty-cells": {show: 1, hide: 1},
-    float: {left: 1, right: 1, none: 1},
-    "font-family": {Arial:2,"Comic Sans MS":2,Consolas:2,"Courier New":2,Courier:2,Georgia:2,Monospace:2,"Sans-Serif":2, "Segoe UI":2,Tahoma:2,"Times New Roman":2,"Trebuchet MS":2,Verdana: 1},
-    "font-size": {px: 1, em: 1, "%": 1},
-    "font-weight": {bold: 1, normal: 1},
-    "font-style": {italic: 1, normal: 1},
-    "font-variant": {normal: 1, "small-caps": 1},
-    height: {px: 1, em: 1, "%": 1},
-    left: {px: 1, em: 1, "%": 1},
-    "letter-spacing": {normal: 1},
-    "line-height": {normal: 1},
-    "list-style-type": {none: 1, disc: 1, circle: 1, square: 1, decimal: 1, "decimal-leading-zero": 1, "lower-roman": 1, "upper-roman": 1, "lower-greek": 1, "lower-latin": 1, "upper-latin": 1, georgian: 1, "lower-alpha": 1, "upper-alpha": 1},
-    margin: {px: 1, em: 1, "%": 1},
-    "margin-right": {px: 1, em: 1, "%": 1},
-    "margin-left": {px: 1, em: 1, "%": 1},
-    "margin-top": {px: 1, em: 1, "%": 1},
-    "margin-bottom": {px: 1, em: 1, "%": 1},
-    "max-height": {px: 1, em: 1, "%": 1},
-    "max-width": {px: 1, em: 1, "%": 1},
-    "min-height": {px: 1, em: 1, "%": 1},
-    "min-width": {px: 1, em: 1, "%": 1},
-    overflow: {hidden: 1, visible: 1, auto: 1, scroll: 1},
-    "overflow-x": {hidden: 1, visible: 1, auto: 1, scroll: 1},
-    "overflow-y": {hidden: 1, visible: 1, auto: 1, scroll: 1},
-    padding: {px: 1, em: 1, "%": 1},
-    "padding-top": {px: 1, em: 1, "%": 1},
-    "padding-right": {px: 1, em: 1, "%": 1},
-    "padding-bottom": {px: 1, em: 1, "%": 1},
-    "padding-left": {px: 1, em: 1, "%": 1},
-    "page-break-after": {auto: 1, always: 1, avoid: 1, left: 1, right: 1},
-    "page-break-before": {auto: 1, always: 1, avoid: 1, left: 1, right: 1},
-    position: {absolute: 1, relative: 1, fixed: 1, static: 1},
-    right: {px: 1, em: 1, "%": 1},
-    "table-layout": {fixed: 1, auto: 1},
-    "text-decoration": {none: 1, underline: 1, "line-through": 1, blink: 1},
-    "text-align": {left: 1, right: 1, center: 1, justify: 1},
-    "text-transform": {capitalize: 1, uppercase: 1, lowercase: 1, none: 1},
-    top: {px: 1, em: 1, "%": 1},
-    "vertical-align": {top: 1, bottom: 1},
-    visibility: {hidden: 1, visible: 1},
-    "white-space": {nowrap: 1, normal: 1, pre: 1, "pre-line": 1, "pre-wrap": 1},
-    width: {px: 1, em: 1, "%": 1},
-    "word-spacing": {normal: 1},
-    filter: {"alpha(opacity=$0100)": 1},
+    "border-style": {"solid":2, "dashed":2, "dotted":2, "double":2, "groove":2, "hidden":2, "inherit":2, "inset":2, "none":2, "outset":2, "ridged":2},
+    "border-collapse": {"collapse": 1, "separate": 1},
+    "bottom": {"px": 1, "em": 1, "%": 1},
+    "clear": {"left": 1, "right": 1, "both": 1, "none": 1},
+    "color": {"#$0": 1, "rgb(#$00,0,0)": 1},
+    "cursor": {"default": 1, "pointer": 1, "move": 1, "text": 1, "wait": 1, "help": 1, "progress": 1, "n-resize": 1, "ne-resize": 1, "e-resize": 1, "se-resize": 1, "s-resize": 1, "sw-resize": 1, "w-resize": 1, "nw-resize": 1},
+    "display": {"none": 1, "block": 1, "inline": 1, "inline-block": 1, "table-cell": 1},
+    "empty-cells": {"show": 1, "hide": 1},
+    "float": {"left": 1, "right": 1, "none": 1},
+    "font-family": {"Arial":2,"Comic Sans MS":2,"Consolas":2,"Courier New":2,"Courier":2,"Georgia":2,"Monospace":2,"Sans-Serif":2, "Segoe UI":2,"Tahoma":2,"Times New Roman":2,"Trebuchet MS":2,"Verdana": 1},
+    "font-size": {"px": 1, "em": 1, "%": 1},
+    "font-weight": {"bold": 1, "normal": 1},
+    "font-style": {"italic": 1, "normal": 1},
+    "font-variant": {"normal": 1, "small-caps": 1},
+    "height": {"px": 1, "em": 1, "%": 1},
+    "left": {"px": 1, "em": 1, "%": 1},
+    "letter-spacing": {"normal": 1},
+    "line-height": {"normal": 1},
+    "list-style-type": {"none": 1, "disc": 1, "circle": 1, "square": 1, "decimal": 1, "decimal-leading-zero": 1, "lower-roman": 1, "upper-roman": 1, "lower-greek": 1, "lower-latin": 1, "upper-latin": 1, "georgian": 1, "lower-alpha": 1, "upper-alpha": 1},
+    "margin": {"px": 1, "em": 1, "%": 1},
+    "margin-right": {"px": 1, "em": 1, "%": 1},
+    "margin-left": {"px": 1, "em": 1, "%": 1},
+    "margin-top": {"px": 1, "em": 1, "%": 1},
+    "margin-bottom": {"px": 1, "em": 1, "%": 1},
+    "max-height": {"px": 1, "em": 1, "%": 1},
+    "max-width": {"px": 1, "em": 1, "%": 1},
+    "min-height": {"px": 1, "em": 1, "%": 1},
+    "min-width": {"px": 1, "em": 1, "%": 1},
+    "overflow": {"hidden": 1, "visible": 1, "auto": 1, "scroll": 1},
+    "overflow-x": {"hidden": 1, "visible": 1, "auto": 1, "scroll": 1},
+    "overflow-y": {"hidden": 1, "visible": 1, "auto": 1, "scroll": 1},
+    "padding": {"px": 1, "em": 1, "%": 1},
+    "padding-top": {"px": 1, "em": 1, "%": 1},
+    "padding-right": {"px": 1, "em": 1, "%": 1},
+    "padding-bottom": {"px": 1, "em": 1, "%": 1},
+    "padding-left": {"px": 1, "em": 1, "%": 1},
+    "page-break-after": {"auto": 1, "always": 1, "avoid": 1, "left": 1, "right": 1},
+    "page-break-before": {"auto": 1, "always": 1, "avoid": 1, "left": 1, "right": 1},
+    "position": {"absolute": 1, "relative": 1, "fixed": 1, "static": 1},
+    "right": {"px": 1, "em": 1, "%": 1},
+    "table-layout": {"fixed": 1, "auto": 1},
+    "text-decoration": {"none": 1, "underline": 1, "line-through": 1, "blink": 1},
+    "text-align": {"left": 1, "right": 1, "center": 1, "justify": 1},
+    "text-transform": {"capitalize": 1, "uppercase": 1, "lowercase": 1, "none": 1},
+    "top": {"px": 1, "em": 1, "%": 1},
+    "vertical-align": {"top": 1, "bottom": 1},
+    "visibility": {"hidden": 1, "visible": 1},
+    "white-space": {"nowrap": 1, "normal": 1, "pre": 1, "pre-line": 1, "pre-wrap": 1},
+    "width": {"px": 1, "em": 1, "%": 1},
+    "word-spacing": {"normal": 1},
+    "filter": {"alpha(opacity=$0100)": 1},
 
     "text-shadow": {"$02px 2px 2px #777": 1},
-    "text-overflow": {"ellipsis-word": 1, clip: 1, ellipsis: 1},
+    "text-overflow": {"ellipsis-word": 1, "clip": 1, "ellipsis": 1},
     "-moz-border-radius": 1,
     "-moz-border-radius-topright": 1,
     "-moz-border-radius-bottomright": 1,
@@ -295,9 +295,9 @@ var propertyMap = {
     "-webkit-border-bottom-left-radius": 1,
     "-moz-box-shadow": 1,
     "-webkit-box-shadow": 1,
-    transform: {"rotate($00deg)": 1, "skew($00deg)": 1},
+    "transform": {"rotate($00deg)": 1, "skew($00deg)": 1},
     "-moz-transform": {"rotate($00deg)": 1, "skew($00deg)": 1},
-    "-webkit-transform": {"rotate($00deg)": 1, "skew($00deg)": 1}
+    "-webkit-transform": {"rotate($00deg)": 1, "skew($00deg)": 1 }
 };
 
 var CssCompletions = function() {
@@ -310,14 +310,14 @@ var CssCompletions = function() {
 
     this.defineCompletions = function() {
         if (document) {
-            var style = document.createElement("c").style;
+            var style = document.createElement('c').style;
 
             for (var i in style) {
-                if (typeof style[i] !== "string")
+                if (typeof style[i] !== 'string')
                     continue;
 
                 var name = i.replace(/[A-Z]/g, function(x) {
-                    return `-${  x.toLowerCase()}`;
+                    return '-' + x.toLowerCase();
                 });
 
                 if (!propertyMap.hasOwnProperty(name))
@@ -337,7 +337,7 @@ var CssCompletions = function() {
 
         if (!token)
             return [];
-        if (state==="ruleset"){
+        if (state==='ruleset'){
             var line = session.getLine(pos.row).substr(0, pos.column);
             if (/:[^;]+$/.test(line)) {
                 /([\w\-]+):[^:]*$/.test(line);
@@ -356,7 +356,7 @@ var CssCompletions = function() {
         return properties.map(function(property){
             return {
                 caption: property,
-                snippet: `${property  }: $0;`,
+                snippet: property + ': $0;',
                 meta: "property",
                 score: Number.MAX_VALUE
             };
@@ -401,25 +401,25 @@ var CssBehaviour = function () {
     this.inherit(CstyleBehaviour);
 
     this.add("colon", "insertion", function (state, action, editor, session, text) {
-        if (text === ":") {
+        if (text === ':') {
             var cursor = editor.getCursorPosition();
             var iterator = new TokenIterator(session, cursor.row, cursor.column);
             var token = iterator.getCurrentToken();
             if (token && token.value.match(/\s+/)) {
                 token = iterator.stepBackward();
             }
-            if (token && token.type === "support.type") {
+            if (token && token.type === 'support.type') {
                 var line = session.doc.getLine(cursor.row);
                 var rightChar = line.substring(cursor.column, cursor.column + 1);
-                if (rightChar === ":") {
+                if (rightChar === ':') {
                     return {
-                       text: "",
+                       text: '',
                        selection: [1, 1]
                     };
                 }
                 if (!line.substring(cursor.column).match(/^\s*;/)) {
                     return {
-                       text: ":;",
+                       text: ':;',
                        selection: [1, 1]
                     };
                 }
@@ -429,17 +429,17 @@ var CssBehaviour = function () {
 
     this.add("colon", "deletion", function (state, action, editor, session, range) {
         var selected = session.doc.getTextRange(range);
-        if (!range.isMultiLine() && selected === ":") {
+        if (!range.isMultiLine() && selected === ':') {
             var cursor = editor.getCursorPosition();
             var iterator = new TokenIterator(session, cursor.row, cursor.column);
             var token = iterator.getCurrentToken();
             if (token && token.value.match(/\s+/)) {
                 token = iterator.stepBackward();
             }
-            if (token && token.type === "support.type") {
+            if (token && token.type === 'support.type') {
                 var line = session.doc.getLine(range.start.row);
                 var rightChar = line.substring(range.end.column, range.end.column + 1);
-                if (rightChar === ";") {
+                if (rightChar === ';') {
                     range.end.column ++;
                     return range;
                 }
@@ -448,13 +448,13 @@ var CssBehaviour = function () {
     });
 
     this.add("semicolon", "insertion", function (state, action, editor, session, text) {
-        if (text === ";") {
+        if (text === ';') {
             var cursor = editor.getCursorPosition();
             var line = session.doc.getLine(cursor.row);
             var rightChar = line.substring(cursor.column, cursor.column + 1);
-            if (rightChar === ";") {
+            if (rightChar === ';') {
                 return {
-                   text: "",
+                   text: '',
                    selection: [1, 1]
                 };
             }
@@ -477,10 +477,10 @@ var BaseFoldMode = acequire("./fold_mode").FoldMode;
 var FoldMode = exports.FoldMode = function(commentRegex) {
     if (commentRegex) {
         this.foldingStartMarker = new RegExp(
-            this.foldingStartMarker.source.replace(/\|[^|]*?$/, `|${  commentRegex.start}`)
+            this.foldingStartMarker.source.replace(/\|[^|]*?$/, "|" + commentRegex.start)
         );
         this.foldingStopMarker = new RegExp(
-            this.foldingStopMarker.source.replace(/\|[^|]*?$/, `|${  commentRegex.end}`)
+            this.foldingStopMarker.source.replace(/\|[^|]*?$/, "|" + commentRegex.end)
         );
     }
 };

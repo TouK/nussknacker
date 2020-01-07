@@ -18,6 +18,7 @@ const emptyGraphState = {
   businessView: false
 };
 
+const STATE_PROPERTY_NAME = "groupingState";
 export function reducer(state, action) {
   switch (action.type) {
     case "PROCESS_LOADING": {
@@ -247,10 +248,10 @@ export function reducer(state, action) {
           processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.groupingState),
           layout: []
         } :  state;
-      return _.omit(withUpdatedGroups, "groupingState")
+      return _.omit(withUpdatedGroups, STATE_PROPERTY_NAME)
     }
     case "CANCEL_GROUPING": {
-      return _.omit(state, "groupingState")
+      return _.omit(state, STATE_PROPERTY_NAME)
     }
     case "UNGROUP": {
       return {

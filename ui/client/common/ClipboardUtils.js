@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 const readText = event => (event.clipboardData || window.clipboardData).getData("text")
 
 // We could have used navigator.clipboard.writeText but it is not defined for

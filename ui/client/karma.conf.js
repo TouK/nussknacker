@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 var path = require("path");
 var WebpackConfig = require("./webpack.config")
 var _ = require("lodash")

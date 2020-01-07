@@ -14,6 +14,7 @@ const espUndoableConfig = {
 }
 
 export function undoRedoReducer (reducer, config = espUndoableConfig) {
+  // eslint-disable-next-line i18next/no-literal-string
   const blacklist = _.concat(["@@INIT"], config.blacklist)
 
   const undoableFun = (state = emptyHistory, action) => {

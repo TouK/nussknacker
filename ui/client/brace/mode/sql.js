@@ -29,13 +29,13 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
 
     var keywordMapper = this.createKeywordMapper({
       "support.function": builtinFunctions,
-      keyword: keywords,
+      "keyword": keywords,
       "constant.language": builtinConstants,
       "storage.type": dataTypes
     }, "identifier", true);
 
     this.$rules = {
-      start : [ {
+      "start" : [ {
         token : "comment",
         regex : "--.*$"
       },  {

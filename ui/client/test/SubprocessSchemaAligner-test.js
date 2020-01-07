@@ -1,5 +1,5 @@
-import * as SubprocessSchemaAligner from "../components/graph/SubprocessSchemaAligner"
-import _ from "lodash"
+import * as SubprocessSchemaAligner from '../components/graph/SubprocessSchemaAligner'
+import _ from 'lodash'
 
 const subprocessProcessDefinitionData = {
   nodesToAdd: [
@@ -11,8 +11,8 @@ const subprocessProcessDefinitionData = {
           type: "SubprocessInput", id: "", ref: {
             id: "subproc1",
             parameters: [
-              {name: "param1", expression: {language: "spel", expression: "''"}},
-              {name: "param2", expression: {language: "spel", expression: "''"}}
+              {"name": "param1", "expression": {"language": "spel", "expression": "''"}},
+              {"name": "param2", "expression": {"language": "spel", "expression": "''"}}
             ]
           }
         }
@@ -40,10 +40,10 @@ describe("subprocess schema aligner test", () => {
     const alignedSubprocess = SubprocessSchemaAligner.alignSubprocessWithSchema(subprocessProcessDefinitionData, subprocessNode)
 
     expect(alignedSubprocess.ref.parameters).toEqual([
-      {name: "param1", expression: {language: "spel", expression: "''"}},
-      {name: "param2", expression: {language: "spel", expression: "'cde'"}}
+      { name: "param1", expression: { language: "spel", expression: "''"}},
+      { name: "param2", expression: { language: "spel", expression: "'cde'"}}
     ])
-    expect(_.omit(alignedSubprocess, "ref")).toEqual(_.omit(subprocessNode, "ref"))
+    expect(_.omit(alignedSubprocess, 'ref')).toEqual(_.omit(subprocessNode, 'ref'))
   })
 
   it("should not change anything if subprocess is valid with schema", () => {

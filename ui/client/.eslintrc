@@ -31,12 +31,14 @@
     "object-curly-spacing": ["error", "never"],
     "i18next/no-literal-string": ["warn", {
       "ignore": [
-        "-icon", "glyphicon"
+        "-icon", "glyphicon",
+        ".svg", ".jpg", ".jpeg", ".png"
       ],
       "ignoreCallee": [
         "t", "withTranslation", "useTranslation",
         "reportEvent", "headerStyles",
         "_.get",
+        "api.get",
         "describe", "it", "expect", "toBe", "toEqual"
       ],
       "ignoreAttribute": [

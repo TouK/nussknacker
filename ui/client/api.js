@@ -4,7 +4,7 @@ import SystemUtils from "./common/SystemUtils";
 
 let headers = {}
 if (SystemUtils.hasAccessToken()) {
-  headers["Authorization"] = SystemUtils.authorizationToken()
+  headers.authorization = SystemUtils.authorizationToken()
 }
 
 const configuration = {

@@ -15,6 +15,7 @@ export default function configureStore() {
   );
 
   if (module.hot) {
+    // eslint-disable-next-line i18next/no-literal-string
     module.hot.accept("../reducers", () =>
       store.replaceReducer(reducer)
     );

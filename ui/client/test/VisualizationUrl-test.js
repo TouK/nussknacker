@@ -1,4 +1,4 @@
-import {extractCountParams} from "../common/VisualizationUrl";
+import { extractCountParams } from "../common/VisualizationUrl";
 import moment from "moment";
 
 describe("validating url counts extractors", () => {
