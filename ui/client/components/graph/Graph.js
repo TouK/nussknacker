@@ -581,7 +581,7 @@ class Graph extends React.Component {
   render() {
     const toRender = (
       <div id="graphContainer" style={{padding: this.props.padding}}>
-        {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
+        {this.props.showNodeDetailsModal ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
         <div ref={this.espGraphRef} id={this.props.divId}></div>
       </div>
@@ -615,6 +615,7 @@ function mapState(state, props) {
     groupingState: state.graphReducer.groupingState,
     expandedGroups: state.ui.expandedGroups,
     layout: state.graphReducer.layout,
+    showNodeDetailsModal: state.ui.showNodeDetailsModal,
     ...commonState(state)
   };
 }

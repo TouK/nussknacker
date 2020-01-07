@@ -30,34 +30,30 @@ class NodeDetailsModal extends React.Component {
   }
 
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       pendingRequest: false,
       shouldCloseOnEsc: true,
-    };
+      subprocessContent: null,
+      editedNode: this.props.nodeToDisplay,
+      currentNodeId: this.props.nodeToDisplay.id,
+    }
   }
 
-  componentWillReceiveProps(props) {
-    const isChromium = !!window.chrome;
-
-    const newState = {
-      editedNode: props.nodeToDisplay,
-      currentNodeId: props.nodeToDisplay.id,
-      subprocessContent: null
-    }
-
-    //TODO more smooth subprocess loading in UI
-    if (props.nodeToDisplay && props.showNodeDetailsModal && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
+  componentDidMount(): void {
+    const {nodeToDisplay, showNodeDetailsModal, businessView, subprocessVersions} = this.props
+    const isChromium = !!window.chrome
+    if (nodeToDisplay && this.state.subprocessContent === null && showNodeDetailsModal && (NodeUtils.nodeType(nodeToDisplay) === "SubprocessInput")) {
       if (isChromium) { //Subprocesses work only in Chromium, there is problem with jonint and SVG
-        const subprocessVersion = props.subprocessVersions[props.nodeToDisplay.ref.id]
-        HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, subprocessVersion, this.props.businessView).then((response) =>
-          this.setState({...newState, subprocessContent: response.data.json})
+        const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
+        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion, businessView).then((response) => {
+            console.log("loaded subprocess")
+            this.setState({...this.state, subprocessContent: response.data.json})
+          }
         )
       } else {
         console.warn("Displaying subprocesses is available only in Chromium based browser.")
       }
-    } else {
-      this.setState(newState)
     }
   }
 
