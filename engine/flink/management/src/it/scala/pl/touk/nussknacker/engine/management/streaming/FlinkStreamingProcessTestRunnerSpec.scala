@@ -47,7 +47,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
       .id(processId)
       .exceptionHandler()
       .source("startProcess", "kafka-transaction")
-      .emptySink("endSend", "sendSms")
+      .emptySink("endSend", "sendSmsNotExist")
 
     val processManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
 
@@ -57,7 +57,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
     val caught = intercept[IllegalArgumentException] {
       Await.result(processManager.test(ProcessName(processId), processData, TestData("terefere"), _ => null), patienceConfig.timeout)
     }
-    caught.getMessage shouldBe "Compilation errors: MissingParameters(Set(param1),$exceptionHandler)"
+    caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }
 
 }
