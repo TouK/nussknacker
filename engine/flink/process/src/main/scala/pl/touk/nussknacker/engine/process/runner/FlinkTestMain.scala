@@ -28,12 +28,12 @@ case class FlinkTestMain(modelData: ModelData, process: EspProcess, testData: Te
     val env = createEnv
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
-      val registrar: FlinkStreamingProcessRegistrar = new TestFlinkProcessCompiler(
+      val registrar: FlinkStreamingProcessRegistrar = FlinkStreamingProcessRegistrar(new TestFlinkProcessCompiler(
         modelData.configCreator,
-        modelData.processConfig,
+        modelData.processConfigFromConfiguration,
         collectingListener,
         process,
-        testData, env.getConfig).createFlinkProcessRegistrar()
+        testData, env.getConfig), modelData.processConfig)
       registrar.register(env, process, processVersion, Option(collectingListener.runId))
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results

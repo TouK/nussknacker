@@ -15,8 +15,9 @@ import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.{AvailablePortFinder, KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,7 +40,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val config = TestConfig(kafkaZookeeperServer)
-    registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
   }
 
   override protected def afterAll(): Unit = {
