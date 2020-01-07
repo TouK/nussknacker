@@ -47,7 +47,6 @@ class NodeDetailsModal extends React.Component {
       if (isChromium) { //Subprocesses work only in Chromium, there is problem with jonint and SVG
         const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
         HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion, businessView).then((response) => {
-            console.log("loaded subprocess")
             this.setState({...this.state, subprocessContent: response.data.json})
           }
         )
