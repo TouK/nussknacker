@@ -1,8 +1,8 @@
-import React from 'react'
+import React from "react"
 import {connect} from "react-redux";
-import _ from 'lodash'
+import _ from "lodash"
 import ActionsUtils from "../actions/ActionsUtils";
-import DialogMessages from '../common/DialogMessages'
+import DialogMessages from "../common/DialogMessages"
 import CommentContent from "./CommentContent";
 import CommentInput from "./CommentInput";
 import Date from "./common/Date"
@@ -58,7 +58,7 @@ class ProcessComments extends React.Component {
                     : null}
                 </div>
                 <CommentContent content={comment.content} commentSettings={this.props.commentSettings}/>
-                {this.lastComment(idx) ? null : <hr className='comment-under-line'/>}
+                {this.lastComment(idx) ? null : <hr className="comment-under-line"/>}
               </div>
             )
           })}
@@ -81,9 +81,9 @@ class ProcessComments extends React.Component {
 
 function mapState(state) {
   return {
-    comments: _.get(state.processActivity, 'comments', []),
-    processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
-    processVersionId: _.get(state.graphReducer, 'fetchedProcessDetails.processVersionId'),
+    comments: _.get(state.processActivity, "comments", []),
+    processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
+    processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
     loggedUser: state.settings.loggedUser || {},
     commentSettings: _.get(state.settings, "featuresSettings.commentSettings") || {}
   }

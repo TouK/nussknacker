@@ -1,8 +1,8 @@
 import React from "react"
-import {withRouter} from 'react-router-dom'
+import {withRouter} from "react-router-dom"
 import "../../stylesheets/processes.styl"
 import {connect} from "react-redux"
-import JSONTree from 'react-json-tree'
+import JSONTree from "react-json-tree"
 import ActionsUtils from "../../actions/ActionsUtils"
 import ProcessUtils from "../../common/ProcessUtils"
 import HttpService from "../../http/HttpService"
@@ -13,10 +13,10 @@ class Services extends BaseAdminTab {
 
   jsonTreeTheme = {
     label: {
-      fontWeight: 'normal',
+      fontWeight: "normal",
     },
     tree: {
-      backgroundColor: 'none'
+      backgroundColor: "none"
     }
   }
 
@@ -24,8 +24,8 @@ class Services extends BaseAdminTab {
     super(props)
     this.state = {
       services: [],
-      processingType: '',
-      serviceName: '',
+      processingType: "",
+      serviceName: "",
       nodeParameters: {},
       parametersValues: [],
       queryResult: {
@@ -88,7 +88,7 @@ class Services extends BaseAdminTab {
       <span>
         {_.map(params, (param) =>
           this.formRow(
-            "param_" + param.name,
+            `param_${  param.name}`,
             <span>{param.name}
               <div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
             <span>

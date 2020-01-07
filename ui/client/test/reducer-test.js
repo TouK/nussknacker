@@ -1,7 +1,7 @@
-import defaultReducer from '../reducers/index'
-import NodeUtils from '../components/graph/NodeUtils'
+import defaultReducer from "../reducers/index"
+import NodeUtils from "../components/graph/NodeUtils"
 
-import _ from 'lodash'
+import _ from "lodash"
 
 
 describe("Reducer suite", () => {

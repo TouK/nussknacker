@@ -1,5 +1,5 @@
 import React from "react"
-import {withRouter} from 'react-router-dom'
+import {withRouter} from "react-router-dom"
 import "../../stylesheets/processes.styl"
 import HttpService from "../../http/HttpService"
 import BaseAdminTab from "./BaseAdminTab"
@@ -38,8 +38,8 @@ class UnusedComponents extends BaseAdminTab {
 
         <Table
           className="esp-table"
-          sortable={['name']}
-          filterable={['name']}
+          sortable={["name"]}
+          filterable={["name"]}
           noDataText="No matching records found."
           hideFilterInput
           hidden={this.state.showLoader}

@@ -6,7 +6,7 @@ export const analyticsMiddleware = ({dispatch, getState}) => next => action => {
   }
 
   const state = !_.isEmpty(getState()) ? getState() : null
-  const analyticsSettings = _.get(state, 'settings.analyticsSettings')
+  const analyticsSettings = _.get(state, "settings.analyticsSettings")
   if (!_.isEmpty(analyticsSettings) && actionTracked(action)) {
     analytics(analyticsSettings).sendEvent(action.tracking)
   }

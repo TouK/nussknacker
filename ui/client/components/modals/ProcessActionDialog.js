@@ -1,5 +1,5 @@
 import React from "react";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 import {connect} from "react-redux";
 import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -82,7 +82,7 @@ function mapState(state) {
       {},
       _.get(state.settings, "featuresSettings.commentSettings"),
       _.get(state.settings, "featuresSettings.deploySettings")),
-    processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
+    processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
     processHasWarnings: !processHasNoWarnings,
     action: config.action,
     message: config.message

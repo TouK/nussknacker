@@ -88,7 +88,7 @@ var CssHighlightRules = function() {
             include : ["strings", "url", "comments"]
         }, {
             token : ["constant.numeric", "keyword"],
-            regex : "(" + numRe + ")(ch|cm|deg|em|ex|fr|gd|grad|Hz|in|kHz|mm|ms|pc|pt|px|rad|rem|s|turn|vh|vm|vw|%)"
+            regex : `(${  numRe  })(ch|cm|deg|em|ex|fr|gd|grad|Hz|in|kHz|mm|ms|pc|pt|px|rad|rem|s|turn|vh|vm|vw|%)`
         }, {
             token : "constant.numeric",
             regex : numRe
@@ -310,14 +310,14 @@ var CssCompletions = function() {
 
     this.defineCompletions = function() {
         if (document) {
-            var style = document.createElement('c').style;
+            var style = document.createElement("c").style;
 
             for (var i in style) {
-                if (typeof style[i] !== 'string')
+                if (typeof style[i] !== "string")
                     continue;
 
                 var name = i.replace(/[A-Z]/g, function(x) {
-                    return '-' + x.toLowerCase();
+                    return `-${  x.toLowerCase()}`;
                 });
 
                 if (!propertyMap.hasOwnProperty(name))
@@ -337,7 +337,7 @@ var CssCompletions = function() {
 
         if (!token)
             return [];
-        if (state==='ruleset'){
+        if (state==="ruleset"){
             var line = session.getLine(pos.row).substr(0, pos.column);
             if (/:[^;]+$/.test(line)) {
                 /([\w\-]+):[^:]*$/.test(line);
@@ -356,7 +356,7 @@ var CssCompletions = function() {
         return properties.map(function(property){
             return {
                 caption: property,
-                snippet: property + ': $0;',
+                snippet: `${property  }: $0;`,
                 meta: "property",
                 score: Number.MAX_VALUE
             };
@@ -401,25 +401,25 @@ var CssBehaviour = function () {
     this.inherit(CstyleBehaviour);
 
     this.add("colon", "insertion", function (state, action, editor, session, text) {
-        if (text === ':') {
+        if (text === ":") {
             var cursor = editor.getCursorPosition();
             var iterator = new TokenIterator(session, cursor.row, cursor.column);
             var token = iterator.getCurrentToken();
             if (token && token.value.match(/\s+/)) {
                 token = iterator.stepBackward();
             }
-            if (token && token.type === 'support.type') {
+            if (token && token.type === "support.type") {
                 var line = session.doc.getLine(cursor.row);
                 var rightChar = line.substring(cursor.column, cursor.column + 1);
-                if (rightChar === ':') {
+                if (rightChar === ":") {
                     return {
-                       text: '',
+                       text: "",
                        selection: [1, 1]
                     };
                 }
                 if (!line.substring(cursor.column).match(/^\s*;/)) {
                     return {
-                       text: ':;',
+                       text: ":;",
                        selection: [1, 1]
                     };
                 }
@@ -429,17 +429,17 @@ var CssBehaviour = function () {
 
     this.add("colon", "deletion", function (state, action, editor, session, range) {
         var selected = session.doc.getTextRange(range);
-        if (!range.isMultiLine() && selected === ':') {
+        if (!range.isMultiLine() && selected === ":") {
             var cursor = editor.getCursorPosition();
             var iterator = new TokenIterator(session, cursor.row, cursor.column);
             var token = iterator.getCurrentToken();
             if (token && token.value.match(/\s+/)) {
                 token = iterator.stepBackward();
             }
-            if (token && token.type === 'support.type') {
+            if (token && token.type === "support.type") {
                 var line = session.doc.getLine(range.start.row);
                 var rightChar = line.substring(range.end.column, range.end.column + 1);
-                if (rightChar === ';') {
+                if (rightChar === ";") {
                     range.end.column ++;
                     return range;
                 }
@@ -448,13 +448,13 @@ var CssBehaviour = function () {
     });
 
     this.add("semicolon", "insertion", function (state, action, editor, session, text) {
-        if (text === ';') {
+        if (text === ";") {
             var cursor = editor.getCursorPosition();
             var line = session.doc.getLine(cursor.row);
             var rightChar = line.substring(cursor.column, cursor.column + 1);
-            if (rightChar === ';') {
+            if (rightChar === ";") {
                 return {
-                   text: '',
+                   text: "",
                    selection: [1, 1]
                 };
             }
@@ -477,10 +477,10 @@ var BaseFoldMode = acequire("./fold_mode").FoldMode;
 var FoldMode = exports.FoldMode = function(commentRegex) {
     if (commentRegex) {
         this.foldingStartMarker = new RegExp(
-            this.foldingStartMarker.source.replace(/\|[^|]*?$/, "|" + commentRegex.start)
+            this.foldingStartMarker.source.replace(/\|[^|]*?$/, `|${  commentRegex.start}`)
         );
         this.foldingStopMarker = new RegExp(
-            this.foldingStopMarker.source.replace(/\|[^|]*?$/, "|" + commentRegex.end)
+            this.foldingStopMarker.source.replace(/\|[^|]*?$/, `|${  commentRegex.end}`)
         );
     }
 };

@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from "lodash"
 import Dialogs from "../components/modals/Dialogs";
 
 const emptyUiState = {

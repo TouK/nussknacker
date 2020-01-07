@@ -1,5 +1,5 @@
-import ProcessUtils from '../common/ProcessUtils'
-import _ from 'lodash'
+import ProcessUtils from "../common/ProcessUtils"
+import _ from "lodash"
 
 describe("process available variables finder", () => {
   it("should find available variables with its types in process at the beginning of the process", () => {
@@ -60,7 +60,7 @@ describe("process available variables finder", () => {
       "date": {refClazzName:"java.time.LocalDate"},
       someVariableName: {refClazzName:"java.lang.Object"},
       processVariables: {refClazzName:"java.lang.Object"},
-      input: {refClazzName: 'org.nussknacker.model.Transaction'}
+      input: {refClazzName: "org.nussknacker.model.Transaction"}
     })
   })
 
@@ -71,7 +71,7 @@ describe("process available variables finder", () => {
       "date2": {refClazzName:"java.time.Date"},
       someVariableName: {refClazzName:"java.lang.Object"},
       processVariables: {refClazzName:"java.lang.Object"},
-      input: {refClazzName: 'org.nussknacker.model.Transaction'}
+      input: {refClazzName: "org.nussknacker.model.Transaction"}
     })
   })
 
@@ -81,7 +81,7 @@ describe("process available variables finder", () => {
     expect(availableVariables).toEqual({
       someVariableName: {refClazzName:"java.lang.Object"},
       processVariables: {refClazzName:"java.lang.Object"},
-      input: {refClazzName: 'org.nussknacker.model.Transaction'}
+      input: {refClazzName: "org.nussknacker.model.Transaction"}
     })
   })
 

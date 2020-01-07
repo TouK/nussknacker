@@ -1,4 +1,4 @@
-import NodeUtils from './NodeUtils'
+import NodeUtils from "./NodeUtils"
 
 export function mapProcessWithNewNode(process, before, after) {
   return {
@@ -64,7 +64,7 @@ export function computeBoundingRect(expandedGroup, layout, nodes, nodeHeight, ma
 
   const widthsHeights = expandedGroup.nodes
     .map(n => {
-      const bbox = nodes.find(node => node.id == n).get('size')
+      const bbox = nodes.find(node => node.id == n).get("size")
       const layoutForNode = ((layout || []).find(k => k.id == n) || {}).position || {}
       return {height: nodeHeight, width: bbox.width, x: layoutForNode.x || 0, y: layoutForNode.y || 0}
     })

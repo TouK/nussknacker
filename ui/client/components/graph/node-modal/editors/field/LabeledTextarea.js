@@ -10,7 +10,7 @@ export const LabeledTextarea = (props) => {
   return (
     <div className="node-row">
       {renderFieldLabel()}
-      <div className={"node-value" + (isMarked ? " marked" : "")}>
+      <div className={`node-value${  isMarked ? " marked" : ""}`}>
         <textarea
           rows={!_.isEmpty(value) ? value.split(lineEndPattern).length : rows}
           cols={cols}

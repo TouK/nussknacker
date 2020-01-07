@@ -60,7 +60,7 @@ class CompareVersionsDialog extends React.Component {
   }
 
   createVersionElement(version, versionPrefix) {
-    const versionId = (versionPrefix || '') + version.processVersionId
+    const versionId = (versionPrefix || "") + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
         {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {DateUtils.formatAbsolutely(version.createDate)}</option>)
@@ -73,7 +73,7 @@ class CompareVersionsDialog extends React.Component {
 
         <div className="esp-form-row">
           <p>Version to compare</p>
-          <select autoFocus={true} id="otherVersion" className="node-input" value={this.state.otherVersion || ''}
+          <select autoFocus={true} id="otherVersion" className="node-input" value={this.state.otherVersion || ""}
                   onChange={(e) => this.loadVersion(e.target.value)}>
             <option key="" value=""/>
             {this.props.versions.filter(version => this.props.version !== version.processVersionId).map((version, index) => this.createVersionElement(version))}
@@ -87,7 +87,7 @@ class CompareVersionsDialog extends React.Component {
                 <div className="esp-form-row">
                   <p>Difference to pick</p>
                   <select id="otherVersion" className="node-input"
-                          value={this.state.currentDiffId || ''}
+                          value={this.state.currentDiffId || ""}
                           onChange={(e) => this.setState({currentDiffId: e.target.value})}>
                     <option key="" value=""/>
                     {_.keys(this.state.difference).map((diffId) => (
@@ -95,8 +95,8 @@ class CompareVersionsDialog extends React.Component {
                   </select>
                 </div>
                 {this.state.currentDiffId ?
-                  (<Scrollbars hideTracksWhenNotNeeded={true} autoHeightMin={'100px'}
-                               autoHeight autoHeightMax={'390px'}
+                  (<Scrollbars hideTracksWhenNotNeeded={true} autoHeightMin={"100px"}
+                               autoHeight autoHeightMax={"390px"}
                                renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
                     {this.printDiff(this.state.currentDiffId)}
                   </Scrollbars>) : null }
@@ -182,11 +182,11 @@ class CompareVersionsDialog extends React.Component {
 
 function mapState(state) {
   return {
-    processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
-    version: _.get(state.graphReducer, 'fetchedProcessDetails.processVersionId'),
+    processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
+    version: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
     processDefinitionData: state.settings.processDefinitionData,
     otherEnvironment: _.get(state.settings, "featuresSettings.remoteEnvironment.targetEnvironmentId"),
-    versions: _.get(state.graphReducer, 'fetchedProcessDetails.history', []),
+    versions: _.get(state.graphReducer, "fetchedProcessDetails.history", []),
     businessView: state.graphReducer.businessView
   }
 }

@@ -1,7 +1,7 @@
-import React from 'react';
-import Enzyme, {mount} from 'enzyme';
-import {ProcessAttachments_} from '../components/ProcessAttachments'; //import redux-independent component
-import Adapter from 'enzyme-adapter-react-16';
+import React from "react";
+import Enzyme, {mount} from "enzyme";
+import {ProcessAttachments_} from "../components/ProcessAttachments"; //import redux-independent component
+import Adapter from "enzyme-adapter-react-16";
 
 describe("ProcessAttachments suite", () => {
   it("should render with no problems", () => {
@@ -17,7 +17,7 @@ describe("ProcessAttachments suite", () => {
       <ProcessAttachments_ attachments={attachments} processId={processId} processVersionId={processVersionId}/>
     )
     //then
-    expect(mountedProcessAttachments.find('.download-attachment').length).toBe(3)
+    expect(mountedProcessAttachments.find(".download-attachment").length).toBe(3)
   })
 
   const processAttachment = (id) => {

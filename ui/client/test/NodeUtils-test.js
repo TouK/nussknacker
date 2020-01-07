@@ -1,5 +1,5 @@
-import NodeUtils from '../components/graph/NodeUtils'
-import _ from 'lodash'
+import NodeUtils from "../components/graph/NodeUtils"
+import _ from "lodash"
 
 
 describe("nodes grouped", () => {

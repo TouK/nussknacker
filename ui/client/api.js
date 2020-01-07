@@ -1,5 +1,5 @@
 import {API_URL} from "./config"
-import axios from 'axios'
+import axios from "axios"
 import SystemUtils from "./common/SystemUtils";
 
 let headers = {}

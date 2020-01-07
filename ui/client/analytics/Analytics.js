@@ -1,6 +1,6 @@
 import MatomoAnalytics from "./MatomoAnalytics"
 
-const MATOMO_ENGINE = 'Matomo'
+const MATOMO_ENGINE = "Matomo"
 
 export default class Analytics {
 

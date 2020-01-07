@@ -1,18 +1,18 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import {Panel} from 'react-bootstrap';
-import {Scrollbars} from 'react-custom-scrollbars';
+import React, {Component} from "react";
+import PropTypes from "prop-types";
+import {Panel} from "react-bootstrap";
+import {Scrollbars} from "react-custom-scrollbars";
 import cn from "classnames";
 
-import ProcessHistory from './ProcessHistory'
-import ToolBox from './ToolBox'
-import ProcessComments from './ProcessComments'
-import ProcessAttachments from './ProcessAttachments'
-import Tips from './tips/Tips.js'
-import TogglePanel from './TogglePanel';
+import ProcessHistory from "./ProcessHistory"
+import ToolBox from "./ToolBox"
+import ProcessComments from "./ProcessComments"
+import ProcessAttachments from "./ProcessAttachments"
+import Tips from "./tips/Tips.js"
+import TogglePanel from "./TogglePanel";
 import "react-treeview/react-treeview.css"
 
-import '../stylesheets/userPanel.styl';
+import "../stylesheets/userPanel.styl";
 import SpinnerWrapper from "./SpinnerWrapper";
 
 export default class UserLeftPanel extends Component {
@@ -28,7 +28,7 @@ export default class UserLeftPanel extends Component {
     const { isOpened, onToggle, isReady, processName} = this.props;
     return (
         <div id="espLeftNav" className={cn("sidenav", { "is-opened": isOpened })}>
-          <span className={cn('process-name', 'left', { 'is-opened': isOpened})}>{processName}</span>
+          <span className={cn("process-name", "left", { "is-opened": isOpened})}>{processName}</span>
             <SpinnerWrapper isReady={isReady}>
                 <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
                     <Tips />

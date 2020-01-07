@@ -15,7 +15,7 @@ export default class SearchFilter extends React.Component {
             value={value}
             onChange={onChange}
           />
-          <SvgDiv className={"search-icon " + fillIconClass} svgFile="search.svg"/>
+          <SvgDiv className={`search-icon ${  fillIconClass}`} svgFile="search.svg"/>
         </div>
       </div>
     )

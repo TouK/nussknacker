@@ -1,8 +1,8 @@
-import React from 'react';
+import React from "react";
 
-import Enzyme, {mount} from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
-import {ProcessHistory_} from '../components/ProcessHistory'; //import redux-independent component
+import Enzyme, {mount} from "enzyme";
+import Adapter from "enzyme-adapter-react-16";
+import {ProcessHistory_} from "../components/ProcessHistory"; //import redux-independent component
 
 describe("ProcessHistory suite", () => {
   it("should mark latest history entry as current and other as past", () => {
@@ -12,8 +12,8 @@ describe("ProcessHistory suite", () => {
     //when
     const mountedProcessHistory = mount(<ProcessHistory_ processHistory={processHistory}/>)
     //then
-    const currentProcessHistoryEntry = mountedProcessHistory.find('.current')
-    const pastHistoryEntries = mountedProcessHistory.find('.past')
+    const currentProcessHistoryEntry = mountedProcessHistory.find(".current")
+    const pastHistoryEntries = mountedProcessHistory.find(".past")
     expect(currentProcessHistoryEntry.length).toBe(1)
     expect(pastHistoryEntries.length).toBe(2)
     expect(contains(currentProcessHistoryEntry.text(), "v3")).toBe(true)

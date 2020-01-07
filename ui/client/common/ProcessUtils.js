@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from "lodash"
 import NodeUtils from "../components/graph/NodeUtils";
 
 class ProcessUtils {
@@ -43,7 +43,7 @@ class ProcessUtils {
 
   findAvailableVariables = (nodeId, process, processDefinition, fieldName, processCategory) => {
     const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
-    const variablesFromValidation = _.get(process.validationResult, "variableTypes." + nodeId)
+    const variablesFromValidation = _.get(process.validationResult, `variableTypes.${  nodeId}`)
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const additionalVariablesForParam = nodeId ? this._additionalVariablesForParameter(nodeId, process, processDefinition, fieldName) : {}
     const variables = {...variablesForNode, ...additionalVariablesForParam}
@@ -94,7 +94,7 @@ class ProcessUtils {
   _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
     const node = _.find(process.nodes, (node) => node.id == nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
-    const clazzName = _.get(nodeObjectTypeDefinition, 'returnType')
+    const clazzName = _.get(nodeObjectTypeDefinition, "returnType")
     switch (node.type) {
       case "Source": {
         return [{"input": clazzName}]

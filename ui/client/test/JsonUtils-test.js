@@ -1,4 +1,4 @@
-import * as JsonUtils from '../common/JsonUtils'
+import * as JsonUtils from "../common/JsonUtils"
 
 describe("json utils", () => {
   it("should flatten object #1", () => {

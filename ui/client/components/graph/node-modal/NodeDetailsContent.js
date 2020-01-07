@@ -1,8 +1,8 @@
 import React from "react"
 import _ from "lodash"
 import NodeUtils from "../NodeUtils"
-import ProcessUtils from '../../../common/ProcessUtils'
-import * as JsonUtils from '../../../common/JsonUtils'
+import ProcessUtils from "../../../common/ProcessUtils"
+import * as JsonUtils from "../../../common/JsonUtils"
 import ParameterList from "./ParameterList"
 import {v4 as uuid4} from "uuid"
 import MapVariable from "./../node-modal/MapVariable"
@@ -145,9 +145,9 @@ export class NodeDetailsContent extends React.Component {
     const {showValidation, showSwitch} = this.props
 
     switch (NodeUtils.nodeType(this.props.node)) {
-      case 'Source':
+      case "Source":
         return this.sourceSinkCommon(null, fieldErrors)
-      case 'Sink':
+      case "Sink":
         const toAppend =
           <div>
             {
@@ -157,7 +157,7 @@ export class NodeDetailsContent extends React.Component {
             {this.createField("checkbox", "Disabled", "isDisabled")}
           </div>
         return this.sourceSinkCommon(toAppend, fieldErrors)
-      case 'SubprocessInputDefinition':
+      case "SubprocessInputDefinition":
         return (
           <SubprocessInputDefinition
             addElement={this.addElement}
@@ -172,7 +172,7 @@ export class NodeDetailsContent extends React.Component {
             renderFieldLabel={this.renderFieldLabel}
           />
         )
-      case 'SubprocessOutputDefinition':
+      case "SubprocessOutputDefinition":
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
@@ -180,7 +180,7 @@ export class NodeDetailsContent extends React.Component {
             {this.descriptionField()}
           </div>
         )
-      case 'Filter':
+      case "Filter":
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
@@ -189,8 +189,8 @@ export class NodeDetailsContent extends React.Component {
             {this.descriptionField()}
           </div>
         )
-      case 'Enricher':
-      case 'Processor':
+      case "Enricher":
+      case "Processor":
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
@@ -201,12 +201,12 @@ export class NodeDetailsContent extends React.Component {
                 </div>
               )
             })}
-            {this.props.node.type === 'Enricher' ? this.createField("input", "Output", "output", false, [notEmptyValidator, errorValidator(fieldErrors, "output")]) : null}
-            {this.props.node.type === 'Processor' ? this.createField("checkbox", "Disabled", "isDisabled") : null}
+            {this.props.node.type === "Enricher" ? this.createField("input", "Output", "output", false, [notEmptyValidator, errorValidator(fieldErrors, "output")]) : null}
+            {this.props.node.type === "Processor" ? this.createField("checkbox", "Disabled", "isDisabled") : null}
             {this.descriptionField()}
           </div>
         )
-      case 'SubprocessInput':
+      case "SubprocessInput":
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
@@ -215,7 +215,7 @@ export class NodeDetailsContent extends React.Component {
               processDefinitionData={this.props.processDefinitionData}
               editedNode={this.state.editedNode}
               savedNode={this.state.editedNode}
-              setNodeState={newParams => this.setNodeDataAt('ref.parameters', newParams)}
+              setNodeState={newParams => this.setNodeDataAt("ref.parameters", newParams)}
               createListField={(param, index) => this.createExpressionListField(param.name, "expression", `ref.parameters[${index}]`, [notEmptyValidator, errorValidator(fieldErrors, param.name)])}
               createReadOnlyField={params => (
                 <div className="node-row">{this.renderFieldLabel(params.name)}
@@ -231,8 +231,8 @@ export class NodeDetailsContent extends React.Component {
           </div>
         )
 
-      case 'Join':
-      case 'CustomNode':
+      case "Join":
+      case "CustomNode":
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
@@ -240,7 +240,7 @@ export class NodeDetailsContent extends React.Component {
             {
               this.showOutputVar && this.createField("input", "Output", "outputVar", false, [notEmptyValidator, errorValidator(fieldErrors, "outputVar")], "outputVar", false, null)
             }
-            {NodeUtils.nodeType(this.props.node) === 'Join' &&
+            {NodeUtils.nodeType(this.props.node) === "Join" &&
             <BranchParameters
               onChange={this.setNodeDataAt}
               node={this.state.editedNode}
@@ -261,7 +261,7 @@ export class NodeDetailsContent extends React.Component {
             {this.descriptionField()}
           </div>
         )
-      case 'VariableBuilder':
+      case "VariableBuilder":
         return <MapVariable
           renderFieldLabel={this.renderFieldLabel}
           removeElement={this.removeElement}
@@ -273,7 +273,7 @@ export class NodeDetailsContent extends React.Component {
           showValidation={showValidation}
           errors={fieldErrors}
         />;
-      case 'Variable':
+      case "Variable":
         return <Variable
           renderFieldLabel={this.renderFieldLabel}
           onChange={this.setNodeDataAt}
@@ -283,7 +283,7 @@ export class NodeDetailsContent extends React.Component {
           showValidation={showValidation}
           errors={fieldErrors}
         />;
-      case 'Switch':
+      case "Switch":
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
@@ -292,23 +292,23 @@ export class NodeDetailsContent extends React.Component {
             {this.descriptionField()}
           </div>
         )
-      case 'Split':
+      case "Split":
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
             {this.descriptionField()}
           </div>
         )
-      case 'Properties':
+      case "Properties":
         const type = this.props.node.typeSpecificProperties.type;
         const commonFields = this.subprocessVersionFields()
         //fixme move this configuration to some better place?
         const fields = type == "StreamMetaData" ? [
-          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", true, [errorValidator(fieldErrors, "parallelism")], "parallelism", null, null, 'parallelism'),
-          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", false, [errorValidator(fieldErrors, "checkpointIntervalInSeconds")], "checkpointIntervalInSeconds", null, null, 'interval-seconds'),
-          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", false, [errorValidator(fieldErrors, "splitStateToDisk")], "splitStateToDisk", false, false, 'split-state-disk'),
-          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", false, [errorValidator(fieldErrors, "useAsyncInterpretation")], "useAsyncInterpretation", false, false, 'use-async')
-        ] : [this.createField("input", "Query path", "typeSpecificProperties.path", false, [errorValidator(fieldErrors, "path")], "path", null, null, 'query-path')]
+          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", true, [errorValidator(fieldErrors, "parallelism")], "parallelism", null, null, "parallelism"),
+          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", false, [errorValidator(fieldErrors, "checkpointIntervalInSeconds")], "checkpointIntervalInSeconds", null, null, "interval-seconds"),
+          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", false, [errorValidator(fieldErrors, "splitStateToDisk")], "splitStateToDisk", false, false, "split-state-disk"),
+          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", false, [errorValidator(fieldErrors, "useAsyncInterpretation")], "useAsyncInterpretation", false, false, "use-async")
+        ] : [this.createField("input", "Query path", "typeSpecificProperties.path", false, [errorValidator(fieldErrors, "path")], "path", null, null, "query-path")]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
           ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig, fieldName, fieldErrors)
         );
@@ -386,7 +386,7 @@ export class NodeDetailsContent extends React.Component {
         (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)),
         null,
         false,
-        'subprocess-versions'
+        "subprocess-versions"
       )]
   }
 
@@ -534,56 +534,56 @@ export class NodeDetailsContent extends React.Component {
 
   availableFields = () => {
     switch (NodeUtils.nodeType(this.state.editedNode)) {
-      case 'Source': {
+      case "Source": {
         const commonFields = ["id"]
         return _.concat(commonFields, this.state.editedNode.ref.parameters.map(param => param.name))
       }
-      case 'Sink': {
+      case "Sink": {
         const commonFields = ["id", DEFAULT_EXPRESSION_ID]
         return _.concat(commonFields, this.state.editedNode.ref.parameters.map(param => param.name))
       }
-      case 'SubprocessInputDefinition': {
+      case "SubprocessInputDefinition": {
         return ["id"]
       }
-      case 'SubprocessOutputDefinition':
+      case "SubprocessOutputDefinition":
         return ["id", "outputName"]
-      case 'Filter':
+      case "Filter":
         return ["id", DEFAULT_EXPRESSION_ID]
-      case 'Enricher':
+      case "Enricher":
         const commonFields = ["id", "output"]
         const paramFields = this.state.editedNode.service.parameters.map(param => param.name);
         return _.concat(commonFields, paramFields)
-      case 'Processor': {
+      case "Processor": {
         const commonFields = ["id"]
         const paramFields = this.state.editedNode.service.parameters.map(param => param.name);
         return _.concat(commonFields, paramFields)
       }
-      case 'SubprocessInput': {
+      case "SubprocessInput": {
         const commonFields = ["id"]
         const paramFields = this.state.editedNode.ref.parameters.map(param => param.name);
         return _.concat(commonFields, paramFields)
       }
-      case 'Join': {
+      case "Join": {
         const commonFields = ["id", "outputVar"]
         const paramFields = this.state.editedNode.parameters.map(param => param.name)
         const branchParamsFields = this.state.editedNode.branchParameters
           .flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
         return _.concat(commonFields, paramFields, branchParamsFields)
       }
-      case 'CustomNode': {
+      case "CustomNode": {
         const commonFields = ["id", "outputVar"]
         const paramFields = this.state.editedNode.parameters.map(param => param.name)
         return _.concat(commonFields, paramFields)
       }
-      case 'VariableBuilder':
+      case "VariableBuilder":
         return MapVariable.availableFields(this.state.editedNode)
-      case 'Variable':
+      case "Variable":
         return Variable.availableFields
-      case 'Switch':
+      case "Switch":
         return ["id", DEFAULT_EXPRESSION_ID, "exprVal"]
-      case 'Split':
+      case "Split":
         return ["id"]
-      case 'Properties': {
+      case "Properties": {
         const commonFields = "subprocessVersions"
         const fields = this.props.node.typeSpecificProperties.type === "StreamMetaData" ?
           ["parallelism", "checkpointIntervalInSeconds", "splitStateToDisk", "useAsyncInterpretation"] : ["path"]
@@ -597,12 +597,12 @@ export class NodeDetailsContent extends React.Component {
   }
 
   render() {
-    const nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
+    const nodeClass = classNames("node-table", {"node-editable": this.props.isEditMode})
     const fieldErrors = this.fieldErrors(this.props.nodeErrors || [])
     const otherErrors = this.props.nodeErrors ? this.props.nodeErrors.filter(error => !fieldErrors.includes(error)) : []
     return (
       <div className={nodeClass}>
-        <NodeErrors errors={otherErrors} message={'Node has errors'}/>
+        <NodeErrors errors={otherErrors} message={"Node has errors"}/>
         <TestResultsSelect
           results={this.props.testResults}
           resultsIdToShow={this.state.testResultsIdToShow}
@@ -618,7 +618,7 @@ export class NodeDetailsContent extends React.Component {
 
 function mapState(state) {
   return {
-    additionalPropertiesConfig: _.get(state.settings, 'processDefinitionData.additionalPropertiesConfig') || {},
+    additionalPropertiesConfig: _.get(state.settings, "processDefinitionData.additionalPropertiesConfig") || {},
     processDefinitionData: state.settings.processDefinitionData || {},
     processToDisplay: state.graphReducer.processToDisplay
   }
