@@ -12,7 +12,7 @@ object SampleProcess {
   def prepareProcess(id: String) : EspProcess = {
     EspProcessBuilder
       .id(id)
-      .exceptionHandler("param1" -> "'val1'")
+      .exceptionHandler()
       .source("startProcess", "kafka-transaction")
       .filter("nightFilter", "true", endWithMessage("endNight", "Odrzucenie noc"))
       .emptySink("endSend", "sendSms")
@@ -21,7 +21,7 @@ object SampleProcess {
   def kafkaProcess(id: String, topic: String) : EspProcess = {
     EspProcessBuilder
       .id(id)
-      .exceptionHandler("param1" -> "'val1'")
+      .exceptionHandler()
       .source("startProcess", "real-kafka", "topic" -> s"'$topic'")
       .sink("end", "#input", "kafka-string", "topic" -> s"'output-$id'")
   }
