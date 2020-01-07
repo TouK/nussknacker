@@ -136,11 +136,11 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
 		outPorts: [],
 		ports: {
 			groups: {
-        "in": {
+        in: {
           position: "top",
           attrs: portInAttrs()
         },
-        "out": {
+        out: {
           position: "bottom",
           attrs: portOutAttrs()
         }

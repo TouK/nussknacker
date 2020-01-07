@@ -34,7 +34,7 @@ class NussknackerInitializer extends React.Component {
       message: "Application Unexpected Error",
       showButton: false
     },
-    "accessToken": {
+    accessToken: {
       message: "Authentication Error",
       buttonOnClick: this.redirectToAuthorizeUrl,
       buttonLabel: "Go to authentication page",

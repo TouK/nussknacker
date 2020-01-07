@@ -72,21 +72,21 @@ describe("Nodes added", () => {
   beforeEach(() => {
     uniqueId = "unique id"
     node = {
-      "type": "Enricher",
-      "id": uniqueId,
-      "service": {
-        "id": "paramService",
-        "parameters": [
+      type: "Enricher",
+      id: uniqueId,
+      service: {
+        id: "paramService",
+        parameters: [
           {
-            "name": "param",
-            "expression": {
-              "language": "spel",
-              "expression": "'3434'"
+            name: "param",
+            expression: {
+              language: "spel",
+              expression: "'3434'"
             }
           }
         ]
       },
-      "output": "output"
+      output: "output"
     }
     position = {x: 10, y: 20}
   })
@@ -173,36 +173,36 @@ const baseReducerWithProcess = () => defaultReducer({}, {
 })
 
 const baseProcessState = {
-  "id": "DEFGH",
-  "name": "DEFGH",
-  "processVersionId": 23,
-  "isLatestVersion": true,
-  "processType": "graph",
-  "processCategory": "Category1",
-  "modificationDate": "2017-02-14T11:16:56.686",
-  "createdAt": "2017-02-14T11:16:56.686",
-  "createdBy": "admin",
-  "tags": [],
-  "currentlyDeployedAt": [
+  id: "DEFGH",
+  name: "DEFGH",
+  processVersionId: 23,
+  isLatestVersion: true,
+  processType: "graph",
+  processCategory: "Category1",
+  modificationDate: "2017-02-14T11:16:56.686",
+  createdAt: "2017-02-14T11:16:56.686",
+  createdBy: "admin",
+  tags: [],
+  currentlyDeployedAt: [
     "test"
   ],
-  "json": {
-    "id": "DEFGH",
-    "properties": {
-      "parallelism": 3,
-      "exceptionHandler": {
-        "parameters": [
+  json: {
+    id: "DEFGH",
+    properties: {
+      parallelism: 3,
+      exceptionHandler: {
+        parameters: [
           {
-            "name": "param1",
-            "value": "adef"
+            name: "param1",
+            value: "adef"
           }
         ]
       },
-      "additionalFields": {
-        "groups": [
+      additionalFields: {
+        groups: [
           {
-            "id": "acdc",
-            "nodes": [
+            id: "acdc",
+            nodes: [
               "kafka-transaction",
               "filter"
             ]
@@ -210,80 +210,80 @@ const baseProcessState = {
         ]
       }
     },
-    "nodes": [
+    nodes: [
       {
-        "type": "Source",
-        "id": "kafka-transaction",
-        "ref": {
-          "typ": "kafka-transaction",
-          "parameters": []
+        type: "Source",
+        id: "kafka-transaction",
+        ref: {
+          typ: "kafka-transaction",
+          parameters: []
         },
-        "additionalFields": {
-          "description": "asdfasdfłóóódźźźasdfsdfasdfasdfasdfasdf"
+        additionalFields: {
+          description: "asdfasdfłóóódźźźasdfsdfasdfasdfasdfasdf"
         }
       },
       {
-        "type": "Filter",
-        "id": "filter",
-        "expression": {
-          "language": "spel",
-          "expression": "4 / (#input.length -5) >= 0"
+        type: "Filter",
+        id: "filter",
+        expression: {
+          language: "spel",
+          expression: "4 / (#input.length -5) >= 0"
         }
       },
       {
-        "type": "Enricher",
-        "id": "paramService",
-        "service": {
-          "id": "paramService",
-          "parameters": [
+        type: "Enricher",
+        id: "paramService",
+        service: {
+          id: "paramService",
+          parameters: [
             {
-              "name": "param",
-              "expression": {
-                "language": "spel",
-                "expression": "'3434'"
+              name: "param",
+              expression: {
+                language: "spel",
+                expression: "'3434'"
               }
             }
           ]
         },
-        "output": "output"
+        output: "output"
       },
       {
-        "type": "Sink",
-        "id": "sendSms",
-        "ref": {
-          "typ": "sendSms",
-          "parameters": []
+        type: "Sink",
+        id: "sendSms",
+        ref: {
+          typ: "sendSms",
+          parameters: []
         },
-        "endResult": {
-          "language": "spel",
-          "expression": "#input"
+        endResult: {
+          language: "spel",
+          expression: "#input"
         }
       }
     ],
-    "edges": [
+    edges: [
       {
-        "from": "kafka-transaction",
-        "to": "filter"
+        from: "kafka-transaction",
+        to: "filter"
       },
       {
-        "from": "filter",
-        "to": "paramService",
-        "edgeType": {
-          "type": "FilterTrue"
+        from: "filter",
+        to: "paramService",
+        edgeType: {
+          type: "FilterTrue"
         }
       },
       {
-        "from": "paramService",
-        "to": "sendSms"
+        from: "paramService",
+        to: "sendSms"
       }
     ],
-    "validationResult": {
-      "errors" : {
-        "invalidNodes": {},
-        "processPropertiesErrors": [],
-        "globalErrors": []
+    validationResult: {
+      errors : {
+        invalidNodes: {},
+        processPropertiesErrors: [],
+        globalErrors: []
       }
     }
   },
-  "history": []
+  history: []
 }

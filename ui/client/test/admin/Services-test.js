@@ -17,138 +17,138 @@ describe("translating process structure to services", () => {
 
   it("translate simplest possible service definitoin", () => {
     let input = {
-      "streaming": {
-        "service1": {
-          "parameters": [],
-          "returnType": {
-            "refClazzName": "string"
+      streaming: {
+        service1: {
+          parameters: [],
+          returnType: {
+            refClazzName: "string"
           },
-          "categories": []
+          categories: []
         },
       }
     }
 
     expect(mapProcessDefinitionToServices(input)).toEqual([
       {
-        "name": "service1",
-        "categories": [],
-        "parameters": [],
-        "returnClassName": "string",
-        "processingType": "streaming"
+        name: "service1",
+        categories: [],
+        parameters: [],
+        returnClassName: "string",
+        processingType: "streaming"
       }
     ])
   })
 
   it("map categories", () => {
     let input = {
-      "streaming": {
-        "service1": {
-          "parameters": [],
-          "returnType": {
-            "refClazzName": "string"
+      streaming: {
+        service1: {
+          parameters: [],
+          returnType: {
+            refClazzName: "string"
           },
-          "categories": ["category1"]
+          categories: ["category1"]
         },
       }
     }
     expect(mapProcessDefinitionToServices(input)).toEqual([
       {
-        "name": "service1",
-        "categories": ["category1"],
-        "parameters": [],
-        "returnClassName": "string",
-        "processingType": "streaming"
+        name: "service1",
+        categories: ["category1"],
+        parameters: [],
+        returnClassName: "string",
+        processingType: "streaming"
       }
     ])
   })
 
   it("map parameters", () => {
     let input = {
-      "streaming": {
-        "service1": {
-          "parameters": [
+      streaming: {
+        service1: {
+          parameters: [
             {
-              "name": "foo",
-              "typ": {
-                "refClazzName": "string"
+              name: "foo",
+              typ: {
+                refClazzName: "string"
               }
             }
           ],
-          "returnType": {
-            "refClazzName": "string"
+          returnType: {
+            refClazzName: "string"
           },
-          "categories": []
+          categories: []
         },
       }
     }
     expect(mapProcessDefinitionToServices(input)).toEqual([
       {
-        "name": "service1",
-        "categories": [],
-        "parameters": [
+        name: "service1",
+        categories: [],
+        parameters: [
           {
-            "name": "foo",
-            "refClazzName": "string"
+            name: "foo",
+            refClazzName: "string"
           }
         ],
-        "returnClassName": "string",
-        "processingType": "streaming"
+        returnClassName: "string",
+        processingType: "streaming"
       }
     ])
   })
 
   let bigInput = {
-    "streaming": {
-      "accountService": {
-        "parameters": [],
-        "returnType": null,
-        "categories": [
+    streaming: {
+      accountService: {
+        parameters: [],
+        returnType: null,
+        categories: [
           "Category1"
         ]
       },
-      "multipleParamsService": {
-        "parameters": [
+      multipleParamsService: {
+        parameters: [
           {
-            "name": "foo",
-            "typ": {
-              "refClazzName": "java.lang.String"
+            name: "foo",
+            typ: {
+              refClazzName: "java.lang.String"
             }
           },
           {
-            "name": "bar",
-            "typ": {
-              "refClazzName": "java.lang.String"
+            name: "bar",
+            typ: {
+              refClazzName: "java.lang.String"
             }
           },
           {
-            "name": "baz",
-            "typ": {
-              "refClazzName": "java.lang.String"
+            name: "baz",
+            typ: {
+              refClazzName: "java.lang.String"
             }
           },
           {
-            "name": "quax",
-            "typ": {
-              "refClazzName": "java.lang.String"
+            name: "quax",
+            typ: {
+              refClazzName: "java.lang.String"
             }
           }
         ],
-        "returnType": null,
-        "categories": [
+        returnType: null,
+        categories: [
           "Category1",
           "Category2"
         ]
       },
-      "paramService": {
-        "parameters": [
+      paramService: {
+        parameters: [
           {
-            "name": "param",
-            "typ": {
-              "refClazzName": "java.lang.String"
+            name: "param",
+            typ: {
+              refClazzName: "java.lang.String"
             },
-            "restriction": {
-              "type": "StringValues",
-              "values": [
+            restriction: {
+              type: "StringValues",
+              values: [
                 "a",
                 "b",
                 "c"
@@ -156,86 +156,86 @@ describe("translating process structure to services", () => {
             }
           }
         ],
-        "returnType": {
-          "refClazzName": "java.lang.String"
+        returnType: {
+          refClazzName: "java.lang.String"
         },
-        "categories": [
+        categories: [
           "Category1"
         ]
       },
-      "serviceModelService": {
-        "parameters": [],
-        "returnType": null,
-        "categories": [
+      serviceModelService: {
+        parameters: [],
+        returnType: null,
+        categories: [
           "Category1",
           "Category2"
         ]
       },
-      "componentService": {
-        "parameters": [],
-        "returnType": null,
-        "categories": [
+      componentService: {
+        parameters: [],
+        returnType: null,
+        categories: [
           "Category1",
           "Category2"
         ]
       },
-      "enricher": {
-        "parameters": [
+      enricher: {
+        parameters: [
           {
-            "name": "param",
-            "typ": {
-              "refClazzName": "java.lang.String"
+            name: "param",
+            typ: {
+              refClazzName: "java.lang.String"
             }
           }
         ],
-        "returnType": {
-          "refClazzName": "pl.touk.nussknacker.engine.management.sample.RichObject"
+        returnType: {
+          refClazzName: "pl.touk.nussknacker.engine.management.sample.RichObject"
         },
-        "categories": [
+        categories: [
           "Category1",
           "Category2"
         ]
       },
-      "transactionService": {
-        "parameters": [],
-        "returnType": null,
-        "categories": [
+      transactionService: {
+        parameters: [],
+        returnType: null,
+        categories: [
           "Category1"
         ]
       }
     },
     "request-response": {
-      "enricherService": {
-        "parameters": [],
-        "returnType": {
-          "refClazzName": "java.lang.String"
+      enricherService: {
+        parameters: [],
+        returnType: {
+          refClazzName: "java.lang.String"
         },
-        "categories": [
+        categories: [
           "StandaloneCategory1"
         ]
       },
-      "timeMeasuringEnricherService": {
-        "parameters": [],
-        "returnType": {
-          "refClazzName": "java.lang.String"
+      timeMeasuringEnricherService: {
+        parameters: [],
+        returnType: {
+          refClazzName: "java.lang.String"
         },
-        "categories": [
+        categories: [
           "StandaloneCategory1"
         ]
       },
-      "slowEnricherService": {
-        "parameters": [],
-        "returnType": {
-          "refClazzName": "java.lang.String"
+      slowEnricherService: {
+        parameters: [],
+        returnType: {
+          refClazzName: "java.lang.String"
         },
-        "categories": [
+        categories: [
           "StandaloneCategory1"
         ]
       },
-      "processorService": {
-        "parameters": [],
-        "returnType": null,
-        "categories": [
+      processorService: {
+        parameters: [],
+        returnType: null,
+        categories: [
           "StandaloneCategory1"
         ]
       }
@@ -244,134 +244,134 @@ describe("translating process structure to services", () => {
 
   let bigResult = [
     {
-      "name": "accountService",
-      "categories": [
+      name: "accountService",
+      categories: [
         "Category1"
       ],
-      "parameters": [],
-      "returnClassName": null,
-      "processingType": "streaming"
+      parameters: [],
+      returnClassName: null,
+      processingType: "streaming"
     },
     {
-      "name": "componentService",
-      "categories": [
+      name: "componentService",
+      categories: [
         "Category1",
         "Category2"
       ],
-      "parameters": [],
-      "returnClassName": null,
-      "processingType": "streaming"
+      parameters: [],
+      returnClassName: null,
+      processingType: "streaming"
     },
     {
-      "name": "enricher",
-      "categories": [
+      name: "enricher",
+      categories: [
         "Category1",
         "Category2"
       ],
-      "parameters": [
+      parameters: [
         {
-          "name": "param",
-          "refClazzName": "java.lang.String"
+          name: "param",
+          refClazzName: "java.lang.String"
         }
       ],
-      "returnClassName": "pl.touk.nussknacker.engine.management.sample.RichObject",
-      "processingType": "streaming"
+      returnClassName: "pl.touk.nussknacker.engine.management.sample.RichObject",
+      processingType: "streaming"
     },
     {
-      "name": "enricherService",
-      "categories": [
+      name: "enricherService",
+      categories: [
         "StandaloneCategory1"
       ],
-      "parameters": [],
-      "returnClassName": "java.lang.String",
-      "processingType": "request-response"
+      parameters: [],
+      returnClassName: "java.lang.String",
+      processingType: "request-response"
     },
     {
-      "name": "multipleParamsService",
-      "categories": [
+      name: "multipleParamsService",
+      categories: [
         "Category1",
         "Category2"
       ],
-      "parameters": [
+      parameters: [
         {
-          "name": "foo",
-          "refClazzName": "java.lang.String"
+          name: "foo",
+          refClazzName: "java.lang.String"
         },
         {
-          "name": "bar",
-          "refClazzName": "java.lang.String"
+          name: "bar",
+          refClazzName: "java.lang.String"
         },
         {
-          "name": "baz",
-          "refClazzName": "java.lang.String"
+          name: "baz",
+          refClazzName: "java.lang.String"
         },
         {
-          "name": "quax",
-          "refClazzName": "java.lang.String"
+          name: "quax",
+          refClazzName: "java.lang.String"
         }
       ],
-      "returnClassName": null,
-      "processingType": "streaming"
+      returnClassName: null,
+      processingType: "streaming"
     },
     {
-      "name": "paramService",
-      "categories": [
+      name: "paramService",
+      categories: [
         "Category1"
       ],
-      "parameters": [
+      parameters: [
         {
-          "name": "param",
-          "refClazzName": "java.lang.String"
+          name: "param",
+          refClazzName: "java.lang.String"
         }
       ],
-      "returnClassName": "java.lang.String",
-      "processingType": "streaming"
+      returnClassName: "java.lang.String",
+      processingType: "streaming"
     },
     {
-      "name": "processorService",
-      "categories": [
+      name: "processorService",
+      categories: [
         "StandaloneCategory1"
       ],
-      "parameters": [],
-      "returnClassName": null,
-      "processingType": "request-response"
+      parameters: [],
+      returnClassName: null,
+      processingType: "request-response"
     },
     {
-      "name": "serviceModelService",
-      "categories": [
+      name: "serviceModelService",
+      categories: [
         "Category1",
         "Category2"
       ],
-      "parameters": [],
-      "returnClassName": null,
-      "processingType": "streaming"
+      parameters: [],
+      returnClassName: null,
+      processingType: "streaming"
     },
     {
-      "name": "slowEnricherService",
-      "categories": [
+      name: "slowEnricherService",
+      categories: [
         "StandaloneCategory1"
       ],
-      "parameters": [],
-      "returnClassName": "java.lang.String",
-      "processingType": "request-response"
+      parameters: [],
+      returnClassName: "java.lang.String",
+      processingType: "request-response"
     },
     {
-      "name": "timeMeasuringEnricherService",
-      "categories": [
+      name: "timeMeasuringEnricherService",
+      categories: [
         "StandaloneCategory1"
       ],
-      "parameters": [],
-      "returnClassName": "java.lang.String",
-      "processingType": "request-response"
+      parameters: [],
+      returnClassName: "java.lang.String",
+      processingType: "request-response"
     },
     {
-      "name": "transactionService",
-      "categories": [
+      name: "transactionService",
+      categories: [
         "Category1"
       ],
-      "parameters": [],
-      "returnClassName": null,
-      "processingType": "streaming"
+      parameters: [],
+      returnClassName: null,
+      processingType: "streaming"
     }
   ]
 })

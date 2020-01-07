@@ -58,7 +58,7 @@ class GenericModalDialog extends React.Component {
         <div className="draggable-container">
           <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
             <div className={style}>
-              {this.props.header ? (<div className="modal-title" style={{color: "white", "backgroundColor": "#70c6ce"}}>
+              {this.props.header ? (<div className="modal-title" style={{color: "white", backgroundColor: "#70c6ce"}}>
                 <span>{this.props.header}</span>
               </div>) : null}
               <div className="modalContentDark">

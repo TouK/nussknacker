@@ -11,8 +11,8 @@ const subprocessProcessDefinitionData = {
           type: "SubprocessInput", id: "", ref: {
             id: "subproc1",
             parameters: [
-              {"name": "param1", "expression": {"language": "spel", "expression": "''"}},
-              {"name": "param2", "expression": {"language": "spel", "expression": "''"}}
+              {name: "param1", expression: {language: "spel", expression: "''"}},
+              {name: "param2", expression: {language: "spel", expression: "''"}}
             ]
           }
         }

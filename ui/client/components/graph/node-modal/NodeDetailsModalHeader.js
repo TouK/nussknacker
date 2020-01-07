@@ -7,10 +7,10 @@ import nodeAttributes from "../../../assets/json/nodeAttributes"
 import SvgDiv from "../../SvgDiv"
 
 const HeaderType = {
-  "SUBTYPE_DOCS": 1,
-  "SUBTYPE": 2,
-  "DOCS": 3,
-  "DEFAULT": 4,
+  SUBTYPE_DOCS: 1,
+  SUBTYPE: 2,
+  DOCS: 3,
+  DEFAULT: 4,
 }
 
 const nodeClassProperties = ["service.id", "ref.typ", "nodeType", "ref.id"]

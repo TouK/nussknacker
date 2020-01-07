@@ -2,51 +2,51 @@ import ExpressionSuggester from "../components/graph/node-modal/editors/expressi
 
 const typesInformation = [
   {
-    "clazzName": {"refClazzName": "org.A"},
-    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String"}}, "barB": {"refClazz": {"refClazzName": "org.B"}}}
+    clazzName: {refClazzName: "org.A"},
+    methods: {fooString: {refClazz: {refClazzName: "java.lang.String"}}, barB: {refClazz: {refClazzName: "org.B"}}}
   },
   {
-    "clazzName": {"refClazzName": "org.B"},
-    "methods": {"bazC": {"refClazz": {"refClazzName": "org.C"}}}
+    clazzName: {refClazzName: "org.B"},
+    methods: {bazC: {refClazz: {refClazzName: "org.C"}}}
   },
   {
-    "clazzName": {"refClazzName": "org.C"},
-    "methods": {"quaxString": {"refClazz": {"refClazzName": "java.lang.String"}}}
+    clazzName: {refClazzName: "org.C"},
+    methods: {quaxString: {refClazz: {refClazzName: "java.lang.String"}}}
   },
   {
-    "clazzName": {"refClazzName": "org.AA"},
-    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String"}}, "barB": {"refClazz": {"refClazzName": "org.C"}}}
+    clazzName: {refClazzName: "org.AA"},
+    methods: {fooString: {refClazz: {refClazzName: "java.lang.String"}}, barB: {refClazz: {refClazzName: "org.C"}}}
   },
   {
-    "clazzName": {"refClazzName": "org.WithList"},
-    "methods": {"listField": {"refClazz": {"refClazzName": "java.util.List", params: [{refClazzName: "org.A"}]}}}
+    clazzName: {refClazzName: "org.WithList"},
+    methods: {listField: {refClazz: {refClazzName: "java.util.List", params: [{refClazzName: "org.A"}]}}}
   },
   {
-    "clazzName": {"refClazzName": "java.lang.String"},
-    "methods": {"toUpperCase": {"refClazz": {"refClazzName": "java.lang.String"}}}
+    clazzName: {refClazzName: "java.lang.String"},
+    methods: {toUpperCase: {refClazz: {refClazzName: "java.lang.String"}}}
   },
   {
-    "clazzName": {"refClazzName": "java.util.LocalDateTime"},
-    "methods": {"isBefore": {"refClazz": {"refClazzName": "java.lang.Boolean"}, "params": {"name": "arg0", "refClazz": "java.util.LocalDateTime"}}}
+    clazzName: {refClazzName: "java.util.LocalDateTime"},
+    methods: {isBefore: {refClazz: {refClazzName: "java.lang.Boolean"}, params: {name: "arg0", refClazz: "java.util.LocalDateTime"}}}
   },
   {
-    "clazzName": {"refClazzName": "org.Util"},
-    "methods": {"now": {"refClazz": {"refClazzName": "java.util.LocalDateTime"}}}
+    clazzName: {refClazzName: "org.Util"},
+    methods: {now: {refClazz: {refClazzName: "java.util.LocalDateTime"}}}
   }
 ];
 
 const variables = {
-  "input": {refClazzName: "org.A"},
-  "other": {refClazzName: "org.C"},
-  "ANOTHER": {refClazzName: "org.A"},
-  "dynamicMap": {refClazzName: "java.util.Map", fields: {"intField": {refClazzName: "java.lang.Integer"}, "aField": {refClazzName: "org.A"}}},
-  "listVar": {refClazzName: "org.WithList"},
-  "util": {refClazzName: "org.Util"},
-  "union": {union: [
+  input: {refClazzName: "org.A"},
+  other: {refClazzName: "org.C"},
+  ANOTHER: {refClazzName: "org.A"},
+  dynamicMap: {refClazzName: "java.util.Map", fields: {intField: {refClazzName: "java.lang.Integer"}, aField: {refClazzName: "org.A"}}},
+  listVar: {refClazzName: "org.WithList"},
+  util: {refClazzName: "org.Util"},
+  union: {union: [
       {refClazzName: "org.A"},
       {refClazzName: "org.B"},
       {refClazzName: "org.AA"}]},
-  "dict": {dict: {
+  dict: {dict: {
     id: "fooDict",
     valueType: {refClazzName: "org.A"}
   }}
@@ -76,7 +76,7 @@ describe("expression suggester", () => {
         {methodName: "#input", refClazz: {refClazzName: "org.A"}},
         {methodName: "#other", refClazz: {refClazzName: "org.C"}},
         {methodName: "#ANOTHER", refClazz: {refClazzName: "org.A"}},
-        {methodName: "#dynamicMap", refClazz: {refClazzName: "java.util.Map", fields: {"intField": {refClazzName: "java.lang.Integer"}, "aField": {refClazzName: "org.A"}}}},
+        {methodName: "#dynamicMap", refClazz: {refClazzName: "java.util.Map", fields: {intField: {refClazzName: "java.lang.Integer"}, aField: {refClazzName: "org.A"}}}},
         {methodName: "#listVar", refClazz: {refClazzName: "org.WithList"}},
         {methodName: "#util", refClazz: {refClazzName: "org.Util"}},
         {methodName: "#union", refClazz: {union: [

@@ -52,7 +52,7 @@ export default class ExpressionSuggester {
       }
     } else if (variableNotSelected && !_.isEmpty(value)) {
       const allVariablesWithClazzRefs = _.map(variables, (val, key) => {
-        return {"methodName": key, "refClazz": val}
+        return {methodName: key, refClazz: val}
       })
       const result = this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
       return new Promise(resolve => resolve(result))

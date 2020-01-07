@@ -21,7 +21,7 @@ class ProcessUtils {
 
   extractInvalidNodes = (invalidNodes) => {
     return _.flatten(Object.keys(invalidNodes || {}).map((key, idx) => invalidNodes[key].map((error) => {
-      return {"error": error, "key": key}
+      return {error: error, key: key}
     })))
   }
 
@@ -97,7 +97,7 @@ class ProcessUtils {
     const clazzName = _.get(nodeObjectTypeDefinition, "returnType")
     switch (node.type) {
       case "Source": {
-        return [{"input": clazzName}]
+        return [{input: clazzName}]
       }
       case "SubprocessInputDefinition": {
         return node.parameters.map(param => ({[param.name]: param.typ}))

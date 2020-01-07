@@ -145,11 +145,11 @@ class NodeUtils {
 
     //TODO: should this map be here??
     const edgeTypeToLabel = {
-      "FilterFalse": "false",
-      "FilterTrue": "true",
-      "SwitchDefault": "default",
-      "SubprocessOutput": _.get(edge, "edgeType.name"),
-      "NextSwitch": _.get(edge, "edgeType.condition.expression")
+      FilterFalse: "false",
+      FilterTrue: "true",
+      SwitchDefault: "default",
+      SubprocessOutput: _.get(edge, "edgeType.name"),
+      NextSwitch: _.get(edge, "edgeType.condition.expression")
     };
     return edgeTypeToLabel[edgeType] || ""
   }

@@ -46,11 +46,11 @@ class Services extends BaseAdminTab {
     const cachedParams = this.cachedServiceParams(service.name, service.processingType)
 
     const initializeParameter = paramName => _.find(cachedParams, cp => cp.name === paramName) || {
-      "name": paramName,
-      "expression": {
+      name: paramName,
+      expression: {
         //TODO: is it always fixed?
-        "language": "spel",
-        "expression": ""
+        language: "spel",
+        expression: ""
       }
     }
 
@@ -178,7 +178,7 @@ class Services extends BaseAdminTab {
 
   prettyPrint(id, json, title) {
     if (this.hasSomeValue(json)) {
-      const data = _.isObject(json) ? json : {"result": json}
+      const data = _.isObject(json) ? json : {result: json}
 
       return (
         <div key={id}>

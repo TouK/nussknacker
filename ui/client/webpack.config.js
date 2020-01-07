@@ -97,13 +97,13 @@ module.exports = {
       {from: "translations", to: "assets/locales"},
     ]),
     new webpack.DefinePlugin({
-      "__DEV__": !isProd,
+      __DEV__: !isProd,
       "process.env": {
-        "NODE_ENV": JSON.stringify(NODE_ENV)
+        NODE_ENV: JSON.stringify(NODE_ENV)
       },
-      "GIT": {
-        "HASH": JSON.stringify(GIT_HASH),
-        "DATE": JSON.stringify(GIT_DATE)
+      GIT: {
+        HASH: JSON.stringify(GIT_HASH),
+        DATE: JSON.stringify(GIT_DATE)
       }
     }),
     // each 10% log entry in separate line - fix for travis no output problem
