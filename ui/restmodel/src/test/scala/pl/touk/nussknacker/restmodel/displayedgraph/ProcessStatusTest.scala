@@ -19,7 +19,7 @@ class ProcessStatusTest extends FunSuite with Matchers {
 
   private def sampleStatus(status: StateStatus, allowedActions: List[StateAction] = List.empty, errorMessage: Option[String] = Option.empty) = ProcessStatus(
     deploymentId = Some("12345"),
-    status = status.toString(),
+    status = status,
     allowedActions = allowedActions,
     startTime = Option.empty,
     attributes = Option.empty,
