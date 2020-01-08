@@ -17,11 +17,12 @@ export default class ExpressionWithFixedValues extends React.Component {
   }
 
   currentOption = (expressionObj, defaultValue) => {
+    //TODO: is it ok to put not-existing option here?
     const defaultOption = {
-      value: expressionObj.expression || defaultValue.expression || "",
-      label: expressionObj.expression || defaultValue.expression || ""
+      value: (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.expression) || "",
+      label: (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.label) || ""
     }
-    return this.options.find((option) => option.value === expressionObj.expression) || defaultOption
+    return this.options.find((option) => expressionObj && option.value === expressionObj.expression) || defaultOption
   }
 
   render() {
