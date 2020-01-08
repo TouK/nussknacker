@@ -5,8 +5,8 @@ import PropTypes from "prop-types"
 export default function BoolEditor(props) {
 
   const {
-    renderFieldLabel, fieldLabel, fieldName, expressionObj, isMarked, readOnly, onValueChange, switchable, toggleEditor,
-    shouldShowSwitch, rowClassName, valueClassName, displayRawEditor, switchableHint
+    renderFieldLabel, fieldLabel, fieldName, expressionObj, isMarked, readOnly, onValueChange, switchableTo, toggleEditor,
+    shouldShowSwitch, rowClassName, valueClassName, displayRawEditor, switchableToHint, notSwitchableToHint
   } = props
 
   const trueValue = {expression: "true", label: "true"}
@@ -24,8 +24,9 @@ export default function BoolEditor(props) {
       expressionObj={expressionObj}
       onValueChange={onValueChange}
       readOnly={readOnly}
-      switchable={switchable}
-      hint={switchableHint()}
+      switchableTo={switchableTo}
+      switchableToHint={switchableToHint}
+      notSwitchableToHint={notSwitchableToHint}
       toggleEditor={toggleEditor}
       shouldShowSwitch={shouldShowSwitch}
       rowClassName={rowClassName}
@@ -55,9 +56,12 @@ const parseable = (expressionObj) => {
 }
 
 const supportedLanguage = "spel"
+const supportedFieldType = "Boolean"
 
-BoolEditor.switchableOnto = (expressionObj) => parseable(expressionObj) || _.isEmpty(expressionObj.expression)
-BoolEditor.nonSwitchableOntoHint = "Expression must be equal to true or false to switch to basic mode"
+BoolEditor.switchableTo = (expressionObj) => parseable(expressionObj) || _.isEmpty(expressionObj.expression)
 
-BoolEditor.switchableFrom = (_) => true
-BoolEditor.switchableFromHint = "Switch to expression mode"
+BoolEditor.switchableToHint = "Switch to basic mode"
+
+BoolEditor.notSwitchableToHint = "Expression must be equal to true or false to switch to basic mode"
+
+BoolEditor.isSupported = (fieldType) => fieldType === supportedFieldType

@@ -1,8 +1,6 @@
 import React from "react"
-import {editorType, Types} from "./EditorType"
+import {editors, editorType, Types} from "./EditorType"
 import ProcessUtils from "../../../../../common/ProcessUtils"
-import StringEditor from "./StringEditor"
-import BoolEditor from "./BoolEditor"
 
 export default class EditableExpression extends React.Component {
 
@@ -16,13 +14,21 @@ export default class EditableExpression extends React.Component {
   render() {
     const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param} = this.props
     const type = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : Types.EXPRESSION)
-    const editorName = this.editorName(type, expressionObj, this.state.displayRawEditor)
-    const editorObject = editorType.editor(editorName)
-    const Editor = editorObject.editor
+
+    const basicEditor = Object.entries(editors).find(
+      ([editorName, value]) => value.isSupported(type) && editorName !== Types.RAW_EDITOR)
+    const editorName = (!this.state.displayRawEditor && !_.isEmpty(basicEditor)) || type === Types.EXPRESSION_WITH_FIXED_VALUES ?
+      basicEditor[0] : Types.RAW_EDITOR
+    const editor = _.get(editors, editorName)
+    const Editor = editor.editor
+
+    const switchableToEditorName = editor.switchableToEditors.find(editor => editors[editor].isSupported(type)) || Types.RAW_EDITOR
+    const switchableToEditor = _.get(editors, switchableToEditorName)
 
     return <Editor toggleEditor={this.toggleEditor}
-                   switchable={editorObject.switchable}
-                   switchableHint={editorObject.switchableHint}
+                   switchableTo={switchableToEditor.switchableTo}
+                   switchableToHint={switchableToEditor.switchableToHint}
+                   notSwitchableToHint={switchableToEditor.notSwitchableToHint}
                    editorName={editorName}
                    shouldShowSwitch={this.showSwitch(type, showSwitch)}
                    rowClassName={rowClassName ? rowClassName : "node-row"}
@@ -33,22 +39,9 @@ export default class EditableExpression extends React.Component {
     />
   }
 
-  editorName = (fieldType, expressionObj, displayRawEditor) => {
-    switch (fieldType) {
-      case Types.BOOLEAN:
-        return !displayRawEditor && BoolEditor.switchableOnto(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
-      case Types.STRING:
-        return !displayRawEditor && StringEditor.switchableOnto(expressionObj) ? Types.STRING_EDITOR : Types.RAW_EDITOR
-      case Types.EXPRESSION_WITH_FIXED_VALUES:
-        return fieldType
-      default:
-        return Types.RAW_EDITOR
-    }
-  }
-
   toggleEditor = (_) => this.setState({
     displayRawEditor: !this.state.displayRawEditor
   })
 
-  showSwitch = (fieldType, showSwitch) => showSwitch && editorType.isSupported(fieldType)
+  showSwitch = (fieldType, showSwitch) => showSwitch && editorType.basicEditorSupported(fieldType)
 }

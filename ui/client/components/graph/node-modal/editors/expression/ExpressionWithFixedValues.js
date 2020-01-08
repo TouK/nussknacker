@@ -2,6 +2,7 @@ import React from "react"
 import Creatable from "react-select/creatable"
 import PropTypes from "prop-types"
 import SwitchIcon from "./SwitchIcon"
+import {Types} from "./EditorType"
 
 const getOptions = (values) => {
   return values.map((value) => ({
@@ -27,8 +28,8 @@ export default class ExpressionWithFixedValues extends React.Component {
 
   render() {
     const {
-      expressionObj, fieldLabel, readOnly, toggleEditor, shouldShowSwitch, switchable, rowClassName, valueClassName,
-      renderFieldLabel, onValueChange, displayRawEditor, defaultValue, hint
+      expressionObj, fieldLabel, readOnly, toggleEditor, shouldShowSwitch, switchableTo, rowClassName, valueClassName,
+      renderFieldLabel, onValueChange, displayRawEditor, defaultValue, switchableToHint, notSwitchableToHint
     } = this.props
     const option = this.currentOption(expressionObj, defaultValue)
 
@@ -45,8 +46,8 @@ export default class ExpressionWithFixedValues extends React.Component {
           formatCreateLabel={(x) => x}
         />
         <SwitchIcon
-          switchable={switchable}
-          hint={hint}
+          switchable={switchableTo(expressionObj)}
+          hint={switchableTo(expressionObj) ? switchableToHint : notSwitchableToHint}
           onClick={toggleEditor}
           shouldShowSwitch={shouldShowSwitch}
           displayRawEditor={displayRawEditor}
@@ -68,3 +69,5 @@ export default class ExpressionWithFixedValues extends React.Component {
     valueClassName: PropTypes.string
   }
 }
+
+ExpressionWithFixedValues.isSupported = (fieldType) => fieldType === Types.EXPRESSION_WITH_FIXED_VALUES

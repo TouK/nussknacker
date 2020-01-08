@@ -2,16 +2,13 @@ import React from "react"
 import ExpressionSuggest from "./ExpressionSuggest"
 import PropTypes from "prop-types"
 import SwitchIcon from "./SwitchIcon"
-import {Types} from "./EditorType"
-import BoolEditor from "./BoolEditor"
-import StringEditor from "./StringEditor"
 
 export default function RawEditor(props) {
 
   const {
     renderFieldLabel, fieldLabel, fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows, cols, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor,
-    fieldType, editorName, switchableHint
+    onValueChange, rows, cols, switchableTo, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor,
+    fieldType, editorName, switchableToHint, notSwitchableToHint
   } = props
 
   return (
@@ -36,8 +33,8 @@ export default function RawEditor(props) {
         />
       </div>
       <SwitchIcon
-        switchable={switchable(editorName, expressionObj, fieldType)}
-        hint={switchableHint(editorName, expressionObj, fieldType)}
+        switchable={switchableTo(expressionObj)}
+        hint={switchableTo(expressionObj) ? switchableToHint : notSwitchableToHint}
         onClick={toggleEditor}
         shouldShowSwitch={shouldShowSwitch}
         displayRawEditor={displayRawEditor}
@@ -71,18 +68,8 @@ RawEditor.defaultProps = {
   cols: 50
 }
 
-RawEditor.switchableFromHint = (editorName, expressionObj, fieldType) => {
-  if (RawEditor.switchableFrom(editorName, expressionObj, fieldType)) {
-    return "Switch to basic mode"
-  } else if (fieldType === Types.BOOLEAN) {
-    return BoolEditor.nonSwitchableOntoHint
-  } else if (fieldType === Types.STRING) {
-    return StringEditor.nonSwitchableOntoHint
-  }
-}
+RawEditor.supportedFieldTypes = ["String", "Boolean", "expression"]
 
-RawEditor.switchableFrom = (editorName, expressionObj, fieldType) =>
-  (fieldType === Types.BOOLEAN && BoolEditor.switchableOnto(expressionObj))
-  || (fieldType === Types.STRING && StringEditor.switchableOnto(expressionObj))
+RawEditor.switchableTo = (_) => true
 
-RawEditor.switchableOnto = (_) => true
+RawEditor.switchableToHint = "Switch to expression mode"

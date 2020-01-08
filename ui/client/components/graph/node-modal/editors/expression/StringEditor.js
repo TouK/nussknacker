@@ -4,7 +4,9 @@ import PropTypes from "prop-types"
 
 export default function StringEditor(props) {
 
-  const {fieldLabel, renderFieldLabel, expressionObj, onValueChange, readOnly, switchable, switchableHint} = props
+  const {
+    fieldLabel, renderFieldLabel, expressionObj, onValueChange, readOnly, switchableTo, switchableToHint, notSwitchableToHint
+  } = props
 
   const defaultQuotationMark = "'"
   const expressionQuotationMark = expressionObj.expression.charAt(0)
@@ -20,8 +22,8 @@ export default function StringEditor(props) {
     onChange={(event) => onValueChange(format(event.target.value))}
     value={trim(expressionObj.expression)}
     formattedValue={expressionObj.expression}
-    switchable={switchable}
-    hint={switchableHint()}
+    switchable={switchableTo(expressionObj)}
+    hint={switchableTo(expressionObj) ? switchableToHint : notSwitchableToHint}
   />
 }
 
@@ -41,8 +43,12 @@ const parseable = (expressionObj) => {
   return stringPattern.test(expression) && language === "spel"
 }
 
-StringEditor.switchableOnto = (expressionObj) => parseable(expressionObj)
-StringEditor.nonSwitchableOntoHint = "Expression must be a simple string literal i.e. text surrounded by single or double quotation marks to switch to basic mode"
+const supportedFieldType = "String"
 
-StringEditor.switchableFrom = (_) => true
-StringEditor.switchableFromHint = "Switch to expression mode"
+StringEditor.switchableTo = (expressionObj) => parseable(expressionObj)
+
+StringEditor.switchableToHint = "Switch to basic mode"
+
+StringEditor.notSwitchableToHint = "Expression must be a simple string literal i.e. text surrounded by single or double quotation marks to switch to basic mode"
+
+StringEditor.isSupported = (fieldType) => fieldType === supportedFieldType
