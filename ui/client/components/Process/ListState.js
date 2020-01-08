@@ -1,6 +1,6 @@
 import React from "react"
-import PropTypes from 'prop-types'
-import ProcessStateUtils from '../../common/ProcessStateUtils'
+import PropTypes from "prop-types"
+import ProcessStateUtils from "../../common/ProcessStateUtils"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 
@@ -23,12 +23,12 @@ export class ListStateComponent extends React.Component {
 
   prepareTooltip = (process, state, isStateLoaded) => {
     if (isStateLoaded === false || process.deployment == null) {
-      return this.getTooltip(process, {'status': ProcessStateUtils.getProcessStatus(process)}, isStateLoaded)
+      return this.getTooltip(process, {status: ProcessStateUtils.getProcessStatus(process)}, isStateLoaded)
     }
 
     //TODO: are we sure that?
     if (ProcessStateUtils.isDeployed(process) && !ProcessStateUtils.isRunning(state)) {
-      return this.getTooltip(process, {'status': ProcessStateUtils.STATUSES.ERROR}, true)
+      return this.getTooltip(process, {status: ProcessStateUtils.STATUSES.ERROR}, true)
     }
 
     return this.getTooltip(process, state, true)
@@ -41,12 +41,12 @@ export class ListStateComponent extends React.Component {
 
   prepareIcon = (process, state, isStateLoaded) => {
     if (isStateLoaded === false || process.deployment == null) {
-      return this.getIcon(process, {'status': ProcessStateUtils.getProcessStatus(process)})
+      return this.getIcon(process, {status: ProcessStateUtils.getProcessStatus(process)})
     }
 
     //TODO: are we sure that?
     if (ProcessStateUtils.isDeployed(process) && !ProcessStateUtils.isRunning(state)) {
-      return this.getIcon(process, {'status': ProcessStateUtils.STATUSES.ERROR})
+      return this.getIcon(process, {status: ProcessStateUtils.STATUSES.ERROR})
     }
 
     return this.getIcon(process, state)
@@ -57,9 +57,9 @@ export class ListStateComponent extends React.Component {
   render() {
     const {process, state, isStateLoaded} = this.props
     return <div
-      dangerouslySetInnerHTML={{__html: this.prepareIcon(process, state, isStateLoaded) }}
+      dangerouslySetInnerHTML={{__html: this.prepareIcon(process, state, isStateLoaded)}}
       title={this.prepareTooltip(process, state, isStateLoaded)}
-      className={'state-list' + (isStateLoaded === false ? ' state-pending' : '')}
+      className={`state-list${  isStateLoaded === false ? " state-pending" : ""}`}
     />
   }
 }

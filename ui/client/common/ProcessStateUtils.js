@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from "lodash"
 
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
 
@@ -76,7 +76,7 @@ export default {
   },
 
   getStateStatus(state) {
-    const status = _.get(state, 'status', null)
+    const status = _.get(state, "status", null)
 
     if (_.isUndefined(state) || (state && status === null)) {
       return this.STATUSES.UNKNOWN
@@ -99,7 +99,7 @@ export default {
   },
 
   getProcessAction(process) {
-    return _.get(process, 'deployment.action', null)
+    return _.get(process, "deployment.action", null)
   },
 
   getProcessTooltip(process) {
