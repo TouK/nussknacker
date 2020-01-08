@@ -6,12 +6,12 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.defaults.deployment.{DefaultStateStatus, DefaultProcessStateConfigurator}
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
@@ -81,8 +81,8 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
     processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion)) => ProcessState(
         deploymentId = DeploymentId(processName.value),
-        status = DefaultStateStatus.Running,
-        allowedActions = DefaultProcessStateConfigurator.getStatusActions(DefaultStateStatus.Running),
+        status = SimpleStateStatus.Running,
+        allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.Running),
         version = Option(processVersion),
         startTime = Some(deploymentTime)
       )

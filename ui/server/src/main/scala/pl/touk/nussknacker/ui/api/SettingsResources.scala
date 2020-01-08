@@ -5,7 +5,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, ProcessStateConfig}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
@@ -33,10 +34,7 @@ class SettingsResources(config: FeatureTogglesConfig,
             attachments = config.attachments.isDefined
           )
 
-          val processStateSettings = ProcessStateSettings(
-            ProcessStateConfig.managersIcons(typeToConfig),
-            ProcessStateConfig.managersTooltips(typeToConfig)
-          )
+          val processStateSettings = ProcessStateSettings(typeToConfig)
 
           val authenticationSettings = AuthenticationSettings(
             authenticationConfig.method.toString,
@@ -85,3 +83,23 @@ class SettingsResources(config: FeatureTogglesConfig,
                                  authentication: AuthenticationSettings,
                                  analytics: Option[AnalyticsSettings],
                                  processStates: ProcessStateSettings)
+
+
+object ProcessStateSettings {
+  def apply(managers: Map[ProcessingType, ProcessingTypeData]): ProcessStateSettings =
+    ProcessStateSettings(icons = managersIcons(managers), tooltips = managersTooltips(managers))
+
+  private def managersIcons(managers: Map[ProcessingType, ProcessingTypeData]): Map[String, Map[ProcessingType, String]] =
+    managers.map({
+      case (mk, mv) => (mk.toString, mapStateStatus(mv.processManager.processStateDefinitionManager.statusIcons))
+    })
+
+  private def managersTooltips(managers: Map[ProcessingType, ProcessingTypeData]): Map[String, Map[ProcessingType, String]] =
+    managers.map({
+      case (mk, mv) => (mk.toString, mapStateStatus(mv.processManager.processStateDefinitionManager.statusTooltips))
+    })
+
+  private def mapStateStatus(state: Map[StateStatus, String]): Map[String, String] = state.map {
+    case (ik, iv) => (ik.toString, iv)
+  }
+}

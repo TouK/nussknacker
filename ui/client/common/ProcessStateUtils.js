@@ -15,6 +15,7 @@ export default {
     DURING_DEPLOY: "DURING_DEPLOY",
     DEPLOYED: "DEPLOYED",
     RUNNING: "RUNNING",
+    DURING_CANCEL: "DURING_CANCEL",
     CANCELED: "CANCELED",
     RESTARTING: "RESTARTING",
     FAILED: "FAILED",
@@ -22,12 +23,13 @@ export default {
     FINISHED: "FINISHED",
   },
 
-  STATUS_TOOLTIPS: {
+  DEFAULT_STATUS_TOOLTIPS: {
     UNKNOWN: "Unknown state of the process..",
     NOT_DEPLOYED: "The process has never been deployed.",
     DURING_DEPLOY: "The process has been already started and currently is being deployed.",
     DEPLOYED: "The process has been successfully deployed.",
     RUNNING: "The process is running.",
+    DURING_CANCEL: "The process currently is being canceled.",
     CANCELED: "The process has been successfully cancelled.",
     RESTARTING: "The process is restarting..",
     FAILED: "There are some problems with checking state of process..",
@@ -35,12 +37,13 @@ export default {
     FINISHED: "The process completed successfully.",
   },
 
-  STATUS_ICONS: {
+  DEFAULT_STATUS_ICONS: {
     UNKNOWN: InlinedSvgs.iconUnknown,
     NOT_DEPLOYED: InlinedSvgs.iconNotDeployed,
     DURING_DEPLOY: InlinedSvgs.iconDeployRunningAnimated,
     DEPLOYED: InlinedSvgs.iconDeploySuccess,
-    RUNNING: InlinedSvgs.iconRunningAnimated,
+    RUNNING: InlinedSvgs.iconDeploySuccess,
+    DURING_CANCEL: InlinedSvgs.iconStoppingRunningAnimated,
     CANCELED: InlinedSvgs.iconStoppingSuccess,
     RESTARTING: InlinedSvgs.iconStoppedWorking,
     FAILED: InlinedSvgs.iconFailed,
@@ -61,7 +64,7 @@ export default {
   },
 
   getStatusTooltip(status) {
-    return _.get(this.STATUS_TOOLTIPS, status, this.STATUS_TOOLTIPS[this.STATUSES.UNKNOWN])
+    return _.get(this.DEFAULT_STATUS_TOOLTIPS, status, this.DEFAULT_STATUS_TOOLTIPS[this.STATUSES.UNKNOWN])
   },
 
   getStateIcon(state) {
@@ -69,7 +72,7 @@ export default {
   },
 
   getStatusIcon(status) {
-    return _.get(this.STATUS_ICONS, status, this.STATUS_ICONS[this.STATUSES.UNKNOWN])
+    return _.get(this.DEFAULT_STATUS_ICONS, status, this.DEFAULT_STATUS_ICONS[this.STATUSES.UNKNOWN])
   },
 
   getStateStatus(state) {

@@ -7,8 +7,8 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.defaults.deployment.DefaultStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
@@ -71,8 +71,8 @@ class ManagementActor(environment: String,
         manager <- processManager(id.id)
       } yield sender() ! Some(ProcessStatus(
         deploymentId = None,
-        status = DefaultStateStatus.DuringDeploy,
-        allowedActions = manager.processStateConfigurator.getStatusActions(DefaultStateStatus.DuringDeploy),
+        status = SimpleStateStatus.DuringDeploy,
+        allowedActions = manager.processStateDefinitionManager.getStatusActions(SimpleStateStatus.DuringDeploy),
         startTime = Some(info.time)
       ))
       reply(processStatus)
@@ -85,7 +85,7 @@ class ManagementActor(environment: String,
         deployedVersion = deployedVersions.headOption.filter(_.deploymentAction == DeploymentAction.Deploy)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
-        _ <- handleFinishedProcess(id, state, manager.processStateConfigurator)
+        _ <- handleFinishedProcess(id, state, manager.processStateDefinitionManager)
       } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
       reply(processStatus)
 
@@ -116,10 +116,10 @@ class ManagementActor(environment: String,
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState], processStateConfigurator: ProcessStateConfigurator): Future[Unit] = {
+  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState], processStateConfigurator: ProcessStateDefinitionManager): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
-      case Some(state) if processStateConfigurator.isFinished(state.status) =>
+      case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
             deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, environment, Some("Process finished")).map(_ => ())

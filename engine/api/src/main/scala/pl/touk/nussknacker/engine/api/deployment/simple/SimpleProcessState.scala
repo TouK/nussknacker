@@ -1,11 +1,11 @@
-package pl.touk.nussknacker.engine.defaults.deployment
+package pl.touk.nussknacker.engine.api.deployment.simple
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
 
-object DefaultProcessState {
+object SimpleProcessState {
   def apply(deploymentId: DeploymentId,
              status: StateStatus,
              version: Option[ProcessVersion] = Option.empty,
@@ -16,7 +16,7 @@ object DefaultProcessState {
       deploymentId = deploymentId,
       status = status,
       version = version,
-      allowedActions = DefaultProcessStateConfigurator.getStatusActions(status),
+      allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(status),
       startTime = startTime,
       attributes = attributes,
       errorMessage = errorMessage

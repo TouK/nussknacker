@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
-import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
+import io.circe.{Encoder, Json}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StatusState.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StatusState}
-import pl.touk.nussknacker.engine.defaults.deployment.{DefaultProcessStateConfigurator, DefaultStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 
 @JsonCodec(encodeOnly = true) case class ProcessStatus(deploymentId: Option[String],
                                     status: StateStatus,
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.defaults.deployment.{DefaultProcessStateConfig
 
 object ProcessStatus {
 
-  implicit val typeEncoder: Encoder[StateStatus] = Encoder.encodeString.contramap(_.toString())
+  implicit val typeEncoder: Encoder[StateStatus] = Encoder.encodeString.contramap(_.name)
 
   def apply(deploymentId: Option[String],
             status: StateStatus,
@@ -52,16 +52,16 @@ object ProcessStatus {
   }
 
   val notFound: ProcessStatus = ProcessStatus(
-    None,
-    DefaultStateStatus.Unknown,
-    DefaultProcessStateConfigurator.getStatusActions(DefaultStateStatus.Unknown),
+    Option.empty,
+    SimpleStateStatus.Unknown,
+    SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.Unknown),
     errorMessage = Some("Process not found in engine.")
   )
 
   val failedToGet: ProcessStatus = ProcessStatus(
-    None,
-    DefaultStateStatus.Unknown,
-    DefaultProcessStateConfigurator.getStatusActions(DefaultStateStatus.Unknown),
+    Option.empty,
+    SimpleStateStatus.Unknown,
+    SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.Unknown),
     errorMessage = Some("Failed to obtain status.")
   )
 }

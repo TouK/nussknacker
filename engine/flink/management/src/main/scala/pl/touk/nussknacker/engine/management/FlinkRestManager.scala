@@ -1,24 +1,20 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
-import java.time.Instant
 
-import sttp.client._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
+import io.circe.generic.JsonCodec
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.runtime.jobgraph.JobStatus
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment._
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import sttp.client._
 import sttp.client.circe._
-import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.defaults.deployment.DefaultStateStatus
 import sttp.model.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -102,18 +98,18 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
           Future.successful(Some(ProcessState(
             DeploymentId(duplicates.head.jid),
-            DefaultStateStatus.Failed,
-            allowedActions = processStateConfigurator.getStatusActions(DefaultStateStatus.Failed),
+            FlinkStateStatus.Failed,
+            allowedActions = processStateDefinitionManager.getStatusActions(FlinkStateStatus.Failed),
             version = Option.empty,
             startTime = Some(duplicates.head.`start-time`),
             errorMessage = Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
           ))
         case one::_ =>
           val stateStatus = one.state match {
-            case JobStatus.RUNNING => DefaultStateStatus.Running
-            case JobStatus.FINISHED => DefaultStateStatus.Finished
-            case JobStatus.RESTARTING => DefaultStateStatus.Restarting
-            case _ => DefaultStateStatus.Failed
+            case JobStatus.RUNNING => FlinkStateStatus.Running
+            case JobStatus.FINISHED => FlinkStateStatus.Finished
+            case JobStatus.RESTARTING => FlinkStateStatus.Restarting
+            case _ => FlinkStateStatus.Failed
           }
           checkVersion(one.jid, name).map { version =>
             //TODO: return error when there's no correct version in process
@@ -126,7 +122,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               DeploymentId(one.jid),
               stateStatus,
               version = version,
-              allowedActions = processStateConfigurator.getStatusActions(stateStatus),
+              allowedActions = processStateDefinitionManager.getStatusActions(stateStatus),
               startTime = Some(one.`start-time`)
             ))
           }
