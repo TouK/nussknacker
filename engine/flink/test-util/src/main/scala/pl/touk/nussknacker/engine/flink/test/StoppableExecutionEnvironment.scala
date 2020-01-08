@@ -26,6 +26,7 @@ object StoppableExecutionEnvironment {
 
   def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, taskManagersCount: Int): Configuration = {
     val proxyPortHigh = proxyPortLow + taskManagersCount - 1
+    configuration.setBoolean(QueryableStateOptions.ENABLE_QUERYABLE_STATE_PROXY_SERVER, true)
     configuration.setString(QueryableStateOptions.PROXY_PORT_RANGE, s"$proxyPortLow-$proxyPortHigh")
     configuration
   }
@@ -96,10 +97,9 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
   // see comment in waitForJobState
   protected def getMiniCluster(resource: MiniClusterResource): MiniCluster
 
-  def execute(jobName: String): JobExecutionResult = {
-    // transform the streaming program into a JobGraph
-    val streamGraph: StreamGraph = getStreamGraph
-    streamGraph.setJobName(jobName)
+
+  override def execute(streamGraph: StreamGraph): JobExecutionResult = {
+
     val jobGraph: JobGraph = streamGraph.getJobGraph
     logger.debug("Running job on local embedded Flink flinkMiniCluster cluster")
 

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.kafka
 import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files
+import java.time.Duration
 import java.util.Properties
 
 import kafka.server.KafkaServer
@@ -105,8 +106,8 @@ object KafkaUtils {
   }
 
   case class KeyMessage[K, V](k: K, msg: V) {
-    def message() = msg
-    def key() = k
+    def message(): V = msg
+    def key(): K = k
   }
 
   implicit class RichConsumerConnector(consumer: KafkaConsumer[Array[Byte], Array[Byte]]) {
@@ -121,7 +122,7 @@ object KafkaUtils {
       consumer.assign(partitions.asJava)
 
       Stream.continually(())
-        .flatMap(_ => consumer.poll(1000).asScala.toStream)
+        .flatMap(_ => consumer.poll(Duration.ofSeconds(1)).asScala.toStream)
         .map(record => KeyMessage(record.key(), record.value()))
     }
   }

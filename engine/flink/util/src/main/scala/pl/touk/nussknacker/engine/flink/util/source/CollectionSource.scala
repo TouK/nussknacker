@@ -17,6 +17,6 @@ case class CollectionSource[T: TypeInformation](config: ExecutionConfig,
   override def toFlinkSource = new FromElementsFunction[T](
     typeInformation.createSerializer(config), list.filterNot(_ == null).asJava)
 
-  override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
+  override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
 }

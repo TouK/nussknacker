@@ -5,10 +5,10 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusC
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Encoder
 import io.circe.generic.JsonCodec
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.parsing.json.JSONObject
 
 class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: ExecutionContext)
   extends Directives with LazyLogging with FailFastCirceSupport {
@@ -39,7 +39,7 @@ class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: Executi
   private def toResponseReject(entity: Map[String, String]): ToResponseMarshallable = {
     HttpResponse(
       status = StatusCodes.BadRequest,
-      entity = HttpEntity(ContentTypes.`application/json`, JSONObject(entity).toString().stripMargin)
+      entity = HttpEntity(ContentTypes.`application/json`, Encoder.encodeMap[String, String].apply(entity).spaces2)
     )
   }
 }
