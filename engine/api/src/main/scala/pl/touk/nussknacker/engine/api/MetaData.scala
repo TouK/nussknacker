@@ -41,7 +41,8 @@ object ProcessAdditionalFields {
 }
 
 case class StreamMetaData(parallelism: Option[Int] = None,
-                          splitStateToDisk: Option[Boolean] = None,
+                          //we assume it's safer to split state to disk and fix performance than to fix heap problems...
+                          splitStateToDisk: Option[Boolean] = Some(true),
                           useAsyncInterpretation: Option[Boolean] = None,
                           checkpointIntervalInSeconds: Option[Long] = None) extends TypeSpecificData {
   

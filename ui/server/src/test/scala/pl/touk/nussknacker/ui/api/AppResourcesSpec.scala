@@ -16,11 +16,13 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.db.entity.DeployedProcessInfoEntityData
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -119,7 +121,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
       .futureValue shouldBe ('right)
     val processId = processRepository.fetchProcessId(ProcessName(id)).futureValue.get
     deploymentProcessRepository.markProcessAsDeployed(processId, 1, TestProcessingTypes.Streaming,
-      "", Some("")).futureValue shouldBe (())
+      "", Some("")).map(_ => ()).futureValue shouldBe (())
   }
 
 

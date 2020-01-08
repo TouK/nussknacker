@@ -16,7 +16,7 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization
@@ -93,6 +93,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val db = initDb(config)
 
     val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+
+    val analyticsConfig = AnalyticsConfig(config)
 
     val modelData = typeToConfig.mapValues(_.modelData)
 
@@ -183,7 +185,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config).publicRoute(),
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config, analyticsConfig).publicRoute(),
       appResources.publicRoute()
     ) ++ authenticator.routes
 

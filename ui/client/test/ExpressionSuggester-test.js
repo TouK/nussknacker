@@ -1,4 +1,4 @@
-import ExpressionSuggester from '../components/graph/ExpressionSuggester'
+import ExpressionSuggester from '../components/graph/node-modal/editors/expression/ExpressionSuggester'
 
 const typesInformation = [
   {
@@ -336,6 +336,12 @@ describe("expression suggester", () => {
   it("should support nested method invocations", (done) => {
     suggestionsFor("#util.now(#other.quaxString.toUpperCase().)", {row: 0, column: "#util.now(#other.quaxString.toUpperCase().".length }).then(suggestions => {
       expect(suggestions).toEqual([{methodName: "toUpperCase", refClazz: {refClazzName: "java.lang.String"}}])
+    }).then(done)
+  })
+
+  it("should support safe navigation", (done) => {
+    suggestionsFor("#input?.barB.bazC?.").then(suggestions => {
+      expect(suggestions).toEqual([{methodName: "quaxString", refClazz: {refClazzName: "java.lang.String"}}])
     }).then(done)
   })
 })

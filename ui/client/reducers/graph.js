@@ -173,11 +173,11 @@ export function reducer(state, action) {
         prepareNewNodesWithLayout(state,[{
           node: action.node,
           position: action.position
-        }])
+        }], false)
       )
     }
     case "NODES_WITH_EDGES_ADDED": {
-      const {nodes, layout, uniqueIds} = prepareNewNodesWithLayout(state, action.nodesWithPositions)
+      const {nodes, layout, uniqueIds} = prepareNewNodesWithLayout(state, action.nodesWithPositions, true)
 
       const idToUniqueId = _.zipObject(action.nodesWithPositions.map(n => n.node.id), uniqueIds)
       const edgesWithValidIds = action.edges.map(edge => ({...edge, from: idToUniqueId[edge.from], to: idToUniqueId[edge.to]}))
@@ -339,15 +339,15 @@ function updateAfterNodeDelete(state, idToDelete) {
   }
 }
 
-function createUniqueNodeId(initialId, usedIds, nodeCounter) {
+function createUniqueNodeId(initialId, usedIds, isCopy) {
   return initialId && !_.includes(usedIds, initialId)
     ? initialId
-    : generateUniqueNodeId(usedIds, nodeCounter)
+    : generateUniqueNodeId(initialId, usedIds, 1, isCopy)
 }
 
-function generateUniqueNodeId(usedIds, nodeCounter) {
-  const newId = `node${nodeCounter}`;
-  return _.includes(usedIds, newId) ? generateUniqueNodeId(usedIds, nodeCounter + 1) : newId
+function generateUniqueNodeId(initialId, usedIds, nodeCounter, isCopy) {
+  const newId = isCopy ? `${initialId} (copy ${nodeCounter})` : `${initialId} ${nodeCounter}`
+  return _.includes(usedIds, newId) ? generateUniqueNodeId(initialId ,usedIds, nodeCounter + 1, isCopy) : newId
 }
 
 function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) {
@@ -363,12 +363,12 @@ function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) 
   }
 }
 
-function prepareNewNodesWithLayout(state, nodesWithPositions) {
+function prepareNewNodesWithLayout(state, nodesWithPositions, isCopy) {
   const alreadyUsedIds = state.processToDisplay.nodes.map(node => node.id)
   const initialIds = nodesWithPositions.map(nodeWithPosition => nodeWithPosition.node.id)
   const uniqueIds = _.reduce(initialIds, (uniqueIds, initialId) => {
     const reservedIds = alreadyUsedIds.concat(uniqueIds)
-    const uniqueId = createUniqueNodeId(initialId, reservedIds, reservedIds.length)
+    const uniqueId = createUniqueNodeId(initialId, reservedIds, isCopy)
     return uniqueIds.concat(uniqueId)
   }, [])
 

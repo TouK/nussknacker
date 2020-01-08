@@ -1,8 +1,7 @@
-import React, {Component} from "react";
-import {render} from "react-dom";
-import {connect} from "react-redux";
-import _ from "lodash";
-import ActionsUtils from "../../actions/ActionsUtils";
+import React, {Component} from "react"
+import {connect} from "react-redux"
+import _ from "lodash"
+import ActionsUtils from "../../actions/ActionsUtils"
 
 class SideNodeDetails extends Component {
 
@@ -11,16 +10,17 @@ class SideNodeDetails extends Component {
       if (_.isArray(val)) {
         if (_.isEqual(key, "ids")) {
           return val.join(",")
+        } else if (val.every(value => typeof value === 'string')) {
+          return _.concat(new FlatObjectEntry(null, key), val.map(nodeName => new FlatObjectEntry("id", nodeName)))
         } else {
-          return _.concat(new FlatObjectEntry(null, key), _.flatMap(val,this.flatObject))
+          return _.concat(new FlatObjectEntry(null, key), _.flatMap(val, this.flatObject))
         }
       } else if (_.isObject(val)) {
         if (_.isEqual(key, "expression")) {
           return [new FlatObjectEntry(key, _.get(val, "expression"))]
-        } else if(_.isEqual(key, "endResult")) {
+        } else if (_.isEqual(key, "endResult")) {
           return [new FlatObjectEntry(null, key), new FlatObjectEntry("expression", _.get(val, "expression"))]
-        }
-        else {
+        } else {
           return _.concat(new FlatObjectEntry(null, key), this.flatObject(val))
         }
       } else {
@@ -28,6 +28,7 @@ class SideNodeDetails extends Component {
       }
     })
   }
+
   render() {
     const flatten = this.flatObject(this.props.nodeToDisplay)
     return (
@@ -63,10 +64,11 @@ class FlatObjectEntry {
     this.isSeparator = !this.key
   }
 }
+
 function mapState(state) {
   return {
     nodeToDisplay: state.graphReducer.nodeToDisplay
-  };
+  }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(SideNodeDetails);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(SideNodeDetails)

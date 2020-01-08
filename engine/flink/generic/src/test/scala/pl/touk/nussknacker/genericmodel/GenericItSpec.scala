@@ -10,10 +10,8 @@ import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, Schem
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.scalatest.concurrent.Eventually
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
@@ -21,10 +19,11 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaUtils}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
-import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with EitherValues with LazyLogging {
+class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
   import KafkaUtils._
   import MockSchemaRegistry._
@@ -224,7 +223,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
     }
   }
 
-  private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(Registry)
@@ -235,7 +234,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with E
     val config = ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
-    registrar = new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
   }
 
   override protected def afterAll(): Unit = {

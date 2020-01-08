@@ -29,7 +29,7 @@ class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration, 
 
   private[basicauth] def toLoggedUser(user: UserWithPassword): LoggedUser = {
     val rulesSet = RulesSet.getOnlyMatchingRules(user.roles, configuration.rules, allCategories)
-    LoggedUser(user.identity, rulesSet)
+    LoggedUser(id = user.identity, username = user.identity, rulesSet = rulesSet)
   }
 
   private def hash(u: UserWithPassword)(receivedSecret: String): String = {

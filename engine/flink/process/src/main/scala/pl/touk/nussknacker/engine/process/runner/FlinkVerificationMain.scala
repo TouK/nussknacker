@@ -24,9 +24,8 @@ case class FlinkVerificationMain(modelData: ModelData, process: EspProcess, proc
   extends FlinkStubbedRunner {
   def runTest(): Unit = {
     val env = createEnv
-    val registrar: FlinkStreamingProcessRegistrar = new VerificationFlinkProcessCompiler(
-      process, env.getConfig, modelData.configCreator,
-      modelData.processConfig).createFlinkProcessRegistrar()
+    val registrar: FlinkStreamingProcessRegistrar = FlinkStreamingProcessRegistrar(new VerificationFlinkProcessCompiler(
+      process, env.getConfig, modelData.configCreator, modelData.processConfigFromConfiguration), modelData.processConfig)
     registrar.register(env, process, processVersion, Option(TestRunId("dummy")))
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }

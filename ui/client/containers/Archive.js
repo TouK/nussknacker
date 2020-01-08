@@ -2,7 +2,6 @@ import React from "react"
 import {Table, Td, Tr} from "reactable"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
-import DateUtils from "../common/DateUtils"
 import LoaderSpinner from "../components/Spinner.js"
 import * as  queryString from 'query-string'
 import "../stylesheets/processes.styl"
@@ -10,10 +9,11 @@ import {withRouter} from 'react-router-dom'
 import {Glyphicon} from 'react-bootstrap'
 import BaseProcesses from "./BaseProcesses"
 import ProcessUtils from "../common/ProcessUtils"
-import {nkPath} from "../config";
+import {nkPath} from "../config"
 import TableSelect from "../components/table/TableSelect"
 import SearchFilter from "../components/table/SearchFilter"
 import Date from "../components/common/Date"
+import TableRowIcon from "../components/table/TableRowIcon"
 
 class Archive extends BaseProcesses {
   queries = {
@@ -98,10 +98,10 @@ class Archive extends BaseProcesses {
                     <Date date={process.modificationDate}/>
                   </Td>
                   <Td column="view" className="edit-column">
-                    <Glyphicon
+                    <TableRowIcon
                       glyph="eye-open"
                       title={"Show " + (process.isSubprocess ? "subprocess" : "process")}
-                      onClick={this.showProcess.bind(this, process)}
+                      onClick={this.showProcess(process)}
                     />
                   </Td>
                 </Tr>

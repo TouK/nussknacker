@@ -36,13 +36,13 @@ node-highlight(strokeColor, backgroundFill)
   node-highlight(errorColor, #fbd2d6)
 
 .node-focused-with-validation-error
-  node-highlight(#0058a9, #f2dede)
+  node-highlight(focusColor, #f2dede)
 
 .node-grouping
   node-highlight(#5ba935, #caf2d6)
 
 .node-focused
-  node-highlight(#0058a9, #e6ecff)
+  node-highlight(focusColor, #e6ecff)
 
 .ReactModal__Overlay
   z-index: 100
@@ -163,25 +163,52 @@ espCheckbox(checkboxWidth)
   height: modalHeaderHeight
   span
     display inline-block
-    margin-left 15px
-    margin-top 3px
-  span::after
-    content: "\00a0\00a0"
-  .docsIcon
+    margin-top 5px
+    margin-left 5px
+    margin-right 5px
+  .docsLink
+    color #FFFFFF
     height: modalHeaderHeight
-    background-color modalBkgColor
-    float right
-    fill: docsIconColor
+    display inline-block
     svg
-      width 26px
-      height 26px
-      &:hover
-        fill: modalLabelTextColor
+      width 22px
+      height 22px
+      padding-top 8px
+
 .modal-title
-  min-width modalHeaderWidth
+  height modalHeaderHeight
+  float left
+  display inline-block
+  padding-left 7px
+  padding-right 10px
+  svg
+    width 18px
+    height 18px
+    display inline-block
+
+.modal-title-icon
+  display inline-block
+  float left
+  padding-top 6px
+
+.modal-subtype-header
+  height modalHeaderHeight
+  background #3a3a3a
   display inline-block
   padding-left 10px
   padding-right 10px
+
+.modal-subtype-header-docs
+  @extend .modal-subtype-header
+  &:hover
+    background lighten(#3a3a3a, 15%)
+  .docsIcon
+    float  right
+
+.modal-docs-link
+  @extend .modal-subtype-header-docs
+  padding-left 6px
+  padding-right 6px
 
 common-node-input(padding)
   width: 100%
@@ -195,6 +222,7 @@ common-node-input(padding)
 modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
   background-color: modalBkgColor
+  clear both
   labelWidth = 20%
   .warning
     margin 15px
@@ -210,23 +238,19 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
     .node-row
       margin-bottom: 14px
       margin-top: 14px
+      display flex
     .movable-row
       display flex
       margin-top 0
       margin-bottom 14px
-      img
-        padding-top 10px
-        padding-bottom 25px
-        margin-top auto
-        margin-bottom auto
     .node-label
-      color: modalLabelTextColor
-      width: labelWidth
-      display: inline-block
-      vertical-align: top
-      margin-top: 9px
-      font-size: 12px
-      font-weight: 700
+      color modalLabelTextColor
+      width labelWidth
+      display inline-block
+      vertical-align sub
+      margin-top 9px
+      font-size 12px
+      font-weight 700
       .labelFooter
         font-weight 500
         opacity: 0.7
@@ -244,11 +268,12 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         border 1px solid okColor
         padding 5px
     .node-value
-      width: 100% - labelWidth
+      width: 95% - labelWidth
       display: inline-block
       color: #686868
       textarea
         overflow hidden
+        height auto
       espCheckbox(20px)
       input[type='checkbox']
         margin-top 7px
@@ -259,15 +284,19 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       &.node-value-select
         .node-value-select__control
           background-color modalInputBkgColor
+          max-height 35px
+          min-height 35px
           border: 0
           border-radius: 0
           color modalInputTextColor
           box-shadow: 0
         .node-value-select__control--is-focused
-          boder-width: 0
-          box-shadow: 0 0 0 1px gray
+          outline 2px solid focusColor!important;
+          outline-offset -1px!important;
         .node-value-select__single-value
           common-node-input(10px)
+        .switchable
+          width: 100% - 40px
         .node-value-select__input
           //TODO: input hides partially due to padding...
           common-node-input(10px)
@@ -280,16 +309,35 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         .node-value-select__menu-list
           padding-top: 0
           padding-bottom: 0
+        .node-value-select__menu-list::-webkit-scrollbar
+          width: 5px
+          height: 0px
+        .node-value-select__menu-list::-webkit-scrollbar-track
+          background: buttonBorderColor
+        .node-value-select__menu-list::-webkit-scrollbar-thumb
+          background: #888
+        .node-value-select__menu-list::-webkit-scrollbar-thumb:hover
+          background: #555
         .node-value-select__option
           common-node-input(10px)
           height: 25px
+          line-height @height
           border: 1
           border-radius: 0
+          &:hover
+           background-color darken(focusColor, 50%)
         .node-value-select__option--is-selected
-          background-color: modalInputBkgColor
+          background-color: focusColor
         .node-value-select__option--is-focused
-          //TODO: better color/variable?
-          background-color: commentBorderColor
+          background-color: darken(focusColor, 50%)
+      &.node-value-type-select
+        width: 100%
+        max-height: 35
+        &.switchable
+          width: 70%
+      &.switchable
+        width: 70%
+
     .node-error
       width: 100%
       color: errorColor
@@ -298,9 +346,12 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       margin-bottom: 10px
       margin-top: 10px
     .node-tip
-      margin-left: 10px
-      width: 15px
-      height: 15px
+      margin-left 10px
+      width 15px
+      height 15px
+      &.node-error-tip
+        margin-right 10px
+        float right
     .node-test-results
       border: 1px solid testResultsColor
       padding: 5px
@@ -356,6 +407,9 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
     margin-top 10px
     margin-bottom 10px
 
+  &.edge-details
+    height 270px
+
 .modalContentDye
   modalContent(
           modalBkgColor:white,
@@ -378,7 +432,7 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
   height modalFooterHeight
   background-color modalFooterBkgColor
   .footerButtons
-    float right
+    text-align right
     button
       margin-right 20px
       text-transform uppercase
@@ -438,6 +492,13 @@ espPanelButton()
     border-color: errorColor
   &.attachment-button
     border-color: errorColor
+  :first-child
+    svg
+      g
+        .a
+          fill: errorColor
+  :nth-of-type(2)
+    color: errorColor
 
 .modalButton
   espButtonBase()
@@ -495,6 +556,30 @@ espPanelButton()
   position: relative
   top: -25px
   float: right
+
+.row-ace-editor
+  color:  #686868
+  padding-top: 8px
+  padding-bottom: 8px
+  padding-left: 10px
+  padding-right: 10px
+  background-color: #333
+  min-height 35px
+  &.focused
+    outline 2px solid #0058a9 !important
+    outline-offset -1px !important
+
+.switch-icon
+  height 35px
+  width 35px
+  margin-left 5px
+  cursor pointer
+  background-color modalInputBkgColor
+  border none
+  padding 0
+  &.active
+    .cls-switch-1
+      fill #8fad60
 
 .testResultsSummary
   color #ccc
@@ -600,21 +685,48 @@ espPanelButton()
     font-weight bold
     font-size 20px
     margin: 0 5px
+  .fieldName
+    width: 28%
+    margin-right 5px
   .node-value
     &.field
-      width: calc(65% - 28px)
-    &.fieldName
-      width: 28%
-      margin-right 5px
+      width: calc(70% - 34px)
     &.fieldRemove
-      width: 5%
+      width: 7%
 
 .branch-parameter-row
-  margin-top 7px
-  margin-bottom 8px
+  margin-top 0
+  margin-bottom 0
   display flex
-  & .read-only
+  & .branch-param-label
     color #ccc
     font-weight 400
     font-size 14px
-    padding 10px 20px 0 20px
+    padding 8px 10px 8px 10px
+    width 30%
+
+.branch-parameter-expr-container
+  width 100%
+
+.branch-parameter-expr
+  display inline-flex
+  width 100%
+  .node-value
+    width 100% !important
+
+.branch-parameter-expr-value
+  width 100%
+  display inline-block
+
+.branch-param-select
+  width 100%
+  padding 0 10px
+  border none
+  background-color #333
+  color #ccc
+  font-weight 400
+  font-size 16px
+
+
+.drop-down-menu-placeholder
+  height 100px

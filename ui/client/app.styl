@@ -153,6 +153,8 @@ processActivityList()
     border 1px solid buttonBorderColor
     &:hover .attachment-drop-zone
       background-color lighten(#333, 5%)
+    .attachments-container
+      height 100%
     .attachment-drop-zone
       width 100%
       height 100%
@@ -193,8 +195,6 @@ processActivityList()
     font-weight lighter
     border 1px solid commentBorderColor
     background-color commentBkgColor
-    &:focus
-      outline-color: defaultTextColor
   .confirmationButtons
     float : right
     margin-right : 10
@@ -251,7 +251,7 @@ processActivityList()
   border-radius: 0
   &:hover
     color buttonBlueColor
-    background: processesHoverColor
+    background: lighten(buttonBlueBkgColor, 25%)
   &:focus
     color buttonBlueColor
   #add-icon

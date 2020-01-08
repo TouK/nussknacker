@@ -6,7 +6,6 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.execution.ExecutionState
-import org.apache.flink.runtime.executiongraph.AccessExecutionJobVertex
 import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
 import org.apache.flink.runtime.minicluster.MiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -15,8 +14,8 @@ import org.apache.flink.test.util.{MiniClusterResource, MiniClusterResourceConfi
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
 import org.scalatest.Matchers
-import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.collection.JavaConverters._
 
@@ -25,21 +24,20 @@ object StoppableExecutionEnvironment {
 
   def apply(userFlinkClusterConfig: Configuration) = new StoppableExecutionEnvironment(userFlinkClusterConfig) with MiniClusterResourceFlink_1_7
 
-  def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int): Configuration = {
-    //blaaa this is needed to make queryableState work with two task manager instances
-    configuration.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, 2)
+  def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, taskManagersCount: Int): Configuration = {
+    val proxyPortHigh = proxyPortLow + taskManagersCount - 1
     configuration.setString(QueryableStateOptions.PROXY_PORT_RANGE, s"$proxyPortLow-$proxyPortHigh")
     configuration
   }
 
-  def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int) : StoppableExecutionEnvironment= {
-    StoppableExecutionEnvironment(addQueryableStateConfiguration(configuration, proxyPortLow, proxyPortHigh))
+  def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, taskManagersCount: Int) : StoppableExecutionEnvironment= {
+    StoppableExecutionEnvironment(addQueryableStateConfiguration(configuration, proxyPortLow, taskManagersCount))
   }
 
 }
 
 abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment
-  with LazyLogging with Eventually with Matchers {
+  with LazyLogging with PatientScalaFutures with Matchers {
 
   // For backward compatibility with Flink 1.6 we have here MiniClusterResource intstead of MiniClusterWithClientResource
   // TODO after breaking compatibility with 1.6, replace MiniClusterResource with MiniClusterWithClientResource
@@ -130,8 +128,8 @@ trait MiniClusterResourceFlink_1_7 extends StoppableExecutionEnvironment {
 
   override def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterResource = {
     val clusterConfig: MiniClusterResourceConfiguration = new MiniClusterResourceConfiguration.Builder()
-      //TODO: what should be here?
-      .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, 2))
+      .setNumberTaskManagers(userFlinkClusterConfig.getInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, ConfigConstants.DEFAULT_LOCAL_NUMBER_TASK_MANAGER))
+      .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue()))
       .setConfiguration(userFlinkClusterConfig)
       .build
     new MiniClusterResource(clusterConfig)

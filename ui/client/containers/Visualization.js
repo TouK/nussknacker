@@ -1,21 +1,20 @@
-import React from 'react';
-import {Prompt} from 'react-router-dom';
-import Graph from '../components/graph/Graph';
-import UserRightPanel from '../components/right-panel/UserRightPanel';
-import UserLeftPanel from '../components/UserLeftPanel';
+import React from 'react'
+import Graph from '../components/graph/Graph'
+import UserRightPanel from '../components/right-panel/UserRightPanel'
+import UserLeftPanel from '../components/UserLeftPanel'
 import HttpService from '../http/HttpService'
-import _ from 'lodash';
-import {connect} from 'react-redux';
-import ActionsUtils from '../actions/ActionsUtils';
-import ProcessUtils from '../common/ProcessUtils';
-import DialogMessages from '../common/DialogMessages';
-import '../stylesheets/visualization.styl';
-import NodeUtils from '../components/graph/NodeUtils';
+import _ from 'lodash'
+import {connect} from 'react-redux'
+import ActionsUtils from '../actions/ActionsUtils'
+import ProcessUtils from '../common/ProcessUtils'
+import '../stylesheets/visualization.styl'
+import NodeUtils from '../components/graph/NodeUtils'
 import * as VisualizationUrl from '../common/VisualizationUrl'
-import SpinnerWrapper from "../components/SpinnerWrapper";
-import * as JsonUtils from "../common/JsonUtils";
-import RouteLeavingGuard from "../components/RouteLeavingGuard";
-import ClipboardUtils from "../common/ClipboardUtils";
+import SpinnerWrapper from "../components/SpinnerWrapper"
+import * as JsonUtils from "../common/JsonUtils"
+import RouteLeavingGuard from "../components/RouteLeavingGuard"
+import ClipboardUtils from "../common/ClipboardUtils"
+import {events} from "../analytics/TrackingEvents"
 
 class Visualization extends React.Component {
 
@@ -28,10 +27,36 @@ class Visualization extends React.Component {
 
   bindShortCuts() {
     this.windowListeners = {
-      copy: (event) => this.copySelection(event, true),
-      paste: (event) => this.pasteSelection(event),
-      cut: (event) => this.cutSelection(event)
+      copy: this.bindCopyShortcut(),
+      paste: this.bindPasteShortcut(),
+      cut: this.bindCutShortcut()
     }
+  }
+
+  bindCopyShortcut() {
+    return (event) => {
+      // Skip event triggered by writing selection to the clipboard.
+      if (this.isNotThisCopyEvent(event, copyNodeElementId)) {
+        this.props.actions.copySelection(
+          () => this.copySelection(event, true),
+          {category: events.categories.keyboard, action: events.actions.keyboard.copy}
+        )
+      }
+    }
+  }
+
+  bindPasteShortcut() {
+    return (event) => this.props.actions.pasteSelection(
+      () => this.pasteSelection(event),
+      {category: events.categories.keyboard, action: events.actions.keyboard.paste}
+    )
+  }
+
+  bindCutShortcut() {
+    return (event) => this.props.actions.cutSelection(
+      () => this.cutSelection(event),
+      {category: events.categories.keyboard, action: events.actions.keyboard.cut}
+    )
   }
 
   componentDidMount() {
@@ -103,7 +128,10 @@ class Visualization extends React.Component {
       }
 
       if (event.key === 'Delete' && !_.isEmpty(this.props.selectionState) && this.props.canDelete) {
-        this.deleteSelection()
+        this.props.actions.deleteSelection(
+          this.props.selectionState,
+          {category: events.categories.keyboard, action: events.actions.keyboard.delete}
+        )
       }
     }
     _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
@@ -134,38 +162,45 @@ class Visualization extends React.Component {
   undo() {
     //this `if` should be closer to reducer?
     if (this.props.undoRedoAvailable) {
-      this.props.undoRedoActions.undo()
+      this.props.undoRedoActions.undo(
+        {category: events.categories.keyboard, action: events.actions.keyboard.undo}
+      )
     }
   }
 
   redo() {
     if (this.props.undoRedoAvailable) {
-      this.props.undoRedoActions.redo()
+      this.props.undoRedoActions.redo(
+        {category: events.categories.keyboard, action: events.actions.keyboard.redo}
+      )
     }
-  }
-
-  deleteSelection() {
-    this.props.actions.deleteNodes(this.props.selectionState)
   }
 
   copySelection = (event, shouldCreateNotification) => {
-    const copyNodeElementId = 'copy-node'
     // Skip event triggered by writing selection to the clipboard.
-    const isNotThisCopyEvent = event == null || (event.target && event.target.id !== copyNodeElementId);
-    if (isNotThisCopyEvent && this.canCopySelection()) {
-      let nodeIds = this.props.selectionState;
-      let process = this.props.processToDisplay;
-      const selectedNodes = NodeUtils.getAllNodesById(nodeIds, process)
-      const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(nodeIds, process)
-      const selection = {
-        nodes: selectedNodes,
-        edges: edgesForNodes
-      }
-      ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId);
-      if (shouldCreateNotification) {
-        this.props.notificationActions.success(this.successMessage('Copied', selectedNodes))
-      }
+    const isNotThisCopyEvent = this.isNotThisCopyEvent(event, copyNodeElementId)
+
+    isNotThisCopyEvent && this.canCopySelection() ? this.copyToClipboard(shouldCreateNotification) :
+      this.props.notificationActions.error("Can not copy selected content. It should contain only plain nodes without groups")
+  }
+
+  copyToClipboard(shouldCreateNotification) {
+    let nodeIds = this.props.selectionState
+    let process = this.props.processToDisplay
+    const selectedNodes = NodeUtils.getAllNodesById(nodeIds, process)
+    const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(nodeIds, process)
+    const selection = {
+      nodes: selectedNodes,
+      edges: edgesForNodes
     }
+    ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
+    if (shouldCreateNotification) {
+      this.props.notificationActions.success(this.successMessage('Copied', selectedNodes))
+    }
+  }
+
+  isNotThisCopyEvent(event, copyNodeElementId) {
+    return event == null || (event.target && event.target.id !== copyNodeElementId)
   }
 
   successMessage(action, selectedNodes) {
@@ -241,8 +276,8 @@ class Visualization extends React.Component {
     const getGraph = () => this.graphRef.current.getDecoratedComponentInstance()
     const graphLayoutFun = () => getGraph().directedLayout()
     const exportGraphFun = () => getGraph().exportGraph()
-    const zoomOutFun = () => getGraph().zoomOut()
-    const zoomInFun = () => getGraph().zoomIn()
+    const zoomOutFun = () => this.props.actions.zoomOut(getGraph())
+    const zoomInFun = () => this.props.actions.zoomIn(getGraph())
 
     const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading;
 
@@ -321,5 +356,7 @@ function mapState(state) {
     }
   };
 }
+
+const copyNodeElementId = 'copy-node'
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);

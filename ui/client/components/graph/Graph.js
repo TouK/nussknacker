@@ -7,8 +7,8 @@ import _ from 'lodash'
 import svgPanZoom from 'svg-pan-zoom'
 import {connect} from 'react-redux'
 import ActionsUtils from '../../actions/ActionsUtils'
-import NodeDetailsModal from './NodeDetailsModal'
-import EdgeDetailsModal from './EdgeDetailsModal'
+import NodeDetailsModal from './node-modal/NodeDetailsModal'
+import EdgeDetailsModal from './node-modal/EdgeDetailsModal'
 import {DropTarget} from 'react-dnd'
 import '../../stylesheets/graph.styl'
 import SVGUtils from '../../common/SVGUtils';
@@ -428,6 +428,10 @@ class Graph extends React.Component {
 
   changeNodeDetailsOnClick() {
     this.processGraphPaper.on('cell:pointerdblclick', (cellView, evt, x, y) => {
+      if (this.props.groupingState) {
+        return;
+      }
+
       const nodeData = cellView.model.attributes.nodeData;
       if (nodeData) {
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeData.id
@@ -449,7 +453,7 @@ class Graph extends React.Component {
 
         this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
 
-        if (evt.ctrlKey) {
+        if (evt.ctrlKey || evt.metaKey) {
           this.props.actions.expandSelection(nodeData.id)
         } else {
           this.props.actions.resetSelection(nodeData.id)
@@ -577,7 +581,7 @@ class Graph extends React.Component {
   render() {
     const toRender = (
       <div id="graphContainer" style={{padding: this.props.padding}}>
-        {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
+        {this.props.showNodeDetailsModal ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
         <div ref={this.espGraphRef} id={this.props.divId}></div>
       </div>
@@ -611,6 +615,7 @@ function mapState(state, props) {
     groupingState: state.graphReducer.groupingState,
     expandedGroups: state.ui.expandedGroups,
     layout: state.graphReducer.layout,
+    showNodeDetailsModal: state.ui.showNodeDetailsModal,
     ...commonState(state)
   };
 }

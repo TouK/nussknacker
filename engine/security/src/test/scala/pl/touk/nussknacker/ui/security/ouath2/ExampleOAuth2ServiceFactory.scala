@@ -29,6 +29,7 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
     clientApi.profileRequest(token).map{ prf =>
       LoggedUser(
         id = prf.uid,
+        username = prf.email,
         isAdmin = ExampleOAuth2ServiceFactory.isAdmin(prf.clearance.roles),
         categoryPermissions = ExampleOAuth2ServiceFactory.getPermissions(prf.clearance.roles, prf.clearance.portals),
         globalPermissions = ExampleOAuth2ServiceFactory.getGlobalPermissions(prf.clearance.roles)
@@ -84,7 +85,7 @@ object ExampleOAuth2ServiceFactory {
   def testConfig: OAuth2Configuration =
     OAuth2Configuration(
       AuthenticationMethod.OAuth2,
-      "ui/server/develConf/tests/oauth2-users.conf",
+      "ui/server/src/test/resources/oauth2-users.conf",
       URI.create("https://github.com/login/oauth/authorize"),
       "clientSecret",
       "clientId",

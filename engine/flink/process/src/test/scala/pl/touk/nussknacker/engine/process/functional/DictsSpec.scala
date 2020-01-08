@@ -4,8 +4,9 @@ import java.util.Date
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord}
 import pl.touk.nussknacker.engine.spel
 
 class DictsSpec extends FunSuite with Matchers {
@@ -31,7 +32,7 @@ class DictsSpec extends FunSuite with Matchers {
       SimpleRecord("1", 3, "fooId", new Date(0), enumValue = SimpleJavaEnum.ONE),
       SimpleRecord("1", 5, "invalidId", new Date(1000), enumValue = SimpleJavaEnum.TWO))
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     MockService.data should have size 1
   }

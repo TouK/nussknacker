@@ -3,8 +3,6 @@ package pl.touk.nussknacker.engine.management.streaming
 import java.util.{Collections, UUID}
 
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -13,21 +11,17 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.Await
 
-class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
+class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with VeryPatientScalaFutures {
 
   private val classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
   private val config = ConfigFactory.load()
     .withValue("processConfig.kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:1234"))
     .withValue("flinkConfig.classpath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
-
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(
-    timeout = Span(10, Seconds),
-    interval = Span(100, Millis)
-  )
 
   it should "run process in test mode" in {
     val processManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
@@ -53,7 +47,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Sc
       .id(processId)
       .exceptionHandler()
       .source("startProcess", "kafka-transaction")
-      .emptySink("endSend", "sendSms")
+      .emptySink("endSend", "sendSmsNotExist")
 
     val processManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
 
@@ -63,7 +57,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Sc
     val caught = intercept[IllegalArgumentException] {
       Await.result(processManager.test(ProcessName(processId), processData, TestData("terefere"), _ => null), patienceConfig.timeout)
     }
-    caught.getMessage shouldBe "Compilation errors: MissingParameters(Set(param1),$exceptionHandler)"
+    caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }
 
 }

@@ -41,6 +41,7 @@ object ProcessTestData {
   val otherExistingSinkFactory = "barSink"
   val existingServiceId = "barService"
   val otherExistingServiceId = "fooService"
+  val processorId = "fooProcessor"
 
   val existingStreamTransformer = "transformer"
   val otherExistingStreamTransformer = "otherTransformer"
@@ -52,6 +53,7 @@ object ProcessTestData {
         .withSinkFactory(existingSinkFactory)
         .withService(existingServiceId)
         .withService(otherExistingServiceId)
+        .withService(processorId, classOf[Void])
         .withCustomStreamTransformer(existingStreamTransformer, classOf[String],  CustomTransformerAdditionalData(Set("query1", "query2"),
           clearsContext = false, manyInputs = false))
         .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
@@ -99,9 +101,10 @@ object ProcessTestData {
       processingType = TestProcessingTypes.Streaming,
       processCategory = "Category",
       modificationDate = LocalDateTime.now(),
+      createdAt = LocalDateTime.now(),
+      createdBy = "user1",
       tags = List(),
-      currentlyDeployedAt = List(),
-      currentDeployment = None,
+      deployment = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None
@@ -120,15 +123,14 @@ object ProcessTestData {
       processingType = TestProcessingTypes.Streaming,
       processCategory = "Category",
       modificationDate = LocalDateTime.now(),
+      createdAt = LocalDateTime.now(),
+      createdBy = "user1",
       tags = List(),
-      currentlyDeployedAt = List(),
-      currentDeployment = None,
+      deployment = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None
     )
-
-
 
   import spel.Implicits._
 
@@ -186,7 +188,7 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", StreamMetaData(None, None, None), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List(), None)
+    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List(), None)
   }
 
   val sampleSubprocessOneOut = {

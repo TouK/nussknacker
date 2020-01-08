@@ -16,13 +16,13 @@ describe("Reducer suite", () => {
       oldGroupId: "acdc",
       newGroup: {
         id: "abcde",
-        ids: ["node0", "looo"]
+        ids: ["kafka-transaction", "filter"]
       }
     })
     expect(NodeUtils.getAllGroups(result.graphReducer.processToDisplay)).toEqual(
       [{
         id: "abcde",
-        nodes: ["node0", "looo"]
+        nodes: ["kafka-transaction", "filter"]
       }]
     )
   })
@@ -35,13 +35,13 @@ describe("Reducer suite", () => {
       {
         type: "DISPLAY_NODE_DETAILS",
         nodeToDisplay: {
-          id: "node3"
+          id: "paramService"
         }
       },
       {
         type: "DISPLAY_NODE_DETAILS",
         nodeToDisplay: {
-          id: "node2"
+          id: "sendSms"
         }
       },
       {
@@ -51,10 +51,10 @@ describe("Reducer suite", () => {
     expect(NodeUtils.getAllGroups(result.graphReducer.processToDisplay)).toEqual(
       [{
         id: "acdc",
-        nodes: ["node0", "looo"]
+        nodes: ["kafka-transaction", "filter"]
       },{
-        id: "node3-node2",
-        nodes: ["node3", "node2"]
+        id: "paramService-sendSms",
+        nodes: ["paramService", "sendSms"]
       }
       ]
     )
@@ -104,37 +104,37 @@ describe("Nodes added", () => {
     expect(_.find(result.graphReducer.layout, n => n.id === uniqueId).position).toEqual(position)
   })
 
-  it("should add single node with duplicated id", () => {
+  it("should add single node with id 1 bigger", () => {
     const result = reduceAll([
       {
         type: "NODE_ADDED",
-        node: {...node, id: "node0"},
+        node: {...node, id: "kafka-transaction"},
         position
       }
     ])
 
-    expect(NodeUtils.getNodeById("node4", result.graphReducer.processToDisplay)).toEqual({...node, id: "node4"})
+    expect(NodeUtils.getNodeById("kafka-transaction 1", result.graphReducer.processToDisplay)).toEqual({...node, id: "kafka-transaction 1"})
     expect(_.find(result.graphReducer.layout, n => n.id).position).toEqual(position)
   })
 
-  it("should add multiple nodes with duplicated ids", () => {
+  it("should add multiple nodes with copy suffix", () => {
     const result = reduceAll([{
       type: "NODES_WITH_EDGES_ADDED",
       nodesWithPositions: [
         {
-          node: {...node, id: "node0"},
+          node: {...node, id: "kafka-transaction"},
           position
         },
         {
-          node: {...node, id: "node0"},
+          node: {...node, id: "kafka-transaction"},
           position
         }
       ],
       edges: []
     }])
 
-    expect(NodeUtils.getNodeById("node4", result.graphReducer.processToDisplay)).toEqual({...node, id: "node4"})
-    expect(NodeUtils.getNodeById("node5", result.graphReducer.processToDisplay)).toEqual({...node, id: "node5"})
+    expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.processToDisplay)).toEqual({...node, id: "kafka-transaction (copy 1)"})
+    expect(NodeUtils.getNodeById("kafka-transaction (copy 2)", result.graphReducer.processToDisplay)).toEqual({...node, id: "kafka-transaction (copy 2)"})
   })
 
   it("should add nodes with edges", () => {
@@ -142,25 +142,25 @@ describe("Nodes added", () => {
       type: "NODES_WITH_EDGES_ADDED",
       nodesWithPositions: [
         {
-          node: {...node, id: "node4"},
+          node: {...node, id: "newNode"},
           position
         },
         {
-          node: {...node, id: "node0"},
+          node: {...node, id: "kafka-transaction"},
           position
         }
       ],
       edges: [
-        {from: "node4", to: "node0"}
+        {from: "newNode", to: "kafka-transaction"}
       ],
       processDefinitionData: {
         edgesForNodes: []
       }
     }])
 
-    expect(NodeUtils.getNodeById("node4", result.graphReducer.processToDisplay)).toEqual({...node, id: "node4"})
-    expect(NodeUtils.getNodeById("node5", result.graphReducer.processToDisplay)).toEqual({...node, id: "node5"})
-    expect(NodeUtils.getEdgeById("node4-node5", result.graphReducer.processToDisplay)).toEqual({from: "node4", to: "node5"})
+    expect(NodeUtils.getNodeById("newNode", result.graphReducer.processToDisplay)).toEqual({...node, id: "newNode"})
+    expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.processToDisplay)).toEqual({...node, id: "kafka-transaction (copy 1)"})
+    expect(NodeUtils.getEdgeById("newNode-kafka-transaction (copy 1)", result.graphReducer.processToDisplay)).toEqual({from: "newNode", to: "kafka-transaction (copy 1)"})
   })
 })
 
@@ -180,6 +180,8 @@ const baseProcessState = {
   "processType": "graph",
   "processCategory": "Category1",
   "modificationDate": "2017-02-14T11:16:56.686",
+  "createdAt": "2017-02-14T11:16:56.686",
+  "createdBy": "admin",
   "tags": [],
   "currentlyDeployedAt": [
     "test"
@@ -201,8 +203,8 @@ const baseProcessState = {
           {
             "id": "acdc",
             "nodes": [
-              "node0",
-              "looo"
+              "kafka-transaction",
+              "filter"
             ]
           }
         ]
@@ -211,7 +213,7 @@ const baseProcessState = {
     "nodes": [
       {
         "type": "Source",
-        "id": "node0",
+        "id": "kafka-transaction",
         "ref": {
           "typ": "kafka-transaction",
           "parameters": []
@@ -222,7 +224,7 @@ const baseProcessState = {
       },
       {
         "type": "Filter",
-        "id": "looo",
+        "id": "filter",
         "expression": {
           "language": "spel",
           "expression": "4 / (#input.length -5) >= 0"
@@ -230,7 +232,7 @@ const baseProcessState = {
       },
       {
         "type": "Enricher",
-        "id": "node3",
+        "id": "paramService",
         "service": {
           "id": "paramService",
           "parameters": [
@@ -247,7 +249,7 @@ const baseProcessState = {
       },
       {
         "type": "Sink",
-        "id": "node2",
+        "id": "sendSms",
         "ref": {
           "typ": "sendSms",
           "parameters": []
@@ -260,19 +262,19 @@ const baseProcessState = {
     ],
     "edges": [
       {
-        "from": "node0",
-        "to": "looo"
+        "from": "kafka-transaction",
+        "to": "filter"
       },
       {
-        "from": "looo",
-        "to": "node3",
+        "from": "filter",
+        "to": "paramService",
         "edgeType": {
           "type": "FilterTrue"
         }
       },
       {
-        "from": "node3",
-        "to": "node2"
+        "from": "paramService",
+        "to": "sendSms"
       }
     ],
     "validationResult": {

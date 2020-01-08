@@ -79,4 +79,8 @@ class FlinkQueryableClient(createClients: => List[QueryableStateClient]) extends
     fetchState[V](jobId, queryName, QueryableState.defaultKey)
   }
 
+  def shutdown(): Unit = {
+    clients.foreach(_.shutdownAndWait())
+  }
+
 }

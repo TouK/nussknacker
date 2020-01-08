@@ -20,13 +20,13 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
-import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
 import scala.util.{Failure, Success, Try}
 import PartSubGraphCompiler._
 import NodeTypingInfo.DefaultExpressionId
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class PartSubGraphCompiler(protected val classLoader: ClassLoader,
                            protected val expressionCompiler: ExpressionCompiler,
@@ -41,10 +41,8 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
   import syntax._
 
   //FIXME: should it be here?
-  private val expressionEvaluator = {
-    val globalVars = expressionConfig.globalVariables.mapValuesNow(_.obj)
-    ExpressionEvaluator.withoutLazyVals(globalVars, List())
-  }
+  private val expressionEvaluator =
+    ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(expressionConfig), List.empty)
 
   def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): CompilationResult[Unit] = {
     compile(n, ctx).map(_ => ())

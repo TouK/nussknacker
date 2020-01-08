@@ -3,14 +3,15 @@ package pl.touk.nussknacker.engine.util.service.query
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -59,13 +60,9 @@ object ExpressionServiceQuery {
     )
 
   //TODO: extract shared part with TestInfoProvider
-  private def expressionEvaluator(modelData: ModelData): ExpressionEvaluator = ExpressionEvaluator
-    .withoutLazyVals(
-      modelData
-        .configCreator
-        .expressionConfig(modelData.processConfig)
-        .globalProcessVariables
-        .mapValues(_.value), List())
+  private def expressionEvaluator(modelData: ModelData): ExpressionEvaluator = {
+    ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig), List.empty)
+  }
 
   private def expressionCompiler(modelData: ModelData) = {
     ExpressionCompiler.withoutOptimization(

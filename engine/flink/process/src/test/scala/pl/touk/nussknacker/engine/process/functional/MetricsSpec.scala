@@ -2,27 +2,20 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
-import org.apache.flink.shaded.testutils.org.jboss.netty.handler.codec.socks.SocksMessage.ProtocolVersion
-import org.scalatest.concurrent.Eventually
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, SinkForStrings, processInvoker}
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 
-class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndAfterEach {
+class MetricsSpec extends FlatSpec with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach {
 
   override protected def beforeEach(): Unit = {
     TestReporter.reset()
   }
-
-  override implicit val patienceConfig = PatienceConfig(
-    timeout = Span(10, Seconds),
-    interval = Span(100, Millis)
-  )
 
   it should "measure time for service" in {
 
@@ -125,6 +118,6 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
   }
 
   private def invoke(process: EspProcess, data: List[SimpleRecord]) = {
-    processInvoker.invoke(process, data, ProcessVersion.empty, 1, TestReporterUtil.configWithTestMetrics())
+    processInvoker.invokeWithSampleData(process, data, TestReporterUtil.configWithTestMetrics())
   }
 }

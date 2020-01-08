@@ -1,15 +1,16 @@
-import { createStore, applyMiddleware } from 'redux';
-import { composeWithDevTools } from 'redux-devtools-extension';
+import {applyMiddleware, createStore} from 'redux';
+import {composeWithDevTools} from 'redux-devtools-extension';
 import thunk from 'redux-thunk';
 
-import { reducer } from '../reducers';
+import {reducer} from '../reducers';
+import {analyticsMiddleware} from "../analytics/AnalyticsMiddleware";
 
 export default function configureStore() {
 
   const store = createStore(
     reducer,
     composeWithDevTools(
-      applyMiddleware(thunk)
+      applyMiddleware(analyticsMiddleware, thunk)
     ),
   );
 

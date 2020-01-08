@@ -25,19 +25,22 @@ public class ExpressionConfig implements Serializable {
 
     private final Map<String, WithCategories<DictDefinition>> dictionaries;
 
+    private final boolean hideMetaVariable;
+
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports) {
-        this(globalProcessVariables, globalImports, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap());
+        this(globalProcessVariables, globalImports, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
                             LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
-                            Map<String, WithCategories<DictDefinition>> dictionaries) {
+                            Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable) {
         this.globalProcessVariables = globalProcessVariables;
         this.globalImports = globalImports;
         this.languages = languages;
         this.optimizeCompilation = optimizeCompilation;
         this.strictTypeChecking = strictTypeChecking;
         this.dictionaries = dictionaries;
+        this.hideMetaVariable = hideMetaVariable;
     }
 
     public Map<String, WithCategories<Object>> getGlobalProcessVariables() {
@@ -64,6 +67,10 @@ public class ExpressionConfig implements Serializable {
         return dictionaries;
     }
 
+    public boolean isHideMetaVariable() {
+        return hideMetaVariable;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -74,12 +81,13 @@ public class ExpressionConfig implements Serializable {
                 Objects.equals(globalProcessVariables, that.globalProcessVariables) &&
                 Objects.equals(globalImports, that.globalImports) &&
                 Objects.equals(languages, that.languages) &&
-                Objects.equals(dictionaries, that.dictionaries);
+                Objects.equals(dictionaries, that.dictionaries) &&
+                Objects.equals(hideMetaVariable, that.hideMetaVariable);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalProcessVariables, globalImports, languages, optimizeCompilation, strictTypeChecking, dictionaries);
+        return Objects.hash(globalProcessVariables, globalImports, languages, optimizeCompilation, strictTypeChecking, dictionaries, hideMetaVariable);
     }
 
 }

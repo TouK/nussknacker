@@ -63,7 +63,7 @@ object KafkaZookeeperServer {
 }
 
 case class KafkaZookeeperServer(zooKeeperServer: NIOServerCnxnFactory, kafkaServer: KafkaServer, zkAddress: String, kafkaAddress: String) {
-  def shutdown() = {
+  def shutdown(): Unit = {
     kafkaServer.shutdown()
     zooKeeperServer.shutdown()
   }

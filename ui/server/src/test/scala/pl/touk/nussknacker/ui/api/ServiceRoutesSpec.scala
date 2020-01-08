@@ -22,7 +22,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
 
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 
-  private implicit val user = LoggedUser("admin", category1Deploy)
+  private implicit val user = LoggedUser("1", "admin", category1Deploy)
   private val modelData = FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config)
   private val serviceRoutes = new ServiceRoutes(Map(TestProcessingTypes.Streaming -> modelData))
 
@@ -93,15 +93,15 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
     }
   }
   test("prevent unauthorized user service invocation") {
-    val user = LoggedUser("nonAdmin")
+    val user = LoggedUser("1", "nonAdmin")
     serviceRoutes.canUserInvokeService(user, "enricher", modelData) shouldBe false
   }
   test("user with category invoke service") {
-    val user = LoggedUser("nonAdmin", category1Deploy)
+    val user = LoggedUser("1", "nonAdmin", category1Deploy)
     serviceRoutes.canUserInvokeService(user, "enricher", modelData) shouldBe true
   }
   test("canUserInvokeService always pass unexciting service") {
-    val user = LoggedUser("nonAdmin", category1Deploy)
+    val user = LoggedUser("1", "nonAdmin", category1Deploy)
     serviceRoutes.canUserInvokeService(user, "unexcitingService", modelData) shouldBe true
   }
 

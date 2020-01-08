@@ -7,7 +7,7 @@ import ProcessUtils from '../../common/ProcessUtils';
 import {v4 as uuid4} from "uuid";
 import Errors from "./Errors"
 import Warnings from "./Warnings"
-import ValidTip from "./ValidTip"
+import ValidTips from "./ValidTips"
 
 export class Tips extends Component {
 
@@ -32,7 +32,9 @@ export class Tips extends Component {
       <div id="tipsPanel" className={this.props.isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
         <Scrollbars renderThumbVertical={props => <div key={uuid4()} {...props} className="thumbVertical"/>}
                     hideTracksWhenNotNeeded={true}>
-          {ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess) && <ValidTip grouping={grouping} testing={testing}/>}
+          {<ValidTips grouping={grouping}
+                      testing={testing}
+                      hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}/>}
           {!ProcessUtils.hasNoErrors(currentProcess) && <Errors errors={errors}
                                                                 showDetails={this.showDetails}
                                                                 currentProcess={currentProcess}/>}

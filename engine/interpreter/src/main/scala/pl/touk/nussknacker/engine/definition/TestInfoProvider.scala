@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.Source
-import pl.touk.nussknacker.engine.variables.MetaVariables
+import pl.touk.nussknacker.engine.variables.{GlobalVariablesPreparer, MetaVariables}
 import shapeless.syntax.typeable._
 
 trait TestInfoProvider {
@@ -25,8 +25,10 @@ trait TestInfoProvider {
 
 class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
 
-  private lazy val evaluator = ExpressionEvaluator
-    .withoutLazyVals(modelData.configCreator.expressionConfig(modelData.processConfig).globalProcessVariables.mapValues(_.value), List())
+  private lazy val globalVariablesPreparer =
+    GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig)
+
+  private lazy val evaluator = ExpressionEvaluator.withoutLazyVals(globalVariablesPreparer, List.empty)
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
     modelData.dictServices.dictRegistry,
@@ -63,9 +65,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
   }
 
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext = {
-    val globalTypes = modelData.processDefinition.expressionConfig.globalVariables.mapValues(_.returnType)
-    val typesWithMeta = MetaVariables.withType(globalTypes)
-    ValidationContext(Map.empty, typesWithMeta)
+    val globalTypes = globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.typ)
+    ValidationContext(Map.empty, globalTypes)
   }
 
   private def prepareSourceParams(definition: ObjectWithMethodDef, source: Source)

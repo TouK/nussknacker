@@ -7,8 +7,8 @@ import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs";
 import HttpService from "../../http/HttpService";
 import * as JsonUtils from "../../common/JsonUtils";
-import NodeDetailsContent from "../graph/NodeDetailsContent";
-import EdgeDetailsContent from "../graph/EdgeDetailsContent";
+import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent";
+import EdgeDetailsContent from "../graph/node-modal/EdgeDetailsContent";
 import Scrollbars from "react-custom-scrollbars";
 import DateUtils from "../../common/DateUtils";
 
@@ -151,6 +151,7 @@ class CompareVersionsDialog extends React.Component {
   printNode(node, pathsToMark) {
     return node ? (<NodeDetailsContent isEditMode={false}
                                        showValidation={false}
+                                       showSwitch={false}
                                        node={node}
                                        pathsToMark={pathsToMark}
                                        onChange={() => {}} />) :
@@ -161,6 +162,7 @@ class CompareVersionsDialog extends React.Component {
     return edge ? (<EdgeDetailsContent edge={edge}
                                        readOnly={true}
                                        showValidation={false}
+                                       showSwitch={false}
                                        changeEdgeTypeValue={() => {}}
                                        updateEdgeProp={() => {}}
                                        pathsToMark={pathsToMark} />) :
@@ -170,6 +172,7 @@ class CompareVersionsDialog extends React.Component {
   printProperties(property, pathsToMark) {
     return property ? (<NodeDetailsContent isEditMode={false}
                                            showValidation={false}
+                                           showSwitch={false}
                                            node={property}
                                            pathsToMark={pathsToMark}
                                            onChange={() => {}} />) :

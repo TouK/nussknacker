@@ -61,7 +61,7 @@ export class ProcessAttachments_ extends React.Component {
         <div className="add-attachments">
           <Dropzone onDrop={this.addAttachment}>
             {({getRootProps, getInputProps}) => (
-              <div {...getRootProps()}>
+              <div className="attachments-container" {...getRootProps()}>
                 <div className={"attachment-drop-zone attachment-button"} dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}} />
                 <div className="attachment-button-text"><span>drop or choose a file</span></div>
                 <input {...getInputProps()} />

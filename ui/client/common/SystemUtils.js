@@ -1,7 +1,9 @@
-import api from "../api";
+import api from "../api"
+import {v4 as uuid4} from "uuid"
 
 const ACCESS_TOKEN_NAMESPACE = "accessToken"
 const BEARER_CASE = 'Bearer'
+const userId = "userId"
 
 class SystemUtils {
   authorizationToken = () => {
@@ -25,8 +27,8 @@ class SystemUtils {
 
     api.interceptors.request.use(function (config) {
       delete config['headers']['Authorization']
-      return config;
-    });
+      return config
+    })
   }
 
   setAuthorizationToken = (token) => {
@@ -35,8 +37,15 @@ class SystemUtils {
 
     api.interceptors.request.use(function (config) {
       config['headers']['Authorization'] = self.authorizationToken()
-      return config;
-    });
+      return config
+    })
+  }
+
+  getUserId() {
+    if (_.isEmpty(localStorage.getItem(userId))) {
+      localStorage.setItem(userId, uuid4())
+    }
+    return localStorage.getItem(userId)
   }
 }
 

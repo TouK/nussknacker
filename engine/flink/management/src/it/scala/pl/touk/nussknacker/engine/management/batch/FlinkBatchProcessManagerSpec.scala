@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management.batch
 import java.nio.file.Files
 
 import org.apache.flink.runtime.jobgraph.JobStatus
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
@@ -13,7 +12,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
-class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with BatchDockerTest {
+class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with BatchDockerTest {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

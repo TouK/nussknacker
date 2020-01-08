@@ -6,17 +6,18 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
-import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator
-import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class SampleRecommendationProcess extends FlatSpec with BeforeAndAfterAll with Matchers {
 
   import spel.Implicits._
 
-  private val env: StoppableExecutionEnvironment = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
+  private val env: StoppableExecutionEnvironment = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
 
-  private val creator = new DemoProcessConfigCreator
+  private val creator = new UnitTestsProcessConfigCreator
 
   override protected def afterAll(): Unit = {
     super.afterAll()
@@ -35,7 +36,7 @@ class SampleRecommendationProcess extends FlatSpec with BeforeAndAfterAll with M
     val config = ConfigFactory.load()
 
 
-    new FlinkStreamingProcessCompiler(creator, config).createFlinkProcessRegistrar()
+    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
     val result = env.execute(process.id)

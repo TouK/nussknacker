@@ -4,14 +4,14 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
-import pl.touk.nussknacker.engine.process.KeyValueTestHelper.MockService
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
@@ -26,7 +26,6 @@ class FlinkStreamingProcessRegistrarKafkaSpec
     with KafkaSpec
     with Matchers
     with VeryPatientScalaFutures
-    with Eventually
     with LazyLogging {
 
   import spel.Implicits._
@@ -49,9 +48,8 @@ class FlinkStreamingProcessRegistrarKafkaSpec
     )
 
     Future {
-      KeyValueTestHelper.processInvoker.invokeWithKafka(
-        process,
-        KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
+      ProcessTestHelpers.processInvoker.invokeWithKafka(
+        process, KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
       )
     }
 
@@ -78,7 +76,7 @@ class FlinkStreamingProcessRegistrarKafkaSpec
 
     def checkResultIsCorrect() = {
       MockService.data should have length outputCount
-      MockService.data.toArray() shouldEqual (1 to outputCount).map(_ => threshold).toArray
+      MockService.data shouldEqual (1 to outputCount).map(_ => threshold).toList
     }
 
     eventually {

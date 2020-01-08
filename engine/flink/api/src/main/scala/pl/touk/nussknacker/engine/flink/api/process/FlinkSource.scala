@@ -25,9 +25,9 @@ trait FlinkSource[T] extends Source[T] {
 
 //Serializable to make Flink happy, e.g. kafkaMocks.MockSourceFactory won't work properly otherwise
 abstract class FlinkSourceFactory[T: TypeInformation] extends SourceFactory[T] with Serializable {
-  def clazz = typeInformation.getTypeClass
+  def clazz: Class[T] = typeInformation.getTypeClass
 
-  def typeInformation = implicitly[TypeInformation[T]]
+  def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
   def timestampAssigner : Option[TimestampAssigner[T]]
 

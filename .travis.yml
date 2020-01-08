@@ -32,9 +32,10 @@ env:
     - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${FORMATTED_DATE}-${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
     - DOCKER_SOURCE_TAG=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}:${BUILD_VERSION}`
     - DOCKER_REPOSITORY=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}`
-    - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true"`
+    - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true" || echo "false"`
     #We do cross build in tests only for staging/master
-    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] ) && echo "true"`
+    - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true" || echo "false"`
+    - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true" || echo "false"`
 
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
@@ -64,14 +65,14 @@ jobs:
       name: "Backend tests"
       script: ./ciBackendTest.sh
       after_success: if [ "$COVERAGE" = true ]; then ./ciRunSbt.sh coveralls; else echo "Skipping coveralls"; fi
-    - name: "UI slow tests"
+    - name: "Slow tests"
       script: ./ciRunSbt.sh clean ui/slow:test
-    - name: "Management tests"
-      script: ./ciRunSbt.sh clean management/it:test
+    - name: "Integration tests"
+      script: ./ciRunSbt.sh clean management/it:test engineStandalone/it:test
     - name: "Cross Scala compile"
-      script: if [ "$CROSS_BUILD" = true ]; then echo "Skipping. Cross compilation executed in other jobs"; else CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile; fi
-    - name: "EngineStandalone tests"
-      script: ./ciRunSbt.sh clean engineStandalone/it:test
+      script: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
+      # We can't use env(CROSS_BUILD) here because of some bug in travis - there is raw, not evaluated script body in env(CROSS_BUILD)
+      if: type = pull_request
     - name: "Frontend tests"
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script: ./ciFrontendTest.sh
@@ -83,11 +84,11 @@ jobs:
       before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
-        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal --add-dev-model=$ADD_DEV_MODEL
         - cd ./demo/docker && echo "NUSSKNACKER_VERSION=$BUILD_VERSION" > .env && ./testQuickstart.sh
         - docker push ${DOCKER_SOURCE_TAG}
-        - docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:latest
-        - docker push ${DOCKER_REPOSITORY}:latest
+        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker push ${DOCKER_REPOSITORY}:latest; fi
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:staging-latest; fi

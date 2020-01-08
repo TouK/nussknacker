@@ -10,8 +10,8 @@ class ProcessUtils {
   }
 
   canExport = (state) => {
-      const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
-      return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
+    const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
+    return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
   }
 
   //fixme maybe return hasErrors flag from backend?
@@ -41,14 +41,20 @@ class ProcessUtils {
     return _.isEmpty(result.processPropertiesErrors)
   }
 
-  findAvailableVariables = (nodeId, process, processDefinition, fieldName) => {
+  findAvailableVariables = (nodeId, process, processDefinition, fieldName, processCategory) => {
+    const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
     const variablesFromValidation = _.get(process.validationResult, "variableTypes." + nodeId)
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const additionalVariablesForParam = nodeId ? this._additionalVariablesForParameter(nodeId, process, processDefinition, fieldName) : {}
-    return {
-      ...variablesForNode,
-      ...additionalVariablesForParam
-    };
+    const variables = {...variablesForNode, ...additionalVariablesForParam}
+
+    //Filtering by category - we show variables only with the same category as process, removing these which are in blackList
+    return _.pickBy(variables, (va, key) => _.indexOf(globalVariablesWithoutProcessCategory, key) === -1)
+  }
+
+  //It's not pretty but works.. This should be done at backend with properly category hierarchy
+  _findGlobalVariablesWithoutProcessCategory = (globalVariables, processCategory) => {
+    return _.keys(_.pickBy(globalVariables, variable => _.indexOf(variable.categories, processCategory) === -1))
   }
 
   _additionalVariablesForParameter = (nodeId, process, processDefinition, fieldName) => {
@@ -60,11 +66,10 @@ class ProcessUtils {
 
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
   _findVariablesBasedOnGraph = (nodeId, process, processDefinition) => {
-    const filteredGlobalVariables = _.pickBy(processDefinition.globalVariables, function(variable) {
-      return variable.returnType !== null
+    const filteredGlobalVariables = _.pickBy(processDefinition.globalVariables, variable => variable.returnType !== null)
+    const globalVariables = _.mapValues(filteredGlobalVariables, (v) => {
+      return v.returnType
     })
-
-    const globalVariables = _.mapValues(filteredGlobalVariables, (v) => {return v.returnType})
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
     return {
       ...globalVariables,
@@ -81,7 +86,9 @@ class ProcessUtils {
   }
 
   _listOfObjectsToObject = (list) => {
-    return _.reduce(list, (memo, current) => { return {...memo, ...current}},  {})
+    return _.reduce(list, (memo, current) => {
+      return {...memo, ...current}
+    }, {})
   }
 
   _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
@@ -93,7 +100,7 @@ class ProcessUtils {
         return [{"input": clazzName}]
       }
       case "SubprocessInputDefinition": {
-        return node.parameters.map(param => ({[param.name]: param.typ }))
+        return node.parameters.map(param => ({[param.name]: param.typ}))
       }
       case "Enricher": {
         return [{[node.output]: clazzName}]
@@ -102,7 +109,7 @@ class ProcessUtils {
       case "Join": {
         const outputVariableName = node.outputVar
         const outputClazz = clazzName
-        return _.isEmpty(outputClazz) ? [] : [ {[outputVariableName]: outputClazz} ]
+        return _.isEmpty(outputClazz) ? [] : [{[outputVariableName]: outputClazz}]
       }
       case "VariableBuilder": {
         return [{[node.varName]: {refClazzName: "java.lang.Object"}}]
@@ -178,7 +185,7 @@ class ProcessUtils {
     this.findNodeDefinitionId(node) || node.type || null
 
   findNodeConfigName = (node) => {
-      return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
+    return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
   }
 
   humanReadableType = (refClazzOrName) => {

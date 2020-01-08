@@ -2,16 +2,16 @@ package pl.touk.nussknacker.engine.util.service.query
 
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ServiceQuerySpec extends FunSuite with Matchers with ScalaFutures {
+class ServiceQuerySpec extends FunSuite with Matchers with PatientScalaFutures {
 
   import QueryServiceTesting._
   import ServiceQuerySpec._

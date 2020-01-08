@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import {connect} from "react-redux";
-import {Panel, Tooltip} from "react-bootstrap";
+import {Panel} from "react-bootstrap";
 import {Scrollbars} from 'react-custom-scrollbars';
 import history from "../../history"
 import cn from "classnames";
@@ -21,7 +21,8 @@ import Archive from "../../containers/Archive";
 import SpinnerWrapper from "../SpinnerWrapper";
 import PropTypes from 'prop-types';
 import Dropzone from 'react-dropzone'
-import Metrics from "../../containers/Metrics";
+import {events} from "../../analytics/TrackingEvents"
+import ProcessStateUtils from "../../common/ProcessStateUtils";
 
 class UserRightPanel extends Component {
 
@@ -136,17 +137,47 @@ class UserRightPanel extends Component {
         ]
       }),
       {
-      panelName: "Process",
-      buttons: [
-        {name: "save" + (!conf.saveDisabled ? "*" : ""), visible: this.props.capabilities.write, disabled: conf.saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
-        {name: "migrate", visible: this.props.capabilities.deploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !conf.deployPossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
-        {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
-        {name: "import", visible: this.props.capabilities.write, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
-        {name: "JSON", disabled: !this.props.canExport, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
-        {name: "PDF", disabled: !this.props.canExport, onClick: this.exportProcessToPdf, icon: InlinedSvgs.pdf},
-        {name: "archive", onClick: this.archiveProcess, disabled: this.isRunning(), icon: 'archive.svg', visible: this.props.capabilities.write}
-      ]
-    },
+        panelName: "Process",
+        buttons: [
+          {
+            name: "save" + (!conf.saveDisabled ? "*" : ""),
+            visible: this.props.capabilities.write,
+            disabled: conf.saveDisabled,
+            onClick: this.save,
+            icon: InlinedSvgs.buttonSave
+          },
+          {
+            name: "migrate",
+            visible: this.props.capabilities.deploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment),
+            disabled: !conf.deployPossible,
+            onClick: this.migrate,
+            icon: InlinedSvgs.buttonMigrate
+          },
+          {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
+          {
+            name: "import",
+            visible: this.props.capabilities.write,
+            disabled: false,
+            onClick: (_) => this.props.actions.reportEvent({
+              category: events.categories.rightPanel,
+              action: events.actions.buttonClick,
+              name: "import"
+            }),
+            onDrop: this.importFiles,
+            icon: InlinedSvgs.buttonImport,
+            dropzone: true
+          },
+          {name: "JSON", disabled: !this.props.canExport, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
+          {name: "PDF", disabled: !this.props.canExport, onClick: this.exportProcessToPdf, icon: InlinedSvgs.pdf},
+          {
+            name: "archive",
+            onClick: this.archiveProcess,
+            disabled: this.isRunning(),
+            icon: 'archive.svg',
+            visible: this.props.capabilities.write
+          }
+        ]
+      },
       {
         panelName: "Edit",
         buttons: [
@@ -165,7 +196,7 @@ class UserRightPanel extends Component {
           },
           {
             name: "layout",
-            onClick: this.props.graphLayoutFunction,
+            onClick: () => this.props.actions.layout(this.props.graphLayoutFunction),
             icon: InlinedSvgs.buttonLayout,
             visible: this.props.capabilities.write
           },
@@ -178,28 +209,40 @@ class UserRightPanel extends Component {
           },
           {
             name: "copy",
-            onClick: this.props.selectionActions.copy,
+            onClick: (event) => this.props.actions.copySelection(
+              () => this.props.selectionActions.copy(event),
+              {category: events.categories.rightPanel, action: events.actions.buttonClick}
+            ),
             icon: 'copy.svg',
             visible: this.props.capabilities.write,
             disabled: !this.props.selectionActions.canCopy
           },
           {
             name: "cut",
-            onClick: this.props.selectionActions.cut,
+            onClick: (event) => this.props.actions.cutSelection(
+              () => this.props.selectionActions.cut(event),
+              {category: events.categories.rightPanel, action: events.actions.buttonClick}
+            ),
             icon: 'cut.svg',
             visible: this.props.capabilities.write,
             disabled: !this.props.selectionActions.canCut
           },
           {
             name: "delete",
-            onClick: this.deleteSelection,
+            onClick: (event) => this.props.actions.deleteSelection(
+              this.props.selectionState,
+              {category: events.categories.rightPanel, action: events.actions.buttonClick}
+            ),
             icon: 'delete.svg',
             visible: this.props.capabilities.write,
             disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
           },
           {
             name: "paste",
-            onClick: this.props.selectionActions.paste,
+            onClick: (event) => this.props.actions.pasteSelection(
+              () => this.props.selectionActions.paste(event),
+              {category: events.categories.rightPanel, action: events.actions.buttonClick}
+            ),
             icon: 'paste.svg',
             visible: this.props.capabilities.write,
             disabled: !this.props.selectionActions.canPaste
@@ -210,23 +253,71 @@ class UserRightPanel extends Component {
       (this.props.isSubprocess ? null : {
         panelName: "Test",
         buttons: [
-          {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
-            disabled: !this.props.testCapabilities.canBeTested, visible: this.props.capabilities.write},
-          {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails, visible: this.props.capabilities.write},
-          {name: "generate", onClick: this.generateData, icon: 'generate.svg',
-            disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData, visible: this.props.capabilities.write},
+          {
+            name: "from file",
+            onDrop: this.testProcess,
+            onClick: (_) => this.props.actions.reportEvent({
+              category: events.categories.rightPanel,
+              action: events.actions.buttonClick,
+              name: "from file"
+            }),
+            icon: InlinedSvgs.buttonFromFile,
+            dropzone: true,
+            disabled: !this.props.testCapabilities.canBeTested,
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "hide",
+            onClick: this.hideRunProcessDetails,
+            icon: InlinedSvgs.buttonHide,
+            disabled: !this.props.showRunProcessDetails,
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "generate",
+            onClick: this.generateData,
+            icon: 'generate.svg',
+            disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData,
+            visible: this.props.capabilities.write
+          },
 //TODO: counts and metrics should not be visible in archived process
-          {name: "counts", onClick: this.fetchProcessCounts, icon: 'counts.svg',
-            visible: this.props.featuresSettings.counts && !this.props.isSubprocess},
+          {
+            name: "counts", onClick: this.fetchProcessCounts, icon: 'counts.svg',
+            visible: this.props.featuresSettings.counts && !this.props.isSubprocess
+          },
         ]
       }),
       {
         panelName: "Group",
         buttons: [
-          {name: "start", onClick: this.props.actions.startGrouping, icon: InlinedSvgs.buttonGroup, disabled: this.props.groupingState != null, visible: this.props.capabilities.write},
-          {name: "finish", onClick: this.props.actions.finishGrouping, icon: InlinedSvgs.buttonGroup, disabled: (this.props.groupingState || []).length <= 1, visible: this.props.capabilities.write},
-          {name: "cancel", onClick: this.props.actions.cancelGrouping, icon: InlinedSvgs.buttonUngroup, disabled: !this.props.groupingState, visible: this.props.capabilities.write },
-          {name: "ungroup", onClick: this.ungroup, icon: InlinedSvgs.buttonUngroup, disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay), visible: this.props.capabilities.write }
+          {
+            name: "start",
+            onClick: this.props.actions.startGrouping,
+            icon: InlinedSvgs.buttonGroup,
+            disabled: this.props.groupingState != null,
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "finish",
+            onClick: this.props.actions.finishGrouping,
+            icon: InlinedSvgs.buttonGroup,
+            disabled: (this.props.groupingState || []).length <= 1,
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "cancel",
+            onClick: this.props.actions.cancelGrouping,
+            icon: InlinedSvgs.buttonUngroup,
+            disabled: !this.props.groupingState,
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "ungroup",
+            onClick: (event) => this.props.actions.ungroup(this.props.nodeToDisplay),
+            icon: InlinedSvgs.buttonUngroup,
+            disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
+            visible: this.props.capabilities.write
+          }
         ]
       }
     ];
@@ -243,19 +334,23 @@ class UserRightPanel extends Component {
     return (
         panelButton.dropzone ?
         <Dropzone
-            key={idx}
-            title={toolTip}
-            disableClick={panelButton.disabled === true}
-            onDrop={panelButton.onClick}
-            onMouseOver={panelButton.onMouseOver}
-            onMouseOut={panelButton.onMouseOut}
+          key={idx}
+          title={toolTip}
+          disableClick={panelButton.disabled === true}
+          onDrop={panelButton.onDrop}
+          onMouseOver={panelButton.onMouseOver}
+          onMouseOut={panelButton.onMouseOut}
         >
           {({getRootProps, getInputProps}) => (
-              <div {...getRootProps({className: "dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")})} >
-                {svgDiv}
-                <input {...getInputProps()} />
-                <div>{panelButton.name}</div>
-              </div>
+            <div {
+                   ...getRootProps({
+                     className: "dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : ""),
+                     onClick: panelButton.onClick
+                   })} >
+              {svgDiv}
+              <input {...getInputProps()} />
+              <div>{panelButton.name}</div>
+            </div>
           )}
         </Dropzone>
         :
@@ -275,10 +370,14 @@ class UserRightPanel extends Component {
     )
   }
 
-  isRunning = () => this.props.fetchedProcessDetails && (this.props.fetchedProcessDetails.currentlyDeployedAt || []).length > 0
+  isRunning = () => ProcessStateUtils.isDeployed(this.props.fetchedProcessDetails)
 
   showProperties = () => {
-    this.props.actions.displayModalNodeDetails(this.props.processToDisplay.properties)
+    this.props.actions.displayModalNodeDetails(
+        this.props.processToDisplay.properties,
+        undefined,
+        {category: events.categories.rightPanel, name: "properties"}
+      )
   }
 
   save = () => {
@@ -286,9 +385,16 @@ class UserRightPanel extends Component {
   }
 
   migrate = () => {
-    this.props.actions.toggleConfirmDialog(true, DialogMessages.migrate(this.processId(), this.props.featuresSettings.remoteEnvironment.targetEnvironmentId), () => {
-      HttpService.migrateProcess(this.processId(), this.versionId() )
-    })
+    this.props.actions.toggleConfirmDialog(
+      true,
+      DialogMessages.migrate(this.processId(), this.props.featuresSettings.remoteEnvironment.targetEnvironmentId),
+      () => {
+        HttpService.migrateProcess(this.processId(), this.versionId())
+      },
+      "Yes",
+      "No",
+      {category: events.categories.rightPanel, action: events.actions.buttonClick, name: "migrate"}
+    )
   }
 
   deploy = () => {
@@ -314,23 +420,29 @@ class UserRightPanel extends Component {
   versionId = () => this.props.fetchedProcessDetails.processVersionId
 
   showMetrics = () => {
-    history.push(Metrics.pathForProcess(this.processId()))
+    this.props.actions.showMetrics(this.processId())
   }
 
   exportProcess = () => {
-    HttpService.exportProcess(this.props.processToDisplay, this.versionId())
+    this.props.actions.exportProcessToJSON(this.props.processToDisplay, this.versionId())
   }
 
   exportProcessToPdf = () => {
-    const data = this.props.exportGraph()
-    HttpService.exportProcessToPdf(this.processId(), this.versionId(), data, this.props.businessView)
+    this.props.actions.exportProcessToPdf(this.processId(), this.versionId(), this.props.exportGraph(), this.props.businessView)
   }
 
   archiveProcess = () => {
-    if(!this.isRunning()){
-      this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
+    if (!this.isRunning()) {
+      this.props.actions.toggleConfirmDialog(
+        true,
+        DialogMessages.archiveProcess(this.processId()),
+        () => {
           return HttpService.archiveProcess(this.processId()).then((response) => history.push(Archive.path))
-      })
+        },
+        "Yes",
+        "No",
+        {category: events.categories.rightPanel, action: events.actions.buttonClick, name: "archive"}
+      )
     }
   }
 
@@ -346,10 +458,8 @@ class UserRightPanel extends Component {
     this.props.actions.toggleModalDialog(Dialogs.types.calculateCounts)
   }
 
-  importProcess = (files) => {
-    files.forEach((file)=>
-      this.props.actions.importProcess(this.processId(), file)
-    );
+  importFiles = (files) => {
+    this.props.actions.importFiles(files, this.processId())
   }
 
   testProcess = (files) => {
@@ -365,22 +475,18 @@ class UserRightPanel extends Component {
   undo = () => {
     //this `if` should be closer to reducer?
     if (this.props.keyActionsAvailable) {
-      this.props.undoRedoActions.undo()
+      this.props.undoRedoActions.undo(
+        {category: events.categories.rightPanel, action: events.actions.buttonClick}
+      )
     }
   }
 
   redo = () => {
     if (this.props.keyActionsAvailable) {
-      this.props.undoRedoActions.redo()
+      this.props.undoRedoActions.redo(
+        {category: events.categories.rightPanel, action: events.actions.buttonClick}
+      )
     }
-  }
-
-  deleteSelection = () => {
-    this.props.actions.deleteNodes(this.props.selectionState)
-  }
-
-  ungroup = () => {
-    this.props.actions.ungroup(this.props.nodeToDisplay)
   }
 
   hasOneVersion = () => _.get(this.props.fetchedProcessDetails, 'history', []).length <= 1

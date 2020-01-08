@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -18,13 +18,11 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 
 object ModelData extends LazyLogging {
 
-  val modelConfigResource = "model.conf"
-
   def apply(processConfig: Config, classpath: List[URL]) : ModelData = {
     //TODO: ability to generate additional classpath?
     val jarClassLoader = ModelClassLoader(classpath)
     logger.debug("Loading model data from classpath: " + classpath)
-    ClassLoaderModelData(processConfig, jarClassLoader)
+    ClassLoaderModelData(ModelConfigToLoad(processConfig), jarClassLoader)
   }
 
   //TODO: remove jarPath
@@ -35,7 +33,7 @@ object ModelData extends LazyLogging {
 }
 
 
-case class ClassLoaderModelData(processConfigFromConfiguration: Config, modelClassLoader: ModelClassLoader)
+case class ClassLoaderModelData(processConfigFromConfiguration: ModelConfigToLoad, modelClassLoader: ModelClassLoader)
   extends ModelData {
 
   //this is not lazy, to be able to detect if creator can be created...
@@ -59,7 +57,7 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   def configCreator: ProcessConfigCreator
 
-  private lazy val processWithObjectsDefinition =
+  lazy val processWithObjectsDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     withThisAsContextClassLoader {
       ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig)
     }
@@ -80,25 +78,8 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   def modelClassLoader : ModelClassLoader
 
-  def processConfigFromConfiguration: Config
+  def processConfigFromConfiguration: ModelConfigToLoad
 
-  protected def modelConfigResource: String = ModelData.modelConfigResource
+  override lazy val processConfig: Config = processConfigFromConfiguration.loadConfig(modelClassLoader.classLoader)
 
-  override val processConfig: Config = {
-    /*
-      We want to be able to embed config in model jar, to avoid excessive config files
-      For most cases using reference.conf would work, however there are subtle problems with substitution:
-      https://github.com/lightbend/config#note-about-resolving-substitutions-in-referenceconf-and-applicationconf
-      https://github.com/lightbend/config/issues/167
-      By using separate model.conf we can define configs there like:
-      service1Url: ${baseUrl}/service1
-      and have baseUrl taken from application config
-     */
-    val configFallbackFromModel = ConfigFactory.parseResources(modelClassLoader.classLoader, modelConfigResource)
-    processConfigFromConfiguration
-      .withFallback(configFallbackFromModel)
-      //this is for reference.conf resources from model jar
-      .withFallback(ConfigFactory.load(modelClassLoader.classLoader))
-      .resolve()
-  }
 }

@@ -3,16 +3,17 @@ package pl.touk.nussknacker.engine.process
 import java.util.Date
 
 import cats.data.NonEmptyList
-import org.scalatest.concurrent.Eventually
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.test.PatientScalaFutures
 
-class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
+class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with PatientScalaFutures {
 
   import spel.Implicits._
 
@@ -35,7 +36,7 @@ class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Eve
       SimpleRecord("1", 23, "d", new Date(5000), Option(4))
     )
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     eventually {
       MockService.data.toSet shouldBe Set("a", "c", "d")
@@ -56,7 +57,7 @@ class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Eve
       SimpleRecord("2", 12, "c", new Date(2000), Option(3))
     )
 
-    processInvoker.invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     eventually {
       MockService.data.toSet shouldBe Set("a", "b", "c")

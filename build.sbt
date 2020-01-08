@@ -23,12 +23,17 @@ val dockerPort = System.getProperty("dockerPort", "8080").toInt
 val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
 val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
 val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
+val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
+
+
+//have some problems with force() - e.g. with forcing circe version in httpUtils...
+ThisBuild / useCoursier := false
 
 val publishSettings = Seq(
   publishMavenStyle := true,
@@ -117,6 +122,17 @@ val commonSettings =
       scalacOptions in (Compile, doc) -= "-Xfatal-warnings"
     )
 
+val forkSettings = Seq(
+  fork := true,
+  javaOptions := Seq(
+    "-Xmx512M",
+    "-XX:ReservedCodeCacheSize=128M",
+    "-Xss4M",
+    "-XX:+UseConcMarkSweepGC",
+    "-XX:+CMSClassUnloadingEnabled"
+  )
+)
+
 val akkaV = "2.4.20" //same version as in Flink
 val flinkV = "1.7.2"
 val kafkaMajorV = "0.11"
@@ -178,37 +194,57 @@ lazy val dockerSettings = {
   )
 }
 
-lazy val dist = (project in file("nussknacker-dist"))
-  .settings(commonSettings)
-  .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
-  .settings(
-    packageName in Universal := ("nussknacker" + "-" + version.value),
-    Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
-      (assembly in Compile) in generic,
-      (assembly in Compile) in example
-    ).value,
-
-    mappings in Universal += {
-      val genericModel = (crossTarget in generic).value / "genericModel.jar"
-      genericModel -> "model/genericModel.jar"
-    },
-    mappings in Universal += {
-      val exampleModel = (crossTarget in example).value / s"nussknacker-example-assembly-${version.value}.jar"
-      exampleModel -> "model/exampleModel.jar"
-    },
-    /* //FIXME: figure out how to filter out only for .tgz, not for docker
-    mappings in Universal := {
-      val universalMappings = (mappings in Universal).value
-      //we don't want docker-* stuff in .tgz
-      universalMappings filterNot { case (file, _) =>
-        file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
-      }
-    },*/
-    publishArtifact := false,
-    SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
-  )
-  .settings(dockerSettings)
-  .dependsOn(ui)
+lazy val dist = {
+  val module = sbt.Project("dist", file("nussknacker-dist"))
+    .settings(commonSettings)
+    .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
+    .settings(
+      packageName in Universal := ("nussknacker" + "-" + version.value),
+      Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
+        (assembly in Compile) in generic,
+        (assembly in Compile) in demo
+      ).value,
+      mappings in Universal += {
+        val genericModel = (crossTarget in generic).value / "genericModel.jar"
+        genericModel -> "model/genericModel.jar"
+      },
+      mappings in Universal += {
+        val demoModel = (crossTarget in demo).value / s"demoModel.jar"
+        demoModel -> "model/demoModel.jar"
+      },
+      /* //FIXME: figure out how to filter out only for .tgz, not for docker
+      mappings in Universal := {
+        val universalMappings = (mappings in Universal).value
+        //we don't want docker-* stuff in .tgz
+        universalMappings filterNot { case (file, _) =>
+          file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
+        }
+      },*/
+      publishArtifact := false,
+      SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
+    )
+    .settings(dockerSettings)
+    .dependsOn(ui)
+  if (addDevModel) {
+    module
+      .settings(
+        Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
+          (assembly in Compile) in managementSample,
+          (assembly in Compile) in standaloneSample
+        ).value,
+        mappings in Universal += {
+          val genericModel = (crossTarget in managementSample).value / "managementSample.jar"
+          genericModel -> "model/managementSample.jar"
+        },
+        mappings in Universal += {
+          val demoModel = (crossTarget in standaloneSample).value / s"standaloneSample.jar"
+          demoModel -> "model/standaloneSample.jar"
+        }
+      )
+  } else {
+    module
+  }
+}
 
 def engine(name: String) = file(s"engine/$name")
 
@@ -337,18 +373,20 @@ lazy val managementBatchSample = (project in engine("flink/management/batch_samp
 
   ).dependsOn(flinkUtil, process % "runtime,test")
 
-lazy val example = (project in engine("example")).
+lazy val demo = (project in engine("demo")).
   settings(commonSettings).
+  settings(forkSettings). // without this there are some classloading issues
   settings(
-    name := "nussknacker-example",
-    fork := true, // without this there are some classloading issues
+    name := "nussknacker-demo",
     libraryDependencies ++= {
       Seq(
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     },
     test in assembly := {},
+    assemblyJarName in assembly := "demoModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))
@@ -364,11 +402,11 @@ lazy val generic = (project in engine("flink/generic")).
     name := "nussknacker-generic-model",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     },
     test in assembly := {},
-
     assemblyJarName in assembly := "genericModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
@@ -379,14 +417,14 @@ lazy val generic = (project in engine("flink/generic")).
 
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
+  settings(forkSettings).
   settings(
     name := "nussknacker-process",
-    fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
   ).dependsOn(flinkApi, flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
@@ -425,7 +463,7 @@ lazy val kafka = (project in engine("kafka")).
     libraryDependencies ++= {
       Seq(
         "org.apache.kafka" % "kafka-clients" % kafkaV,
-        "org.scalatest" %% "scalatest" % scalaTestV
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   ).
@@ -679,14 +717,15 @@ lazy val restmodel = (project in file("ui/restmodel"))
       "io.circe" %% "circe-java8" % circeV
     )
   )
-  .dependsOn(api, interpreter, security, testUtil % "test")
+  .dependsOn(api, interpreter, testUtil % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-listener-api",
   )
-  .dependsOn(restmodel, api, util, testUtil % "test")
+  //security needed for LoggedUser etc
+  .dependsOn(restmodel, api, util, security, testUtil % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -753,5 +792,4 @@ lazy val ui = (project in file("ui/server"))
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
-addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly")
-
+addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
