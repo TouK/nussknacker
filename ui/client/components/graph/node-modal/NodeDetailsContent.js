@@ -303,7 +303,7 @@ export class NodeDetailsContent extends React.Component {
         const type = this.props.node.typeSpecificProperties.type;
         const commonFields = this.subprocessVersionFields()
         //fixme move this configuration to some better place?
-        const fields = type == "StreamMetaData" ? [
+        const fields = type === "StreamMetaData" ? [
           this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", true, [errorValidator(fieldErrors, "parallelism")], "parallelism", null, null, "parallelism"),
           this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", false, [errorValidator(fieldErrors, "checkpointIntervalInSeconds")], "checkpointIntervalInSeconds", null, null, "interval-seconds"),
           this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", false, [errorValidator(fieldErrors, "splitStateToDisk")], "splitStateToDisk", false, false, "split-state-disk"),
@@ -493,6 +493,7 @@ export class NodeDetailsContent extends React.Component {
                   showValidation={showValidation}
                   validators={validators}
                   onChange={handleChange}
+                  key={key}
                   className={(!showValidation || allValid(validators, [fieldValue])) ? "node-input" : "node-input node-input-with-error"}
     />
   }
