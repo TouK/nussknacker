@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.{ModelConfigToLoad, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
@@ -17,14 +18,13 @@ import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExce
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 
-class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
-                               config: Config,
+class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfigToLoad,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
                                testData: TestData, executionConfig: ExecutionConfig) extends StubbedFlinkProcessCompiler(process, creator, config) {
 
 
-  override protected def listeners(): Seq[ProcessListener] = List(collectingListener) ++ super.listeners()
+  override protected def listeners(config: Config): Seq[ProcessListener] = List(collectingListener) ++ super.listeners(config)
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     val originalSourceFactory = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]

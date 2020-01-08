@@ -14,7 +14,7 @@ object StatefulSampleProcess {
 
    EspProcessBuilder
       .id(id)
-     .exceptionHandler("param1" -> "'val1'")
+     .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "stateful", "keyBy" -> "#input")
         .sink("end", "#stateVar": Expression, "kafka-string", "topic" -> s"'output-$id'")
@@ -24,7 +24,7 @@ object StatefulSampleProcess {
 
    EspProcessBuilder
       .id(id)
-     .exceptionHandler("param1" -> "'val1'")
+     .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformer")
         .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")
@@ -34,7 +34,7 @@ object StatefulSampleProcess {
 
    EspProcessBuilder
       .id(id)
-     .exceptionHandler("param1" -> "'val1'")
+     .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
         .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")

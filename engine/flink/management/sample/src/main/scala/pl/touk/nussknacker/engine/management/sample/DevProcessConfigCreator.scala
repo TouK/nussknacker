@@ -235,7 +235,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
+  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
+    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
   override def expressionConfig(config: Config) = {
     val dictId = "dict"

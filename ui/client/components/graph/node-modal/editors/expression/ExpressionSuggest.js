@@ -98,7 +98,8 @@ class ExpressionSuggest extends React.Component {
   //this shouldComponentUpdate is for cases when there are multiple instances of suggestion component in one view and to make them not interfere with each other
   //fixme maybe use this.state.id here?
   shouldComponentUpdate(nextProps, nextState) {
-    return !(_.isEqual(this.state.value, nextState.value))
+    return !(_.isEqual(this.state.value, nextState.value)) ||
+      !(_.isEqual(this.state.editorFocused, nextState.editorFocused))
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -126,7 +127,8 @@ class ExpressionSuggest extends React.Component {
           <div className={"row-ace-editor" +
           (!showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error ") +
           (isMarked ? " marked" : "") +
-          (shouldShowSwitch ? " switchable" : "")}>
+          (shouldShowSwitch ? " switchable" : "") +
+          (this.state.editorFocused ? " focused" : "")}>
             <AceEditor mode={inputProps.language}
                        width={"100%"}
                        minLines={1}
@@ -152,7 +154,9 @@ class ExpressionSuggest extends React.Component {
                          fontSize: 16,
                          fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
                          readOnly: inputProps.readOnly
-                       }}/>
+                       }}
+                       onFocus={this.setEditorFocus(true)}
+                       onBlur={this.setEditorFocus(false)}/>
           </div>
           {showValidation && <ValidationLabels validators={validators} values={[this.state.value]}/>}
         </React.Fragment>
@@ -162,6 +166,8 @@ class ExpressionSuggest extends React.Component {
     }
 
   }
+
+  setEditorFocus = (focus) => () => this.setState({editorFocused: focus})
 }
 
 function mapState(state, props) {
