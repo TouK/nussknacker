@@ -128,7 +128,8 @@ class ExpressionSuggest extends React.Component {
           !showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error " 
           }${isMarked ? " marked" : "" 
           }${shouldShowSwitch ? " switchable" : "" 
-          }${this.state.editorFocused ? " focused" : ""}`}>
+          }${this.state.editorFocused ? " focused" : ""
+          }${inputProps.readOnly ? " read-only" : ""}`}>
             <AceEditor mode={inputProps.language}
                        width={"100%"}
                        minLines={1}
@@ -145,6 +146,7 @@ class ExpressionSuggest extends React.Component {
                        editorProps={{
                          $blockScrolling: "Infinity"
                        }}
+                       className={inputProps.readOnly ? " read-only" : ""}
                        setOptions={{
                          indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
                          enableBasicAutocompletion: [this.customAceEditorCompleter],

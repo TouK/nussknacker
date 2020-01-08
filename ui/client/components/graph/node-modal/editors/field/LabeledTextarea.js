@@ -14,7 +14,7 @@ export const LabeledTextarea = (props) => {
         <textarea
           rows={!_.isEmpty(value) ? value.split(lineEndPattern).length : rows}
           cols={cols}
-          className={className}
+          className={className + `${readOnly ? " read-only" : ""}`}
           value={value}
           onChange={onChange}
           readOnly={readOnly}

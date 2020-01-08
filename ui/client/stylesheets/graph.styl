@@ -218,6 +218,7 @@ common-node-input(padding)
   color: modalInputTextColor
   font-weight: 400
   font-size: 14px
+  outline 1px solid rgba(255,255,255,0.075)
 
 modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
@@ -295,11 +296,13 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
           outline-offset -1px!important;
         .node-value-select__single-value
           common-node-input(10px)
+          outline none
         .switchable
           width: 100% - 40px
         .node-value-select__input
           //TODO: input hides partially due to padding...
           common-node-input(10px)
+          outline none
         .node-value-select__value-container--has-value
           background-color modalInputBkgColor
           color modalInputTextColor
@@ -337,6 +340,8 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
           width: 70%
       &.switchable
         width: 70%
+      &.read-only
+        background-color #444
 
     .node-error
       width: 100%
@@ -359,15 +364,7 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       height: 35px
       common-node-input(10px)
     .read-only
-      height: 40px
-      padding: 0
-      border: none
-      color: modalInputTextColor
-      font-weight: 400
-      font-size: 14px
-      display: inline-block
-      vertical-align: top
-      padding-top: 9px
+      background-color #444
       .labelFooter
         font-weight 500
         opacity: 0.7
@@ -565,6 +562,7 @@ espPanelButton()
   padding-right: 10px
   background-color: #333
   min-height 35px
+  outline 1px solid rgba(255,255,255,0.075)
   &.focused
     outline 2px solid #0058a9 !important
     outline-offset -1px !important
@@ -671,11 +669,6 @@ espPanelButton()
 
 .marked
   border 2px solid markColor !important
-
-.read-only
-  background-color #444
-  font-weight 400;
-  font-size 14px;
 
 .fieldsControl
   .addRemoveButton
