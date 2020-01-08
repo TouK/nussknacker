@@ -37,6 +37,9 @@ env:
     - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true" || echo "false"`
     - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true" || echo "false"`
 
+before_script:
+  - cp .travis.sbt.repositories $HOME/.sbt/repositories
+
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
   - rm -fv $HOME/.ivy2/.sbt.ivy.lock
