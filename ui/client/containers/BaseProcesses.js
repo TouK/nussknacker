@@ -1,7 +1,7 @@
 import React from "react"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 import * as _ from "lodash"
-import * as  queryString from 'query-string'
+import * as  queryString from "query-string"
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
 import history from "../history"
 import HttpService from "../http/HttpService"
@@ -9,21 +9,21 @@ import ProcessStateUtils from "../common/ProcessStateUtils"
 import Metrics from "./Metrics"
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
-  searchItems = ['categories']
+  searchItems = ["categories"]
   shouldReloadStatuses = false
   intervalTime = 15000
   queries = {}
-  page = ''
+  page = ""
 
   filterIsSubprocessOptions = [
-    {label: 'Show all types processes', value: undefined},
-    {label: 'Show only processes', value: false},
-    {label: 'Show only subprocesses', value: true},
+    {label: "Show all types processes", value: undefined},
+    {label: "Show only processes", value: false},
+    {label: "Show only subprocesses", value: true},
   ]
 
   prepareState(withoutCategories) {
     const query = queryString.parse(this.props.history.location.search, {
-      arrayFormat: 'comma',
+      arrayFormat: "comma",
       parseNumbers: true,
       parseBooleans: true
     })
@@ -53,7 +53,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
       this.reloadStatuses()
     }
 
-    if (this.page === 'processes' || this.page === 'subProcesses') {
+    if (this.page === "processes" || this.page === "subProcesses") {
       this.loadAllClashedNames()
     }
   }
@@ -140,7 +140,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   onCategoryChange = (elements) => {
-    this.afterElementChange({categories: _.map(elements, 'value'), page: 0}, true)
+    this.afterElementChange({categories: _.map(elements, "value"), page: 0}, true)
   }
 
   onIsSubprocessChange = (element) => {

@@ -1,7 +1,7 @@
-import React from 'react'
+import React from "react"
 import {v4 as uuid4} from "uuid"
 import {Link} from "react-router-dom"
-import NodeUtils from '../../components/graph/NodeUtils'
+import NodeUtils from "../../components/graph/NodeUtils"
 
 export default function NodeErrorsLinkSection(props) {
 
@@ -36,7 +36,7 @@ const ErrorHeader = (props) => {
 const NodeErrorLink = (props) => {
   const {onClick, nodeId, addSeparator} = props
 
-  const separator = ', '
+  const separator = ", "
 
   return (
     <Link key={uuid4()} className={"node-error-link"} to={""} onClick={onClick}>

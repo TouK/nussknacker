@@ -1,5 +1,5 @@
 import React from "react"
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types"
 import Field from "../field/Field"
 import Input from "../field/Input"
 
@@ -7,7 +7,7 @@ export default function MapKey(props) {
   const {rowKey, autofocus, isMarked, paths, showValidation, validators, readOnly, onChange} = props
 
   return (
-    <div className={"node-value fieldName" + (isMarked ? " marked" : "")}>
+    <div className={`node-value fieldName${  isMarked ? " marked" : ""}`}>
       <Input isMarked={isMarked}
              readOnly={readOnly}
              value={rowKey.name}

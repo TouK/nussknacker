@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _ from "lodash";
 
 const getPossibleNodesInCategory = (possibleNodes, category) =>
   possibleNodes.filter(node => node.categories.includes(category))

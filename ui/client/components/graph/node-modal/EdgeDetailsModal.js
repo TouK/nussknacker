@@ -1,13 +1,13 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import {connect} from 'react-redux';
-import Modal from 'react-modal';
-import _ from 'lodash';
+import React from "react";
+import PropTypes from "prop-types";
+import {connect} from "react-redux";
+import Modal from "react-modal";
+import _ from "lodash";
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import ActionsUtils from '../../../actions/ActionsUtils';
-import NodeUtils from '../NodeUtils';
-import EspModalStyles from '../../../common/EspModalStyles'
+import ActionsUtils from "../../../actions/ActionsUtils";
+import NodeUtils from "../NodeUtils";
+import EspModalStyles from "../../../common/EspModalStyles"
 import EdgeDetailsContent from "./EdgeDetailsContent";
 import Draggable from "react-draggable";
 import {preventFromMoveSelectors} from "../../modals/GenericModalDialog";
@@ -44,9 +44,9 @@ class EdgeDetailsModal extends React.Component {
   }
 
   performEdgeEdit = () => {
-    this.setState( { pendingRequest: true});
+    this.setState( {pendingRequest: true});
     this.props.actions.editEdge(this.props.processToDisplay, this.props.edgeToDisplay, this.state.editedEdge).then (() => {
-      this.setState( { pendingRequest: false});
+      this.setState( {pendingRequest: false});
       this.closeModal()
     })
   }
@@ -57,14 +57,14 @@ class EdgeDetailsModal extends React.Component {
         <LaddaButton
           key="1"
           title="Apply edge details"
-          className='modalButton pull-right modalConfirmButton'
+          className="modalButton pull-right modalConfirmButton"
           loading={this.state.pendingRequest}
-          data-style='zoom-in'
+          data-style="zoom-in"
           onClick={this.performEdgeEdit}
         >
           Apply
         </LaddaButton>,
-        <button key="3" type="button" title="Cancel edge details" className='modalButton' onClick={this.closeModal}>
+        <button key="3" type="button" title="Cancel edge details" className="modalButton" onClick={this.closeModal}>
           Cancel
         </button>
       ] );
@@ -76,7 +76,7 @@ class EdgeDetailsModal extends React.Component {
   updateEdgeProp = (prop, value) => {
     const editedEdge = _.cloneDeep(this.state.editedEdge)
     const newEdge = _.set(editedEdge, prop, value)
-    this.setState({ editedEdge: newEdge })
+    this.setState({editedEdge: newEdge})
   }
 
   changeEdgeTypeValue = (edgeTypeValue) => {

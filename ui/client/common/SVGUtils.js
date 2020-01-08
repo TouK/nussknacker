@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  Copied from: https://github.com/sampumon/SVG.toDataURL
 

@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {connect} from "react-redux";
 import {Panel} from "react-bootstrap";
-import {Scrollbars} from 'react-custom-scrollbars';
+import {Scrollbars} from "react-custom-scrollbars";
 import history from "../../history"
 import cn from "classnames";
 
@@ -10,17 +10,17 @@ import HttpService from "../../http/HttpService";
 import DialogMessages from "../../common/DialogMessages";
 import ProcessUtils from "../../common/ProcessUtils";
 import SideNodeDetails from "./SideNodeDetails";
-import NodeUtils from '../graph/NodeUtils'
+import NodeUtils from "../graph/NodeUtils"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import Dialogs from "../modals/Dialogs"
 import TogglePanel from "../TogglePanel";
 import SvgDiv from "../SvgDiv"
 
-import '../../stylesheets/userPanel.styl';
+import "../../stylesheets/userPanel.styl";
 import Archive from "../../containers/Archive";
 import SpinnerWrapper from "../SpinnerWrapper";
-import PropTypes from 'prop-types';
-import Dropzone from 'react-dropzone'
+import PropTypes from "prop-types";
+import Dropzone from "react-dropzone"
 import {events} from "../../analytics/TrackingEvents"
 import ProcessStateUtils from "../../common/ProcessStateUtils";
 
@@ -46,14 +46,14 @@ class UserRightPanel extends Component {
   };
 
   render() {
-    const { isOpened, actions, isReady } = this.props;
+    const {isOpened, actions, isReady} = this.props;
     const config = this.getConfig();
 
     return (
-      <div id="espRightNav" className={cn('rightSidenav', { 'is-opened': isOpened })}>
-        <div className={cn('zoom-in-out', 'right', { 'is-opened': isOpened})}>
-          <SvgDiv className={"zoom"} title={"zoom-in"} svgFile={`buttons/zoomin.svg`} onClick={this.props.zoomIn}/>
-          <SvgDiv className={"zoom"} title={"zoom-out"} svgFile={`buttons/zoomout.svg`} onClick={this.props.zoomOut}/>
+      <div id="espRightNav" className={cn("rightSidenav", {"is-opened": isOpened})}>
+        <div className={cn("zoom-in-out", "right", {"is-opened": isOpened})}>
+          <SvgDiv className={"zoom"} title={"zoom-in"} svgFile={"buttons/zoomin.svg"} onClick={this.props.zoomIn}/>
+          <SvgDiv className={"zoom"} title={"zoom-out"} svgFile={"buttons/zoomout.svg"} onClick={this.props.zoomOut}/>
         </div>
         <SpinnerWrapper isReady={isReady}>
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
@@ -140,7 +140,7 @@ class UserRightPanel extends Component {
         panelName: "Process",
         buttons: [
           {
-            name: "save" + (!conf.saveDisabled ? "*" : ""),
+            name: `save${  !conf.saveDisabled ? "*" : ""}`,
             visible: this.props.capabilities.write,
             disabled: conf.saveDisabled,
             onClick: this.save,
@@ -153,7 +153,7 @@ class UserRightPanel extends Component {
             onClick: this.migrate,
             icon: InlinedSvgs.buttonMigrate
           },
-          {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
+          {name: "compare", onClick: this.compareVersions, icon: "compare.svg", disabled: this.hasOneVersion()},
           {
             name: "import",
             visible: this.props.capabilities.write,
@@ -173,7 +173,7 @@ class UserRightPanel extends Component {
             name: "archive",
             onClick: this.archiveProcess,
             disabled: this.isRunning(),
-            icon: 'archive.svg',
+            icon: "archive.svg",
             visible: this.props.capabilities.write
           }
         ]
@@ -213,7 +213,7 @@ class UserRightPanel extends Component {
               () => this.props.selectionActions.copy(event),
               {category: events.categories.rightPanel, action: events.actions.buttonClick}
             ),
-            icon: 'copy.svg',
+            icon: "copy.svg",
             visible: this.props.capabilities.write,
             disabled: !this.props.selectionActions.canCopy
           },
@@ -223,7 +223,7 @@ class UserRightPanel extends Component {
               () => this.props.selectionActions.cut(event),
               {category: events.categories.rightPanel, action: events.actions.buttonClick}
             ),
-            icon: 'cut.svg',
+            icon: "cut.svg",
             visible: this.props.capabilities.write,
             disabled: !this.props.selectionActions.canCut
           },
@@ -233,7 +233,7 @@ class UserRightPanel extends Component {
               this.props.selectionState,
               {category: events.categories.rightPanel, action: events.actions.buttonClick}
             ),
-            icon: 'delete.svg',
+            icon: "delete.svg",
             visible: this.props.capabilities.write,
             disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
           },
@@ -243,7 +243,7 @@ class UserRightPanel extends Component {
               () => this.props.selectionActions.paste(event),
               {category: events.categories.rightPanel, action: events.actions.buttonClick}
             ),
-            icon: 'paste.svg',
+            icon: "paste.svg",
             visible: this.props.capabilities.write,
             disabled: !this.props.selectionActions.canPaste
           }
@@ -276,13 +276,13 @@ class UserRightPanel extends Component {
           {
             name: "generate",
             onClick: this.generateData,
-            icon: 'generate.svg',
+            icon: "generate.svg",
             disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData,
             visible: this.props.capabilities.write
           },
 //TODO: counts and metrics should not be visible in archived process
           {
-            name: "counts", onClick: this.fetchProcessCounts, icon: 'counts.svg',
+            name: "counts", onClick: this.fetchProcessCounts, icon: "counts.svg",
             visible: this.props.featuresSettings.counts && !this.props.isSubprocess
           },
         ]
@@ -327,7 +327,7 @@ class UserRightPanel extends Component {
     const buttonClass = panelButton.className || "espButton right-panel"
     //TODO: move other buttons from inlined svgs to files
     const toolTip = panelButton.btnTitle || panelButton.name
-    const svgDiv = panelButton.icon.endsWith('.svg')
+    const svgDiv = panelButton.icon.endsWith(".svg")
                  ? (<SvgDiv title={toolTip} svgFile={`buttons/${panelButton.icon}`}/>)
                  : ( <div title={toolTip} dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
 
@@ -344,7 +344,7 @@ class UserRightPanel extends Component {
           {({getRootProps, getInputProps}) => (
             <div {
                    ...getRootProps({
-                     className: "dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : ""),
+                     className: `dropZone ${  buttonClass  }${panelButton.disabled === true ? " disabled" : ""}`,
                      onClick: panelButton.onClick
                    })} >
               {svgDiv}
@@ -489,7 +489,7 @@ class UserRightPanel extends Component {
     }
   }
 
-  hasOneVersion = () => _.get(this.props.fetchedProcessDetails, 'history', []).length <= 1
+  hasOneVersion = () => _.get(this.props.fetchedProcessDetails, "history", []).length <= 1
 
 }
 
@@ -509,7 +509,7 @@ function mapState(state) {
     canExport: ProcessUtils.canExport(state),
     showRunProcessDetails: !_.isEmpty(state.graphReducer.testResults) || !_.isEmpty(state.graphReducer.processCounts),
     keyActionsAvailable: state.ui.allModalsClosed,
-    processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
+    processIsLatestVersion: _.get(fetchedProcessDetails, "isLatestVersion", false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
     selectionState: state.graphReducer.selectionState,

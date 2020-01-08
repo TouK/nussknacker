@@ -18,7 +18,7 @@ class RowSelect extends React.Component {
 
     return connectDropTarget(connectDragSource(
       <div className="node-row movable-row" style={{opacity}}>
-        <div className={"node-value fieldName" + markedClass}>
+        <div className={`node-value fieldName${  markedClass}`}>
           <input
             className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
             type="text"
@@ -29,7 +29,7 @@ class RowSelect extends React.Component {
           />
           {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
         </div>
-        <div className={"node-value field" + markedClass}>
+        <div className={`node-value field${  markedClass}`}>
           <Select
             className="node-value node-value-select node-value-type-select"
             classNamePrefix="node-value-select"

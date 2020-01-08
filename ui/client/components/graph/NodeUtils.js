@@ -1,12 +1,12 @@
-import _ from 'lodash'
-import fp from 'lodash/fp'
-import ProcessUtils from '../../common/ProcessUtils.js'
+import _ from "lodash"
+import fp from "lodash/fp"
+import ProcessUtils from "../../common/ProcessUtils.js"
 import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
 
 class NodeUtils {
 
   isNode = (obj) => {
-    return !_.isEmpty(obj) && _.has(obj, 'id') && _.has(obj, 'type')
+    return !_.isEmpty(obj) && _.has(obj, "id") && _.has(obj, "type")
   }
 
   nodeType = (node) => {
@@ -86,7 +86,7 @@ class NodeUtils {
   getEdgesForConnectedNodes = (nodeIds, process) => this.edgesFromProcess(process)
     .filter(edge => nodeIds.includes(edge.from) && nodeIds.includes(edge.to))
 
-  getAllGroups = (process) => _.get(process, 'properties.additionalFields.groups', [])
+  getAllGroups = (process) => _.get(process, "properties.additionalFields.groups", [])
 
   getCollapsedGroups = (process, expandedGroups) => this.getAllGroups(process)
     .filter(g => !_.includes(expandedGroups, g.id))
@@ -107,18 +107,18 @@ class NodeUtils {
 
   createGroup = (process, newGroup) => {
     const groupId = newGroup.join("-")
-    return this._update('properties.additionalFields.groups',
+    return this._update("properties.additionalFields.groups",
                     (groups) => _.concat((groups || []), [{id: groupId, nodes: newGroup}]), process)
   }
 
   ungroup = (process, groupToDeleteId) => {
-    return this._update('properties.additionalFields.groups',
+    return this._update("properties.additionalFields.groups",
           (groups) => groups.filter(e => !_.isEqual(e.id, groupToDeleteId)), process)
   }
 
   editGroup = (process, oldGroupId, newGroup) => {
     const groupForState = {id: newGroup.id, nodes: newGroup.ids}
-    return this._update('properties.additionalFields.groups',
+    return this._update("properties.additionalFields.groups",
              (groups) => _.concat((groups.filter(g => g.id !== oldGroupId)), [groupForState]), process)
   }
 
@@ -136,22 +136,22 @@ class NodeUtils {
     const data =  (processDefinitionData.edgesForNodes
       .filter(e => !forInput || e.isForInputDefinition === forInput)
       //here we use == in second comparison, as we sometimes compare null to undefined :|
-      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition)) || { edges: [null], canChooseNodes: false}
+      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition)) || {edges: [null], canChooseNodes: false}
     return data
   }
 
   edgeLabel = (edge) => {
-    const edgeType = _.get(edge, 'edgeType.type')
+    const edgeType = _.get(edge, "edgeType.type")
 
     //TODO: should this map be here??
     const edgeTypeToLabel = {
-      "FilterFalse": "false",
-      "FilterTrue": "true",
-      "SwitchDefault": "default",
-      "SubprocessOutput": _.get(edge, 'edgeType.name'),
-      "NextSwitch": _.get(edge, 'edgeType.condition.expression')
+      FilterFalse: "false",
+      FilterTrue: "true",
+      SwitchDefault: "default",
+      SubprocessOutput: _.get(edge, "edgeType.name"),
+      NextSwitch: _.get(edge, "edgeType.condition.expression")
     };
-    return edgeTypeToLabel[edgeType] || ''
+    return edgeTypeToLabel[edgeType] || ""
   }
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
@@ -172,7 +172,7 @@ class NodeUtils {
   }
 
   _changeGroupNodes = (processToDisplay, nodeOperation) => {
-    return this._update('properties.additionalFields.groups',
+    return this._update("properties.additionalFields.groups",
       (groups) => (groups || []).map(group => ({
                     ...group,
                     nodes: nodeOperation(group.nodes)

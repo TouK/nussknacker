@@ -1,5 +1,5 @@
 import React from "react"
-import {matchPath, NavLink, Route, Switch, withRouter} from 'react-router-dom'
+import {matchPath, NavLink, Route, Switch, withRouter} from "react-router-dom"
 import _ from "lodash"
 import Processes from "./Processes"
 import SubProcesses from "./SubProcesses"
@@ -14,15 +14,15 @@ import DragArea from "../components/DragArea"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import Dialogs from "../components/modals/Dialogs"
-import * as VisualizationUrl from '../common/VisualizationUrl'
+import * as VisualizationUrl from "../common/VisualizationUrl"
 import Archive from "./Archive"
 import Visualization from "./Visualization"
 
-import 'bootstrap/dist/css/bootstrap.css'
-import '../stylesheets/mainMenu.styl'
-import '../assets/fonts/fonts.less'
-import '../stylesheets/main.styl'
-import '../app.styl'
+import "bootstrap/dist/css/bootstrap.css"
+import "../stylesheets/mainMenu.styl"
+import "../assets/fonts/fonts.less"
+import "../stylesheets/main.styl"
+import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
 
 class EspApp extends React.Component {
@@ -47,7 +47,7 @@ class EspApp extends React.Component {
 
   canGoToProcess() {
     const match = this.getMetricsMatch()
-    return _.get(match, 'params.processId') != null
+    return _.get(match, "params.processId") != null
   }
 
   goToProcess = () => {
@@ -71,7 +71,7 @@ class EspApp extends React.Component {
     if (params && params.content)
       return (
         <span className="navbar-brand vert-middle ">
-          <span className={"indicator " + params.cssClass}>{params.content}</span>
+          <span className={`indicator ${  params.cssClass}`}>{params.content}</span>
         </span>
       )
   }
@@ -119,7 +119,7 @@ class EspApp extends React.Component {
         <main>
           <DragArea>
             <AllDialogs/>
-            <div id="working-area" className={this.props.leftPanelIsOpened ? 'is-opened' : null}>
+            <div id="working-area" className={this.props.leftPanelIsOpened ? "is-opened" : null}>
               <ErrorHandler>
                 <Route path={EspApp.path} render={({location}) => (
                   <TransitionGroup>
@@ -159,6 +159,6 @@ function mapState(state) {
 }
 
 EspApp.path = `${nkPath}/`
-EspApp.header = 'ESP'
+EspApp.header = "ESP"
 
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EspApp))

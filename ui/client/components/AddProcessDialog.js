@@ -1,16 +1,16 @@
 import React from "react";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 import history from "../history"
 import Modal from "react-modal";
 import {connect} from "react-redux";
-import _ from 'lodash';
+import _ from "lodash";
 import ActionsUtils from "../actions/ActionsUtils";
 import EspModalStyles from "../common/EspModalStyles";
 import "../stylesheets/visualization.styl";
 import HttpService from "../http/HttpService";
-import * as VisualizationUrl from '../common/VisualizationUrl';
-import Draggable from 'react-draggable';
+import * as VisualizationUrl from "../common/VisualizationUrl";
+import Draggable from "react-draggable";
 import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
 import {duplicateValue, notEmptyValidator} from "../common/Validators";
 import ValidationLabels from "./modals/ValidationLabels";
@@ -29,7 +29,7 @@ class AddProcessDialog extends React.Component {
   }
 
   initialState(props) {
-    return {processId: '', processCategory: _.head(props.categories) || ''}
+    return {processId: "", processCategory: _.head(props.categories) || ""}
   }
 
   constructor(props) {
@@ -93,9 +93,9 @@ class AddProcessDialog extends React.Component {
 
               <div className="modalFooter">
                 <div className="footerButtons">
-                  <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel
+                  <button type="button" title="Cancel" className="modalButton" onClick={this.closeDialog}>Cancel
                   </button>
-                  <button type="button" title="Create" className='modalButton' onClick={this.confirm}>Create
+                  <button type="button" title="Create" className="modalButton" onClick={this.confirm}>Create
                   </button>
                 </div>
               </div>

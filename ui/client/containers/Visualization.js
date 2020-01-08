@@ -1,15 +1,15 @@
-import React from 'react'
-import Graph from '../components/graph/Graph'
-import UserRightPanel from '../components/right-panel/UserRightPanel'
-import UserLeftPanel from '../components/UserLeftPanel'
-import HttpService from '../http/HttpService'
-import _ from 'lodash'
-import {connect} from 'react-redux'
-import ActionsUtils from '../actions/ActionsUtils'
-import ProcessUtils from '../common/ProcessUtils'
-import '../stylesheets/visualization.styl'
-import NodeUtils from '../components/graph/NodeUtils'
-import * as VisualizationUrl from '../common/VisualizationUrl'
+import React from "react"
+import Graph from "../components/graph/Graph"
+import UserRightPanel from "../components/right-panel/UserRightPanel"
+import UserLeftPanel from "../components/UserLeftPanel"
+import HttpService from "../http/HttpService"
+import _ from "lodash"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import ProcessUtils from "../common/ProcessUtils"
+import "../stylesheets/visualization.styl"
+import NodeUtils from "../components/graph/NodeUtils"
+import * as VisualizationUrl from "../common/VisualizationUrl"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import * as JsonUtils from "../common/JsonUtils"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
@@ -127,7 +127,7 @@ class Visualization extends React.Component {
         this.redo()
       }
 
-      if (event.key === 'Delete' && !_.isEmpty(this.props.selectionState) && this.props.canDelete) {
+      if (event.key === "Delete" && !_.isEmpty(this.props.selectionState) && this.props.canDelete) {
         this.props.actions.deleteSelection(
           this.props.selectionState,
           {category: events.categories.keyboard, action: events.actions.keyboard.delete}
@@ -156,7 +156,7 @@ class Visualization extends React.Component {
   }
 
   isRunning() {
-    return _.get(this.state.status, 'isRunning', false)
+    return _.get(this.state.status, "isRunning", false)
   }
 
   undo() {
@@ -195,7 +195,7 @@ class Visualization extends React.Component {
     }
     ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
     if (shouldCreateNotification) {
-      this.props.notificationActions.success(this.successMessage('Copied', selectedNodes))
+      this.props.notificationActions.success(this.successMessage("Copied", selectedNodes))
     }
   }
 
@@ -204,7 +204,7 @@ class Visualization extends React.Component {
   }
 
   successMessage(action, selectedNodes) {
-    return `${action} ${selectedNodes.length} ${selectedNodes.length === 1 ? 'node' : 'nodes'}`;
+    return `${action} ${selectedNodes.length} ${selectedNodes.length === 1 ? "node" : "nodes"}`;
   }
 
   canCopySelection() {
@@ -219,7 +219,7 @@ class Visualization extends React.Component {
       const nodeIds = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
           .map(node => node.id)
       this.props.actions.deleteNodes(nodeIds)
-      this.props.notificationActions.success(this.successMessage('Cut', nodeIds))
+      this.props.notificationActions.success(this.successMessage("Cut", nodeIds))
     }
   }
 
@@ -237,7 +237,7 @@ class Visualization extends React.Component {
 
   pasteSelectionFromClipboard = () => {
     const clipboard = navigator.clipboard
-    if (typeof clipboard.readText !== 'function') {
+    if (typeof clipboard.readText !== "function") {
       this.props.notificationActions.error("Paste button is not available. Try Ctrl+V")
     } else {
       clipboard.readText().then(text => this.pasteSelectionFromText(text))
@@ -246,7 +246,7 @@ class Visualization extends React.Component {
 
   pasteSelectionFromText = (text) => {
     const selection = JsonUtils.tryParseOrNull(text)
-    const canPasteSelection = _.has(selection, 'nodes') && _.has(selection, 'edges') && selection.nodes.every(node => this.canAddNode(node))
+    const canPasteSelection = _.has(selection, "nodes") && _.has(selection, "edges") && selection.nodes.every(node => this.canAddNode(node))
     if (!canPasteSelection) {
       this.props.notificationActions.error("Cannot paste content from clipboard")
       return
@@ -259,7 +259,7 @@ class Visualization extends React.Component {
       return {node, position}
     })
     this.props.actions.nodesWithEdgesAdded(nodesWithPositions, selection.edges)
-    this.props.notificationActions.success(this.successMessage('Pasted', selection.nodes))
+    this.props.notificationActions.success(this.successMessage("Pasted", selection.nodes))
   }
 
   canAddNode(node) {
@@ -326,15 +326,15 @@ class Visualization extends React.Component {
 }
 
 Visualization.path = VisualizationUrl.visualizationPath
-Visualization.header = 'Visualization'
+Visualization.header = "Visualization"
 
 function mapState(state) {
-  const processCategory = _.get(state, 'graphReducer.fetchedProcessDetails.processCategory');
+  const processCategory = _.get(state, "graphReducer.fetchedProcessDetails.processCategory");
   const canDelete = state.ui.allModalsClosed
     && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
     && state.settings.loggedUser.canWrite(processCategory);
   const loggedUser = state.settings.loggedUser;
-  const isArchived = _.get(state, 'graphReducer.fetchedProcessDetails.isArchived')
+  const isArchived = _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
   return {
     processCategory: processCategory,
     selectionState: state.graphReducer.selectionState,
@@ -357,6 +357,6 @@ function mapState(state) {
   };
 }
 
-const copyNodeElementId = 'copy-node'
+const copyNodeElementId = "copy-node"
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);

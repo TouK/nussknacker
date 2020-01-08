@@ -1,12 +1,12 @@
-import React from 'react'
+import React from "react"
 import {render} from "react-dom";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 import {connect} from "react-redux";
-import _ from 'lodash'
+import _ from "lodash"
 import "../stylesheets/toolBox.styl";
 import Tool from "./Tool"
 
-import TreeView from 'react-treeview'
+import TreeView from "react-treeview"
 import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils";
 
 class ToolBox extends React.Component {
@@ -66,7 +66,7 @@ class ToolBox extends React.Component {
 
 function mapState(state) {
   const processDefinitionData = state.settings.processDefinitionData || {}
-  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, 'processCategory', '')
+  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, "processCategory", "")
   const nodesToAdd = ProcessDefitionUtils.getNodesToAddInCategory(processDefinitionData, processCategory)
   return {
     processDefinitionData: processDefinitionData,

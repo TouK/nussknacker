@@ -35,7 +35,7 @@ class GenerateTestDataDialog extends React.Component {
 
 function mapState(state) {
   return {
-    processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
+    processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
     processToDisplay: state.graphReducer.processToDisplay
   }
 }

@@ -1,12 +1,12 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import {Scrollbars} from 'react-custom-scrollbars';
-import {connect} from 'react-redux';
-import _ from 'lodash'
-import ActionsUtils from '../actions/ActionsUtils';
-import DialogMessages from '../common/DialogMessages';
-import '../stylesheets/processHistory.styl'
-import ProcessUtils from '../common/ProcessUtils'
+import React, {Component} from "react";
+import PropTypes from "prop-types";
+import {Scrollbars} from "react-custom-scrollbars";
+import {connect} from "react-redux";
+import _ from "lodash"
+import ActionsUtils from "../actions/ActionsUtils";
+import DialogMessages from "../common/DialogMessages";
+import "../stylesheets/processHistory.styl"
+import ProcessUtils from "../common/ProcessUtils"
 import Date from "./common/Date"
 
 export class ProcessHistory_ extends Component {
@@ -90,7 +90,7 @@ export class ProcessHistory_ extends Component {
 
 function mapState(state) {
   return {
-    processHistory: _.get(state.graphReducer.fetchedProcessDetails, 'history', []),
+    processHistory: _.get(state.graphReducer.fetchedProcessDetails, "history", []),
     nothingToSave: ProcessUtils.nothingToSave(state),
     businessView: state.graphReducer.businessView
   };

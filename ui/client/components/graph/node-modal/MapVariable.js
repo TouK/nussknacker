@@ -12,7 +12,7 @@ const MapVariable = (props) => {
   const {isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel} = props
 
   const addField = () => {
-    addElement("fields", {"name": "", "uuid": uuid4(), "expression": {"expression": "", "language": "spel"}})
+    addElement("fields", {name: "", uuid: uuid4(), expression: {expression: "", language: "spel"}})
   }
 
   const onInputChange = (path, event) => onChange(path, event.target.value)

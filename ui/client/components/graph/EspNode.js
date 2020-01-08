@@ -1,23 +1,23 @@
-import * as joint from 'jointjs/index'
-import _ from 'lodash'
-import NodeUtils from './NodeUtils'
-import * as GraphUtils from './GraphUtils'
-import ProcessUtils from '../../common/ProcessUtils';
-import * as LoaderUtils from '../../common/LoaderUtils'
+import * as joint from "jointjs/index"
+import _ from "lodash"
+import NodeUtils from "./NodeUtils"
+import * as GraphUtils from "./GraphUtils"
+import ProcessUtils from "../../common/ProcessUtils";
+import * as LoaderUtils from "../../common/LoaderUtils"
 
-import nodeMarkup from './markups/node.html';
-import boundingMarkup from './markups/bounding.html';
-import expandIcon from '../../assets/img/expand.svg'
-import collapseIcon from '../../assets/img/collapse.svg'
+import nodeMarkup from "./markups/node.html";
+import boundingMarkup from "./markups/bounding.html";
+import expandIcon from "../../assets/img/expand.svg"
+import collapseIcon from "../../assets/img/collapse.svg"
 
-import customAttrs from '../../assets/json/nodeAttributes.json'
+import customAttrs from "../../assets/json/nodeAttributes.json"
 
 import SVGUtils from "../../common/SVGUtils";
 
 const rectWidth = 300
 const rectHeight = 60
 const nodeLabelFontSize = 15
-const edgeStroke = '#b3b3b3'
+const edgeStroke = "#b3b3b3"
 const maxLineLength = 24;
 const maxLineCount = 2;
 
@@ -30,59 +30,59 @@ const summaryCountConfig = {
 
 const attrsConfig = () => {
   return {
-    '.': {
+    ".": {
       magnet: false
 		},
-    '.body': {
+    ".body": {
       fill: "none",
       width: rectWidth,
       height: rectHeight,
-      stroke: '#B5B5B5',
+      stroke: "#B5B5B5",
       strokeWidth: 1,
     },
-    '.background': {
+    ".background": {
       width: rectWidth,
       height: rectHeight,
     },
-    '.disabled-node-layer': {
+    ".disabled-node-layer": {
       width: rectWidth,
       height: rectHeight,
       zIndex: 0
     },
     text: {
-      fill: '#1E1E1E',
-      pointerEvents: 'none',
+      fill: "#1E1E1E",
+      pointerEvents: "none",
       fontWeight: 400
     },
-    '.nodeIconPlaceholder': {
+    ".nodeIconPlaceholder": {
       x: 0,
       y: 0,
       height: rectHeight,
       width: rectHeight
     },
-    '.nodeIconItself': {
+    ".nodeIconItself": {
       width: rectHeight/2,
       height: rectHeight/2,
-      ref: '.nodeIconPlaceholder',
+      ref: ".nodeIconPlaceholder",
       refX: rectHeight/4,
       refY: rectHeight/4
     },
-    '.contentText': {
+    ".contentText": {
       fontSize: nodeLabelFontSize,
-      ref: '.nodeIconPlaceholder',
+      ref: ".nodeIconPlaceholder",
       refX: rectHeight + 10,
       refY: rectHeight/2,
-      textVerticalAnchor: 'middle'
+      textVerticalAnchor: "middle"
     },
-    '.testResultsPlaceholder': {
-      ref: '.nodeIconPlaceholder',
+    ".testResultsPlaceholder": {
+      ref: ".nodeIconPlaceholder",
       refX: rectWidth,
       y: 0,
       height: rectHeight,
       width: rectHeight
     },
-    '.testResultsSummary': {
-      textAnchor: 'middle',
+    ".testResultsSummary": {
+      textAnchor: "middle",
       alignmentBaseline: "middle"
     }
   }
@@ -90,11 +90,11 @@ const attrsConfig = () => {
 
 const portsAttrs = () => {
   return {
-    '.port': {
+    ".port": {
       refX: 0,
       refY: 0,
     },
-    '.port-body': {
+    ".port-body": {
       r: 5,
       magnet: true,
       fontSize: 10
@@ -104,22 +104,22 @@ const portsAttrs = () => {
 
 const portInAttrs = () => {
   return Object.assign({},  portsAttrs(), {
-  '.port circle': {
-    fill: '#FFFFFF',
-    magnet: 'passive',
+  ".port circle": {
+    fill: "#FFFFFF",
+    magnet: "passive",
     stroke: edgeStroke,
-    strokeWidth: '1',
-    type: 'input'
+    strokeWidth: "1",
+    type: "input"
   }})
 }
 
 const portOutAttrs = () => {
   return Object.assign({},  portsAttrs(), {
-    '.port circle': {
-      fill: '#FFFFFF',
+    ".port circle": {
+      fill: "#FFFFFF",
       stroke: edgeStroke,
-      strokeWidth: '1',
-      type: 'output'
+      strokeWidth: "1",
+      type: "output"
   }})
 }
 
@@ -129,19 +129,19 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
 	portLabelMarkup: null,
 
 	defaults: joint.util.deepSupplement({
-		type: 'devs.GenericModel',
+		type: "devs.GenericModel",
 		attrs: attrsConfig(),
 		size: {width: 1, height: 1},
 		inPorts: [],
 		outPorts: [],
 		ports: {
 			groups: {
-        'in': {
-          position: 'top',
+        in: {
+          position: "top",
           attrs: portInAttrs()
         },
-        'out': {
-          position: 'bottom',
+        out: {
+          position: "bottom",
           attrs: portOutAttrs()
         }
 			}
@@ -150,8 +150,8 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
 });
 
 export function makeElement(node, processCounts, forExport, nodesSettings){
-  const description = _.get(node.additionalFields, 'description', null)
-  const { text: bodyContent, multiline } = getBodyContent(node);
+  const description = _.get(node.additionalFields, "description", null)
+  const {text: bodyContent, multiline} = getBodyContent(node);
   const hasCounts = !_.isEmpty(processCounts);
   const width = rectWidth;
   const height = rectHeight;
@@ -163,45 +163,45 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
   //dynamically sized width
   const testResultsWidth = (_.toArray(_.toString(processCounts ? processCounts.all : "")).length * pxPerChar) + 2 * countsPadding
   let attrs = {
-    '.background': {
+    ".background": {
       width: width,
       opacity: node.isDisabled ? 0.4 : 1
     },
-    '.disabled-node-layer': {
-      display: node.isDisabled ? 'block' : 'none',
+    ".disabled-node-layer": {
+      display: node.isDisabled ? "block" : "none",
       width: width,
-      fill: '#b3b3b3'
+      fill: "#b3b3b3"
     },
-    '.background title': {
+    ".background title": {
       text: description
     },
-    '.body': {
+    ".body": {
       width: width,
     },
-    'rect.nodeIconPlaceholder': {
+    "rect.nodeIconPlaceholder": {
       fill: customAttrs[node.type].styles.fill,
       opacity: node.isDisabled ? 0.4 : 1
     },
-    '.nodeIconItself': {
-      'xlink:href': SVGUtils.svgToDataURL(icon), //we encode icon data to have standalone svg that can be used to generate pdf
+    ".nodeIconItself": {
+      "xlink:href": SVGUtils.svgToDataURL(icon), //we encode icon data to have standalone svg that can be used to generate pdf
     },
-    '.contentText': {
+    ".contentText": {
       text: bodyContent,
       opacity: node.isDisabled ? 0.65 : 1
     },
-    '.testResultsPlaceHolder': {
-      display: hasCounts && !forExport ? 'block' : 'none',
+    ".testResultsPlaceHolder": {
+      display: hasCounts && !forExport ? "block" : "none",
       width: testResultsWidth,
       refX: width - testResultsWidth,
       refY: height,
       height: testResultsHeight
     },
-    '.testResultsSummary': getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight),
-    '.groupElements': {
-      display: NodeUtils.nodeIsGroup(node) ? 'block' : 'none'
+    ".testResultsSummary": getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight),
+    ".groupElements": {
+      display: NodeUtils.nodeIsGroup(node) ? "block" : "none"
     },
-    '.expandIcon': {
-      'xlink:href': expandIcon,
+    ".expandIcon": {
+      "xlink:href": expandIcon,
       width: 26,
       height: 26,
       refX: width - 13,
@@ -209,8 +209,8 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     }
   };
 
-  const inPorts = NodeUtils.hasInputs(node) ? ['In'] : [];
-  const outPorts = NodeUtils.hasOutputs(node) ? ['Out'] : [];
+  const inPorts = NodeUtils.hasInputs(node) ? ["In"] : [];
+  const outPorts = NodeUtils.hasOutputs(node) ? ["Out"] : [];
 
   return new joint.shapes.devs.EspNode({
     id: node.id,
@@ -218,7 +218,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     inPorts: inPorts,
     outPorts: outPorts,
     attrs: attrs,
-    rankDir: 'R',
+    rankDir: "R",
     nodeData: node,
     definitionToCompare: {
       node: node,
@@ -229,7 +229,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
 }
 
 function getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight) {
-  const { breakPoint, fontSizeStep, maxExtraDigits, defaultFontSize } = summaryCountConfig;
+  const {breakPoint, fontSizeStep, maxExtraDigits, defaultFontSize} = summaryCountConfig;
 
   const hasCounts = !_.isEmpty(processCounts);
   const hasErrors = hasCounts && processCounts && processCounts.errors > 0;
@@ -239,7 +239,7 @@ function getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testR
 
   return {
     text: countsContent,
-    fill: hasErrors ? 'red' : '#ccc',
+    fill: hasErrors ? "red" : "#ccc",
     refX: width - testResultsWidth/2,
     // magic/hack: central vertical position when font-size changes
     y: 78 - extraDigitsCount * 1.5,
@@ -257,11 +257,11 @@ function getBodyContent(node) {
     };
   }
 
-  const splitContent = bodyContent.split(' ');
+  const splitContent = bodyContent.split(" ");
 
   if (splitContent[0].length > maxLineLength) {
     return {
-      text: bodyContent.slice(0, maxLineLength) + '...',
+      text: `${bodyContent.slice(0, maxLineLength)  }...`,
       multiline: false,
     }
   }
@@ -272,17 +272,17 @@ function getBodyContent(node) {
     let idx = tmpLines.length - 1;
 
     if (tmpLines[idx].length + str.length <= maxLineLength) {
-      tmpLines[idx] += ' ' + str;
+      tmpLines[idx] += ` ${  str}`;
       continue;
     }
 
     if (tmpLines.length >= maxLineCount) {
-      tmpLines[idx] += '...';
+      tmpLines[idx] += "...";
       break;
     }
 
     if (str.length > maxLineLength) {
-      tmpLines[idx + 1] = str.slice(0, maxLineLength) + '...';
+      tmpLines[idx + 1] = `${str.slice(0, maxLineLength)  }...`;
       break;
     }
 
@@ -291,11 +291,11 @@ function getBodyContent(node) {
 
   let idx = tmpLines.length - 1;
   if (tmpLines[idx].length > maxLineLength) {
-    tmpLines[idx] = tmpLines[idx].slice(0, maxLineLength) + '...';
+    tmpLines[idx] = `${tmpLines[idx].slice(0, maxLineLength)  }...`;
   }
 
   return {
-    text: tmpLines.join('\n'),
+    text: tmpLines.join("\n"),
     multiline: tmpLines.length > 1,
   }
 }
@@ -306,18 +306,18 @@ export function boundingRect(nodes, expandedGroup, layout, group) {
   return new joint.shapes.basic.Rect({
     id: group.id,
     markup: boundingMarkup,
-    position: { x: boundingRect.x, y: boundingRect.y },
+    position: {x: boundingRect.x, y: boundingRect.y},
     backgroundObject: true,
     nodeData: group,
-    size: { width: boundingRect.width, height: boundingRect.height },
+    size: {width: boundingRect.width, height: boundingRect.height},
     attrs: {
       rect: {
-        fill: 'green', opacity: 0.1
+        fill: "green", opacity: 0.1
       },
-      '.collapseIcon': {
-        'xlink:href': collapseIcon,
-        'ref-x': boundingRect.width - 13,
-        'ref-y': - 13,
+      ".collapseIcon": {
+        "xlink:href": collapseIcon,
+        "ref-x": boundingRect.width - 13,
+        "ref-y": - 13,
         width: 26,
         height: 26,
       },
@@ -338,27 +338,27 @@ export function makeLink(edge, forExport) {
       position: 0.5,
       attrs: {
         rect: {
-          ref: 'text',
+          ref: "text",
           refX: -5,
           refY: -5,
-          refWidth: '100%',
-          refHeight: '100%',
+          refWidth: "100%",
+          refHeight: "100%",
           refWidth2: 10,
           refHeight2: 10,
-          stroke: '#686868',
-          fill: '#F5F5F5',
+          stroke: "#686868",
+          fill: "#F5F5F5",
           strokeWidth: 1,
           rx: 5,
           ry: 5,
-          cursor: 'pointer'
+          cursor: "pointer"
         },
         text: {
-          text: joint.util.breakText(label, { width: rectWidth }),
+          text: joint.util.breakText(label, {width: rectWidth}),
           fontWeight: 300,
           fontSize: 10,
-          fill: '#686868',
-          textAnchor: 'middle',
-          textVerticalAnchor: 'middle',
+          fill: "#686868",
+          textAnchor: "middle",
+          textVerticalAnchor: "middle",
         },
       }
     })
@@ -367,16 +367,16 @@ export function makeLink(edge, forExport) {
   return new joint.dia.Link({
     //TODO: some different way to create id? Must be deterministic and unique
     id: `${edge.from}-${edge.to}-${label}`,
-    source: {id: edge.from, port: 'Out'},
-    target: {id: edge.to, port: 'In'},
+    source: {id: edge.from, port: "Out"},
+    target: {id: edge.to, port: "In"},
     labels: labels,
     attrs: {
       line: {
         connection: true,
       },
-      '.link-tools': forExport ? { display: 'none'} : {},
-      '.connection': forExport ? { stroke: edgeStroke, 'stroke-width': 2, fill: edgeStroke } : { stroke: 'white', 'stroke-width': 2, fill: 'none' },
-      '.marker-target': { 'stroke-width': forExport ? 1 : 0, stroke: forExport ? edgeStroke : 'white', fill: 'white', d: 'M 10 0 L 0 5 L 10 10 L 8 5 z' },
+      ".link-tools": forExport ? {display: "none"} : {},
+      ".connection": forExport ? {stroke: edgeStroke, "stroke-width": 2, fill: edgeStroke} : {stroke: "white", "stroke-width": 2, fill: "none"},
+      ".marker-target": {"stroke-width": forExport ? 1 : 0, stroke: forExport ? edgeStroke : "white", fill: "white", d: "M 10 0 L 0 5 L 10 10 L 8 5 z"},
       minLen: label ? 20 : 10
     },
     edgeData: edge,

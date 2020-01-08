@@ -18,7 +18,7 @@ export default function SwitchIcon(props) {
 
   return (
     shouldShowSwitch ?
-      <button className={"inlined switch-icon" + (displayRawEditor ? " active " : "")}
+      <button className={`inlined switch-icon${  displayRawEditor ? " active " : ""}`}
               onClick={onClick}
               disabled={!switchable || readOnly}
               title={hint(switchable, displayRawEditor, readOnly)}>

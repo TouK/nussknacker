@@ -7,13 +7,13 @@ export const Checkbox = (props) => {
   return (
     <div className="node-row">
       {renderFieldLabel()}
-      <div className={"node-value" + (isMarked ? " marked" : "")}>
+      <div className={`node-value${  isMarked ? " marked" : ""}`}>
         <input
           autoFocus={autofocus}
           type="checkbox"
           checked={value || false}
           onChange={onChange}
-          disabled={readOnly ? 'disabled' : ''}
+          disabled={readOnly ? "disabled" : ""}
         />
       </div>
     </div>

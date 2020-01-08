@@ -7,7 +7,7 @@ export default function TestValue(props) {
   const hiddenClassPart = (shouldHideTestResults ? " partly-hidden" : "")
 
   return (
-    <div className={"node-value" + hiddenClassPart}>
+    <div className={`node-value${  hiddenClassPart}`}>
       {
         _.get(value, "original") ?
           <Textarea className="node-input"
