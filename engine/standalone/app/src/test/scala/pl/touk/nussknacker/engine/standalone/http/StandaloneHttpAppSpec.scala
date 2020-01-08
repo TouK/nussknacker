@@ -119,8 +119,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   val processesRoute = exampleApp.processRoute.route(StandaloneRequestResponseLogger.default)
 
   it should "deploy process and then run it" in {
-    import StateStatus._
-
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(processJson))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -132,7 +130,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
         cursorState.downField("deploymentId").downField("value").focus shouldBe Some(Json.fromString(procId.value))
         cursorState.downField("startTime").focus shouldBe Some(Json.fromBigDecimal(testEpoch))
-        cursorState.downField("status").downField("clazz").focus shouldBe Some(Json.fromString("pl.touk.nussknacker.engine.api.deployment.StateStatus$RunningStateStatus"))
+        cursorState.downField("status").downField("clazz").focus shouldBe Some(Json.fromString("pl.touk.nussknacker.engine.api.deployment.RunningStateStatus"))
         cursorState.downField("status").downField("value").focus shouldBe Some(Json.fromString("RUNNING"))
       }
 

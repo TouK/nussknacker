@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName

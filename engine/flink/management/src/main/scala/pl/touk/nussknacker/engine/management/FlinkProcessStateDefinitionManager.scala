@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, StateAction}
 
 object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager  {

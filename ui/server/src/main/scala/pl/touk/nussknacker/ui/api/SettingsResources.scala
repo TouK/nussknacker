@@ -5,7 +5,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 

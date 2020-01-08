@@ -8,12 +8,12 @@ import com.typesafe.config.ConfigValueFactory
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
+import pl.touk.nussknacker.engine.management.{FlinkStateStatus, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
@@ -173,7 +173,8 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(ProcessName(processId)).futureValue
-    jobStatus.map(_.status) shouldBe Some("RUNNING")
+    jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+    jobStatus.map(_.status.isRunning) shouldBe Some(true)
 
     cancel(processId)
   }
@@ -216,7 +217,8 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
     Thread.sleep(1000)
     val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
-    jobStatus.map(_.status) shouldBe Some("RUNNING")
+    jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+    jobStatus.map(_.status.isRunning) shouldBe Some(true)
   }
 
   private def cancel(processId: String): Unit = {

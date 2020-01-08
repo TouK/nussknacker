@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, StateAction}
 
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {

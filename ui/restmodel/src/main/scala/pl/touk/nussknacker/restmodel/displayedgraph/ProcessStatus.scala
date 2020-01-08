@@ -2,17 +2,17 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 
 import io.circe.generic.JsonCodec
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 
 @JsonCodec(encodeOnly = true) case class ProcessStatus(deploymentId: Option[String],
-                                    status: StateStatus,
-                                    allowedActions: List[StateAction],
-                                    startTime: Option[Long],
-                                    attributes: Option[Json],
-                                    errorMessage: Option[String])
+                                                       status: StateStatus,
+                                                       allowedActions: List[StateAction],
+                                                       startTime: Option[Long],
+                                                       attributes: Option[Json],
+                                                       errorMessage: Option[String])
 
 object ProcessStatus {
 

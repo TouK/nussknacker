@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import org.scalatest.{FunSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateAction}
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 
 import scala.collection.immutable.List
 
