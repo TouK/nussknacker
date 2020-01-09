@@ -175,6 +175,16 @@ espCheckbox(checkboxWidth)
       height 22px
       padding-top 8px
 
+.modal-title-container
+  height modalHeaderHeight
+  float left
+
+.modal-draggable-handle
+  &:hover
+    cursor grab
+  &:active
+    cursor grabbing
+
 .modal-title
   height modalHeaderHeight
   float left
@@ -185,6 +195,10 @@ espCheckbox(checkboxWidth)
     width 18px
     height 18px
     display inline-block
+
+.edge-modal-title
+  @extend .modal-title
+  padding-left 10px
 
 .modal-title-icon
   display inline-block

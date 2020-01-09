@@ -11,7 +11,6 @@ import "../stylesheets/visualization.styl";
 import HttpService from "../http/HttpService";
 import * as VisualizationUrl from "../common/VisualizationUrl";
 import Draggable from "react-draggable";
-import {preventFromMoveSelectors} from "./modals/GenericModalDialog";
 import {duplicateValue, notEmptyValidator} from "../common/Validators";
 import ValidationLabels from "./modals/ValidationLabels";
 
@@ -57,10 +56,10 @@ class AddProcessDialog extends React.Component {
              shouldCloseOnOverlayClick={false}
              onRequestClose={this.closeDialog}>
         <div className="draggable-container">
-          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+          <Draggable bounds="parent" handle=".modal-draggable-handle">
             <div className="espModal">
               <div className="modalHeader">
-                <div className="modal-title" style={titleStyles}>
+                <div className="modal-title modal-draggable-handle" style={titleStyles}>
                   <span>{this.props.message}</span>
                 </div>
               </div>
