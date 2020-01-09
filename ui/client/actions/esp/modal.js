@@ -1,12 +1,37 @@
+// @flow
 import _ from "lodash"
+import {ThunkDispatch} from "redux-thunk"
 import {events} from "../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import NodeUtils from "../../components/graph/NodeUtils"
+import type {DialogType} from "../../components/modals/Dialogs"
 import history from "../../history"
+import type {Action} from "../types"
+import type {EventInfo} from "./reportEvent"
 import {reportEvent} from "./reportEvent"
+import type {Edge, NodeType} from "./types"
 
-export function displayModalNodeDetails(node, readonly, eventInfo) {
-  return (dispatch) => {
+export type DisplayModalNodeDetailsAction = {
+  type: "DISPLAY_MODAL_NODE_DETAILS",
+  nodeToDisplay: NodeType,
+  nodeToDisplayReadonly: boolean,
+}
+export type DisplayModalEdgeDetailsAction = {
+  type: "DISPLAY_MODAL_EDGE_DETAILS",
+  edgeToDisplay: Edge,
+}
+export type ToggleModalDialogAction = {
+  type: "TOGGLE_MODAL_DIALOG",
+  openDialog: DialogType,
+}
+export type ToggleInfoModalAction = {
+  type: "TOGGLE_INFO_MODAL",
+  openDialog: DialogType,
+  text: string,
+}
+
+export function displayModalNodeDetails(node: NodeType, readonly: boolean, eventInfo: EventInfo) {
+  return (dispatch: ThunkDispatch<Action>) => {
     history.replace({
       pathname: window.location.pathname,
       search: VisualizationUrl.setAndPreserveLocationParams({
@@ -16,7 +41,7 @@ export function displayModalNodeDetails(node, readonly, eventInfo) {
     })
 
     !_.isEmpty(eventInfo) && dispatch(reportEvent({
-      category: eventInfo.eventCategory,
+      category: eventInfo.category,
       action: events.actions.buttonClick,
       name: eventInfo.name,
     }))
@@ -29,7 +54,7 @@ export function displayModalNodeDetails(node, readonly, eventInfo) {
   }
 }
 
-export function displayModalEdgeDetails(edge) {
+export function displayModalEdgeDetails(edge: Edge) {
   history.replace({
     pathname: window.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({
@@ -44,22 +69,8 @@ export function displayModalEdgeDetails(edge) {
   }
 }
 
-export function closeModals() {
-  history.replace({
-    pathname: window.location.pathname,
-    search: VisualizationUrl.setAndPreserveLocationParams({
-      edgeId: null,
-      nodeId: null,
-    }),
-  })
-
-  return {
-    type: "CLOSE_MODALS",
-  }
-}
-
-export function toggleModalDialog(openDialog) {
-  return (dispatch) => {
+export function toggleModalDialog(openDialog: string) {
+  return (dispatch: ThunkDispatch<Action>) => {
     openDialog != null && dispatch(reportEvent({
           category: "right_panel",
           action: "button_click",
@@ -74,7 +85,7 @@ export function toggleModalDialog(openDialog) {
   }
 }
 
-export function toggleInfoModal(openDialog, text) {
+export function toggleInfoModal(openDialog: string, text: string) {
   return {
     type: "TOGGLE_INFO_MODAL",
     openDialog: openDialog,

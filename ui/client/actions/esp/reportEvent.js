@@ -1,14 +1,31 @@
-export function reportEvent(eventInfo) {
-  return (dispatch) => {
-    return dispatch({
-      type: "USER_TRACKING",
-      tracking: {
-        event: {
-          e_c: eventInfo.category,
-          e_a: eventInfo.action,
-          e_n: eventInfo.name,
-        },
+// @flow
+
+import {ThunkAction, ThunkDispatch} from "redux-thunk"
+
+export type EventInfo = {
+  category: string,
+  action: string,
+  name: string,
+}
+
+export type ReportEventAction = {
+    type: "USER_TRACKING",
+    tracking: {
+      e_c: string,
+      e_a: string,
+      e_n: string,
+    }
+}
+
+export function reportEvent(eventInfo: EventInfo): ThunkAction {
+  return (dispatch: ThunkDispatch) => dispatch({
+    type: "USER_TRACKING",
+    tracking: {
+      event: {
+        e_c: eventInfo.category,
+        e_a: eventInfo.action,
+        e_n: eventInfo.name,
       },
-    })
-  }
+    },
+  })
 }

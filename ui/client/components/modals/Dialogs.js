@@ -1,28 +1,34 @@
-import React from "react";
-import ConfirmDialog from "./ConfirmDialog"
-import ProcessActionDialog from "./ProcessActionDialog"
-import SaveProcessDialog from "./SaveProcessDialog"
-import GenerateTestDataDialog from "./GenerateTestDataDialog"
+import React from "react"
 import CalculateCountsDialog from "./CalculateCountsDialog"
 import CompareVersionsDialog from "./CompareVersionsDialog"
-import InfoModal from "./InfoModal";
+import ConfirmDialog from "./ConfirmDialog"
+import GenerateTestDataDialog from "./GenerateTestDataDialog"
+import InfoModal from "./InfoModal"
+import ProcessActionDialog from "./ProcessActionDialog"
+import SaveProcessDialog from "./SaveProcessDialog"
 
-
-class AllDialogs extends React.Component{
-    render() {
-        return (
-            <div>
-                <ConfirmDialog/>
-                <ProcessActionDialog />
-                <InfoModal/>
-                <SaveProcessDialog/>
-                <GenerateTestDataDialog/>
-                <CalculateCountsDialog/>
-                <CompareVersionsDialog/>
-            </div>
-        );
-    }
+class AllDialogs extends React.Component {
+  render() {
+    return (
+        <div>
+          <ConfirmDialog />
+          <ProcessActionDialog />
+          <InfoModal />
+          <SaveProcessDialog />
+          <GenerateTestDataDialog />
+          <CalculateCountsDialog />
+          <CompareVersionsDialog />
+        </div>
+    )
+  }
 }
+
+export type DialogType = "INFO_MODAL"
+    | "PROCESS_ACTION"
+    | "SAVE_PROCESS"
+    | "GENERATE_TEST_DATA"
+    | "CALCULATE_COUNTS"
+    | "COMPARE_VERSIONS"
 
 export default {
   types: {
@@ -31,7 +37,6 @@ export default {
     saveProcess: "SAVE_PROCESS",
     generateTestData: "GENERATE_TEST_DATA",
     calculateCounts: "CALCULATE_COUNTS",
-    compareVersions: "COMPARE_VERSIONS"
-
-  }, AllDialogs
+    compareVersions: "COMPARE_VERSIONS",
+  }, AllDialogs,
 }

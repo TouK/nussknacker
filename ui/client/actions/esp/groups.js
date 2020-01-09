@@ -1,8 +1,12 @@
+// @flow
+import {ThunkAction, ThunkDispatch} from "redux-thunk"
 import {events} from "../../analytics/TrackingEvents"
+import type {Action} from "../types"
 import {reportEvent} from "./reportEvent"
+import type {GroupId, NodeId, NodeType} from "./types"
 
 export function startGrouping() {
-  return (dispatch) => {
+  return (dispatch: ThunkDispatch<Action>) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
       action: events.actions.buttonClick,
@@ -16,7 +20,7 @@ export function startGrouping() {
 }
 
 export function cancelGrouping() {
-  return (dispatch) => {
+  return (dispatch: ThunkDispatch<Action>) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
       action: events.actions.buttonClick,
@@ -30,7 +34,7 @@ export function cancelGrouping() {
 }
 
 export function finishGrouping() {
-  return (dispatch) => {
+  return (dispatch: ThunkDispatch<Action>) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
       action: events.actions.buttonClick,
@@ -43,11 +47,14 @@ export function finishGrouping() {
   }
 }
 
-export function addToGroup(nodeId) {
+export type AddNodeToGroupAction = { type: "ADD_NODE_TO_GROUP", nodeId: NodeId }
+export type UnGroupAction = { type: "UNGROUP", groupToRemove: NodeId }
+
+export function addToGroup(nodeId: NodeId): AddNodeToGroupAction {
   return {type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
 }
 
-export function ungroup(node) {
+export function ungroup(node: NodeType): ThunkAction<UnGroupAction> {
   return (dispatch) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
@@ -62,10 +69,15 @@ export function ungroup(node) {
   }
 }
 
-export function expandGroup(id) {
-  return {type: "EXPAND_GROUP", id: id}
+export type ToggleGroupAction = {
+  type: "EXPAND_GROUP" | "COLLAPSE_GROUP",
+  id: GroupId
 }
 
-export function collapseGroup(id) {
-  return {type: "COLLAPSE_GROUP", id: id}
+export function expandGroup(id: GroupId) {
+  return {type: "EXPAND_GROUP", id}
+}
+
+export function collapseGroup(id: GroupId) {
+  return {type: "COLLAPSE_GROUP", id}
 }

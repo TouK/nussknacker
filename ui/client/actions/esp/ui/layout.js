@@ -1,13 +1,24 @@
-import {events} from "../../analytics/TrackingEvents"
-import * as VisualizationUrl from "../../common/VisualizationUrl"
-import history from "../../history"
-import {reportEvent} from "./reportEvent"
+// @flow
+import {ThunkDispatch} from "redux-thunk"
+import {events} from "../../../analytics/TrackingEvents"
+import * as VisualizationUrl from "../../../common/VisualizationUrl"
+import history from "../../../history"
+import type {Action} from "../../types"
+import {reportEvent} from "../reportEvent"
 
-export function layoutChanged(layout) {
+export type Layout = any;
+export type GraphLayoutFunction = any;
+export type BusinessView = any;
+
+export function layoutChanged(layout: Layout) {
   return {
     type: "LAYOUT_CHANGED",
     layout: layout,
   }
+}
+
+export type TogglePanelAction = {
+  type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL",
 }
 
 export function toggleLeftPanel() {
@@ -17,7 +28,7 @@ export function toggleLeftPanel() {
 }
 
 export function toggleRightPanel() {
-  return (dispatch) => {
+  return (dispatch: ThunkDispatch<Action>) => {
     dispatch({
       type: "TOGGLE_RIGHT_PANEL",
     })
@@ -30,8 +41,8 @@ export function toggleRightPanel() {
   }
 }
 
-export function layout(graphLayoutFunction) {
-  return (dispatch) => {
+export function layout(graphLayoutFunction: GraphLayoutFunction) {
+  return (dispatch: ThunkDispatch<Action>) => {
     graphLayoutFunction()
 
     dispatch(reportEvent({
@@ -46,7 +57,7 @@ export function layout(graphLayoutFunction) {
   }
 }
 
-export function businessViewChanged(value) {
+export function businessViewChanged(value: BusinessView) {
   history.replace({
     pathname: window.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({

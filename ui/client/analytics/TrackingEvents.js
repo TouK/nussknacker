@@ -1,3 +1,4 @@
+// @flow
 export const events = {
   categories: {
     rightPanel: "right_panel",

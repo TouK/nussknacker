@@ -1,10 +1,20 @@
-const initialState = {
+// @flow
+
+import type {Action} from "../actions/types"
+
+type SettingsState = {
+  loggedUser: any,
+  featuresSettings: any,
+  authenticationSettings: any,
+}
+
+const initialState: SettingsState = {
   loggedUser: {},
   featuresSettings: {},
-  authenticationSettings: {}
-};
+  authenticationSettings: {},
+}
 
-export function reducer(state = initialState, action) {
+export function reducer(state: SettingsState = initialState, action: Action): SettingsState {
   switch (action.type) {
     case "LOGGED_USER": {
       return {
@@ -17,19 +27,19 @@ export function reducer(state = initialState, action) {
         ...state,
         featuresSettings: action.settings.features,
         authenticationSettings: action.settings.authentication,
-        analyticsSettings: action.settings.analytics
+        analyticsSettings: action.settings.analytics,
       }
     }
     case "PROCESS_DEFINITION_DATA": {
       return {
         ...state,
-          processDefinitionData: action.processDefinitionData
+        processDefinitionData: action.processDefinitionData,
       }
     }
     case "AVAILABLE_QUERY_STATES": {
       return {
         ...state,
-        availableQueryableStates: action.availableQueryableStates
+        availableQueryableStates: action.availableQueryableStates,
       }
     }
     default:

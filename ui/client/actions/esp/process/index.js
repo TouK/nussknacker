@@ -114,23 +114,6 @@ function alignSubprocessesWithSchema(process, processDefinitionData) {
   return {...process, nodes: nodesWithNewSubprocessSchema}
 }
 
-export function toggleProcessActionDialog(message, action, displayWarnings) {
-  return (dispatch) => {
-    dispatch(reportEvent({
-      category: "right_panel",
-      action: "button_click",
-      name: message,
-    }))
-
-    return dispatch({
-      type: "TOGGLE_PROCESS_ACTION_MODAL",
-      message: message,
-      action: action,
-      displayWarnings: displayWarnings,
-    })
-  }
-}
-
 export function testProcessFromFile(id, testDataFile, process) {
   return (dispatch) => {
     dispatch({
@@ -200,3 +183,4 @@ export * from "./showMetrics"
 export * from "./editEdge"
 export * from "./editGroup"
 export * from "./editNode"
+export * from "./toggleProcessActionDialog"
