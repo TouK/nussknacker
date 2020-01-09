@@ -5,7 +5,7 @@ import java.util.Properties
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 
 object CustomProcess {
@@ -25,7 +25,7 @@ object CustomProcess {
     val props = new Properties()
     props.setProperty("bootstrap.servers", config.getString("kafka.kafkaAddress"))
 
-    env.addSource(new FlinkKafkaConsumer011[String]("testTopic", new SimpleStringSchema, props))
+    env.addSource(new FlinkKafkaConsumer[String]("testTopic", new SimpleStringSchema, props))
       .printToErr()
 
     env.execute(args(0))

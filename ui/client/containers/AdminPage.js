@@ -1,12 +1,12 @@
-import React from 'react'
-import {Tab, TabList, TabPanel, Tabs} from 'react-tabs'
-import * as  queryString from 'query-string'
-import 'react-tabs/style/react-tabs.css'
+import React from "react"
+import {Tab, TabList, TabPanel, Tabs} from "react-tabs"
+import * as  queryString from "query-string"
+import "react-tabs/style/react-tabs.css"
 import SearchComponents from "./admin/SearchComponents"
 import UnusedComponents from "./admin/UnusedComponents"
 import Services from "./admin/Services"
 import CustomProcesses from "./admin/CustomProcesses"
-import {withRouter} from 'react-router-dom'
+import {withRouter} from "react-router-dom"
 import {nkPath} from "../config";
 
 class AdminPage extends React.Component {

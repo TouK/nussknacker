@@ -34,7 +34,7 @@ trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matche
     val process = EspProcessBuilder
       .id("example1")
       .parallelism(1)
-      .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+      .exceptionHandler()
       .source("start", "kafka-transaction", "topic" -> s"'$in'")
       .filter("amountFilter", "#input.amount > 1")
       .sink("end", "#UTIL.mapToJson({'clientId': #input.clientId, 'amount': #input.amount})",
@@ -61,7 +61,7 @@ trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matche
     val process = EspProcessBuilder
       .id("example2")
       .parallelism(1)
-      .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+      .exceptionHandler()
       .source("start", "kafka-transaction", "topic" -> s"'$in'")
       .enricher("clientEnricher", "client", "clientService", "clientId" -> "#input.clientId")
       .sink("end",
@@ -94,7 +94,7 @@ trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matche
     val process =EspProcessBuilder
         .id("example3")
         .parallelism(1)
-        .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+        .exceptionHandler()
         .source("start", "kafka-transaction", "topic" -> s"'$in'")
         .customNode("aggregate", "aggregatedAmount", "transactionAmountAggregator", "clientId" -> "#input.clientId")
         .filter("aggregateFilter", "#aggregatedAmount.amount > 10")
@@ -126,7 +126,7 @@ trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matche
     val process = EspProcessBuilder
       .id("example4")
       .parallelism(1)
-      .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+      .exceptionHandler()
       .source("start", "kafka-transaction", "topic" -> s"'$in'")
       .customNode("transactionCounter", "transactionCounts", "eventsCounter", "key" -> "#input.clientId", "length" -> "'1h'")
       .filter("aggregateFilter", "#transactionCounts.count > 1")

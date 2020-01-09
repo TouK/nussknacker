@@ -222,6 +222,7 @@ common-node-input(padding)
 modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
   background-color: modalBkgColor
+  clear both
   labelWidth = 20%
   .warning
     margin 15px
@@ -272,6 +273,7 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       color: #686868
       textarea
         overflow hidden
+        height auto
       espCheckbox(20px)
       input[type='checkbox']
         margin-top 7px
@@ -490,6 +492,13 @@ espPanelButton()
     border-color: errorColor
   &.attachment-button
     border-color: errorColor
+  :first-child
+    svg
+      g
+        .a
+          fill: errorColor
+  :nth-of-type(2)
+    color: errorColor
 
 .modalButton
   espButtonBase()
@@ -556,6 +565,9 @@ espPanelButton()
   padding-right: 10px
   background-color: #333
   min-height 35px
+  &.focused
+    outline 2px solid #0058a9 !important
+    outline-offset -1px !important
 
 .switch-icon
   height 35px

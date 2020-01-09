@@ -1,6 +1,6 @@
 import React from "react"
 import Creatable from "react-select/creatable"
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types"
 import SwitchIcon from "./SwitchIcon"
 
 const getOptions = (values) => {
@@ -17,11 +17,12 @@ export default class ExpressionWithFixedValues extends React.Component {
   }
 
   currentOption = (expressionObj, defaultValue) => {
+    //TODO: is it ok to put not-existing option here?
     const defaultOption = {
-      value: expressionObj.expression || defaultValue.expression || "",
-      label: expressionObj.expression || defaultValue.expression || ""
+      value: (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.expression) || "",
+      label: (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.label) || ""
     }
-    return this.options.find((option) => option.value === expressionObj.expression) || defaultOption
+    return this.options.find((option) => expressionObj && option.value === expressionObj.expression) || defaultOption
   }
 
   render() {
@@ -35,7 +36,7 @@ export default class ExpressionWithFixedValues extends React.Component {
       <div className={rowClassName ? rowClassName : " node-row"}>
         {fieldLabel && renderFieldLabel(fieldLabel)}
         <Creatable
-          className={"node-value-select node-value " + (shouldShowSwitch ? " switchable" : "")}
+          className={`node-value-select node-value ${  shouldShowSwitch ? " switchable" : ""}`}
           classNamePrefix="node-value-select"
           value={option}
           onChange={(newValue) => onValueChange(newValue.value)}

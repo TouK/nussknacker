@@ -1,7 +1,7 @@
-import { bindActionCreators } from 'redux'
-import * as EspActions from './actions'
-import * as UndoRedoActions from './undoRedoActions'
-import * as NotificationActions from './notificationActions'
+import {bindActionCreators} from "redux"
+import * as EspActions from "./actions"
+import * as UndoRedoActions from "./undoRedoActions"
+import * as NotificationActions from "./notificationActions"
 
 export default {
   mapDispatchWithEspActions(dispatch) {

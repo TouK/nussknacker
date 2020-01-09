@@ -1,8 +1,8 @@
-import React from 'react'
+import React from "react"
 import {render} from "react-dom";
-import PropTypes from 'prop-types';
-import {DragSource} from 'react-dnd';
-import * as LoaderUtils from '../common/LoaderUtils'
+import PropTypes from "prop-types";
+import {DragSource} from "react-dnd";
+import * as LoaderUtils from "../common/LoaderUtils"
 import "../stylesheets/toolBox.styl";
 
 class Tool extends React.Component {
@@ -29,7 +29,7 @@ class Tool extends React.Component {
 var spec = {
   beginDrag: (props, monitor, component) => {
     const nodeModel = _.cloneDeep(props.nodeModel)
-    _.set(nodeModel, 'id', props.label)
+    _.set(nodeModel, "id", props.label)
     return nodeModel
   }
 }

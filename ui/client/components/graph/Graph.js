@@ -1,22 +1,22 @@
-import React from 'react'
-import * as joint from 'jointjs'
-import * as dagre from 'dagre'
-import EspNode from './EspNode'
-import 'jointjs/dist/joint.css'
-import _ from 'lodash'
-import svgPanZoom from 'svg-pan-zoom'
-import {connect} from 'react-redux'
-import ActionsUtils from '../../actions/ActionsUtils'
-import NodeDetailsModal from './node-modal/NodeDetailsModal'
-import EdgeDetailsModal from './node-modal/EdgeDetailsModal'
-import {DropTarget} from 'react-dnd'
-import '../../stylesheets/graph.styl'
-import SVGUtils from '../../common/SVGUtils';
-import NodeUtils from './NodeUtils.js'
+import React from "react"
+import * as joint from "jointjs"
+import * as dagre from "dagre"
+import EspNode from "./EspNode"
+import "jointjs/dist/joint.css"
+import _ from "lodash"
+import svgPanZoom from "svg-pan-zoom"
+import {connect} from "react-redux"
+import ActionsUtils from "../../actions/ActionsUtils"
+import NodeDetailsModal from "./node-modal/NodeDetailsModal"
+import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
+import {DropTarget} from "react-dnd"
+import "../../stylesheets/graph.styl"
+import SVGUtils from "../../common/SVGUtils";
+import NodeUtils from "./NodeUtils.js"
 import cssVariables from "../../stylesheets/_variables.styl"
 import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types"
 
 class Graph extends React.Component {
 
@@ -127,7 +127,7 @@ class Graph extends React.Component {
     //  then `toFront()` method works as expected but there are issues with group fold/unfold
     //when joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')) is used here
     // then `toFront()` method does not work at all, but group fold/unfold works just fine
-    joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')), {
+    joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get("backgroundObject")), {
       graphlib: dagre.graphlib,
       dagre: dagre,
       nodeSep: 0,
@@ -173,7 +173,7 @@ class Graph extends React.Component {
         } else if (model instanceof joint.dia.Link) {
           // Disable the default vertex add and label move functionality on pointerdown.
           return {vertexAdd: false, labelMove: false};
-        } else if (model.get && model.get('backgroundObject')) {
+        } else if (model.get && model.get("backgroundObject")) {
           //Disable moving group rect
           return false
         } else {
@@ -243,16 +243,16 @@ class Graph extends React.Component {
 
     const nodesWithGroups = NodeUtils.nodesFromProcess(process, expandedGroups)
     const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
-    t = this.time(t, 'start')
+    t = this.time(t, "start")
 
     const nodes = _.map(nodesWithGroups, (n) => {
       return EspNode.makeElement(n, processCounts[n.id], forExport, this.props.processDefinitionData.nodesConfig || {})
     })
 
-    t = this.time(t, 'nodes')
+    t = this.time(t, "nodes")
 
     const edges = _.map(edgesWithGroups, (e) => EspNode.makeLink(e, forExport))
-    t = this.time(t, 'links')
+    t = this.time(t, "links")
 
     const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups).map(expandedGroup => ({
       group: expandedGroup,
@@ -260,7 +260,7 @@ class Graph extends React.Component {
         NodeUtils.createGroupNode(nodesWithGroups, expandedGroup))
     }))
 
-    t = this.time(t, 'bounding')
+    t = this.time(t, "bounding")
 
     const cells = boundingRects.map(g => g.rect).concat(nodes.concat(edges));
 
@@ -272,7 +272,7 @@ class Graph extends React.Component {
       return old && JSON.stringify(old.get("definitionToCompare")) !== JSON.stringify(cell.get("definitionToCompare"))
     })
 
-    t = this.time(t, 'compute')
+    t = this.time(t, "compute")
 
     if (newCells.length + deletedCells.length + changedCells.length > 3) {
       this.graph.resetCells(cells);
@@ -281,10 +281,10 @@ class Graph extends React.Component {
       this._updateChangedCells(changedCells);
       this.graph.addCells(newCells)
     }
-    t = this.time(t, 'redraw')
+    t = this.time(t, "redraw")
 
     this._layout(layout);
-    this.time(t, 'layout')
+    this.time(t, "layout")
 
     _.forEach(boundingRects, rect => rect.rect.toBack())
 
@@ -297,7 +297,7 @@ class Graph extends React.Component {
     } else {
       _.forEach(layout, el => {
         const cell = this.graph.getCell(el.id)
-        if (cell && JSON.stringify(cell.get('position')) !== JSON.stringify(el.position)) cell.set('position', el.position)
+        if (cell && JSON.stringify(cell.get("position")) !== JSON.stringify(el.position)) cell.set("position", el.position)
       });
     }
   }
@@ -330,17 +330,17 @@ class Graph extends React.Component {
   //Hack for FOP to properly export image from svg xml
   svgDimensions = (width, height) => {
     let svg = this.getEspGraphRef().getElementsByTagName("svg")[0]
-    svg.setAttribute('width', width)
-    svg.setAttribute('height', height)
+    svg.setAttribute("width", width)
+    svg.setAttribute("height", height)
     this.setState({exported: SVGUtils.toXml(svg)})
   }
 
   highlightNodes = (data, nodeToDisplay, groupingState, selectionState) => {
     this.graph.getCells().forEach(cell => {
-      this.unhighlightCell(cell, 'node-validation-error')
-      this.unhighlightCell(cell, 'node-focused')
-      this.unhighlightCell(cell, 'node-focused-with-validation-error')
-      this.unhighlightCell(cell, 'node-grouping')
+      this.unhighlightCell(cell, "node-validation-error")
+      this.unhighlightCell(cell, "node-focused")
+      this.unhighlightCell(cell, "node-focused-with-validation-error")
+      this.unhighlightCell(cell, "node-grouping")
     });
 
     const invalidNodeIds = _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes)
@@ -348,12 +348,12 @@ class Graph extends React.Component {
 
     invalidNodeIds.forEach(id =>
       selectedNodeIds.includes(id) ?
-        this.highlightNode(id, 'node-focused-with-validation-error') : this.highlightNode(id, 'node-validation-error'));
+        this.highlightNode(id, "node-focused-with-validation-error") : this.highlightNode(id, "node-validation-error"));
 
-    (groupingState || []).forEach(id => this.highlightNode(id, 'node-grouping'));
+    (groupingState || []).forEach(id => this.highlightNode(id, "node-grouping"));
     selectedNodeIds.forEach(id => {
       if (!invalidNodeIds.includes(id)) {
-        this.highlightNode(id, 'node-focused')
+        this.highlightNode(id, "node-focused")
       }
     });
   }
@@ -361,7 +361,7 @@ class Graph extends React.Component {
   highlightCell(cell, className) {
     this.processGraphPaper.findViewByModel(cell).highlight(null, {
       highlighter: {
-        name: 'addClass',
+        name: "addClass",
         options: {className: className}
       }
     })
@@ -370,7 +370,7 @@ class Graph extends React.Component {
   unhighlightCell(cell, className) {
     this.processGraphPaper.findViewByModel(cell).unhighlight(null, {
       highlighter: {
-        name: 'addClass',
+        name: "addClass",
         options: {className: className}
       }
     })
@@ -384,8 +384,8 @@ class Graph extends React.Component {
   }
 
   changeLayoutIfNeeded = () => {
-    let newLayout = this.graph.getElements().filter(el => !el.get('backgroundObject')).map(el => {
-      const pos = el.get('position');
+    let newLayout = this.graph.getElements().filter(el => !el.get("backgroundObject")).map(el => {
+      const pos = el.get("position");
       return {id: el.id, position: pos}
     })
 
@@ -398,7 +398,7 @@ class Graph extends React.Component {
     const svgElement =  this.getEspGraphRef().getElementsByTagName("svg").item(0);
 
     const panAndZoom = svgPanZoom(svgElement, {
-      viewportSelector: '.svg-pan-zoom_viewport',
+      viewportSelector: ".svg-pan-zoom_viewport",
       fit: this.props.processToDisplay.nodes.length > 1,
       zoomScaleSensitivity: 0.4,
       controlIconsEnabled: false,
@@ -408,11 +408,11 @@ class Graph extends React.Component {
       maxZoom: 10
     });
 
-    this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
+    this.processGraphPaper.on("blank:pointerdown", (evt, x, y) => {
       panAndZoom.enablePan();
     });
 
-    this.processGraphPaper.on('cell:pointerup blank:pointerup', (cellView, event) => {
+    this.processGraphPaper.on("cell:pointerup blank:pointerup", (cellView, event) => {
       panAndZoom.disablePan();
     });
 
@@ -427,7 +427,11 @@ class Graph extends React.Component {
   }
 
   changeNodeDetailsOnClick() {
-    this.processGraphPaper.on('cell:pointerdblclick', (cellView, evt, x, y) => {
+    this.processGraphPaper.on("cell:pointerdblclick", (cellView, evt, x, y) => {
+      if (this.props.groupingState) {
+        return;
+      }
+
       const nodeData = cellView.model.attributes.nodeData;
       if (nodeData) {
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeData.id
@@ -440,7 +444,7 @@ class Graph extends React.Component {
     })
 
     if (this.props.singleClickNodeDetailsEnabled) {
-      this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
+      this.processGraphPaper.on("cell:pointerclick", (cellView, evt, x, y) => {
 
         const nodeData = cellView.model.attributes.nodeData
         if (!nodeData) {
@@ -449,25 +453,25 @@ class Graph extends React.Component {
 
         this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
 
-        if (evt.ctrlKey) {
+        if (evt.ctrlKey || evt.metaKey) {
           this.props.actions.expandSelection(nodeData.id)
         } else {
           this.props.actions.resetSelection(nodeData.id)
         }
 
         //TODO: is this the best place for this? if no, where should it be?
-        const targetClass = _.get(evt, 'originalEvent.target.className.baseVal')
-        if (targetClass.includes('collapseIcon') && nodeData) {
+        const targetClass = _.get(evt, "originalEvent.target.className.baseVal")
+        if (targetClass.includes("collapseIcon") && nodeData) {
           this.props.actions.collapseGroup(nodeData.id)
         }
 
-        if (targetClass.includes('expandIcon') && nodeData) {
+        if (targetClass.includes("expandIcon") && nodeData) {
           this.props.actions.expandGroup(nodeData.id)
         }
       })
     }
 
-    this.processGraphPaper.on('blank:pointerdown', () => {
+    this.processGraphPaper.on("blank:pointerdown", () => {
       if (this.props.fetchedProcessDetails != null) {
         this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
         this.props.actions.resetSelection()
@@ -476,19 +480,19 @@ class Graph extends React.Component {
   }
 
   hooverHandling() {
-    this.processGraphPaper.on('cell:mouseover', (cellView) => {
+    this.processGraphPaper.on("cell:mouseover", (cellView) => {
       const model = cellView.model
       this.showLabelOnHover(model);
       this.showBackgroundIcon(model);
     });
-    this.processGraphPaper.on('cell:mouseout', (cellView, evt) => {
+    this.processGraphPaper.on("cell:mouseout", (cellView, evt) => {
       this.hideBackgroundIcon(cellView.model, evt);
     });
   }
 
   //needed for proper switch/filter label handling
   showLabelOnHover(model) {
-    if (model.get && !model.get('backgroundObject')) {
+    if (model.get && !model.get("backgroundObject")) {
       model.toFront();
     }
     return model;
@@ -496,20 +500,20 @@ class Graph extends React.Component {
 
   //background is below normal node, we cannot use normal hover/mouseover/mouseout...
   showBackgroundIcon(model) {
-    if (model.get && model.get('backgroundObject')) {
+    if (model.get && model.get("backgroundObject")) {
       const el = this.processGraphPaper.findViewByModel(model).vel
-      el.addClass('nodeIconForceHoverBox')
-      el.removeClass('nodeIconForceNoHoverBox')
+      el.addClass("nodeIconForceHoverBox")
+      el.removeClass("nodeIconForceNoHoverBox")
     }
   }
 
   //background is below normal node, we cannot use normal hover/mouseover/mouseout...
   hideBackgroundIcon(model, evt) {
-    if (model.get && model.get('backgroundObject')) {
+    if (model.get && model.get("backgroundObject")) {
       if (!this.checkIfCursorInRect(model, evt)) {
         const el = this.processGraphPaper.findViewByModel(model).vel
-        el.removeClass('nodeIconForceHoverBox')
-        el.addClass('nodeIconForceNoHoverBox')
+        el.removeClass("nodeIconForceHoverBox")
+        el.addClass("nodeIconForceNoHoverBox")
       }
 
     }
@@ -523,13 +527,13 @@ class Graph extends React.Component {
   }
 
   cursorBehaviour() {
-    this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
+    this.processGraphPaper.on("blank:pointerdown", (evt, x, y) => {
       if (this.getEspGraphRef()) {
         this.getEspGraphRef().style.cursor = "move"
       }
     })
 
-    this.processGraphPaper.on('blank:pointerup', (evt, x, y) => {
+    this.processGraphPaper.on("blank:pointerup", (evt, x, y) => {
       if (this.getEspGraphRef()) {
         this.getEspGraphRef().style.cursor = "auto"
       }
@@ -577,7 +581,7 @@ class Graph extends React.Component {
   render() {
     const toRender = (
       <div id="graphContainer" style={{padding: this.props.padding}}>
-        {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
+        {this.props.showNodeDetailsModal ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
         <div ref={this.espGraphRef} id={this.props.divId}></div>
       </div>
@@ -611,6 +615,7 @@ function mapState(state, props) {
     groupingState: state.graphReducer.groupingState,
     expandedGroups: state.ui.expandedGroups,
     layout: state.graphReducer.layout,
+    showNodeDetailsModal: state.ui.showNodeDetailsModal,
     ...commonState(state)
   };
 }
@@ -622,7 +627,7 @@ function mapSubprocessState(state, props) {
     padding: 30,
     readonly: true,
     singleClickNodeDetailsEnabled: false,
-    nodeIdPrefixForSubprocessTests: state.graphReducer.nodeToDisplay.id + "-", //TODO where should it be?
+    nodeIdPrefixForSubprocessTests: `${state.graphReducer.nodeToDisplay.id  }-`, //TODO where should it be?
     processToDisplay: props.processToDisplay,
     processCounts: props.processCounts,
     ...commonState(state)

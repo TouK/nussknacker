@@ -1,7 +1,7 @@
 
 class DialogMessages {
   unsavedProcessChanges = () => {
-    return `There are some unsaved process changes. Do you want to discard unsaved changes?`
+    return "There are some unsaved process changes. Do you want to discard unsaved changes?"
   }
   deploy = (processId) => {
     return `Are you sure you want to deploy ${processId}?`
@@ -19,11 +19,11 @@ class DialogMessages {
   }
 
   deleteComment = () => {
-    return 'Are you sure you want to delete comment?'
+    return "Are you sure you want to delete comment?"
   }
 
   cantArchiveRunningProcess = () => {
-    return `You can't archive running process! Stop it first and then click 'archive' button again.`
+    return "You can't archive running process! Stop it first and then click 'archive' button again."
   }
 
 }

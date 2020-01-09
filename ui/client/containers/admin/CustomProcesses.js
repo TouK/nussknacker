@@ -1,12 +1,12 @@
 import React from "react"
 import {Table, Td, Tr} from "reactable"
-import {withRouter} from 'react-router-dom'
+import {withRouter} from "react-router-dom"
 import HttpService from "../../http/HttpService"
 import DateUtils from "../../common/DateUtils"
 import LoaderSpinner from "../../components/Spinner.js"
 import HealthCheck from "../../components/HealthCheck.js"
 import DialogMessages from "../../common/DialogMessages"
-import {Glyphicon} from 'react-bootstrap'
+import {Glyphicon} from "react-bootstrap"
 import "../../stylesheets/processes.styl"
 import BaseProcesses from "./../BaseProcesses"
 import {connect} from "react-redux"
@@ -16,7 +16,7 @@ import Date from "../../components/common/Date"
 
 class CustomProcesses extends BaseProcesses {
 
-  page = 'custom'
+  page = "custom"
 
   constructor(props) {
     super(props)
@@ -73,18 +73,18 @@ class CustomProcesses extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={['name', 'category', 'modifyDate', 'createDate']}
-          filterable={['name', 'category']}
+          sortable={["name", "category", "modifyDate", "createDate"]}
+          filterable={["name", "category"]}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
-            {key: 'name', label: 'Process name'},
-            {key: 'category', label: 'Category'},
-            {key: 'createdAt', label: 'Created at'},
-            {key: 'modifyDate', label: 'Last modification'},
-            {key: 'status', label: 'Status'},
-            {key: 'deploy', label: 'Deploy'},
-            {key: 'cancel', label: 'Cancel'}
+            {key: "name", label: "Process name"},
+            {key: "category", label: "Category"},
+            {key: "createdAt", label: "Created at"},
+            {key: "modifyDate", label: "Last modification"},
+            {key: "status", label: "Status"},
+            {key: "deploy", label: "Deploy"},
+            {key: "cancel", label: "Cancel"}
           ]}
         >
           {

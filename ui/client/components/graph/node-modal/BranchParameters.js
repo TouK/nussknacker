@@ -69,5 +69,5 @@ BranchParameters.defaultProps = {
 export default BranchParameters
 
 export const branchErrorFieldName = (paramName, branch) => {
-  return `${paramName}` + " for branch " + `${branch}`;
+  return `${paramName} for branch ${branch}`;
 }

@@ -10,6 +10,11 @@
 
       ],
       "plugins": [
+        ["i18next-extract", {
+          "outputPath":  "translations/{{locale}}/{{ns}}.json",
+          "keyAsDefaultValue": true,
+          "locales": ["en", "pl"]
+        }],
         "react-hot-loader/babel"
       ]
     }

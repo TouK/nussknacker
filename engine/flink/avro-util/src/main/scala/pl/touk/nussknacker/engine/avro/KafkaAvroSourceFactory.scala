@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.avro
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
-import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
+import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -22,7 +22,7 @@ class KafkaAvroSourceFactory[T: TypeInformation](config: KafkaConfig,
 
   override protected def createSource(processMetaData: MetaData,
                                       topics: List[String],
-                                      schema: KeyedDeserializationSchema[T]): KafkaSource = {
+                                      schema: KafkaDeserializationSchema[T]): KafkaSource = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(config)
     new KafkaSource(consumerGroupId = processMetaData.id, topics, schema,
       Some(AvroToJsonFormatter(schemaRegistryClient, topics.head, formatKey)))

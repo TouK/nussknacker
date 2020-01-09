@@ -5,7 +5,7 @@ import ActionsUtils from "../../actions/ActionsUtils";
 import "../../stylesheets/visualization.styl";
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 import Draggable from "react-draggable";
 
 class GenericModalDialog extends React.Component {
@@ -50,7 +50,7 @@ class GenericModalDialog extends React.Component {
   }
 
   render() {
-    const style = 'espModal ' + (this.props.style || 'confirmationModal')
+    const style = `espModal ${  this.props.style || "confirmationModal"}`
     return (
       <Modal isOpen={this.props.modalDialog.openDialog === this.props.type}
              shouldCloseOnOverlayClick={false}
@@ -58,13 +58,13 @@ class GenericModalDialog extends React.Component {
         <div className="draggable-container">
           <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
             <div className={style}>
-              {this.props.header ? (<div className="modal-title" style={{color: 'white', 'backgroundColor': '#70c6ce'}}>
+              {this.props.header ? (<div className="modal-title" style={{color: "white", backgroundColor: "#70c6ce"}}>
                 <span>{this.props.header}</span>
               </div>) : null}
               <div className="modalContentDark">
                 {this.props.children}
                 <div className="confirmationButtons">
-                  <button type="button" title="CANCEL" className='modalButton' onClick={this.closeDialog}>CANCEL
+                  <button type="button" title="CANCEL" className="modalButton" onClick={this.closeDialog}>CANCEL
                   </button>
                   {this.props.confirm ? this.renderOkBtn() : null}
                 </div>

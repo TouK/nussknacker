@@ -1,5 +1,5 @@
 import React from "react";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 import {connect} from "react-redux";
 import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -31,7 +31,7 @@ class ProcessActionDialog extends React.Component {
   }
 
   deploy = (closeDialog) => {
-    const { actions, processId } = this.props
+    const {actions, processId} = this.props
     const comment = this.state.comment
 
     closeDialog()
@@ -50,7 +50,7 @@ class ProcessActionDialog extends React.Component {
     const validated =
       ValidateDeployComment(this.state.comment, this.props.settings)
 
-    return { disabled: !validated.isValid, title: validated.toolTip }
+    return {disabled: !validated.isValid, title: validated.toolTip}
   }
 
   onInputChange = (e) => {
@@ -82,7 +82,7 @@ function mapState(state) {
       {},
       _.get(state.settings, "featuresSettings.commentSettings"),
       _.get(state.settings, "featuresSettings.deploySettings")),
-    processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
+    processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
     processHasWarnings: !processHasNoWarnings,
     action: config.action,
     message: config.message

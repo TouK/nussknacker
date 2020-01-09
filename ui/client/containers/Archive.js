@@ -2,27 +2,27 @@ import React from "react"
 import {Table, Td, Tr} from "reactable"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
-import DateUtils from "../common/DateUtils"
 import LoaderSpinner from "../components/Spinner.js"
-import * as  queryString from 'query-string'
+import * as  queryString from "query-string"
 import "../stylesheets/processes.styl"
-import {withRouter} from 'react-router-dom'
-import {Glyphicon} from 'react-bootstrap'
+import {withRouter} from "react-router-dom"
+import {Glyphicon} from "react-bootstrap"
 import BaseProcesses from "./BaseProcesses"
 import ProcessUtils from "../common/ProcessUtils"
-import {nkPath} from "../config";
+import {nkPath} from "../config"
 import TableSelect from "../components/table/TableSelect"
 import SearchFilter from "../components/table/SearchFilter"
 import Date from "../components/common/Date"
+import TableRowIcon from "../components/table/TableRowIcon"
 
 class Archive extends BaseProcesses {
   queries = {
     isArchived: true
   }
 
-  searchItems = ['categories', 'isSubprocess']
+  searchItems = ["categories", "isSubprocess"]
 
-  page = 'archive'
+  page = "archive"
 
   constructor(props) {
     super(props)
@@ -71,16 +71,16 @@ class Archive extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={['name', 'category', 'modifyDate']}
-          filterable={['name', 'category']}
+          sortable={["name", "category", "modifyDate"]}
+          filterable={["name", "category"]}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
-            {key: 'name', label: 'Process name'},
-            {key: 'category', label: 'Category'},
-            {key: 'subprocess', label: 'Subprocess'},
-            {key: 'modifyDate', label: 'Last modification'},
-            {key: 'view', label: 'View'},
+            {key: "name", label: "Process name"},
+            {key: "category", label: "Category"},
+            {key: "subprocess", label: "Subprocess"},
+            {key: "modifyDate", label: "Last modification"},
+            {key: "view", label: "View"},
           ]}
         >
           {
@@ -90,7 +90,7 @@ class Archive extends BaseProcesses {
                   <Td column="name">{process.name}</Td>
                   <Td column="category">{process.processCategory}</Td>
                   <Td column="subprocess" className="centered-column">
-                    <Glyphicon glyph={process.isSubprocess ? 'ok' : 'remove'}/>
+                    <Glyphicon glyph={process.isSubprocess ? "ok" : "remove"}/>
                   </Td>
                   <Td column="modifyDate"
                       className="centered-column"
@@ -98,10 +98,10 @@ class Archive extends BaseProcesses {
                     <Date date={process.modificationDate}/>
                   </Td>
                   <Td column="view" className="edit-column">
-                    <Glyphicon
+                    <TableRowIcon
                       glyph="eye-open"
-                      title={"Show " + (process.isSubprocess ? "subprocess" : "process")}
-                      onClick={this.showProcess.bind(this, process)}
+                      title={`Show ${  process.isSubprocess ? "subprocess" : "process"}`}
+                      onClick={this.showProcess(process)}
                     />
                   </Td>
                 </Tr>
@@ -114,7 +114,7 @@ class Archive extends BaseProcesses {
 }
 
 Archive.path = `${nkPath}/archivedProcesses`
-Archive.header = 'Archive'
+Archive.header = "Archive"
 
 const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,

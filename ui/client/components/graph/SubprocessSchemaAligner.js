@@ -1,4 +1,4 @@
-import fp from 'lodash/fp'
+import fp from "lodash/fp"
 
 export function alignSubprocessWithSchema(processDefinitionData, subprocessNode) {
   const subprocessId = subprocessNode.ref.id
@@ -8,5 +8,5 @@ export function alignSubprocessWithSchema(processDefinitionData, subprocessNode)
   const subprocessSchemaParameters = subprocessSchema.node.ref.parameters
   const mergedParameters = subprocessSchemaParameters
     .map((param) => subprocessNode.ref.parameters.find((nodeParam) => nodeParam.name === param.name) || param)
-  return fp.set(`ref.parameters`, mergedParameters, subprocessNode)
+  return fp.set("ref.parameters", mergedParameters, subprocessNode)
 }

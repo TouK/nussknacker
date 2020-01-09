@@ -1,5 +1,5 @@
 import React from "react"
-import Select from 'react-select'
+import Select from "react-select"
 import "../../stylesheets/processes.styl"
 
 export default class TableSelect extends React.Component {
@@ -9,14 +9,14 @@ export default class TableSelect extends React.Component {
       ...styles,
       minHeight: 45,
       fontSize: 14,
-      color: '#555555',
+      color: "#555555",
       borderRadius: 0
     }),
     option: (styles, state) => ({
       ...styles,
       fontSize: 14,
-      backgroundColor: state.isSelected ? '#e6ecff' : null,
-      color: '#555555',
+      backgroundColor: state.isSelected ? "#e6ecff" : null,
+      color: "#555555",
     })
   }
 
@@ -25,7 +25,7 @@ export default class TableSelect extends React.Component {
       ...theme,
       colors: {
         ...theme.colors,
-        primary: '#0058a9',
+        primary: "#0058a9",
       }
     }
   }

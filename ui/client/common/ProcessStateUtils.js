@@ -1,22 +1,22 @@
-import _ from 'lodash'
+import _ from "lodash"
 
 export default {
   ACTION_DEPLOY: "DEPLOY",
   ACTION_CANCEL: "CANCEL",
 
   isDeployed(process) {
-    const action = _.get(process, 'deployment.action')
+    const action = _.get(process, "deployment.action")
     return action != null && action.toUpperCase() === this.ACTION_DEPLOY
   },
 
   isCanceled(deployment) {
-    const action = _.get(deployment, 'deployment.action')
+    const action = _.get(deployment, "deployment.action")
     return action != null && action.toUpperCase() === this.ACTION_CANCEL
   },
 
   //TODO: display e.g. warnings, use it in Visualization (left panel)
   getStatusClass(processState, shouldRun, statusesLoaded) {
-    const isRunning = _.get(processState, 'isRunning')
+    const isRunning = _.get(processState, "isRunning")
     if (isRunning) {
       return "status-running"
     } else if (shouldRun) {
@@ -26,7 +26,7 @@ export default {
   },
 
   getStatusMessage(processState, shouldRun, loaded) {
-    const isRunning = _.get(processState, 'isRunning')
+    const isRunning = _.get(processState, "isRunning")
     if (isRunning) {
       return "Running"
     } else if (shouldRun) {

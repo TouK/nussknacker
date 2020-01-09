@@ -4,6 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.time.{LocalDate, LocalDateTime, LocalTime, Period, ZonedDateTime}
 import java.util
 import java.util.Optional
+import java.time.LocalDateTime
+import java.{lang, util}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.Config
@@ -23,6 +25,7 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
@@ -30,6 +33,19 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
+import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
+import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
+
+import scala.collection.JavaConverters._
+import scala.concurrent.{ExecutionContext, Future}
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.streaming.api.functions.TimestampAssigner
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.kafka.clients.producer.ProducerRecord
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -39,6 +55,7 @@ import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHa
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -68,14 +85,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "sendSms" -> all(SinkFactory.noParam(sendSmsSink)),
       "monitor" -> all(SinkFactory.noParam(monitorSink)),
-      "kafka-string" -> all(new KafkaSinkFactory(kConfig,
-        new KeyedSerializationSchema[Any] {
-          override def serializeValue(element: Any) = element.toString.getBytes(StandardCharsets.UTF_8)
-
-          override def serializeKey(element: Any) = null
-
-          override def getTargetTopic(element: Any) = null
-        }))
+      "kafka-string" -> all(new KafkaSinkFactory(kConfig, new SimpleSerializationSchema[Any](_, _.toString)))
     )
   }
 
@@ -112,12 +122,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           }
         }
 
-        override def typeInformation = implicitly[TypeInformation[String]]
+        override val typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
       })),
       "csv-source" -> all(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord]
         with TestDataParserProvider[CsvRecord] with TestDataGenerator {
 
-        override def typeInformation = implicitly[TypeInformation[CsvRecord]]
+        override val typeInformation: TypeInformation[CsvRecord] = implicitly[TypeInformation[CsvRecord]]
 
         override def toFlinkSource = new SourceFunction[CsvRecord] {
           override def cancel() = {}
@@ -143,7 +153,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
   def prepareNotEndingSource: FlinkSource[String] = {
     new FlinkSource[String] with TestDataParserProvider[String] {
-      override def typeInformation = implicitly[TypeInformation[String]]
+      override val typeInformation = implicitly[TypeInformation[String]]
 
       override def timestampAssigner = Option(new BoundedOutOfOrdernessTimestampExtractor[String](Time.minutes(10)) {
         override def extractTimestamp(element: String): Long = System.currentTimeMillis()
@@ -225,7 +235,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
+  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
+    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
   override def expressionConfig(config: Config) = {
     val dictId = "dict"

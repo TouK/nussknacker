@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
 import org.apache.flink.api.common.serialization.DeserializationSchema
+import pl.touk.nussknacker.engine.{ModelConfigToLoad, ModelData}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -15,17 +16,17 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
-abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: ProcessConfigCreator, config: Config)
-  extends FlinkStreamingProcessCompiler(creator, config, diskStateBackendSupport = false) {
+abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: ProcessConfigCreator, config: ModelConfigToLoad)
+  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport = false) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  override protected def signalSenders: Map[SignalSenderKey, FlinkProcessSignalSender] =
-    super.signalSenders.mapValuesNow(_ => DummyFlinkSignalSender)
+  override protected def signalSenders(config: Config): Map[SignalSenderKey, FlinkProcessSignalSender] =
+    super.signalSenders(config).mapValuesNow(_ => DummyFlinkSignalSender)
 
 
-  override protected def definitions(): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
-    val createdDefinitions = super.definitions()
+  override protected def definitions(config: Config): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
+    val createdDefinitions = super.definitions(config)
 
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
     //TODO JOIN: handling multiple sources?

@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react"
 import PropTypes from "prop-types"
 import NodeErrors from "./NodeErrors"
 
@@ -21,7 +21,7 @@ export default function BaseModalContent(props) {
         </div>
         <div className="node-row">
           <div className="node-label">Type</div>
-          <div className={"node-value" + (isMarked("edgeType.type") ? " marked" : "")}>
+          <div className={`node-value${  isMarked("edgeType.type") ? " marked" : ""}`}>
             <select
               id="processCategory"
               disabled={readOnly}

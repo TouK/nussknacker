@@ -10,11 +10,10 @@ export const Input = (props) => {
     <div className={className}>
       <div className={isMarked ? " marked" : ""}>
         {
-          readOnly ?
-            <div className="read-only" title={value}>{value}</div> :
             <input
               autoFocus={autoFocus}
               type="text"
+              readOnly={readOnly}
               placeholder={placeholder}
               className={!showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"}
               value={value || ""}
@@ -29,7 +28,10 @@ export const Input = (props) => {
 
 Input.propTypes = {
   isMarked: PropTypes.bool,
-  value: PropTypes.string,
+  value: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number
+  ]),
   readOnly: PropTypes.bool,
   autoFocus: PropTypes.bool,
   showValidation: PropTypes.bool,

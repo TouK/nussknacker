@@ -25,7 +25,10 @@ LabeledInput.propTypes = {
   renderFieldLabel: PropTypes.func.isRequired,
   isMarked: PropTypes.bool,
   readOnly: PropTypes.bool,
-  value: PropTypes.string || PropTypes.number,
+  value: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number
+  ]),
   autofocus: PropTypes.bool,
   showValidation: PropTypes.bool,
   validators: PropTypes.array,

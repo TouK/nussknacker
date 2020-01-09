@@ -1,11 +1,11 @@
-import React from 'react'
+import React from "react"
 import {connect} from "react-redux";
-import PropTypes from 'prop-types';
-import _ from 'lodash'
+import PropTypes from "prop-types";
+import _ from "lodash"
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
-import Dropzone from 'react-dropzone'
-import InlinedSvgs from '../assets/icons/InlinedSvgs'
+import Dropzone from "react-dropzone"
+import InlinedSvgs from "../assets/icons/InlinedSvgs"
 import Date from "./common/Date"
 
 export class ProcessAttachments_ extends React.Component {
@@ -16,12 +16,12 @@ export class ProcessAttachments_ extends React.Component {
 
   constructor(props) {
     super(props);
-    this.initState = { pendingRequest: false }
+    this.initState = {pendingRequest: false}
     this.state = this.initState
   }
 
   addAttachment = (files) => {
-    this.setState({ pendingRequest: true})
+    this.setState({pendingRequest: true})
     Promise.all(files.map((file)=>
       this.props.actions.addAttachment(this.props.processId, this.props.processVersionId, file)
     )).then ((resp) => {
@@ -76,9 +76,9 @@ export class ProcessAttachments_ extends React.Component {
 
 function mapState(state) {
   return {
-    attachments: _.get(state.processActivity, 'attachments', []),
-    processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
-    processVersionId: _.get(state.graphReducer, 'fetchedProcessDetails.processVersionId')
+    attachments: _.get(state.processActivity, "attachments", []),
+    processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
+    processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId")
   }
 }
 

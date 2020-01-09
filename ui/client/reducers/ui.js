@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from "lodash"
 import Dialogs from "../components/modals/Dialogs";
 
 const emptyUiState = {
@@ -14,7 +14,7 @@ const emptyUiState = {
 export function reducer(state = emptyUiState, action) {
   const withAllModalsClosed = (newState) => {
     const allModalsClosed = !(newState.modalDialog.openDialog || newState.showNodeDetailsModal || newState.showEdgeDetailsModal || newState.confirmDialog.isOpen)
-    return { ...newState, allModalsClosed: allModalsClosed}
+    return {...newState, allModalsClosed: allModalsClosed}
   }
   switch (action.type) {
     case "TOGGLE_LEFT_PANEL": {

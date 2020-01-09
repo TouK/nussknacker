@@ -1,5 +1,5 @@
-import React from 'react'
-import {withRouter} from 'react-router-dom'
+import React from "react"
+import {withRouter} from "react-router-dom"
 import {connect} from "react-redux"
 import {hot} from "react-hot-loader";
 import ActionsUtils from "../actions/ActionsUtils";
@@ -34,7 +34,7 @@ class NussknackerInitializer extends React.Component {
       message: "Application Unexpected Error",
       showButton: false
     },
-    "accessToken": {
+    accessToken: {
       message: "Authentication Error",
       buttonOnClick: this.redirectToAuthorizeUrl,
       buttonLabel: "Go to authentication page",
@@ -67,7 +67,7 @@ class NussknackerInitializer extends React.Component {
   }
 
   httpErrorHandler = (error, redirect) => {
-    const code = _.get(error, 'response.status')
+    const code = _.get(error, "response.status")
     const showError = (code !== HTTP_UNAUTHORIZED_CODE || !redirect)
     this.setState({
       error: showError ? _.get(this.errors, code, this.errors[HTTP_APPLICATION_CODE]) : null
@@ -77,7 +77,7 @@ class NussknackerInitializer extends React.Component {
   authenticationStrategy = (settings) => {
     // Automatically redirect user when he is not authenticated and backend is OAUTH2
     api.interceptors.response.use(response => response, (error) => {
-      if ( _.get(error, 'response.status') === HTTP_UNAUTHORIZED_CODE && settings.backend === OAUTH2_BACKEND) {
+      if ( _.get(error, "response.status") === HTTP_UNAUTHORIZED_CODE && settings.backend === OAUTH2_BACKEND) {
         window.location.replace(settings.authorizeUrl)
       }
 

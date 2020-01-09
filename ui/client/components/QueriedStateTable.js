@@ -1,11 +1,11 @@
-import React from 'react'
-import { connect } from 'react-redux';
+import React from "react"
+import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
 import _ from "lodash";
 import Moment from "moment"
 import {Table} from "reactable";
-import JSONTree from 'react-json-tree'
+import JSONTree from "react-json-tree"
 import {dateFormat} from "../config";
 
 class QueriedStateTable extends React.Component {
@@ -112,10 +112,10 @@ class QueriedStateTable extends React.Component {
     return (
       <JSONTree data={value} hideRoot={true} theme={{
         label: {
-          fontWeight: 'normal',
+          fontWeight: "normal",
         },
         tree: {
-          backgroundColor: 'none'
+          backgroundColor: "none"
         }
       }}/>
     )

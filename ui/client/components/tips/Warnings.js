@@ -17,7 +17,7 @@ export default class Warnings extends React.Component {
   render() {
     const {warnings, showDetails, currentProcess} = this.props
     const groupedByMessage = _.groupBy(warnings, warning => warning.error.message)
-    const separator = ', '
+    const separator = ", "
 
     return (
       <div key={uuid4()}>

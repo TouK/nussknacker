@@ -16,9 +16,10 @@ import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableE
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.process.{FlinkStreamingProcessRegistrar, SimpleJavaEnum}
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 object ProcessTestHelpers {
 
@@ -27,16 +28,18 @@ object ProcessTestHelpers {
   object processInvoker {
 
     def invokeWithSampleData(process: EspProcess, data: List[SimpleRecord],
-                             config: Configuration = new Configuration(),
+                             configuration: Configuration = new Configuration(),
                              processVersion: ProcessVersion = ProcessVersion.empty,
                              parallelism: Int = 1): Unit = {
 
       val creator: ProcessConfigCreator = prepareCreator(data, KafkaConfig("http://notexist.pl", None, None))
 
-      val env = StoppableExecutionEnvironment(config)
+      val env = StoppableExecutionEnvironment(configuration)
       try {
-        new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(
-          new StreamExecutionEnvironment(env), process, processVersion)
+        val config = ConfigFactory.load()
+        FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+          .register(new StreamExecutionEnvironment(env), process, processVersion)
+
         MockService.clear()
         val id = env.execute(process.id)
         env.waitForJobState(id.getJobID, process.id, ExecutionState.FINISHED)()
@@ -46,13 +49,15 @@ object ProcessTestHelpers {
     }
 
     def invoke(process: EspProcess, creator: ProcessConfigCreator,
-               config: Configuration,
+               configuration: Configuration,
                processVersion: ProcessVersion,
                parallelism: Int, action: => Unit): Unit = {
-      val env = StoppableExecutionEnvironment(config)
+      val env = StoppableExecutionEnvironment(configuration)
       try {
-        new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(
-          new StreamExecutionEnvironment(env), process, processVersion)
+        val config = ConfigFactory.load()
+        FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+          .register(new StreamExecutionEnvironment(env), process, processVersion)
+
 
         MockService.clear()
         env.withJobRunning(process.id)(action)
@@ -108,7 +113,7 @@ object ProcessTestHelpers {
 
       override def signals(config: Config): Map[String, WithCategories[TestProcessSignalFactory]] = Map("sig1" ->
         WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
-      
+
       override def buildInfo(): Map[String, String] = Map.empty
     }
 

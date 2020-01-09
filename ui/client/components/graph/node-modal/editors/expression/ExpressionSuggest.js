@@ -1,20 +1,20 @@
 import React from "react"
-import PropTypes from 'prop-types'
-import ReactDOMServer from 'react-dom/server'
-import {connect} from 'react-redux'
-import _ from 'lodash'
-import ActionsUtils from '../../../../../actions/ActionsUtils'
-import ProcessUtils from '../../../../../common/ProcessUtils'
-import ExpressionSuggester from './ExpressionSuggester'
+import PropTypes from "prop-types"
+import ReactDOMServer from "react-dom/server"
+import {connect} from "react-redux"
+import _ from "lodash"
+import ActionsUtils from "../../../../../actions/ActionsUtils"
+import ProcessUtils from "../../../../../common/ProcessUtils"
+import ExpressionSuggester from "./ExpressionSuggester"
 
-import AceEditor from 'react-ace'
-import 'ace-builds/src-noconflict/mode-jsx'
-import 'ace-builds/src-noconflict/ext-language_tools'
-import 'ace-builds/src-noconflict/ext-searchbox'
+import AceEditor from "react-ace"
+import "ace-builds/src-noconflict/mode-jsx"
+import "ace-builds/src-noconflict/ext-language_tools"
+import "ace-builds/src-noconflict/ext-searchbox"
 
-import '../../../../../brace/mode/spel'
-import '../../../../../brace/mode/sql'
-import '../../../../../brace/theme/nussknacker'
+import "../../../../../brace/mode/spel"
+import "../../../../../brace/mode/sql"
+import "../../../../../brace/theme/nussknacker"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import HttpService from "../../../../../http/HttpService"
 import {allValid} from "../../../../../common/Validators"
@@ -71,7 +71,7 @@ class ExpressionSuggest extends React.Component {
     identifierRegexps: identifierRegexpsIncludingDot,
     getDocTooltip: (item) => {
       if (item.description || !_.isEmpty(item.parameters)) {
-        const paramsSignature = item.parameters.map(p => ProcessUtils.humanReadableType(p.refClazz) + " " + p.name).join(", ")
+        const paramsSignature = item.parameters.map(p => `${ProcessUtils.humanReadableType(p.refClazz)  } ${  p.name}`).join(", ")
         const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`
         item.docHTML = ReactDOMServer.renderToStaticMarkup((
           <div className="function-docs">
@@ -89,7 +89,7 @@ class ExpressionSuggest extends React.Component {
     inputExprIdCounter+=1;
     this.state = {
       value: props.inputProps.value,
-      id: "inputExpr" + inputExprIdCounter
+      id: `inputExpr${  inputExprIdCounter}`
     };
     this.expressionSuggester = this.createExpressionSuggester(props)
   }
@@ -98,7 +98,8 @@ class ExpressionSuggest extends React.Component {
   //this shouldComponentUpdate is for cases when there are multiple instances of suggestion component in one view and to make them not interfere with each other
   //fixme maybe use this.state.id here?
   shouldComponentUpdate(nextProps, nextState) {
-    return !(_.isEqual(this.state.value, nextState.value))
+    return !(_.isEqual(this.state.value, nextState.value)) ||
+      !(_.isEqual(this.state.editorFocused, nextState.editorFocused))
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -123,15 +124,16 @@ class ExpressionSuggest extends React.Component {
       const {isMarked, showValidation, inputProps, validators, shouldShowSwitch} = this.props
       return (
         <React.Fragment>
-          <div className={"row-ace-editor" +
-          (!showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error ") +
-          (isMarked ? " marked" : "") +
-          (shouldShowSwitch ? " switchable" : "")}>
+          <div className={`row-ace-editor${ 
+          !showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error " 
+          }${isMarked ? " marked" : "" 
+          }${shouldShowSwitch ? " switchable" : "" 
+          }${this.state.editorFocused ? " focused" : ""}`}>
             <AceEditor mode={inputProps.language}
                        width={"100%"}
                        minLines={1}
                        maxLines={50}
-                       theme={'nussknacker'}
+                       theme={"nussknacker"}
                        onChange={this.onChange}
                        value={this.state.value}
                        showPrintMargin={false}
@@ -152,7 +154,9 @@ class ExpressionSuggest extends React.Component {
                          fontSize: 16,
                          fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
                          readOnly: inputProps.readOnly
-                       }}/>
+                       }}
+                       onFocus={this.setEditorFocus(true)}
+                       onBlur={this.setEditorFocus(false)}/>
           </div>
           {showValidation && <ValidationLabels validators={validators} values={[this.state.value]}/>}
         </React.Fragment>
@@ -162,10 +166,12 @@ class ExpressionSuggest extends React.Component {
     }
 
   }
+
+  setEditorFocus = (focus) => () => this.setState({editorFocused: focus})
 }
 
 function mapState(state, props) {
-  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, 'processCategory')
+  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, "processCategory")
   const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: {typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation

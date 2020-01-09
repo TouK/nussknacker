@@ -23,10 +23,49 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
+import UnitTestsProcessConfigCreator._
 
 /**
  * This config creator is for purpose of unit testing... maybe we should merge it with DevProcessConfigCreator?
  */
+object UnitTestsProcessConfigCreator {
+
+  case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends WithFields {
+    override def fields = List(msisdn, notificationType, finalCharge, tariffId, timestamp)
+
+    override def asJson: Json = Json.obj(
+      "msisdn" -> Json.fromString(msisdn),
+      "notificationType" -> Json.fromLong(notificationType),
+      "finalCharge" -> Json.fromBigDecimal(finalCharge),
+      "tariffId" -> Json.fromLong(tariffId),
+      "timestamp" -> Json.fromLong(timestamp)
+    )
+  }
+
+  case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends WithFields {
+    override def fields = List(clientId, date, amount, `type`)
+    override def asJson: Json = Json.obj(
+      "clientId" -> Json.fromString(clientId),
+      "date" -> Json.fromString(date.toString),
+      "amount" -> Json.fromInt(amount),
+      "type" -> Json.fromString(`type`)
+    )
+  }
+
+  case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends WithFields {
+    override def fields = List(clientId, date, path, ip)
+    override def asJson: Json = Json.obj(
+      "clientId" -> Json.fromString(clientId),
+      "date" -> Json.fromString(date.toString),
+      "path" -> Json.fromString(path),
+      "ip" -> Json.fromString(ip)
+    )
+  }
+
+  case class Client(clientId: String, age: Long, isVip: Boolean, country: String)
+
+}
+
 class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   val fraudDetection = "FraudDetection"
@@ -97,40 +136,6 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   }
 
-  case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends WithFields {
-    override def fields = List(msisdn, notificationType, finalCharge, tariffId, timestamp)
-
-    override def asJson: Json = Json.obj(
-      "msisdn" -> Json.fromString(msisdn),
-      "notificationType" -> Json.fromLong(notificationType),
-      "finalCharge" -> Json.fromBigDecimal(finalCharge),
-      "tariffId" -> Json.fromLong(tariffId),
-      "timestamp" -> Json.fromLong(timestamp)
-    )
-  }
-
-  case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends WithFields {
-    override def fields = List(clientId, date, amount, `type`)
-    override def asJson: Json = Json.obj(
-      "clientId" -> Json.fromString(clientId),
-      "date" -> Json.fromString(date.toString),
-      "amount" -> Json.fromInt(amount),
-      "type" -> Json.fromString(`type`)
-    )
-  }
-
-  case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends WithFields {
-    override def fields = List(clientId, date, path, ip)
-    override def asJson: Json = Json.obj(
-      "clientId" -> Json.fromString(clientId),
-      "date" -> Json.fromString(date.toString),
-      "path" -> Json.fromString(path),
-      "ip" -> Json.fromString(ip)
-    )
-  }
-
-  case class Client(clientId: String, age: Long, isVip: Boolean, country: String)
-
   class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T] {
 
     override val timestampAssigner = Some(new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
@@ -141,7 +146,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     def create(@ParamName("ratePerMinute") rate: Int) = {
       new FlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
 
-        override def typeInformation = implicitly[TypeInformation[T]]
+        override val typeInformation = implicitly[TypeInformation[T]]
 
         override def toFlinkSource = new SourceFunction[T] {
 

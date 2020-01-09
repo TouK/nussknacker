@@ -7,10 +7,10 @@ import nodeAttributes from "../../../assets/json/nodeAttributes"
 import SvgDiv from "../../SvgDiv"
 
 const HeaderType = {
-  'SUBTYPE_DOCS': 1,
-  'SUBTYPE': 2,
-  'DOCS': 3,
-  'DEFAULT': 4,
+  SUBTYPE_DOCS: 1,
+  SUBTYPE: 2,
+  DOCS: 3,
+  DEFAULT: 4,
 }
 
 const nodeClassProperties = ["service.id", "ref.typ", "nodeType", "ref.id"]
@@ -36,7 +36,7 @@ const Docs = (props) => {
     <a className="docsLink" target="_blank" href={docsUrl} title="Documentation">
       <div className={className}>
         {nodeClass && <span>{nodeClass}</span>}
-        <SvgDiv className="docsIcon" svgFile={'documentation.svg'}/>
+        <SvgDiv className="docsIcon" svgFile={"documentation.svg"}/>
       </div>
     </a>
   )
@@ -78,7 +78,7 @@ const NodeDetailsModalHeader = (props) => {
   const {docsUrl, node} = props
   const attributes = getNodeAttributes(node)
   const titleStyles = EspModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
-  const variableLanguage = _.get(node, 'value.language')
+  const variableLanguage = _.get(node, "value.language")
   const header = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name
 
   const nodeIcon = _.has(node, "type") ? `nodes/${node.type}.svg` : null

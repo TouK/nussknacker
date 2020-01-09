@@ -15,8 +15,9 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, ProcessVersion
 import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSink, FlinkBatchSource, FlinkBatchSourceFactory, NoParamBatchSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.source.FlinkCollectionBatchSource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.compiler.FlinkBatchProcessCompiler
-import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.process.FlinkBatchProcessRegistrar
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 
 import scala.reflect.ClassTag
 
@@ -33,8 +34,7 @@ object BatchProcessTestHelpers {
       val creator = prepareCreator(env.getConfig, data)
       env.getConfig.disableSysoutLogging
 
-      new FlinkBatchProcessCompiler(creator, ConfigFactory.load())
-        .createFlinkProcessRegistrar()
+      FlinkBatchProcessRegistrar(new FlinkProcessCompiler(LocalModelData(ConfigFactory.load(), creator)), ConfigFactory.load())
         .register(env, process, processVersion)
 
       env.execute(process.id)

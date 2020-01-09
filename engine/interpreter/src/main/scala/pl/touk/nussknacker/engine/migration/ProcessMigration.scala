@@ -28,7 +28,7 @@ object ProcessMigrations {
 
 }
 
-trait ProcessMigrations {
+trait ProcessMigrations extends Serializable {
 
   def processMigrations: Map[Int, ProcessMigration]
 
