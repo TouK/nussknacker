@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 35">
+    <defs>
+        <style>.handle-bars-1{fill:none;}.handle-bars-2{fill:#333;}</style>
+    </defs>
+    <title>drag and drop to switch places</title>
+    <g id="Layer_2">
+        <g>
+            <rect class="handle-bars-1" width="16" height="35"/>
+            <circle class="handle-bars-2" cx="4" cy="8.33" r="2"/>
+            <circle class="handle-bars-2" cx="4" cy="26.67" r="2"/>
+            <circle class="handle-bars-2" cx="4" cy="17.5" r="2"/>
+            <circle class="handle-bars-2" cx="12" cy="8.33" r="2"/>
+            <circle class="handle-bars-2" cx="12" cy="26.67" r="2"/>
+            <circle class="handle-bars-2" cx="12" cy="17.5" r="2"/>
+        </g>
+    </g>
+</svg>
