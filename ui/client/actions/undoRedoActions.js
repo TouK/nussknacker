@@ -1,4 +1,4 @@
-import {reportEvent} from "./actions";
+import {reportEvent} from "./esp/reportEvent"
 
 export function undo(eventInfo) {
   return (dispatch) => {
@@ -11,7 +11,7 @@ export function undo(eventInfo) {
     return dispatch({
       type: "UNDO"
     })
-  };
+  }
 }
 
 export function redo(eventInfo) {
@@ -25,9 +25,9 @@ export function redo(eventInfo) {
     return dispatch({
       type: "REDO"
     })
-  };
+  }
 }
 
 export function clear() {
-  return {type: "CLEAR"};
+  return {type: "CLEAR"}
 }
