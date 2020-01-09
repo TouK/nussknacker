@@ -1,41 +1,53 @@
-import {parseableBoolean} from "./ExpressionParser"
 import RawEditor from "./RawEditor"
 import BoolEditor from "./BoolEditor"
+import StringEditor from "./StringEditor"
 import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
 
 class EditorType {
-
-  isSupported = (filedType) => supportedFieldType.includes(filedType)
-
-  editorName = (fieldType, expressionObj, displayRawEditor) => {
-    switch (fieldType) {
-      case Types.BOOLEAN:
-        return !displayRawEditor && this.switchableToBooleanEditor(expressionObj) ? Types.BOOL_EDITOR : Types.RAW_EDITOR
-      case Types.EXPRESSION_WITH_FIXED_VALUES || Types.RAW_EDITOR:
-        return fieldType
-      default:
-        return Types.RAW_EDITOR
-    }
-  }
-
-  switchableToBooleanEditor = (expressionObj) => parseableBoolean(expressionObj) || _.isEmpty(expressionObj.expression)
-
-  editor = (editorName) => _.get(editorTypes, editorName, editorTypes[Types.RAW_EDITOR])
+  basicEditorSupported = (fieldType) => Object.entries(editors).some(
+    ([key, value]) => value.isSupported(fieldType)
+      && key !== Types.RAW_EDITOR
+      && value.switchableToEditors.length > 0
+  )
 }
 
 export const Types = {
   BOOL_EDITOR: "boolEditor",
+  STRING_EDITOR: "stringEditor",
   RAW_EDITOR: "rawEditor",
-  BOOLEAN: "Boolean",
+  EXPRESSION: "expression",
   EXPRESSION_WITH_FIXED_VALUES: "expressionWithFixedValues",
 }
 
-const supportedFieldType = [Types.BOOLEAN]
-
-const editorTypes = {
-  [Types.RAW_EDITOR]: RawEditor,
-  [Types.BOOL_EDITOR]: BoolEditor,
-  [Types.EXPRESSION_WITH_FIXED_VALUES]: ExpressionWithFixedValues
+export const editors = {
+  [Types.RAW_EDITOR]: {
+    editor: RawEditor,
+    switchableToEditors: [Types.BOOL_EDITOR, Types.STRING_EDITOR],
+    switchableTo: (_) => RawEditor.switchableTo(),
+    switchableToHint: RawEditor.switchableToHint,
+    isSupported: (fieldType) => RawEditor.supportedFieldTypes.includes(fieldType)
+  },
+  [Types.BOOL_EDITOR]: {
+    editor: BoolEditor,
+    switchableToEditors: [Types.RAW_EDITOR],
+    switchableTo: (expression) => BoolEditor.switchableTo(expression),
+    switchableToHint: BoolEditor.switchableToHint,
+    notSwitchableToHint: BoolEditor.notSwitchableToHint,
+    isSupported: (fieldType) => BoolEditor.isSupported(fieldType)
+  },
+  [Types.STRING_EDITOR]: {
+    editor: StringEditor,
+    switchableToEditors: [Types.RAW_EDITOR],
+    switchableTo: (expression) => StringEditor.switchableTo(expression),
+    switchableToHint: StringEditor.switchableToHint,
+    notSwitchableToHint: StringEditor.notSwitchableToHint,
+    isSupported: (fieldType) => StringEditor.isSupported(fieldType)
+  },
+  [Types.EXPRESSION_WITH_FIXED_VALUES]: {
+    editor: ExpressionWithFixedValues,
+    switchableToEditors: [],
+    isSupported: (fieldType) => ExpressionWithFixedValues.isSupported(fieldType)
+  }
 }
 
 export const editorType = new EditorType()
