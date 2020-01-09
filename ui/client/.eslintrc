@@ -22,6 +22,7 @@
     "i18next"
   ],
   "rules": {
+    "semi": ["warn", "never"],
     "quotes": ["error", "double", { "avoidEscape": true }],
     "jsx-quotes": ["error", "prefer-double"],
     "prefer-template": "error",

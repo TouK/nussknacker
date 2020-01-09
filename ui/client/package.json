@@ -8,7 +8,7 @@
   "scripts": {
     "build": "NODE_ENV=production webpack -p --progress && cp -R assets/icons/license dist",
     "flow": "flow",
-    "lint": "eslint . --fix",
+    "lint": "eslint",
     "check": "npm run flow && npm run lint",
     "start": "PROXY_API_DOMAIN=http://localhost:8080/api webpack-dev-server",
     "start-backend-demo": "PROXY_API_DOMAIN=https://staging.nussknacker.io/api webpack-dev-server",
@@ -120,6 +120,7 @@
     "karma-webpack": "^4.0.0-rc.6",
     "less": "^3.9.0",
     "less-loader": "^5.0.0",
+    "lint-staged": "^9.5.0",
     "node-libs-browser": "^0.7.0",
     "puppeteer": "^1.16.0",
     "raw-loader": "^0.5.1",
@@ -132,7 +133,13 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run check"
+      "pre-commit": "lint-staged"
     }
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
   }
 }
