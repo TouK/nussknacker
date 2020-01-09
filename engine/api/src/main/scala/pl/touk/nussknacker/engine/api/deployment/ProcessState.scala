@@ -1,46 +1,40 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import java.net.URI
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import io.circe.syntax._
 
-// For icons and tooltips we return maps because of optimization. Base configurations for tooltips and icons are configured at FR side.
-// For each manager we can override configuration, because we don't want return for each state big string with svg.
 trait ProcessStateDefinitionManager {
   def getStatusActions(stateStatus: StateStatus): List[StateAction]
-  def statusTooltips: Map[StateStatus, String]
-  def statusIcons: Map[StateStatus, String]
+  def getStatusTooltip(stateStatus: StateStatus): Option[String]
+  def getStatusIcon(stateStatus: StateStatus): Option[URI]
 }
 
 object ProcessState {
-  implicit val typeEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getName, st.name).asJson)
-  implicit val typeDecoder: Decoder[StateStatus] = Decoder.decodeNone.map(_ => null) //TODO: Add decode implementation by clazz and value. At now we don't need it.
+  import io.circe.syntax._
 
-  @JsonCodec case class StateStatusCodec(clazz: String, value: String)
-
-  def apply(deploymentId: DeploymentId,
-            status: StateStatus,
-            version: Option[ProcessVersion],
-            allowedActions: List[StateAction] = List.empty,
-            startTime: Option[Long] = Option.empty,
-            attributes: Option[Json] = Option.empty,
-            errorMessage: Option[String] = Option.empty): ProcessState =
-    new ProcessState(deploymentId, status, version, allowedActions, startTime, attributes, errorMessage)
-
+  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getName, st.name).asJson)
+  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeNone.map(_ => null) //TODO: Add decode implementation by clazz and value. At now we don't need it.
+  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
+  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
   def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], allowedActions: List[StateAction]): ProcessState =
     ProcessState(DeploymentId(deploymentId), status, version, allowedActions)
+
+  @JsonCodec case class StateStatusCodec(clazz: String, value: String)
 }
 
 @JsonCodec case class ProcessState(deploymentId: DeploymentId,
                                    status: StateStatus,
-                                   version: Option[ProcessVersion],
-                                   allowedActions: List[StateAction],
-                                   startTime: Option[Long],
-                                   attributes: Option[Json],
-                                   errorMessage: Option[String])
+                                   version: Option[ProcessVersion] = Option.empty,
+                                   allowedActions: List[StateAction] = List.empty,
+                                   icon: Option[URI] = Option.empty,
+                                   tooltip: Option[String] = Option.empty,
+                                   startTime: Option[Long] = Option.empty,
+                                   attributes: Option[Json] = Option.empty,
+                                   errorMessage: Option[String] = Option.empty)
 
 object StateAction extends Enumeration {
   implicit val typeEncoder: Encoder[StateAction.Value] = Encoder.enumEncoder(StateAction)
@@ -59,7 +53,7 @@ sealed trait StateStatus {
   def name: String
 }
 
-final class BaseStateStatus(val name: String) extends StateStatus
+final class NotEstablishedStateStatus(val name: String) extends StateStatus
 
 final class DuringDeployStateStatus(val name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true

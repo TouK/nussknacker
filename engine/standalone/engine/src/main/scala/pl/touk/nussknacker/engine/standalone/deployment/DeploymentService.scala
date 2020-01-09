@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.standalone.deployment
 
 import cats.data.Validated.Invalid
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
@@ -79,10 +79,9 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
   }
 
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
-    processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion)) => ProcessState(
+    processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion)) => SimpleProcessState(
         deploymentId = DeploymentId(processName.value),
         status = SimpleStateStatus.Running,
-        allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.Running),
         version = Option(processVersion),
         startTime = Some(deploymentTime)
       )
@@ -103,16 +102,14 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
     pathToInterpreterMap.get(path)
   }
 
-  private def newInterpreter(canonicalProcess: CanonicalProcess) =
+  private def newInterpreter(canonicalProcess: CanonicalProcess): Validated[NonEmptyList[DeploymentError], StandaloneProcessInterpreter] =
     ProcessCanonizer.uncanonize(canonicalProcess)
       .andThen(StandaloneProcessInterpreter(_, context, modelData)).leftMap(_.map(DeploymentError(_)))
-
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =
     ProcessMarshaller.fromJson(processJson)
       .leftMap(error => NonEmptyList.of(DeploymentError(error)))
 }
-
 
 case class DeploymentError(nodeIds: Set[String], message: String)
 
@@ -120,5 +117,4 @@ object DeploymentError {
   def apply(error: ProcessCompilationError) : DeploymentError = DeploymentError(error.nodeIds, error.toString)
 
   def apply(error: ProcessUnmarshallError) : DeploymentError = DeploymentError(error.nodeIds, error.toString)
-
 }

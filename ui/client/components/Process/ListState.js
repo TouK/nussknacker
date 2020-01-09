@@ -1,83 +1,67 @@
 import React from "react"
 import PropTypes from "prop-types"
 import ProcessStateUtils from "../../common/ProcessStateUtils"
-import {connect} from "react-redux"
-import ActionsUtils from "../../actions/ActionsUtils"
+import {CSSTransition, SwitchTransition} from "react-transition-group"
 
-export class ListStateComponent extends React.Component {
-  properties = {
-    TOOLTIPS: "tooltips",
-    ICONS: "icons"
+export default class ListState extends React.Component {
+
+  animationTimeout = {
+    enter: 500,
+    appear: 500,
+    exit: 500
   }
 
-  getSettingsTooltip = (process, state) => this.getSettingsProperty(this.properties.TOOLTIPS, process, state)
-
-  getSettingsIcon = (process, state) => this.getSettingsProperty(this.properties.ICONS, process, state)
-
-  getSettingsProperty = (property, process, state) => {
-    const status = ProcessStateUtils.getProcessStateStatus(process, state)
-    const settings =  _.get(this.props.processStatesSettings, property)
-    const engineConfig = _.get(settings, process.processingType)
-    return _.get(engineConfig, status)
-  }
-
-  prepareTooltip = (process, state, isStateLoaded) => {
-    if (isStateLoaded === false || process.deployment == null) {
-      return this.getTooltip(process, {status: ProcessStateUtils.getProcessStatus(process)}, isStateLoaded)
-    }
-
-    //TODO: are we sure that?
-    if (ProcessStateUtils.isDeployed(process) && !ProcessStateUtils.isRunning(state)) {
-      return this.getTooltip(process, {status: ProcessStateUtils.STATUSES.ERROR}, true)
-    }
-
-    return this.getTooltip(process, state, true)
-  }
+  animationListener = (node, done) => node.addEventListener("transitionend", done, false)
 
   getTooltip = (process, state, isStateLoaded) => {
-    const tooltip = this.getSettingsTooltip(process, state) || ProcessStateUtils.getStateTooltip(state)
-    return tooltip  + (isStateLoaded === false ? " Loading current state of the process..." : "")
-  }
-
-  prepareIcon = (process, state, isStateLoaded) => {
-    if (isStateLoaded === false || process.deployment == null) {
-      return this.getIcon(process, {status: ProcessStateUtils.getProcessStatus(process)})
+    if (isStateLoaded === false || process.deployment == null && state == null) {
+      return ProcessStateUtils.getProcessTooltip(process, isStateLoaded)
     }
 
     //TODO: are we sure that?
     if (ProcessStateUtils.isDeployed(process) && !ProcessStateUtils.isRunning(state)) {
-      return this.getIcon(process, {status: ProcessStateUtils.STATUSES.ERROR})
+      return ProcessStateUtils.getStatusTooltip(ProcessStateUtils.STATUSES.ERROR)
     }
 
-    return this.getIcon(process, state)
+    return ProcessStateUtils.getStateTooltip(state)
   }
 
-  getIcon = (process, state) => this.getSettingsIcon(process, state) || ProcessStateUtils.getStateIcon(state)
+  getIcon = (process, state, isStateLoaded) => {
+    if (isStateLoaded === false || process.deployment == null && state == null) {
+      return ProcessStateUtils.getProcessIcon(process)
+    }
+
+    //TODO: are we sure that?
+    if (ProcessStateUtils.isDeployed(process) && !ProcessStateUtils.isRunning(state)) {
+      return ProcessStateUtils.getStatusIcon(ProcessStateUtils.STATUSES.ERROR)
+    }
+
+    return ProcessStateUtils.getStateIcon(state)
+  }
 
   render() {
     const {process, state, isStateLoaded} = this.props
-    return <div
-      dangerouslySetInnerHTML={{__html: this.prepareIcon(process, state, isStateLoaded)}}
-      title={this.prepareTooltip(process, state, isStateLoaded)}
-      className={`state-list${  isStateLoaded === false ? " state-pending" : ""}`}
-    />
+    const icon = this.getIcon(process, state, isStateLoaded)
+    const tooltip = this.getTooltip(process, state, isStateLoaded)
+    const iconClass = `state-list${isStateLoaded === false ? " state-pending" : ""}`
+
+    return (
+      <SwitchTransition>
+        <CSSTransition key={icon} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
+          <img src={icon} title={tooltip} alt={tooltip} className={iconClass} />
+        </CSSTransition>
+      </SwitchTransition>
+    )
   }
 }
 
-ListStateComponent.propTypes = {
-  processStatesSettings: PropTypes.object.isRequired,
+ListState.propTypes = {
   process: PropTypes.object.isRequired,
   isStateLoaded: PropTypes.bool,
-  state: PropTypes.object,
+  state: PropTypes.object
 }
 
-ListStateComponent.defaultProps = {
+ListState.defaultProps = {
   isStateLoaded: false,
-  state: undefined,
+  state: undefined
 }
-
-const mapState = state => ({
-  processStatesSettings: state.settings.processStatesSettings
-})
-
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ListStateComponent)

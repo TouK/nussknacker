@@ -6,7 +6,6 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 
-
 const NODE_ENV = process.env.NODE_ENV || "development";
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString();
 const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString();
@@ -76,11 +75,15 @@ module.exports = {
     port: 3000,
     proxy: {
       "/api": {
-        target: process.env.PROXY_API_DOMAIN,
+        target: process.env.BACKEND_DOMAIN,
+        changeOrigin: true
+      },
+      "/be-static": {
+        target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
         pathRewrite: {
-          "^/api": ""
-        }
+          "^/be-static": "/static"
+        },
       }
     }
   },

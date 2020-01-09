@@ -56,7 +56,7 @@ services:
 
   jobmanager:
     container_name: nussknacker_jobmanager
-    image: flink:${FLINK_VERSION-1.7.2}-scala_${SCALA_VERSION-2.12}
+    image: flink:${FLINK_VERSION-1.9.1}-scala_${SCALA_VERSION-2.12}
     ports:
       - "3031:8081"
     entrypoint: /flink-entrypoint.sh
@@ -74,7 +74,7 @@ services:
 
   taskmanager:
     container_name: nussknacker_taskmanager
-    image: flink:${FLINK_VERSION-1.7.2}-scala_${SCALA_VERSION-2.12}
+    image: flink:${FLINK_VERSION-1.9.1}-scala_${SCALA_VERSION-2.12}
     ports:
       - "3063:9069"
     entrypoint: /flink-entrypoint.sh

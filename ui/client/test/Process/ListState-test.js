@@ -1,88 +1,72 @@
 import React from 'react'
 
+import {BACKEND_STATIC_URL} from "../../config"
 import Enzyme, {mount} from 'enzyme'
 import Adapter from 'enzyme-adapter-react-16'
-import {ListStateComponent} from '../../components/Process/ListState'
+import ListState from '../../components/Process/ListState'
 import ProcessStateUtils from "../../common/ProcessStateUtils" //import redux-independent component
-
-const settings = {
- "icons": {
-    "streaming": {
-      "RUNNING": "My own svg icon for RUNNING status",
-      "CANCELED": "My own svg icon for CANCELED status"
-    }
-  },
-  "tooltips": {
-    "streaming": {
-      "RUNNING": "My own tooltip for RUNNING status",
-      "CANCELED": "My own tooltip for CANCELED status"
-    }
-  }
-}
-
-const noSettings = {
-  "icons": {
-    "streaming": null
-  },
-  "tooltips": {
-    "streaming": null
-  }
-}
+import urljoin from "url-join"
 
 describe("ListState tests", () => {
   Enzyme.configure({ adapter: new Adapter() })
 
-  const loadingText = " Loading current state of the process..."
-  const contains = (str, con) => str.substring(con) !== -1
-
-  it("should show defaults for no loaded state and no settings configuration", () => {
+  it("should show defaults for no loaded state", () => {
     const process = {"processingType":"streaming","deployment":{"action":"DEPLOY"}}
-    const listState = mount(<ListStateComponent process={process} processStatesSettings={noSettings} />)
-    expect(listState.find('div').prop('title')).toBe(ProcessStateUtils.getProcessTooltip(process) + loadingText)
-    expect(contains(listState.find('div').text(), ProcessStateUtils.getProcessTooltip(process))).toBe(true)
+    const listState = mount(<ListState process={process} />)
+    expect(listState.find('img').prop('title')).toBe(ProcessStateUtils.getProcessTooltip(process))
+    expect(listState.find('img').prop('src')).toBe(ProcessStateUtils.getProcessIcon(process))
   })
 
-  it("should show icon and tooltip from settings for not loaded stage", () => {
-    const process = {"processingType":"streaming","deployment": {"action":"CANCEL"}}
-    const listState = mount(<ListStateComponent process={process} processStatesSettings={settings} />)
-    expect(listState.find('div').prop('title')).toBe(_.get(_.get(settings['tooltips'], process['processingType']), "CANCELED")  + loadingText)
-    expect(contains(listState.find('div').text(), _.get(_.get(settings['icons'], process['processingType']), "CANCELED")  + loadingText)).toBe(true)
-  })
-
-  it("should show defaults for loaded undefined state and no settings configuration", () => {
+  it("should show defaults for loaded undefined state", () => {
     const process = {"processingType":"streaming","deployment":{"action":"DEPLOY"}}
-    const listState = mount(<ListStateComponent process={process} state={{}} isStateLoaded={true} processStatesSettings={noSettings} />)
-    expect(listState.find('div').prop('title')).toBe(ProcessStateUtils.getStatusTooltip(ProcessStateUtils.STATUSES.ERROR))
-    expect(contains(listState.find('div').text(), ProcessStateUtils.getStatusIcon(ProcessStateUtils.STATUSES.ERROR))).toBe(true)
+    const listState = mount(<ListState process={process} state={{}} isStateLoaded={true} />)
+    expect(listState.find('img').prop('title')).toBe(ProcessStateUtils.getStatusTooltip(ProcessStateUtils.STATUSES.ERROR))
+    expect(listState.find('img').prop('src')).toBe(ProcessStateUtils.getStatusIcon(ProcessStateUtils.STATUSES.ERROR))
   })
 
   it("should show defaults for never deployed process", () => {
     const process = {"processingType":"streaming","deployment": null}
-    const listState = mount(<ListStateComponent process={process} isStateLoaded={true} processStatesSettings={noSettings} />)
-    expect(listState.find('div').prop('title')).toBe(ProcessStateUtils.getProcessTooltip(process))
-    expect(contains(listState.find('div').text(), ProcessStateUtils.getProcessIcon(process))).toBe(true)
+    const listState = mount(<ListState process={process} isStateLoaded={true} />)
+    expect(listState.find('img').prop('title')).toBe(ProcessStateUtils.getProcessTooltip(process))
+    expect(listState.find('img').prop('src')).toBe(ProcessStateUtils.getProcessIcon(process))
   })
 
-  it("should show defaults for loaded canceled state and no settings configuration", () => {
+  it("should show defaults for loaded canceled state", () => {
     const process = {"processingType":"streaming", "deployment": {"action":"CANCELED"}}
-    const listState = mount(<ListStateComponent process={process} state={null} isStateLoaded={true} processStatesSettings={noSettings} />)
-    expect(listState.find('div').prop('title')).toBe(ProcessStateUtils.getStateTooltip( null))
-    expect(contains(listState.find('div').text(), ProcessStateUtils.getStateIcon(null))).toBe(true)
+    const listState = mount(<ListState process={process} state={null} isStateLoaded={true} />)
+    expect(listState.find('img').prop('title')).toBe(ProcessStateUtils.getStateTooltip(null))
+    expect(listState.find('img').prop('src')).toBe(ProcessStateUtils.getStateIcon(null))
   })
 
-  it("should show defaults for loaded running state and no settings", () => {
+  it("should show defaults loaded from state, cdn icon url", () => {
     const process = {"processingType":"streaming","deployment": {"action":"DEPLOY"}}
-    const state = {"status":"RUNNING"}
-    const listState = mount(<ListStateComponent process={process} state={state} isStateLoaded={true} processStatesSettings={noSettings} />)
-    expect(listState.find('div').prop('title')).toBe(ProcessStateUtils.getStateTooltip( state))
-    expect(contains(listState.find('div').text(), ProcessStateUtils.getStateIcon(state))).toBe(true)
+    const state = {"status":"RUNNING", "icon": "http://my-ftp.com/icons/test.svg", "tooltip": "Some tooltip"}
+    const listState = mount(<ListState process={process} state={state} isStateLoaded={true} />)
+    expect(listState.find('img').prop('title')).toBe(state.tooltip)
+    expect(listState.find('img').prop('src')).toBe(state.icon)
   })
 
-  it("should show icon and tooltip from settings", () => {
+  it("should show defaults loaded from state, local icon url", () => {
+    const process = {"processingType":"streaming","deployment": {"action":"DEPLOY"}}
+    const state = {"status":"RUNNING", "icon": "/icons/test.svg", "tooltip": "Some tooltip"}
+    const listState = mount(<ListState process={process} state={state} isStateLoaded={true} />)
+    expect(listState.find('img').prop('title')).toBe(state.tooltip)
+    expect(listState.find('img').prop('src')).toBe(urljoin(BACKEND_STATIC_URL, state.icon))
+  })
+
+  it("should show defaults for state without icon and tooltip and RUNNING STATUS", () => {
     const process = {"processingType":"streaming","deployment": {"action":"DEPLOY"}}
     const state = {"status":"RUNNING"}
-    const listState = mount(<ListStateComponent process={process} state={state} isStateLoaded={true} processStatesSettings={settings} />)
-    expect(listState.find('div').prop('title')).toBe(_.get(_.get(settings['tooltips'], process['processingType']), state['status']))
-    expect(contains(listState.find('div').text(), _.get(_.get(settings['icons'], process['processingType']), state['status']))).toBe(true)
+    const listState = mount(<ListState process={process} state={state} isStateLoaded={true} />)
+    expect(listState.find('img').prop('title')).toBe(ProcessStateUtils.getStatusTooltip(ProcessStateUtils.STATUSES.RUNNING))
+    expect(listState.find('img').prop('src')).toBe(ProcessStateUtils.getStatusIcon(ProcessStateUtils.STATUSES.RUNNING))
+  })
+
+  it("should show defaults for state without icon and tooltip and unknown status", () => {
+    const process = {"processingType":"streaming"}
+    const state = {"status":"SOME_STATUS"}
+    const listState = mount(<ListState process={process} state={state} isStateLoaded={true} />)
+    expect(listState.find('img').prop('title')).toBe(ProcessStateUtils.getStatusTooltip(ProcessStateUtils.STATUSES.UNKNOWN))
+    expect(listState.find('img').prop('src')).toBe(ProcessStateUtils.getStatusIcon(ProcessStateUtils.STATUSES.UNKNOWN))
   })
 })

@@ -5,7 +5,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
@@ -34,15 +33,13 @@ class SettingsResources(config: FeatureTogglesConfig,
             attachments = config.attachments.isDefined
           )
 
-          val processStateSettings = ProcessStateSettings(typeToConfig)
-
           val authenticationSettings = AuthenticationSettings(
             authenticationConfig.method.toString,
             authenticationConfig.authorizeUrl.map(_.toString)
           )
 
           val analyticsSettings = analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
-          UISettings(toggleOptions, authenticationSettings, analyticsSettings, processStateSettings)
+          UISettings(toggleOptions, authenticationSettings, analyticsSettings)
         }
       }
     }
@@ -81,25 +78,4 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class UISettings(features: ToggleFeaturesOptions,
                                  authentication: AuthenticationSettings,
-                                 analytics: Option[AnalyticsSettings],
-                                 processStates: ProcessStateSettings)
-
-
-object ProcessStateSettings {
-  def apply(managers: Map[ProcessingType, ProcessingTypeData]): ProcessStateSettings =
-    ProcessStateSettings(icons = managersIcons(managers), tooltips = managersTooltips(managers))
-
-  private def managersIcons(managers: Map[ProcessingType, ProcessingTypeData]): Map[String, Map[ProcessingType, String]] =
-    managers.map({
-      case (mk, mv) => (mk.toString, mapStateStatus(mv.processManager.processStateDefinitionManager.statusIcons))
-    })
-
-  private def managersTooltips(managers: Map[ProcessingType, ProcessingTypeData]): Map[String, Map[ProcessingType, String]] =
-    managers.map({
-      case (mk, mv) => (mk.toString, mapStateStatus(mv.processManager.processStateDefinitionManager.statusTooltips))
-    })
-
-  private def mapStateStatus(state: Map[StateStatus, String]): Map[String, String] = state.map {
-    case (ik, iv) => (ik.toString, iv)
-  }
-}
+                                 analytics: Option[AnalyticsSettings])

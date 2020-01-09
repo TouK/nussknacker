@@ -1,38 +1,30 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
+import java.net.URI
+
 import io.circe.generic.JsonCodec
-import io.circe.{Encoder, Json}
+import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 
-@JsonCodec(encodeOnly = true) case class ProcessStatus(deploymentId: Option[String],
-                                                       status: StateStatus,
-                                                       allowedActions: List[StateAction],
-                                                       startTime: Option[Long],
-                                                       attributes: Option[Json],
-                                                       errorMessage: Option[String])
+@JsonCodec(encodeOnly = true) case class ProcessStatus(status: StateStatus,
+                                                       deploymentId: Option[String] = Option.empty,
+                                                       allowedActions: List[StateAction] = List.empty,
+                                                       icon: Option[URI] = Option.empty,
+                                                       tooltip: Option[String] = Option.empty,
+                                                       startTime: Option[Long] = Option.empty,
+                                                       attributes: Option[Json] = Option.empty,
+                                                       errorMessage: Option[String] = Option.empty)
 
 object ProcessStatus {
 
   implicit val typeEncoder: Encoder[StateStatus] = Encoder.encodeString.contramap(_.name)
+  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
+  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
-  def apply(deploymentId: Option[String],
-            status: StateStatus,
-            allowedActions: List[StateAction],
-            startTime: Option[Long] = Option.empty,
-            attributes: Option[Json] = Option.empty,
-            errorMessage: Option[String] = Option.empty) = new ProcessStatus(
-    deploymentId = deploymentId,
-    status = status,
-    allowedActions = allowedActions,
-    startTime = startTime,
-    attributes = attributes,
-    errorMessage = errorMessage
-  )
-
-  def apply(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {
+  def create(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {
     val versionMatchMessage = (processState.version, expectedDeploymentVersion) match {
       //currently returning version is optional
       case (None, _) => None
@@ -45,6 +37,8 @@ object ProcessStatus {
       deploymentId = Some(processState.deploymentId.value),
       status = processState.status,
       allowedActions = processState.allowedActions,
+      icon = processState.icon,
+      tooltip = processState.tooltip,
       startTime = processState.startTime,
       attributes = processState.attributes,
       errorMessage = List(versionMatchMessage, processState.errorMessage).flatten.reduceOption(_  + ", " + _)
@@ -52,16 +46,16 @@ object ProcessStatus {
   }
 
   val notFound: ProcessStatus = ProcessStatus(
-    Option.empty,
-    SimpleStateStatus.Unknown,
-    SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.Unknown),
-    errorMessage = Some("Process not found in engine.")
+    SimpleStateStatus.NotFound,
+    allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.NotFound),
+    icon = SimpleProcessStateDefinitionManager.getStatusIcon(SimpleStateStatus.NotFound),
+    tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(SimpleStateStatus.NotFound)
   )
 
   val failedToGet: ProcessStatus = ProcessStatus(
-    Option.empty,
-    SimpleStateStatus.Unknown,
-    SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.Unknown),
-    errorMessage = Some("Failed to obtain status.")
+    SimpleStateStatus.FailedToGet,
+    allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.FailedToGet),
+    icon = SimpleProcessStateDefinitionManager.getStatusIcon(SimpleStateStatus.FailedToGet),
+    tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(SimpleStateStatus.FailedToGet)
   )
 }

@@ -1,15 +1,18 @@
 package pl.touk.nussknacker.engine.management
 
-import pl.touk.nussknacker.engine.api.deployment.{BaseStateStatus, RunningStateStatus, DuringDeployStateStatus, FinishedStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.NotEstablishedStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
-object FlinkStateStatus {
-  val Unknown = new BaseStateStatus("UNKNOWN")
-  val NotDeployed = new BaseStateStatus("NOT_DEPLOYED")
-  val DuringDeploy = new DuringDeployStateStatus("DURING_DEPLOY")
-  val Running = new RunningStateStatus("RUNNING")
-  val Finished = new FinishedStateStatus("FINISHED")
-  val Restarting = new BaseStateStatus("RESTARTING")
-  val DuringCancel = new BaseStateStatus("DURING_CANCEL")
-  val Canceled = new BaseStateStatus("CANCELED")
-  val Failed = new BaseStateStatus("FAILED")
+object FlinkStateStatus  {
+  val FailedToGet = SimpleStateStatus.FailedToGet
+  val NotFound = SimpleStateStatus.NotFound
+  val Unknown = SimpleStateStatus.Unknown
+  val NotDeployed = SimpleStateStatus.NotDeployed
+  val DuringDeploy = SimpleStateStatus.DuringDeploy
+  val Running = SimpleStateStatus.Running
+  val Finished = SimpleStateStatus.Finished
+  val Restarting = new NotEstablishedStateStatus("RESTARTING")
+  val DuringCancel = SimpleStateStatus.DuringCancel
+  val Canceled = SimpleStateStatus.Canceled
+  val Failed = SimpleStateStatus.Failed
 }

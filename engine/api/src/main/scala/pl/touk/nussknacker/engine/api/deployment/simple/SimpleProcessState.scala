@@ -17,6 +17,8 @@ object SimpleProcessState {
       status = status,
       version = version,
       allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(status),
+      icon = SimpleProcessStateDefinitionManager.getStatusIcon(status),
+      tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(status),
       startTime = startTime,
       attributes = attributes,
       errorMessage = errorMessage

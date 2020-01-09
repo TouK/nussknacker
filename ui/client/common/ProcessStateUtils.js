@@ -1,54 +1,44 @@
 import _ from "lodash"
 
-import InlinedSvgs from "../assets/icons/InlinedSvgs"
+import {BACKEND_STATIC_URL} from "../config"
+import iconDeployed from "../assets/img/states/deployed.svg"
+import iconNotDeployed from "../assets/img/states/not-deployed.svg"
+import iconUnknown from "../assets/img/states/state-unknown.svg"
+import iconErrorState from "../assets/img/states/state-error.svg"
+import iconCanceled from "../assets/img/states/canceled.svg"
+import urljoin from "url-join"
+
+const localIconPatternRegexp = /^((http|https|ftp):\/\/)/
 
 export default {
-  ACTIONS: {
-    NOT_DEPLOYED: null,
-    DEPLOY: "DEPLOY",
-    CANCEL: "CANCEL",
-  },
-
   STATUSES: {
     UNKNOWN: "UNKNOWN",
     NOT_DEPLOYED: "NOT_DEPLOYED",
-    DURING_DEPLOY: "DURING_DEPLOY",
-    DEPLOYED: "DEPLOYED",
     RUNNING: "RUNNING",
-    DURING_CANCEL: "DURING_CANCEL",
     CANCELED: "CANCELED",
-    RESTARTING: "RESTARTING",
-    FAILED: "FAILED",
-    ERROR: "ERROR",
-    FINISHED: "FINISHED",
+    ERROR: "ERROR"
+  },
+
+  ACTIONS: {
+    NOT_DEPLOYED: null,
+    DEPLOY: "DEPLOY",
+    CANCEL: "CANCEL"
   },
 
   DEFAULT_STATUS_TOOLTIPS: {
     UNKNOWN: "Unknown state of the process..",
     NOT_DEPLOYED: "The process has never been deployed.",
-    DURING_DEPLOY: "The process has been already started and currently is being deployed.",
-    DEPLOYED: "The process has been successfully deployed.",
-    RUNNING: "The process is running.",
-    DURING_CANCEL: "The process currently is being canceled.",
+    RUNNING: "The process has been successfully deployed.",
     CANCELED: "The process has been successfully cancelled.",
-    RESTARTING: "The process is restarting..",
-    FAILED: "There are some problems with checking state of process..",
     ERROR: "There are some errors with state of process..",
-    FINISHED: "The process completed successfully.",
   },
 
   DEFAULT_STATUS_ICONS: {
-    UNKNOWN: InlinedSvgs.iconUnknown,
-    NOT_DEPLOYED: InlinedSvgs.iconNotDeployed,
-    DURING_DEPLOY: InlinedSvgs.iconDeployRunningAnimated,
-    DEPLOYED: InlinedSvgs.iconDeploySuccess,
-    RUNNING: InlinedSvgs.iconDeploySuccess,
-    DURING_CANCEL: InlinedSvgs.iconStoppingRunningAnimated,
-    CANCELED: InlinedSvgs.iconStoppingSuccess,
-    RESTARTING: InlinedSvgs.iconStoppedWorking,
-    FAILED: InlinedSvgs.iconFailed,
-    ERROR: InlinedSvgs.iconStoppedWorking,
-    FINISHED: InlinedSvgs.iconSuccess,
+    UNKNOWN: iconUnknown,
+    NOT_DEPLOYED: iconNotDeployed,
+    RUNNING: iconDeployed,
+    CANCELED: iconCanceled,
+    ERROR: iconErrorState
   },
 
   isRunning(state) {
@@ -59,16 +49,8 @@ export default {
     return this.getProcessAction(process) === this.ACTIONS.DEPLOY
   },
 
-  getStateTooltip(state) {
-    return this.getStatusTooltip(this.getStateStatus(state))
-  },
-
   getStatusTooltip(status) {
     return _.get(this.DEFAULT_STATUS_TOOLTIPS, status, this.DEFAULT_STATUS_TOOLTIPS[this.STATUSES.UNKNOWN])
-  },
-
-  getStateIcon(state) {
-    return this.getStatusIcon(this.getStateStatus(state))
   },
 
   getStatusIcon(status) {
@@ -90,12 +72,30 @@ export default {
     return state.status.toUpperCase()
   },
 
-  getProcessStateStatus(process, state) {
-    if (state == null) {
-      return this.getProcessStatus(process)
+  getStateIcon(state) {
+    const icon = _.get(state, "icon")
+
+    if (icon == null) {
+      return this.getStatusIcon(this.getStateStatus(state))
     }
 
-    return this.getStateStatus(state)
+    //When icon doesn't include http / https / ftp then we assume it should be served from our backend static url
+    if (!localIconPatternRegexp.test(icon)) {
+      return urljoin(BACKEND_STATIC_URL, icon)
+    }
+
+    return icon
+  },
+
+  getStateTooltip(state) {
+    const errors = _.get(state, "errorMessage")
+    const tooltip = _.get(state, "tooltip")
+
+    if (tooltip) {
+      return tooltip + (errors != null ? errors : "")
+    }
+
+    return this.getStatusTooltip(this.getStateStatus(state))
   },
 
   getProcessAction(process) {
@@ -103,15 +103,26 @@ export default {
   },
 
   getProcessTooltip(process) {
-    return this.getStatusTooltip(this.getProcessStatus(process))
+    return this.getStatusTooltip(this.mapProcessDeploymentToStatus(process))
   },
 
-  getProcessStatus(process) {
+  getProcessIcon(process) {
+    return this.getStatusIcon(this.mapProcessDeploymentToStatus(process))
+  },
+
+  /**
+   * Function map process deployment action to state status,
+   * because it's easier to show default icon / tooltip by status
+   *
+   * @param process
+   * @returns {string}
+   */
+  mapProcessDeploymentToStatus(process) {
     const action = this.getProcessAction(process)
 
     switch(action) {
       case this.ACTIONS.DEPLOY:
-        return this.STATUSES.DEPLOYED
+        return this.STATUSES.RUNNING
       case this.ACTIONS.CANCEL:
         return this.STATUSES.CANCELED
       case this.ACTIONS.NOT_DEPLOYED:
@@ -119,9 +130,5 @@ export default {
       default:
         return this.STATUSES.UNKNOWN
     }
-  },
-
-  getProcessIcon(process) {
-    return this.getStatusIcon(this.getProcessStatus(process))
   }
 }

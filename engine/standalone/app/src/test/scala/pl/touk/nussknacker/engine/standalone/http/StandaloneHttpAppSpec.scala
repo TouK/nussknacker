@@ -125,7 +125,10 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       Get(s"/checkStatus/${procId.value}") ~> managementRoute ~> check {
         status shouldBe StatusCodes.OK
 
-        val docs: Json = parse(responseAs[String]).getOrElse(Json.Null)
+        val docs = parse(responseAs[String]) match {
+          case Right(json) => json
+        }
+
         val cursorState = docs.hcursor
 
         cursorState.downField("deploymentId").downField("value").focus shouldBe Some(Json.fromString(procId.value))
@@ -176,7 +179,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       }
     }
   }
-
 
   it should "not be able to invoke with POST for GET source" in {
     assertProcessNotRunning(procId)

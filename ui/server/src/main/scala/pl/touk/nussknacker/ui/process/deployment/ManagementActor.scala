@@ -86,7 +86,7 @@ class ManagementActor(environment: String,
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state, manager.processStateDefinitionManager)
-      } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
+      } yield state.map(ProcessStatus.create(_, deployedVersion.map(_.processVersionId)))
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>

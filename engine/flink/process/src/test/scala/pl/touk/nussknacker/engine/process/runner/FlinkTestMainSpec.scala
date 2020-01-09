@@ -393,8 +393,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     invocationResults("out").head.contextId shouldBe "sampleProcess-id-0-1"
   }
 
-  def nodeResult(count: Int, vars: (String, Any)*)
-  = NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
+  def nodeResult(count: Int, vars: (String, Any)*) =
+    NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
 
 }
 

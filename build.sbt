@@ -603,7 +603,6 @@ lazy val standaloneApi = (project in engine("standalone/api")).
   ).dependsOn(api)
 
 
-
 lazy val api = (project in engine("api")).
   settings(commonSettings).
   settings(
@@ -614,6 +613,7 @@ lazy val api = (project in engine("api")).
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,
+        "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "1.1.0",
