@@ -11,16 +11,14 @@ export const Input = (props) => {
       <div className={isMarked ? " marked" : ""}>
         {
             <input
-            autoFocus={autoFocus}
-            type="text"
-            readOnly={readOnly}
-            placeholder={placeholder}
-            className={
-              (!showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error") + (readOnly ? " read-only" : "")
-            }
-            value={value || ""}
-            onChange={onChange}
-          />
+              autoFocus={autoFocus}
+              type="text"
+              readOnly={readOnly}
+              placeholder={placeholder}
+              className={!showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"}
+              value={value || ""}
+              onChange={onChange}
+            />
         }
       </div>
       {showValidation && <ValidationLabels validators={validators} values={[value]}/>}

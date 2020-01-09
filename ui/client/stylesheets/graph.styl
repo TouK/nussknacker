@@ -275,6 +275,10 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       textarea
         overflow hidden
         height auto
+      textarea:read-only
+        background-color #444
+      input:read-only
+        background-color #444
       espCheckbox(20px)
       input[type='checkbox']
         margin-top 7px
@@ -340,8 +344,6 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
           width: 70%
       &.switchable
         width: 70%
-      &.read-only
-        background-color #444
 
     .node-error
       width: 100%
