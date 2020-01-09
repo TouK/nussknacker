@@ -1,7 +1,6 @@
 import React from "react"
 import Creatable from "react-select/creatable"
 import PropTypes from "prop-types"
-import SwitchIcon from "./SwitchIcon"
 import {Types} from "./EditorType"
 
 const getOptions = (values) => {
@@ -28,14 +27,11 @@ export default class ExpressionWithFixedValues extends React.Component {
 
   render() {
     const {
-      expressionObj, fieldLabel, readOnly, toggleEditor, shouldShowSwitch, switchableTo, rowClassName, valueClassName,
-      renderFieldLabel, onValueChange, displayRawEditor, defaultValue, switchableToHint, notSwitchableToHint
+      expressionObj, readOnly, shouldShowSwitch, onValueChange, defaultValue
     } = this.props
     const option = this.currentOption(expressionObj, defaultValue)
 
     return (
-      <div className={rowClassName ? rowClassName : " node-row"}>
-        {fieldLabel && renderFieldLabel(fieldLabel)}
         <Creatable
           className={`node-value-select node-value ${  shouldShowSwitch ? " switchable" : ""}`}
           classNamePrefix="node-value-select"
@@ -45,28 +41,15 @@ export default class ExpressionWithFixedValues extends React.Component {
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
         />
-        <SwitchIcon
-          switchable={switchableTo(expressionObj)}
-          hint={switchableTo(expressionObj) ? switchableToHint : notSwitchableToHint}
-          onClick={toggleEditor}
-          shouldShowSwitch={shouldShowSwitch}
-          displayRawEditor={displayRawEditor}
-          readOnly={readOnly}
-        />
-      </div>
     )
   }
 
   static propTypes = {
     values: PropTypes.array,
-    renderFieldLabel: PropTypes.func,
     expressionObj: PropTypes.object,
-    fieldLabel: PropTypes.string,
     onValueChange: PropTypes.func,
     readOnly: PropTypes.bool,
-    shouldShowSwitch: PropTypes.bool,
-    rowClassName: PropTypes.string,
-    valueClassName: PropTypes.string
+    shouldShowSwitch: PropTypes.bool
   }
 }
 

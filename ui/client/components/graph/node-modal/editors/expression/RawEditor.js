@@ -1,19 +1,15 @@
 import React from "react"
 import ExpressionSuggest from "./ExpressionSuggest"
 import PropTypes from "prop-types"
-import SwitchIcon from "./SwitchIcon"
 
 export default function RawEditor(props) {
 
   const {
-    renderFieldLabel, fieldLabel, fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows, cols, switchableTo, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor,
-    fieldType, editorName, switchableToHint, notSwitchableToHint
+    fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
+    onValueChange, rows, cols, shouldShowSwitch, valueClassName
   } = props
 
   return (
-    <div className={rowClassName}>
-      {fieldLabel && renderFieldLabel(fieldLabel)}
       <div className={(shouldShowSwitch ? " switchable " : "") + valueClassName}>
         <ExpressionSuggest
           fieldName={fieldName}
@@ -32,22 +28,10 @@ export default function RawEditor(props) {
           shouldShowSwitch={shouldShowSwitch}
         />
       </div>
-      <SwitchIcon
-        switchable={switchableTo(expressionObj)}
-        hint={switchableTo(expressionObj) ? switchableToHint : notSwitchableToHint}
-        onClick={toggleEditor}
-        shouldShowSwitch={shouldShowSwitch}
-        displayRawEditor={displayRawEditor}
-        readOnly={readOnly}
-        fieldType={fieldType}
-      />
-    </div>
   )
 }
 
 RawEditor.propTypes = {
-  fieldLabel: PropTypes.string,
-  renderFieldLabel: PropTypes.func,
   valueClassName: PropTypes.string,
   fieldName: PropTypes.string,
   rows: PropTypes.number,
@@ -58,8 +42,6 @@ RawEditor.propTypes = {
   validators: PropTypes.array,
   isMarked: PropTypes.bool,
   showValidation: PropTypes.bool,
-  switchable: PropTypes.func,
-  toggleEditor: PropTypes.func,
   shouldShowSwitch: PropTypes.bool
 }
 

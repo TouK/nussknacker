@@ -1,6 +1,7 @@
 import React from "react"
 import {editors, editorType, Types} from "./EditorType"
 import ProcessUtils from "../../../../../common/ProcessUtils"
+import SwitchIcon from "./SwitchIcon";
 
 export default class EditableExpression extends React.Component {
 
@@ -12,7 +13,7 @@ export default class EditableExpression extends React.Component {
   }
 
   render() {
-    const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param} = this.props
+    const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param, renderFieldLabel, fieldLabel, readOnly} = this.props
     const type = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : Types.EXPRESSION)
 
     const basicEditor = Object.entries(editors).find(
@@ -25,18 +26,25 @@ export default class EditableExpression extends React.Component {
     const switchableToEditorName = editor.switchableToEditors.find(editor => editors[editor].isSupported(type)) || Types.RAW_EDITOR
     const switchableToEditor = _.get(editors, switchableToEditorName)
 
-    return <Editor toggleEditor={this.toggleEditor}
-                   switchableTo={switchableToEditor.switchableTo}
-                   switchableToHint={switchableToEditor.switchableToHint}
-                   notSwitchableToHint={switchableToEditor.notSwitchableToHint}
-                   editorName={editorName}
+    return (
+      <div className={rowClassName ? rowClassName : " node-row"}>
+        {fieldLabel && renderFieldLabel(fieldLabel)}
+      <Editor toggleEditor={this.toggleEditor}
                    shouldShowSwitch={this.showSwitch(type, showSwitch)}
                    rowClassName={rowClassName ? rowClassName : "node-row"}
                    valueClassName={valueClassName ? valueClassName : "node-value"}
-                   displayRawEditor={this.state.displayRawEditor}
                    {...this.props}
-                   fieldType={type}
     />
+        <SwitchIcon
+          switchable={switchableToEditor.switchableTo(expressionObj)}
+          hint={switchableToEditor.switchableTo(expressionObj) ? switchableToEditor.switchableToHint : switchableToEditor.notSwitchableToHint}
+          onClick={this.toggleEditor}
+          shouldShowSwitch={this.showSwitch(type, showSwitch)}
+          displayRawEditor={this.state.displayRawEditor}
+          readOnly={readOnly}
+        />
+      </div>
+    )
   }
 
   toggleEditor = (_) => this.setState({

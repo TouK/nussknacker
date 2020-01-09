@@ -1,11 +1,11 @@
 import React from "react"
-import LabeledInput from "../field/LabeledInput"
 import PropTypes from "prop-types"
+import Input from "../field/Input";
 
 export default function StringEditor(props) {
 
   const {
-    fieldLabel, renderFieldLabel, expressionObj, onValueChange, readOnly, switchableTo, switchableToHint, notSwitchableToHint
+    expressionObj, onChange, shouldShowSwitch
   } = props
 
   const defaultQuotationMark = "'"
@@ -16,25 +16,21 @@ export default function StringEditor(props) {
 
   const trim = (value) => value.substring(1, value.length - 1)
 
-  return <LabeledInput
-    {...props}
-    renderFieldLabel={() => props.renderFieldLabel(props.fieldLabel)}
-    onChange={(event) => onValueChange(format(event.target.value))}
-    value={trim(expressionObj.expression)}
-    formattedValue={expressionObj.expression}
-    switchable={switchableTo(expressionObj)}
-    hint={switchableTo(expressionObj) ? switchableToHint : notSwitchableToHint}
-  />
+  return <Input {...props}
+               onChange={(event) => onChange(format(event.target.value))}
+               value={trim(expressionObj.expression)}
+               formattedValue={expressionObj.expression}
+               className={`${shouldShowSwitch ? "switchable " : ""  }node-value`}/>
 }
 
 //TODO handle expressions with escaped '/"
 const stringPattern = /(^'.*'$)|(^".*"$)/
 
 StringEditor.propTypes = {
-  fieldLabel: PropTypes.string,
-  renderFieldLabel: PropTypes.func,
+
   expressionObj: PropTypes.object,
-  onValueChange: PropTypes.func
+  onChange: PropTypes.func,
+  shouldShowSwitch: PropTypes.func
 }
 
 const parseable = (expressionObj) => {
