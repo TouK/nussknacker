@@ -6,11 +6,11 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "postinstall": "flow-typed install",
+    "postinstall": "flow-typed install -s -o",
     "build": "NODE_ENV=production webpack -p --progress && cp -R assets/icons/license dist",
-    "flow": "flow",
-    "lint": "eslint",
-    "check": "npm run flow && npm run lint",
+    "flow": "flow status",
+    "lint": "eslint .",
+    "check": "flow check && npm run lint",
     "start": "PROXY_API_DOMAIN=http://localhost:8080/api webpack-dev-server",
     "start-backend-demo": "PROXY_API_DOMAIN=https://staging.nussknacker.io/api webpack-dev-server",
     "test": "./node_modules/karma/bin/karma start --single-run"

@@ -10,7 +10,7 @@ export type ToggleConfirmDialogAction = {
   text: string,
   confirmText: string,
   denyText: string,
-  onConfirmCallback: any,
+  onConfirmCallback: $FlowTODO,
 }
 
 export function toggleConfirmDialog(

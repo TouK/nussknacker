@@ -9,7 +9,7 @@ export type EditGroupAction = {
   type: "EDIT_GROUP",
   oldGroupId: GroupId,
   newGroup: GroupType,
-  validationResult: any,
+  validationResult: $FlowTODO,
 }
 
 export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupType) {
