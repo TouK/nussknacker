@@ -4,10 +4,7 @@ import PropTypes from "prop-types"
 
 export default function BoolEditor(props) {
 
-  const {
-    expressionObj, readOnly, onValueChange,
-    shouldShowSwitch
-  } = props
+  const {expressionObj, readOnly, onValueChange, className} = props
 
   const trueValue = {expression: "true", label: "true"}
   const falseValue = {expression: "false", label: "false"}
@@ -22,7 +19,7 @@ export default function BoolEditor(props) {
       expressionObj={expressionObj}
       onValueChange={onValueChange}
       readOnly={readOnly}
-      shouldShowSwitch={shouldShowSwitch}
+      className={className}
     />
   )
 }
@@ -31,8 +28,7 @@ BoolEditor.propTypes = {
   expressionObj: PropTypes.object,
   onValueChange: PropTypes.func,
   readOnly: PropTypes.bool,
-  shouldShowSwitch: PropTypes.bool,
-  rowClassName: PropTypes.string,
+  className: PropTypes.string
 }
 
 const parseable = (expressionObj) => {

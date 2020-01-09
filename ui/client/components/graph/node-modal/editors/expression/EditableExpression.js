@@ -1,7 +1,7 @@
 import React from "react"
 import {editors, editorType, Types} from "./EditorType"
 import ProcessUtils from "../../../../../common/ProcessUtils"
-import SwitchIcon from "./SwitchIcon";
+import SwitchIcon from "./SwitchIcon"
 
 export default class EditableExpression extends React.Component {
 
@@ -26,20 +26,20 @@ export default class EditableExpression extends React.Component {
     const switchableToEditorName = editor.switchableToEditors.find(editor => editors[editor].isSupported(type)) || Types.RAW_EDITOR
     const switchableToEditor = _.get(editors, switchableToEditorName)
 
+    const shouldShowSwitch = this.showSwitch(type, showSwitch)
+
     return (
-      <div className={rowClassName ? rowClassName : " node-row"}>
+      <div className={`${rowClassName ? rowClassName : " node-row"}`}>
         {fieldLabel && renderFieldLabel(fieldLabel)}
-      <Editor toggleEditor={this.toggleEditor}
-                   shouldShowSwitch={this.showSwitch(type, showSwitch)}
-                   rowClassName={rowClassName ? rowClassName : "node-row"}
-                   valueClassName={valueClassName ? valueClassName : "node-value"}
-                   {...this.props}
-    />
+        <Editor toggleEditor={this.toggleEditor}
+                className={`${valueClassName ? valueClassName : "node-value"} ${shouldShowSwitch ? "switchable " : ""}`}
+                {...this.props}
+        />
         <SwitchIcon
           switchable={switchableToEditor.switchableTo(expressionObj)}
           hint={switchableToEditor.switchableTo(expressionObj) ? switchableToEditor.switchableToHint : switchableToEditor.notSwitchableToHint}
           onClick={this.toggleEditor}
-          shouldShowSwitch={this.showSwitch(type, showSwitch)}
+          shouldShowSwitch={shouldShowSwitch}
           displayRawEditor={this.state.displayRawEditor}
           readOnly={readOnly}
         />

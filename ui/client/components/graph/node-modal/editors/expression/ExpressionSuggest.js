@@ -71,7 +71,7 @@ class ExpressionSuggest extends React.Component {
     identifierRegexps: identifierRegexpsIncludingDot,
     getDocTooltip: (item) => {
       if (item.description || !_.isEmpty(item.parameters)) {
-        const paramsSignature = item.parameters.map(p => `${ProcessUtils.humanReadableType(p.refClazz)  } ${  p.name}`).join(", ")
+        const paramsSignature = item.parameters.map(p => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`).join(", ")
         const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`
         item.docHTML = ReactDOMServer.renderToStaticMarkup((
           <div className="function-docs">
@@ -85,12 +85,12 @@ class ExpressionSuggest extends React.Component {
   }
 
   constructor(props) {
-    super(props);
-    inputExprIdCounter+=1;
+    super(props)
+    inputExprIdCounter += 1
     this.state = {
       value: props.inputProps.value,
-      id: `inputExpr${  inputExprIdCounter}`
-    };
+      id: `inputExpr${inputExprIdCounter}`
+    }
     this.expressionSuggester = this.createExpressionSuggester(props)
   }
 
@@ -110,7 +110,7 @@ class ExpressionSuggest extends React.Component {
   }
 
   createExpressionSuggester = (props) => {
-    return new ExpressionSuggester(props.typesInformation, props.variables, props.processingType, HttpService);
+    return new ExpressionSuggester(props.typesInformation, props.variables, props.processingType, HttpService)
   }
 
   onChange = (newValue) => {
@@ -121,13 +121,12 @@ class ExpressionSuggest extends React.Component {
 
   render() {
     if (this.props.dataResolved) {
-      const {isMarked, showValidation, inputProps, validators, shouldShowSwitch} = this.props
+      const {isMarked, showValidation, inputProps, validators} = this.props
       return (
         <React.Fragment>
-          <div className={`row-ace-editor${ 
-          !showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error " 
-          }${isMarked ? " marked" : "" 
-          }${shouldShowSwitch ? " switchable" : "" 
+          <div className={`row-ace-editor${
+            !showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error "
+          }${isMarked ? " marked" : ""
           }${this.state.editorFocused ? " focused" : ""
           }${inputProps.readOnly ? " read-only" : ""}`}>
             <AceEditor mode={inputProps.language}

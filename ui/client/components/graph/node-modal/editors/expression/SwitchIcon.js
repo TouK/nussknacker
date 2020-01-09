@@ -4,13 +4,13 @@ import * as LoaderUtils from "../../../../../common/LoaderUtils"
 
 export default function SwitchIcon(props) {
 
-  const {switchable, readOnly, hint, onClick, shouldShowSwitch, displayRawEditor} = props
+  const {switchable, readOnly, hint, onClick, displayRawEditor, shouldShowSwitch} = props
 
   const title = () => readOnly ? "Switching to basic mode is disabled. You are in read-only mode" : hint
 
   return (
     shouldShowSwitch ?
-      <button className={`inlined switch-icon${  displayRawEditor ? " active " : ""}`}
+      <button className={`inlined switch-icon${displayRawEditor ? " active " : ""}`}
               onClick={onClick}
               disabled={!switchable || readOnly}
               title={title(readOnly)}>

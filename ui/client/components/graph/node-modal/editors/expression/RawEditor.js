@@ -6,11 +6,11 @@ export default function RawEditor(props) {
 
   const {
     fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows, cols, shouldShowSwitch, valueClassName
+    onValueChange, rows, cols, className
   } = props
 
   return (
-      <div className={(shouldShowSwitch ? " switchable " : "") + valueClassName}>
+      <div className={className}>
         <ExpressionSuggest
           fieldName={fieldName}
           inputProps={{
@@ -25,14 +25,12 @@ export default function RawEditor(props) {
           validators={validators}
           isMarked={isMarked}
           showValidation={showValidation}
-          shouldShowSwitch={shouldShowSwitch}
         />
       </div>
   )
 }
 
 RawEditor.propTypes = {
-  valueClassName: PropTypes.string,
   fieldName: PropTypes.string,
   rows: PropTypes.number,
   cols: PropTypes.number,
@@ -41,8 +39,7 @@ RawEditor.propTypes = {
   readOnly: PropTypes.bool,
   validators: PropTypes.array,
   isMarked: PropTypes.bool,
-  showValidation: PropTypes.bool,
-  shouldShowSwitch: PropTypes.bool
+  showValidation: PropTypes.bool
 }
 
 RawEditor.defaultProps = {

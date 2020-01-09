@@ -11,6 +11,7 @@ const getOptions = (values) => {
 }
 
 export default class ExpressionWithFixedValues extends React.Component {
+
   constructor(props) {
     super(props)
     this.options = getOptions(props.values)
@@ -27,20 +28,20 @@ export default class ExpressionWithFixedValues extends React.Component {
 
   render() {
     const {
-      expressionObj, readOnly, shouldShowSwitch, onValueChange, defaultValue
+      expressionObj, readOnly, onValueChange, defaultValue, className
     } = this.props
     const option = this.currentOption(expressionObj, defaultValue)
 
     return (
-        <Creatable
-          className={`node-value-select node-value ${  shouldShowSwitch ? " switchable" : ""}`}
-          classNamePrefix="node-value-select"
-          value={option}
-          onChange={(newValue) => onValueChange(newValue.value)}
-          options={this.options}
-          isDisabled={readOnly}
-          formatCreateLabel={(x) => x}
-        />
+      <Creatable
+        className={`node-value-select ${className}`}
+        classNamePrefix="node-value-select"
+        value={option}
+        onChange={(newValue) => onValueChange(newValue.value)}
+        options={this.options}
+        isDisabled={readOnly}
+        formatCreateLabel={(x) => x}
+      />
     )
   }
 
@@ -49,7 +50,7 @@ export default class ExpressionWithFixedValues extends React.Component {
     expressionObj: PropTypes.object,
     onValueChange: PropTypes.func,
     readOnly: PropTypes.bool,
-    shouldShowSwitch: PropTypes.bool
+    className: PropTypes.string
   }
 }
 

@@ -1,12 +1,10 @@
 import React from "react"
 import PropTypes from "prop-types"
-import Input from "../field/Input";
+import Input from "../field/Input"
 
 export default function StringEditor(props) {
 
-  const {
-    expressionObj, onChange, shouldShowSwitch
-  } = props
+  const {expressionObj, onValueChange, className} = props
 
   const defaultQuotationMark = "'"
   const expressionQuotationMark = expressionObj.expression.charAt(0)
@@ -17,20 +15,19 @@ export default function StringEditor(props) {
   const trim = (value) => value.substring(1, value.length - 1)
 
   return <Input {...props}
-               onChange={(event) => onChange(format(event.target.value))}
-               value={trim(expressionObj.expression)}
-               formattedValue={expressionObj.expression}
-               className={`${shouldShowSwitch ? "switchable " : ""  }node-value`}/>
+                onChange={(event) => onValueChange(format(event.target.value))}
+                value={trim(expressionObj.expression)}
+                formattedValue={expressionObj.expression}
+                className={className}/>
 }
 
 //TODO handle expressions with escaped '/"
 const stringPattern = /(^'.*'$)|(^".*"$)/
 
 StringEditor.propTypes = {
-
   expressionObj: PropTypes.object,
-  onChange: PropTypes.func,
-  shouldShowSwitch: PropTypes.func
+  onValueChange: PropTypes.func,
+  className: PropTypes.string
 }
 
 const parseable = (expressionObj) => {
