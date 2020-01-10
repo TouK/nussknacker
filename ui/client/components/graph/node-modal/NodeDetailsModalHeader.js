@@ -86,9 +86,11 @@ const NodeDetailsModalHeader = (props) => {
 
   return (
     <div className="modalHeader">
-      <div className="modal-title" style={titleStyles}>
-        {nodeIcon ? <SvgDiv className="modal-title-icon" svgFile={nodeIcon}/> : null}
-        <span>{header}</span>
+      <div className="modal-title-container modal-draggable-handle">
+        <div className="modal-title" style={titleStyles}>
+          {nodeIcon ? <SvgDiv className="modal-title-icon" svgFile={nodeIcon}/> : null}
+          <span>{header}</span>
+        </div>
       </div>
       {renderNodeClassDocs(nodeClass, docsUrl)}
     </div>

@@ -4,7 +4,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels"
 import PropTypes from "prop-types"
 
 export const Input = (props) => {
-  const {isMarked, showValidation, className, placeholder, autoFocus, onChange, value, validators, readOnly} = props
+  const {isMarked, showValidation, className, placeholder, autoFocus, onChange, value, validators, readOnly, formattedValue} = props
 
   return (
     <div className={className}>
@@ -15,13 +15,13 @@ export const Input = (props) => {
               type="text"
               readOnly={readOnly}
               placeholder={placeholder}
-              className={!showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"}
+              className={!showValidation || allValid(validators, [formattedValue ? formattedValue : value]) ? "node-input" : "node-input node-input-with-error"}
               value={value || ""}
               onChange={onChange}
             />
         }
       </div>
-      {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
+      {showValidation && <ValidationLabels validators={validators} values={[formattedValue ? formattedValue : value]}/>}
     </div>
   )
 }
