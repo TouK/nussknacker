@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
+import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
