@@ -98,7 +98,7 @@ class AppResources(config: Config,
 
   private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser) : Future[Set[String]] = {
     for {
-      processes <- processRepository.fetchProcessesDetails[Unit]()
+      processes <- processRepository.fetchDeployedProcessesDetails[Unit]()
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
     } yield {
       statusMap.filter { case (_, status) => !status.exists(_.isOkForDeployed) }.keySet
