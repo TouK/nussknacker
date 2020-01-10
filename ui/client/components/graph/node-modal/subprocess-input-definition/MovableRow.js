@@ -4,6 +4,7 @@ import ReactDOM from "react-dom"
 import {allValid} from "../../../../common/Validators"
 import ValidationLabels from "../../../modals/ValidationLabels"
 import Select from "react-select"
+import SvgDiv from "../../../SvgDiv"
 
 class RowSelect extends React.Component {
   render() {
@@ -18,7 +19,10 @@ class RowSelect extends React.Component {
 
     return connectDropTarget(connectDragSource(
       <div className="node-row movable-row" style={{opacity}}>
-        <div className={`node-value fieldName${  markedClass}`}>
+        <div className={`node-value fieldName${markedClass}`}
+          //to prevent dragging on specified elements, see https://stackoverflow.com/a/51911875
+             draggable={true}
+             onDragStart={this.preventDrag}>
           <input
             className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
             type="text"
@@ -29,7 +33,9 @@ class RowSelect extends React.Component {
           />
           {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
         </div>
-        <div className={`node-value field${  markedClass}`}>
+        <div className={`node-value field${markedClass}`}
+             draggable={true}
+             onDragStart={this.preventDrag}>
           <Select
             className="node-value node-value-select node-value-type-select"
             classNamePrefix="node-value-select"
@@ -44,12 +50,23 @@ class RowSelect extends React.Component {
         </div>
         {
           readOnly ? null :
-            <div className="node-value fieldRemove">
-              <button className="addRemoveButton" title="Remove field" onClick={() => {remove()}}>-</button>
+            <div className="node-value fieldRemove"
+                 draggable={true}
+                 onDragStart={this.preventDrag}>
+              <button className="addRemoveButton" title="Remove field" onClick={() => {
+                remove()
+              }}>-
+              </button>
             </div>
         }
+        <SvgDiv svgFile={"handlebars.svg"} className={"handle-bars"}/>
       </div>
     ))
+  }
+
+  preventDrag = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
   }
 }
 
