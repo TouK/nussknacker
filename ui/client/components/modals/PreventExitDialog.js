@@ -29,8 +29,8 @@ class PreventExitDialog extends React.Component {
           <div className="espModal confirmationModal modalContentDark">
             <p>{DialogMessages.unsavedProcessChanges()}</p>
             <div className="confirmationButtons">
-              <button type="button" title="NO" className='modalButton' onClick={this.closeDialog}>NO</button>
-              <button type="button" title="DISCARD" className='modalButton' onClick={this.confirm}>DISCARD</button>
+              <button type="button" title="NO" className="modalButton" onClick={this.closeDialog}>NO</button>
+              <button type="button" title="DISCARD" className="modalButton" onClick={this.confirm}>DISCARD</button>
             </div>
           </div>
         </div>

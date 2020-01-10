@@ -38,9 +38,9 @@ class ConfirmDialog extends React.Component {
             <p>{confirmDialog.text}</p>
             <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings}/>
             <div className="confirmationButtons">
-              <button type="button" title={confirmDialog.denyText} className='modalButton'
+              <button type="button" title={confirmDialog.denyText} className="modalButton"
                       onClick={this.closeDialog}>{confirmDialog.denyText}</button>
-              <button type="button" title={confirmDialog.confirmText} className='modalButton'
+              <button type="button" title={confirmDialog.confirmText} className="modalButton"
                       onClick={this.confirm}>{confirmDialog.confirmText}</button>
             </div>
           </div>
