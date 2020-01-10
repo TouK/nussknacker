@@ -24,6 +24,14 @@ object ProcessStatus {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
+  def simple(status: StateStatus, deploymentId: Option[String]): ProcessStatus = ProcessStatus(
+    status,
+    deploymentId,
+    allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(status),
+    icon = SimpleProcessStateDefinitionManager.getStatusIcon(status),
+    tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(status)
+  )
+
   def create(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {
     val versionMatchMessage = (processState.version, expectedDeploymentVersion) match {
       //currently returning version is optional
@@ -45,17 +53,7 @@ object ProcessStatus {
     )
   }
 
-  val notFound: ProcessStatus = ProcessStatus(
-    SimpleStateStatus.NotFound,
-    allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.NotFound),
-    icon = SimpleProcessStateDefinitionManager.getStatusIcon(SimpleStateStatus.NotFound),
-    tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(SimpleStateStatus.NotFound)
-  )
+  val failedToGet: ProcessStatus = simple(SimpleStateStatus.FailedToGet, Option.empty)
 
-  val failedToGet: ProcessStatus = ProcessStatus(
-    SimpleStateStatus.FailedToGet,
-    allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(SimpleStateStatus.FailedToGet),
-    icon = SimpleProcessStateDefinitionManager.getStatusIcon(SimpleStateStatus.FailedToGet),
-    tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(SimpleStateStatus.FailedToGet)
-  )
+  val notFound: ProcessStatus = simple(SimpleStateStatus.NotFound, Option.empty)
 }

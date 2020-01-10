@@ -19,8 +19,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   )
 
   val statusIcons: Map[StateStatus, String] = Map(
-    SimpleStateStatus.FailedToGet -> "/assets/states/failed.svg",
-    SimpleStateStatus.NotFound -> "/assets/states/failed.svg",
+    SimpleStateStatus.FailedToGet -> "/assets/states/error.svg",
+    SimpleStateStatus.NotFound -> "/assets/states/process-does-not-exist.svg",
     SimpleStateStatus.Unknown -> "/assets/states/status-unknown.svg",
     SimpleStateStatus.NotDeployed -> "/assets/states/not-deployed.svg",
     SimpleStateStatus.DuringDeploy -> "/assets/states/deploy-running-animated.svg",

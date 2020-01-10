@@ -60,13 +60,8 @@ export default {
   getStateStatus(state) {
     const status = _.get(state, "status", null)
 
-    if (_.isUndefined(state) || (state && status === null)) {
+    if (status === null) {
       return this.STATUSES.UNKNOWN
-    }
-
-    //TODO: In future it will be nice when API return state with status CANCELED
-    if (_.isNull(state)) {
-      return this.STATUSES.CANCELED
     }
 
     return state.status.toUpperCase()

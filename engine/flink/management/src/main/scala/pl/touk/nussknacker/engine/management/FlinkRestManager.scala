@@ -45,7 +45,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
   private def checkIfJarExists(jarId: String): Future[String] = {
-
     basicRequest
       .get(flinkUrl.path("jars"))
       .response(asJson[JarsResponse])
@@ -78,7 +77,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     uploadedJar
   }
 
-
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     basicRequest
       .get(flinkUrl.path("jobs", "overview"))
@@ -86,52 +84,53 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .send()
       .flatMap(SttpJson.failureToFuture)
       .flatMap { jobs =>
-      val jobsForName = jobs.jobs
-        .filter(_.name == name.value)
-        .sortBy(_.`last-modification`).reverse
 
-      val runningOrFinished = jobsForName
-        .filter(status => !status.state.isGloballyTerminalState || status.state == JobStatus.FINISHED)
+        val jobsForName = jobs.jobs
+          .filter(_.name == name.value)
+          .sortBy(_.`last-modification`)
+          .reverse
 
-      runningOrFinished match {
-        case Nil => Future.successful(None)
-        case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
-          Future.successful(Some(ProcessState(
-            DeploymentId(duplicates.head.jid),
-            FlinkStateStatus.Failed,
-            allowedActions = processStateDefinitionManager.getStatusActions(FlinkStateStatus.Failed),
-            icon = processStateDefinitionManager.getStatusIcon(FlinkStateStatus.Failed),
-            tooltip = processStateDefinitionManager.getStatusTooltip(FlinkStateStatus.Failed),
-            version = Option.empty,
-            startTime = Some(duplicates.head.`start-time`),
-            errorMessage = Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
-          ))
-        case one::_ =>
-          val stateStatus = one.state match {
-            case JobStatus.RUNNING => FlinkStateStatus.Running
-            case JobStatus.FINISHED => FlinkStateStatus.Finished
-            case JobStatus.RESTARTING => FlinkStateStatus.Restarting
-            case _ => FlinkStateStatus.Failed
-          }
-          checkVersion(one.jid, name).map { version =>
-            //TODO: return error when there's no correct version in process
-            //currently we're rather lax on this, so that this change is backward-compatible
-            //we log debug here for now, since it's invoked v. often
-            if (version.isEmpty) {
-              logger.debug(s"No correct version in deployed process: ${one.name}")
-            }
-            Some(ProcessState(
-              DeploymentId(one.jid),
-              stateStatus,
-              version = version,
-              allowedActions = processStateDefinitionManager.getStatusActions(stateStatus),
-              icon = processStateDefinitionManager.getStatusIcon(stateStatus),
-              tooltip = processStateDefinitionManager.getStatusTooltip(stateStatus),
-              startTime = Some(one.`start-time`)
+        jobsForName match {
+          case Nil => Future.successful(None)
+          case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
+            Future.successful(Some(ProcessState(
+              DeploymentId(duplicates.head.jid),
+              FlinkStateStatus.Failed,
+              allowedActions = processStateDefinitionManager.getStatusActions(FlinkStateStatus.Failed),
+              icon = processStateDefinitionManager.getStatusIcon(FlinkStateStatus.Failed),
+              tooltip = processStateDefinitionManager.getStatusTooltip(FlinkStateStatus.Failed),
+              version = Option.empty,
+              startTime = Some(duplicates.head.`start-time`),
+              errorMessage = Some(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
             ))
-          }
+          case one::_ =>
+            val stateStatus = one.state match {
+              case JobStatus.RUNNING => FlinkStateStatus.Running
+              case JobStatus.FINISHED => FlinkStateStatus.Finished
+              case JobStatus.RESTARTING => FlinkStateStatus.Restarting
+              case JobStatus.CANCELED => FlinkStateStatus.Canceled
+              case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
+              case _ => FlinkStateStatus.Failed
+            }
+            checkVersion(one.jid, name).map { version =>
+              //TODO: return error when there's no correct version in process
+              //currently we're rather lax on this, so that this change is backward-compatible
+              //we log debug here for now, since it's invoked v. often
+              if (version.isEmpty) {
+                logger.debug(s"No correct version in deployed process: ${one.name}")
+              }
+              Some(ProcessState(
+                DeploymentId(one.jid),
+                stateStatus,
+                version = version,
+                allowedActions = processStateDefinitionManager.getStatusActions(stateStatus),
+                icon = processStateDefinitionManager.getStatusIcon(stateStatus),
+                tooltip = processStateDefinitionManager.getStatusTooltip(stateStatus),
+                startTime = Some(one.`start-time`)
+              ))
+            }
+        }
       }
-    }
   }
 
   //TODO: cache by jobId?
@@ -261,8 +260,4 @@ object flinkRestModel {
   @JsonCodec(decodeOnly = true) case class UploadJarResponse(filename: String)
 
   @JsonCodec(decodeOnly = true) case class JarFile(id: String)
-
-
 }
-
-

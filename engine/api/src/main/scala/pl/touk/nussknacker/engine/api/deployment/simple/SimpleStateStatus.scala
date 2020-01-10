@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment.{NotEstablishedStateStatus, RunningStateStatus, DuringDeployStateStatus, FinishedStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DuringDeployStateStatus, FinishedStateStatus, NotEstablishedStateStatus, RunningStateStatus}
 
 object SimpleStateStatus {
   val FailedToGet = new NotEstablishedStateStatus("FAILED_TO_GET")

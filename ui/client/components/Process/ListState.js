@@ -44,10 +44,11 @@ export default class ListState extends React.Component {
     const icon = this.getIcon(process, state, isStateLoaded)
     const tooltip = this.getTooltip(process, state, isStateLoaded)
     const iconClass = `state-list${isStateLoaded === false ? " state-pending" : ""}`
+    const transitionKey = `${process.id}-${icon}`
 
     return (
       <SwitchTransition>
-        <CSSTransition key={icon} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
+        <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
           <img src={icon} title={tooltip} alt={tooltip} className={iconClass} />
         </CSSTransition>
       </SwitchTransition>
