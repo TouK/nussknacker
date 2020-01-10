@@ -27,9 +27,9 @@ object ProcessStatus {
   def simple(status: StateStatus, deploymentId: Option[String]): ProcessStatus = ProcessStatus(
     status,
     deploymentId,
-    allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(status),
-    icon = SimpleProcessStateDefinitionManager.getStatusIcon(status),
-    tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(status)
+    allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
+    icon = SimpleProcessStateDefinitionManager.statusIcon(status),
+    tooltip = SimpleProcessStateDefinitionManager.statusTooltip(status)
   )
 
   def create(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {

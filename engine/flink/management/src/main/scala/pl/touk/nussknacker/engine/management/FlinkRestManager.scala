@@ -96,9 +96,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
             Future.successful(Some(ProcessState(
               DeploymentId(duplicates.head.jid),
               FlinkStateStatus.Failed,
-              allowedActions = processStateDefinitionManager.getStatusActions(FlinkStateStatus.Failed),
-              icon = processStateDefinitionManager.getStatusIcon(FlinkStateStatus.Failed),
-              tooltip = processStateDefinitionManager.getStatusTooltip(FlinkStateStatus.Failed),
+              allowedActions = processStateDefinitionManager.statusActions(FlinkStateStatus.Failed),
+              icon = processStateDefinitionManager.statusIcon(FlinkStateStatus.Failed),
+              tooltip = processStateDefinitionManager.statusTooltip(FlinkStateStatus.Failed),
               version = Option.empty,
               startTime = Some(duplicates.head.`start-time`),
               errorMessage = Some(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
@@ -119,13 +119,14 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               if (version.isEmpty) {
                 logger.debug(s"No correct version in deployed process: ${one.name}")
               }
+
               Some(ProcessState(
                 DeploymentId(one.jid),
                 stateStatus,
                 version = version,
-                allowedActions = processStateDefinitionManager.getStatusActions(stateStatus),
-                icon = processStateDefinitionManager.getStatusIcon(stateStatus),
-                tooltip = processStateDefinitionManager.getStatusTooltip(stateStatus),
+                allowedActions = processStateDefinitionManager.statusActions(stateStatus),
+                icon = processStateDefinitionManager.statusIcon(stateStatus),
+                tooltip = processStateDefinitionManager.statusTooltip(stateStatus),
                 startTime = Some(one.`start-time`)
               ))
             }
@@ -141,13 +142,15 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .send()
       .flatMap(SttpJson.failureToFuture)
       .map { config =>
-      val userConfig = config.`execution-config`.`user-config`
-      for {
-        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong)
-        user <- userConfig.get("user").map(_.asString.getOrElse(""))
-        modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
-      } yield ProcessVersion(version, name, user, modelVersion)
-    }
+        val userConfig = config.`execution-config`.`user-config`
+        for {
+          version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong)
+          user <- userConfig.get("user").map(_.asString.getOrElse(""))
+          modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
+        } yield {
+          ProcessVersion(version, name, user, modelVersion)
+        }
+      }
   }
 
   //FIXME: get rid of sleep, refactor?
@@ -196,7 +199,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       }
   }
 
-
   override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
     val program =
       DeployProcessRequest(
@@ -220,7 +222,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     case Right(_) => Future.successful(())
     case Left(error) => Future.failed(new RuntimeException(s"Request failed: $error, code: ${response.code}"))
   }
-
 }
 
 object flinkRestModel {

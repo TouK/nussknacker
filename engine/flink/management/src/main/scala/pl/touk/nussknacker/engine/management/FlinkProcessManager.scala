@@ -81,7 +81,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   private def findStatusIgnoringTerminal(processName: ProcessName): Future[Option[ProcessState]] =
-    findJobStatus(processName).map(_.filterNot(_.status.isFinished))
+    findJobStatus(processName).map(_.filterNot(_.status.canDeploy))
 
   private def checkIfJobIsCompatible(savepointPath: String, processDeploymentData: ProcessDeploymentData, processVersion: ProcessVersion): Future[Unit] =
     processDeploymentData match {
@@ -89,7 +89,6 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
         verification.verify(processVersion, processAsJson, savepointPath)
       case _ => Future.successful(())
     }
-
 
   private def stopSavingSavepoint(processVersion: ProcessVersion, job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
     for {

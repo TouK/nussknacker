@@ -15,4 +15,6 @@ object FlinkStateStatus  {
   val DuringCancel = SimpleStateStatus.DuringCancel
   val Canceled = SimpleStateStatus.Canceled
   val Failed = SimpleStateStatus.Failed
+  val Error = SimpleStateStatus.Error
+  val Warning = SimpleStateStatus.Warning
 }

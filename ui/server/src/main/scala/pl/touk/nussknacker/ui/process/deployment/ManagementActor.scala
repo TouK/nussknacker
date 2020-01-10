@@ -72,7 +72,9 @@ class ManagementActor(environment: String,
       } yield sender() ! Some(ProcessStatus(
         deploymentId = None,
         status = SimpleStateStatus.DuringDeploy,
-        allowedActions = manager.processStateDefinitionManager.getStatusActions(SimpleStateStatus.DuringDeploy),
+        allowedActions = manager.processStateDefinitionManager.statusActions(SimpleStateStatus.DuringDeploy),
+        icon = manager.processStateDefinitionManager.statusIcon(SimpleStateStatus.DuringDeploy),
+        tooltip = manager.processStateDefinitionManager.statusTooltip(SimpleStateStatus.DuringDeploy),
         startTime = Some(info.time)
       ))
       reply(processStatus)

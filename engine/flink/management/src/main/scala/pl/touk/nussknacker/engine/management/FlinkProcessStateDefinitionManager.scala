@@ -7,24 +7,24 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, StateAction, StateStatus}
 
 object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager  {
-  val statusActions: Map[StateStatus, List[StateAction]] = Map(
+  val statusActionsMap: Map[StateStatus, List[StateAction]] = Map(
     FlinkStateStatus.Restarting -> List(StateAction.Cancel)
   )
 
-  val statusIcons: Map[StateStatus, String] = Map(
+  val statusIconsMap: Map[StateStatus, String] = Map(
     FlinkStateStatus.Restarting -> "/flink/states/deploy-restart-animated.svg"
   )
 
-  val statusTooltips: Map[StateStatus, String] = Map(
+  val statusTooltipsMap: Map[StateStatus, String] = Map(
     FlinkStateStatus.Restarting -> "The process is restarting.."
   )
 
-  override def getStatusTooltip(stateStatus: StateStatus): Option[String] =
-    statusTooltips.get(stateStatus).orElse(SimpleProcessStateDefinitionManager.getStatusTooltip(stateStatus))
+  override def statusTooltip(stateStatus: StateStatus): Option[String] =
+    statusTooltipsMap.get(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusTooltip(stateStatus))
 
-  override def getStatusIcon(stateStatus: StateStatus): Option[URI] =
-    statusIcons.get(stateStatus).map(URI.create).orElse(SimpleProcessStateDefinitionManager.getStatusIcon(stateStatus))
+  override def statusIcon(stateStatus: StateStatus): Option[URI] =
+    statusIconsMap.get(stateStatus).map(URI.create).orElse(SimpleProcessStateDefinitionManager.statusIcon(stateStatus))
 
-  override def getStatusActions(stateStatus: StateStatus): List[StateAction] =
-    statusActions.getOrElse(stateStatus, SimpleProcessStateDefinitionManager.getStatusActions(stateStatus))
+  override def statusActions(stateStatus: StateStatus): List[StateAction] =
+    statusActionsMap.getOrElse(stateStatus, SimpleProcessStateDefinitionManager.statusActions(stateStatus))
 }

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment.{DuringDeployStateStatus, FinishedStateStatus, NotEstablishedStateStatus, RunningStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DuringDeployStateStatus, FinishedStateStatus, NotEstablishedStateStatus, RunningStateStatus, StoppedStateStatus}
 
 object SimpleStateStatus {
   val FailedToGet = new NotEstablishedStateStatus("FAILED_TO_GET")
@@ -11,6 +11,8 @@ object SimpleStateStatus {
   val Running = new RunningStateStatus("RUNNING")
   val Finished = new FinishedStateStatus("FINISHED")
   val DuringCancel = new NotEstablishedStateStatus("DURING_CANCEL")
-  val Canceled = new NotEstablishedStateStatus("CANCELED")
+  val Canceled = new StoppedStateStatus("CANCELED")
   val Failed = new NotEstablishedStateStatus("FAILED")
+  val Error = new NotEstablishedStateStatus("ERROR")
+  val Warning = new NotEstablishedStateStatus("WARNING")
 }

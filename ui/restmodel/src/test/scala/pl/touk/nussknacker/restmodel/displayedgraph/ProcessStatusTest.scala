@@ -17,9 +17,9 @@ class ProcessStatusTest extends FunSuite with Matchers {
   private def sampleStatus(status: StateStatus, errorMessage: Option[String] = Option.empty) = ProcessStatus(
     deploymentId = Some("12345"),
     status = status,
-    allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(status),
-    icon = SimpleProcessStateDefinitionManager.getStatusIcon(status),
-    tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(status),
+    allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
+    icon = SimpleProcessStateDefinitionManager.statusIcon(status),
+    tooltip = SimpleProcessStateDefinitionManager.statusTooltip(status),
     startTime = Option.empty,
     attributes = Option.empty,
     errorMessage = errorMessage

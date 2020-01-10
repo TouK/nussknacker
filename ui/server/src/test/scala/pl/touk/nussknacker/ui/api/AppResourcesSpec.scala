@@ -65,9 +65,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
   test("it shouldn't return healthcheck when process canceled") {
     val statusCheck = TestProbe()
-    val resources = new AppResources(
-      ConfigFactory.empty(), Map(), processRepository, TestFactory.processValidation, new JobStatusService(statusCheck.ref)
-    )
+    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
+      new JobStatusService(statusCheck.ref))
 
     createDeployedCanceledProcess(ProcessName("id1"),  false)
     createDeployedProcess(ProcessName("id3"),  false)

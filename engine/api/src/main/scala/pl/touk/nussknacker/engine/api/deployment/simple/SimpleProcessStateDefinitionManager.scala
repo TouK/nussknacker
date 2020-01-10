@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager,
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
   val defaultActions = List()
 
-  val statusActions: Map[StateStatus, List[StateAction]] = Map(
+  val statusActionsMap: Map[StateStatus, List[StateAction]] = Map(
     SimpleStateStatus.Unknown -> List(StateAction.Deploy),
     SimpleStateStatus.NotDeployed -> List(StateAction.Deploy),
     SimpleStateStatus.DuringDeploy -> List(StateAction.Cancel),
@@ -18,7 +18,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Finished -> List(StateAction.Deploy)
   )
 
-  val statusIcons: Map[StateStatus, String] = Map(
+  val statusIconsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "/assets/states/error.svg",
     SimpleStateStatus.NotFound -> "/assets/states/process-does-not-exist.svg",
     SimpleStateStatus.Unknown -> "/assets/states/status-unknown.svg",
@@ -28,10 +28,11 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Canceled -> "/assets/states/stopping-success.svg",
     SimpleStateStatus.DuringCancel -> "/assets/states/stopping-running-animated.svg",
     SimpleStateStatus.Failed -> "/assets/states/failed.svg",
-    SimpleStateStatus.Finished -> "/assets/states/success.svg"
+    SimpleStateStatus.Finished -> "/assets/states/success.svg",
+    SimpleStateStatus.Error -> "/assets/states/error.svg"
   )
 
-  val statusTooltips: Map[StateStatus, String] = Map(
+  val statusTooltipsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "There are some problems with obtaining process state at engine. Please check if your engine is working properly..",
     SimpleStateStatus.NotFound -> "There are some problems with process. Please check if process really exists..",
     SimpleStateStatus.Unknown -> "Unknown state of the process..",
@@ -41,15 +42,16 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Canceled -> "The process has been successfully cancelled.",
     SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with checking state of process..",
-    SimpleStateStatus.Finished -> "The process completed successfully."
+    SimpleStateStatus.Finished -> "The process completed successfully.",
+    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process."
   )
 
-  override def getStatusTooltip(stateStatus: StateStatus): Option[String] =
-    statusTooltips.get(stateStatus)
+  override def statusTooltip(stateStatus: StateStatus): Option[String] =
+    statusTooltipsMap.get(stateStatus)
 
-  override def getStatusIcon(stateStatus: StateStatus): Option[URI] =
-    statusIcons.get(stateStatus).map(URI.create)
+  override def statusIcon(stateStatus: StateStatus): Option[URI] =
+    statusIconsMap.get(stateStatus).map(URI.create)
 
-  override def getStatusActions(stateStatus: StateStatus): List[StateAction] =
-    statusActions.getOrElse(stateStatus, defaultActions)
+  override def statusActions(stateStatus: StateStatus): List[StateAction] =
+    statusActionsMap.getOrElse(stateStatus, defaultActions)
 }

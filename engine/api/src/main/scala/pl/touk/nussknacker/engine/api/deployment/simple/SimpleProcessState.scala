@@ -16,9 +16,9 @@ object SimpleProcessState {
       deploymentId = deploymentId,
       status = status,
       version = version,
-      allowedActions = SimpleProcessStateDefinitionManager.getStatusActions(status),
-      icon = SimpleProcessStateDefinitionManager.getStatusIcon(status),
-      tooltip = SimpleProcessStateDefinitionManager.getStatusTooltip(status),
+      allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
+      icon = SimpleProcessStateDefinitionManager.statusIcon(status),
+      tooltip = SimpleProcessStateDefinitionManager.statusTooltip(status),
       startTime = startTime,
       attributes = attributes,
       errorMessage = errorMessage

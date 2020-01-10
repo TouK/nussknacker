@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 
 trait ProcessStateDefinitionManager {
-  def getStatusActions(stateStatus: StateStatus): List[StateAction]
-  def getStatusTooltip(stateStatus: StateStatus): Option[String]
-  def getStatusIcon(stateStatus: StateStatus): Option[URI]
+  def statusActions(stateStatus: StateStatus): List[StateAction]
+  def statusTooltip(stateStatus: StateStatus): Option[String]
+  def statusIcon(stateStatus: StateStatus): Option[URI]
 }
 
 object ProcessState {
@@ -50,10 +50,15 @@ sealed trait StateStatus {
   def isDuringDeploy: Boolean = false
   def isFinished: Boolean = false
   def isRunning: Boolean = false
+  def canDeploy: Boolean = false
   def name: String
 }
 
 final class NotEstablishedStateStatus(val name: String) extends StateStatus
+
+final class StoppedStateStatus(val name: String) extends StateStatus {
+  override def canDeploy: Boolean = true
+}
 
 final class DuringDeployStateStatus(val name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true
@@ -61,6 +66,7 @@ final class DuringDeployStateStatus(val name: String) extends StateStatus {
 
 final class FinishedStateStatus(val name: String) extends StateStatus {
   override def isFinished: Boolean = true
+  override def canDeploy: Boolean = true
 }
 
 final class RunningStateStatus(val name: String) extends StateStatus {

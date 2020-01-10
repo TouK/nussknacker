@@ -51,9 +51,9 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       deploymentId,
       status,
       version,
-      manager.processStateDefinitionManager.getStatusActions(status),
-      manager.processStateDefinitionManager.getStatusIcon(status),
-      manager.processStateDefinitionManager.getStatusTooltip(status),
+      manager.processStateDefinitionManager.statusActions(status),
+      manager.processStateDefinitionManager.statusIcon(status),
+      manager.processStateDefinitionManager.statusTooltip(status),
       startTime = startTime, errorMessage = errorMessage
     )
 
