@@ -38,11 +38,11 @@ export function deleteNode(process, id) {
   }
 }
 
-export function canInjectNode(process, source, middleMan, target, processDefinitionData) {
-  const processAfterDisconnection = deleteEdge(process, source.id, target.id)
-  const canConnectSourceToMiddleMan = NodeUtils.canMakeLink(source.id, middleMan.id, processAfterDisconnection, processDefinitionData)
-  const processWithConnectedSourceAndMiddleMan = addEdge(processAfterDisconnection, source.id, middleMan.id)
-  const canConnectMiddleManToTarget = NodeUtils.canMakeLink(middleMan.id, target.id, processWithConnectedSourceAndMiddleMan, processDefinitionData)
+export function canInjectNode(process, sourceId, middleManId, targetId, processDefinitionData) {
+  const processAfterDisconnection = deleteEdge(process, sourceId, targetId)
+  const canConnectSourceToMiddleMan = NodeUtils.canMakeLink(sourceId, middleManId, processAfterDisconnection, processDefinitionData)
+  const processWithConnectedSourceAndMiddleMan = addEdge(processAfterDisconnection, sourceId, middleManId)
+  const canConnectMiddleManToTarget = NodeUtils.canMakeLink(middleManId, targetId, processWithConnectedSourceAndMiddleMan, processDefinitionData)
   return canConnectSourceToMiddleMan && canConnectMiddleManToTarget
 }
 

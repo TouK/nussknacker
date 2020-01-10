@@ -22,3 +22,12 @@ export function error(message, error, showErrorText) {
     ])
   })
 }
+
+export function info(message) {
+  return Notifications.info({
+    autoDismiss: 10,
+    children: ([
+      <Notification icon={InlinedSvgs.tipsInfo} message={message} key={uuid4()}/>
+    ])
+  })
+}

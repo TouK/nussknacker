@@ -214,12 +214,28 @@ class Graph extends React.Component {
       const source = JointJsGraphUtils.findCell(this.graph, linkBelowCell.attributes.source.id)
       const target = JointJsGraphUtils.findCell(this.graph, linkBelowCell.attributes.target.id)
       const middleMan = cellView.model
-      //TODO: consider doing this check in actions.js?
-      if (GraphUtils.canInjectNode(this.props.processToDisplay, source, middleMan, target, this.props.processDefinitionData)) {
+      const middleManNode = middleMan.attributes.nodeData
+
+      const sourceNodeData = source.attributes.nodeData
+      const sourceNode = NodeUtils.nodeIsGroup(sourceNodeData) ? _.last(sourceNodeData.nodes) : sourceNodeData
+
+      const targetNodeData = target.attributes.nodeData
+      const targetNode = NodeUtils.nodeIsGroup(targetNodeData) ? _.head(targetNodeData.nodes) : targetNodeData
+
+      if (NodeUtils.nodeIsGroup(middleManNode))  {
+        if (!NodeUtils.groupIncludesOneOfNodes(middleManNode, [sourceNode.id, targetNode.id])) {
+          // TODO: handle inject when group is middleman
+          this.props.notificationActions.info("Injecting group is not possible yet")
+        }
+      } else if (NodeUtils.nodesAreInOneGroup(this.props.processToDisplay, [sourceNode.id, targetNode.id])) {
+        // TODO: handle inject when source and target are in one group
+        this.props.notificationActions.info("Injecting node in group is not possible yet")
+      } else if (GraphUtils.canInjectNode(this.props.processToDisplay, sourceNode.id, middleMan.id, targetNode.id, this.props.processDefinitionData)) {
+        //TODO: consider doing inject check in actions.js?
         this.props.actions.injectNode(
-          source.attributes.nodeData,
-          middleMan.attributes.nodeData,
-          target.attributes.nodeData,
+          sourceNode,
+          middleManNode,
+          targetNode,
           linkBelowCell.attributes.edgeData.edgeType
         )
       }
@@ -235,7 +251,6 @@ class Graph extends React.Component {
 
   drawGraph = (process, layout, processCounts, forExport, expandedGroups) => {
     this.redrawing = true
-
     //leaving performance debug for now, as there is still room for improvement:
     //handling forExport and processCounts without need of full redraw
     const performance = window.performance;
