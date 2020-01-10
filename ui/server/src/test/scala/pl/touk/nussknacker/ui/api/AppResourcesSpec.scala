@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
+import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory, TestProcessingTypes}
@@ -49,10 +50,30 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val third = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(None)
 
-
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
       entityAs[String] shouldBe s"Deployed processes not running (probably failed): \n${first.id.name.value}, ${third.id.name.value}"
+    }
+  }
+
+  test("it shouldn't return healthcheck when process canceled") {
+    val statusCheck = TestProbe()
+    val resources = new AppResources(
+      ConfigFactory.empty(), Map(), processRepository, TestFactory.processValidation, new JobStatusService(statusCheck.ref)
+    )
+
+    val id1 = saveProcessWithDeployInfo("id1")
+    saveProcessWithDeployInfo("id3")
+    cancelProcess(id1)
+
+    val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
+
+    val second = statusCheck.expectMsgClass(classOf[CheckStatus])
+    statusCheck.reply(None)
+
+    result ~> check {
+      status shouldBe StatusCodes.InternalServerError
+      entityAs[String] shouldBe s"Deployed processes not running (probably failed): \n${second.id.name.value}"
     }
   }
 
@@ -115,14 +136,26 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     }
   }
 
-  private def saveProcessWithDeployInfo(id: String) = {
+  private def saveProcessWithDeployInfo(id: String): process.ProcessId = {
     implicit val logged: LoggedUser = TestFactory.adminUser("userId")
-    writeProcessRepository.saveNewProcess(ProcessName(id), TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
-      .futureValue shouldBe ('right)
+    writeProcessRepository.saveNewProcess(
+      ProcessName(id), TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false
+    ).futureValue shouldBe ('right)
+
     val processId = processRepository.fetchProcessId(ProcessName(id)).futureValue.get
-    deploymentProcessRepository.markProcessAsDeployed(processId, 1, TestProcessingTypes.Streaming,
-      "", Some("")).map(_ => ()).futureValue shouldBe (())
+
+    deploymentProcessRepository.markProcessAsDeployed(
+      processId, 1, TestProcessingTypes.Streaming, "", Some("")
+    ).map(_ => ()).futureValue shouldBe (())
+
+    processId
   }
 
+  private def cancelProcess(processId: process.ProcessId): Assertion = {
+    implicit val logged: LoggedUser = TestFactory.adminUser("userId")
 
+    deploymentProcessRepository.markProcessAsCancelled(
+      processId, 1, "", Some("")
+    ).map(_ => ()).futureValue shouldBe (())
+  }
 }
