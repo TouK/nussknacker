@@ -9,20 +9,23 @@ type UiState = {
   rightPanelIsOpened: boolean,
   showNodeDetailsModal: boolean,
   showEdgeDetailsModal: boolean,
-  confirmDialog: {
+  confirmDialog: $Shape<{
     isOpen: boolean,
     text: string,
     confirmText: string,
     denyText: string,
-  },
-  modalDialog: {
+    onConfirmCallback: $FlowTODO,
+  }>,
+  modalDialog: $Shape<{
     openDialog: DialogType,
-    message?: string,
-    action?: string,
-    displayWarnings?: boolean,
-  },
+    message: string,
+    action: string,
+    displayWarnings: boolean,
+    text: string,
+  }>,
   expandedGroups: GroupId[],
   allModalsClosed: boolean,
+  isToolTipsHighlighted: boolean,
 };
 
 const emptyUiState: UiState = {
@@ -31,6 +34,7 @@ const emptyUiState: UiState = {
   rightPanelIsOpened: true,
   showNodeDetailsModal: false,
   showEdgeDetailsModal: false,
+  isToolTipsHighlighted: false,
   confirmDialog: {},
   modalDialog: {},
   expandedGroups: [],
