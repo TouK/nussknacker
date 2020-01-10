@@ -1,8 +1,8 @@
 // @flow
 import {events} from "../../analytics/TrackingEvents"
-import type {ThunkAction} from "../types"
+import type {ThunkAction} from "../reduxTypes.flow"
+import type {GroupId} from "./models.flow"
 import {reportEvent} from "./reportEvent"
-import type {GroupId, NodeId, NodeType} from "./types"
 
 export function startGrouping(): ThunkAction {
   return (dispatch) => {
@@ -46,14 +46,16 @@ export function finishGrouping(): ThunkAction {
   }
 }
 
-export type AddNodeToGroupAction = { type: "ADD_NODE_TO_GROUP", nodeId: NodeId }
-export type UnGroupAction = { type: "UNGROUP", groupToRemove: NodeId }
+export type AddNodeToGroupAction = { type: "ADD_NODE_TO_GROUP", nodeId: GroupId }
+export type UnGroupAction = { type: "UNGROUP", groupToRemove: GroupId }
 
-export function addToGroup(nodeId: NodeId): AddNodeToGroupAction {
+export function addToGroup(nodeId: GroupId): AddNodeToGroupAction {
   return {type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
 }
 
-export function ungroup(node: NodeType): ThunkAction {
+export function ungroup(node: {
+  id: GroupId;
+}): ThunkAction {
   return (dispatch) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,

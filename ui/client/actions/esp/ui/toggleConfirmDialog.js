@@ -1,6 +1,6 @@
 // @flow
 import {isEmpty} from "lodash"
-import type {ThunkAction} from "../../types"
+import type {ThunkAction} from "../../reduxTypes.flow"
 import type {EventInfo} from "../reportEvent"
 import {reportEvent} from "../reportEvent"
 

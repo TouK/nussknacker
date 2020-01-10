@@ -2,7 +2,7 @@
 import type Moment from "moment"
 import {dateFormat} from "../../config"
 import HttpService from "../../http/HttpService"
-import type {ThunkAction} from "../types"
+import type {ThunkAction} from "../reduxTypes.flow"
 import {availableQueryStates, displayProcessCounts, processDefinitionData} from "./process"
 
 type ProcessingType = string

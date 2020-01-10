@@ -7,6 +7,7 @@ import HttpService from "../../../http/HttpService"
 import * as UndoRedoActions from "../../undoRedoActions"
 import {fetchProcessDefinition} from "../fetch"
 import {reportEvent} from "../reportEvent"
+import {displayProcessActivity} from "./displayProcessActivity"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -38,18 +39,6 @@ function displayProcess(processDetails) {
 
 export function displayCurrentProcessVersion(processId) {
   return fetchProcessToDisplay(processId)
-}
-
-export function displayProcessActivity(processId) {
-  return (dispatch) => {
-    return HttpService.fetchProcessActivity(processId).then((response) => {
-      return dispatch({
-        type: "DISPLAY_PROCESS_ACTIVITY",
-        comments: response.data.comments,
-        attachments: response.data.attachments,
-      })
-    })
-  }
 }
 
 export function saveProcess(processId, processJson, comment) {

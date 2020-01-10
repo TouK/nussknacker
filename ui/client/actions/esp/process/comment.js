@@ -1,5 +1,5 @@
 import HttpService from "../../../http/HttpService"
-import {displayProcessActivity} from "./index"
+import {displayProcessActivity} from "./displayProcessActivity"
 
 export function addComment(processId, processVersionId, comment) {
   return (dispatch) => {

@@ -3,7 +3,7 @@ import {ThunkDispatch} from "redux-thunk"
 import {events} from "../../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../../common/VisualizationUrl"
 import history from "../../../history"
-import type {Action} from "../../types"
+import type {Action} from "../../reduxTypes.flow"
 import {reportEvent} from "../reportEvent"
 
 export type Layout = any;

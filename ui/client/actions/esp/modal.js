@@ -6,14 +6,16 @@ import * as VisualizationUrl from "../../common/VisualizationUrl"
 import NodeUtils from "../../components/graph/NodeUtils"
 import type {DialogType} from "../../components/modals/Dialogs"
 import history from "../../history"
-import type {Action} from "../types"
+import type {Action} from "../reduxTypes.flow"
+import type {Edge, GroupId} from "./models.flow"
 import type {EventInfo} from "./reportEvent"
 import {reportEvent} from "./reportEvent"
-import type {Edge, NodeType} from "./types"
 
 export type DisplayModalNodeDetailsAction = {
   type: "DISPLAY_MODAL_NODE_DETAILS",
-  nodeToDisplay: NodeType,
+  nodeToDisplay: {
+    id: GroupId;
+  },
   nodeToDisplayReadonly: boolean,
 }
 export type DisplayModalEdgeDetailsAction = {
@@ -30,7 +32,9 @@ export type ToggleInfoModalAction = {
   text: string,
 }
 
-export function displayModalNodeDetails(node: NodeType, readonly: boolean, eventInfo: EventInfo) {
+export function displayModalNodeDetails(node: {
+  id: GroupId;
+}, readonly: boolean, eventInfo: EventInfo) {
   return (dispatch: ThunkDispatch<Action>) => {
     history.replace({
       pathname: window.location.pathname,
