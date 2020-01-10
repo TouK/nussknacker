@@ -1,12 +1,11 @@
 // @flow
-import {ThunkAction, ThunkDispatch} from "redux-thunk"
 import {events} from "../../analytics/TrackingEvents"
-import type {Action} from "../types"
+import type {ThunkAction} from "../types"
 import {reportEvent} from "./reportEvent"
 import type {GroupId, NodeId, NodeType} from "./types"
 
-export function startGrouping() {
-  return (dispatch: ThunkDispatch<Action>) => {
+export function startGrouping(): ThunkAction {
+  return (dispatch) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
       action: events.actions.buttonClick,
@@ -19,8 +18,8 @@ export function startGrouping() {
   }
 }
 
-export function cancelGrouping() {
-  return (dispatch: ThunkDispatch<Action>) => {
+export function cancelGrouping(): ThunkAction {
+  return (dispatch) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
       action: events.actions.buttonClick,
@@ -33,8 +32,8 @@ export function cancelGrouping() {
   }
 }
 
-export function finishGrouping() {
-  return (dispatch: ThunkDispatch<Action>) => {
+export function finishGrouping(): ThunkAction {
+  return (dispatch) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
       action: events.actions.buttonClick,
@@ -54,7 +53,7 @@ export function addToGroup(nodeId: NodeId): AddNodeToGroupAction {
   return {type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
 }
 
-export function ungroup(node: NodeType): ThunkAction<UnGroupAction> {
+export function ungroup(node: NodeType): ThunkAction {
   return (dispatch) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,

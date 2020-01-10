@@ -1,8 +1,7 @@
 // @flow
-import {ThunkAction} from "redux-thunk"
 import NodeUtils from "../../../components/graph/NodeUtils"
 import HttpService from "../../../http/HttpService"
-import type {Action} from "../../types"
+import type {ThunkAction} from "../../types"
 import type {GroupId, GroupType, Process} from "../types"
 
 export type EditGroupAction = {
@@ -12,8 +11,8 @@ export type EditGroupAction = {
   validationResult: $FlowTODO,
 }
 
-export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupType) {
-  return (dispatch: ThunkAction<Action>) => {
+export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupType): ThunkAction {
+  return (dispatch) => {
     const newProcess = NodeUtils.editGroup(process, oldGroupId, newGroup)
     return HttpService.validateProcess(newProcess).then((response) => {
       dispatch({
@@ -24,5 +23,4 @@ export function editGroup(process: Process, oldGroupId: GroupId, newGroup: Group
       })
     })
   }
-
 }

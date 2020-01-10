@@ -1,25 +1,33 @@
 // @flow
 
 import type {Action} from "../actions/types"
+import User from "../common/models/User"
 
 type SettingsState = {
-  loggedUser: any,
-  featuresSettings: any,
-  authenticationSettings: any,
+  loggedUser: $Shape<User>,
+  featuresSettings: $FlowTODO,
+  authenticationSettings: $FlowTODO,
+  analyticsSettings: $FlowTODO,
+  processDefinitionData: $FlowTODO,
+  availableQueryableStates: $FlowTODO,
 }
 
 const initialState: SettingsState = {
   loggedUser: {},
   featuresSettings: {},
   authenticationSettings: {},
+  analyticsSettings: {},
+  processDefinitionData: {},
+  availableQueryableStates: {},
 }
 
 export function reducer(state: SettingsState = initialState, action: Action): SettingsState {
   switch (action.type) {
     case "LOGGED_USER": {
+      const {user} = action
       return {
         ...state,
-        loggedUser: action.user,
+        loggedUser: user,
       }
     }
     case "UI_SETTINGS": {
@@ -46,4 +54,3 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
       return state
   }
 }
-

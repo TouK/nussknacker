@@ -1,6 +1,6 @@
 // @flow
 
-import {ThunkAction, ThunkDispatch} from "redux-thunk"
+import type {ThunkAction} from "../types"
 
 export type EventInfo = {
   category: string,
@@ -9,16 +9,18 @@ export type EventInfo = {
 }
 
 export type ReportEventAction = {
-    type: "USER_TRACKING",
-    tracking: {
+  type: "USER_TRACKING",
+  tracking: {
+    event: {
       e_c: string,
       e_a: string,
       e_n: string,
     }
+  }
 }
 
 export function reportEvent(eventInfo: EventInfo): ThunkAction {
-  return (dispatch: ThunkDispatch) => dispatch({
+  return (dispatch) => dispatch({
     type: "USER_TRACKING",
     tracking: {
       event: {

@@ -1,6 +1,6 @@
 // @flow
-import _ from "lodash"
-import {ThunkAction, ThunkDispatch} from "redux-thunk"
+import {isEmpty} from "lodash"
+import type {ThunkAction} from "../../types"
 import type {EventInfo} from "../reportEvent"
 import {reportEvent} from "../reportEvent"
 
@@ -21,22 +21,16 @@ export function toggleConfirmDialog(
     denyText: string = "No",
     event: EventInfo,
 ): ThunkAction {
-  return (dispatch: ThunkDispatch) => {
-    !_.isEmpty(event) && dispatch(reportEvent(
-        {
-          category: event.category,
-          action: event.action,
-          name: event.name,
-        },
-    ))
+  return (dispatch) => {
+    !isEmpty(event) && dispatch(reportEvent(event))
 
     return dispatch({
       type: "TOGGLE_CONFIRM_DIALOG",
-      isOpen: isOpen,
-      text: text,
-      confirmText: confirmText,
-      denyText: denyText,
       onConfirmCallback: action,
+      isOpen,
+      text,
+      confirmText,
+      denyText,
     })
   }
 }

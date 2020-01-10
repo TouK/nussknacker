@@ -1,25 +1,30 @@
+//@flow
+import type Moment from "moment"
 import {dateFormat} from "../../config"
 import HttpService from "../../http/HttpService"
-import {displayProcessCounts} from "./process"
+import type {ThunkAction} from "../types"
+import {availableQueryStates, displayProcessCounts, processDefinitionData} from "./process"
 
-export function fetchProcessDefinition(processingType, isSubprocess, subprocessVersions) {
+type ProcessingType = string
+
+export function fetchProcessDefinition(processingType: ProcessingType, isSubprocess: boolean, subprocessVersions: $FlowTODO): ThunkAction {
   return (dispatch) => {
     return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then((response) => (
-            dispatch({type: "PROCESS_DEFINITION_DATA", processDefinitionData: response.data})
+            dispatch(processDefinitionData(response.data))
         ),
     )
   }
 }
 
-export function fetchAvailableQueryStates() {
+export function fetchAvailableQueryStates(): ThunkAction {
   return (dispatch) => {
     return HttpService.availableQueryableStates().then((response) =>
-        dispatch({type: "AVAILABLE_QUERY_STATES", availableQueryableStates: response.data}),
+        dispatch(availableQueryStates(response.data)),
     )
   }
 }
 
-export function fetchAndDisplayProcessCounts(processName, from, to) {
+export function fetchAndDisplayProcessCounts(processName: string, from: Moment, to: Moment): ThunkAction {
   return (dispatch) =>
       HttpService.fetchProcessCounts(
           processName,
@@ -27,4 +32,3 @@ export function fetchAndDisplayProcessCounts(processName, from, to) {
           to ? to.format(dateFormat) : null,
       ).then((response) => dispatch(displayProcessCounts(response.data)))
 }
-

@@ -1,10 +1,12 @@
 // @flow
 
+import type {Store as ReduxStore} from "redux"
 import type {
   AddNodeToGroupAction,
   CloseModalsAction,
   DisplayModalEdgeDetailsAction,
   DisplayModalNodeDetailsAction,
+  LoggedUserAction,
   ReportEventAction,
   SwitchToolTipsHighlightAction,
   ToggleConfirmDialogAction,
@@ -12,29 +14,16 @@ import type {
   ToggleInfoModalAction,
   ToggleModalDialogAction,
   TogglePanelAction,
+  UiSettingsAction,
   UnGroupAction,
 } from "./esp"
-import type {EditGroupAction} from "./esp/process"
+import type {AvailableQueryStatesAction} from "./esp/process/availableQueryStates"
+import type {EditGroupAction} from "./esp/process/editGroup"
+import type {ProcessDefinitionDataAction} from "./esp/process/processDefinitionData"
 import type {ToggleProcessActionModalAction} from "./esp/process/toggleProcessActionDialog"
 
-type UiActions =
-    TogglePanelAction
-    | SwitchToolTipsHighlightAction
-    | CloseModalsAction
-    | DisplayModalNodeDetailsAction
-    | DisplayModalEdgeDetailsAction
-    | ToggleModalDialogAction
-    | ToggleInfoModalAction
-    | ToggleConfirmDialogAction
-    | ToggleGroupAction
-    | AddNodeToGroupAction
-    | UnGroupAction
-    | ToggleProcessActionModalAction
-    | EditGroupAction;
-
-export type Action = ReportEventAction | UiActions;
-
-type ActionTypes = "TOGGLE_CONFIRM_DIALOG"
+type ActionTypes =
+    | "TOGGLE_CONFIRM_DIALOG"
     | "USER_TRACKING"
     | "LAYOUT_CHANGED"
     | "TOGGLE_LEFT_PANEL"
@@ -96,3 +85,39 @@ type ActionTypes = "TOGGLE_CONFIRM_DIALOG"
     | "UNDO"
     | "REDO"
     | "CLEAR"
+
+type UiActions =
+    | AddNodeToGroupAction
+    | CloseModalsAction
+    | DisplayModalEdgeDetailsAction
+    | DisplayModalNodeDetailsAction
+    | EditGroupAction
+    | SwitchToolTipsHighlightAction
+    | ToggleConfirmDialogAction
+    | ToggleGroupAction
+    | ToggleInfoModalAction
+    | ToggleModalDialogAction
+    | TogglePanelAction
+    | ToggleProcessActionModalAction
+    | UnGroupAction
+
+type SettingsActions =
+    | LoggedUserAction
+    | UiSettingsAction
+    | ProcessDefinitionDataAction
+    | AvailableQueryStatesAction
+
+export type Action =
+    | ReportEventAction
+    | UiActions
+    | SettingsActions
+
+export type State = $FlowTODO;
+export type GetState = () => State;
+
+type A = $Shape<{ type: ActionTypes, ... }> | Action
+export type Dispatch = (action: A | ThunkAction | PromiseAction) => any;
+export type ThunkAction = (dispatch: Dispatch, getState: GetState) => any;
+export type PromiseAction = Promise<A>;
+
+export type Store = ReduxStore<State, Action>;

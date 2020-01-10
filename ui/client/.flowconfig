@@ -11,5 +11,6 @@
 
 [options]
 suppress_type=$FlowTODO
+exact_by_default=true
 
 [strict]

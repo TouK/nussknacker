@@ -133,12 +133,6 @@ export function testProcessFromFile(id, testDataFile, process) {
   }
 }
 
-export function displayProcessCounts(processCounts) {
-  return {
-    type: "DISPLAY_PROCESS_COUNTS",
-    processCounts: processCounts,
-  }
-}
 
 export function hideRunProcessDetails() {
   return (dispatch) => {
@@ -176,11 +170,3 @@ export function addAttachment(processId, processVersionId, comment) {
     })
   }
 }
-
-export * from "./comment"
-export * from "./importExport"
-export * from "./showMetrics"
-export * from "./editEdge"
-export * from "./editGroup"
-export * from "./editNode"
-export * from "./toggleProcessActionDialog"
