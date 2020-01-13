@@ -22,6 +22,13 @@
     "i18next"
   ],
   "rules": {
+    "react/jsx-tag-spacing": ["warn", {
+      "beforeSelfClosing": "never"
+    }],
+    "comma-dangle": ["warn", "always-multiline"],
+    "no-multiple-empty-lines": ["warn", { "max": 1, "maxEOF": 0, "maxBOF": 0}],
+    "eol-last": ["warn", "never"],
+    "semi": ["warn", "never"],
     "quotes": ["error", "double", { "avoidEscape": true }],
     "jsx-quotes": ["error", "prefer-double"],
     "prefer-template": "error",

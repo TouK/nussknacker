@@ -1,14 +1,14 @@
-import React from "react";
-import Modal from "react-modal";
-import DialogMessages from "../../common/DialogMessages";
-import PropTypes from "prop-types";
+import PropTypes from "prop-types"
+import React from "react"
+import Modal from "react-modal"
+import DialogMessages from "../../common/DialogMessages"
 
 class PreventExitDialog extends React.Component {
 
   static propTypes = {
     onCancel : PropTypes.func,
     onConfirm: PropTypes.func,
-    visible: PropTypes.bool
+    visible: PropTypes.bool,
   }
 
   closeDialog = () => {
@@ -29,16 +29,14 @@ class PreventExitDialog extends React.Component {
           <div className="espModal confirmationModal modalContentDark">
             <p>{DialogMessages.unsavedProcessChanges()}</p>
             <div className="confirmationButtons">
-              <button type="button" title="NO" className='modalButton' onClick={this.closeDialog}>NO</button>
-              <button type="button" title="DISCARD" className='modalButton' onClick={this.confirm}>DISCARD</button>
+              <button type="button" title="NO" className="modalButton" onClick={this.closeDialog}>NO</button>
+              <button type="button" title="DISCARD" className="modalButton" onClick={this.confirm}>DISCARD</button>
             </div>
           </div>
         </div>
       </Modal>
-    );
+    )
   }
-
-
 
 
 }
