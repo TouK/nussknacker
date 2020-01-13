@@ -1,7 +1,7 @@
 // @flow
 import {ThunkDispatch} from "redux-thunk"
-import type {Action} from "../../reduxTypes.flow"
-import {reportEvent} from "../reportEvent"
+import type {Action} from "../reduxTypes.flow"
+import {reportEvent} from "./reportEvent"
 
 export type ToggleProcessActionModalAction = {
   type: "TOGGLE_PROCESS_ACTION_MODAL",

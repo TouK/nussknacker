@@ -1,4 +1,4 @@
-import HttpService from "../../../http/HttpService"
+import HttpService from "../../http/HttpService"
 
 export function editNode(process, before, after) {
   return (dispatch) => {

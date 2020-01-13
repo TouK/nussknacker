@@ -1,7 +1,9 @@
 // @flow
 import {events} from "../../analytics/TrackingEvents"
+import NodeUtils from "../../components/graph/NodeUtils"
+import HttpService from "../../http/HttpService"
 import type {ThunkAction} from "../reduxTypes.flow"
-import type {GroupId} from "./models.flow"
+import type {GroupId, GroupType, NodeId, NodeType, Process} from "./models.flow"
 import {reportEvent} from "./reportEvent"
 
 export function startGrouping(): ThunkAction {
@@ -46,16 +48,14 @@ export function finishGrouping(): ThunkAction {
   }
 }
 
-export type AddNodeToGroupAction = { type: "ADD_NODE_TO_GROUP", nodeId: GroupId }
-export type UnGroupAction = { type: "UNGROUP", groupToRemove: GroupId }
+export type AddNodeToGroupAction = { type: "ADD_NODE_TO_GROUP", nodeId: NodeId }
+export type UnGroupAction = { type: "UNGROUP", groupToRemove: NodeId }
 
-export function addToGroup(nodeId: GroupId): AddNodeToGroupAction {
+export function addToGroup(nodeId: NodeId): AddNodeToGroupAction {
   return {type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
 }
 
-export function ungroup(node: {
-  id: GroupId;
-}): ThunkAction {
+export function ungroup(node: NodeType): ThunkAction {
   return (dispatch) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
@@ -81,4 +81,25 @@ export function expandGroup(id: GroupId) {
 
 export function collapseGroup(id: GroupId) {
   return {type: "COLLAPSE_GROUP", id}
+}
+
+export type EditGroupAction = {
+  type: "EDIT_GROUP",
+  oldGroupId: GroupId,
+  newGroup: GroupType,
+  validationResult: $FlowTODO,
+}
+
+export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupType): ThunkAction {
+  return (dispatch) => {
+    const newProcess = NodeUtils.editGroup(process, oldGroupId, newGroup)
+    return HttpService.validateProcess(newProcess).then((response) => {
+      dispatch({
+        type: "EDIT_GROUP",
+        oldGroupId: oldGroupId,
+        newGroup: newGroup,
+        validationResult: response.data,
+      })
+    })
+  }
 }

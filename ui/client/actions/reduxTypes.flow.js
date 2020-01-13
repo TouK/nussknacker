@@ -3,7 +3,7 @@
 import type {Reducer as ReduxReducer, Store as ReduxStore} from "redux"
 import type {ActionTypes} from "./actionTypes.flow"
 import type {ReportEventAction} from "./esp"
-import type {DisplayProcessActivityAction} from "./esp/process/displayProcessActivity"
+import type {DisplayProcessActivityAction} from "./esp/displayProcessActivity"
 import type {UiActions} from "./esp/ui/uiActions.flow"
 import type {SettingsActions} from "./settingsActions.flow"
 

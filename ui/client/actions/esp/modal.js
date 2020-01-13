@@ -1,21 +1,18 @@
 // @flow
 import _ from "lodash"
-import {ThunkDispatch} from "redux-thunk"
 import {events} from "../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import NodeUtils from "../../components/graph/NodeUtils"
 import type {DialogType} from "../../components/modals/Dialogs"
 import history from "../../history"
-import type {Action} from "../reduxTypes.flow"
-import type {Edge, GroupId} from "./models.flow"
+import type {ThunkAction} from "../reduxTypes.flow"
+import type {Edge, NodeType} from "./models.flow"
 import type {EventInfo} from "./reportEvent"
 import {reportEvent} from "./reportEvent"
 
 export type DisplayModalNodeDetailsAction = {
   type: "DISPLAY_MODAL_NODE_DETAILS",
-  nodeToDisplay: {
-    id: GroupId;
-  },
+  nodeToDisplay: NodeType,
   nodeToDisplayReadonly: boolean,
 }
 export type DisplayModalEdgeDetailsAction = {
@@ -32,10 +29,8 @@ export type ToggleInfoModalAction = {
   text: string,
 }
 
-export function displayModalNodeDetails(node: {
-  id: GroupId;
-}, readonly: boolean, eventInfo: EventInfo) {
-  return (dispatch: ThunkDispatch<Action>) => {
+export function displayModalNodeDetails(node: NodeType, readonly: boolean, eventInfo: EventInfo): ThunkAction {
+  return (dispatch) => {
     history.replace({
       pathname: window.location.pathname,
       search: VisualizationUrl.setAndPreserveLocationParams({
@@ -58,7 +53,7 @@ export function displayModalNodeDetails(node: {
   }
 }
 
-export function displayModalEdgeDetails(edge: Edge) {
+export function displayModalEdgeDetails(edge: Edge): DisplayModalEdgeDetailsAction {
   history.replace({
     pathname: window.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({
@@ -73,8 +68,8 @@ export function displayModalEdgeDetails(edge: Edge) {
   }
 }
 
-export function toggleModalDialog(openDialog: string) {
-  return (dispatch: ThunkDispatch<Action>) => {
+export function toggleModalDialog(openDialog: string): ThunkAction {
+  return (dispatch) => {
     openDialog != null && dispatch(reportEvent({
           category: "right_panel",
           action: "button_click",
@@ -89,7 +84,7 @@ export function toggleModalDialog(openDialog: string) {
   }
 }
 
-export function toggleInfoModal(openDialog: string, text: string) {
+export function toggleInfoModal(openDialog: string, text: string): ToggleInfoModalAction {
   return {
     type: "TOGGLE_INFO_MODAL",
     openDialog: openDialog,

@@ -1,4 +1,5 @@
 // @flow
+import type {EditGroupAction} from "../groups"
 import type {
   AddNodeToGroupAction,
   CloseModalsAction,
@@ -12,8 +13,7 @@ import type {
   TogglePanelAction,
   UnGroupAction,
 } from "../index"
-import type {EditGroupAction} from "../process/editGroup"
-import type {ToggleProcessActionModalAction} from "../process/toggleProcessActionDialog"
+import type {ToggleProcessActionModalAction} from "../toggleProcessActionDialog"
 
 export type UiActions =
     | AddNodeToGroupAction

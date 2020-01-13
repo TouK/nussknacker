@@ -1,5 +1,5 @@
-import * as GraphUtils from "../../../components/graph/GraphUtils"
-import HttpService from "../../../http/HttpService"
+import * as GraphUtils from "../../components/graph/GraphUtils"
+import HttpService from "../../http/HttpService"
 
 export function editEdge(process, before, after) {
   return (dispatch) => {

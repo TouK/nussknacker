@@ -1,6 +1,6 @@
-import HttpService from "../../../http/HttpService"
-import {reportEvent} from "../reportEvent"
+import HttpService from "../../http/HttpService"
 import {importProcess} from "./index"
+import {reportEvent} from "./reportEvent"
 
 export function importFiles(files, processId) {
   return (dispatch) => {

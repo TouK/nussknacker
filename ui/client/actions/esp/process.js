@@ -1,13 +1,12 @@
 import _ from "lodash"
-import {events} from "../../../analytics/TrackingEvents"
-import * as GraphUtils from "../../../components/graph/GraphUtils"
-import NodeUtils from "../../../components/graph/NodeUtils"
-import * as SubprocessSchemaAligner from "../../../components/graph/SubprocessSchemaAligner"
-import HttpService from "../../../http/HttpService"
-import * as UndoRedoActions from "../../undoRedoActions"
-import {fetchProcessDefinition} from "../fetch"
-import {reportEvent} from "../reportEvent"
+import {events} from "../../analytics/TrackingEvents"
+import * as GraphUtils from "../../components/graph/GraphUtils"
+import NodeUtils from "../../components/graph/NodeUtils"
+import * as SubprocessSchemaAligner from "../../components/graph/SubprocessSchemaAligner"
+import HttpService from "../../http/HttpService"
+import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
+import {reportEvent} from "./reportEvent"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {

@@ -1,6 +1,6 @@
 // @flow
-import HttpService from "../../../http/HttpService"
-import type {ThunkAction} from "../../reduxTypes.flow"
+import HttpService from "../../http/HttpService"
+import type {ThunkAction} from "../reduxTypes.flow"
 
 export type DisplayProcessActivityAction = {
   type: "DISPLAY_PROCESS_ACTIVITY",

@@ -1,6 +1,6 @@
-import Metrics from "../../../containers/Metrics"
-import history from "../../../history"
-import {reportEvent} from "../reportEvent"
+import Metrics from "../../containers/Metrics"
+import history from "../../history"
+import {reportEvent} from "./reportEvent"
 
 export function showMetrics(processId) {
   return (dispatch) => {
