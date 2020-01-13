@@ -114,11 +114,11 @@ class AppResources(config: Config,
     }
   }
 
-  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] = {
-    processes
-      .filterNot(_.deployment.isEmpty)
-      .map(process => findJobStatus(process.idWithName, process.processingType).map((process.name, _)))
-  }
+  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] =
+    processes.map(process =>
+      findJobStatus(process.idWithName, process.processingType)
+        .map((process.name, _))
+    )
 
   private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
     jobStatusService.retrieveJobStatus(processId).recover {
