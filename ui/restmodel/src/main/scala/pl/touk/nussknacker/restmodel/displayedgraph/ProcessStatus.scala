@@ -1,21 +1,38 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
+import java.net.URI
+
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, RunningState}
+import io.circe.{Decoder, Encoder, Json}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 
-@JsonCodec case class ProcessStatus(deploymentId: Option[String],
-                                    status: String,
-                                    startTime: Long,
-                                    isRunning: Boolean,
-                                    isDeployInProgress: Boolean,
-                                    errorMessage: Option[String] = None) {
-  def isOkForDeployed: Boolean = isRunning || isDeployInProgress
-
-}
+@JsonCodec(encodeOnly = true) case class ProcessStatus(status: StateStatus,
+                                                       deploymentId: Option[String] = Option.empty,
+                                                       allowedActions: List[StateAction] = List.empty,
+                                                       icon: Option[URI] = Option.empty,
+                                                       tooltip: Option[String] = Option.empty,
+                                                       startTime: Option[Long] = Option.empty,
+                                                       attributes: Option[Json] = Option.empty,
+                                                       errorMessage: Option[String] = Option.empty)
 
 object ProcessStatus {
-  def apply(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {
 
+  implicit val typeEncoder: Encoder[StateStatus] = Encoder.encodeString.contramap(_.name)
+  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
+  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
+
+  def simple(status: StateStatus, deploymentId: Option[String]): ProcessStatus = ProcessStatus(
+    status,
+    deploymentId,
+    allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
+    icon = SimpleProcessStateDefinitionManager.statusIcon(status),
+    tooltip = SimpleProcessStateDefinitionManager.statusTooltip(status)
+  )
+
+  def create(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {
     val versionMatchMessage = (processState.version, expectedDeploymentVersion) match {
       //currently returning version is optional
       case (None, _) => None
@@ -23,22 +40,20 @@ object ProcessStatus {
       case (Some(stateVersion), Some(expectedVersion)) => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version $expectedVersion")
       case (Some(stateVersion), None) => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed")
     }
-    val isRunning = processState.runningState == RunningState.Running && versionMatchMessage.isEmpty
-    val errorMessage = List(versionMatchMessage, processState.message).flatten.reduceOption(_  + ", " + _)
 
     ProcessStatus(
-      deploymentId = Some(processState.id.value),
+      deploymentId = Some(processState.deploymentId.value),
       status = processState.status,
+      allowedActions = processState.allowedActions,
+      icon = processState.icon,
+      tooltip = processState.tooltip,
       startTime = processState.startTime,
-      isRunning = isRunning,
-      isDeployInProgress = processState.runningState == RunningState.Deploying,
-      errorMessage = errorMessage
+      attributes = processState.attributes,
+      errorMessage = List(versionMatchMessage, processState.errorMessage).flatten.reduceOption(_  + ", " + _)
     )
   }
 
-  def failedToGet = ProcessStatus(None, "UNKOWN", 0L, isRunning = false,
-    isDeployInProgress = false, errorMessage = Some("Failed to obtain status"))
+  val failedToGet: ProcessStatus = simple(SimpleStateStatus.FailedToGet, Option.empty)
 
-  def stateNotFound = ProcessStatus(None, "UNKOWN", 0L, isRunning = false,
-    isDeployInProgress = false, errorMessage = Some("Process not found in engine"))
+  val notFound: ProcessStatus = simple(SimpleStateStatus.NotFound, Option.empty)
 }

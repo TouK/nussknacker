@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <defs>
+        <style>.ahaa-1{fill:none;opacity:0.35}.ahaa-2{fill:#64d864}</style>
+    </defs>
+    <g id="Layer_2">
+        <g id="Layer_1-2">
+            <rect class="ahaa-1" width="24" height="24"/>
+            <path class="ahaa-2"
+                  d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2ZM10.93,16.67,8.65,14.39,6,11.74,8.28,9.46l2.65,2.67,4.79-4.79L18,9.61Z"/>
+        </g>
+    </g>
+</svg>

@@ -61,7 +61,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
-
   test("ensure config is properly parsed") {
     Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("nodesConfig").focus.get
@@ -155,5 +154,4 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       body
     }
   }
-
 }

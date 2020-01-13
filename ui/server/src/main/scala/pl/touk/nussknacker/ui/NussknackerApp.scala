@@ -134,7 +134,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, modelData, processRepository, processValidation, jobStatusService)
+    val appResources = new AppResources(config, typeToConfig, modelData, processRepository, processValidation, jobStatusService)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(

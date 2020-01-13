@@ -20,4 +20,6 @@ trait ProcessManager {
 
   def cancel(name: ProcessName) : Future[Unit]
 
+  def processStateDefinitionManager: ProcessStateDefinitionManager
+
 }

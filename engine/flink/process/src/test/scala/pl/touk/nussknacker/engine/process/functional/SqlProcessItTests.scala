@@ -83,5 +83,4 @@ class SqlProcessItTests extends FunSuite with BeforeAndAfterAll with Matchers {
     Try(s.toLong).map(BigDecimal.apply)
       .getOrElse(BigDecimal.apply(s.toDouble))
   }
-
 }

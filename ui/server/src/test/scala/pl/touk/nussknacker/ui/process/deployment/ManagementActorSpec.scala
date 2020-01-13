@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -28,9 +29,17 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   private val processRepository = newProcessRepository(db)
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val deploymentProcessRepository = newDeploymentProcessRepository(db)
-  private val managementActor =
-    system.actorOf(
-      ManagementActor.props(env, Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver, ProcessChangeListener.noop), "management")
+  private val managementActor = system.actorOf(
+      ManagementActor.props(
+        env,
+        Map(TestProcessingTypes.Streaming -> processManager),
+        processRepository,
+        deploymentProcessRepository,
+        TestFactory.sampleResolver,
+        ProcessChangeListener.noop
+      ),
+    "management"
+  )
 
   private val jobStatusService = new JobStatusService(managementActor)
 
@@ -38,11 +47,11 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
     val id: process.ProcessId = prepareDeployedProcess(processName)
 
-    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.isOkForDeployed) shouldBe Some(true)
+    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(true)
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.deployment should not be None
 
     processManager.withProcessFinished {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.isOkForDeployed) shouldBe Some(false)
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(false)
     }
 
     val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
@@ -50,7 +59,10 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.isCanceled shouldBe true
   }
 
-  private def prepareDeployedProcess(processName: ProcessName) = {
+  private def isOkForDeployed(state: ProcessStatus): Boolean =
+    state.status.isDuringDeploy || state.status.isRunning
+
+  private def prepareDeployedProcess(processName: ProcessName): process.ProcessId = {
     (for {
       _ <- writeProcessRepository.saveNewProcess(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
       id <- processRepository.fetchProcessId(processName).map(_.get)

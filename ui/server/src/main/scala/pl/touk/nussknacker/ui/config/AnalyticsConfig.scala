@@ -10,12 +10,9 @@ case class AnalyticsConfig(engine: AnalyticsEngine, url: URI, siteId: String)
 
 object AnalyticsConfig {
   import net.ceedubs.ficus.Ficus._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
   import net.ceedubs.ficus.readers.EnumerationReader._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-  implicit val uriValueReader: ValueReader[URI] = new ValueReader[URI] {
-    def read(config: Config, path: String): URI = new URI(config.getString(path))
-  }
 
   val analyticsConfigNamespace = "analytics"
 
