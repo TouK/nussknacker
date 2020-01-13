@@ -11,13 +11,13 @@ class AllDialogs extends React.Component {
   render() {
     return (
         <div>
-          <ConfirmDialog />
-          <ProcessActionDialog />
-          <InfoModal />
-          <SaveProcessDialog />
-          <GenerateTestDataDialog />
-          <CalculateCountsDialog />
-          <CompareVersionsDialog />
+          <ConfirmDialog/>
+          <ProcessActionDialog/>
+          <InfoModal/>
+          <SaveProcessDialog/>
+          <GenerateTestDataDialog/>
+          <CalculateCountsDialog/>
+          <CompareVersionsDialog/>
         </div>
     )
   }
