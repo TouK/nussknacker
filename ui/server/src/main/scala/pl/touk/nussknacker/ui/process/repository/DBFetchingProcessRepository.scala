@@ -61,6 +61,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess))
   }
 
+  override def fetchDeployedProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] =
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess, Option(true)))
+
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](processNames: List[ProcessName])
                                                                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     val processNamesSet = processNames.map(_.value).toSet
@@ -79,13 +82,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(fetchProcessDetailsByQueryAction(_.isArchived))
   }
 
-  private def fetchProcessDetailsByQueryActionUnarchived[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
+  private def fetchProcessDetailsByQueryActionUnarchived[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean], isDeployed: Option[Boolean] = None)
                                                                                        (implicit loggedUser: LoggedUser, ec: ExecutionContext) =
-    fetchProcessDetailsByQueryAction(e => query(e) && !e.isArchived)
+    fetchProcessDetailsByQueryAction(e => query(e) && !e.isArchived, isDeployed)
 
   private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
                                                                              (implicit loggedUser: LoggedUser, ec: ExecutionContext): api.DBIOAction[List[BaseProcessDetails[PS]], api.NoStream, Effect.All with Effect.Read] = {
-    this.fetchProcessDetailsByQueryAction(query, None) //Back compatibility
+    fetchProcessDetailsByQueryAction(query, None) //Back compatibility
   }
 
   private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
@@ -183,11 +186,12 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       lastDeployAction = deployments.headOption,
       isLatestVersion = isLatestVersion,
       tags = tags,
-      history = processVersions.map(pvs => ProcessRepository.toProcessHistoryEntry(process, pvs, deployments.toList)),
+      history = processVersions.map(pvs => ProcessRepository.toProcessHistoryEntry(
+        process, pvs, deployments.filterNot(_.isCanceled).toList //We want't canceled deployments here
+      )),
       businessView = businessView
     )
   }
-
 
   private def createFullDetails[PS: ProcessShapeFetchStrategy](process: ProcessEntityData,
                                                                processVersion: ProcessVersionEntityData,
