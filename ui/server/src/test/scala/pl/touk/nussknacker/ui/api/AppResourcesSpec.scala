@@ -32,11 +32,10 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
       deploymentId,
       allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
       SimpleProcessStateDefinitionManager.statusIcon(status),
-      SimpleProcessStateDefinitionManager.statusTooltip(status),
+      SimpleProcessStateDefinitionManager.statusTooltip(status)
     )
 
   test("it should return healthcheck also if cannot retrieve statuses") {
-
     val statusCheck = TestProbe()
 
     val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
@@ -69,7 +68,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
       new JobStatusService(statusCheck.ref))
 
     createDeployedCanceledProcess(ProcessName("id1"),  false)
-    createDeployedProcess(ProcessName("id3"),  false)
+    createDeployedProcess(ProcessName("id2"),  false)
 
     val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
 
@@ -83,7 +82,6 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
   }
 
   test("it should return healthcheck ok if statuses are ok") {
-
     val statusCheck = TestProbe()
 
     val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
@@ -107,12 +105,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
   test("it should not report deployment in progress as fail") {
     val statusCheck = TestProbe()
 
-    val resources = new AppResources(ConfigFactory.empty(),
-      typeToConfig,
-      Map(), processRepository,
-      TestFactory.processValidation,
-      new JobStatusService(statusCheck.ref)
-    )
+    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
+      new JobStatusService(statusCheck.ref))
 
     createDeployedProcess("id1")
 
