@@ -2,9 +2,9 @@
 
 import type {Reducer as ReduxReducer, Store as ReduxStore} from "redux"
 import type {ActionTypes} from "./actionTypes.flow"
-import type {ReportEventAction} from "./esp"
-import type {DisplayProcessActivityAction} from "./esp/displayProcessActivity"
-import type {UiActions} from "./esp/ui/uiActions.flow"
+import type {ReportEventAction} from "./nk"
+import type {DisplayProcessActivityAction} from "./nk/displayProcessActivity"
+import type {UiActions} from "./nk/ui/uiActions.flow"
 import type {SettingsActions} from "./settingsActions.flow"
 
 export type Action =

@@ -7,7 +7,6 @@ export type LoggedUserAction = {
   user: User,
 }
 
-
 export function assignUser(data: UserData): LoggedUserAction {
   return {
     type: "LOGGED_USER",

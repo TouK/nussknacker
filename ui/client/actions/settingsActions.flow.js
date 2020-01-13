@@ -1,7 +1,7 @@
 // @flow
-import type {LoggedUserAction, UiSettingsAction} from "./esp"
-import type {AvailableQueryStatesAction} from "./esp/availableQueryStates"
-import type {ProcessDefinitionDataAction} from "./esp/processDefinitionData"
+import type {LoggedUserAction, UiSettingsAction} from "./nk"
+import type {AvailableQueryStatesAction} from "./nk/availableQueryStates"
+import type {ProcessDefinitionDataAction} from "./nk/processDefinitionData"
 
 export type SettingsActions =
     | LoggedUserAction

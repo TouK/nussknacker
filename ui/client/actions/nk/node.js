@@ -78,7 +78,7 @@ function runSyncActionsThenValidate(syncActions) {
   return (dispatch, getState) => {
     syncActions(getState()).forEach(action => dispatch(action))
     return HttpService.validateProcess(getState().graphReducer.processToDisplay).then(
-      (response) => dispatch({type: "VALIDATION_RESULT", validationResult: response.data})
+      (response) => dispatch({type: "VALIDATION_RESULT", validationResult: response.data}),
     )
   }
 }

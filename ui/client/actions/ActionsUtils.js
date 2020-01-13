@@ -1,8 +1,8 @@
 import type {Dispatch} from "redux"
 import {bindActionCreators} from "redux"
-import * as EspActions from "./esp"
+import * as EspActions from "./nk"
 import * as NotificationActions from "./notificationActions"
-import type {Action} from "./types"
+import type {Action} from "./reduxTypes.flow"
 import * as UndoRedoActions from "./undoRedoActions"
 
 export default {

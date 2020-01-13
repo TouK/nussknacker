@@ -121,7 +121,6 @@ export function testProcessFromFile(id, testDataFile, process) {
   }
 }
 
-
 export function hideRunProcessDetails() {
   return (dispatch) => {
     dispatch(reportEvent({

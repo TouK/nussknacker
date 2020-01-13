@@ -26,7 +26,7 @@
       "beforeSelfClosing": "never"
     }],
     "comma-dangle": ["warn", "always-multiline"],
-    "no-multiple-empty-lines": ["warn", { "max": 2, "maxEOF": 0, "maxBOF": 0}],
+    "no-multiple-empty-lines": ["warn", { "max": 1, "maxEOF": 0, "maxBOF": 0}],
     "eol-last": ["warn", "never"],
     "semi": ["warn", "never"],
     "quotes": ["error", "double", { "avoidEscape": true }],

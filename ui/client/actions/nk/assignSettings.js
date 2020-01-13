@@ -3,10 +3,7 @@ type MetricsType = {
   url: string,
   defaultDashboard: string,
   processingTypeToDashboard: {
-    "streaming-demo": string,
-    "request-response": string,
-    "streaming-generic": string,
-    "streaming": string,
+    [key: string]: string,
   },
 }
 

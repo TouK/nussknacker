@@ -1,4 +1,4 @@
-import {handleHTTPError} from "./error"
+import {handleHTTPError} from "./errors"
 
 export function urlChange(location) {
 

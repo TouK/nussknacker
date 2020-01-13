@@ -1,5 +1,5 @@
 // @flow
-import type {GroupId} from "../actions/esp/models.flow"
+import type {GroupId} from "../actions/nk/models.flow"
 import type {Action} from "../actions/reduxTypes.flow"
 import type {DialogType} from "../components/modals/Dialogs"
 import Dialogs from "../components/modals/Dialogs"

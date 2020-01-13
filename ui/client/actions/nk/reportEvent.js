@@ -1,6 +1,5 @@
 // @flow
 
-
 import type {ThunkAction} from "../reduxTypes.flow"
 
 export type EventInfo = {
