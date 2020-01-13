@@ -1,4 +1,3 @@
-// @flow
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import history from "../../history"
 

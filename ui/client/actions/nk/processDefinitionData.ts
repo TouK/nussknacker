@@ -1,7 +1,6 @@
-// @flow
-
 import HttpService from "../../http/HttpService"
-import type {ThunkAction} from "../reduxTypes.flow"
+import {$FlowTODO} from "../migrationTypes"
+import {ThunkAction} from "../reduxTypes"
 
 export type ProcessDefinitionDataAction = {
   type: "PROCESS_DEFINITION_DATA",

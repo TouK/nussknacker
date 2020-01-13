@@ -1,11 +1,10 @@
-// @flow
-
-import type {Reducer as ReduxReducer, Store as ReduxStore} from "redux"
-import type {ActionTypes} from "./actionTypes.flow"
-import type {ReportEventAction} from "./nk"
-import type {DisplayProcessActivityAction} from "./nk/displayProcessActivity"
-import type {UiActions} from "./nk/ui/uiActions.flow"
-import type {SettingsActions} from "./settingsActions.flow"
+import {Reducer as ReduxReducer, Store as ReduxStore} from "redux"
+import {ActionTypes} from "./actionTypes"
+import {$FlowTODO} from "./migrationTypes"
+import {ReportEventAction} from "./nk"
+import {DisplayProcessActivityAction} from "./nk/displayProcessActivity"
+import {UiActions} from "./nk/ui/uiActions.flow"
+import {SettingsActions} from "./settingsActions"
 
 export type Action =
     | ReportEventAction
@@ -13,7 +12,7 @@ export type Action =
     | SettingsActions
     | DisplayProcessActivityAction
 
-type A = $Shape<{ type: ActionTypes, ... }> | Action
+type A = { type: ActionTypes } | Action
 
 type State = $FlowTODO;
 type Store = ReduxStore<State, Action>;

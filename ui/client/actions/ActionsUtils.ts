@@ -1,10 +1,11 @@
-import {bindActionCreators} from "redux"
+import {bindActionCreators, Dispatch} from "redux"
 import * as EspActions from "./nk"
 import * as NotificationActions from "./notificationActions"
+import {Action} from "./reduxTypes"
 import * as UndoRedoActions from "./undoRedoActions"
 
 export default {
-  mapDispatchWithEspActions(dispatch) {
+  mapDispatchWithEspActions(dispatch: Dispatch<Action>) {
     return {
       actions: bindActionCreators(EspActions, dispatch),
       undoRedoActions: bindActionCreators(UndoRedoActions, dispatch),

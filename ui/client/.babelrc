@@ -1,20 +1,23 @@
 {
   "presets": [
     "@babel/preset-env",
-    "@babel/preset-flow",
+    "@babel/typescript",
     "@babel/preset-react"
   ],
   "env": {
     "development": {
-      "presets": [
-
-      ],
       "plugins": [
-        ["i18next-extract", {
-          "outputPath":  "translations/{{locale}}/{{ns}}.json",
-          "keyAsDefaultValue": true,
-          "locales": ["en", "pl"]
-        }],
+        [
+          "i18next-extract",
+          {
+            "outputPath": "translations/{{locale}}/{{ns}}.json",
+            "keyAsDefaultValue": true,
+            "locales": [
+              "en",
+              "pl"
+            ]
+          }
+        ],
         "react-hot-loader/babel"
       ]
     }
@@ -23,6 +26,7 @@
     "@babel/plugin-syntax-dynamic-import",
     "@babel/plugin-syntax-import-meta",
     "@babel/plugin-proposal-class-properties",
+    "@babel/proposal-object-rest-spread",
     "@babel/plugin-proposal-json-strings",
     [
       "@babel/plugin-proposal-decorators",

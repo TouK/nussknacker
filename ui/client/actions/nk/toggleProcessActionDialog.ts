@@ -1,6 +1,4 @@
-// @flow
-import {ThunkDispatch} from "redux-thunk"
-import type {Action} from "../reduxTypes.flow"
+import {ThunkAction} from "../reduxTypes"
 import {reportEvent} from "./reportEvent"
 
 export type ToggleProcessActionModalAction = {
@@ -10,8 +8,8 @@ export type ToggleProcessActionModalAction = {
   displayWarnings: boolean,
 }
 
-export function toggleProcessActionDialog(message: string, action: string, displayWarnings: boolean) {
-  return (dispatch: ThunkDispatch<Action>) => {
+export function toggleProcessActionDialog(message: string, action: string, displayWarnings: boolean): ThunkAction {
+  return (dispatch) => {
     dispatch(reportEvent({
       category: "right_panel",
       action: "button_click",

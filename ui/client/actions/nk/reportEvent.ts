@@ -1,6 +1,4 @@
-// @flow
-
-import type {ThunkAction} from "../reduxTypes.flow"
+import {ThunkAction} from "../reduxTypes"
 
 export type EventInfo = {
   category: string,

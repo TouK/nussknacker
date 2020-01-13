@@ -1,9 +1,7 @@
-// @flow
-import {ThunkDispatch} from "redux-thunk"
 import {events} from "../../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../../common/VisualizationUrl"
 import history from "../../../history"
-import type {Action} from "../../reduxTypes.flow"
+import {ThunkAction} from "../../reduxTypes"
 import {reportEvent} from "../reportEvent"
 
 export type Layout = any;
@@ -27,8 +25,8 @@ export function toggleLeftPanel() {
   }
 }
 
-export function toggleRightPanel() {
-  return (dispatch: ThunkDispatch<Action>) => {
+export function toggleRightPanel(): ThunkAction {
+  return (dispatch) => {
     dispatch({
       type: "TOGGLE_RIGHT_PANEL",
     })
@@ -41,8 +39,8 @@ export function toggleRightPanel() {
   }
 }
 
-export function layout(graphLayoutFunction: GraphLayoutFunction) {
-  return (dispatch: ThunkDispatch<Action>) => {
+export function layout(graphLayoutFunction: GraphLayoutFunction): ThunkAction {
+  return (dispatch) => {
     graphLayoutFunction()
 
     dispatch(reportEvent({

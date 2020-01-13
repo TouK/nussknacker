@@ -26,6 +26,7 @@
     "sourceType": "module"
   },
   "plugins": [
+    "@typescript-eslint",
     "react",
     "import",
     "flowtype",

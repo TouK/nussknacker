@@ -1,8 +1,7 @@
-// @flow
-import type {GroupId} from "../actions/nk/models.flow"
-import type {Action} from "../actions/reduxTypes.flow"
-import type {DialogType} from "../components/modals/Dialogs"
-import Dialogs from "../components/modals/Dialogs"
+import {$FlowTODO, $Shape} from "../actions/migrationTypes"
+import {GroupId} from "../actions/nk/models"
+import {Action} from "../actions/reduxTypes"
+import Dialogs, {DialogType} from "../components/modals/Dialogs"
 
 type UiState = {
   leftPanelIsOpened: boolean,

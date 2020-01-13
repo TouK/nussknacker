@@ -1,6 +1,5 @@
-// @flow
-
-import type {Action} from "../actions/reduxTypes.flow"
+import {$FlowTODO} from "../actions/migrationTypes"
+import {Action} from "../actions/reduxTypes"
 
 export type ProcessActivityState = {
   comments: $FlowTODO[],

@@ -1,14 +1,12 @@
-// @flow
 import _ from "lodash"
 import {events} from "../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import NodeUtils from "../../components/graph/NodeUtils"
-import type {DialogType} from "../../components/modals/Dialogs"
+import {DialogType} from "../../components/modals/Dialogs"
 import history from "../../history"
-import type {ThunkAction} from "../reduxTypes.flow"
-import type {Edge, NodeType} from "./models.flow"
-import type {EventInfo} from "./reportEvent"
-import {reportEvent} from "./reportEvent"
+import {ThunkAction} from "../reduxTypes"
+import {Edge, NodeType} from "./models"
+import {EventInfo, reportEvent} from "./reportEvent"
 
 export type DisplayModalNodeDetailsAction = {
   type: "DISPLAY_MODAL_NODE_DETAILS",

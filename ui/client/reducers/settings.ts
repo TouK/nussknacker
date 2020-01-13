@@ -1,6 +1,5 @@
-// @flow
-
-import type {Action} from "../actions/reduxTypes.flow"
+import {$FlowTODO, $Shape} from "../actions/migrationTypes"
+import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 
 type SettingsState = {

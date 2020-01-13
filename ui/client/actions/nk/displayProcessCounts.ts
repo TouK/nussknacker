@@ -1,8 +1,8 @@
-// @flow
-import type Moment from "moment"
+import {Moment} from "moment"
 import {dateFormat} from "../../config"
 import HttpService from "../../http/HttpService"
-import type {ThunkAction} from "../reduxTypes.flow"
+import {$FlowTODO} from "../migrationTypes"
+import {ThunkAction} from "../reduxTypes"
 
 export function displayProcessCounts(processCounts: $FlowTODO): $FlowTODO {
   return {

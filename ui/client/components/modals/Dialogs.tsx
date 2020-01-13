@@ -1,4 +1,3 @@
-// @flow
 import React from "react"
 import CalculateCountsDialog from "./CalculateCountsDialog"
 import CompareVersionsDialog from "./CompareVersionsDialog"
@@ -8,7 +7,7 @@ import InfoModal from "./InfoModal"
 import ProcessActionDialog from "./ProcessActionDialog"
 import SaveProcessDialog from "./SaveProcessDialog"
 
-class AllDialogs extends React.Component<void> {
+export class AllDialogs extends React.Component {
   render() {
     return (
         <div>
@@ -31,13 +30,13 @@ export type DialogType = "INFO_MODAL"
     | "CALCULATE_COUNTS"
     | "COMPARE_VERSIONS"
 
-export default {
-  types: {
-    infoModal: "INFO_MODAL",
-    processAction: "PROCESS_ACTION",
-    saveProcess: "SAVE_PROCESS",
-    generateTestData: "GENERATE_TEST_DATA",
-    calculateCounts: "CALCULATE_COUNTS",
-    compareVersions: "COMPARE_VERSIONS",
-  }, AllDialogs,
+export const types: { [k: string]: DialogType } = {
+  infoModal: "INFO_MODAL",
+  processAction: "PROCESS_ACTION",
+  saveProcess: "SAVE_PROCESS",
+  generateTestData: "GENERATE_TEST_DATA",
+  calculateCounts: "CALCULATE_COUNTS",
+  compareVersions: "COMPARE_VERSIONS",
 }
+
+export default {types, AllDialogs}

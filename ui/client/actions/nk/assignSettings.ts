@@ -1,10 +1,9 @@
-// @flow
+import {$FlowTODO} from "../migrationTypes"
+
 type MetricsType = {
   url: string,
   defaultDashboard: string,
-  processingTypeToDashboard: {
-    [key: string]: string,
-  },
+  processingTypeToDashboard: {},
 }
 
 type FeaturesType = {
@@ -24,7 +23,7 @@ type SettingsData = {
   features: FeaturesType,
   authentication: {
     backend: string,
-    authorizeUrl: ?string,
+    authorizeUrl: string,
   },
   analytics: $FlowTODO,
 }

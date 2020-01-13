@@ -12,7 +12,7 @@ const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
 const entry = {
-  main: path.resolve(__dirname,"./index.js"),
+  main: path.resolve(__dirname, "./index.js"),
 }
 
 let previouslyPrintedPercentage = 0
@@ -52,6 +52,7 @@ module.exports = {
     maxAssetSize: 3000000,
   },
   resolve: {
+    extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
     alias: {
       "react-dom": "@hot-loader/react-dom",
     },
@@ -125,7 +126,7 @@ module.exports = {
         loader: "html-loader?minimize=false",
       },
       {
-        test: /\.js$/,
+        test: /\.[tj]sx?$/,
         use: ["babel-loader"],
         exclude: /node_modules/,
         include: __dirname,

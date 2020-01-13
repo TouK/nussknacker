@@ -1,6 +1,4 @@
-// @flow
-import type {UserData} from "../../common/models/User"
-import User from "../../common/models/User"
+import User, {UserData} from "../../common/models/User"
 
 export type LoggedUserAction = {
   type: "LOGGED_USER",

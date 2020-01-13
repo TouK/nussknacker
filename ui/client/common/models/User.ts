@@ -1,11 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
-// @flow
 import {flatMap, uniq} from "lodash"
 
 type Permission = "Read" | "Write" | "Deploy"
 type PermissionCategory = string
-type CategoryPermissions = { [category: PermissionCategory]: Permission[] }
-type GlobalPermissions = { [key: string]: boolean }
+type CategoryPermissions = Record<PermissionCategory, Permission[]>
+type GlobalPermissions = Record<string, boolean>
 
 export type UserData = {
   permissions: Permission[],

@@ -1,8 +1,7 @@
-// @flow
 import {isEmpty} from "lodash"
-import type {ThunkAction} from "../../reduxTypes.flow"
-import type {EventInfo} from "../reportEvent"
-import {reportEvent} from "../reportEvent"
+import {$FlowTODO} from "../../migrationTypes"
+import {ThunkAction} from "../../reduxTypes"
+import {EventInfo, reportEvent} from "../reportEvent"
 
 export type ToggleConfirmDialogAction = {
   type: "TOGGLE_CONFIRM_DIALOG",
