@@ -73,7 +73,14 @@ object EspTypeUtils {
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val shouldHideToString = classOf[HideToString].isAssignableFrom(clazz)
 
-    val filteredMethods = clazz.getMethods
+    /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
+       does not contain any implicitly declared methods from {@code Object}.
+       The same for primitives - we assume that languages like SpEL will be able to do boxing
+       It could be significant only for toString, as we filter out other Object methods, but to be consistent...
+     */
+    val publicMethods = clazz.getMethods.toList ++ (if (clazz.isInterface || clazz.isPrimitive) classOf[Object].getMethods.toList else List.empty)
+
+    val filteredMethods = publicMethods
       .filterNot(m => Modifier.isStatic(m.getModifiers))
       .filter(_.getAnnotation(classOf[Hidden]) == null)
       .filterNot(m => shouldHideToString && m.getName == "toString" && m.getParameterCount == 0)
