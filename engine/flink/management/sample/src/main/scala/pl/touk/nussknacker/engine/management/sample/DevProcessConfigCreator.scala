@@ -37,6 +37,8 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.AggregateHelper
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
@@ -218,6 +220,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "constantStateTransformerLongValue" -> all(ConstantStateTransformer[Long](12333)),
       "additionalVariable" -> all(AdditionalVariableTransformer),
       "lockStreamTransformer" -> all(new SampleSignalHandlingTransformer.LockStreamTransformer()),
+      "aggregate" -> all(SlidingAggregateTransformer),
       "union" -> all(UnionTransformer),
       "state" -> all(TransformStateTransformer),
       // types
@@ -243,6 +246,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "bar" -> "Bar",
       "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots"))
     val globalProcessVariables = Map(
+      "AGG" -> all(AggregateHelper),
       "DATE" -> all(DateProcessHelper),
       "DICT" -> all(DictInstance(dictId, dictDef)))
     ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()),

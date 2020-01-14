@@ -184,6 +184,27 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     cancel(processId)
   }
 
+  ignore("fail to redeploy if old state with mapAggregator is incompatible") {
+    val processId = "redeployFail"
+    val outTopic = s"output-$processId"
+
+    val process = StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.set")
+
+    kafkaClient.createTopic(outTopic, 1)
+
+    deployProcessAndWaitIfRunning(process, empty(process.id))
+    messagesFromTopic(outTopic,1) shouldBe List("test")
+
+    logger.info("Starting to redeploy")
+
+    val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality"))).spaces2
+    val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None, user = userToAct).failed.futureValue
+
+    exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
+
+    cancel(processId)
+  }
+
   def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName = ProcessName(processId))
 
   test("deploy custom process") {

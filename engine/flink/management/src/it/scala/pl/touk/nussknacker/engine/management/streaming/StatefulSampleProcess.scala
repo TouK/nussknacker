@@ -30,6 +30,18 @@ object StatefulSampleProcess {
         .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")
   }
 
+  def processWithMapAggegator(id: String, aggegatorExpression: String) =     EspProcessBuilder
+    .id(id)
+    .exceptionHandler()
+    .source("state", "oneSource")
+    .customNode("transform", "aggregate", "aggregate",
+      "keyBy" -> "'test'",
+      "aggregator" -> s"#AGG.map({x: $aggegatorExpression})",
+      "aggregateBy" -> "{ x: 1 }",
+      "windowLengthInSeconds" -> "3600"
+    )
+    .sink("end", "'test'", "kafka-string", "topic" -> s"'output-$id'")
+
   def prepareProcessWithLongState(id: String): EspProcess = {
 
    EspProcessBuilder
