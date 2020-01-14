@@ -1,21 +1,21 @@
 /* eslint-disable i18next/no-literal-string */
-const path = require("path");
-const webpack = require("webpack");
-const childProcess = require("child_process");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const TerserPlugin = require("terser-webpack-plugin");
-const CopyPlugin = require("copy-webpack-plugin");
+const path = require("path")
+const webpack = require("webpack")
+const childProcess = require("child_process")
+const HtmlWebpackPlugin = require("html-webpack-plugin")
+const TerserPlugin = require("terser-webpack-plugin")
+const CopyPlugin = require("copy-webpack-plugin")
 
-const NODE_ENV = process.env.NODE_ENV || "development";
-const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString();
-const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString();
-const isProd = NODE_ENV === "production";
+const NODE_ENV = process.env.NODE_ENV || "development"
+const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
+const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
+const isProd = NODE_ENV === "production"
 
 const entry = {
   main: path.resolve(__dirname,"./index.js"),
 }
 
-let previouslyPrintedPercentage = 0;
+let previouslyPrintedPercentage = 0
 
 if (!isProd) {
   entry["developer-tools"] = [
@@ -32,9 +32,9 @@ module.exports = {
         commons: {
           test: /[\\/]node_modules[\\/]/,
           name: "vendors",
-          chunks: "all"
-        }
-      }
+          chunks: "all",
+        },
+      },
     },
     minimizer: [new TerserPlugin({
       parallel: true,
@@ -43,18 +43,18 @@ module.exports = {
       terserOptions: {
         mangle: {
           reserved: ["Td", "Tr", "Th", "Thead", "Table"],
-        }
-      }
-    })]
+        },
+      },
+    })],
   },
   performance: {
     maxEntrypointSize: 3000000,
-    maxAssetSize: 3000000
+    maxAssetSize: 3000000,
   },
   resolve: {
     alias: {
-      "react-dom": "@hot-loader/react-dom"
-    }
+      "react-dom": "@hot-loader/react-dom",
+    },
   },
   entry: entry,
   output: {
@@ -68,7 +68,7 @@ module.exports = {
   devServer: {
     contentBase: __dirname,
     historyApiFallback: {
-      index: "/static/main.html"
+      index: "/static/main.html",
     },
     hot: true,
     hotOnly: true,
@@ -76,23 +76,23 @@ module.exports = {
     proxy: {
       "/api": {
         target: process.env.BACKEND_DOMAIN,
-        changeOrigin: true
+        changeOrigin: true,
       },
       "/be-static": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
         pathRewrite: {
-          "^/be-static": "/static"
+          "^/be-static": "/static",
         },
-      }
-    }
+      },
+    },
   },
   plugins: [
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       hash: true,
       filename: "main.html",
-      template: "index_template_no_doctype.ejs"
+      template: "index_template_no_doctype.ejs",
     }),
     isProd ? null : new webpack.NamedModulesPlugin(),
     isProd ? null : new webpack.HotModuleReplacementPlugin(),
@@ -102,19 +102,19 @@ module.exports = {
     new webpack.DefinePlugin({
       __DEV__: !isProd,
       "process.env": {
-        NODE_ENV: JSON.stringify(NODE_ENV)
+        NODE_ENV: JSON.stringify(NODE_ENV),
       },
-      GIT: {
+      __GIT__: {
         HASH: JSON.stringify(GIT_HASH),
-        DATE: JSON.stringify(GIT_DATE)
-      }
+        DATE: JSON.stringify(GIT_DATE),
+      },
     }),
     // each 10% log entry in separate line - fix for travis no output problem
     new webpack.ProgressPlugin((percentage, message, ...args) => {
-      const decimalPercentage = Math.ceil(percentage * 100);
+      const decimalPercentage = Math.ceil(percentage * 100)
       if (this.previouslyPrintedPercentage == null || decimalPercentage >= this.previouslyPrintedPercentage + 10 || decimalPercentage === 100) {
-        console.log(` ${decimalPercentage}%`, message, ...args);
-        this.previouslyPrintedPercentage = decimalPercentage;
+        console.log(` ${decimalPercentage}%`, message, ...args)
+        this.previouslyPrintedPercentage = decimalPercentage
       }
     }),
   ].filter(p => p !== null),
@@ -122,39 +122,39 @@ module.exports = {
     rules: [
       {
         test: /\.html$/,
-        loader: "html-loader?minimize=false"
+        loader: "html-loader?minimize=false",
       },
       {
         test: /\.js$/,
         use: ["babel-loader"],
         exclude: /node_modules/,
-        include: __dirname
+        include: __dirname,
       },
       {
         test: /\.css?$/,
         loaders: ["style-loader", "raw-loader"],
-        include: __dirname
+        include: __dirname,
       },
       {
         test: /\.styl$/,
         loaders: ["style-loader", "css-loader", "stylus-loader"],
-        include: __dirname
+        include: __dirname,
       },
       {
         test: /\.less$/,
         loaders: ["style-loader", "css-loader", "less-loader"],
-        include: __dirname
+        include: __dirname,
       },
       {
         test: /\.(eot|ttf|woff|woff2)$/,
         loader: "file-loader?name=assets/fonts/[name].[ext]",
-        include: __dirname
+        include: __dirname,
       },
       {
         test: /\.(svg|png|jpg)$/,
         loader: "file-loader?name=assets/images/[name].[ext]",
-        include: __dirname
-      }
-    ]
-  }
+        include: __dirname,
+      },
+    ],
+  },
 }
