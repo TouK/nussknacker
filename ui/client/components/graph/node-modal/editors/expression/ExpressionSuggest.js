@@ -1,24 +1,26 @@
-import React from "react"
-import PropTypes from "prop-types"
-import ReactDOMServer from "react-dom/server"
-import {connect} from "react-redux"
+// eslint-disable-next-line import/no-unresolved
+import "ace-builds/src-noconflict/ext-language_tools"
+// eslint-disable-next-line import/no-unresolved
+import "ace-builds/src-noconflict/ext-searchbox"
+// eslint-disable-next-line import/no-unresolved
+import "ace-builds/src-noconflict/mode-jsx"
 import _ from "lodash"
-import ActionsUtils from "../../../../../actions/ActionsUtils"
-import ProcessUtils from "../../../../../common/ProcessUtils"
-import ExpressionSuggester from "./ExpressionSuggester"
+import PropTypes from "prop-types"
+import React from "react"
 
 import AceEditor from "react-ace"
-import "ace-builds/src-noconflict/mode-jsx"
-import "ace-builds/src-noconflict/ext-language_tools"
-import "ace-builds/src-noconflict/ext-searchbox"
+import ReactDOMServer from "react-dom/server"
+import {connect} from "react-redux"
+import ActionsUtils from "../../../../../actions/ActionsUtils"
 
 import "../../../../../brace/mode/spel"
 import "../../../../../brace/mode/sql"
 import "../../../../../brace/theme/nussknacker"
-import ValidationLabels from "../../../../modals/ValidationLabels"
-import HttpService from "../../../../../http/HttpService"
+import ProcessUtils from "../../../../../common/ProcessUtils"
 import {allValid} from "../../../../../common/Validators"
-
+import HttpService from "../../../../../http/HttpService"
+import ValidationLabels from "../../../../modals/ValidationLabels"
+import ExpressionSuggester from "./ExpressionSuggester"
 
 //to reconsider
 // - respect categories for global variables?
@@ -36,9 +38,8 @@ class ExpressionSuggest extends React.Component {
     fieldName: PropTypes.string,
     validators: PropTypes.array,
     showValidation: PropTypes.bool,
-    processingType: PropTypes.string
+    processingType: PropTypes.string,
   }
-
 
   customAceEditorCompleter = {
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
@@ -59,7 +60,7 @@ class ExpressionSuggest extends React.Component {
               meta: returnType,
               description: s.description,
               parameters: s.parameters,
-              returnType: returnType
+              returnType: returnType,
             }
           }))
         } finally {
@@ -81,7 +82,7 @@ class ExpressionSuggest extends React.Component {
           </div>
         ))
       }
-    }
+    },
   }
 
   constructor(props) {
@@ -89,7 +90,7 @@ class ExpressionSuggest extends React.Component {
     inputExprIdCounter += 1
     this.state = {
       value: props.inputProps.value,
-      id: `inputExpr${inputExprIdCounter}`
+      id: `inputExpr${inputExprIdCounter}`,
     }
     this.expressionSuggester = this.createExpressionSuggester(props)
   }
@@ -115,7 +116,7 @@ class ExpressionSuggest extends React.Component {
 
   onChange = (newValue) => {
     this.setState({
-      value: newValue
+      value: newValue,
     })
   }
 
@@ -143,7 +144,7 @@ class ExpressionSuggest extends React.Component {
                        highlightGutterLine={false}
                        wrapEnabled={true}
                        editorProps={{
-                         $blockScrolling: "Infinity"
+                         $blockScrolling: "Infinity",
                        }}
                        className={inputProps.readOnly ? " read-only" : ""}
                        setOptions={{
@@ -154,7 +155,7 @@ class ExpressionSuggest extends React.Component {
                          showLineNumbers: false,
                          fontSize: 16,
                          fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
-                         readOnly: inputProps.readOnly
+                         readOnly: inputProps.readOnly,
                        }}
                        onFocus={this.setEditorFocus(true)}
                        onBlur={this.setEditorFocus(false)}/>
@@ -183,7 +184,7 @@ function mapState(state, props) {
     typesInformation: typesInformation,
     dataResolved: dataResolved,
     variables: variables,
-    processingType: state.graphReducer.processToDisplay.processingType
+    processingType: state.graphReducer.processToDisplay.processingType,
   }
 }
 
