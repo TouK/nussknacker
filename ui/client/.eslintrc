@@ -5,6 +5,9 @@
   },
   "parser": "babel-eslint",
   "extends": [
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:flowtype/recommended"
   ],
   "globals": {
     "Atomics": "readonly",
@@ -19,6 +22,8 @@
   },
   "plugins": [
     "react",
+    "import",
+    "flowtype",
     "i18next"
   ],
   "rules": {

@@ -1,3 +1,4 @@
+// @flow
 import React from "react"
 import CalculateCountsDialog from "./CalculateCountsDialog"
 import CompareVersionsDialog from "./CompareVersionsDialog"
@@ -7,7 +8,7 @@ import InfoModal from "./InfoModal"
 import ProcessActionDialog from "./ProcessActionDialog"
 import SaveProcessDialog from "./SaveProcessDialog"
 
-class AllDialogs extends React.Component {
+class AllDialogs extends React.Component<void> {
   render() {
     return (
         <div>

@@ -68,7 +68,7 @@ export function displayModalEdgeDetails(edge: Edge): DisplayModalEdgeDetailsActi
   }
 }
 
-export function toggleModalDialog(openDialog: string): ThunkAction {
+export function toggleModalDialog(openDialog: DialogType): ThunkAction {
   return (dispatch) => {
     openDialog != null && dispatch(reportEvent({
           category: "right_panel",
@@ -84,7 +84,7 @@ export function toggleModalDialog(openDialog: string): ThunkAction {
   }
 }
 
-export function toggleInfoModal(openDialog: string, text: string): ToggleInfoModalAction {
+export function toggleInfoModal(openDialog: DialogType, text: string): ToggleInfoModalAction {
   return {
     type: "TOGGLE_INFO_MODAL",
     openDialog: openDialog,
