@@ -1,6 +1,6 @@
+import PropTypes from "prop-types"
 import React from "react"
 import Dotdotdot from "react-dotdotdot"
-import PropTypes from "prop-types"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import HeaderIcon from "../tips/HeaderIcon"
 
@@ -25,5 +25,5 @@ export default function Notification(props) {
 Notification.propTypes = {
   icon: PropTypes.string.isRequired,
   message: PropTypes.string,
-  details: PropTypes.string
+  details: PropTypes.string,
 }

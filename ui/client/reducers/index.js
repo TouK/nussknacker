@@ -1,12 +1,12 @@
+import {reducer as notifications} from "react-notification-system-redux"
 import {combineReducers} from "redux"
-import {reducer as notifications} from "react-notification-system-redux";
-
-import {undoRedoReducer as undoRedo} from "./undoRedo"
+import {reducer as graph} from "./graph"
+import {reducer as httpErrorHandler} from "./httpErrorHandler"
+import {reducer as processActivity} from "./processActivity"
 import {reducer as settings} from "./settings"
 import {reducer as ui} from "./ui"
-import {reducer as graph} from "./graph"
-import {reducer as processActivity} from "./processActivity"
-import {reducer as httpErrorHandler} from "./httpErrorHandler"
+
+import {undoRedoReducer as undoRedo} from "./undoRedo"
 
 export const reducer = combineReducers({
   httpErrorHandler,
@@ -14,7 +14,7 @@ export const reducer = combineReducers({
   settings,
   ui,
   processActivity,
-  notifications
+  notifications,
 })
 
 export default reducer

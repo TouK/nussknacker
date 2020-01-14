@@ -1,16 +1,15 @@
+import PropTypes from "prop-types"
 import React from "react"
-import {render} from "react-dom";
-import PropTypes from "prop-types";
-import {DragSource} from "react-dnd";
+import {DragSource} from "react-dnd"
 import * as LoaderUtils from "../common/LoaderUtils"
-import "../stylesheets/toolBox.styl";
+import "../stylesheets/toolBox.styl"
 
 class Tool extends React.Component {
 
   static propTypes = {
     nodeModel: PropTypes.object.isRequired,
     label: PropTypes.string.isRequired,
-    connectDragSource: PropTypes.func.isRequired
+    connectDragSource: PropTypes.func.isRequired,
   };
 
   render() {
@@ -21,7 +20,7 @@ class Tool extends React.Component {
       <div className="tool">
         <div className="toolWrapper">
           <div dangerouslySetInnerHTML={{__html: icon}} className="toolIcon"/> {this.props.label} </div>
-        </div>
+        </div>,
     )
   }
 }
@@ -31,9 +30,9 @@ var spec = {
     const nodeModel = _.cloneDeep(props.nodeModel)
     _.set(nodeModel, "id", props.label)
     return nodeModel
-  }
+  },
 }
 
 export default DragSource("element", spec, (connect, monitor) => ({
-  connectDragSource: connect.dragSource()
-}))(Tool);
+  connectDragSource: connect.dragSource(),
+}))(Tool)

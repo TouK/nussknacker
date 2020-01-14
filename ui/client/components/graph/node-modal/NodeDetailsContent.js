@@ -1,38 +1,38 @@
-import React from "react"
-import _ from "lodash"
-import NodeUtils from "../NodeUtils"
-import ProcessUtils from "../../../common/ProcessUtils"
-import * as JsonUtils from "../../../common/JsonUtils"
-import ParameterList from "./ParameterList"
-import {v4 as uuid4} from "uuid"
-import MapVariable from "./../node-modal/MapVariable"
-import BranchParameters from "./../node-modal/BranchParameters"
-import Variable from "./../node-modal/Variable"
-import JoinDef from "./JoinDef"
-import {allValid, errorValidator, notEmptyValidator} from "../../../common/Validators"
-import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
-import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
-import {connect} from "react-redux"
-import ActionsUtils from "../../../actions/ActionsUtils"
 import classNames from "classnames"
+import _ from "lodash"
+import React from "react"
+import {connect} from "react-redux"
+import {v4 as uuid4} from "uuid"
+import ActionsUtils from "../../../actions/ActionsUtils"
+import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
+import * as JsonUtils from "../../../common/JsonUtils"
+import ProcessUtils from "../../../common/ProcessUtils"
+import TestResultUtils from "../../../common/TestResultUtils"
+import {allValid, errorValidator, notEmptyValidator} from "../../../common/Validators"
+import NodeUtils from "../NodeUtils"
+import BranchParameters from "./../node-modal/BranchParameters"
+import MapVariable from "./../node-modal/MapVariable"
+import Variable from "./../node-modal/Variable"
 import {branchErrorFieldName} from "./BranchParameters"
-import Field from "./editors/field/Field"
 import EditableExpression from "./editors/expression/EditableExpression"
 import ExpressionField from "./editors/expression/ExpressionField"
+import Field from "./editors/field/Field"
+import JoinDef from "./JoinDef"
+import NodeErrors from "./NodeErrors"
+import ParameterList from "./ParameterList"
+import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
+import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
-import TestErrors from "./tests/TestErrors"
-import TestResultUtils from "../../../common/TestResultUtils"
-import NodeErrors from "./NodeErrors"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
 export class NodeDetailsContent extends React.Component {
 
   constructor(props) {
-    super(props);
+    super(props)
 
-    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition);
+    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
 
     this.nodeDef = this.prepareNodeDef(props.node, this.nodeObjectDetails, props.processToDisplay)
 
@@ -41,7 +41,7 @@ export class NodeDetailsContent extends React.Component {
       editedNode: this.enrichNodeWithProcessDependentData(_.cloneDeep(props.node)),
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
-    };
+    }
 
     let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || (hasNoReturn === true && this.state.editedNode.outputVar)
@@ -65,7 +65,7 @@ export class NodeDetailsContent extends React.Component {
         let existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
         let newBranchParams = this.nodeDef.branchParameters.map((branchParamDef) => {
           let existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
-          let templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name);
+          let templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
           return existingParamValue || _.cloneDeep(templateParamValue) ||
               // We need to have this fallback to some template for situation when it is existing node and it has't got
               // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
@@ -74,12 +74,12 @@ export class NodeDetailsContent extends React.Component {
                 expression: {
                   expression: `#${branchParamDef.name}`,
                   language: "spel",
-                }
+                },
               })
         })
         return {
           branchId: branchId,
-          parameters: newBranchParams
+          parameters: newBranchParams,
         }
       })
       delete node["branchParametersTemplate"]
@@ -90,10 +90,10 @@ export class NodeDetailsContent extends React.Component {
   generateUUID(...properties) {
     properties.forEach((property) => {
       if (_.has(this.state.editedNode, property)) {
-        let elements = _.get(this.state.editedNode, property);
-        elements.map((el) => el.uuid = el.uuid || uuid4());
+        let elements = _.get(this.state.editedNode, property)
+        elements.map((el) => el.uuid = el.uuid || uuid4())
       }
-    });
+    })
   }
 
   componentWillReceiveProps(nextProps) {
@@ -115,30 +115,30 @@ export class NodeDetailsContent extends React.Component {
 
   removeElement = (property, index)  => {
     if (_.has(this.state.editedNode, property)) {
-      _.get(this.state.editedNode, property).splice(index, 1);
+      _.get(this.state.editedNode, property).splice(index, 1)
 
       this.setState((state, props) => ({editedNode: state.editedNode}), () => {
-        this.props.onChange(this.state.editedNode);
-      });
+        this.props.onChange(this.state.editedNode)
+      })
     }
   };
 
   addElement = (property, element) => {
     if (_.has(this.state.editedNode, property)) {
-      _.get(this.state.editedNode, property).push(element);
+      _.get(this.state.editedNode, property).push(element)
 
       this.setState((state, props) => ({editedNode: state.editedNode}), () => {
-        this.props.onChange(this.state.editedNode);
-      });
+        this.props.onChange(this.state.editedNode)
+      })
     }
   };
 
   setNodeDataAt = (property, value) => {
-    _.set(this.state.editedNode, property, value);
+    _.set(this.state.editedNode, property, value)
 
     this.setState((state, props) => ({editedNode: state.editedNode}), () => {
-      this.props.onChange(this.state.editedNode);
-    });
+      this.props.onChange(this.state.editedNode)
+    })
   };
 
   customNode = (fieldErrors) => {
@@ -272,7 +272,7 @@ export class NodeDetailsContent extends React.Component {
           readOnly={!this.props.isEditMode}
           showValidation={showValidation}
           errors={fieldErrors}
-        />;
+        />
       case "Variable":
         return <Variable
           renderFieldLabel={this.renderFieldLabel}
@@ -282,7 +282,7 @@ export class NodeDetailsContent extends React.Component {
           readOnly={!this.props.isEditMode}
           showValidation={showValidation}
           errors={fieldErrors}
-        />;
+        />
       case "Switch":
         return (
           <div className="node-table-body">
@@ -300,18 +300,18 @@ export class NodeDetailsContent extends React.Component {
           </div>
         )
       case "Properties":
-        const type = this.props.node.typeSpecificProperties.type;
+        const type = this.props.node.typeSpecificProperties.type
         const commonFields = this.subprocessVersionFields()
         //fixme move this configuration to some better place?
         const fields = type === "StreamMetaData" ? [
           this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", true, [errorValidator(fieldErrors, "parallelism")], "parallelism", null, null, "parallelism"),
           this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", false, [errorValidator(fieldErrors, "checkpointIntervalInSeconds")], "checkpointIntervalInSeconds", null, null, "interval-seconds"),
           this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", false, [errorValidator(fieldErrors, "splitStateToDisk")], "splitStateToDisk", false, false, "split-state-disk"),
-          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", false, [errorValidator(fieldErrors, "useAsyncInterpretation")], "useAsyncInterpretation", false, false, "use-async")
+          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", false, [errorValidator(fieldErrors, "useAsyncInterpretation")], "useAsyncInterpretation", false, false, "use-async"),
         ] : [this.createField("input", "Query path", "typeSpecificProperties.path", false, [errorValidator(fieldErrors, "path")], "path", null, null, "query-path")]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
-          ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig, fieldName, fieldErrors)
-        );
+          ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig, fieldName, fieldErrors),
+        )
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
@@ -367,9 +367,9 @@ export class NodeDetailsContent extends React.Component {
       )
     } else {
       const fieldType = () => {
-        if (fieldConfig.type == "text") return "plain-textarea";
-        else return "input";
-      };
+        if (fieldConfig.type == "text") return "plain-textarea"
+        else return "input"
+      }
 
       return this.createField(fieldType(), fieldConfig.label, `additionalFields.properties.${fieldName}`, false, [errorValidator(fieldErrors, fieldName)], fieldName, null, null, key)
     }
@@ -386,7 +386,7 @@ export class NodeDetailsContent extends React.Component {
         (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)),
         null,
         false,
-        "subprocess-versions"
+        "subprocess-versions",
       )]
   }
 
@@ -422,7 +422,7 @@ export class NodeDetailsContent extends React.Component {
       this.isMarked(fieldProperty),
       key,
       autofocus,
-      validators
+      validators,
     )
   }
 
@@ -436,7 +436,7 @@ export class NodeDetailsContent extends React.Component {
       _.get(obj, fieldProperty),
       ((newValue) => this.setNodeDataAt(path, newValue)),
       null,
-      this.isMarked(path)
+      this.isMarked(path),
     )
   }
 
@@ -552,16 +552,16 @@ export class NodeDetailsContent extends React.Component {
         return ["id", DEFAULT_EXPRESSION_ID]
       case "Enricher":
         const commonFields = ["id", "output"]
-        const paramFields = this.state.editedNode.service.parameters.map(param => param.name);
+        const paramFields = this.state.editedNode.service.parameters.map(param => param.name)
         return _.concat(commonFields, paramFields)
       case "Processor": {
         const commonFields = ["id"]
-        const paramFields = this.state.editedNode.service.parameters.map(param => param.name);
+        const paramFields = this.state.editedNode.service.parameters.map(param => param.name)
         return _.concat(commonFields, paramFields)
       }
       case "SubprocessInput": {
         const commonFields = ["id"]
-        const paramFields = this.state.editedNode.ref.parameters.map(param => param.name);
+        const paramFields = this.state.editedNode.ref.parameters.map(param => param.name)
         return _.concat(commonFields, paramFields)
       }
       case "Join": {
@@ -588,7 +588,7 @@ export class NodeDetailsContent extends React.Component {
         const commonFields = "subprocessVersions"
         const fields = this.props.node.typeSpecificProperties.type === "StreamMetaData" ?
           ["parallelism", "checkpointIntervalInSeconds", "splitStateToDisk", "useAsyncInterpretation"] : ["path"]
-        const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => fieldName);
+        const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => fieldName)
         const exceptionHandlerFields = this.state.editedNode.exceptionHandler.parameters.map(param => param.name)
         return _.concat(commonFields, fields, additionalFields, exceptionHandlerFields)
       }
@@ -621,12 +621,11 @@ function mapState(state) {
   return {
     additionalPropertiesConfig: _.get(state.settings, "processDefinitionData.additionalPropertiesConfig") || {},
     processDefinitionData: state.settings.processDefinitionData || {},
-    processToDisplay: state.graphReducer.processToDisplay
+    processToDisplay: state.graphReducer.processToDisplay,
   }
 }
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(NodeDetailsContent)
-
 
 class NodeDetails extends React.Component {
   render() {
@@ -634,6 +633,6 @@ class NodeDetails extends React.Component {
       <div>
         <pre>{JSON.stringify(this.props.node, null, 2)}</pre>
       </div>
-    );
+    )
   }
 }

@@ -1,12 +1,12 @@
-import PropTypes from "prop-types"
-import LabeledTextarea from "./editors/field/LabeledTextarea"
-import React from "react"
 import _ from "lodash"
-import {errorValidator, notEmptyValidator} from "../../../common/Validators"
+import PropTypes from "prop-types"
+import React from "react"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
-import LabeledInput from "./editors/field/LabeledInput"
+import {errorValidator, notEmptyValidator} from "../../../common/Validators"
 import EditableExpression from "./editors/expression/EditableExpression"
 import {Types} from "./editors/expression/EditorType"
+import LabeledInput from "./editors/field/LabeledInput"
+import LabeledTextarea from "./editors/field/LabeledTextarea"
 
 const Variable = (props) => {
 
@@ -56,11 +56,11 @@ Variable.propTypes = {
   node: PropTypes.object.isRequired,
   onChange: PropTypes.func.isRequired,
   showValidation: PropTypes.bool.isRequired,
-  showSwitch: PropTypes.bool
+  showSwitch: PropTypes.bool,
 }
 
 Variable.defaultProps = {
-  readOnly: false
+  readOnly: false,
 }
 
 Variable.availableFields = ["id", "varName", DEFAULT_EXPRESSION_ID]

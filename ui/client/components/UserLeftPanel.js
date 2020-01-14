@@ -1,19 +1,19 @@
-import React, {Component} from "react";
-import PropTypes from "prop-types";
-import {Panel} from "react-bootstrap";
-import {Scrollbars} from "react-custom-scrollbars";
-import cn from "classnames";
-
-import ProcessHistory from "./ProcessHistory"
-import ToolBox from "./ToolBox"
-import ProcessComments from "./ProcessComments"
-import ProcessAttachments from "./ProcessAttachments"
-import Tips from "./tips/Tips.js"
-import TogglePanel from "./TogglePanel";
+import cn from "classnames"
+import PropTypes from "prop-types"
+import React, {Component} from "react"
+import {Panel} from "react-bootstrap"
+import {Scrollbars} from "react-custom-scrollbars"
 import "react-treeview/react-treeview.css"
 
-import "../stylesheets/userPanel.styl";
-import SpinnerWrapper from "./SpinnerWrapper";
+import "../stylesheets/userPanel.styl"
+import ProcessAttachments from "./ProcessAttachments"
+import ProcessComments from "./ProcessComments"
+
+import ProcessHistory from "./ProcessHistory"
+import SpinnerWrapper from "./SpinnerWrapper"
+import Tips from "./tips/Tips.js"
+import TogglePanel from "./TogglePanel"
+import ToolBox from "./ToolBox"
 
 export default class UserLeftPanel extends Component {
 
@@ -21,17 +21,17 @@ export default class UserLeftPanel extends Component {
     isOpened: PropTypes.bool.isRequired,
     onToggle: PropTypes.func.isRequired,
     loggedUser: PropTypes.object.isRequired,
-    isReady: PropTypes.bool.isRequired
+    isReady: PropTypes.bool.isRequired,
   }
 
   render() {
-    const {isOpened, onToggle, isReady, processName} = this.props;
+    const {isOpened, onToggle, isReady, processName} = this.props
     return (
         <div id="espLeftNav" className={cn("sidenav", {"is-opened": isOpened})}>
           <span className={cn("process-name", "left", {"is-opened": isOpened})}>{processName}</span>
             <SpinnerWrapper isReady={isReady}>
                 <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-                    <Tips />
+                    <Tips/>
                     {this.props.capabilities.write ?
                         <Panel defaultExpanded>
                             <Panel.Heading><Panel.Title toggle>Creator panel</Panel.Title></Panel.Heading>
@@ -62,6 +62,6 @@ export default class UserLeftPanel extends Component {
             </SpinnerWrapper>
           <TogglePanel type="left" isOpened={isOpened} onToggle={onToggle}/>
         </div>
-    );
+    )
   }
 }

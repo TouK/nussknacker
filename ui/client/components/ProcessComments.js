@@ -1,19 +1,19 @@
-import React from "react"
-import {connect} from "react-redux";
 import _ from "lodash"
-import ActionsUtils from "../actions/ActionsUtils";
+import React from "react"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
 import DialogMessages from "../common/DialogMessages"
-import CommentContent from "./CommentContent";
-import CommentInput from "./CommentInput";
+import CommentContent from "./CommentContent"
+import CommentInput from "./CommentInput"
 import Date from "./common/Date"
 
 class ProcessComments extends React.Component {
 
   constructor(props) {
-    super(props);
+    super(props)
     this.initState = {
       comment: "",
-      pendingRequest: false
+      pendingRequest: false,
     }
 
     this.state = this.initState
@@ -40,7 +40,7 @@ class ProcessComments extends React.Component {
   }
 
   lastComment = (idx) => {
-    return idx + 1 === this.props.comments.length;
+    return idx + 1 === this.props.comments.length
   }
 
   render() {
@@ -64,7 +64,7 @@ class ProcessComments extends React.Component {
           })}
         </ul>
         <div className="add-comment">
-          <CommentInput onChange={this.onInputChange.bind(this)} value={this.state.comment} />
+          <CommentInput onChange={this.onInputChange.bind(this)} value={this.state.comment}/>
           <button
             type="button"
             className="espButton add-comment"
@@ -85,9 +85,9 @@ function mapState(state) {
     processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
     processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
     loggedUser: state.settings.loggedUser || {},
-    commentSettings: _.get(state.settings, "featuresSettings.commentSettings") || {}
+    commentSettings: _.get(state.settings, "featuresSettings.commentSettings") || {},
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessComments);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessComments)
 

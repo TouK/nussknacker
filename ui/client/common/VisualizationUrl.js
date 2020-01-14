@@ -1,7 +1,7 @@
-import _ from "lodash";
-import Moment from "moment";
+import _ from "lodash"
+import Moment from "moment"
 import * as  queryString from "query-string"
-import {nkPath} from "../config";
+import {nkPath} from "../config"
 
 export const visualizationBasePath = `${nkPath}/visualization`
 export const visualizationPath = `${visualizationBasePath  }/:processId`
@@ -23,8 +23,8 @@ export function visualizationUrl(processName, nodeId, edgeId) {
 
 export function extractVisualizationParams(search) {
   let queryParams = queryString.parse(search)
-  const nodeId = queryParams.nodeId;
-  const edgeId = queryParams.edgeId;
+  const nodeId = queryParams.nodeId
+  const edgeId = queryParams.edgeId
   return {nodeId, edgeId}
 }
 
@@ -38,20 +38,20 @@ export function extractBusinessViewParams(queryParams) {
 
 export function extractCountParams(queryParams) {
   if (queryParams.from || queryParams.to) {
-    const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : null;
-    const to = queryParams.to ? fromTimestampOrDate(queryParams.to) : Moment();
-    return {from, to};
+    const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : null
+    const to = queryParams.to ? fromTimestampOrDate(queryParams.to) : Moment()
+    return {from, to}
   }
 
   return null
 }
 
 function fromTimestampOrDate(tsOrDate) {
-  const asInt = parseInt(tsOrDate);
+  const asInt = parseInt(tsOrDate)
   if (Number.isInteger(asInt) && !isNaN(tsOrDate))
-    return Moment(asInt);
+    return Moment(asInt)
   else
-    return Moment(tsOrDate);
+    return Moment(tsOrDate)
 }
 
 export function setAndPreserveLocationParams(params){

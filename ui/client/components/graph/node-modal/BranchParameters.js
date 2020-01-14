@@ -42,7 +42,7 @@ const BranchParameters = (props) => {
                         </div>
                       </div>
                     )
-                  }
+                  },
                 )
               }
             </div>
@@ -59,15 +59,15 @@ BranchParameters.propTypes = {
   isMarked: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
-  showSwitch: PropTypes.bool
+  showSwitch: PropTypes.bool,
 }
 
 BranchParameters.defaultProps = {
-  readOnly: false
+  readOnly: false,
 }
 
 export default BranchParameters
 
 export const branchErrorFieldName = (paramName, branch) => {
-  return `${paramName} for branch ${branch}`;
+  return `${paramName} for branch ${branch}`
 }

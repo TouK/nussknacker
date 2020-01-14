@@ -1,21 +1,21 @@
-import React from "react"
-import {connect} from "react-redux";
-import PropTypes from "prop-types";
 import _ from "lodash"
-import ActionsUtils from "../actions/ActionsUtils";
-import HttpService from "../http/HttpService";
+import PropTypes from "prop-types"
+import React from "react"
 import Dropzone from "react-dropzone"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
+import HttpService from "../http/HttpService"
 import Date from "./common/Date"
 
 export class ProcessAttachments_ extends React.Component {
 
   static propTypes = {
-    attachments: PropTypes.array.isRequired
+    attachments: PropTypes.array.isRequired,
   }
 
   constructor(props) {
-    super(props);
+    super(props)
     this.initState = {pendingRequest: false}
     this.state = this.initState
   }
@@ -23,7 +23,7 @@ export class ProcessAttachments_ extends React.Component {
   addAttachment = (files) => {
     this.setState({pendingRequest: true})
     Promise.all(files.map((file)=>
-      this.props.actions.addAttachment(this.props.processId, this.props.processVersionId, file)
+      this.props.actions.addAttachment(this.props.processId, this.props.processVersionId, file),
     )).then ((resp) => {
       this.setState(this.initState)
     })
@@ -62,9 +62,9 @@ export class ProcessAttachments_ extends React.Component {
           <Dropzone onDrop={this.addAttachment}>
             {({getRootProps, getInputProps}) => (
               <div className="attachments-container" {...getRootProps()}>
-                <div className={"attachment-drop-zone attachment-button"} dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}} />
+                <div className={"attachment-drop-zone attachment-button"} dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}}/>
                 <div className="attachment-button-text"><span>drop or choose a file</span></div>
-                <input {...getInputProps()} />
+                <input {...getInputProps()}/>
               </div>
             )}
           </Dropzone>
@@ -78,8 +78,8 @@ function mapState(state) {
   return {
     attachments: _.get(state.processActivity, "attachments", []),
     processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
-    processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId")
+    processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessAttachments_);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessAttachments_)

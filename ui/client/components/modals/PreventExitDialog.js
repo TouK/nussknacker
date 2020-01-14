@@ -38,7 +38,6 @@ class PreventExitDialog extends React.Component {
     )
   }
 
-
 }
 
 export default PreventExitDialog

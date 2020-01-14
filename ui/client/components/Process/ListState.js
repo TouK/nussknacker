@@ -1,14 +1,14 @@
-import React from "react"
 import PropTypes from "prop-types"
-import ProcessStateUtils from "../../common/ProcessStateUtils"
+import React from "react"
 import {CSSTransition, SwitchTransition} from "react-transition-group"
+import ProcessStateUtils from "../../common/ProcessStateUtils"
 
 export default class ListState extends React.Component {
 
   animationTimeout = {
     enter: 500,
     appear: 500,
-    exit: 500
+    exit: 500,
   }
 
   animationListener = (node, done) => node.addEventListener("transitionend", done, false)
@@ -49,7 +49,7 @@ export default class ListState extends React.Component {
     return (
       <SwitchTransition>
         <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
-          <img src={icon} title={tooltip} alt={tooltip} className={iconClass} />
+          <img src={icon} title={tooltip} alt={tooltip} className={iconClass}/>
         </CSSTransition>
       </SwitchTransition>
     )
@@ -59,10 +59,10 @@ export default class ListState extends React.Component {
 ListState.propTypes = {
   process: PropTypes.object.isRequired,
   isStateLoaded: PropTypes.bool,
-  state: PropTypes.object
+  state: PropTypes.object,
 }
 
 ListState.defaultProps = {
   isStateLoaded: false,
-  state: undefined
+  state: undefined,
 }

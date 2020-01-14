@@ -44,8 +44,8 @@ InitializeError.defaultProps = {
     buttonLabel: null,
     message: null,
     description: null,
-    showButton: null
-  }
+    showButton: null,
+  },
 }
 
 export default withRouter(InitializeError)

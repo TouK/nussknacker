@@ -1,10 +1,10 @@
-import React from "react";
-import PropTypes from "prop-types";
+import PropTypes from "prop-types"
+import React from "react"
 
 export default class CommentContent extends React.Component {
   static propTypes = {
     content: PropTypes.string.isRequired,
-    commentSettings: PropTypes.object.isRequired
+    commentSettings: PropTypes.object.isRequired,
   }
 
   newContent = () => {
@@ -17,7 +17,6 @@ export default class CommentContent extends React.Component {
       return this.props.content.replace(regex, replacement)
     }
   }
-
 
   render() {
     //TODO: replace dangerouslySetInnerHTML with something safer

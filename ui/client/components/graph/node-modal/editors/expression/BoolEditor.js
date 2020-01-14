@@ -1,6 +1,6 @@
+import PropTypes from "prop-types"
 import React from "react"
 import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
-import PropTypes from "prop-types"
 
 export default function BoolEditor(props) {
 
@@ -13,7 +13,7 @@ export default function BoolEditor(props) {
     <ExpressionWithFixedValues
       values={[
         trueValue,
-        falseValue
+        falseValue,
       ]}
       defaultValue={trueValue}
       expressionObj={expressionObj}
@@ -28,7 +28,7 @@ BoolEditor.propTypes = {
   expressionObj: PropTypes.object,
   onValueChange: PropTypes.func,
   readOnly: PropTypes.bool,
-  className: PropTypes.string
+  className: PropTypes.string,
 }
 
 const parseable = (expressionObj) => {

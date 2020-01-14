@@ -1,9 +1,9 @@
 import React from "react"
+import Checkbox from "./Checkbox"
+import Input from "./Input"
 import LabeledInput from "./LabeledInput"
 import LabeledTextarea from "./LabeledTextarea"
-import Checkbox from "./Checkbox"
 import UnknownField from "./UnknownField"
-import Input from "./Input"
 
 export const Field = (props) => {
   const {fieldType, onChange} = props

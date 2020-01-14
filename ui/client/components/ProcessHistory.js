@@ -1,25 +1,25 @@
-import React, {Component} from "react";
-import PropTypes from "prop-types";
-import {Scrollbars} from "react-custom-scrollbars";
-import {connect} from "react-redux";
 import _ from "lodash"
-import ActionsUtils from "../actions/ActionsUtils";
-import DialogMessages from "../common/DialogMessages";
-import "../stylesheets/processHistory.styl"
+import PropTypes from "prop-types"
+import React, {Component} from "react"
+import {Scrollbars} from "react-custom-scrollbars"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import DialogMessages from "../common/DialogMessages"
 import ProcessUtils from "../common/ProcessUtils"
+import "../stylesheets/processHistory.styl"
 import Date from "./common/Date"
 
 export class ProcessHistory_ extends Component {
 
   static propTypes = {
-    processHistory: PropTypes.array.isRequired
+    processHistory: PropTypes.array.isRequired,
   }
 
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
-      currentProcess: {}
-    };
+      currentProcess: {},
+    }
   }
 
   componentWillReceiveProps(nextProps) {
@@ -52,7 +52,7 @@ export class ProcessHistory_ extends Component {
     if (_.isEmpty(this.state.currentProcess)) {
       return index == 0 ? "current" : "past"
     } else {
-      return _.isEqual(process.createDate, this.state.currentProcess.createDate) ? "current" : process.createDate < this.state.currentProcess.createDate ? "past" : "future";
+      return _.isEqual(process.createDate, this.state.currentProcess.createDate) ? "current" : process.createDate < this.state.currentProcess.createDate ? "past" : "future"
     }
   }
 
@@ -77,14 +77,14 @@ export class ProcessHistory_ extends Component {
                 <small><i><Date date={historyEntry.createDate}/></i></small>
                 <br/>
                 {historyEntry.deployments.map((deployment, index) =>
-                  <small key={index}><i><Date date={deployment.deployedAt}/></i> <span className="label label-info">{deployment.environment}</span></small>
+                  <small key={index}><i><Date date={deployment.deployedAt}/></i> <span className="label label-info">{deployment.environment}</span></small>,
                 )}
               </li>
             )
           })}
         </ul>
       </Scrollbars>
-    );
+    )
   }
 }
 
@@ -92,8 +92,8 @@ function mapState(state) {
   return {
     processHistory: _.get(state.graphReducer.fetchedProcessDetails, "history", []),
     nothingToSave: ProcessUtils.nothingToSave(state),
-    businessView: state.graphReducer.businessView
-  };
+    businessView: state.graphReducer.businessView,
+  }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessHistory_);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessHistory_)

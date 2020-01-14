@@ -1,5 +1,5 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 import * as LoaderUtils from "../../../../../common/LoaderUtils"
 
 export default function SwitchIcon(props) {
@@ -25,5 +25,5 @@ SwitchIcon.propTypes = {
   onClick: PropTypes.func,
   shouldShowSwitch: PropTypes.bool,
   displayRawEditor: PropTypes.bool,
-  readOnly: PropTypes.bool
+  readOnly: PropTypes.bool,
 }

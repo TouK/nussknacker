@@ -1,18 +1,18 @@
 import React from "react"
-import {Table, Td, Tr} from "reactable"
-import {withRouter} from "react-router-dom"
-import HttpService from "../../http/HttpService"
-import LoaderSpinner from "../../components/Spinner.js"
-import HealthCheck from "../../components/HealthCheck.js"
-import DialogMessages from "../../common/DialogMessages"
 import {Glyphicon} from "react-bootstrap"
+import {connect} from "react-redux"
+import {withRouter} from "react-router-dom"
+import {Table, Td, Tr} from "reactable"
+import ActionsUtils from "../../actions/ActionsUtils"
+import DialogMessages from "../../common/DialogMessages"
+import Date from "../../components/common/Date"
+import HealthCheck from "../../components/HealthCheck.js"
+import ListState from "../../components/Process/ListState"
+import LoaderSpinner from "../../components/Spinner.js"
+import SearchFilter from "../../components/table/SearchFilter"
+import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
 import BaseProcesses from "./../BaseProcesses"
-import {connect} from "react-redux"
-import ActionsUtils from "../../actions/ActionsUtils";
-import SearchFilter from "../../components/table/SearchFilter"
-import Date from "../../components/common/Date"
-import ListState from "../../components/Process/ListState";
 
 class CustomProcesses extends BaseProcesses {
   shouldReloadStatuses = true
@@ -84,7 +84,7 @@ class CustomProcesses extends BaseProcesses {
             {key: "modifyDate", label: "Last modification"},
             {key: "status", label: "Status"},
             {key: "deploy", label: "Deploy"},
-            {key: "cancel", label: "Cancel"}
+            {key: "cancel", label: "Cancel"},
           ]}
         >
           {
@@ -107,12 +107,12 @@ class CustomProcesses extends BaseProcesses {
                     />
                   </Td>
                   <Td column="deploy" className="deploy-column">
-                    <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)} />
+                    <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)}/>
                   </Td>
                   {
                     this.isRunning(process) ? (
                       <Td column="cancel" className="cancel-column">
-                        <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)} />
+                        <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)}/>
                       </Td>
                     ): null
                   }
@@ -130,7 +130,7 @@ CustomProcesses.key = "custom-processes"
 
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,
-  featuresSettings: state.settings.featuresSettings
+  featuresSettings: state.settings.featuresSettings,
 })
 
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CustomProcesses))

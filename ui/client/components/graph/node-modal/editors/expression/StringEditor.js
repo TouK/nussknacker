@@ -1,5 +1,5 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 import Input from "../field/Input"
 
 export default function StringEditor(props) {
@@ -27,7 +27,7 @@ const stringPattern = /(^'.*'$)|(^".*"$)/
 StringEditor.propTypes = {
   expressionObj: PropTypes.object,
   onValueChange: PropTypes.func,
-  className: PropTypes.string
+  className: PropTypes.string,
 }
 
 const parseable = (expressionObj) => {

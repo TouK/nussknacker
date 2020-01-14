@@ -1,9 +1,9 @@
 import React from "react"
 import {DragSource, DropTarget} from "react-dnd"
 import ReactDOM from "react-dom"
+import Select from "react-select"
 import {allValid} from "../../../../common/Validators"
 import ValidationLabels from "../../../modals/ValidationLabels"
-import Select from "react-select"
 import SvgDiv from "../../../SvgDiv"
 
 class RowSelect extends React.Component {
@@ -11,7 +11,7 @@ class RowSelect extends React.Component {
     const {
       changeName, changeValue, connectDragSource, connectDropTarget,
       field, index, isDragging, isMarked, options, toogleCloseOnEsc,
-      showValidation, readOnly, remove, value, validators
+      showValidation, readOnly, remove, value, validators,
     } = this.props
 
     const markedClass = isMarked(index) ? " marked" : ""
@@ -60,7 +60,7 @@ class RowSelect extends React.Component {
             </div>
         }
         <SvgDiv svgFile={"handlebars.svg"} className={"handle-bars"}/>
-      </div>
+      </div>,
     ))
   }
 
@@ -113,18 +113,18 @@ const MovableRow =
         monitor.getItem().index = hoverIndex
       },
     }, (connect) => ({
-      connectDropTarget: connect.dropTarget()
+      connectDropTarget: connect.dropTarget(),
     }),
   )(
   new DragSource(
     "field", {
     beginDrag: (props) => ({
-      index: props.index
-    })
+      index: props.index,
+    }),
   }, (connect, monitor) => ({
     connectDragSource: connect.dragSource(),
     isDragging: monitor.isDragging(),
-  }))(RowSelect)
+  }))(RowSelect),
 )
 
 export default MovableRow

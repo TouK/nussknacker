@@ -1,15 +1,15 @@
-import React from "react"
 import _ from "lodash"
+import React from "react"
+import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableExpression from "./EditableExpression"
 import {Types} from "./EditorType"
-import ExpressionTestResults from "../../tests/ExpressionTestResults"
 
 export default class ExpressionField extends React.Component {
 
   render() {
     const {
       fieldName, fieldLabel, exprPath, validators, isEditMode, editedNode, isMarked, showValidation, showSwitch,
-      nodeObjectDetails, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel, fieldType
+      nodeObjectDetails, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel, fieldType,
     } = this.props
     const readOnly = !isEditMode
     const exprTextPath = `${exprPath}.expression`
@@ -61,7 +61,7 @@ export default class ExpressionField extends React.Component {
     const restriction = (this.findParamByName(fieldName) || {}).restriction
     return {
       hasFixedValues: restriction && restriction.type === "FixedExpressionValues",
-      values: restriction && restriction.values
+      values: restriction && restriction.values,
     }
   }
 

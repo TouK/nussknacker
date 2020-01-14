@@ -1,5 +1,5 @@
 import _ from "lodash"
-import NodeUtils from "../components/graph/NodeUtils";
+import NodeUtils from "../components/graph/NodeUtils"
 
 class ProcessUtils {
 
@@ -10,7 +10,7 @@ class ProcessUtils {
   }
 
   canExport = (state) => {
-    const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
+    const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
     return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
   }
 
@@ -70,10 +70,10 @@ class ProcessUtils {
     const globalVariables = _.mapValues(filteredGlobalVariables, (v) => {
       return v.returnType
     })
-    const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
+    const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition)
     return {
       ...globalVariables,
-      ...variablesDefinedBeforeNode
+      ...variablesDefinedBeforeNode,
     }
   }
 
@@ -82,7 +82,7 @@ class ProcessUtils {
     const variablesDefinedBeforeNodeList = _.flatMap(previousNodes, (nodeId) => {
       return this._findVariablesDefinedInProcess(nodeId, process, processDefinition)
     })
-    return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
+    return this._listOfObjectsToObject(variablesDefinedBeforeNodeList)
   }
 
   _listOfObjectsToObject = (list) => {
@@ -176,7 +176,7 @@ class ProcessUtils {
         return node.nodeType
       }
       default: {
-        return null;
+        return null
       }
     }
   }
@@ -185,7 +185,7 @@ class ProcessUtils {
     this.findNodeDefinitionId(node) || node.type || null
 
   findNodeConfigName = (node) => {
-    return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
+    return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1))
   }
 
   humanReadableType = (refClazzOrName) => {
@@ -212,7 +212,7 @@ class ProcessUtils {
   prepareFilterCategories = (categories, loggedUser) => _.map((categories || []).filter(c => loggedUser.canRead(c)), (e) => {
     return {
       value: e,
-      label: e
+      label: e,
     }
   })
 }

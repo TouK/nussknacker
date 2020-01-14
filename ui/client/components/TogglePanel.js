@@ -1,9 +1,9 @@
+import cn from "classnames"
+import PropTypes from "prop-types"
 import React from "react"
-import PropTypes from "prop-types";
-import cn from "classnames";
+import "../stylesheets/togglePanel.styl"
 
 import SvgDiv from "./SvgDiv"
-import "../stylesheets/togglePanel.styl"
 
 export default class TogglePanel extends React.Component {
 
@@ -14,11 +14,11 @@ export default class TogglePanel extends React.Component {
   }
 
   render() {
-    const {isOpened, onToggle, type} = this.props;
-    const left = type === "left" ?  isOpened : !isOpened;
+    const {isOpened, onToggle, type} = this.props
+    const left = type === "left" ?  isOpened : !isOpened
     const iconFile = `arrows/arrow-${left ? "left" : "right"}.svg`
     return (
       <SvgDiv className={cn("togglePanel", type, {"is-opened": isOpened})} onClick={onToggle} svgFile={iconFile}/>
-    );
+    )
   }
 }

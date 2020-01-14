@@ -1,5 +1,5 @@
 import React from "react"
-import SvgDiv from "../SvgDiv";
+import SvgDiv from "../SvgDiv"
 
 export default class SearchFilter extends React.Component {
   render() {

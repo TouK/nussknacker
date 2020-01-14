@@ -1,5 +1,5 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 import {connect} from "react-redux"
 
 class Search extends React.Component {
@@ -23,7 +23,7 @@ class Search extends React.Component {
 }
 
 Search.propTypes = {
-  settings: PropTypes.object.isRequired
+  settings: PropTypes.object.isRequired,
 }
 
 Search.path = "/search"
@@ -31,7 +31,7 @@ Search.header = "Search"
 
 function mapState(state) {
   return {
-    settings: state.settings.featuresSettings.search || {}
+    settings: state.settings.featuresSettings.search || {},
   }
 }
 
