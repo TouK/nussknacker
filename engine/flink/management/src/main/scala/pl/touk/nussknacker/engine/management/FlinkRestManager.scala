@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import sttp.client._
 import sttp.client.circe._
@@ -187,10 +187,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .flatMap(handleUnitResponse)
   }
 
-  override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
+  override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String], cancelJob: Boolean): Future[String] = {
     basicRequest
       .post(flinkUrl.path("jobs", job.deploymentId.value, "savepoints"))
-      .body("""{"cancel-job": false}""")
+      .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = cancelJob))
       .response(asJson[SavepointTriggerResponse])
       .send()
       .flatMap(SttpJson.failureToFuture)
@@ -229,6 +229,8 @@ object flinkRestModel {
   implicit val jobStatusDecoder: Decoder[JobStatus] = Decoder.decodeString.map(JobStatus.valueOf)
 
   @JsonCodec(encodeOnly = true) case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
+
+  @JsonCodec(encodeOnly = true) case class SavepointTriggerRequest(`target-directory`: Option[String], `cancel-job`: Boolean)
 
   @JsonCodec(decodeOnly = true) case class SavepointTriggerResponse(`request-id`: String)
 

@@ -137,7 +137,7 @@ object TestFactory extends TestPermissions{
 
     override protected def cancel(job: ProcessState): Future[Unit] = Future.successful(Unit)
 
-    override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = Future.successful("dummy")
+    override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String], cancelJob: Boolean): Future[String] = Future.successful("dummy")
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
   }

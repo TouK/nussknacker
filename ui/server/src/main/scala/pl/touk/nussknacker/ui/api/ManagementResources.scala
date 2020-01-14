@@ -25,7 +25,6 @@ import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -117,11 +116,11 @@ class ManagementResources(processCounter: ProcessCounter,
     }
 
   def securedRoute(implicit user: LoggedUser): Route = {
-    path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processName, savepointDir) =>
-      (post & processId(processName)) { processId =>
+    path("adminProcessManagement" / "snapshot" / Segment) { processName =>
+      (post & processId(processName) & parameters('savepointDir.?, 'cancelProcess.as[Boolean] ? false)) { (processId, savepointDir, cancelProcess) =>
         canDeploy(processId) {
           complete {
-            (managementActor ? Snapshot(processId, user, savepointDir))
+            (managementActor ? Snapshot(processId, user, savepointDir, cancelProcess))
               .mapTo[String].map(path => HttpResponse(entity = path, status = StatusCodes.OK))
               .recover(EspErrorToHttp.errorToHttp)
           }
