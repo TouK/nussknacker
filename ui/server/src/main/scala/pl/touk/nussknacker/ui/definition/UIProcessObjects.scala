@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterRestriction}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -132,10 +132,11 @@ object UIObjectDefinition {
 }
 
 @JsonCodec(encodeOnly = true) case class UIParameter(name: String,
-                       typ: TypingResult,
-                       restriction: Option[ParameterRestriction],
-                       additionalVariables: Map[String, TypingResult],
-                       branchParam: Boolean)
+                                                     typ: TypingResult,
+                                                     restriction: Option[ParameterRestriction],
+                                                     editor: Option[ParameterEditor],
+                                                     additionalVariables: Map[String, TypingResult],
+                                                     branchParam: Boolean)
 
 object UIParameter {
   def apply(parameter: Parameter): UIParameter = {
@@ -143,6 +144,7 @@ object UIParameter {
       name = parameter.name,
       typ = parameter.typ,
       restriction = parameter.restriction,
+      editor = parameter.editor,
       additionalVariables = parameter.additionalVariables,
       branchParam = parameter.branchParam
     )

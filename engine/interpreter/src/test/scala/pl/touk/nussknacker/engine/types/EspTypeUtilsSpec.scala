@@ -65,6 +65,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     )
   }
 
+  //this test fails when is runned from Intellij Idea
   test("shoud detect java beans and fields in java class") {
     EspTypeUtils.clazzDefinition(classOf[JavaSampleClass])(ClassExtractionSettings.Default).methods shouldBe Map(
       "getNotProperty" -> MethodInfo(List(Parameter("foo", ClazzRef[Int])), ClazzRef[String], None),

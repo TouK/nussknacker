@@ -46,6 +46,7 @@ import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, RawEditor, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -491,9 +492,20 @@ class SimpleTypesCustomStreamTransformer extends CustomStreamTransformer with Se
 // In services all parameters are lazy evaluated
 class SimpleTypesService extends Service with Serializable {
   @MethodToInvoke
-  def invoke(@ParamName("booleanParam") booleanParam: Boolean,
-             @ParamName("stringParam") string: String,
-             @ParamName("intParam") intParam: Int,
+  def invoke(@ParamName("booleanParam")
+             @SimpleEditor(
+               `type` = SimpleEditorType.BOOL_EDITOR
+             ) booleanParam: Boolean,
+
+             @ParamName("stringParam")
+             @DualEditor(
+               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+               defaultMode = DualEditorMode.SIMPLE
+             ) string: String,
+
+             @ParamName("intParam")
+             @RawEditor intParam: Int,
+
              @ParamName("bigDecimalParam") bigDecimalParam: java.math.BigDecimal,
              @ParamName("bigIntegerParam") bigIntegerParam: java.math.BigInteger): Future[Unit] = {
     ???
