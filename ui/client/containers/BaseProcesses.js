@@ -1,34 +1,35 @@
 import React from "react"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 import * as _ from "lodash"
-import * as  queryString from 'query-string'
+import * as  queryString from "query-string"
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
-import history from "../history"
 import HttpService from "../http/HttpService"
-import ProcessStateUtils from "../common/ProcessStateUtils"
+import history from "../history"
 import Metrics from "./Metrics"
+import ProcessStateUtils from "../common/ProcessStateUtils";
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
-  searchItems = ['categories']
+  searchItems = ["categories"]
   shouldReloadStatuses = false
   intervalTime = 15000
   queries = {}
-  page = ''
+  page = ""
 
   filterIsSubprocessOptions = [
-    {label: 'Show all types processes', value: undefined},
-    {label: 'Show only processes', value: false},
-    {label: 'Show only subprocesses', value: true},
+    {label: "Show all types processes", value: undefined},
+    {label: "Show only processes", value: false},
+    {label: "Show only subprocesses", value: true},
   ]
 
   prepareState(withoutCategories) {
     const query = queryString.parse(this.props.history.location.search, {
-      arrayFormat: 'comma',
+      arrayFormat: "comma",
       parseNumbers: true,
       parseBooleans: true
     })
 
     let state = {
+      statuses: null,
       processes: [],
       clashedNames: [],
       showLoader: true,
@@ -53,7 +54,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
       this.reloadStatuses()
     }
 
-    if (this.page === 'processes' || this.page === 'subProcesses') {
+    if (this.page === "processes" || this.page === "subProcesses") {
       this.loadAllClashedNames()
     }
   }
@@ -94,7 +95,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   loadClashedNames = (searchParams, fetch) => {
-    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
+    const query = _.pick(queryString.parse(window.location.search), this.searchItems || []);
     const data = Object.assign(query, searchParams)
     fetch(data).then(response => {
       this.setState((prevState, props) => ({
@@ -140,7 +141,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   onCategoryChange = (elements) => {
-    this.afterElementChange({categories: _.map(elements, 'value'), page: 0}, true)
+    this.afterElementChange({categories: _.map(elements, "value"), page: 0}, true)
   }
 
   onIsSubprocessChange = (element) => {
@@ -159,21 +160,19 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     history.push(VisualizationUrl.visualizationUrl(process.name))
   }
 
-  processStatusClass = (process) => {
-    const processName = process.name
-    const shouldRun = ProcessStateUtils.isDeployed(process)
-    return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
-  }
-
-  processStatusTitle = (process) => {
-    const processName = process.name
-    const shouldRun = ProcessStateUtils.isDeployed(process)
-    return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
-  }
-
   getIntervalTime() {
     return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
   }
+
+  getProcessState = (process) => {
+    if (this.state.statuses == null) {
+      return null
+    }
+
+    return _.get(this.state.statuses, process.name, undefined) //Unknown means that process was not found
+  }
+
+  isRunning = (process) => ProcessStateUtils.isDeployed(process) && ProcessStateUtils.isRunning(this.getProcessState(process))
 }
 
 const defaultProcessesSearchParams = {isSubprocess: false, isArchived: false}

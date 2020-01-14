@@ -12,7 +12,7 @@ export default function TestResults(props) {
       <div className="node-table-body node-test-results">
         <div className="node-row">
           <div className="node-label">
-            <NodeTip title={'Variables in test case'} icon={InlinedSvgs.tipsInfo}/>
+            <NodeTip title={"Variables in test case"} icon={InlinedSvgs.tipsInfo}/>
           </div>
         </div>
         {
@@ -26,14 +26,14 @@ export default function TestResults(props) {
           resultsToShow && !_.isEmpty(resultsToShow.mockedResultsForCurrentContext) ?
             (resultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
                 <span className="testResultDownload">
-            <a download={nodeId + "-single-input"} key={index} href={downloadableHref(mockedValue.value.pretty)}>
+            <a download={`${nodeId  }-single-input`} key={index} href={downloadableHref(mockedValue.value.pretty)}>
               <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
             ) : null
         }
         {
           resultsToShow && !_.isEmpty(resultsToShow.mockedResultsForEveryContext) ?
             <span className="testResultDownload">
-            <a download={nodeId + "-all-inputs"}
+            <a download={`${nodeId  }-all-inputs`}
                href={downloadableHref(mergedMockedResults(resultsToShow.mockedResultsForEveryContext))}>
             <span className="glyphicon glyphicon-download"/> Results for all inputs</a></span>
             : null
@@ -47,6 +47,6 @@ export default function TestResults(props) {
   }
 
   function downloadableHref(content) {
-    return "data:application/octet-stream;charset=utf-8," + encodeURIComponent(content)
+    return `data:application/octet-stream;charset=utf-8,${  encodeURIComponent(content)}`
   }
 }

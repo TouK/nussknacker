@@ -48,7 +48,7 @@ export default class Errors extends React.Component {
 
   globalError = (error, suffix) =>
     <span key={uuid4()} title={error.description}>
-        {(suffix ? suffix + ": " : '') + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
+        {(suffix ? `${suffix  }: ` : "") + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
     </span>
 
   nodeErrorsTips = (propertiesErrors, nodeErrors) => {

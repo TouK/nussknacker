@@ -1,33 +1,59 @@
-import * as _ from "lodash"
+/* eslint-disable i18next/no-literal-string */
+// @flow
+import {flatMap, uniq} from "lodash"
 
-const User = function User(data) {
-  this.permissions = _.uniq(_.flatMap(data.categoryPermissions))
-  this.categoryPermissions = data.categoryPermissions
-  this.categories = data.categories
-  this.isAdmin = data.isAdmin
-  this.globalPermissions = data.globalPermissions
-  this.id = data.id
+type Permission = "Read" | "Write" | "Deploy"
+type PermissionCategory = string
+type CategoryPermissions = { [category: PermissionCategory]: Permission[] }
+type GlobalPermissions = { [key: string]: boolean }
+
+export type UserData = {
+  permissions: Permission[],
+  categoryPermissions: CategoryPermissions,
+  categories: PermissionCategory[],
+  isAdmin: boolean,
+  globalPermissions: GlobalPermissions,
+  id: string,
 }
 
-User.prototype.hasPermission = function (permission, category) {
-  let permissions = this.categoryPermissions[category] || []
-  return this.isAdmin || category && permissions.includes(permission)
-}
+export default class User {
+  categories: PermissionCategory[]
+  categoryPermissions: CategoryPermissions
+  globalPermissions: GlobalPermissions
+  permissions: Permission[]
+  isAdmin: boolean
+  id: string
 
-User.prototype.canRead = function (category) {
-  return this.hasPermission("Read", category)
-}
+  constructor({categories, categoryPermissions, globalPermissions, id, isAdmin}: UserData) {
+    this.categoryPermissions = categoryPermissions
+    this.categories = categories
+    this.isAdmin = isAdmin
+    this.globalPermissions = globalPermissions
+    this.id = id
+    this.permissions = uniq(flatMap(categoryPermissions))
+  }
 
-User.prototype.canDeploy = function (category) {
-  return this.hasPermission("Deploy", category)
-}
+  hasPermission(permission: Permission, category: PermissionCategory) {
+    if (this.isAdmin) {
+      return true
+    }
+    const permissions = this.categoryPermissions[category] || []
+    return permissions.includes(permission)
+  }
 
-User.prototype.canWrite = function (category) {
-  return this.hasPermission("Write", category)
-}
+  canRead(category: PermissionCategory) {
+    return this.hasPermission("Read", category)
+  }
 
-User.prototype.isWriter = function () {
-  return this.isAdmin || this.permissions.includes("Write")
-}
+  canDeploy(category: PermissionCategory) {
+    return this.hasPermission("Deploy", category)
+  }
 
-export default User
+  canWrite(category: PermissionCategory) {
+    return this.hasPermission("Write", category)
+  }
+
+  isWriter() {
+    return this.isAdmin || this.permissions.includes("Write")
+  }
+}

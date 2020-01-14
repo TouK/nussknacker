@@ -1,0 +1,13 @@
+.DS_Store
+
+.idea/
+*.iml
+
+.vscode
+
+node_modules/
+npm-debug.log
+
+flow-typed/
+
+dist/

@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.demo
 
-import java.nio.charset.StandardCharsets
-import java.util.UUID
-
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -11,7 +8,6 @@ import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
@@ -26,7 +22,8 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSou
 import pl.touk.nussknacker.engine.util.LoggingListener
 import CirceUtil.decodeJsonUnsafe
 import io.circe.Json
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 
@@ -81,23 +78,16 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
-    val encoder = BestEffortJsonEncoder(failOnUnkown = false)
-    val stringOrJsonSink = kafkaSink(kafkaConfig, new KeyedSerializationSchema[Any] {
-      override def serializeKey(element: Any): Array[Byte] = UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8)
-      override def serializeValue(element: Any): Array[Byte] = element match {
-        case a:DisplayJson => a.asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
-        case a:Json => a.noSpaces.getBytes(StandardCharsets.UTF_8)
-        case a:String => a.getBytes(StandardCharsets.UTF_8)
-        case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
-      }
-      override def getTargetTopic(element: Any): String = null
-    })
-    Map(
-      "kafka-stringSink" -> all(stringOrJsonSink)
-    )
+    val stringOrJsonSink = kafkaSink(kafkaConfig, new SimpleSerializationSchema[Any](_, {
+      case a: DisplayJson => a.asJson.noSpaces
+      case a: Json => a.noSpaces
+      case a: String => a
+      case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
+    }))
+    Map("kafka-stringSink" -> all(stringOrJsonSink))
   }
 
-  private def kafkaSink(kafkaConfig: KafkaConfig, serializationSchema: KeyedSerializationSchema[Any]) : SinkFactory = {
+  private def kafkaSink(kafkaConfig: KafkaConfig, serializationSchema: String => KafkaSerializationSchema[Any]) : SinkFactory = {
     new KafkaSinkFactory(kafkaConfig, serializationSchema)
   }
 
@@ -105,9 +95,8 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     Seq(LoggingListener)
   }
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory = {
+  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
     new LoggingExceptionHandlerFactory(config)
-  }
 
   override def expressionConfig(config: Config): ExpressionConfig = {
     val globalProcessVariables = Map(
@@ -132,8 +121,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 class LoggingExceptionHandlerFactory(config: Config) extends ExceptionHandlerFactory {
 
   @MethodToInvoke
-  def create(metaData: MetaData, @ParamName("sampleParam") sampleParam: String): EspExceptionHandler = {
-    BrieflyLoggingRestartingExceptionHandler(metaData, config, params = Map("sampleParam" -> sampleParam))
-  }
+  def create(metaData: MetaData): EspExceptionHandler =
+    BrieflyLoggingRestartingExceptionHandler(metaData, config)
 
 }

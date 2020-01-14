@@ -17,7 +17,7 @@ export default class NodeErrors extends React.Component {
             {
               errors.map((error, index) =>
                 (<div className="node-error" key={index}
-                      title={error.description}>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</div>))
+                      title={error.description}>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : "")}</div>))
             }
           </div>
         </div>

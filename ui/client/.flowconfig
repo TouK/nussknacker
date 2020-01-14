@@ -1,4 +1,6 @@
 [ignore]
+<PROJECT_ROOT>/test/.*
+<PROJECT_ROOT>/brace/.*
 
 [include]
 
@@ -8,5 +10,7 @@
 [lints]
 
 [options]
+suppress_type=$FlowTODO
+exact_by_default=true
 
 [strict]

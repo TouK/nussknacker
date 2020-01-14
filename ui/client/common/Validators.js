@@ -1,9 +1,9 @@
 // @flow
-import React from "react";
-import _ from "lodash";
+import _ from "lodash"
+import React from "react"
 
 export type Validator = {
-    isValid: any => boolean,
+    isValid: $FlowTODO => boolean,
     message: ?string,
     description: ?string
 }
@@ -14,7 +14,7 @@ export const duplicateValue = "This value is already taken"
 export const notEmptyValidator: Validator = {
   isValid: value => !_.isEmpty(value),
   message: canNotBeEmpty,
-  description: canNotBeEmpty
+  description: canNotBeEmpty,
 }
 
 export function errorValidator(errors: Array<Object>, fieldName: string): Validator {
@@ -23,17 +23,16 @@ export function errorValidator(errors: Array<Object>, fieldName: string): Valida
     {
       isValid: _ => false,
       message: error.message,
-      description: error.description
+      description: error.description,
     }
     :
     {
       isValid: _ => true,
       message: null,
-      description: null
+      description: null,
     }
 }
 
 export function allValid(validators: Array<Validator>, values: Array<any>): boolean {
   return validators.every(validator => validator.isValid(...values))
 }
-

@@ -1,11 +1,14 @@
 package pl.touk.nussknacker.engine.kafka
 
 import java.util.Properties
+import java.util.concurrent.TimeUnit
 
 import kafka.admin.AdminUtils
 import kafka.utils.ZkUtils
+import kafka.zk.{AdminZkClient, KafkaZkClient}
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
+import org.apache.kafka.common.utils.Time
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -16,17 +19,18 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
-  private val zkClient = ZkUtils.createZkClient(zkAddress, 10000, 10000)
-  private val zkUtils = ZkUtils(zkClient, isZkSecurityEnabled = false)
+  private val zkClient = KafkaZkClient(zkAddress, isSecure = false,
+    sessionTimeoutMs = 10000, connectionTimeoutMs = 10000, maxInFlightRequests = 100, time = Time.SYSTEM, metricGroup = "", metricType = "")
+  private val adminClient = new AdminZkClient(zkClient)
 
   def createTopic(name: String, partitions: Int = 5) = {
-    AdminUtils.createTopic(zkUtils, name, partitions, 1, new Properties())
+    //adminClient.createTopic(name, partitions, 1, new Properties())
     val replicaAssignment = (0 until partitions).map(_ -> Seq(0)).toMap
-    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkUtils, name, replicaAssignment, new Properties, update = true)
+    adminClient.createTopicWithAssignment(name, new Properties, replicaAssignment)
   }
 
   def deleteTopic(name: String) = {
-    AdminUtils.deleteTopic(zkUtils, name)
+    adminClient.deleteTopic(name)
   }
 
   def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None): Future[RecordMetadata] = {
@@ -76,7 +80,6 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
     consumers.foreach(_.close())
     producer.close()
     rawProducer.close()
-    zkUtils.close()
     zkClient.close()
   }
 

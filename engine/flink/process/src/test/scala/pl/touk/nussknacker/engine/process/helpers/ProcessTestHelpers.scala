@@ -15,9 +15,10 @@ import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
+import pl.touk.nussknacker.engine.process.{FlinkStreamingProcessRegistrar, SimpleJavaEnum}
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 object ProcessTestHelpers {
 
@@ -33,13 +34,14 @@ object ProcessTestHelpers {
     }
 
     def invoke(process: EspProcess, creator: ProcessConfigCreator,
-               config: Configuration = new Configuration(),
+               configuration: Configuration = new Configuration(),
                processVersion: ProcessVersion = ProcessVersion.empty,
                parallelism: Int = 1): JobExecutionResult = {
-      FlinkTestConfiguration.addQueryableStatePortRanges(config)
-      val env = StreamExecutionEnvironment.createLocalEnvironment(parallelism, config)
+      FlinkTestConfiguration.addQueryableStatePortRanges(configuration)
+      val env = StreamExecutionEnvironment.createLocalEnvironment(parallelism, configuration)
       env.getConfig.disableSysoutLogging
-      new FlinkStreamingProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process, processVersion)
+      val config = ConfigFactory.load()
+      FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config).register(env, process, processVersion)
 
       MockService.clear()
       env.execute(process.id)

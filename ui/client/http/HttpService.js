@@ -39,7 +39,7 @@ export default {
 
   addError(message, error, showErrorText) {
     console.warn(error)
-    const errorMessage = _.get(error, 'response.data') || error.message
+    const errorMessage = _.get(error, "response.data") || error.message
     this.addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   },
@@ -51,7 +51,7 @@ export default {
   queryState(processId, queryName, key) {
     const data = {processId, queryName, key}
     return api.get("/queryableState/fetch", {params: data})
-      .catch(error => this.addError(`Cannot fetch state`, error))
+      .catch(error => this.addError("Cannot fetch state", error))
   },
 
   fetchHealthCheck() {
@@ -81,7 +81,7 @@ export default {
 
         return response
       }))
-      .catch((error) => this.addError(`Cannot find chosen versions`, error, true))
+      .catch((error) => this.addError("Cannot find chosen versions", error, true))
   },
 
   fetchComponentIds() {
@@ -101,7 +101,7 @@ export default {
   },
 
   fetchProcessesComponents(componentId) {
-    return api.get("/processesComponents/" + encodeURIComponent(componentId))
+    return api.get(`/processesComponents/${  encodeURIComponent(componentId)}`)
   },
 
   fetchProcesses(data) {
@@ -120,12 +120,12 @@ export default {
 
   fetchProcessesStatus() {
     return api.get("/processes/status")
-      .catch(error => this.addError(`Cannot fetch statuses`, error))
+      .catch(error => this.addError("Cannot fetch statuses", error))
   },
 
   fetchSingleProcessStatus(processId) {
     return api.get(`/processes/${processId}/status`)
-      .catch(error => this.addError(`Cannot fetch status`, error))
+      .catch(error => this.addError("Cannot fetch status", error))
   },
 
   deploy(processId, comment) {
@@ -154,14 +154,14 @@ export default {
 
   addComment(processId, versionId, data) {
     return api.post(`/processes/${processId}/${versionId}/activity/comments`, data)
-      .then(() => this.addInfo(`Comment added`))
-      .catch(error => this.addError(`Failed to add comment`, error))
+      .then(() => this.addInfo("Comment added"))
+      .catch(error => this.addError("Failed to add comment", error))
   },
 
   deleteComment(processId, commentId) {
     return api.delete(`/processes/${processId}/activity/comments/${commentId}`)
-      .then(() => this.addInfo(`Comment deleted`))
-      .catch(error => this.addError(`Failed to delete comment`, error))
+      .then(() => this.addInfo("Comment deleted"))
+      .catch(error => this.addError("Failed to delete comment", error))
   },
 
   addAttachment(processId, versionId, file) {
@@ -169,8 +169,8 @@ export default {
     data.append("attachment", file)
 
     return api.post(`/processes/${processId}/${versionId}/activity/attachments`, data)
-      .then(() => this.addInfo(`Attachment added`))
-      .catch(error => this.addError(`Failed to add attachment`, error))
+      .then(() => this.addInfo("Attachment added"))
+      .catch(error => this.addError("Failed to add attachment", error))
   },
 
   downloadAttachment(processId, processVersionId, attachmentId) {
@@ -197,7 +197,7 @@ export default {
   exportProcess(process, versionId) {
     return api.post("/processesExport", process, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${process.id}-${versionId}.json`))
-      .catch(error => this.addError(`Failed to export`, error))
+      .catch(error => this.addError("Failed to export", error))
   },
 
   exportProcessToPdf(processId, versionId, data, businessView) {
@@ -206,47 +206,47 @@ export default {
 
     return api.post(queryParams ? `${url}?${queryParams}` : url, data, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${processId}-${versionId}.pdf`))
-      .catch(error => this.addError(`Failed to export`, error))
+      .catch(error => this.addError("Failed to export", error))
   },
 
   validateProcess(process) {
     return api.post("/processValidation", process)
-      .catch(error => this.addError(`Fatal validation error, cannot save`, error, true))
+      .catch(error => this.addError("Fatal validation error, cannot save", error, true))
   },
 
   getTestCapabilities(process) {
     return api.post("/testInfo/capabilities", process)
-      .catch(error => this.addError(`Failed to get capabilities`, error, true))
+      .catch(error => this.addError("Failed to get capabilities", error, true))
   },
 
   generateTestData(processId, testSampleSize, data) {
     return api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
-      .catch(error => this.addError(`Failed to generate test data`, error))
+      .catch(error => this.addError("Failed to generate test data", error))
   },
 
   fetchProcessCounts(processId, dateFrom, dateTo) {
     const data = {dateFrom: dateFrom, dateTo: dateTo}
 
     return api.get(`/processCounts/${processId}`, {params: data})
-      .catch(error => this.addError(`Cannot fetch process counts`, error, true))
+      .catch(error => this.addError("Cannot fetch process counts", error, true))
   },
 
   saveProcess(processId, processJson, comment) {
     const data = {process: processJson, comment: comment}
     return api.put(`/processes/${processId}`, data)
       .then(() => this.addInfo(`Process ${processId} was saved`))
-      .catch(error => this.addError(`Failed to save`, error, true))
+      .catch(error => this.addError("Failed to save", error, true))
   },
 
   archiveProcess(processId) {
     return api.post(`/archive/${processId}`, {isArchived: true})
-      .catch(error => this.addError(`Failed to archive process`, error, true))
+      .catch(error => this.addError("Failed to archive process", error, true))
   },
 
   createProcess(processId, processCategory, isSubprocess) {
     return api.post(`/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`)
-      .catch(error => this.addError(`Failed to create process:`, error, true))
+      .catch(error => this.addError("Failed to create process:", error, true))
   },
 
   importProcess(processId, file) {
@@ -254,46 +254,46 @@ export default {
     data.append("process", file)
 
     return api.post(`/processes/import/${processId}`, data)
-      .catch(error => this.addError(`Failed to import`, error, true))
+      .catch(error => this.addError("Failed to import", error, true))
   },
 
   testProcess(processId, file, processJson, callback, errorCallback) {
     let data = new FormData()
     data.append("testData", file)
-    data.append("processJson", new Blob([JSON.stringify(processJson)], {type: 'application/json'}))
+    data.append("processJson", new Blob([JSON.stringify(processJson)], {type: "application/json"}))
 
     return api.post(`/processManagement/test/${processId}`, data)
-      .catch(error => this.addError(`Failed to test`, error, true))
+      .catch(error => this.addError("Failed to test", error, true))
   },
 
   compareProcesses(processId, thisVersion, otherVersion, businessView, remoteEnv) {
     const queryParams = this.businessViewQueryParams(businessView)
-    const path = remoteEnv ? 'remoteEnvironment' : 'processes'
+    const path = remoteEnv ? "remoteEnvironment" : "processes"
 
     return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: queryParams})
-      .catch(error => this.addError(`Cannot compare processes`, error, true))
+      .catch(error => this.addError("Cannot compare processes", error, true))
   },
 
   fetchRemoteVersions(processId) {
     return api.get(`/remoteEnvironment/${processId}/versions`)
-      .catch(error => this.addError(`Failed to get versions from second environment`, error))
+      .catch(error => this.addError("Failed to get versions from second environment", error))
   },
 
   migrateProcess(processId, versionId) {
     return api.post(`/remoteEnvironment/${processId}/${versionId}/migrate`)
       .then(() => this.addInfo(`Process ${processId} was migrated`))
-      .catch(error => this.addError(`Failed to migrate`, error, true))
+      .catch(error => this.addError("Failed to migrate", error, true))
   },
 
   fetchSignals() {
     return api.get("/signal")
-      .catch(error => this.addError(`Failed to fetch signals`, error))
+      .catch(error => this.addError("Failed to fetch signals", error))
   },
 
   sendSignal(signalType, processId, params) {
     return api.post(`/signal/${signalType}/${processId}`, params)
-      .then(() => this.addInfo(`Signal send`))
-      .catch(error => this.addError(`Failed to send signal`, error))
+      .then(() => this.addInfo("Signal send"))
+      .catch(error => this.addError("Failed to send signal", error))
   },
 
   businessViewQueryParams(businessView) {

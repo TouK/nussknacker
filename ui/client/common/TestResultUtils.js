@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from "lodash"
 
 //TODO move it to backend
 class TestResultUtils {

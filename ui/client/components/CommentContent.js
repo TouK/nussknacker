@@ -1,5 +1,5 @@
 import React from "react";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 export default class CommentContent extends React.Component {
   static propTypes = {
@@ -11,6 +11,7 @@ export default class CommentContent extends React.Component {
     if (_.isEmpty(this.props.commentSettings)) {
       return this.props.content
     } else {
+      // eslint-disable-next-line i18next/no-literal-string
       const regex = new RegExp(this.props.commentSettings.matchExpression, "g")
       const replacement = `<a href=${this.props.commentSettings.link} target="_blank">$1</a>`
       return this.props.content.replace(regex, replacement)

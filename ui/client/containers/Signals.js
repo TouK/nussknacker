@@ -1,5 +1,5 @@
-import React from 'react'
-import {connect} from 'react-redux';
+import React from "react"
+import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
 import QueriedStateTable from "../components/QueriedStateTable";
@@ -27,7 +27,7 @@ class Signals extends React.Component {
   }
 
   initialState(props) {
-    return {signalType: '', processId: null, signalParams: {}, signals: {}}
+    return {signalType: "", processId: null, signalParams: {}, signals: {}}
   }
 
   render() {
@@ -69,7 +69,7 @@ class Signals extends React.Component {
                   </select>
                 </div>
               </div>
-              {_.get(currentSignal, 'parameters', []).map((param, idx) => {
+              {_.get(currentSignal, "parameters", []).map((param, idx) => {
                 return (
                   <div className="node-row" key={idx}>
                     <div className="node-label">{param}</div>
@@ -122,7 +122,7 @@ Signals.header = "Signals"
 
 function mapState(state) {
   return {
-    processingType: 'streaming',
+    processingType: "streaming",
   };
 }
 

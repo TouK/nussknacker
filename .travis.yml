@@ -37,6 +37,12 @@ env:
     - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true" || echo "false"`
     - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true" || echo "false"`
 
+before_script:
+  # We override maven central by google cloud because travis workers are blacklisted by maven central (Server returned HTTP response code: 403...)
+  # It must be done in both ivy and maven settings, because we download deps using ivy during compile and using maven during publish (publishMavenStyle := true)
+  - cp .travis.sbt.repositories $HOME/.sbt/repositories
+  - cp .travis.m2.settings.xml $HOME/.m2/settings.xml
+
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
   - rm -fv $HOME/.ivy2/.sbt.ivy.lock

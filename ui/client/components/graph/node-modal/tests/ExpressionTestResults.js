@@ -15,7 +15,7 @@ export default function ExpressionTestResults(props) {
         {props.children}
         <div className="node-row node-test-results">
           <div className="node-label">
-            <NodeTip title={'Value evaluated in test case'} icon={InlinedSvgs.tipsInfo}/>
+            <NodeTip title={"Value evaluated in test case"} icon={InlinedSvgs.tipsInfo}/>
             {testValue.pretty ? <span className={showIconClass} onClick={e => toggleResult(fieldName)}/> : null}
           </div>
           <TestValue value={testValue} shouldHideTestResults={shouldHideTestResults}/>

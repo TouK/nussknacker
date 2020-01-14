@@ -11,7 +11,7 @@ case class EmptySource[T:TypeInformation](returnType: TypingResult) extends Flin
 
   override def toFlinkSource: SourceFunction[T] = new EmptySourceFunction[T]
 
-  override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
+  override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
   override def timestampAssigner: Option[TimestampAssigner[T]] = None
 

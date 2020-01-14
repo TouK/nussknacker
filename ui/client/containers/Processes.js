@@ -7,15 +7,16 @@ import LoaderSpinner from "../components/Spinner.js"
 import AddProcessDialog from "../components/AddProcessDialog.js"
 import HealthCheck from "../components/HealthCheck.js"
 import "../stylesheets/processes.styl"
-import {withRouter} from 'react-router-dom'
+import {withRouter} from "react-router-dom"
 import ProcessUtils from "../common/ProcessUtils"
 import BaseProcesses from "./BaseProcesses"
-import * as  queryString from 'query-string'
+import * as  queryString from "query-string"
 import {nkPath} from "../config"
 import AddProcessButton from "../components/table/AddProcessButton"
 import TableSelect from "../components/table/TableSelect"
 import SearchFilter from "../components/table/SearchFilter"
 import Date from "../components/common/Date"
+import ListState from "../components/Process/ListState"
 import TableRowIcon from "../components/table/TableRowIcon"
 
 class Processes extends BaseProcesses {
@@ -24,15 +25,15 @@ class Processes extends BaseProcesses {
     isArchived: false
   }
 
-  page = 'processes'
+  page = "processes"
 
-  searchItems = ['categories', 'isDeployed']
+  searchItems = ["categories", "isDeployed"]
   shouldReloadStatuses = true
 
   deployedOptions = [
-    {label: 'Show all processes', value: undefined},
-    {label: 'Show only deployed processes', value: true},
-    {label: 'Show only not deployed processes', value: false},
+    {label: "Show all processes", value: undefined},
+    {label: "Show only deployed processes", value: true},
+    {label: "Show only not deployed processes", value: false},
   ]
 
   constructor(props) {
@@ -54,19 +55,19 @@ class Processes extends BaseProcesses {
   }
 
   processNameChanged = (name, e) => {
-    const newName = e.target.value;
+    const newName = e.target.value
     this.updateProcess(name, process => process.editedName = newName)
   }
 
   changeProcessName = (process, e) => {
-    e.persist();
+    e.persist()
     if (e.key === "Enter" && process.editedName !== process.name) {
       HttpService.changeProcessName(process.name, process.editedName).then((isSuccess) => {
         if (isSuccess) {
           this.updateProcess(process.name, (process) => process.name = process.editedName)
-          e.target.blur();
+          e.target.blur()
         }
-      });
+      })
     }
   }
 
@@ -122,19 +123,19 @@ class Processes extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={['name', 'category', 'modifyDate', 'createDate', 'createdBy']}
-          filterable={['name', 'category', 'createdBy']}
+          sortable={["name", "category", "modifyDate", "createdAt", "createdBy"]}
+          filterable={["name", "category", "createdBy"]}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
-            {key: 'name', label: 'Name'},
-            {key: 'category', label: 'Category'},
-            {key: 'createdBy', label: 'Created by'},
-            {key: 'createdAt', label: 'Created at'},
-            {key: 'modifyDate', label: 'Last modification'},
-            {key: 'status', label: 'Status'},
-            {key: 'edit', label: 'Edit'},
-            {key: 'metrics', label: 'Metrics'}
+            {key: "name", label: "Name"},
+            {key: "category", label: "Category"},
+            {key: "createdBy", label: "Created by"},
+            {key: "createdAt", label: "Created at"},
+            {key: "modifyDate", label: "Last modification"},
+            {key: "status", label: "Status"},
+            {key: "edit", label: "Edit"},
+            {key: "metrics", label: "Metrics"}
           ]}
         >
           {this.state.processes.map((process, index) => {
@@ -158,7 +159,11 @@ class Processes extends BaseProcesses {
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  <div className={this.processStatusClass(process)} title={this.processStatusTitle(process)}/>
+                  <ListState
+                    process={process}
+                    state={this.getProcessState(process)}
+                    isStateLoaded={this.state.statusesLoaded}
+                  />
                 </Td>
                 <Td column="edit" className="edit-column">
                   <TableRowIcon
@@ -184,7 +189,7 @@ class Processes extends BaseProcesses {
 }
 
 Processes.path = `${nkPath}/processes`
-Processes.header = 'Processes'
+Processes.header = "Processes"
 
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,

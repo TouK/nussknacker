@@ -35,8 +35,8 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
     val stoppingResult = for {
       oldJob <- OptionT(findStatusIgnoringTerminal(processName))
-      _ <- OptionT[Future, Unit](if (!(oldJob.runningState == RunningState.Running))
-        Future.failed(new IllegalStateException(s"Job ${processName.value} is not running, status: ${oldJob.status}")) else Future.successful(Some(())))
+      _ <- OptionT[Future, Unit](if (!oldJob.status.isRunning)
+        Future.failed(new IllegalStateException(s"Job ${processName.value} is not running, status: ${oldJob.status.name}")) else Future.successful(Some(())))
       maybeSavePoint <- {
         { logger.debug(s"Deploying $processName. Status: $oldJob") }
         OptionT.liftF(stopSavingSavepoint(processVersion, oldJob, processDeploymentData))
@@ -57,10 +57,10 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   override def savepoint(processName: ProcessName, savepointDir: String): Future[String] = {
     val name = processName.value
     findStatusIgnoringTerminal(processName).flatMap {
-      case Some(state) if state.runningState == RunningState.Running =>
+      case Some(state) if state.status.isRunning =>
         makeSavepoint(state, Option(savepointDir))
       case Some(state) =>
-        Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status}"))
+        Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status.name}"))
       case None =>
         Future.failed(new IllegalStateException(s"Job $name not found"))
     }
@@ -72,7 +72,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def cancel(processName: ProcessName): Future[Unit] = {
     findStatusIgnoringTerminal(processName).flatMap {
-      case Some(state) if state.runningState == RunningState.Running =>
+      case Some(state) if state.status.isRunning =>
         cancel(state)
       case state =>
         logger.warn(s"Trying to cancel ${processName.value} which is not running but in status: $state")
@@ -80,8 +80,8 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  private def findStatusIgnoringTerminal(processName: ProcessName): Future[Option[ProcessState]]
-  = findJobStatus(processName).map(_.filterNot(status => status.runningState == RunningState.Finished))
+  private def findStatusIgnoringTerminal(processName: ProcessName): Future[Option[ProcessState]] =
+    findJobStatus(processName).map(_.filterNot(_.status.canDeploy))
 
   private def checkIfJobIsCompatible(savepointPath: String, processDeploymentData: ProcessDeploymentData, processVersion: ProcessVersion): Future[Unit] =
     processDeploymentData match {
@@ -89,7 +89,6 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
         verification.verify(processVersion, processAsJson, savepointPath)
       case _ => Future.successful(())
     }
-
 
   private def stopSavingSavepoint(processVersion: ProcessVersion, job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
     for {
@@ -100,7 +99,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   private def prepareProgramArgs(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
-    val configPart = modelData.processConfig.root().render()
+    val configPart = modelData.processConfigFromConfiguration.render()
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
         List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson)
@@ -125,5 +124,5 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit]
 
-
+  override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
 }

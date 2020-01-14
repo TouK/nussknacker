@@ -1,22 +1,21 @@
-import React from 'react'
-import {connect} from 'react-redux'
-import Modal from 'react-modal'
-import _ from 'lodash'
+import React from "react"
+import {connect} from "react-redux"
+import Modal from "react-modal"
+import _ from "lodash"
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import ActionsUtils from '../../../actions/ActionsUtils'
-import NodeUtils from '../NodeUtils'
-import NodeDetailsContent from './NodeDetailsContent'
-import NodeDetailsModalHeader from './NodeDetailsModalHeader'
-import TestResultUtils from '../../../common/TestResultUtils'
+import ActionsUtils from "../../../actions/ActionsUtils"
+import NodeUtils from "../NodeUtils"
+import NodeDetailsContent from "./NodeDetailsContent"
+import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
+import TestResultUtils from "../../../common/TestResultUtils"
 import {Scrollbars} from "react-custom-scrollbars"
 import cssVariables from "../../../stylesheets/_variables.styl"
 import {BareGraph} from "../Graph"
 import HttpService from "../../../http/HttpService"
 import ProcessUtils from "../../../common/ProcessUtils"
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types"
 import Draggable from "react-draggable"
-import {preventFromMoveSelectors} from "../../modals/GenericModalDialog"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
 
 class NodeDetailsModal extends React.Component {
@@ -30,34 +29,29 @@ class NodeDetailsModal extends React.Component {
   }
 
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       pendingRequest: false,
       shouldCloseOnEsc: true,
-    };
+      subprocessContent: null,
+      editedNode: this.props.nodeToDisplay,
+      currentNodeId: this.props.nodeToDisplay.id,
+    }
   }
 
-  componentWillReceiveProps(props) {
-    const isChromium = !!window.chrome;
-
-    const newState = {
-      editedNode: props.nodeToDisplay,
-      currentNodeId: props.nodeToDisplay.id,
-      subprocessContent: null
-    }
-
-    //TODO more smooth subprocess loading in UI
-    if (props.nodeToDisplay && props.showNodeDetailsModal && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
+  componentDidMount(): void {
+    const {nodeToDisplay, showNodeDetailsModal, businessView, subprocessVersions} = this.props
+    const isChromium = !!window.chrome
+    if (nodeToDisplay && this.state.subprocessContent === null && showNodeDetailsModal && (NodeUtils.nodeType(nodeToDisplay) === "SubprocessInput")) {
       if (isChromium) { //Subprocesses work only in Chromium, there is problem with jonint and SVG
-        const subprocessVersion = props.subprocessVersions[props.nodeToDisplay.ref.id]
-        HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, subprocessVersion, this.props.businessView).then((response) =>
-          this.setState({...newState, subprocessContent: response.data.json})
+        const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
+        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion, businessView).then((response) => {
+            this.setState({...this.state, subprocessContent: response.data.json})
+          }
         )
       } else {
         console.warn("Displaying subprocesses is available only in Chromium based browser.")
       }
-    } else {
-      this.setState(newState)
     }
   }
 
@@ -72,21 +66,21 @@ class NodeDetailsModal extends React.Component {
   }
 
   performNodeEdit = () => {
-    this.setState( { pendingRequest: true})
+    this.setState( {pendingRequest: true})
 
     const actionResult = this.isGroup() ?
       this.props.actions.editGroup(this.props.processToDisplay, this.props.nodeToDisplay.id, this.state.editedNode)
       : this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode)
 
     actionResult.then (() => {
-        this.setState( { pendingRequest: false})
+        this.setState( {pendingRequest: false})
         this.closeModal()
-      }, () => this.setState( { pendingRequest: false})
+      }, () => this.setState( {pendingRequest: false})
     )
   }
 
   updateNodeState = (newNodeState) => {
-    this.setState( { editedNode: newNodeState})
+    this.setState( {editedNode: newNodeState})
   }
 
   onNodeGroupChange = (event) => {
@@ -97,16 +91,16 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return ([
       this.isGroup() ? this.renderGroupUngroup() : null,
-      <button key="2" type="button" title="Cancel node details" className='modalButton' onClick={this.closeModal}>
+      <button key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
         Cancel
       </button>,
       !this.props.readOnly ?
           <LaddaButton
               key="1"
               title="Apply node details"
-              className='modalButton pull-right modalConfirmButton'
+              className="modalButton pull-right modalConfirmButton"
               loading={this.state.pendingRequest}
-              data-style='zoom-in'
+              data-style="zoom-in"
               onClick={this.performNodeEdit}
           >
             Apply
@@ -122,8 +116,8 @@ class NodeDetailsModal extends React.Component {
 
     const id = this.state.editedNode.id
     const expanded = _.includes(this.props.expandedGroups, id)
-    return  expanded ? (<button type="button" key="0" title="Collapse group" className='modalButton' onClick={collapse}>Collapse</button>)
-         : (<button type="button" title="Expand group" key="0" className='modalButton' onClick={expand}>Expand</button>)
+    return  expanded ? (<button type="button" key="0" title="Collapse group" className="modalButton" onClick={collapse}>Collapse</button>)
+         : (<button type="button" title="Expand group" key="0" className="modalButton" onClick={expand}>Expand</button>)
   }
 
   isGroup() {
@@ -154,7 +148,7 @@ class NodeDetailsModal extends React.Component {
                isOpen={isOpen}
                onRequestClose={this.closeModal}>
           <div className="draggable-container">
-            <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+            <Draggable bounds="parent" handle=".modal-draggable-handle">
               <div className="espModal">
                 <NodeDetailsModalHeader node={nodeToDisplay} docsUrl={nodeSetting.docsUrl}/>
                 <div className="modalContentDark" id="modal-content">
@@ -215,7 +209,7 @@ function mapState(state) {
     readOnly: !state.settings.loggedUser.canWrite(processCategory)
       || state.graphReducer.businessView
       || state.graphReducer.nodeToDisplayReadonly
-      || _.get(state, 'graphReducer.fetchedProcessDetails.isArchived')
+      || _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
       || false,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,

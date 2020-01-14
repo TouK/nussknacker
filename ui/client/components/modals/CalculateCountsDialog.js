@@ -6,9 +6,9 @@ import "../../stylesheets/visualization.styl";
 import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs"
 import Moment from "moment"
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import '../../stylesheets/datePicker.styl'
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "../../stylesheets/datePicker.styl"
 import {dateFormat} from "../../config";
 
 
@@ -20,28 +20,28 @@ class CalculateCountsDialog extends React.Component {
   predefinedRanges = [
     {
       name: "Last hour",
-      from: () => Moment().subtract(1, 'hours').toDate(),
+      from: () => Moment().subtract(1, "hours").toDate(),
       to: () => Moment().toDate()
     },
     {
       name: "Today",
-      from: () => Moment().startOf('day').toDate(),
+      from: () => Moment().startOf("day").toDate(),
       to: () => Moment().toDate()
     },
     {
       name: "Yesterday",
-      from: () => Moment().subtract(1, 'days').startOf('day').toDate(),
-      to: () => Moment().startOf('day').toDate()
+      from: () => Moment().subtract(1, "days").startOf("day").toDate(),
+      to: () => Moment().startOf("day").toDate()
     },
     {
       name: "Day before yesterday",
-      from: () => Moment().subtract(2, 'days').startOf('day').toDate(),
-      to: () => Moment().subtract(1, 'days').startOf('day').toDate()
+      from: () => Moment().subtract(2, "days").startOf("day").toDate(),
+      to: () => Moment().subtract(1, "days").startOf("day").toDate()
     },
     {
       name: "This day last week",
-      from: () => Moment().subtract(8, 'days').startOf('day').toDate(),
-      to: () => Moment().subtract(7, 'days').startOf('day').toDate()
+      from: () => Moment().subtract(8, "days").startOf("day").toDate(),
+      to: () => Moment().subtract(7, "days").startOf("day").toDate()
     }
   ]
 
@@ -54,8 +54,8 @@ class CalculateCountsDialog extends React.Component {
 
   constructor(props) {
     super(props);
-    const nowMidnight = Moment().startOf('day')
-    const yesterdayMidnight = Moment().subtract(1, 'days').startOf('day')
+    const nowMidnight = Moment().startOf("day")
+    const yesterdayMidnight = Moment().subtract(1, "days").startOf("day")
     this.initState = {
       processCountsDateFrom: yesterdayMidnight.toDate(),
       processCountsDateTo: nowMidnight.toDate()
@@ -111,7 +111,7 @@ class CalculateCountsDialog extends React.Component {
         <p>Quick ranges</p>
         {
           this.predefinedRanges.map(range =>
-            (<button type="button" key={range.name} title={range.name} className='predefinedRangeButton' onClick={() => this.setTime(range)}>{range.name}</button>)
+            (<button type="button" key={range.name} title={range.name} className="predefinedRangeButton" onClick={() => this.setTime(range)}>{range.name}</button>)
           )
         }
       </GenericModalDialog>
@@ -121,7 +121,7 @@ class CalculateCountsDialog extends React.Component {
 
 function mapState(state) {
   return {
-    processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
+    processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
     processToDisplay: state.graphReducer.processToDisplay
   }
 }

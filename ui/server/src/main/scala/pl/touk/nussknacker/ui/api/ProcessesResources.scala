@@ -224,7 +224,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             canWrite(processId) {
               complete {
                 processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap {
-                  case Some(details) if details.deployment.isEmpty =>
+                  case Some(details) if !details.isDeployed =>
                     writeRepository.renameProcess(processId.id, newName).map(toResponse(StatusCodes.OK))
                       .withSideEffect(_ => processChangeListener.handle(OnRenamed(processId.id, processId.name, ProcessName(newName))))
                   case _ => Future.successful(espErrorToHttp(ProcessAlreadyDeployed(processName)))
@@ -280,7 +280,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                 case Some(process) =>
                   findJobStatus(processId, process.processingType).map {
                     case Some(status) => status
-                    case None => ProcessStatus.stateNotFound
+                    case None => ProcessStatus.notFound
                   }
                 case None =>
                   Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))

@@ -22,7 +22,7 @@ import scala.concurrent.duration._
 trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with LazyLogging {
   self: Suite =>
 
-  private val flinkEsp = s"flinkesp:1.7.2-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
+  private val flinkEsp = s"flinkesp:1.9.1-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 

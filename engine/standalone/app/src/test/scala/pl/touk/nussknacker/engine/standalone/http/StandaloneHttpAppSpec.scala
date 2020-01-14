@@ -17,7 +17,6 @@ import io.circe.Encoder
 import io.circe.syntax._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -27,6 +26,9 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
+import io.circe._
+import io.circe.parser._
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 
 class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach with FailFastCirceSupport {
 
@@ -116,19 +118,25 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   val managementRoute = exampleApp.managementRoute.route
   val processesRoute = exampleApp.processRoute.route(StandaloneRequestResponseLogger.default)
 
-  
   it should "deploy process and then run it" in {
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(processJson))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       Get(s"/checkStatus/${procId.value}") ~> managementRoute ~> check {
         status shouldBe StatusCodes.OK
-        val processState = responseAs[ProcessState]
-        processState.id shouldBe DeploymentId(procId.value)
-        processState.startTime shouldBe testEpoch
 
-        processState.status shouldBe "RUNNING"
+        val docs = parse(responseAs[String]) match {
+          case Right(json) => json
+        }
+
+        val cursorState = docs.hcursor
+
+        cursorState.downField("deploymentId").downField("value").focus shouldBe Some(Json.fromString(procId.value))
+        cursorState.downField("startTime").focus shouldBe Some(Json.fromBigDecimal(testEpoch))
+        cursorState.downField("status").downField("clazz").focus shouldBe Some(Json.fromString("pl.touk.nussknacker.engine.api.deployment.RunningStateStatus"))
+        cursorState.downField("status").downField("value").focus shouldBe Some(Json.fromString("RUNNING"))
       }
+
       Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "[\"b\"]"
@@ -146,10 +154,8 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
         responseAs[String] shouldBe "[\"b\"]"
         cancelProcess(procId)
       }
-
     }
   }
-
 
   it should "be able to invoke with GET for GET source" in {
     assertProcessNotRunning(procId)
@@ -173,7 +179,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       }
     }
   }
-
 
   it should "not be able to invoke with POST for GET source" in {
     assertProcessNotRunning(procId)
@@ -201,7 +206,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       cancelProcess(procId)
       LifecycleService.closed shouldBe true
     }
-
   }
 
   it should "run process that produces empty response" in {
@@ -298,8 +302,4 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     val json = jsonable.asJson.spaces2
     HttpEntity(ContentTypes.`application/json`, json)
   }
-
-
-
-
 }

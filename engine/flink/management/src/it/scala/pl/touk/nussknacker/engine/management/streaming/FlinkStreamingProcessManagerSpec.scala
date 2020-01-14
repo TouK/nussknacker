@@ -8,12 +8,12 @@ import com.typesafe.config.ConfigValueFactory
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, RunningState}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
+import pl.touk.nussknacker.engine.management.{FlinkStateStatus, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
@@ -116,7 +116,6 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   }
 
   test("snapshot state and be able to deploy using it") {
-
     val processId = "snapshot"
     val outTopic = s"output-$processId"
 
@@ -141,7 +140,6 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     messages shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
-
   }
 
   test("fail to redeploy if old is incompatible") {
@@ -173,16 +171,14 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(ProcessName(processId)).futureValue
-    jobStatus.map(_.status) shouldBe Some("RUNNING")
+    jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+    jobStatus.map(_.status.isRunning) shouldBe Some(true)
 
     cancel(processId)
   }
 
-
   test("extract process definition") {
-
     val definition = FlinkStreamingProcessManagerProvider.defaultTypeConfig(config).toModelData.processDefinition
-
     definition.services should contain key "accountService"
   }
 
@@ -200,9 +196,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
     signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
     signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
-
   }
-
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] = {
     kafkaClient.createConsumer()
@@ -216,15 +210,21 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
     Thread.sleep(1000)
     val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
-    jobStatus.map(_.status) shouldBe Some("RUNNING")
+    jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+    jobStatus.map(_.status.isRunning) shouldBe Some(true)
   }
 
   private def cancel(processId: String): Unit = {
     assert(processManager.cancel(ProcessName(processId)).isReadyWithin(10 seconds))
     eventually {
-      val jobStatusCanceled = processManager.findJobStatus(ProcessName(processId)).futureValue.filterNot(_.runningState == RunningState.Finished)
-      if (jobStatusCanceled.nonEmpty)
+      val jobStatusCanceled = processManager
+        .findJobStatus(ProcessName(processId))
+        .futureValue
+        .filterNot(_.status.canDeploy)
+
+      if (jobStatusCanceled.nonEmpty) {
         throw new IllegalStateException("Job still exists")
+      }
     }
   }
 

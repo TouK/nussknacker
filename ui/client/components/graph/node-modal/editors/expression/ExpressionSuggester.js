@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _ from "lodash";
 
 // before indexer['last indexer key
 const INDEXER_REGEX = /^(.*)\['([^\[]*)$/
@@ -25,7 +25,7 @@ export default class ExpressionSuggester {
     const rows = inputValue.split("\n")
     const trimmedRows = _.map(rows, (row) => {
       const trimmedAtStartRow = _.dropWhile(row, (c) => c === " ").join("")
-      return { trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length }
+      return {trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length}
     })
     const beforeCaretInputLength = _.sum(_.map(_.take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length));
     const normalizedCaretPosition = caretPosition2d.column - trimmedRows[caretPosition2d.row].trimmedCount + beforeCaretInputLength
@@ -52,7 +52,7 @@ export default class ExpressionSuggester {
       }
     } else if (variableNotSelected && !_.isEmpty(value)) {
       const allVariablesWithClazzRefs = _.map(variables, (val, key) => {
-        return {'methodName': key, 'refClazz': val}
+        return {methodName: key, refClazz: val}
       })
       const result = this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
       return new Promise(resolve => resolve(result))
@@ -100,9 +100,9 @@ export default class ExpressionSuggester {
     if (type.union != null) {
       let foundedTypes = _.filter(_.map(type.union, (clazz) => this._extractMethodFromClass(clazz, prop)), i => i != null)
       // TODO: compute union of extracted methods types
-      return _.first(foundedTypes) || {refClazzName: ''}
+      return _.first(foundedTypes) || {refClazzName: ""}
     } else {
-      return this._extractMethodFromClass(type, prop) || {refClazzName: ''}
+      return this._extractMethodFromClass(type, prop) || {refClazzName: ""}
     }
   }
 
@@ -123,7 +123,7 @@ export default class ExpressionSuggester {
 
   _getTypeInfoFromClass = (clazz) => {
     const methodsFromInfo = this._getMethodsFromGlobalTypeInfo(clazz);
-    const methodsFromFields = _.mapValues((clazz.fields || []), (field) => ({ refClazz: field }));
+    const methodsFromFields = _.mapValues((clazz.fields || []), (field) => ({refClazz: field}));
     const allMethods = _.merge(methodsFromFields, methodsFromInfo);
 
     return {
@@ -133,7 +133,7 @@ export default class ExpressionSuggester {
   }
 
   _getMethodsFromGlobalTypeInfo = (clazz) => {
-    const foundData = _.find(this._typesInformation, { clazzName: { refClazzName: clazz.refClazzName }})
+    const foundData = _.find(this._typesInformation, {clazzName: {refClazzName: clazz.refClazzName}})
     return !_.isEmpty(foundData) ? foundData.methods : []
   }
 
@@ -155,8 +155,8 @@ export default class ExpressionSuggester {
     const withoutNestedParenthesis = value.substring(this._lastNonClosedParenthesisIndex(value) + 1, value.length);
     const valueCleaned = withoutNestedParenthesis.replace(/\(.*\)/, "");
     //handling ?. operator
-    const withSafeNavigationIgnored = valueCleaned.replace(/\?\./g, '.');
-    return _.isEmpty(value) ? "" : "#" + _.last(_.split(withSafeNavigationIgnored, '#'))
+    const withSafeNavigationIgnored = valueCleaned.replace(/\?\./g, ".");
+    return _.isEmpty(value) ? "" : `#${  _.last(_.split(withSafeNavigationIgnored, "#"))}`
   };
 
   _lastNonClosedParenthesisIndex = (value) => {
@@ -197,7 +197,7 @@ export default class ExpressionSuggester {
 
   _getAllVariables = (normalized) => {
     const thisClazz = this._findProjectionOrSelectionRootClazz(normalized)
-    const data = thisClazz ? { '#this' : thisClazz } : {};
+    const data = thisClazz ? {"#this" : thisClazz} : {};
     return _.merge(data, this._variables)
   }
 

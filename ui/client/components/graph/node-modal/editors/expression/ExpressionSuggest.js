@@ -1,20 +1,20 @@
 import React from "react"
-import PropTypes from 'prop-types'
-import ReactDOMServer from 'react-dom/server'
-import {connect} from 'react-redux'
-import _ from 'lodash'
-import ActionsUtils from '../../../../../actions/ActionsUtils'
-import ProcessUtils from '../../../../../common/ProcessUtils'
-import ExpressionSuggester from './ExpressionSuggester'
+import PropTypes from "prop-types"
+import ReactDOMServer from "react-dom/server"
+import {connect} from "react-redux"
+import _ from "lodash"
+import ActionsUtils from "../../../../../actions/ActionsUtils"
+import ProcessUtils from "../../../../../common/ProcessUtils"
+import ExpressionSuggester from "./ExpressionSuggester"
 
-import AceEditor from 'react-ace'
-import 'ace-builds/src-noconflict/mode-jsx'
-import 'ace-builds/src-noconflict/ext-language_tools'
-import 'ace-builds/src-noconflict/ext-searchbox'
+import AceEditor from "react-ace"
+import "ace-builds/src-noconflict/mode-jsx"
+import "ace-builds/src-noconflict/ext-language_tools"
+import "ace-builds/src-noconflict/ext-searchbox"
 
-import '../../../../../brace/mode/spel'
-import '../../../../../brace/mode/sql'
-import '../../../../../brace/theme/nussknacker'
+import "../../../../../brace/mode/spel"
+import "../../../../../brace/mode/sql"
+import "../../../../../brace/theme/nussknacker"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import HttpService from "../../../../../http/HttpService"
 import {allValid} from "../../../../../common/Validators"
@@ -71,7 +71,7 @@ class ExpressionSuggest extends React.Component {
     identifierRegexps: identifierRegexpsIncludingDot,
     getDocTooltip: (item) => {
       if (item.description || !_.isEmpty(item.parameters)) {
-        const paramsSignature = item.parameters.map(p => ProcessUtils.humanReadableType(p.refClazz) + " " + p.name).join(", ")
+        const paramsSignature = item.parameters.map(p => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`).join(", ")
         const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`
         item.docHTML = ReactDOMServer.renderToStaticMarkup((
           <div className="function-docs">
@@ -85,12 +85,12 @@ class ExpressionSuggest extends React.Component {
   }
 
   constructor(props) {
-    super(props);
-    inputExprIdCounter+=1;
+    super(props)
+    inputExprIdCounter += 1
     this.state = {
       value: props.inputProps.value,
-      id: "inputExpr" + inputExprIdCounter
-    };
+      id: `inputExpr${inputExprIdCounter}`
+    }
     this.expressionSuggester = this.createExpressionSuggester(props)
   }
 
@@ -110,7 +110,7 @@ class ExpressionSuggest extends React.Component {
   }
 
   createExpressionSuggester = (props) => {
-    return new ExpressionSuggester(props.typesInformation, props.variables, props.processingType, HttpService);
+    return new ExpressionSuggester(props.typesInformation, props.variables, props.processingType, HttpService)
   }
 
   onChange = (newValue) => {
@@ -121,19 +121,19 @@ class ExpressionSuggest extends React.Component {
 
   render() {
     if (this.props.dataResolved) {
-      const {isMarked, showValidation, inputProps, validators, shouldShowSwitch} = this.props
+      const {isMarked, showValidation, inputProps, validators} = this.props
       return (
         <React.Fragment>
-          <div className={"row-ace-editor" +
-          (!showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error ") +
-          (isMarked ? " marked" : "") +
-          (shouldShowSwitch ? " switchable" : "") +
-          (this.state.editorFocused ? " focused" : "")}>
+          <div className={`row-ace-editor${
+            !showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error "
+          }${isMarked ? " marked" : ""
+          }${this.state.editorFocused ? " focused" : ""
+          }${inputProps.readOnly ? " read-only" : ""}`}>
             <AceEditor mode={inputProps.language}
                        width={"100%"}
                        minLines={1}
                        maxLines={50}
-                       theme={'nussknacker'}
+                       theme={"nussknacker"}
                        onChange={this.onChange}
                        value={this.state.value}
                        showPrintMargin={false}
@@ -145,6 +145,7 @@ class ExpressionSuggest extends React.Component {
                        editorProps={{
                          $blockScrolling: "Infinity"
                        }}
+                       className={inputProps.readOnly ? " read-only" : ""}
                        setOptions={{
                          indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
                          enableBasicAutocompletion: [this.customAceEditorCompleter],
@@ -171,7 +172,7 @@ class ExpressionSuggest extends React.Component {
 }
 
 function mapState(state, props) {
-  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, 'processCategory')
+  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, "processCategory")
   const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: {typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation

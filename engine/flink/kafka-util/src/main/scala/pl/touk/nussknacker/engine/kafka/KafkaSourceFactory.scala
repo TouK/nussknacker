@@ -4,8 +4,9 @@ import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011
-import org.apache.flink.streaming.util.serialization.{KeyedDeserializationSchema, KeyedDeserializationSchemaWrapper}
+import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFact
 import scala.collection.JavaConverters._
 
 /** <pre>
-  * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09]]
+  * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer]]
   * Features:
   *   - fetch latest N records which can be later used to test process in UI
   * Fetching data is defined in [[pl.touk.nussknacker.engine.kafka.BaseKafkaSourceFactory.KafkaSource]] which
@@ -40,7 +41,7 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
            schema: DeserializationSchema[T],
            timestampAssigner: Option[TimestampAssigner[T]],
            testPrepareInfo: TestDataSplit) =
-    this(config, FixedDeserializationSchemaFactory(new KeyedDeserializationSchemaWrapper(schema)), timestampAssigner, testPrepareInfo)
+    this(config, FixedDeserializationSchemaFactory(new KafkaDeserializationSchemaWrapper(schema)), timestampAssigner, testPrepareInfo)
 
   @MethodToInvoke
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] with TestDataGenerator = {
@@ -68,7 +69,7 @@ class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
            schema: DeserializationSchema[T],
            timestampAssigner: Option[TimestampAssigner[T]],
            testPrepareInfo: TestDataSplit) =
-    this(topic, config, FixedDeserializationSchemaFactory(new KeyedDeserializationSchemaWrapper(schema)), timestampAssigner, testPrepareInfo)
+    this(topic, config, FixedDeserializationSchemaFactory(new KafkaDeserializationSchemaWrapper(schema)), timestampAssigner, testPrepareInfo)
 
   @MethodToInvoke
   def create(processMetaData: MetaData): Source[T] with TestDataGenerator = {
@@ -83,22 +84,22 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
   extends FlinkSourceFactory[T] with Serializable {
 
   protected def createSource(processMetaData: MetaData, topics: List[String],
-                             schema: KeyedDeserializationSchema[T]): KafkaSource = {
+                             schema: KafkaDeserializationSchema[T]): KafkaSource = {
     new KafkaSource(consumerGroupId = processMetaData.id, topics = topics, schema, None)
   }
 
-  class KafkaSource(consumerGroupId: String, topics: List[String], schema: KeyedDeserializationSchema[T], recordFormatterOpt: Option[RecordFormatter])
+  class KafkaSource(consumerGroupId: String, topics: List[String], schema: KafkaDeserializationSchema[T], recordFormatterOpt: Option[RecordFormatter])
     extends FlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
 
-    override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
+    override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
     override def toFlinkSource: SourceFunction[T] = {
       topics.foreach(KafkaEspUtils.setToLatestOffsetIfNeeded(config, _, consumerGroupId))
       createFlinkSource()
     }
 
-    protected def createFlinkSource(): FlinkKafkaConsumer011[T] = {
-      new FlinkKafkaConsumer011[T](topics.asJava, schema, KafkaEspUtils.toProperties(config, Some(consumerGroupId)))
+    protected def createFlinkSource(): FlinkKafkaConsumer[T] = {
+      new FlinkKafkaConsumer[T](topics.asJava, schema, KafkaEspUtils.toProperties(config, Some(consumerGroupId)))
     }
 
     override def generateTestData(size: Int): Array[Byte] = {
@@ -117,7 +118,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
           val record = recordFormatterOpt
             .map(formatter => formatter.parseRecord(formatted))
             .getOrElse(new ProducerRecord(topic, formatted))
-          schema.deserialize(record.key(), record.value(), topic, -1, -1)
+          schema.deserialize(new ConsumerRecord[Array[Byte], Array[Byte]](topic, -1, -1, record.key(), record.value()))
         }
     }
 

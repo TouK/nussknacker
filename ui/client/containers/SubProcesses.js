@@ -6,7 +6,7 @@ import LoaderSpinner from "../components/Spinner.js"
 import AddProcessDialog from "../components/AddProcessDialog.js"
 import HealthCheck from "../components/HealthCheck.js"
 import "../stylesheets/processes.styl"
-import {withRouter} from 'react-router-dom'
+import {withRouter} from "react-router-dom"
 import BaseProcesses from "./BaseProcesses"
 import ProcessUtils from "../common/ProcessUtils"
 import {nkPath} from "../config"
@@ -22,7 +22,7 @@ class SubProcesses extends BaseProcesses {
     isArchived: false
   }
 
-  page = 'subProcesses'
+  page = "subProcesses"
 
   constructor(props) {
     super(props)
@@ -70,17 +70,17 @@ class SubProcesses extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={['name', 'category', 'modifyDate', 'createDate', 'createdBy']}
-          filterable={['name', 'category', 'createdBy']}
+          sortable={["name", "category", "modifyDate", "createDate", "createdBy"]}
+          filterable={["name", "category", "createdBy"]}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
           columns={[
-            {key: 'name', label: 'Process name'},
-            {key: 'category', label: 'Category'},
-            {key: 'createdBy', label: 'Created by'},
-            {key: 'createdAt', label: 'Created'},
-            {key: 'modifyDate', label: 'Last modification'},
-            {key: 'edit', label: 'Edit'}
+            {key: "name", label: "Process name"},
+            {key: "category", label: "Category"},
+            {key: "createdBy", label: "Created by"},
+            {key: "createdAt", label: "Created"},
+            {key: "modifyDate", label: "Last modification"},
+            {key: "edit", label: "Edit"}
           ]}
         >
           {this.state.processes.map((process, index) => {
@@ -111,7 +111,7 @@ class SubProcesses extends BaseProcesses {
   }
 }
 
-SubProcesses.header = 'Subprocesses'
+SubProcesses.header = "Subprocesses"
 SubProcesses.path = `${nkPath}/subProcesses`
 
 const mapState = (state) => ({

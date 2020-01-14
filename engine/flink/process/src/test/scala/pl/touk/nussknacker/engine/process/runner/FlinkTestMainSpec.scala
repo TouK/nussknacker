@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.{ClassLoaderModelData, spel}
+import pl.touk.nussknacker.engine.{ClassLoaderModelData, ModelConfigToLoad, spel}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,10 +31,9 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     RecordingExceptionHandler.clear()
   }
 
-  private val modelData = ClassLoaderModelData(ConfigFactory.load(), ModelClassLoader.empty)
+  private val modelData = ClassLoaderModelData(ModelConfigToLoad(ConfigFactory.load()), ModelClassLoader.empty)
 
   private def marshall(process: EspProcess): String = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-
 
   test("be able to return test results") {
     val process =
@@ -393,8 +392,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     invocationResults("out").head.contextId shouldBe "sampleProcess-id-0-1"
   }
 
-  def nodeResult(count: Int, vars: (String, Any)*)
-  = NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
-
+  def nodeResult(count: Int, vars: (String, Any)*): NodeResult[Any] =
+    NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
 }
 

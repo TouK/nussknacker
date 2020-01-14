@@ -175,6 +175,16 @@ espCheckbox(checkboxWidth)
       height 22px
       padding-top 8px
 
+.modal-title-container
+  height modalHeaderHeight
+  float left
+
+.modal-draggable-handle
+  &:hover
+    cursor grab
+  &:active
+    cursor grabbing
+
 .modal-title
   height modalHeaderHeight
   float left
@@ -185,6 +195,10 @@ espCheckbox(checkboxWidth)
     width 18px
     height 18px
     display inline-block
+
+.edge-modal-title
+  @extend .modal-title
+  padding-left 10px
 
 .modal-title-icon
   display inline-block
@@ -218,6 +232,7 @@ common-node-input(padding)
   color: modalInputTextColor
   font-weight: 400
   font-size: 14px
+  outline 1px solid rgba(255,255,255,0.075)
 
 modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
@@ -274,6 +289,10 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       textarea
         overflow hidden
         height auto
+      textarea:read-only
+        background-color #444
+      input:read-only
+        background-color #444
       espCheckbox(20px)
       input[type='checkbox']
         margin-top 7px
@@ -295,11 +314,13 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
           outline-offset -1px!important;
         .node-value-select__single-value
           common-node-input(10px)
+          outline none
         .switchable
           width: 100% - 40px
         .node-value-select__input
           //TODO: input hides partially due to padding...
           common-node-input(10px)
+          outline none
         .node-value-select__value-container--has-value
           background-color modalInputBkgColor
           color modalInputTextColor
@@ -359,15 +380,7 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       height: 35px
       common-node-input(10px)
     .read-only
-      height: 40px
-      padding: 0
-      border: none
-      color: modalInputTextColor
-      font-weight: 400
-      font-size: 14px
-      display: inline-block
-      vertical-align: top
-      padding-top: 9px
+      background-color #444
       .labelFooter
         font-weight 500
         opacity: 0.7
@@ -565,6 +578,7 @@ espPanelButton()
   padding-right: 10px
   background-color: #333
   min-height 35px
+  outline 1px solid rgba(255,255,255,0.075)
   &.focused
     outline 2px solid #0058a9 !important
     outline-offset -1px !important
@@ -672,11 +686,6 @@ espPanelButton()
 .marked
   border 2px solid markColor !important
 
-.read-only
-  background-color #444
-  font-weight 400;
-  font-size 14px;
-
 .fieldsControl
   .addRemoveButton
     espButtonBase()
@@ -688,6 +697,11 @@ espPanelButton()
   .fieldName
     width: 28%
     margin-right 5px
+  .handle-bars
+    height 24px
+    width 24px
+    margin-left 10px
+    cursor grab
   .node-value
     &.field
       width: calc(70% - 34px)

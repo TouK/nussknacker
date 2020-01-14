@@ -2,14 +2,15 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import java.time.LocalDateTime
 
-import akka.actor.{Actor, ActorRefFactory, Props, Status}
+import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionSuccess, OnDeployActionFailed}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
@@ -35,7 +36,6 @@ object ManagementActor {
            (implicit context: ActorRefFactory): Props = {
     Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver, processChangeListener)
   }
-
 }
 
 class ManagementActor(environment: String,
@@ -64,8 +64,21 @@ class ManagementActor(environment: String,
         reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, comment, cancelRes))
       }
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
+      implicit val loggedUser: LoggedUser = user
       val info = beingDeployed(id.name)
-      sender() ! Some(ProcessStatus(None, s"${info.action} IN PROGRESS", info.time, false, true))
+
+      val processStatus = for {
+        manager <- processManager(id.id)
+      } yield sender() ! Some(ProcessStatus(
+        deploymentId = None,
+        status = SimpleStateStatus.DuringDeploy,
+        allowedActions = manager.processStateDefinitionManager.statusActions(SimpleStateStatus.DuringDeploy),
+        icon = manager.processStateDefinitionManager.statusIcon(SimpleStateStatus.DuringDeploy),
+        tooltip = manager.processStateDefinitionManager.statusTooltip(SimpleStateStatus.DuringDeploy),
+        startTime = Some(info.time)
+      ))
+      reply(processStatus)
+
     case CheckStatus(id, user) =>
       implicit val loggedUser: LoggedUser = user
 
@@ -74,8 +87,8 @@ class ManagementActor(environment: String,
         deployedVersion = deployedVersions.headOption.filter(_.deploymentAction == DeploymentAction.Deploy)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
-        _ <- handleFinishedProcess(id, state)
-      } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
+        _ <- handleFinishedProcess(id, state, manager.processStateDefinitionManager)
+      } yield state.map(ProcessStatus.create(_, deployedVersion.map(_.processVersionId)))
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
@@ -105,10 +118,10 @@ class ManagementActor(environment: String,
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
+  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState], processStateConfigurator: ProcessStateDefinitionManager): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
-      case Some(state) if state.runningState == RunningState.Finished =>
+      case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
             deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, environment, Some("Process finished")).map(_ => ())
@@ -214,7 +227,6 @@ class ManagementActor(environment: String,
     }
   }
 }
-
 
 trait DeploymentAction {
   def id: ProcessIdWithName

@@ -42,7 +42,7 @@ class SubprocessInputDefinition extends React.Component {
     const {addElement, isMarked, node, onChange, readOnly, removeElement, showValidation, errors, renderFieldLabel} = this.props
 
     const addField = () => {
-      addElement("parameters", {"name": "", "uuid": uuid4(), typ: {refClazzName: this.defaultTypeOption.value}})
+      addElement("parameters", {name: "", uuid: uuid4(), typ: {refClazzName: this.defaultTypeOption.value}})
     }
 
     return (

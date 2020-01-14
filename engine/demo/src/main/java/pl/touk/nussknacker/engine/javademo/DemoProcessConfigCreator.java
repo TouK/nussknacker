@@ -3,18 +3,15 @@ package pl.touk.nussknacker.engine.javademo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
@@ -31,6 +28,8 @@ import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 import pl.touk.nussknacker.engine.kafka.KafkaConfig;
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
+import pl.touk.nussknacker.engine.kafka.serialization.SerializationSchemaFactory;
+import pl.touk.nussknacker.engine.kafka.serialization.schemas;
 import scala.Option;
 import scala.collection.JavaConverters;
 
@@ -97,24 +96,16 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     @Override
     public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config) {
         KafkaConfig kafkaConfig = getKafkaConfig(config);
-        KeyedSerializationSchema<Object> schema = new KeyedSerializationSchema<Object>() {
-            @Override
-            public byte[] serializeKey(Object element) {
-                return UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
-            }
-            @Override
-            public byte[] serializeValue(Object element) {
-                if (element instanceof String) {
-                    return ((String) element).getBytes(StandardCharsets.UTF_8);
-                } else {
-                    throw new RuntimeException("Sorry, only strings");
-                }
-            }
-            @Override
-            public String getTargetTopic(Object element) {
-                return null;
+
+        schemas.ToStringSerializer<Object> serializer = element -> {
+            if (element instanceof String) {
+                return (String) element;
+            } else {
+                throw new RuntimeException("Sorry, only strings");
             }
         };
+        SerializationSchemaFactory<Object> schema = (topic, kafkaConfig1) ->
+            new schemas.SimpleSerializationSchema<>(topic, serializer, null);
         KafkaSinkFactory factory = new KafkaSinkFactory(kafkaConfig, schema);
         Map<String, WithCategories<SinkFactory>> m = new HashMap<>();
         m.put("kafka-stringSink", all(factory));

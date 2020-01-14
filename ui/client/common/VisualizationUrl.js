@@ -1,10 +1,10 @@
 import _ from "lodash";
 import Moment from "moment";
-import * as  queryString from 'query-string'
+import * as  queryString from "query-string"
 import {nkPath} from "../config";
 
 export const visualizationBasePath = `${nkPath}/visualization`
-export const visualizationPath = visualizationBasePath + '/:processId'
+export const visualizationPath = `${visualizationBasePath  }/:processId`
 
 function nodeIdPart(nodeId) {
   return `?nodeId=${encodeURIComponent(nodeId)}`
@@ -55,10 +55,10 @@ function fromTimestampOrDate(tsOrDate) {
 }
 
 export function setAndPreserveLocationParams(params){
-  let queryParams = queryString.parse(window.location.search, {arrayFormat: 'comma'})
+  let queryParams = queryString.parse(window.location.search, {arrayFormat: "comma"})
   let resultParams = _.omitBy(Object.assign({}, queryParams, params), (e) => {
     return e == null || e === "" || e === 0
   })
 
-  return queryString.stringify(resultParams, {arrayFormat: 'comma'})
+  return queryString.stringify(resultParams, {arrayFormat: "comma"})
 }
