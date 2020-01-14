@@ -1,5 +1,5 @@
 import {isEmpty} from "lodash"
-import {$FlowTODO} from "../../migrationTypes"
+import {$TodoType} from "../../migrationTypes"
 import {ThunkAction} from "../../reduxTypes"
 import {EventInfo, reportEvent} from "../reportEvent"
 
@@ -9,7 +9,7 @@ export type ToggleConfirmDialogAction = {
   text: string;
   confirmText: string;
   denyText: string;
-  onConfirmCallback: $FlowTODO;
+  onConfirmCallback: $TodoType;
 }
 
 export function toggleConfirmDialog(

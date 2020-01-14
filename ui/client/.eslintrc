@@ -75,6 +75,7 @@
       "files": ["*.ts", "*.tsx"],
       "parser": "@typescript-eslint/parser",
       "extends": [
+        "plugin:import/typescript",
         "plugin:@typescript-eslint/recommended",
         "plugin:react/recommended"
       ]

@@ -1,7 +1,7 @@
 import {events} from "../../analytics/TrackingEvents"
 import NodeUtils from "../../components/graph/NodeUtils"
 import HttpService from "../../http/HttpService"
-import {$FlowTODO} from "../migrationTypes"
+import {$TodoType} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 import {GroupId, GroupType, NodeId, NodeType, Process} from "./models"
 import {reportEvent} from "./reportEvent"
@@ -87,7 +87,7 @@ export type EditGroupAction = {
   type: "EDIT_GROUP";
   oldGroupId: GroupId;
   newGroup: GroupType;
-  validationResult: $FlowTODO;
+  validationResult: $TodoType;
 }
 
 export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupType): ThunkAction {

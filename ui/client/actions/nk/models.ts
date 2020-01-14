@@ -1,4 +1,6 @@
-export type Edge = any;
+import {$TodoType} from "../migrationTypes"
+
+export type Edge = $TodoType;
 
 export type GroupId = string;
 export type GroupType = {
@@ -10,4 +12,4 @@ export type NodeType = {
   id: NodeId;
 };
 
-export type Process = {}
+export type Process = $TodoType

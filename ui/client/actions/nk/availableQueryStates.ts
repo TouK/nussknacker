@@ -1,13 +1,13 @@
 import HttpService from "../../http/HttpService"
-import {$FlowTODO} from "../migrationTypes"
+import {$TodoType} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export type AvailableQueryStatesAction = {
   type: "AVAILABLE_QUERY_STATES";
-  availableQueryableStates: $FlowTODO;
+  availableQueryableStates: $TodoType;
 }
 
-export function availableQueryStates(data: $FlowTODO): AvailableQueryStatesAction {
+export function availableQueryStates(data: $TodoType): AvailableQueryStatesAction {
   return {
     type: "AVAILABLE_QUERY_STATES",
     availableQueryableStates: data,

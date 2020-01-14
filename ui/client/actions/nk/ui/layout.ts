@@ -1,25 +1,25 @@
 import {events} from "../../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../../common/VisualizationUrl"
 import history from "../../../history"
+import {$TodoType} from "../../migrationTypes"
 import {ThunkAction} from "../../reduxTypes"
 import {reportEvent} from "../reportEvent"
 
-export type Layout = any;
-export type GraphLayoutFunction = any;
-export type BusinessView = any;
+export type Layout = $TodoType;
+export type GraphLayoutFunction = $TodoType;
+export type BusinessView = $TodoType;
 
-export function layoutChanged(layout: Layout) {
+export type LayoutChangedAction = { layout: Layout; type: "LAYOUT_CHANGED" }
+export type TogglePanelAction = {type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL"}
+
+export function layoutChanged(layout: Layout): LayoutChangedAction {
   return {
     type: "LAYOUT_CHANGED",
     layout: layout,
   }
 }
 
-export type TogglePanelAction = {
-  type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL";
-}
-
-export function toggleLeftPanel() {
+export function toggleLeftPanel(): TogglePanelAction {
   return {
     type: "TOGGLE_LEFT_PANEL",
   }

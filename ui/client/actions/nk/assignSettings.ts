@@ -1,4 +1,4 @@
-import {$FlowTODO} from "../migrationTypes"
+import {$TodoType} from "../migrationTypes"
 
 type MetricsType = {
   url: string;
@@ -16,7 +16,7 @@ type FeaturesType = {
   environmentAlert: { content: string; "cssClass": string };
   commentSettings: { matchExpression: string; link: string };
   intervalTimeSettings: { processes: number; healthCheck: number };
-  deploySettings: $FlowTODO;
+  deploySettings: $TodoType;
 }
 
 type SettingsData = {
@@ -25,7 +25,7 @@ type SettingsData = {
     backend: string;
     authorizeUrl: string;
   };
-  analytics: $FlowTODO;
+  analytics: $TodoType;
 }
 
 export type UiSettingsAction = {

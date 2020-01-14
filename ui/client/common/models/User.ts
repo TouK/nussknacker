@@ -32,7 +32,7 @@ export default class User {
     this.permissions = uniq(flatMap(categoryPermissions))
   }
 
-  hasPermission(permission: Permission, category: PermissionCategory) {
+  hasPermission(permission: Permission, category: PermissionCategory): boolean {
     if (this.isAdmin) {
       return true
     }
@@ -40,19 +40,19 @@ export default class User {
     return permissions.includes(permission)
   }
 
-  canRead(category: PermissionCategory) {
+  canRead(category: PermissionCategory): boolean {
     return this.hasPermission("Read", category)
   }
 
-  canDeploy(category: PermissionCategory) {
+  canDeploy(category: PermissionCategory): boolean {
     return this.hasPermission("Deploy", category)
   }
 
-  canWrite(category: PermissionCategory) {
+  canWrite(category: PermissionCategory): boolean {
     return this.hasPermission("Write", category)
   }
 
-  isWriter() {
+  isWriter(): boolean {
     return this.isAdmin || this.permissions.includes("Write")
   }
 }

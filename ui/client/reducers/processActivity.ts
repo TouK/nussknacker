@@ -1,9 +1,9 @@
-import {$FlowTODO} from "../actions/migrationTypes"
+import {$TodoType} from "../actions/migrationTypes"
 import {Action} from "../actions/reduxTypes"
 
 export type ProcessActivityState = {
-  comments: $FlowTODO[];
-  attachments: $FlowTODO[];
+  comments: $TodoType[];
+  attachments: $TodoType[];
 }
 
 const emptyProcessActivity: ProcessActivityState = {

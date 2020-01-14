@@ -1,11 +1,11 @@
 import HttpService from "../../http/HttpService"
-import {$FlowTODO} from "../migrationTypes"
+import {$TodoType} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export type DisplayProcessActivityAction = {
   type: "DISPLAY_PROCESS_ACTIVITY";
-  comments: $FlowTODO[];
-  attachments: $FlowTODO[];
+  comments: $TodoType[];
+  attachments: $TodoType[];
 }
 
 export function displayProcessActivity(processId: string): ThunkAction {

@@ -1,14 +1,14 @@
-import {$FlowTODO, $Shape} from "../actions/migrationTypes"
+import {$TodoType} from "../actions/migrationTypes"
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 
 type SettingsState = {
-  loggedUser: $Shape<User>;
-  featuresSettings: $FlowTODO;
-  authenticationSettings: $FlowTODO;
-  analyticsSettings: $FlowTODO;
-  processDefinitionData: $FlowTODO;
-  availableQueryableStates: $FlowTODO;
+  loggedUser: Partial<User>;
+  featuresSettings: $TodoType;
+  authenticationSettings: $TodoType;
+  analyticsSettings: $TodoType;
+  processDefinitionData: $TodoType;
+  availableQueryableStates: $TodoType;
 }
 
 const initialState: SettingsState = {

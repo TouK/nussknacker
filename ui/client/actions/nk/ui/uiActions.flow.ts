@@ -3,7 +3,7 @@ import {AddNodeToGroupAction, EditGroupAction, ToggleGroupAction, UnGroupAction}
 import {DisplayModalEdgeDetailsAction, DisplayModalNodeDetailsAction, ToggleInfoModalAction, ToggleModalDialogAction} from "../modal"
 import {ToggleProcessActionModalAction} from "../toggleProcessActionDialog"
 import {SwitchToolTipsHighlightAction} from "../tooltips"
-import {TogglePanelAction} from "./layout"
+import {LayoutChangedAction, TogglePanelAction} from "./layout"
 import {ToggleConfirmDialogAction} from "./toggleConfirmDialog"
 
 export type UiActions =
@@ -18,5 +18,6 @@ export type UiActions =
     | ToggleInfoModalAction
     | ToggleModalDialogAction
     | TogglePanelAction
+    | LayoutChangedAction
     | ToggleProcessActionModalAction
     | UnGroupAction
