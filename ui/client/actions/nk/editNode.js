@@ -1,4 +1,5 @@
 import HttpService from "../../http/HttpService"
+import {calculateProcessAfterChange} from "./process"
 
 export function editNode(process, before, after) {
   return (dispatch) => {
