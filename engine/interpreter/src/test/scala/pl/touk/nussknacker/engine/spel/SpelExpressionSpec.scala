@@ -165,7 +165,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parsed.isValid shouldBe true
 
     val invalid = parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)
-    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT'")))
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in pl.touk.nussknacker.engine.spel.SampleGlobalObject$")))
 
   }
 
