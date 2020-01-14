@@ -5,6 +5,7 @@ const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
 const CopyPlugin = require("copy-webpack-plugin")
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
@@ -118,6 +119,7 @@ module.exports = {
         this.previouslyPrintedPercentage = decimalPercentage
       }
     }),
+    new ForkTsCheckerWebpackPlugin(),
   ].filter(p => p !== null),
   module: {
     rules: [
