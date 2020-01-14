@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -138,13 +138,9 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T] {
 
-    override val timestampAssigner = Some(new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
-      override def extractTimestamp(element: T): Long = timestamp(element)
-    })
-
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {
-      new FlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
+      new BasicFlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
 
         override val typeInformation = implicitly[TypeInformation[T]]
 
@@ -164,9 +160,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
             ctx.collect(generate(count))
           }
         }
-
-        override val timestampAssigner = RunningSourceFactory.this.timestampAssigner
-
+        
         override def generateTestData(size: Int): Array[Byte] = {
           (1 to size).map(generate).map(_.originalDisplay.getOrElse("")).mkString("\n").getBytes(StandardCharsets.UTF_8)
         }

@@ -99,7 +99,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         new SimpleStringSchema, None, TestParsingUtils.newLineSplit)),
       "kafka-transaction" -> all(FlinkSourceFactory.noParam(prepareNotEndingSource)),
       "boundedSource" -> all(BoundedSource),
-      "oneSource" -> all(FlinkSourceFactory.noParam(new FlinkSource[String] {
+      "oneSource" -> all(FlinkSourceFactory.noParam(new BasicFlinkSource[String] {
 
         override def timestampAssigner = None
 
@@ -124,7 +124,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
         override val typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
       })),
-      "csv-source" -> all(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord]
+      "csv-source" -> all(FlinkSourceFactory.noParam(new BasicFlinkSource[CsvRecord]
         with TestDataParserProvider[CsvRecord] with TestDataGenerator {
 
         override val typeInformation: TypeInformation[CsvRecord] = implicitly[TypeInformation[CsvRecord]]
@@ -151,8 +151,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
 
   //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
-  def prepareNotEndingSource: FlinkSource[String] = {
-    new FlinkSource[String] with TestDataParserProvider[String] {
+  def prepareNotEndingSource: BasicFlinkSource[String] = {
+    new BasicFlinkSource[String] with TestDataParserProvider[String] {
       override val typeInformation = implicitly[TypeInformation[String]]
 
       override def timestampAssigner = Option(new BoundedOutOfOrdernessTimestampExtractor[String](Time.minutes(10)) {

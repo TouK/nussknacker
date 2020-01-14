@@ -147,10 +147,10 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
 
     def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, DataStream[InterpretationResult]] = {
       //TODO: get rid of cast (but how??)
-      val source = part.obj.asInstanceOf[BaseFlinkSource[Any]]
+      val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
       val start = source
-          .startStream(env, metaData)
+          .sourceStream(env, metaData)
           .process(new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration))
           .map(new RateMeterFunction[Any]("source"))
           .map(InitContextFunction(metaData.id, part.node.id))
