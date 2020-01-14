@@ -1,6 +1,6 @@
 export type SwitchToolTipsHighlightAction = {
-  type: "SWITCH_TOOL_TIPS_HIGHLIGHT",
-  isHighlighted: boolean,
+  type: "SWITCH_TOOL_TIPS_HIGHLIGHT";
+  isHighlighted: boolean;
 };
 
 export function enableToolTipsHighlight() {

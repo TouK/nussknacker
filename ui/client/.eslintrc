@@ -7,8 +7,7 @@
   "parser": "babel-eslint",
   "extends": [
     "plugin:import/errors",
-    "plugin:import/warnings",
-    "plugin:flowtype/recommended"
+    "plugin:import/warnings"
   ],
   "globals": {
     "Atomics": "readonly",
@@ -29,9 +28,15 @@
     "@typescript-eslint",
     "react",
     "import",
-    "flowtype",
     "i18next"
   ],
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".ts", ".tsx", ".js", ".jsx", ".json"]
+      }
+    }
+  },
   "rules": {
     "react/jsx-tag-spacing": ["warn", {
       "beforeSelfClosing": "never"
@@ -48,7 +53,7 @@
     "no-template-curly-in-string": "error",
     "quote-props": ["error", "as-needed"],
     "object-curly-spacing": ["error", "never"],
-    "i18next/no-literal-string": ["warn", {
+    "i18next/no-literal-string": [0, {
       "ignore": [
         "-icon", "glyphicon",
         ".svg", ".jpg", ".jpeg", ".png"
@@ -64,5 +69,15 @@
         "svgFile", "bounds"
       ]
     }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "parser": "@typescript-eslint/parser",
+      "extends": [
+        "plugin:@typescript-eslint/recommended",
+        "plugin:react/recommended"
+      ]
+    }
+  ]
 }

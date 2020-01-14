@@ -9,22 +9,22 @@ import {Edge, NodeType} from "./models"
 import {EventInfo, reportEvent} from "./reportEvent"
 
 export type DisplayModalNodeDetailsAction = {
-  type: "DISPLAY_MODAL_NODE_DETAILS",
-  nodeToDisplay: NodeType,
-  nodeToDisplayReadonly: boolean,
+  type: "DISPLAY_MODAL_NODE_DETAILS";
+  nodeToDisplay: NodeType;
+  nodeToDisplayReadonly: boolean;
 }
 export type DisplayModalEdgeDetailsAction = {
-  type: "DISPLAY_MODAL_EDGE_DETAILS",
-  edgeToDisplay: Edge,
+  type: "DISPLAY_MODAL_EDGE_DETAILS";
+  edgeToDisplay: Edge;
 }
 export type ToggleModalDialogAction = {
-  type: "TOGGLE_MODAL_DIALOG",
-  openDialog: DialogType,
+  type: "TOGGLE_MODAL_DIALOG";
+  openDialog: DialogType;
 }
 export type ToggleInfoModalAction = {
-  type: "TOGGLE_INFO_MODAL",
-  openDialog: DialogType,
-  text: string,
+  type: "TOGGLE_INFO_MODAL";
+  openDialog: DialogType;
+  text: string;
 }
 
 export function displayModalNodeDetails(node: NodeType, readonly: boolean, eventInfo: EventInfo): ThunkAction {

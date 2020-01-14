@@ -3,9 +3,9 @@ import {$FlowTODO} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export type DisplayProcessActivityAction = {
-  type: "DISPLAY_PROCESS_ACTIVITY",
-  comments: $FlowTODO[],
-  attachments: $FlowTODO[],
+  type: "DISPLAY_PROCESS_ACTIVITY";
+  comments: $FlowTODO[];
+  attachments: $FlowTODO[];
 }
 
 export function displayProcessActivity(processId: string): ThunkAction {

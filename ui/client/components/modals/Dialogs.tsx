@@ -40,3 +40,4 @@ export const types: { [k: string]: DialogType } = {
 }
 
 export default {types, AllDialogs}
+

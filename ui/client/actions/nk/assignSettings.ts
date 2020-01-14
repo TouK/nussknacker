@@ -1,36 +1,36 @@
 import {$FlowTODO} from "../migrationTypes"
 
 type MetricsType = {
-  url: string,
-  defaultDashboard: string,
-  processingTypeToDashboard: {},
+  url: string;
+  defaultDashboard: string;
+  processingTypeToDashboard: {};
 }
 
 type FeaturesType = {
-  counts: boolean,
-  attachments: boolean,
-  signals: boolean,
-  search: { url: string },
-  metrics: MetricsType,
-  remoteEnvironment: { targetEnvironmentId: "development" | string },
-  environmentAlert: { content: string, "cssClass": string },
-  commentSettings: { matchExpression: string, link: string },
-  intervalTimeSettings: { processes: number, healthCheck: number },
-  deploySettings: $FlowTODO,
+  counts: boolean;
+  attachments: boolean;
+  signals: boolean;
+  search: { url: string };
+  metrics: MetricsType;
+  remoteEnvironment: { targetEnvironmentId: "development" | string };
+  environmentAlert: { content: string; "cssClass": string };
+  commentSettings: { matchExpression: string; link: string };
+  intervalTimeSettings: { processes: number; healthCheck: number };
+  deploySettings: $FlowTODO;
 }
 
 type SettingsData = {
-  features: FeaturesType,
+  features: FeaturesType;
   authentication: {
-    backend: string,
-    authorizeUrl: string,
-  },
-  analytics: $FlowTODO,
+    backend: string;
+    authorizeUrl: string;
+  };
+  analytics: $FlowTODO;
 }
 
 export type UiSettingsAction = {
-  type: "UI_SETTINGS",
-  settings: SettingsData,
+  type: "UI_SETTINGS";
+  settings: SettingsData;
 }
 
 export function assignSettings(settings: SettingsData): UiSettingsAction {

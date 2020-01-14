@@ -2,10 +2,10 @@ import {ThunkAction} from "../reduxTypes"
 import {reportEvent} from "./reportEvent"
 
 export type ToggleProcessActionModalAction = {
-  type: "TOGGLE_PROCESS_ACTION_MODAL",
-  message: string,
-  action: string,
-  displayWarnings: boolean,
+  type: "TOGGLE_PROCESS_ACTION_MODAL";
+  message: string;
+  action: string;
+  displayWarnings: boolean;
 }
 
 export function toggleProcessActionDialog(message: string, action: string, displayWarnings: boolean): ThunkAction {

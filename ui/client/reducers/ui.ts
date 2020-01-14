@@ -4,27 +4,27 @@ import {Action} from "../actions/reduxTypes"
 import Dialogs, {DialogType} from "../components/modals/Dialogs"
 
 type UiState = {
-  leftPanelIsOpened: boolean,
-  rightPanelIsOpened: boolean,
-  showNodeDetailsModal: boolean,
-  showEdgeDetailsModal: boolean,
+  leftPanelIsOpened: boolean;
+  rightPanelIsOpened: boolean;
+  showNodeDetailsModal: boolean;
+  showEdgeDetailsModal: boolean;
   confirmDialog: $Shape<{
-    isOpen: boolean,
-    text: string,
-    confirmText: string,
-    denyText: string,
-    onConfirmCallback: $FlowTODO,
-  }>,
+    isOpen: boolean;
+    text: string;
+    confirmText: string;
+    denyText: string;
+    onConfirmCallback: $FlowTODO;
+  }>;
   modalDialog: $Shape<{
-    openDialog: DialogType,
-    message: string,
-    action: string,
-    displayWarnings: boolean,
-    text: string,
-  }>,
-  expandedGroups: GroupId[],
-  allModalsClosed: boolean,
-  isToolTipsHighlighted: boolean,
+    openDialog: DialogType;
+    message: string;
+    action: string;
+    displayWarnings: boolean;
+    text: string;
+  }>;
+  expandedGroups: GroupId[];
+  allModalsClosed: boolean;
+  isToolTipsHighlighted: boolean;
 };
 
 const emptyUiState: UiState = {

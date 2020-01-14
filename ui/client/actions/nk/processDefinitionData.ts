@@ -3,8 +3,8 @@ import {$FlowTODO} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export type ProcessDefinitionDataAction = {
-  type: "PROCESS_DEFINITION_DATA",
-  processDefinitionData: $FlowTODO,
+  type: "PROCESS_DEFINITION_DATA";
+  processDefinitionData: $FlowTODO;
 }
 
 export function processDefinitionData(data: $FlowTODO): ProcessDefinitionDataAction {

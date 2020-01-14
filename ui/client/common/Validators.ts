@@ -1,15 +1,15 @@
 import _ from "lodash"
 
 export type Validator = {
-    isValid: (...args: any[]) => boolean,
-    message: string,
-    description: string
+    isValid: (...args: any[]) => boolean;
+    message: string;
+    description: string;
 }
 
 type ErrorType = {
-  fieldName: string,
-  message: string,
-  description: string,
+  fieldName: string;
+  message: string;
+  description: string;
 }
 
 export const canNotBeEmpty = "This field cannot be empty"
@@ -20,7 +20,6 @@ export const notEmptyValidator: Validator = {
   message: canNotBeEmpty,
   description: canNotBeEmpty,
 }
-
 
 export function errorValidator(errors: Array<ErrorType>, fieldName: string): Validator {
   const error = errors.find(error => error.fieldName === fieldName)

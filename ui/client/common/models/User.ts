@@ -7,12 +7,12 @@ type CategoryPermissions = Record<PermissionCategory, Permission[]>
 type GlobalPermissions = Record<string, boolean>
 
 export type UserData = {
-  permissions: Permission[],
-  categoryPermissions: CategoryPermissions,
-  categories: PermissionCategory[],
-  isAdmin: boolean,
-  globalPermissions: GlobalPermissions,
-  id: string,
+  permissions: Permission[];
+  categoryPermissions: CategoryPermissions;
+  categories: PermissionCategory[];
+  isAdmin: boolean;
+  globalPermissions: GlobalPermissions;
+  id: string;
 }
 
 export default class User {

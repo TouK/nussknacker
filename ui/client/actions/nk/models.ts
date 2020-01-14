@@ -10,5 +10,4 @@ export type NodeType = {
   id: NodeId;
 };
 
-export interface Process {
-}
+export type Process = {}

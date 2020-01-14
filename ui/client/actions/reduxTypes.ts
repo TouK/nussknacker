@@ -1,8 +1,8 @@
 import {Reducer as ReduxReducer, Store as ReduxStore} from "redux"
 import {ActionTypes} from "./actionTypes"
 import {$FlowTODO} from "./migrationTypes"
-import {ReportEventAction} from "./nk"
 import {DisplayProcessActivityAction} from "./nk/displayProcessActivity"
+import {ReportEventAction} from "./nk/reportEvent"
 import {UiActions} from "./nk/ui/uiActions.flow"
 import {SettingsActions} from "./settingsActions"
 

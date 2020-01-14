@@ -16,7 +16,7 @@ export function layoutChanged(layout: Layout) {
 }
 
 export type TogglePanelAction = {
-  type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL",
+  type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL";
 }
 
 export function toggleLeftPanel() {

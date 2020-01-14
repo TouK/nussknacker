@@ -53,7 +53,7 @@ module.exports = {
     maxAssetSize: 3000000,
   },
   resolve: {
-    extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+    extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
     alias: {
       "react-dom": "@hot-loader/react-dom",
     },

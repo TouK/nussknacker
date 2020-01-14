@@ -3,8 +3,8 @@ import {$FlowTODO} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export type AvailableQueryStatesAction = {
-  type: "AVAILABLE_QUERY_STATES",
-  availableQueryableStates: $FlowTODO,
+  type: "AVAILABLE_QUERY_STATES";
+  availableQueryableStates: $FlowTODO;
 }
 
 export function availableQueryStates(data: $FlowTODO): AvailableQueryStatesAction {
