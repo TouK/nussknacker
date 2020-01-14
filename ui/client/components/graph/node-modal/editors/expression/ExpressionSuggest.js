@@ -1,26 +1,23 @@
-// eslint-disable-next-line import/no-unresolved
-import "ace-builds/src-noconflict/ext-language_tools"
-// eslint-disable-next-line import/no-unresolved
-import "ace-builds/src-noconflict/ext-searchbox"
-// eslint-disable-next-line import/no-unresolved
-import "ace-builds/src-noconflict/mode-jsx"
-import _ from "lodash"
-import PropTypes from "prop-types"
 import React from "react"
-
-import AceEditor from "react-ace"
+import PropTypes from "prop-types"
 import ReactDOMServer from "react-dom/server"
 import {connect} from "react-redux"
+import _ from "lodash"
 import ActionsUtils from "../../../../../actions/ActionsUtils"
+import ProcessUtils from "../../../../../common/ProcessUtils"
+import ExpressionSuggester from "./ExpressionSuggester"
+
+import AceEditor from "react-ace"
+import "ace-builds/src-noconflict/mode-jsx"
+import "ace-builds/src-noconflict/ext-language_tools"
+import "ace-builds/src-noconflict/ext-searchbox"
 
 import "../../../../../brace/mode/spel"
 import "../../../../../brace/mode/sql"
 import "../../../../../brace/theme/nussknacker"
-import ProcessUtils from "../../../../../common/ProcessUtils"
-import {allValid} from "../../../../../common/Validators"
-import HttpService from "../../../../../http/HttpService"
 import ValidationLabels from "../../../../modals/ValidationLabels"
-import ExpressionSuggester from "./ExpressionSuggester"
+import HttpService from "../../../../../http/HttpService"
+import {allValid} from "../../../../../common/Validators"
 
 //to reconsider
 // - respect categories for global variables?
