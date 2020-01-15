@@ -22,7 +22,8 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Try
 
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions{
@@ -95,34 +96,30 @@ object TestFactory extends TestPermissions{
 
     import ExecutionContext.Implicits.global
 
-    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] = Future {
-      Thread.sleep(sleepBeforeAnswer.get())
-      if (failDeployment.get()) {
-        throw new RuntimeException("Failing deployment...")
-      } else {
-        ()
-      }
-    }
+    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] =
+      deployResult
 
-    private val sleepBeforeAnswer = new AtomicLong(0)
-    private val failDeployment = new AtomicBoolean(false)
+    private var deployResult: Future[Unit] = Future.successful()
+
     private val managerProcessState = new AtomicReference[StateStatus](SimpleStateStatus.Running)
 
-    def withLongerSleepBeforeAnswer[T](action: => T): T = {
+    def withWaitForDeployFinish[T](action: => T): T = {
+      val promise = Promise[Unit]
       try {
-        sleepBeforeAnswer.set(500)
+        deployResult = promise.future
         action
       } finally {
-        sleepBeforeAnswer.set(0)
+        promise.complete(Try(Unit))
+        deployResult = Future.successful()
       }
     }
 
     def withFailingDeployment[T](action: => T): T = {
+      deployResult = Future.failed(new RuntimeException("Failing deployment..."))
       try {
-        failDeployment.set(true)
         action
       } finally {
-        failDeployment.set(false)
+        deployResult = Future.successful()
       }
     }
 

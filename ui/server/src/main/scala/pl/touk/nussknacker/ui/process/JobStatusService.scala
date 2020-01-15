@@ -14,7 +14,7 @@ class JobStatusService(managerActor: ActorRef) {
   import scala.concurrent.duration._
 
   def retrieveJobStatus(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessStatus]] = {
-    implicit val timeout = Timeout(1 minute)
+    implicit val timeout: Timeout = Timeout(1 minute)
     (managerActor ? CheckStatus(processId, user)).mapTo[Option[ProcessStatus]]
   }
 }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
 class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
 
@@ -43,6 +44,18 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
   private val jobStatusService = new JobStatusService(managementActor)
 
+  test("should return state correctly when state is deployed") {
+    val id: process.ProcessId =  prepareProcess(processName).futureValue
+
+    processManager.withWaitForDeployFinish {
+      managementActor ! Deploy(ProcessIdWithName(id, processName), user, None, None)
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.DuringDeploy)
+    }
+    eventually {
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    }
+  }
+
   test("Should mark finished process as finished") {
 
     val id: process.ProcessId = prepareDeployedProcess(processName)
@@ -64,9 +77,15 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
   private def prepareDeployedProcess(processName: ProcessName): process.ProcessId = {
     (for {
-      _ <- writeProcessRepository.saveNewProcess(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
-      id <- processRepository.fetchProcessId(processName).map(_.get)
+      id <- prepareProcess(processName)
       _ <- deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", env, Some("one"))
     } yield id).futureValue
+  }
+
+  private def prepareProcess(processName: ProcessName): Future[process.ProcessId] = {
+    for {
+      _ <- writeProcessRepository.saveNewProcess(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
+      id <- processRepository.fetchProcessId(processName).map(_.get)
+    } yield id
   }
 }
