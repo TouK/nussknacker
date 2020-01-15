@@ -4,8 +4,7 @@ import java.net.URI
 
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 
@@ -24,13 +23,36 @@ object ProcessStatus {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
-  def simple(status: StateStatus, deploymentId: Option[String]): ProcessStatus = ProcessStatus(
-    status,
-    deploymentId,
-    allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
-    icon = SimpleProcessStateDefinitionManager.statusIcon(status),
-    tooltip = SimpleProcessStateDefinitionManager.statusTooltip(status)
-  )
+  def simple(status: StateStatus,
+             deploymentId: Option[String] = Option.empty,
+             startTime: Option[Long] = Option.empty,
+             attributes: Option[Json] = Option.empty,
+             errorMessage: Option[String] = Option.empty): ProcessStatus =
+    create(
+      status,
+      SimpleProcessStateDefinitionManager,
+      deploymentId,
+      startTime,
+      attributes,
+      errorMessage
+    )
+
+  def create(status: StateStatus,
+             processStateDefinitionManager: ProcessStateDefinitionManager,
+             deploymentId: Option[String] ,
+             startTime: Option[Long],
+             attributes: Option[Json],
+             errorMessage: Option[String]): ProcessStatus =
+    ProcessStatus(
+      status,
+      deploymentId,
+      allowedActions = processStateDefinitionManager.statusActions(status),
+      icon = processStateDefinitionManager.statusIcon(status),
+      tooltip = processStateDefinitionManager.statusTooltip(status),
+      startTime,
+      attributes,
+      errorMessage
+    )
 
   def create(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {
     val versionMatchMessage = (processState.version, expectedDeploymentVersion) match {
@@ -53,7 +75,7 @@ object ProcessStatus {
     )
   }
 
-  val failedToGet: ProcessStatus = simple(SimpleStateStatus.FailedToGet, Option.empty)
+  val failedToGet: ProcessStatus = simple(SimpleStateStatus.FailedToGet)
 
-  val notFound: ProcessStatus = simple(SimpleStateStatus.NotFound, Option.empty)
+  val notFound: ProcessStatus = simple(SimpleStateStatus.NotFound)
 }
