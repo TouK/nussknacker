@@ -1,3 +1,5 @@
+/* eslint-disable i18next/no-literal-string */
+
 //fixme remove
 class EspModalStyles {
 

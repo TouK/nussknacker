@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 export const events = {
   categories: {
     rightPanel: "right_panel",

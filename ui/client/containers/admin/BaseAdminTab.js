@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import * as  queryString from "query-string"
 import React from "react"
 import * as VisualizationUrl from "../../common/VisualizationUrl"

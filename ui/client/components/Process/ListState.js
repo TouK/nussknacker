@@ -43,6 +43,7 @@ export default class ListState extends React.Component {
     const {process, state, isStateLoaded} = this.props
     const icon = this.getIcon(process, state, isStateLoaded)
     const tooltip = this.getTooltip(process, state, isStateLoaded)
+    // eslint-disable-next-line i18next/no-literal-string
     const iconClass = `state-list${isStateLoaded === false ? " state-pending" : ""}`
     const transitionKey = `${process.id}-${icon}`
 

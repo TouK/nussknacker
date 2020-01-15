@@ -61,12 +61,13 @@
       "ignoreCallee": [
         "t", "withTranslation", "useTranslation",
         "reportEvent", "headerStyles",
-        "_.get",
-        "api.get",
-        "describe", "it", "expect", "toBe", "toEqual"
+        "_.get", "_.pick", "_.has",
+        "api.get", "api.post",
+        "describe"
       ],
       "ignoreAttribute": [
-        "svgFile", "bounds"
+        "svgFile", "bounds", "handle", "column", "glyph", "value",
+        "classNames", "className", "valueClassName", "rowClassName", "fieldType", "classNamePrefix"
       ]
     }]
   },

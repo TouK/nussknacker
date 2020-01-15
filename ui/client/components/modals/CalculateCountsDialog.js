@@ -13,8 +13,8 @@ import GenericModalDialog from "./GenericModalDialog"
 
 class CalculateCountsDialog extends React.Component {
   //React Datepicker supports different time format
-  dateFormat="yyyy-MM-dd HH:mm:ss"
-  timeFormat="HH:mm:ss"
+  dateFormat="yyyy-MM-dd HH:mm:ss" // eslint-disable-line i18next/no-literal-string
+  timeFormat="HH:mm:ss" // eslint-disable-line i18next/no-literal-string
 
   predefinedRanges = [
     {
