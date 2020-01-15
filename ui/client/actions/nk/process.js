@@ -6,6 +6,7 @@ import * as SubprocessSchemaAligner from "../../components/graph/SubprocessSchem
 import HttpService from "../../http/HttpService"
 import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
+import {fetchProcessDefinition} from "./processDefinitionData"
 import {reportEvent} from "./reportEvent"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {

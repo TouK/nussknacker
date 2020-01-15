@@ -1,7 +1,8 @@
 {
   "env": {
     "browser": true,
-    "es6": true
+    "es6": true,
+    "node": true
   },
   "parser": "babel-eslint",
   "extends": [
@@ -11,7 +12,11 @@
   ],
   "globals": {
     "Atomics": "readonly",
-    "SharedArrayBuffer": "readonly"
+    "SharedArrayBuffer": "readonly",
+    "__webpack_public_path__": "readonly",
+    "__DEV__": "readonly",
+    "__GIT__": "readonly",
+    "_": "readonly" // TODO: remove lodash from global, fix imports
   },
   "parserOptions": {
     "ecmaFeatures": {
@@ -30,6 +35,7 @@
     "react/jsx-tag-spacing": ["warn", {
       "beforeSelfClosing": "never"
     }],
+    "no-undef": "error",
     "comma-dangle": ["warn", "always-multiline"],
     "no-multiple-empty-lines": ["warn", { "max": 1, "maxEOF": 0, "maxBOF": 0}],
     "eol-last": ["warn", "never"],
