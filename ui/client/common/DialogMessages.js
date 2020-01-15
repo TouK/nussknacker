@@ -1,4 +1,3 @@
-
 class DialogMessages {
   unsavedProcessChanges = () => {
     return "There are some unsaved process changes. Do you want to discard unsaved changes?"

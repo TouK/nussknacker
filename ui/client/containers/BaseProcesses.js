@@ -1,12 +1,12 @@
-import React from "react"
-import * as VisualizationUrl from "../common/VisualizationUrl"
 import * as _ from "lodash"
 import * as  queryString from "query-string"
+import React from "react"
+import ProcessStateUtils from "../common/ProcessStateUtils"
+import * as VisualizationUrl from "../common/VisualizationUrl"
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
-import HttpService from "../http/HttpService"
 import history from "../history"
+import HttpService from "../http/HttpService"
 import Metrics from "./Metrics"
-import ProcessStateUtils from "../common/ProcessStateUtils";
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ["categories"]
@@ -25,7 +25,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     const query = queryString.parse(this.props.history.location.search, {
       arrayFormat: "comma",
       parseNumbers: true,
-      parseBooleans: true
+      parseBooleans: true,
     })
 
     let state = {
@@ -36,12 +36,12 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
       showAddProcess: false,
       search: query.search || "",
       page: query.page || 0,
-      sort: {column: query.column || "name", direction: query.direction || 1}
+      sort: {column: query.column || "name", direction: query.direction || 1},
     }
 
     if (withoutCategories == null) {
       Object.assign(state, {
-        selectedCategories: this.retrieveSelectedCategories(query.categories)
+        selectedCategories: this.retrieveSelectedCategories(query.categories),
       })
     }
 
@@ -95,11 +95,11 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   loadClashedNames = (searchParams, fetch) => {
-    const query = _.pick(queryString.parse(window.location.search), this.searchItems || []);
+    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
     const data = Object.assign(query, searchParams)
     fetch(data).then(response => {
       this.setState((prevState, props) => ({
-        clashedNames: prevState.clashedNames.concat(response.data.map(process => process.name))
+        clashedNames: prevState.clashedNames.concat(response.data.map(process => process.name)),
       }))
     })
   }

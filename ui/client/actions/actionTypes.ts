@@ -1,4 +1,3 @@
-// @flow
 export type ActionTypes =
     | "TOGGLE_CONFIRM_DIALOG"
     | "USER_TRACKING"

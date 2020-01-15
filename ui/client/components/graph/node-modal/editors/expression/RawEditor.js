@@ -1,12 +1,12 @@
+import PropTypes from "prop-types"
 import React from "react"
 import ExpressionSuggest from "./ExpressionSuggest"
-import PropTypes from "prop-types"
 
 export default function RawEditor(props) {
 
   const {
     fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows, cols, className
+    onValueChange, rows, cols, className,
   } = props
 
   return (
@@ -20,7 +20,7 @@ export default function RawEditor(props) {
             value: expressionObj.expression,
             language: expressionObj.language,
             onValueChange: onValueChange,
-            readOnly: readOnly
+            readOnly: readOnly,
           }}
           validators={validators}
           isMarked={isMarked}
@@ -39,12 +39,12 @@ RawEditor.propTypes = {
   readOnly: PropTypes.bool,
   validators: PropTypes.array,
   isMarked: PropTypes.bool,
-  showValidation: PropTypes.bool
+  showValidation: PropTypes.bool,
 }
 
 RawEditor.defaultProps = {
   rows: 1,
-  cols: 50
+  cols: 50,
 }
 
 RawEditor.supportedFieldTypes = ["String", "Boolean", "expression"]

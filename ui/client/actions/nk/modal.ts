@@ -1,32 +1,30 @@
-// @flow
 import _ from "lodash"
 import {events} from "../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import NodeUtils from "../../components/graph/NodeUtils"
-import type {DialogType} from "../../components/modals/Dialogs"
+import {DialogType} from "../../components/modals/Dialogs"
 import history from "../../history"
-import type {ThunkAction} from "../reduxTypes.flow"
-import type {Edge, NodeType} from "./models.flow"
-import type {EventInfo} from "./reportEvent"
-import {reportEvent} from "./reportEvent"
+import {ThunkAction} from "../reduxTypes"
+import {Edge, NodeType} from "./models"
+import {EventInfo, reportEvent} from "./reportEvent"
 
 export type DisplayModalNodeDetailsAction = {
-  type: "DISPLAY_MODAL_NODE_DETAILS",
-  nodeToDisplay: NodeType,
-  nodeToDisplayReadonly: boolean,
+  type: "DISPLAY_MODAL_NODE_DETAILS";
+  nodeToDisplay: NodeType;
+  nodeToDisplayReadonly: boolean;
 }
 export type DisplayModalEdgeDetailsAction = {
-  type: "DISPLAY_MODAL_EDGE_DETAILS",
-  edgeToDisplay: Edge,
+  type: "DISPLAY_MODAL_EDGE_DETAILS";
+  edgeToDisplay: Edge;
 }
 export type ToggleModalDialogAction = {
-  type: "TOGGLE_MODAL_DIALOG",
-  openDialog: DialogType,
+  type: "TOGGLE_MODAL_DIALOG";
+  openDialog: DialogType;
 }
 export type ToggleInfoModalAction = {
-  type: "TOGGLE_INFO_MODAL",
-  openDialog: DialogType,
-  text: string,
+  type: "TOGGLE_INFO_MODAL";
+  openDialog: DialogType;
+  text: string;
 }
 
 export function displayModalNodeDetails(node: NodeType, readonly: boolean, eventInfo: EventInfo): ThunkAction {

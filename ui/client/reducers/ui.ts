@@ -1,31 +1,18 @@
-// @flow
-import type {GroupId} from "../actions/nk/models.flow"
-import type {Action} from "../actions/reduxTypes.flow"
-import type {DialogType} from "../components/modals/Dialogs"
-import Dialogs from "../components/modals/Dialogs"
+import {$TodoType} from "../actions/migrationTypes"
+import {GroupId} from "../actions/nk/models"
+import {Action} from "../actions/reduxTypes"
+import {DialogType, types} from "../components/modals/Dialogs"
 
 type UiState = {
-  leftPanelIsOpened: boolean,
-  rightPanelIsOpened: boolean,
-  showNodeDetailsModal: boolean,
-  showEdgeDetailsModal: boolean,
-  confirmDialog: $Shape<{
-    isOpen: boolean,
-    text: string,
-    confirmText: string,
-    denyText: string,
-    onConfirmCallback: $FlowTODO,
-  }>,
-  modalDialog: $Shape<{
-    openDialog: DialogType,
-    message: string,
-    action: string,
-    displayWarnings: boolean,
-    text: string,
-  }>,
-  expandedGroups: GroupId[],
-  allModalsClosed: boolean,
-  isToolTipsHighlighted: boolean,
+  leftPanelIsOpened: boolean;
+  rightPanelIsOpened: boolean;
+  showNodeDetailsModal: boolean;
+  showEdgeDetailsModal: boolean;
+  confirmDialog: Partial<{ isOpen: boolean; text: string; confirmText: string; denyText: string; onConfirmCallback: $TodoType }>;
+  modalDialog: Partial<{ openDialog: DialogType; message: string; action: string; displayWarnings: boolean; text: string }>;
+  expandedGroups: GroupId[];
+  allModalsClosed: boolean;
+  isToolTipsHighlighted: boolean;
 };
 
 const emptyUiState: UiState = {
@@ -117,7 +104,7 @@ export function reducer(state: UiState = emptyUiState, action: Action): UiState 
       return withAllModalsClosed({
         ...state,
         modalDialog: {
-          openDialog: Dialogs.types.processAction,
+          openDialog: types.processAction,
           message: action.message,
           action: action.action,
           displayWarnings: action.displayWarnings,

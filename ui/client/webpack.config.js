@@ -5,6 +5,7 @@ const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
 const CopyPlugin = require("copy-webpack-plugin")
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
@@ -12,7 +13,7 @@ const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
 const entry = {
-  main: path.resolve(__dirname,"./index.js"),
+  main: path.resolve(__dirname, "./index.js"),
 }
 
 let previouslyPrintedPercentage = 0
@@ -52,6 +53,7 @@ module.exports = {
     maxAssetSize: 3000000,
   },
   resolve: {
+    extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
     alias: {
       "react-dom": "@hot-loader/react-dom",
     },
@@ -117,6 +119,7 @@ module.exports = {
         this.previouslyPrintedPercentage = decimalPercentage
       }
     }),
+    new ForkTsCheckerWebpackPlugin(),
   ].filter(p => p !== null),
   module: {
     rules: [
@@ -125,7 +128,7 @@ module.exports = {
         loader: "html-loader?minimize=false",
       },
       {
-        test: /\.js$/,
+        test: /\.[tj]sx?$/,
         use: ["babel-loader"],
         exclude: /node_modules/,
         include: __dirname,

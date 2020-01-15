@@ -13,7 +13,7 @@ export function mapProcessWithNewNode(process, before, after) {
       }
     }),
     nodes: _.map(process.nodes, (n) => { return _.isEqual(n, before) ? after : n }),
-    properties: NodeUtils.nodeIsProperties(before) ? after : process.properties
+    properties: NodeUtils.nodeIsProperties(before) ? after : process.properties,
   }
 }
 
@@ -26,7 +26,7 @@ export function mapProcessWithNewEdge(process, before, after) {
       } else {
         return e
       }
-    })
+    }),
   }
 }
 
@@ -34,7 +34,7 @@ export function deleteNode(process, id) {
   return {
     ...process,
     edges: _.filter(process.edges, (e) => !_.isEqual(e.from, id) && !_.isEqual(e.to, id)),
-    nodes: _.filter(process.nodes, (n) => !_.isEqual(n.id, id))
+    nodes: _.filter(process.nodes, (n) => !_.isEqual(n.id, id)),
   }
 }
 
@@ -49,14 +49,14 @@ export function canInjectNode(process, sourceId, middleManId, targetId, processD
 function deleteEdge(process, fromId, toId) {
   return {
   ...process,
-    edges: _.reject(process.edges, (e) => e.from === fromId && e.to === toId)
+    edges: _.reject(process.edges, (e) => e.from === fromId && e.to === toId),
   }
 }
 
 function addEdge(process, fromId, toId) {
   return {
     ...process,
-    edges: process.edges.concat({from: fromId, to: toId})
+    edges: process.edges.concat({from: fromId, to: toId}),
   }
 }
 

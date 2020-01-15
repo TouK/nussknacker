@@ -1,9 +1,9 @@
-import {API_URL} from "../config"
-import React from "react"
 import FileSaver from "file-saver"
-import api from "../api"
 import * as _ from "lodash"
-import * as queryString from "query-string";
+import * as queryString from "query-string"
+import React from "react"
+import api from "../api"
+import {API_URL} from "../config"
 
 let notificationActions = null
 let notificationReload = null
@@ -302,5 +302,5 @@ export default {
 
   fetchOAuth2AccessToken(authorizeCode) {
     return api.get(`/authentication/oauth2?code=${authorizeCode}`)
-  }
+  },
 }

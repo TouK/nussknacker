@@ -1,5 +1,5 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 import EditableExpression from "../expression/EditableExpression"
 
 export default function MapValue(props) {
@@ -31,6 +31,6 @@ MapValue.propTypes = {
   isMarked: PropTypes.bool,
   onChange: PropTypes.func,
   paths: PropTypes.string,
-  showSwitch: PropTypes.bool
+  showSwitch: PropTypes.bool,
 }
 

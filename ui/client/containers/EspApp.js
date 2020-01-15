@@ -4,7 +4,7 @@ import _ from "lodash"
 import Processes from "./Processes"
 import SubProcesses from "./SubProcesses"
 import NotFound from "./errors/NotFound"
-import {nkPath} from "../config"
+import {nkPath} from "../config";
 import {CSSTransition, TransitionGroup} from "react-transition-group"
 import Metrics from "./Metrics"
 import Search from "./Search"

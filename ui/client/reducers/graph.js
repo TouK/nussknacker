@@ -15,16 +15,16 @@ const emptyGraphState = {
   selectionState: [],
   processCounts: {},
   testResults: null,
-  businessView: false
-};
+  businessView: false,
+}
 
-const STATE_PROPERTY_NAME = "groupingState";
+const STATE_PROPERTY_NAME = "groupingState"
 export function reducer(state, action) {
   switch (action.type) {
     case "PROCESS_LOADING": {
       return {
         ...state,
-        graphLoading: true
+        graphLoading: true,
       }
     }
     case "UPDATE_IMPORTED_PROCESS": {
@@ -36,13 +36,13 @@ export function reducer(state, action) {
         ...state,
         graphLoading: false,
         processToDisplay: action.processJson,
-        layout: newLayout
+        layout: newLayout,
       }
     }
     case "UPDATE_TEST_CAPABILITIES": {
       return {
         ...state,
-        testCapabilities: action.capabilities
+        testCapabilities: action.capabilities,
       }
     }
     case "DISPLAY_PROCESS": {
@@ -52,13 +52,13 @@ export function reducer(state, action) {
         fetchedProcessDetails: action.fetchedProcessDetails,
         graphLoading: false,
         nodeToDisplay: action.fetchedProcessDetails.json.properties,
-        layout: [] //needed for displaying historical version
+        layout: [], //needed for displaying historical version
       }
     }
     case "LOADING_FAILED": {
       return {
         ...state,
-        graphLoading: false
+        graphLoading: false,
       }
     }
     case "CLEAR_PROCESS": {
@@ -66,7 +66,7 @@ export function reducer(state, action) {
         ...state,
         processToDisplay: {},
         fetchedProcessDetails: {},
-        testResults: null
+        testResults: null,
       }
     }
     case "DISPLAY_MODAL_NODE_DETAILS":
@@ -76,20 +76,20 @@ export function reducer(state, action) {
         return {
            ...state,
           groupingState: canGroup(state, action.nodeToDisplay) ?
-            _.concat(state.groupingState, newNodeId) : state.groupingState
+            _.concat(state.groupingState, newNodeId) : state.groupingState,
         }
       } else {
         return {
           ...state,
           nodeToDisplay: action.nodeToDisplay,
-          nodeToDisplayReadonly: action.nodeToDisplayReadonly
+          nodeToDisplayReadonly: action.nodeToDisplayReadonly,
         }
       }
 
     case "DISPLAY_MODAL_EDGE_DETAILS": {
       return {
         ...state,
-        edgeToDisplay: action.edgeToDisplay
+        edgeToDisplay: action.edgeToDisplay,
       }
     }
 
@@ -97,13 +97,13 @@ export function reducer(state, action) {
       const processToDisplay = GraphUtils.mapProcessWithNewEdge(
         state.processToDisplay,
         action.before,
-        action.after
-      );
+        action.after,
+      )
       return {
         ...state,
         processToDisplay: {
           ...processToDisplay,
-          validationResult: action.validationResult
+          validationResult: action.validationResult,
         },
         edgeToDisplay: action.after,
       }
@@ -111,13 +111,13 @@ export function reducer(state, action) {
     case "EDIT_NODE": {
       const stateAfterNodeRename = {
         ...state,
-        ...updateAfterNodeIdChange(state.layout, action.processAfterChange, action.before.id, action.after.id)
+        ...updateAfterNodeIdChange(state.layout, action.processAfterChange, action.before.id, action.after.id),
       }
         return {
         ...stateAfterNodeRename,
         processToDisplay: {
           ...stateAfterNodeRename.processToDisplay,
-          validationResult: action.validationResult
+          validationResult: action.validationResult,
         },
         nodeToDisplay: action.after,
       }
@@ -133,14 +133,14 @@ export function reducer(state, action) {
             ...processToDisplay,
             properties: {
               ...processToDisplay.properties,
-              subprocessVersions: newSubprocessVersions
-            }
-          }
+              subprocessVersions: newSubprocessVersions,
+            },
+          },
         }
       }, state)
       return {
         ...stateAfterDelete,
-        nodeToDisplay: stateAfterDelete.processToDisplay.properties
+        nodeToDisplay: stateAfterDelete.processToDisplay.properties,
       }
     }
     case "URL_CHANGED": {
@@ -155,8 +155,8 @@ export function reducer(state, action) {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          edges: _.concat(state.processToDisplay.edges, edge)
-        }
+          edges: _.concat(state.processToDisplay.edges, edge),
+        },
       }
     }
     case "NODES_DISCONNECTED": {
@@ -164,8 +164,8 @@ export function reducer(state, action) {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          edges: _.reject(state.processToDisplay.edges, (e) => e.from === action.from && e.to === action.to)
-        }
+          edges: _.reject(state.processToDisplay.edges, (e) => e.from === action.from && e.to === action.to),
+        },
       }
     }
     case "NODE_ADDED": {
@@ -173,8 +173,8 @@ export function reducer(state, action) {
         state,
         prepareNewNodesWithLayout(state,[{
           node: action.node,
-          position: action.position
-        }], false)
+          position: action.position,
+        }], false),
       )
     }
     case "NODES_WITH_EDGES_ADDED": {
@@ -194,8 +194,8 @@ export function reducer(state, action) {
         ...stateWithNodesAdded,
         processToDisplay: {
           ...stateWithNodesAdded.processToDisplay,
-          edges: updatedEdges
-        }
+          edges: updatedEdges,
+        },
       }
     }
     case "VALIDATION_RESULT": {
@@ -203,42 +203,42 @@ export function reducer(state, action) {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          validationResult: action.validationResult
-        }
+          validationResult: action.validationResult,
+        },
       }
     }
     //TODO: handle it differently?
     case "LAYOUT_CHANGED": {
       return {
         ...state,
-        layout: action.layout
+        layout: action.layout,
       }
     }
     case "DISPLAY_PROCESS_COUNTS": {
       return {
         ...state,
-        processCounts: action.processCounts
+        processCounts: action.processCounts,
       }
     }
     case "DISPLAY_TEST_RESULTS_DETAILS": {
       return {
         ...state,
         testResults: action.testResults,
-        graphLoading: false
+        graphLoading: false,
       }
     }
     case "HIDE_RUN_PROCESS_DETAILS": {
       return {
         ...state,
         testResults: null,
-        processCounts: null
+        processCounts: null,
       }
     }
     case "START_GROUPING": {
       return {
         ...state,
         groupingState: [],
-        nodeToDisplay: state.processToDisplay.properties
+        nodeToDisplay: state.processToDisplay.properties,
       }
     }
     case "FINISH_GROUPING": {
@@ -246,8 +246,8 @@ export function reducer(state, action) {
         {
           ...state,
           processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.groupingState),
-          layout: []
-        } :  state;
+          layout: [],
+        } :  state
       return _.omit(withUpdatedGroups, STATE_PROPERTY_NAME)
     }
     case "CANCEL_GROUPING": {
@@ -265,7 +265,7 @@ export function reducer(state, action) {
     case "COLLAPSE_GROUP": {
       return {
         ...state,
-        layout: []
+        layout: [],
       }
     }
     case "EDIT_GROUP": {
@@ -273,29 +273,29 @@ export function reducer(state, action) {
         ...state,
         processToDisplay: {
           ...NodeUtils.editGroup(state.processToDisplay, action.oldGroupId, action.newGroup),
-          validationResult: action.validationResult
+          validationResult: action.validationResult,
         },
         nodeToDisplay: action.newGroup,
-        layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id)
+        layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id),
       }
     }
     case "EXPAND_SELECTION": {
       return {
         ...state,
-        selectionState: _.uniq(_.concat(state.selectionState, action.nodeId))
+        selectionState: _.uniq(_.concat(state.selectionState, action.nodeId)),
       }
     }
     case "RESET_SELECTION": {
       const selectionState = action.nodeId ? [action.nodeId] : []
       return {
         ...state,
-        selectionState
+        selectionState,
       }
     }
     case "BUSINESS_VIEW_CHANGED": {
       return {
         ...state,
-        businessView: action.businessView
+        businessView: action.businessView,
       }
     }
     default:
@@ -311,11 +311,11 @@ function canGroup(state, newNode) {
 }
 
 function updateAfterNodeIdChange(layout, process, oldId, newId) {
-  const newLayout = updateLayoutAfterNodeIdChange(layout, oldId, newId);
-  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeIdChange(process, oldId, newId);
+  const newLayout = updateLayoutAfterNodeIdChange(layout, oldId, newId)
+  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeIdChange(process, oldId, newId)
   return {
     processToDisplay: withGroupsUpdated,
-    layout: newLayout
+    layout: newLayout,
   }
 }
 
@@ -324,19 +324,19 @@ function updateLayoutAfterNodeIdChange(layout, oldId, newId) {
     if (oldId === n.id) {
       return {
         ...n,
-        id: newId
+        id: newId,
       }
-    } else return n;
-  });
+    } else return n
+  })
 }
 
 function updateAfterNodeDelete(state, idToDelete) {
-  const layoutWithoutNode = _.filter(state.layout, (n) => n.id !== idToDelete);
-  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeDelete(state.processToDisplay, idToDelete);
+  const layoutWithoutNode = _.filter(state.layout, (n) => n.id !== idToDelete)
+  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeDelete(state.processToDisplay, idToDelete)
   return {
     ...state,
     processToDisplay: withGroupsUpdated,
-    layout: layoutWithoutNode
+    layout: layoutWithoutNode,
   }
 }
 
@@ -383,7 +383,7 @@ function prepareNewNodesWithLayout(state, nodesWithPositions, isCopy) {
   return {
     nodes: state.processToDisplay.nodes.concat(updatedNodes),
     layout: state.layout.concat(updatedLayout),
-    uniqueIds
+    uniqueIds,
   }
 }
 
@@ -392,9 +392,9 @@ function addNodes(state, {nodes, layout}) {
     ...state,
     processToDisplay: {
       ...state.processToDisplay,
-      nodes: nodes
+      nodes: nodes,
     },
-    layout: layout
+    layout: layout,
   }
 }
 

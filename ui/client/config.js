@@ -20,5 +20,5 @@ export {
   BACKEND_STATIC_URL,
   DATE_FORMAT as dateFormat,
   DISPLAY_DATE_FORMAT as displayDateFormat,
-  nkPath
+  nkPath,
 }

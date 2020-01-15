@@ -1,24 +1,23 @@
-// @flow
 import {isEmpty} from "lodash"
-import type {ThunkAction} from "../../reduxTypes.flow"
-import type {EventInfo} from "../reportEvent"
-import {reportEvent} from "../reportEvent"
+import {$TodoType} from "../../migrationTypes"
+import {ThunkAction} from "../../reduxTypes"
+import {EventInfo, reportEvent} from "../reportEvent"
 
 export type ToggleConfirmDialogAction = {
-  type: "TOGGLE_CONFIRM_DIALOG",
-  isOpen: boolean,
-  text: string,
-  confirmText: string,
-  denyText: string,
-  onConfirmCallback: $FlowTODO,
+  type: "TOGGLE_CONFIRM_DIALOG";
+  isOpen: boolean;
+  text: string;
+  confirmText: string;
+  denyText: string;
+  onConfirmCallback: $TodoType;
 }
 
 export function toggleConfirmDialog(
     isOpen: boolean,
     text: string,
     action: string,
-    confirmText: string = "Yes",
-    denyText: string = "No",
+    confirmText = "Yes",
+    denyText = "No",
     event: EventInfo,
 ): ThunkAction {
   return (dispatch) => {

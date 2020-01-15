@@ -1,6 +1,6 @@
 import React from "react"
-import {withRouter} from "react-router-dom"
 import {connect} from "react-redux"
+import {withRouter} from "react-router-dom"
 import NotFound from "./errors/NotFound"
 import ServerError from "./errors/ServerError"
 
@@ -13,7 +13,7 @@ class ErrorHandler extends React.Component {
     const {config, isAxiosError, request, response, toJSON} = this.props.error
 
     if (response.status === 404) {
-      return <NotFound message={response.data} />
+      return <NotFound message={response.data}/>
     }
 
     return <ServerError/>
@@ -22,12 +22,12 @@ class ErrorHandler extends React.Component {
 
 const mapState = function (state) {
   return {
-    error: state.httpErrorHandler.error
+    error: state.httpErrorHandler.error,
   }
 }
 
 const mapDispatch = () => ({
-  actions: {}
+  actions: {},
 })
 
 export default withRouter(connect(mapState, mapDispatch)(ErrorHandler))

@@ -1,11 +1,15 @@
-// @flow
 import _ from "lodash"
-import React from "react"
 
 export type Validator = {
-    isValid: $FlowTODO => boolean,
-    message: ?string,
-    description: ?string
+    isValid: (...args: any[]) => boolean;
+    message: string;
+    description: string;
+}
+
+type ErrorType = {
+  fieldName: string;
+  message: string;
+  description: string;
 }
 
 export const canNotBeEmpty = "This field cannot be empty"
@@ -17,7 +21,7 @@ export const notEmptyValidator: Validator = {
   description: canNotBeEmpty,
 }
 
-export function errorValidator(errors: Array<Object>, fieldName: string): Validator {
+export function errorValidator(errors: Array<ErrorType>, fieldName: string): Validator {
   const error = errors.find(error => error.fieldName === fieldName)
   return error ?
     {

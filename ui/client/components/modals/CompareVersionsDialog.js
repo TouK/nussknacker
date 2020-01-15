@@ -1,16 +1,16 @@
-import React from "react";
-import {connect} from "react-redux";
-import _ from "lodash";
-import ActionsUtils from "../../actions/ActionsUtils";
-import "../../stylesheets/visualization.styl";
-import GenericModalDialog from "./GenericModalDialog";
-import Dialogs from "./Dialogs";
-import HttpService from "../../http/HttpService";
-import * as JsonUtils from "../../common/JsonUtils";
-import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent";
-import EdgeDetailsContent from "../graph/node-modal/EdgeDetailsContent";
-import Scrollbars from "react-custom-scrollbars";
-import DateUtils from "../../common/DateUtils";
+import _ from "lodash"
+import React from "react"
+import Scrollbars from "react-custom-scrollbars"
+import {connect} from "react-redux"
+import ActionsUtils from "../../actions/ActionsUtils"
+import DateUtils from "../../common/DateUtils"
+import * as JsonUtils from "../../common/JsonUtils"
+import HttpService from "../../http/HttpService"
+import "../../stylesheets/visualization.styl"
+import EdgeDetailsContent from "../graph/node-modal/EdgeDetailsContent"
+import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent"
+import Dialogs from "./Dialogs"
+import GenericModalDialog from "./GenericModalDialog"
 
 //TODO: handle displaying groups
 //TODO: handle different textarea heights
@@ -20,13 +20,13 @@ class CompareVersionsDialog extends React.Component {
   remotePrefix = "remote-"
 
   constructor(props) {
-    super(props);
+    super(props)
     this.initState = {
       otherVersion: null,
       currentDiffId: null,
       difference: null,
-      remoteVersions: []
-    };
+      remoteVersions: [],
+    }
     this.state = this.initState
   }
 
@@ -39,7 +39,7 @@ class CompareVersionsDialog extends React.Component {
   loadVersion(versionId) {
     if (versionId) {
       HttpService.compareProcesses(this.props.processId, this.props.version, this.versionToPass(versionId), this.props.businessView, this.isRemote(versionId)).then(
-        (response) => this.setState({difference: response.data, otherVersion: versionId, currentDiffId: null})
+        (response) => this.setState({difference: response.data, otherVersion: versionId, currentDiffId: null}),
       )
     } else {
       this.setState(this.initState)
@@ -56,7 +56,7 @@ class CompareVersionsDialog extends React.Component {
   }
 
   versionDisplayString(versionId) {
-    return this.isRemote(versionId) ? `${this.versionToPass(versionId)} on ${this.props.otherEnvironment}` : versionId;
+    return this.isRemote(versionId) ? `${this.versionToPass(versionId)} on ${this.props.otherEnvironment}` : versionId
   }
 
   createVersionElement(version, versionPrefix) {
@@ -104,7 +104,7 @@ class CompareVersionsDialog extends React.Component {
             ) : null
         }
       </GenericModalDialog>
-    );
+    )
   }
 
   printDiff(diffId) {
@@ -114,13 +114,13 @@ class CompareVersionsDialog extends React.Component {
       case "NodeNotPresentInOther":
       case "NodeNotPresentInCurrent":
       case "NodeDifferent":
-        return this.renderDiff(diff.currentNode, diff.otherNode, this.printNode);
+        return this.renderDiff(diff.currentNode, diff.otherNode, this.printNode)
       case "EdgeNotPresentInCurrent":
       case "EdgeNotPresentInOther":
       case "EdgeDifferent":
-        return this.renderDiff(diff.currentEdge, diff.otherEdge, this.printEdge);
+        return this.renderDiff(diff.currentEdge, diff.otherEdge, this.printEdge)
       case "PropertiesDifferent":
-        return this.renderDiff(diff.currentProperties, diff.otherProperties, this.printProperties);
+        return this.renderDiff(diff.currentProperties, diff.otherProperties, this.printProperties)
       default:
         console.error(`Difference type ${diff.type} is not supported`)
     }
@@ -144,7 +144,7 @@ class CompareVersionsDialog extends React.Component {
 
   differentPathsForObjects(currentNode, otherNode) {
     const diffObject = JsonUtils.objectDiff(currentNode, otherNode)
-    const flattenObj = JsonUtils.flattenObj(diffObject);
+    const flattenObj = JsonUtils.flattenObj(diffObject)
     return _.keys(flattenObj)
   }
 
@@ -154,7 +154,7 @@ class CompareVersionsDialog extends React.Component {
                                        showSwitch={false}
                                        node={node}
                                        pathsToMark={pathsToMark}
-                                       onChange={() => {}} />) :
+                                       onChange={() => {}}/>) :
       (<div className="notPresent">Node not present</div>)
   }
 
@@ -165,7 +165,7 @@ class CompareVersionsDialog extends React.Component {
                                        showSwitch={false}
                                        changeEdgeTypeValue={() => {}}
                                        updateEdgeProp={() => {}}
-                                       pathsToMark={pathsToMark} />) :
+                                       pathsToMark={pathsToMark}/>) :
       (<div className="notPresent">Edge not present</div>)
   }
 
@@ -175,7 +175,7 @@ class CompareVersionsDialog extends React.Component {
                                            showSwitch={false}
                                            node={property}
                                            pathsToMark={pathsToMark}
-                                           onChange={() => {}} />) :
+                                           onChange={() => {}}/>) :
       (<div className="notPresent">Properties not present</div>)
   }
 }
@@ -187,8 +187,8 @@ function mapState(state) {
     processDefinitionData: state.settings.processDefinitionData,
     otherEnvironment: _.get(state.settings, "featuresSettings.remoteEnvironment.targetEnvironmentId"),
     versions: _.get(state.graphReducer, "fetchedProcessDetails.history", []),
-    businessView: state.graphReducer.businessView
+    businessView: state.graphReducer.businessView,
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CompareVersionsDialog);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CompareVersionsDialog)

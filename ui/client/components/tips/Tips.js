@@ -1,13 +1,13 @@
-import React, {Component} from "react";
-import PropTypes from "prop-types";
-import {Scrollbars} from "react-custom-scrollbars";
-import {connect} from "react-redux";
-import ActionsUtils from "../../actions/ActionsUtils";
-import ProcessUtils from "../../common/ProcessUtils";
-import {v4 as uuid4} from "uuid";
+import PropTypes from "prop-types"
+import React, {Component} from "react"
+import {Scrollbars} from "react-custom-scrollbars"
+import {connect} from "react-redux"
+import {v4 as uuid4} from "uuid"
+import ActionsUtils from "../../actions/ActionsUtils"
+import ProcessUtils from "../../common/ProcessUtils"
 import Errors from "./Errors"
-import Warnings from "./Warnings"
 import ValidTips from "./ValidTips"
+import Warnings from "./Warnings"
 
 export class Tips extends Component {
 
@@ -15,7 +15,7 @@ export class Tips extends Component {
     currentProcess: PropTypes.object,
     grouping: PropTypes.bool.isRequired,
     isHighlighted: PropTypes.bool,
-    testing: PropTypes.bool.isRequired
+    testing: PropTypes.bool.isRequired,
   }
 
   showDetails = (event, node) => {
@@ -43,7 +43,7 @@ export class Tips extends Component {
                                                                     currentProcess={currentProcess}/>}
         </Scrollbars>
       </div>
-    );
+    )
   }
 }
 
@@ -52,8 +52,8 @@ function mapState(state) {
     currentProcess: state.graphReducer.processToDisplay || {},
     grouping: state.graphReducer.groupingState != null,
     isHighlighted: state.ui.isToolTipsHighlighted,
-    testing: !!state.graphReducer.testResults
-  };
+    testing: !!state.graphReducer.testResults,
+  }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Tips);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Tips)

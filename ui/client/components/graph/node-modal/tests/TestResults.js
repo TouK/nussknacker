@@ -1,8 +1,8 @@
 import _ from "lodash"
-import TestValue from "./TestValue"
 import React from "react"
-import NodeTip from "../NodeTip"
 import InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
+import NodeTip from "../NodeTip"
+import TestValue from "./TestValue"
 
 export default function TestResults(props) {
   const {nodeId, resultsToShow} = props
@@ -27,7 +27,7 @@ export default function TestResults(props) {
             (resultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
                 <span className="testResultDownload">
             <a download={`${nodeId  }-single-input`} key={index} href={downloadableHref(mockedValue.value.pretty)}>
-              <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
+              <span className="glyphicon glyphicon-download"/> Results for this input</a></span>,
             ) : null
         }
         {
@@ -40,7 +40,6 @@ export default function TestResults(props) {
         }
       </div> : null
   )
-
 
   function mergedMockedResults(mockedResults) {
     return _.join(mockedResults.map((mockedValue) => mockedValue.value.pretty), "\n\n")

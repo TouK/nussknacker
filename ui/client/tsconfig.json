@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "moduleResolution": "Node",
+    "module": "ESNext",
+    "target": "ESNext",
+    "jsx": "preserve",
+    "lib": [
+      "dom",
+      "ESNext"
+    ],
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "preserveSymlinks": true,
+    "skipLibCheck": true,
+    "downlevelIteration": true,
+    "isolatedModules": true
+  },
+  "exclude": [
+    "node_modules",
+    "flow_typed"
+  ]
+}

@@ -1,11 +1,11 @@
-import _ from "lodash";
-import Flattenizer from "flattenizer";
+import Flattenizer from "flattenizer"
+import _ from "lodash"
 
 //tryStringify and tryParse are hacky functions.
 // They should be removed as soon as friendly UI components for complex input objects are ready
 
 export function tryStringify(input) {
-  return _.isString(input) ? input : _.isObject(input) ? JSON.stringify(input) : input;
+  return _.isString(input) ? input : _.isObject(input) ? JSON.stringify(input) : input
 }
 
 export function tryParse(input){
@@ -44,9 +44,9 @@ export function objectDiff(object, base) {
   const changes = (object, base) => {
     return _.transform(object, function (result, value, key) {
       if (base && !_.isEqual(value, base[key])) {
-        result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value;
+        result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value
       }
-    });
+    })
   }
   return changes(object, base)
 }

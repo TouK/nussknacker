@@ -165,7 +165,6 @@ class NodeUtils {
     return (fromId !== toId) && this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
   }
 
-
   //TODO: this function should already exists in lodash?
   _update = (path, fun, object) => {
     return fp.set(path, fun(_.get(object, path)), object)

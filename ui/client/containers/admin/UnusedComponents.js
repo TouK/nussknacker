@@ -1,19 +1,18 @@
 import React from "react"
 import {withRouter} from "react-router-dom"
-import "../../stylesheets/processes.styl"
-import HttpService from "../../http/HttpService"
-import BaseAdminTab from "./BaseAdminTab"
 import {Table, Td, Tr} from "reactable"
-import filterIcon from "../../assets/img/search.svg"
 import LoaderSpinner from "../../components/Spinner"
 import SearchFilter from "../../components/table/SearchFilter"
+import HttpService from "../../http/HttpService"
+import "../../stylesheets/processes.styl"
+import BaseAdminTab from "./BaseAdminTab"
 
 class UnusedComponents extends BaseAdminTab {
   constructor(props) {
     super(props)
 
     this.state = Object.assign({
-      unusedComponents: []
+      unusedComponents: [],
     }, this.prepareState())
   }
 
@@ -22,7 +21,7 @@ class UnusedComponents extends BaseAdminTab {
       this.setState({
         unusedComponents: _.map(response.data, (e) => {
           return {name: e}
-        }), showLoader: false
+        }), showLoader: false,
       })
     })
   }
@@ -52,7 +51,7 @@ class UnusedComponents extends BaseAdminTab {
           nextPageLabel=">"
           filterBy={this.state.search.toLowerCase()}
           columns={[
-            {key: "name", label: "Component ID"}
+            {key: "name", label: "Component ID"},
           ]}
         >
           {

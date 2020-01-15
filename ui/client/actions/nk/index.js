@@ -1,4 +1,3 @@
-// @flow
 export * from "./assignSettings"
 export * from "./assignUser"
 export * from "./availableQueryStates"

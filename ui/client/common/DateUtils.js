@@ -1,5 +1,5 @@
-import Moment from "moment";
-import {displayDateFormat} from "../config";
+import Moment from "moment"
+import {displayDateFormat} from "../config"
 
 class DateUtils {
     formatRelatively = (dateTimeString) => {

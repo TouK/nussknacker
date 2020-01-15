@@ -1,10 +1,10 @@
-import React from "react"
-import PropTypes from "prop-types"
-import _ from "lodash"
 import "ladda/dist/ladda.min.css"
+import _ from "lodash"
+import PropTypes from "prop-types"
+import React from "react"
 import {notEmptyValidator} from "../../../common/Validators"
-import EditableExpression from "./editors/expression/EditableExpression"
 import BaseModalContent from "./BaseModalContent"
+import EditableExpression from "./editors/expression/EditableExpression"
 
 export default class EdgeDetailsContent extends React.Component {
   static propTypes = {
@@ -14,7 +14,7 @@ export default class EdgeDetailsContent extends React.Component {
     changeEdgeTypeValue: PropTypes.func.isRequired,
     pathsToMark: PropTypes.array,
     showValidation: PropTypes.bool.isRequired,
-    showSwitch: PropTypes.bool.isRequired
+    showSwitch: PropTypes.bool.isRequired,
   }
 
   isMarked = (path) => {
@@ -39,7 +39,7 @@ export default class EdgeDetailsContent extends React.Component {
       case "NextSwitch": {
         const expressionObj = {
           expression: edge.edgeType.condition.expression,
-          language: edge.edgeType.condition.language
+          language: edge.edgeType.condition.language,
         }
         return (
           <BaseModalContent

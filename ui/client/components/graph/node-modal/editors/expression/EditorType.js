@@ -1,13 +1,13 @@
-import RawEditor from "./RawEditor"
 import BoolEditor from "./BoolEditor"
-import StringEditor from "./StringEditor"
 import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
+import RawEditor from "./RawEditor"
+import StringEditor from "./StringEditor"
 
 class EditorType {
   basicEditorSupported = (fieldType) => Object.entries(editors).some(
     ([key, value]) => value.isSupported(fieldType)
       && key !== Types.RAW_EDITOR
-      && value.switchableToEditors.length > 0
+      && value.switchableToEditors.length > 0,
   )
 }
 
@@ -25,7 +25,7 @@ export const editors = {
     switchableToEditors: [Types.BOOL_EDITOR, Types.STRING_EDITOR],
     switchableTo: (_) => RawEditor.switchableTo(),
     switchableToHint: RawEditor.switchableToHint,
-    isSupported: (fieldType) => RawEditor.supportedFieldTypes.includes(fieldType)
+    isSupported: (fieldType) => RawEditor.supportedFieldTypes.includes(fieldType),
   },
   [Types.BOOL_EDITOR]: {
     editor: BoolEditor,
@@ -33,7 +33,7 @@ export const editors = {
     switchableTo: (expression) => BoolEditor.switchableTo(expression),
     switchableToHint: BoolEditor.switchableToHint,
     notSwitchableToHint: BoolEditor.notSwitchableToHint,
-    isSupported: (fieldType) => BoolEditor.isSupported(fieldType)
+    isSupported: (fieldType) => BoolEditor.isSupported(fieldType),
   },
   [Types.STRING_EDITOR]: {
     editor: StringEditor,
@@ -41,13 +41,13 @@ export const editors = {
     switchableTo: (expression) => StringEditor.switchableTo(expression),
     switchableToHint: StringEditor.switchableToHint,
     notSwitchableToHint: StringEditor.notSwitchableToHint,
-    isSupported: (fieldType) => StringEditor.isSupported(fieldType)
+    isSupported: (fieldType) => StringEditor.isSupported(fieldType),
   },
   [Types.EXPRESSION_WITH_FIXED_VALUES]: {
     editor: ExpressionWithFixedValues,
     switchableToEditors: [],
-    isSupported: (fieldType) => ExpressionWithFixedValues.isSupported(fieldType)
-  }
+    isSupported: (fieldType) => ExpressionWithFixedValues.isSupported(fieldType),
+  },
 }
 
 export const editorType = new EditorType()

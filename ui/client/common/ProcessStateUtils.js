@@ -1,12 +1,12 @@
 import _ from "lodash"
-
-import {BACKEND_STATIC_URL} from "../config"
+import urljoin from "url-join"
+import iconCanceled from "../assets/img/states/canceled.svg"
 import iconDeployed from "../assets/img/states/deployed.svg"
 import iconNotDeployed from "../assets/img/states/not-deployed.svg"
-import iconUnknown from "../assets/img/states/state-unknown.svg"
 import iconErrorState from "../assets/img/states/state-error.svg"
-import iconCanceled from "../assets/img/states/canceled.svg"
-import urljoin from "url-join"
+import iconUnknown from "../assets/img/states/state-unknown.svg"
+
+import {BACKEND_STATIC_URL} from "../config"
 
 const localIconPatternRegexp = /^((http|https|ftp):\/\/)/
 
@@ -16,13 +16,13 @@ export default {
     NOT_DEPLOYED: "NOT_DEPLOYED",
     RUNNING: "RUNNING",
     CANCELED: "CANCELED",
-    ERROR: "ERROR"
+    ERROR: "ERROR",
   },
 
   ACTIONS: {
     NOT_DEPLOYED: null,
     DEPLOY: "DEPLOY",
-    CANCEL: "CANCEL"
+    CANCEL: "CANCEL",
   },
 
   DEFAULT_STATUS_TOOLTIPS: {
@@ -38,7 +38,7 @@ export default {
     NOT_DEPLOYED: iconNotDeployed,
     RUNNING: iconDeployed,
     CANCELED: iconCanceled,
-    ERROR: iconErrorState
+    ERROR: iconErrorState,
   },
 
   isRunning(state) {
@@ -125,5 +125,5 @@ export default {
       default:
         return this.STATUSES.UNKNOWN
     }
-  }
+  },
 }

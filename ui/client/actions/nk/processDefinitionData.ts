@@ -1,14 +1,13 @@
-// @flow
-
 import HttpService from "../../http/HttpService"
-import type {ThunkAction} from "../reduxTypes.flow"
+import {$TodoType} from "../migrationTypes"
+import {ThunkAction} from "../reduxTypes"
 
 export type ProcessDefinitionDataAction = {
-  type: "PROCESS_DEFINITION_DATA",
-  processDefinitionData: $FlowTODO,
+  type: "PROCESS_DEFINITION_DATA";
+  processDefinitionData: $TodoType;
 }
 
-export function processDefinitionData(data: $FlowTODO): ProcessDefinitionDataAction {
+export function processDefinitionData(data: $TodoType): ProcessDefinitionDataAction {
   return {
     type: "PROCESS_DEFINITION_DATA",
     processDefinitionData: data,
@@ -17,7 +16,7 @@ export function processDefinitionData(data: $FlowTODO): ProcessDefinitionDataAct
 
 type ProcessingType = string
 
-export function fetchProcessDefinition(processingType: ProcessingType, isSubprocess: boolean, subprocessVersions: $FlowTODO): ThunkAction {
+export function fetchProcessDefinition(processingType: ProcessingType, isSubprocess: boolean, subprocessVersions: $TodoType): ThunkAction {
   return (dispatch) => {
     return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then((response) => (
             dispatch(processDefinitionData(response.data))
