@@ -1,3 +1,4 @@
+import i18next from "i18next"
 import _ from "lodash"
 
 export type Validator = {
@@ -12,8 +13,8 @@ type ErrorType = {
   description: string;
 }
 
-export const canNotBeEmpty = "This field cannot be empty"
-export const duplicateValue = "This value is already taken"
+export const canNotBeEmpty = i18next.t("validation.canNotBeEmpty","This field cannot be empty")
+export const duplicateValue = i18next.t("validation.duplicateValue","This value is already taken")
 
 export const notEmptyValidator: Validator = {
   isValid: value => !_.isEmpty(value),
@@ -25,13 +26,13 @@ export function errorValidator(errors: Array<ErrorType>, fieldName: string): Val
   const error = errors.find(error => error.fieldName === fieldName)
   return error ?
     {
-      isValid: _ => false,
+      isValid: () => false,
       message: error.message,
       description: error.description,
     }
     :
     {
-      isValid: _ => true,
+      isValid: () => true,
       message: null,
       description: null,
     }

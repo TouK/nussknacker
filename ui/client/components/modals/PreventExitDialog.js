@@ -1,7 +1,7 @@
 import PropTypes from "prop-types"
 import React from "react"
 import Modal from "react-modal"
-import DialogMessages from "../../common/DialogMessages"
+import * as DialogMessages from "../../common/DialogMessages"
 
 class PreventExitDialog extends React.Component {
 

@@ -9,12 +9,11 @@ i18n
     .use(LanguageDetector)
     .use(initReactI18next)
     .init({
+      ns: "main",
+      defaultNS: "main",
       fallbackLng: "en",
-      keySeparator: false,
-      interpolation: {
-        escapeValue: false,
-      },
       backend: {
-          loadPath: "static/assets/locales/{{lng}}/{{ns}}.json",
+        loadPath: "/static/assets/locales/{{lng}}/{{ns}}.json",
       },
+      whitelist: ["en", "pl"],
     })

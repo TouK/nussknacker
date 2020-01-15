@@ -13,3 +13,4 @@ export type NodeType = {
 };
 
 export type Process = $TodoType
+export type ProcessId = string
