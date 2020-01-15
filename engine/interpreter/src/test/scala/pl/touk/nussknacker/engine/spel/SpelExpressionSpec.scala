@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import java.math.BigDecimal
 import java.text.ParseException
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.Collections
 
@@ -17,10 +17,12 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
+import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
@@ -163,6 +165,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("validate MethodReference") {
     val parsed = parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal)
     parsed.isValid shouldBe true
+
+    val invalid = parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in pl.touk.nussknacker.engine.spel.SampleGlobalObject$")))
+
   }
 
   test("return invalid type for MethodReference with invalid arity ") {
@@ -381,6 +387,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[Any]("abcd", ctx) shouldNot be ('valid)
   }
 
+  test("can handle return generic return types") {
+    parse[Any]("#processHelper.now.toLocalDate", ctxWithGlobal).map(_.returnType) should be (Valid(Typed[LocalDate]))
+  }
+
   test("evaluate static field/method using property syntax") {
     parseOrFail[Any]("#processHelper.one", ctxWithGlobal).evaluateSyncToValue[Int](ctxWithGlobal) should equal(1)
     parseOrFail[Any]("#processHelper.one()", ctxWithGlobal).evaluateSyncToValue[Int](ctxWithGlobal) should equal(1)
@@ -578,6 +588,7 @@ object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
   def one() = 1
+  def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
 }
 

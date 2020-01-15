@@ -9,6 +9,7 @@ import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -73,7 +74,14 @@ object EspTypeUtils {
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val shouldHideToString = classOf[HideToString].isAssignableFrom(clazz)
 
-    val filteredMethods = clazz.getMethods
+    /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
+       does not contain any implicitly declared methods from {@code Object}.
+       The same for primitives - we assume that languages like SpEL will be able to do boxing
+       It could be significant only for toString, as we filter out other Object methods, but to be consistent...
+     */
+    val publicMethods = clazz.getMethods.toList ++ (if (clazz.isInterface || clazz.isPrimitive) classOf[Object].getMethods.toList else List.empty)
+
+    val filteredMethods = publicMethods
       .filterNot(m => Modifier.isStatic(m.getModifiers))
       .filter(_.getAnnotation(classOf[Hidden]) == null)
       .filterNot(m => shouldHideToString && m.getName == "toString" && m.getParameterCount == 0)
@@ -86,7 +94,9 @@ object EspTypeUtils {
       methodAccessMethods(method).map(_ -> toMethodInfo(method))
     }
 
-    val sortedByArityDesc = methodNameAndInfoList.sortBy(- _._2.parameters.size)
+    val genericReturnTypeDeduplicated = deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
+
+    val sortedByArityDesc = genericReturnTypeDeduplicated.sortBy(- _._2.parameters.size)
 
     // Currently SpEL methods are naively and optimistically type checked. This is, for overloaded methods with
     // different arity, validation is successful when SpEL MethodReference provides the number of parameters greater
@@ -94,10 +104,34 @@ object EspTypeUtils {
     sortedByArityDesc.toMap
   }
 
+  /*
+    This is tricky case. If we have generic class and concrete subclasses, e.g.
+    - ChronoLocalDateTime<D extends ChronoLocalDate>
+    - LocalDateTime extends ChronoLocalDateTime<LocalDate>
+    and method with generic return type from superclass: D toLocalDate()
+    getMethods return two toLocalDate methods:
+      ChronoLocalDate toLocalDate()
+      LocalDate toLocalDate()
+    In our case the second one is correct
+   */
+  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
+    methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.parameters)).toList.map {
+      case (_, methodsForParams) =>
+        /*
+          we want to find "most specific" class, however suprisingly it's not always possible, because we treat e.g. isLeft and left methods
+          as equal (for javabean-like access) and e.g. in scala Either this is perfectly possible. In case we cannot find most specific
+          class we pick arbitrary one (we sort to avoid randomness)
+         */
+        methodsForParams.find { case (_, MethodInfo(_, ret, _)) =>
+          methodsForParams.forall(mi => Typed(ret).canBeSubclassOf(Typed(mi._2.refClazz)))
+        }.getOrElse(methodsForParams.minBy(_._2.refClazz.refClazzName))
+    }
+  }
+
   private def toMethodInfo(method: Method)
     = MethodInfo(getParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
 
-  private def methodAccessMethods(method: Method) = {
+  private def methodAccessMethods(method: Method): List[String] = {
     val isGetter = (method.getName.startsWith("get") || method.getName.startsWith("is")) && method.getParameterCount == 0
     if (isGetter)
       List(method.getName, StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))) else List(method.getName)
