@@ -1,14 +1,14 @@
 import _ from "lodash"
-import urljoin from "url-join"
-import iconCanceled from "../assets/img/states/canceled.svg"
-import iconDeployed from "../assets/img/states/deployed.svg"
-import iconNotDeployed from "../assets/img/states/not-deployed.svg"
-import iconErrorState from "../assets/img/states/state-error.svg"
-import iconUnknown from "../assets/img/states/state-unknown.svg"
 
-import {BACKEND_STATIC_URL} from "../config"
+// TODO: all this mappings of tooltips, icons etc. below are walk-around for missing first fetch of process states,
+//       and should be moved to backend when it will be fixed eventually
+const iconCanceled = "/assets/states/stopping-success.svg"
+const iconDeployed = "/assets/states/deploy-success.svg"
+const iconNotDeployed = "/assets/states/not-deployed.svg"
+const iconErrorState = "/assets/states/error.svg"
+const iconUnknown = "/assets/states/status-unknown.svg"
 
-const localIconPatternRegexp = /^((http|https|ftp):\/\/)/
+import {absoluteBePath} from "./UrlUtils"
 
 export default {
   STATUSES: {
@@ -54,7 +54,7 @@ export default {
   },
 
   getStatusIcon(status) {
-    return _.get(this.DEFAULT_STATUS_ICONS, status, this.DEFAULT_STATUS_ICONS[this.STATUSES.UNKNOWN])
+    return absoluteBePath(_.get(this.DEFAULT_STATUS_ICONS, status, this.DEFAULT_STATUS_ICONS[this.STATUSES.UNKNOWN]))
   },
 
   getStateStatus(state) {
@@ -74,12 +74,7 @@ export default {
       return this.getStatusIcon(this.getStateStatus(state))
     }
 
-    //When icon doesn't include http / https / ftp then we assume it should be served from our backend static url
-    if (!localIconPatternRegexp.test(icon)) {
-      return urljoin(BACKEND_STATIC_URL, icon)
-    }
-
-    return icon
+    return absoluteBePath(icon)
   },
 
   getStateTooltip(state) {
