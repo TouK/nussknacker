@@ -1,11 +1,11 @@
 import "ladda/dist/ladda.min.css"
-import _ from "lodash"
-import PropTypes from "prop-types"
 import React from "react"
-import Draggable from "react-draggable"
-import LaddaButton from "react-ladda"
-import Modal from "react-modal"
+import PropTypes from "prop-types"
 import {connect} from "react-redux"
+import Modal from "react-modal"
+import _ from "lodash"
+import LaddaButton from "react-ladda"
+import Draggable from "react-draggable"
 import ActionsUtils from "../../../actions/ActionsUtils"
 import EspModalStyles from "../../../common/EspModalStyles"
 import NodeUtils from "../NodeUtils"
@@ -51,25 +51,21 @@ class EdgeDetailsModal extends React.Component {
   }
 
   renderModalButtons() {
-    if (!this.props.readOnly) {
-      return ([
-        <LaddaButton
-          key="1"
-          title="Apply edge details"
-          className="modalButton pull-right modalConfirmButton"
-          loading={this.state.pendingRequest}
-          data-style="zoom-in"
-          onClick={this.performEdgeEdit}
-        >
-          Apply
-        </LaddaButton>,
-        <button key="3" type="button" title="Cancel edge details" className="modalButton" onClick={this.closeModal}>
-          Cancel
-        </button>,
-      ] )
-    } else {
-      return null
-    }
+    return ([
+      <button key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
+        Cancel
+      </button>,
+      !this.props.readOnly ? <LaddaButton
+        key="1"
+        title="Apply edge details"
+        className="modalButton pull-right modalConfirmButton"
+        loading={this.state.pendingRequest}
+        data-style="zoom-in"
+        onClick={this.performEdgeEdit}
+      >
+        Apply
+      </LaddaButton> : null
+    ])
   }
 
   updateEdgeProp = (prop, value) => {
@@ -97,6 +93,7 @@ class EdgeDetailsModal extends React.Component {
   render() {
     const isOpen = !_.isEmpty(this.props.edgeToDisplay) && this.props.showEdgeDetailsModal && this.edgeIsEditable()
     const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
+    const {readOnly} = this.props
     return (
       <div className="objectModal">
         <Modal isOpen={isOpen}
@@ -114,7 +111,7 @@ class EdgeDetailsModal extends React.Component {
                   <EdgeDetailsContent
                     changeEdgeTypeValue={this.changeEdgeTypeValue}
                     updateEdgeProp={this.updateEdgeProp}
-                    readOnly={false}
+                    readOnly={readOnly}
                     edge={this.state.editedEdge}
                     showValidation={true}
                     showSwitch={true}
@@ -142,7 +139,8 @@ function mapState(state) {
     edgeToDisplay: state.graphReducer.edgeToDisplay,
     processToDisplay: state.graphReducer.processToDisplay,
     edgeErrors: errors,
-    readOnly: !state.settings.loggedUser.canWrite(processCategory),
+    readOnly: !state.settings.loggedUser.canWrite(processCategory)
+      || _.get(state, "graphReducer.fetchedProcessDetails.isArchived"),
     processDefinitionData: state.settings.processDefinitionData,
     showEdgeDetailsModal: state.ui.showEdgeDetailsModal,
   }
