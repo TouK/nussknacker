@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
+import pl.touk.nussknacker.restmodel.processdetails.{DeploymentAction, DeploymentHistoryEntry}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{DeployedProcessInfoEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
@@ -86,11 +87,11 @@ class ManagementActor(environment: String,
 
       val processStatus = for {
         deployedVersions <- processRepository.fetchDeploymentHistory(id.id)
-        deployedVersion = deployedVersions.headOption.filter(_.deploymentAction == DeploymentAction.Deploy)
+        deployedVersion = deployedVersions.headOption.filter(_.isDeployed)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
-        _ <- handleFinishedProcess(id, state, manager.processStateDefinitionManager)
-      } yield state.map(ProcessStatus.create(_, deployedVersion.map(_.processVersionId)))
+        _ <- handleFinishedProcess(id, state)
+      } yield handleCheckStatus(state, deployedVersion.map(_.processVersionId), deployedVersions.headOption)
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
@@ -118,9 +119,16 @@ class ManagementActor(environment: String,
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
   }
 
+  private def handleCheckStatus(processState: Option[ProcessState], deployedVersion: Option[Long], lastDeployHistory: Option[DeploymentHistoryEntry]): Option[ProcessStatus] =
+    (processState, lastDeployHistory) match {
+      case (None, Some(history)) if history.isCanceled => Option(ProcessStatus.canceled)
+      case (Some(state), _) => Option(ProcessStatus.create(state, deployedVersion))
+      case (None, None) => Option.empty
+    }
+
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState], processStateConfigurator: ProcessStateDefinitionManager): Future[Unit] = {
+  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
       case Some(state) if state.status.isFinished =>
@@ -215,7 +223,7 @@ class ManagementActor(environment: String,
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 
-  private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser) = {
+  private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessManager] = {
     processRepository.fetchProcessingType(processId).map(managers)
   }
 

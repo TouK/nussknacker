@@ -110,7 +110,11 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                                deploymentAction: DeploymentAction,
                                                commentId: Option[Long],
                                                comment: Option[String],
-                                               buildInfo: Map[String, String])
+                                               buildInfo: Map[String, String]) {
+
+    def isDeployed: Boolean = deploymentAction.equals(DeploymentAction.Deploy)
+    def isCanceled: Boolean = deploymentAction.equals(DeploymentAction.Cancel)
+  }
 
   @JsonCodec case class ProcessDeployment(processVersionId: Long,
                                           @Deprecated environment: String, //TODO: remove it in future..

@@ -187,7 +187,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       isLatestVersion = isLatestVersion,
       tags = tags,
       history = processVersions.map(pvs => ProcessRepository.toProcessHistoryEntry(
-        process, pvs, deployments.filterNot(_.isCanceled).toList //We want't canceled deployments here
+        process, pvs, deployments.toList
       )),
       businessView = businessView
     )

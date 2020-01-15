@@ -96,10 +96,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
             Future.successful(Some(ProcessState(
               DeploymentId(duplicates.head.jid),
               FlinkStateStatus.Failed,
-              allowedActions = processStateDefinitionManager.statusActions(FlinkStateStatus.Failed),
-              icon = processStateDefinitionManager.statusIcon(FlinkStateStatus.Failed),
-              tooltip = processStateDefinitionManager.statusTooltip(FlinkStateStatus.Failed),
+              definitionManager = processStateDefinitionManager,
               version = Option.empty,
+              attributes = Option.empty,
               startTime = Some(duplicates.head.`start-time`),
               errorMessage = Some(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
             ))
@@ -124,10 +123,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
                 DeploymentId(one.jid),
                 stateStatus,
                 version = version,
-                allowedActions = processStateDefinitionManager.statusActions(stateStatus),
-                icon = processStateDefinitionManager.statusIcon(stateStatus),
-                tooltip = processStateDefinitionManager.statusTooltip(stateStatus),
-                startTime = Some(one.`start-time`)
+                definitionManager = processStateDefinitionManager,
+                startTime = Some(one.`start-time`),
+                attributes = Option.empty,
+                errorMessage = Option.empty
               ))
             }
         }

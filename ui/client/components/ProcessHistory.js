@@ -8,11 +8,13 @@ import DialogMessages from "../common/DialogMessages"
 import ProcessUtils from "../common/ProcessUtils"
 import "../stylesheets/processHistory.styl"
 import Date from "./common/Date"
+import ProcessStateUtils from "../common/ProcessStateUtils"
 
 export class ProcessHistory_ extends Component {
 
   static propTypes = {
     processHistory: PropTypes.array.isRequired,
+    lastDeployedAction: PropTypes.object,
   }
 
   constructor(props) {
@@ -42,7 +44,6 @@ export class ProcessHistory_ extends Component {
       this.doShowProcess(process)
     } else {
       this.props.actions.toggleConfirmDialog(true, DialogMessages.unsavedProcessChanges(), () => {
-        console.log("Inside Toggle")
         this.doShowProcess(process)
       }, "DISCARD", "NO")
     }
@@ -57,8 +58,10 @@ export class ProcessHistory_ extends Component {
   }
 
   latestVersionIsNotDeployed = (index, historyEntry) => {
-    return _.isEqual(index, 0) && _.isEmpty(historyEntry.deployments)
+    return this.isLastVersion(historyEntry) && !_.eq(this.props.lastDeployedAction, _.head(historyEntry.deployments))
   }
+
+  isLastVersion = (historyEntry) => _.eq(_.head(this.props.processHistory), historyEntry)
 
   render() {
     return (
@@ -66,8 +69,7 @@ export class ProcessHistory_ extends Component {
         <ul id="process-history">
           {this.props.processHistory.map ((historyEntry, index) => {
             return (
-              <li key={index} className={this.processVersionOnTimeline(historyEntry, index)}
-                  onClick={this.showProcess.bind(this, historyEntry, index)}>
+              <li key={index} className={this.processVersionOnTimeline(historyEntry, index)} onClick={this.showProcess.bind(this, historyEntry, index)}>
                 {`v${historyEntry.processVersionId}`} | {historyEntry.user}
                 {this.latestVersionIsNotDeployed(index, historyEntry) ?
                   <small> <span title="Latest version is not deployed" className="glyphicon glyphicon-warning-sign"/></small> :
@@ -76,8 +78,13 @@ export class ProcessHistory_ extends Component {
                 <br/>
                 <small><i><Date date={historyEntry.createDate}/></i></small>
                 <br/>
-                {historyEntry.deployments.map((deployment, index) =>
-                  <small key={index}><i><Date date={deployment.deployedAt}/></i> <span className="label label-info">{deployment.environment}</span></small>,
+                {
+                  historyEntry.deployments.map((deployment, index) =>
+                  this.props.lastDeployedAction != null && _.eq(this.props.lastDeployedAction, deployment) ?
+                    <small key={index}><i><Date date={deployment.deployedAt}/></i>
+                      <span className="label label-info">{deployment.environment}</span>
+                    </small>
+                    : null,
                 )}
               </li>
             )
@@ -89,8 +96,14 @@ export class ProcessHistory_ extends Component {
 }
 
 function mapState(state) {
+  const history = _.get(state.graphReducer.fetchedProcessDetails, "history", [])
+  const deployActions = _.reverse(_.sortBy(_.flatMap(history, hist => hist.deployments), ["deployedAt"])) //make sure that we have good ordered actions
+  const deployedActions = _.filter(deployActions, da => ProcessStateUtils.isDeployedAction(da))
+  const lastDeployedAction = _.head(deployedActions)
+
   return {
-    processHistory: _.get(state.graphReducer.fetchedProcessDetails, "history", []),
+    processHistory: history,
+    lastDeployedAction: lastDeployedAction,
     nothingToSave: ProcessUtils.nothingToSave(state),
     businessView: state.graphReducer.businessView,
   }

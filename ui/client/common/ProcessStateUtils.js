@@ -41,6 +41,10 @@ export default {
     ERROR: iconErrorState,
   },
 
+  isDeployedAction(deployment) {
+    return _.get(deployment, "action") === this.ACTIONS.DEPLOY
+  },
+
   isRunning(state) {
     return this.getStateStatus(state) === this.STATUSES.RUNNING
   },

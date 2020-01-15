@@ -23,6 +23,25 @@ object ProcessState {
   def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], allowedActions: List[StateAction]): ProcessState =
     ProcessState(DeploymentId(deploymentId), status, version, allowedActions)
 
+  def apply(deploymentId: DeploymentId,
+            status: StateStatus,
+            version: Option[ProcessVersion],
+            definitionManager: ProcessStateDefinitionManager,
+            startTime: Option[Long],
+            attributes: Option[Json],
+            errorMessage: Option[String]): ProcessState =
+    ProcessState(
+      deploymentId,
+      status,
+      version,
+      definitionManager.statusActions(status),
+      definitionManager.statusIcon(status),
+      definitionManager.statusTooltip(status),
+      startTime,
+      attributes,
+      errorMessage
+    )
+
   @JsonCodec case class StateStatusCodec(clazz: String, value: String)
 }
 
@@ -34,7 +53,10 @@ object ProcessState {
                                    tooltip: Option[String] = Option.empty,
                                    startTime: Option[Long] = Option.empty,
                                    attributes: Option[Json] = Option.empty,
-                                   errorMessage: Option[String] = Option.empty)
+                                   errorMessage: Option[String] = Option.empty) {
+  def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
+  def isStopped: Boolean = status.isStopped
+}
 
 object StateAction extends Enumeration {
   implicit val typeEncoder: Encoder[StateAction.Value] = Encoder.enumEncoder(StateAction)
@@ -50,6 +72,7 @@ sealed trait StateStatus {
   def isDuringDeploy: Boolean = false
   def isFinished: Boolean = false
   def isRunning: Boolean = false
+  def isStopped: Boolean = false
   def canDeploy: Boolean = false
   def name: String
 }
@@ -58,6 +81,7 @@ final class NotEstablishedStateStatus(val name: String) extends StateStatus
 
 final class StoppedStateStatus(val name: String) extends StateStatus {
   override def canDeploy: Boolean = true
+  override def isStopped: Boolean = true
 }
 
 final class DuringDeployStateStatus(val name: String) extends StateStatus {
