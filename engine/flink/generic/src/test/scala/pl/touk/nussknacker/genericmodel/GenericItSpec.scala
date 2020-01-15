@@ -36,12 +36,18 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   private val givenNotMatchingJsonObj =
     """{
       |  "first": "Zenon",
-      |  "last": "Nowak"
+      |  "last": "Nowak",
+      |  "nestMap": { "nestedField": "empty" },
+      |  "list1": [ {"listField": "full" } ],
+      |  "list2": [ 123 ]
       |}""".stripMargin
   private val givenMatchingJsonObj =
     """{
       |  "first": "Jan",
-      |  "last": "Kowalski"
+      |  "last": "Kowalski",
+      |  "nestMap": { "nestedField": "empty" },
+      |  "list1": [ {"listField": "full" } ],
+      |  "list2": [ 123 ]
       |}""".stripMargin
 
   private val givenNotMatchingAvroObj = {
@@ -57,7 +63,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     r
   }
 
-  private def jsonProcess(fieldSelection: String) =
+  private def jsonProcess(filter: String) =
     EspProcessBuilder
       .id("json-test")
       .parallelism(1)
@@ -67,10 +73,13 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         "type" ->
           """{
             |  "first": "String",
-            |  "last": "String"
+            |  "last": "String",
+            |  "nestMap": { "nestedField": "String" },
+            |  "list1": {{"listField": "String"}},
+            |  "list2": { "Long" }
             |}""".stripMargin
       )
-      .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
+      .filter("name-filter", filter)
       .sink("end", "#input","kafka-json", "topic" -> s"'$JsonOutTopic'")
 
   private val avroProcess =
@@ -108,9 +117,16 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     kafkaClient.sendMessage(JsonInTopic, givenMatchingJsonObj)
 
     assertThrows[Exception] {
-      run(jsonProcess("asdf")){}
+      run(jsonProcess("#input.nestMap.notExist == ''")){}
     }
-    val validJsonProcess = jsonProcess("first")
+    assertThrows[Exception] {
+      run(jsonProcess("#input.list1[0].notExist == ''")){}
+    }
+
+    val validJsonProcess = jsonProcess("#input.first == 'Jan' and " +
+      "#input.nestMap.nestedField != 'dummy' and " +
+      "#input.list1[0].listField != 'dummy' and " +
+      "#input.list2[0] != 15")
     run(validJsonProcess) {
       val consumer = kafkaClient.createConsumer()
       val processed = consumer.consume(JsonOutTopic).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
