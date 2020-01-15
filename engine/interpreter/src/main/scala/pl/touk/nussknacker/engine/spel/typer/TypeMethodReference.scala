@@ -51,6 +51,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
     }
 
   //TODO: we check only arity, but don't check if any of overloaded methods has matching signature
+  //this will lead to erros if we have different return types for different signatures!
   private def typeFromMethodInfoes(methodInfoes: List[MethodInfo]): Either[String, TypingResult] =
     methodInfoes.filter(_.parameters.size <= paramsCount) match {
       case Nil =>

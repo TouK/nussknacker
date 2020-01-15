@@ -22,7 +22,7 @@ class TypedClassColumnModelTest extends FunSuite with Matchers{
   }
   test("use typed list") {
     val result = typeMe[Data1]
-    result shouldEqual ColumnModel(List(Column("name", Varchar), Column("value", Numeric)))
+    result shouldEqual ColumnModel(List(Column("value", Numeric), Column("name", Varchar)))
   }
 
   trait Countable {
