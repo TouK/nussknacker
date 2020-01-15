@@ -61,6 +61,7 @@ object sources {
 
   object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)
 
+  //It is important that object returned by this schema is consistent with types from TypingUtils.typeMapDefinition, i.e. collections type must match etc.
   object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](m => TypedMap(deserializeToMap(m).asScala.toMap))
 
   //TOOD: better error handling?
