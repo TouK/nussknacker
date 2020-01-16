@@ -13,6 +13,7 @@ import boundingMarkup from "./markups/bounding.html"
 
 import nodeMarkup from "./markups/node.html"
 import NodeUtils from "./NodeUtils"
+import {absoluteBePath} from "../../common/UrlUtils"
 
 const rectWidth = 300
 const rectHeight = 60
@@ -156,7 +157,13 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
   const width = rectWidth
   const height = rectHeight
   const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
-  const icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
+  const defaultIconName = `${node.type}.svg`
+  const iconHref = forExport ?
+    // TODO: Currently we encode icon data to have standalone svg that can be used to generate pdf
+    //       it will works only with assets available on FE side. We should switch to fetching all icons from BE
+    //       but it will cause async fetching on some step
+    SVGUtils.svgToDataURL(LoaderUtils.loadNodeSvgContent(defaultIconName)) :
+    absoluteBePath(`/assets/nodes/${iconFromConfig ? iconFromConfig : defaultIconName}`)
   const testResultsHeight = 24
   const pxPerChar = 8
   const countsPadding = 8
@@ -183,7 +190,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
       opacity: node.isDisabled ? 0.4 : 1,
     },
     ".nodeIconItself": {
-      "xlink:href": SVGUtils.svgToDataURL(icon), //we encode icon data to have standalone svg that can be used to generate pdf
+      "xlink:href": iconHref,
     },
     ".contentText": {
       text: bodyContent,
