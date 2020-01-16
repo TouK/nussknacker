@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import io.circe.Encoder
+import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.api.LazyParameter
@@ -38,13 +38,21 @@ case object RawParameterEditor extends ParameterEditor
 @JsonCodec(encodeOnly = true) case class SimpleParameterEditor(simpleEditorType: SimpleEditorType, possibleValues: List[FixedExpressionValue]) extends ParameterEditor
 
 object SimpleParameterEditor {
-  implicit val simpleEditorTypeEncoder: Encoder[SimpleEditorType] = (simpleEditorType : SimpleEditorType) => Encoder.encodeString(simpleEditorType.name())
+  implicit val simpleEditorTypeEncoder: Encoder[SimpleEditorType] = {
+        new Encoder[SimpleEditorType] {
+          override def apply(editorType: SimpleEditorType): Json =  Encoder.encodeString(editorType.name())
+        }
+  }
 }
 
 @JsonCodec(encodeOnly = true) case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode) extends ParameterEditor
 
 object DualParameterEditor {
-  implicit val defaultEditorModeEncoder: Encoder[DualEditorMode] = (defaultEditorMode: DualEditorMode) => Encoder.encodeString(defaultEditorMode.name())
+  implicit val defaultEditorModeEncoder: Encoder[DualEditorMode] = {
+    new Encoder[DualEditorMode] {
+      override def apply(editorMode: DualEditorMode): Json = Encoder.encodeString(editorMode.name())
+    }
+  }
 }
 
 //TODO: add validation of restrictions during compilation...
