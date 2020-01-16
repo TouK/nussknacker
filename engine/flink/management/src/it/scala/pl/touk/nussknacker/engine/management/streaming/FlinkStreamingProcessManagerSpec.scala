@@ -126,7 +126,8 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
     val savepointDir = Files.createTempDirectory("customSavepoint")
-    val savepointPathFuture = processManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), savepointDir = Some(savepointDir.toUri.toString), cancelProcess = false)
+    val savepointPathFuture = processManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), savepointDir = Some(savepointDir.toUri.toString))
+        .map(_.path)
     assert(savepointPathFuture.isReadyWithin(10 seconds))
     val savepointPath = new URI(savepointPathFuture.futureValue)
     Paths.get(savepointPath).startsWith(savepointDir) shouldBe true
@@ -142,8 +143,8 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     cancel(processId)
   }
 
-  test("should snapshot state and cancel process in single action") {
-    val processId = "snapshotAndCancel"
+  test("should stop process and deploy it using savepoint") {
+    val processId = "stop"
     val inTopic = s"input-$processId"
     val outTopic = s"output-$processId"
     val kafkaProcess = SampleProcess.kafkaProcess(processId, inTopic)
@@ -151,7 +152,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "1"))
     messagesFromTopic(outTopic, 1) shouldBe List("1")
-    val savepointPath = processManager.savepoint(ProcessName(processId), savepointDir = None, cancelProcess = true)
+    val savepointPath = processManager.stop(ProcessName(processId), savepointDir = None).map(_.path)
 
     eventually {
       processManager.findJobStatus(ProcessName(processId)).futureValue.map(_.status) shouldBe Some(FlinkStateStatus.Canceled)

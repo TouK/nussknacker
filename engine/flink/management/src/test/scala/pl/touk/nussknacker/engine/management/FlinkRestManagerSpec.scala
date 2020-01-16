@@ -6,15 +6,15 @@ import io.circe.Json.fromString
 import org.apache.flink.runtime.jobgraph.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, SavepointResult, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, JobConfig, JobOverview, JobsResponse}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JobConfig, JobOverview, JobsResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.Response
+import sttp.client.{NothingT, Response, SttpBackend}
 import sttp.client.testing.SttpBackendStub
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
@@ -25,10 +25,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
   private var configs: Map[String, Map[String, Json]] = Map()
 
-  private val manager = new FlinkRestManager(
-    config = config,
-    modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
-  )(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
+  private val manager = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
     val toReturn = req.uri.path match {
       case List("jobs", "overview") =>
         JobsResponse(statuses)
@@ -64,6 +61,48 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       CustomProcess("nothing"), None).failed.futureValue.getMessage shouldBe "Job p1 is not running, status: RESTARTING"
   }
 
+  test("should make savepoint") {
+    val savepointRequestId = "123-savepoint"
+    val savepointPath = "savepointPath"
+    val processName = ProcessName("p1")
+    val manager = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
+      val toReturn = req.uri.path match {
+        case List("jobs", "overview") =>
+          JobsResponse(List(buildRunningJobOverview(processName)))
+        case List("jobs", jobId, "config") =>
+          JobConfig(jobId, ExecutionConfig(Map.empty))
+        case List("jobs", _, "savepoints") =>
+          SavepointTriggerResponse(`request-id` = savepointRequestId)
+        case List("jobs", _, "savepoints", `savepointRequestId`) =>
+          buildFinishedSavepointResponse(savepointPath)
+      }
+      Response.ok(Right(toReturn))
+    })
+
+    manager.savepoint(processName, savepointDir = None).futureValue shouldBe SavepointResult(path = savepointPath)
+  }
+
+  test("should stop") {
+    val stopRequestId = "123-stop"
+    val savepointPath = "savepointPath"
+    val processName = ProcessName("p1")
+    val manager = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
+      val toReturn = req.uri.path match {
+        case List("jobs", "overview") =>
+          JobsResponse(List(buildRunningJobOverview(processName)))
+        case List("jobs", jobId, "config") =>
+          JobConfig(jobId, ExecutionConfig(Map.empty))
+        case List("jobs", _, "stop") =>
+          SavepointTriggerResponse(`request-id` = stopRequestId)
+        case List("jobs", _, "savepoints", `stopRequestId`) =>
+          buildFinishedSavepointResponse(savepointPath)
+      }
+      Response.ok(Right(toReturn))
+    })
+
+    manager.stop(processName, savepointDir = None).futureValue shouldBe SavepointResult(path = savepointPath)
+  }
+
   test("return failed status if two jobs running") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING))
 
@@ -94,5 +133,21 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     manager.findJobStatus(processName).futureValue shouldBe Some(processState(
       manager, DeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(version, processName, user, None)), Some(10L)
     ))
+  }
+
+  private def createManagerWithBackend(backend: SttpBackend[Future, Nothing, NothingT]): FlinkRestManager = {
+    implicit val b: SttpBackend[Future, Nothing, NothingT] = backend
+    new FlinkRestManager(
+      config = config,
+      modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
+    )
+  }
+
+  private def buildRunningJobOverview(processName: ProcessName): JobOverview = {
+    JobOverview(jid = "1111", name = processName.value, `last-modification` = System.currentTimeMillis(), `start-time` = System.currentTimeMillis(), state = JobStatus.RUNNING)
+  }
+
+  private def buildFinishedSavepointResponse(savepointPath: String): GetSavepointStatusResponse = {
+    GetSavepointStatusResponse(status = SavepointStatus("COMPLETED"), operation = Some(SavepointOperation(location = Some(savepointPath), `failure-cause` = None)))
   }
 }

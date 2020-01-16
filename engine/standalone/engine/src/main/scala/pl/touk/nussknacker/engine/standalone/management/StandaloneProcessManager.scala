@@ -59,8 +59,12 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
     }
   }
 
-  override def savepoint(processName: ProcessName, savepointDir: Option[String], cancelProcess: Boolean): Future[String] = {
+  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
+  }
+
+  override def stop(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
+    Future.failed(new UnsupportedOperationException("Cannot stop standalone process"))
   }
 
   override def test[T](processName: ProcessName, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {

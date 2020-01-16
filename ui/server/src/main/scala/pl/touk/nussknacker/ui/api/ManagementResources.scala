@@ -17,6 +17,7 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
 import pl.touk.nussknacker.engine.api.DisplayJson
+import pl.touk.nussknacker.engine.api.deployment.SavepointResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -24,7 +25,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
+import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -117,16 +118,25 @@ class ManagementResources(processCounter: ProcessCounter,
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("adminProcessManagement" / "snapshot" / Segment) { processName =>
-      (post & processId(processName) & parameters('savepointDir.?, 'cancelProcess.as[Boolean] ? false)) { (processId, savepointDir, cancelProcess) =>
+      println("hmm")
+      (post & processId(processName) & parameters('savepointDir.?)) { (processId, savepointDir) =>
+        println("hmm2")
         canDeploy(processId) {
           complete {
-            (managementActor ? Snapshot(processId, user, savepointDir, cancelProcess))
-              .mapTo[String].map(path => HttpResponse(entity = path, status = StatusCodes.OK))
-              .recover(EspErrorToHttp.errorToHttp)
+            convertSavepointResultToResponse(managementActor ? Snapshot(processId, user, savepointDir))
           }
         }
       }
     } ~
+      path("adminProcessManagement" / "stop" / Segment) { processName =>
+        (post & processId(processName) & parameters('savepointDir.?)) { (processId, savepointDir) =>
+          canDeploy(processId) {
+            complete {
+              convertSavepointResultToResponse(managementActor ? Stop(processId, user, savepointDir))
+            }
+          }
+        }
+      } ~
       path("adminProcessManagement" / "deploy" / Segment / Segment) { (processName, savepointPath) =>
         (post & processId(processName)) { processId =>
           canDeploy(processId) {
@@ -247,6 +257,12 @@ class ManagementResources(processCounter: ProcessCounter,
     Directive[Unit](toStrict0)
   }
 
+  private def convertSavepointResultToResponse(future: Future[Any]) = {
+    future
+      .mapTo[SavepointResult]
+      .map { case SavepointResult(path) => HttpResponse(entity = path, status = StatusCodes.OK) }
+      .recover(EspErrorToHttp.errorToHttp)
+  }
 }
 
 @JsonCodec case class ResultsWithCounts(results: Json, counts: Map[String, NodeCount])
