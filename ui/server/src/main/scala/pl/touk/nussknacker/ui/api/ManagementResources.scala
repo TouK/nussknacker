@@ -118,9 +118,7 @@ class ManagementResources(processCounter: ProcessCounter,
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("adminProcessManagement" / "snapshot" / Segment) { processName =>
-      println("hmm")
       (post & processId(processName) & parameters('savepointDir.?)) { (processId, savepointDir) =>
-        println("hmm2")
         canDeploy(processId) {
           complete {
             convertSavepointResultToResponse(managementActor ? Snapshot(processId, user, savepointDir))
