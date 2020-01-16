@@ -81,7 +81,7 @@
         "plugin:react/recommended"
       ],
        "rules": {
-        "@typescript-eslint/explicit-function-return-type": ["warn", {"allowExpressions": true}]
+        "@typescript-eslint/explicit-function-return-type": 0
       }
     }
   ]

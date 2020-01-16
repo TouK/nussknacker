@@ -1,9 +1,18 @@
 import {$TodoType} from "../actions/migrationTypes"
 import {Action} from "../actions/reduxTypes"
 
+export type Attachment = {
+  processId: $TodoType;
+  processVersionId: $TodoType;
+  id: $TodoType;
+  createDate: $TodoType;
+  user: $TodoType;
+  fileName: string;
+}
+
 export type ProcessActivityState = {
   comments: $TodoType[];
-  attachments: $TodoType[];
+  attachments: Attachment[];
 }
 
 const emptyProcessActivity: ProcessActivityState = {
@@ -17,7 +26,7 @@ export function reducer(state: ProcessActivityState = emptyProcessActivity, acti
       return {
         ...state,
         comments: action.comments,
-        attachments: action.attachments,
+        attachments: action.attachments || [],
       }
     }
     default:
