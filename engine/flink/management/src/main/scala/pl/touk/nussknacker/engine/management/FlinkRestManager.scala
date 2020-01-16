@@ -190,7 +190,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
     val savepointRequest = basicRequest
       .post(flinkUrl.path("jobs", job.deploymentId.value, "savepoints"))
-      .body(SavepointTriggerRequest(`target-directory` = savepointDir))
+      .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
     processSavepointRequest(job, savepointRequest)
   }
 
@@ -242,7 +242,7 @@ object flinkRestModel {
 
   @JsonCodec(encodeOnly = true) case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
 
-  @JsonCodec(encodeOnly = true) case class SavepointTriggerRequest(`target-directory`: Option[String])
+  @JsonCodec(encodeOnly = true) case class SavepointTriggerRequest(`target-directory`: Option[String], `cancel-job`: Boolean)
 
   @JsonCodec(encodeOnly = true) case class StopRequest(targetDirectory: Option[String])
 
