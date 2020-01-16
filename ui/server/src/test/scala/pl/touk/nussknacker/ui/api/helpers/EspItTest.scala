@@ -186,6 +186,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     ) ~> withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
   }
 
+  def snapshot(processName: String): RouteTestResult = {
+    Post(s"/adminProcessManagement/snapshot/$processName") ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+  }
+
+  def stop(processName: String): RouteTestResult = {
+    Post(s"/adminProcessManagement/stop/$processName") ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+  }
+
   def getSampleProcess: RouteTestResult = {
     Get(s"/processes/${SampleProcess.process.id}") ~> withPermissions(processesRoute, testPermissionRead)
   }

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import sttp.client._
 import sttp.client.circe._
@@ -154,7 +154,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
   //FIXME: get rid of sleep, refactor?
-  private def waitForSavepoint(jobId: DeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[String] = {
+  private def waitForSavepoint(jobId: DeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[SavepointResult] = {
     val start = System.currentTimeMillis()
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
@@ -170,7 +170,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         //getOrElse is not really needed since isCompletedSuccessfully returns true only if it's defined
         val location = resp.operation.flatMap(_.location).getOrElse("")
         logger.info(s"Savepoint $savepointId for $jobId finished in $location")
-        Future.successful(location)
+        Future.successful(SavepointResult(location))
       } else if (resp.isFailed) {
         Future.failed(new RuntimeException(s"Failed to complete savepoint: ${resp.operation}"))
       } else {
@@ -187,10 +187,22 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .flatMap(handleUnitResponse)
   }
 
-  override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
-    basicRequest
+  override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
+    val savepointRequest = basicRequest
       .post(flinkUrl.path("jobs", job.deploymentId.value, "savepoints"))
-      .body("""{"cancel-job": false}""")
+      .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
+    processSavepointRequest(job, savepointRequest)
+  }
+
+  override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
+    val stopRequest = basicRequest
+      .post(flinkUrl.path("jobs", job.deploymentId.value, "stop"))
+      .body(StopRequest(targetDirectory = savepointDir, drain = false))
+    processSavepointRequest(job, stopRequest)
+  }
+
+  private def processSavepointRequest(job: ProcessState, request: RequestT[Identity, Either[String, String], Nothing]): Future[SavepointResult] = {
+    request
       .response(asJson[SavepointTriggerResponse])
       .send()
       .flatMap(SttpJson.failureToFuture)
@@ -229,6 +241,10 @@ object flinkRestModel {
   implicit val jobStatusDecoder: Decoder[JobStatus] = Decoder.decodeString.map(JobStatus.valueOf)
 
   @JsonCodec(encodeOnly = true) case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
+
+  @JsonCodec(encodeOnly = true) case class SavepointTriggerRequest(`target-directory`: Option[String], `cancel-job`: Boolean)
+
+  @JsonCodec(encodeOnly = true) case class StopRequest(targetDirectory: Option[String], drain: Boolean)
 
   @JsonCodec(decodeOnly = true) case class SavepointTriggerResponse(`request-id`: String)
 

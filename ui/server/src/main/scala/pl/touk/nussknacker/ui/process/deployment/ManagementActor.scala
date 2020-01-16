@@ -57,6 +57,8 @@ class ManagementActor(environment: String,
       }
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
+    case Stop(id, user, savepointDir) =>
+      reply(processManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir)))
     case Cancel(id, user, comment) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
@@ -236,7 +238,9 @@ case class Deploy(id: ProcessIdWithName, user: LoggedUser, savepointPath: Option
 
 case class Cancel(id: ProcessIdWithName, user: LoggedUser, comment: Option[String]) extends DeploymentAction
 
-case class Snapshot(id: ProcessIdWithName, user: LoggedUser, savepointPath: String)
+case class Snapshot(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[String])
+
+case class Stop(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[String])
 
 case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 

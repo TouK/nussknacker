@@ -156,6 +156,22 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
+  test("snaphots process") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    snapshot(SampleProcess.process.id) ~> check {
+      status shouldBe StatusCodes.OK
+      responseAs[String] shouldBe MockProcessManager.savepointPath
+    }
+  }
+
+  test("stops process") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    stop(SampleProcess.process.id) ~> check {
+      status shouldBe StatusCodes.OK
+      responseAs[String] shouldBe MockProcessManager.stopSavepointPath
+    }
+  }
+
   test("return test results") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process)
