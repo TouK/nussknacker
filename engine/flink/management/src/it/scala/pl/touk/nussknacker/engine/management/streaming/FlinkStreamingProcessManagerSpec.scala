@@ -145,24 +145,20 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   test("should stop process and deploy it using savepoint") {
     val processId = "stop"
-    val inTopic = s"input-$processId"
     val outTopic = s"output-$processId"
-    val kafkaProcess = SampleProcess.kafkaProcess(processId, inTopic)
+    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
-    deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
-    kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "1"))
-    messagesFromTopic(outTopic, 1) shouldBe List("1")
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+    messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
     val savepointPath = processManager.stop(ProcessName(processId), savepointDir = None).map(_.path)
 
     eventually {
       processManager.findJobStatus(ProcessName(processId)).futureValue.map(_.status) shouldBe Some(FlinkStateStatus.Canceled)
     }
 
-    kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2"))
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
 
-    deployProcessAndWaitIfRunning(kafkaProcess, empty(processId), Some(savepointPath.futureValue))
-
-    messagesFromTopic(outTopic, 2) shouldBe List("1", "2")
+    messagesFromTopic(outTopic, 2) shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
   }
