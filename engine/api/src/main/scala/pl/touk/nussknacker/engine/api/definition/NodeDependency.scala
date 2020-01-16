@@ -38,7 +38,7 @@ case object RawParameterEditor extends ParameterEditor
 @JsonCodec(encodeOnly = true) case class SimpleParameterEditor(simpleEditorType: SimpleEditorType, possibleValues: List[FixedExpressionValue]) extends ParameterEditor
 
 object SimpleParameterEditor {
-  implicit val simpleEditorTypeEncoder: Encoder[SimpleEditorType] = simpleEditorType => Encoder.encodeString(simpleEditorType.name())
+  implicit val simpleEditorTypeEncoder: Encoder[SimpleEditorType] = (simpleEditorType : SimpleEditorType) => Encoder.encodeString(simpleEditorType.name())
 }
 
 @JsonCodec(encodeOnly = true) case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode) extends ParameterEditor
