@@ -57,35 +57,53 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   }
 
   test("Should mark finished process as finished") {
-
-    val id: process.ProcessId = prepareDeployedProcess(processName)
+    val id: process.ProcessId = prepareDeployedProcess(processName).futureValue
 
     jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(true)
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.deployment should not be None
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     processManager.withProcessFinished {
       jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(false)
     }
 
     val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
-    processDetails.deployment should not be None
+    processDetails.lastAction should not be None
+    processDetails.isCanceled shouldBe true
+  }
+
+  test("Should return canceled status for canceled process with not founded state - cleaned state") {
+    val id: process.ProcessId = prepareCanceledProcess(processName).futureValue
+
+    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(true)
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
+
+    processManager.withCleanedProcessState {
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
+    }
+
+    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    processDetails.lastAction should not be None
     processDetails.isCanceled shouldBe true
   }
 
   private def isOkForDeployed(state: ProcessStatus): Boolean =
     state.status.isDuringDeploy || state.status.isRunning
 
-  private def prepareDeployedProcess(processName: ProcessName): process.ProcessId = {
-    (for {
+  private def prepareDeployedProcess(processName: ProcessName): Future[process.ProcessId] =
+    for {
       id <- prepareProcess(processName)
-      _ <- deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", env, Some("one"))
-    } yield id).futureValue
-  }
+      _ <- deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", env, Some("Deployed"))
+    }  yield id
 
-  private def prepareProcess(processName: ProcessName): Future[process.ProcessId] = {
+  private def prepareCanceledProcess(processName: ProcessName): Future[process.ProcessId] =
+    for {
+      id <- prepareDeployedProcess(processName)
+      _ <- deploymentProcessRepository.markProcessAsCancelled(id, 1, "stream", Some("Canceled"))
+    } yield id
+
+  private def prepareProcess(processName: ProcessName): Future[process.ProcessId] =
     for {
       _ <- writeProcessRepository.saveNewProcess(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
       id <- processRepository.fetchProcessId(processName).map(_.get)
     } yield id
-  }
 }

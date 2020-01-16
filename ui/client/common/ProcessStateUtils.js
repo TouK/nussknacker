@@ -41,16 +41,17 @@ export default {
     ERROR: iconErrorState,
   },
 
-  isDeployedAction(deployment) {
-    return _.get(deployment, "action") === this.ACTIONS.DEPLOY
-  },
-
   isRunning(state) {
     return this.getStateStatus(state) === this.STATUSES.RUNNING
   },
 
   isDeployed(process) {
     return this.getProcessAction(process) === this.ACTIONS.DEPLOY
+  },
+
+  isActionDeployed(deploymentAction) {
+    const action = _.get(deploymentAction, "action")
+    return action && action === this.ACTIONS.DEPLOY
   },
 
   getStatusTooltip(status) {
@@ -93,7 +94,7 @@ export default {
   },
 
   getProcessAction(process) {
-    return _.get(process, "deployment.action", null)
+    return _.get(process, "lastAction.action", null)
   },
 
   getProcessTooltip(process) {

@@ -14,7 +14,7 @@ export default class ListState extends React.Component {
   animationListener = (node, done) => node.addEventListener("transitionend", done, false)
 
   getTooltip = (process, state, isStateLoaded) => {
-    if (isStateLoaded === false || process.deployment == null && state == null) {
+    if (isStateLoaded === false || process.lastAction == null && state == null) {
       return ProcessStateUtils.getProcessTooltip(process, isStateLoaded)
     }
 
@@ -27,7 +27,7 @@ export default class ListState extends React.Component {
   }
 
   getIcon = (process, state, isStateLoaded) => {
-    if (isStateLoaded === false || process.deployment == null && state == null) {
+    if (isStateLoaded === false || process.lastAction == null && state == null) {
       return ProcessStateUtils.getProcessIcon(process)
     }
 

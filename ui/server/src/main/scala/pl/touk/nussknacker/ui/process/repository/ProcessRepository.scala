@@ -4,7 +4,7 @@ import java.sql.Timestamp
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeployment, ProcessHistoryEntry, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.{DeploymentAction, ProcessDeployment, ProcessHistoryEntry, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
@@ -30,7 +30,11 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
       .filter(_.processId === processId.value)
       .sortBy(_.createDate.desc)
 
-  protected def fetchLastDeploymentActionPerProcess: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
+
+  protected def fetchLastDeployedActionPerProcess: Query[(api.Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
+    fetchLastActionPerProcess.filter(_._2.deploymentAction === DeploymentAction.Deploy)
+
+  protected def fetchLastActionPerProcess: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
     deployedProcessesTable
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.deployedAt).max) }

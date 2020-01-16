@@ -21,12 +21,16 @@ class ProcessStatusTest extends FunSuite with Matchers {
   )
 
   test("display error when not expected version running") {
-    ProcessStatus.create(sampleState(SimpleStateStatus.Running, 5, None), Some(5)) shouldBe sampleStatus(SimpleStateStatus.Running)
     ProcessStatus.create(sampleState(SimpleStateStatus.Running, 3, None), Some(5)) shouldBe sampleStatus(SimpleStateStatus.Running, Some("Process deployed in version 3 (by user), expected version 5"))
     ProcessStatus.create(sampleState(SimpleStateStatus.Running, 5, None), None) shouldBe sampleStatus(SimpleStateStatus.Running,  Some("Process deployed in version 5 (by user), should not be deployed"))
-    ProcessStatus.create(sampleState(SimpleStateStatus.Failed, 1, Some("Failed?")), Some(1)) shouldBe sampleStatus(SimpleStateStatus.Failed, Some("Failed?"))
-    ProcessStatus.create(sampleState(SimpleStateStatus.Failed, 3, Some("Failed?")), Some(5)) shouldBe sampleStatus(SimpleStateStatus.Failed, Some("Process deployed in version 3 (by user), expected version 5, Failed?"))
-    ProcessStatus.create(sampleState(SimpleStateStatus.Failed, 3, Some("Failed?")), None) shouldBe sampleStatus(SimpleStateStatus.Failed, Some("Process deployed in version 3 (by user), should not be deployed, Failed?"))
+  }
+
+  test ("don't display error when process is not running") {
+    ProcessStatus.create(sampleState(SimpleStateStatus.Running, 5, None), Some(5)) shouldBe sampleStatus(SimpleStateStatus.Running)
+    ProcessStatus.create(sampleState(SimpleStateStatus.Canceled, 3, None), Some(5)) shouldBe sampleStatus(SimpleStateStatus.Canceled)
     ProcessStatus.create(sampleState(SimpleStateStatus.DuringDeploy, 3, None), Some(3)) shouldBe sampleStatus(SimpleStateStatus.DuringDeploy)
+    ProcessStatus.create(sampleState(SimpleStateStatus.Failed, 1, Some("Failed?")), Some(1)) shouldBe sampleStatus(SimpleStateStatus.Failed, Some("Failed?"))
+    ProcessStatus.create(sampleState(SimpleStateStatus.Failed, 3, Some("Failed?")), Some(5)) shouldBe sampleStatus(SimpleStateStatus.Failed, Some("Failed?"))
+    ProcessStatus.create(sampleState(SimpleStateStatus.Failed, 3, Some("Failed?")), None) shouldBe sampleStatus(SimpleStateStatus.Failed, Some("Failed?"))
   }
 }

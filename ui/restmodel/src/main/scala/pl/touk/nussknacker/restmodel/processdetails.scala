@@ -29,7 +29,8 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
       modificationDate = baseProcessDetails.modificationDate,
       createdAt = baseProcessDetails.createdAt,
       createdBy = baseProcessDetails.createdBy,
-      deployment = baseProcessDetails.deployment
+      lastAction = baseProcessDetails.lastAction,
+      lastDeployedAction = baseProcessDetails.lastDeployedAction
     )
   }
 
@@ -44,9 +45,10 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                      modificationDate: LocalDateTime,
                                      createdAt: LocalDateTime,
                                      createdBy: String,
-                                     deployment: Option[ProcessDeployment]) {
-    def isDeployed: Boolean = deployment.exists(_.isDeployed)
-    def isCanceled: Boolean = deployment.exists(_.isCanceled)
+                                     lastAction: Option[ProcessDeployment],
+                                     lastDeployedAction: Option[ProcessDeployment]) {
+    def isDeployed: Boolean = lastAction.exists(_.isDeployed)
+    def isCanceled: Boolean = lastAction.exists(_.isCanceled)
   }
 
   object BaseProcessDetails {
@@ -68,13 +70,14 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                               createdAt: LocalDateTime,
                                               createdBy: String,
                                               tags: List[String],
-                                              deployment: Option[ProcessDeployment],
+                                              lastDeployedAction: Option[ProcessDeployment],
+                                              lastAction: Option[ProcessDeployment],
                                               json: Option[ProcessShape],
                                               history: List[ProcessHistoryEntry],
                                               modelVersion: Option[Int]) {
 
-    def isDeployed: Boolean = deployment.exists(_.isDeployed)
-    def isCanceled: Boolean = deployment.exists(_.isCanceled)
+    def isDeployed: Boolean = lastAction.exists(_.isDeployed)
+    def isCanceled: Boolean = lastAction.exists(_.isCanceled)
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
     // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes
     def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(id.toLong), ProcessName(name))

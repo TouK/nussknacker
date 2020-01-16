@@ -56,12 +56,10 @@ object ProcessStatus {
 
   def create(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {
     val versionMatchMessage = (processState.version, expectedDeploymentVersion) match {
-      //currently returning version is optional
-      case (None, _) => None
-      case (_, _) if !processState.isDeployed => None
       case (Some(stateVersion), Some(expectedVersion)) if stateVersion.versionId == expectedVersion => None
       case (Some(stateVersion), Some(expectedVersion)) if processState.isDeployed => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version $expectedVersion")
       case (Some(stateVersion), None) if processState.isDeployed => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed")
+      case _  => None
     }
 
     ProcessStatus(

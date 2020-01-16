@@ -36,7 +36,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .customNode("custom2", "out2", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process1deployed = process1.copy(deployment = Option(ProcessDeployment(1, "test", LocalDateTime.now(), "user", DeploymentAction.Deploy, Map.empty)))
+  private val process1deployed = process1.copy(lastAction = Option(ProcessDeployment(1, "test", LocalDateTime.now(), "user", DeploymentAction.Deploy, Map.empty)))
 
   private val process2 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess2").exceptionHandler()

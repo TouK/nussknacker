@@ -91,11 +91,11 @@ class ManagementActor(environment: String,
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state)
-      } yield handleCheckStatus(state, deployedVersion.map(_.processVersionId), deployedVersions.headOption)
+      } yield handleObsoleteStatus(state, deployedVersion.map(_.processVersionId), deployedVersions.headOption)
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
-      implicit val loggedUser = user
+      implicit val loggedUser: LoggedUser = user
       result match {
         case Left(failure) =>
           logger.error(s"Action: ${beingDeployed.get(process.name)} of $process finished with failure", failure)
@@ -119,11 +119,13 @@ class ManagementActor(environment: String,
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
   }
 
-  private def handleCheckStatus(processState: Option[ProcessState], deployedVersion: Option[Long], lastDeployHistory: Option[DeploymentHistoryEntry]): Option[ProcessStatus] =
-    (processState, lastDeployHistory) match {
+  //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleObsoleteStatus(processState: Option[ProcessState], deployedVersion: Option[Long], lastDeployAction: Option[DeploymentHistoryEntry]): Option[ProcessStatus] =
+    (processState, lastDeployAction) match {
       case (None, Some(history)) if history.isCanceled => Option(ProcessStatus.canceled)
       case (Some(state), _) => Option(ProcessStatus.create(state, deployedVersion))
-      case (None, None) => Option.empty
+      case _ => Option.empty
     }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
@@ -176,7 +178,7 @@ class ManagementActor(environment: String,
 
   private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser) : Future[Option[Long]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-    currentDeploymentInfo = process.flatMap(_.deployment)
+    currentDeploymentInfo = process.flatMap(_.lastAction)
   } yield (currentDeploymentInfo.map(_.processVersionId))
 
 

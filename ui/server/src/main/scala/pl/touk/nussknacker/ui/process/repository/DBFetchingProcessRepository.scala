@@ -94,13 +94,15 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                                                               isDeployed: Option[Boolean])(implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
-      deployments <- fetchLastDeploymentActionPerProcess.result
+      deployments <- fetchLastActionPerProcess.result
+      latestDeployed <- fetchLastDeployedActionPerProcess.result
       latestProcesses <- fetchLatestProcesses(query, deployments, isDeployed).result
     } yield
       latestProcesses.map { case ((_, processVersion), process) => createFullDetails(
         process,
         processVersion,
         deployments.find(_._1 == process.id).map(_._2),
+        latestDeployed.find(_._1 == process.id).map(_._2),
         isLatestVersion = true
       )}).map(_.toList)
   }
@@ -183,7 +185,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
-      lastDeployAction = deployments.headOption,
+      lastAction = deployments.headOption,
+      lastDeployedAction = deployments.headOption.find(_.isDeployed),
       isLatestVersion = isLatestVersion,
       tags = tags,
       history = processVersions.map(pvs => ProcessRepository.toProcessHistoryEntry(
@@ -195,7 +198,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
 
   private def createFullDetails[PS: ProcessShapeFetchStrategy](process: ProcessEntityData,
                                                                processVersion: ProcessVersionEntityData,
-                                                               lastDeployAction: Option[DeployedProcessInfoEntityData],
+                                                               lastAction: Option[DeployedProcessInfoEntityData],
+                                                               lastDeployedAction: Option[DeployedProcessInfoEntityData],
                                                                isLatestVersion: Boolean,
                                                                tags: Seq[TagsEntityData] = List.empty,
                                                                history: Seq[ProcessHistoryEntry] = List.empty,
@@ -211,7 +215,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       processType = process.processType,
       processingType = process.processingType,
       processCategory = process.processCategory,
-      deployment = lastDeployAction.map(ProcessRepository.toDeploymentEntry),
+      lastAction = lastAction.map(ProcessRepository.toDeploymentEntry),
+      lastDeployedAction = lastDeployedAction.map(ProcessRepository.toDeploymentEntry),
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       createdAt = DateUtils.toLocalDateTime(process.createdAt),

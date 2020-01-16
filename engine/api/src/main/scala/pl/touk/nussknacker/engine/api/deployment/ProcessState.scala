@@ -55,7 +55,6 @@ object ProcessState {
                                    attributes: Option[Json] = Option.empty,
                                    errorMessage: Option[String] = Option.empty) {
   def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
-  def isStopped: Boolean = status.isStopped
 }
 
 object StateAction extends Enumeration {
@@ -72,7 +71,6 @@ sealed trait StateStatus {
   def isDuringDeploy: Boolean = false
   def isFinished: Boolean = false
   def isRunning: Boolean = false
-  def isStopped: Boolean = false
   def canDeploy: Boolean = false
   def name: String
 }
@@ -81,7 +79,6 @@ final class NotEstablishedStateStatus(val name: String) extends StateStatus
 
 final class StoppedStateStatus(val name: String) extends StateStatus {
   override def canDeploy: Boolean = true
-  override def isStopped: Boolean = true
 }
 
 final class DuringDeployStateStatus(val name: String) extends StateStatus {

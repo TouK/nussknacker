@@ -45,12 +45,12 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
         val oldDeployments = getHistoryDeployments
-        decodeDetails.deployment shouldBe deployedWithVersions(2)
+        decodeDetails.lastAction shouldBe deployedWithVersions(2)
         oldDeployments.size shouldBe 1
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
-            decodeDetails.deployment shouldBe deployedWithVersions(2)
+            decodeDetails.lastAction shouldBe deployedWithVersions(2)
 
             val currentDeployments = getHistoryDeployments
             currentDeployments.size shouldBe 2
@@ -101,7 +101,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[ProcessDetails]
-        processDetails.deployment shouldBe deployedWithVersions(1)
+        processDetails.lastAction shouldBe deployedWithVersions(1)
         processDetails.isDeployed shouldBe true
       }
     }
@@ -112,10 +112,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
-        decodeDetails.deployment shouldBe deployedWithVersions(2)
+        decodeDetails.lastAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
-            decodeDetails.deployment should not be None
+            decodeDetails.lastAction should not be None
             decodeDetails.isCanceled shouldBe  true
           }
         }
@@ -128,10 +128,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getProcesses ~> check {
-        decodeDetailsFromAll.deployment shouldBe deployedWithVersions(2)
+        decodeDetailsFromAll.lastAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcesses ~> check {
-            decodeDetailsFromAll.deployment should not be None
+            decodeDetailsFromAll.lastAction should not be None
             decodeDetailsFromAll.isCanceled shouldBe true
           }
         }
