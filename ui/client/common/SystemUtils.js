@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import {v4 as uuid4} from "uuid"
 import api from "../api"
 

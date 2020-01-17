@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
