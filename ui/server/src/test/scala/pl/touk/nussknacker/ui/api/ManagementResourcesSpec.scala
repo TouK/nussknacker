@@ -33,30 +33,22 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private val fixedTime = LocalDateTime.now()
 
-  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeployment]] =
+  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeploymentAction]] =
     BeMatcher(equal(
-        Option(ProcessDeployment(versionId, "test", fixedTime, user().username, DeploymentAction.Deploy, buildInfo))
-      ).matcher[Option[ProcessDeployment]]
-    ).compose[Option[ProcessDeployment]](_.map(_.copy(deployedAt = fixedTime)))
+        Option(ProcessDeploymentAction(versionId, "test", fixedTime, user().username, DeploymentAction.Deploy, buildInfo))
+      ).matcher[Option[ProcessDeploymentAction]]
+    ).compose[Option[ProcessDeploymentAction]](_.map(_.copy(deployedAt = fixedTime)))
 
   test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
-        val oldDeployments = getHistoryDeployments
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
-        oldDeployments.size shouldBe 1
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
             decodeDetails.lastAction shouldBe deployedWithVersions(2)
-
-            val currentDeployments = getHistoryDeployments
-            currentDeployments.size shouldBe 2
-            currentDeployments.head.deployedAt should not be oldDeployments.head.deployedAt
-            val buildInfo = currentDeployments.head.buildInfo
-            buildInfo("engine-version") should not be empty
           }
         }
       }
@@ -226,8 +218,6 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       status shouldEqual StatusCodes.OK
     }
   }
-
-  private def getHistoryDeployments: List[ProcessDeployment] = decodeDetails.history.flatMap(_.deployments)
 
   def decodeDetails: ProcessDetails = responseAs[ProcessDetails]
 

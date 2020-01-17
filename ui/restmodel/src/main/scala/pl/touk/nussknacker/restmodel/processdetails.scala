@@ -45,8 +45,8 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                      modificationDate: LocalDateTime,
                                      createdAt: LocalDateTime,
                                      createdBy: String,
-                                     lastAction: Option[ProcessDeployment],
-                                     lastDeployedAction: Option[ProcessDeployment]) {
+                                     lastAction: Option[ProcessDeploymentAction],
+                                     lastDeployedAction: Option[ProcessDeploymentAction]) {
     def isDeployed: Boolean = lastAction.exists(_.isDeployed)
     def isCanceled: Boolean = lastAction.exists(_.isCanceled)
   }
@@ -70,8 +70,8 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                               createdAt: LocalDateTime,
                                               createdBy: String,
                                               tags: List[String],
-                                              lastDeployedAction: Option[ProcessDeployment],
-                                              lastAction: Option[ProcessDeployment],
+                                              lastDeployedAction: Option[ProcessDeploymentAction],
+                                              lastAction: Option[ProcessDeploymentAction],
                                               json: Option[ProcessShape],
                                               history: List[ProcessHistoryEntry],
                                               modelVersion: Option[Int]) {
@@ -103,9 +103,7 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                             processName: String,
                                             processVersionId: Long,
                                             createDate: LocalDateTime,
-                                            user: String,
-                                            //TODO: remove, replace with 'currentDeployments'
-                                            deployments: List[ProcessDeployment])
+                                            user: String)
 
   @JsonCodec case class DeploymentHistoryEntry(processVersionId: Long,
                                                time: LocalDateTime,
@@ -119,12 +117,12 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
     def isCanceled: Boolean = deploymentAction.equals(DeploymentAction.Cancel)
   }
 
-  @JsonCodec case class ProcessDeployment(processVersionId: Long,
-                                          @Deprecated environment: String, //TODO: remove it in future..
-                                          deployedAt: LocalDateTime,
-                                          user: String,
-                                          action: DeploymentAction,
-                                          buildInfo: Map[String, String]) {
+  @JsonCodec case class ProcessDeploymentAction(processVersionId: Long,
+                                                @Deprecated environment: String, //TODO: remove it in future..
+                                                deployedAt: LocalDateTime,
+                                                user: String,
+                                                action: DeploymentAction,
+                                                buildInfo: Map[String, String]) {
     def isDeployed: Boolean = action.equals(DeploymentAction.Deploy)
     def isCanceled: Boolean = action.equals(DeploymentAction.Cancel)
   }

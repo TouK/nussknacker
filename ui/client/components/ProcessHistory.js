@@ -6,7 +6,6 @@ import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import DialogMessages from "../common/DialogMessages"
 import ProcessUtils from "../common/ProcessUtils"
-import ProcessStateUtils from "../common/ProcessStateUtils"
 import "../stylesheets/processHistory.styl"
 import Date from "./common/Date"
 
@@ -57,7 +56,10 @@ export class ProcessHistory_ extends Component {
     }
   }
 
-  latestVersionIsNotDeployed = (index, historyEntry) => index === 0 && !ProcessStateUtils.isActionDeployed(_.head(historyEntry.deployments))
+  latestVersionIsNotDeployed = (index, historyEntry) => {
+    const deployedProcessVersionId = _.get(this.props.lastDeployedAction, "processVersionId")
+    return index === 0 && (_.isUndefined(deployedProcessVersionId) || historyEntry.processVersionId !== deployedProcessVersionId)
+  }
 
   render() {
     return (

@@ -78,6 +78,6 @@ case class DeployedProcessInfoEntityData(processId: Long,
                                          buildInfo: Option[String]) {
 
   lazy val deployedAtTime: LocalDateTime = DateUtils.toLocalDateTime(deployedAt)
-  lazy val isDeployed = deploymentAction.equals(DeploymentAction.Deploy)
-  lazy val isCanceled = deploymentAction.equals(DeploymentAction.Cancel)
+  lazy val isDeployed: Boolean = deploymentAction.equals(DeploymentAction.Deploy)
+  lazy val isCanceled: Boolean = deploymentAction.equals(DeploymentAction.Cancel)
 }

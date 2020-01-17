@@ -5,7 +5,6 @@ import java.time.LocalDateTime
 import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.{DeploymentAction, DeploymentHistoryEntry}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeploymentAction}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{DeployedProcessInfoEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
@@ -86,12 +85,11 @@ class ManagementActor(environment: String,
       implicit val loggedUser: LoggedUser = user
 
       val processStatus = for {
-        deployedVersions <- processRepository.fetchDeploymentHistory(id.id)
-        deployedVersion = deployedVersions.headOption.filter(_.isDeployed)
+        actions <- processRepository.fetchProcessActions(id.id)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state)
-      } yield handleObsoleteStatus(state, deployedVersion.map(_.processVersionId), deployedVersions.headOption)
+      } yield handleObsoleteStatus(state, actions.headOption)
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
@@ -121,10 +119,10 @@ class ManagementActor(environment: String,
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleObsoleteStatus(processState: Option[ProcessState], deployedVersion: Option[Long], lastDeployAction: Option[DeploymentHistoryEntry]): Option[ProcessStatus] =
-    (processState, lastDeployAction) match {
-      case (None, Some(history)) if history.isCanceled => Option(ProcessStatus.canceled)
-      case (Some(state), _) => Option(ProcessStatus.create(state, deployedVersion))
+  private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessDeploymentAction]): Option[ProcessStatus] =
+    (processState, lastAction) match {
+      case (Some(state), _)  => Option(ProcessStatus.create(state, lastAction.map(_.processVersionId)))
+      case (None, Some(action)) if action.isCanceled => Option(ProcessStatus.canceled)
       case _ => Option.empty
     }
 
@@ -176,11 +174,10 @@ class ManagementActor(environment: String,
     } yield result
   }
 
-  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser) : Future[Option[Long]] = for {
+  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[Long]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-    currentDeploymentInfo = process.flatMap(_.lastAction)
-  } yield (currentDeploymentInfo.map(_.processVersionId))
-
+    lastAction = process.flatMap(_.lastAction)
+  } yield lastAction.map(_.processVersionId)
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])
                            (implicit user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
