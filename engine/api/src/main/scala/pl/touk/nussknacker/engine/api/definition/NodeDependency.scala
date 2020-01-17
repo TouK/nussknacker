@@ -48,7 +48,7 @@ object SimpleParameterEditor {
 @JsonCodec(encodeOnly = true) case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode) extends ParameterEditor
 
 object DualParameterEditor {
-  implicit val defaultEditorModeEncoder: Encoder[DualEditorMode] = {
+  implicit val dualEditorModeEncoder: Encoder[DualEditorMode] = {
     new Encoder[DualEditorMode] {
       override def apply(editorMode: DualEditorMode): Json = Encoder.encodeString(editorMode.name())
     }

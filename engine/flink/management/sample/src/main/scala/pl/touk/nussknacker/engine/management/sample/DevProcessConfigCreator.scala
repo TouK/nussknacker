@@ -46,7 +46,7 @@ import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, RawEditor, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, LabeledExpression, RawEditor, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -505,6 +505,12 @@ class SimpleTypesService extends Service with Serializable {
 
              @ParamName("intParam")
              @RawEditor intParam: Int,
+
+             @ParamName("fixedValuesStringParam")
+             @SimpleEditor(
+               `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+               possibleValues = Array(new LabeledExpression(expression = "Max", label = "Max"), new LabeledExpression(expression = "Min", label = "Min"))
+             ) fixedValuesStringParam: String,
 
              @ParamName("bigDecimalParam") bigDecimalParam: java.math.BigDecimal,
              @ParamName("bigIntegerParam") bigIntegerParam: java.math.BigInteger): Future[Unit] = {

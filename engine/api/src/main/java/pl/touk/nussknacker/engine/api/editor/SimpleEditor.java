@@ -11,5 +11,8 @@ public @interface SimpleEditor {
 
     SimpleEditorType type();
 
+    /**
+     * This field should be used only with {@link SimpleEditorType#FIXED_VALUES_EDITOR}
+     */
     LabeledExpression[] possibleValues() default {};
 }
