@@ -33,30 +33,22 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private val fixedTime = LocalDateTime.now()
 
-  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeployment]] =
+  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeploymentAction]] =
     BeMatcher(equal(
-        Option(ProcessDeployment(versionId, "test", fixedTime, user().username, DeploymentAction.Deploy, buildInfo))
-      ).matcher[Option[ProcessDeployment]]
-    ).compose[Option[ProcessDeployment]](_.map(_.copy(deployedAt = fixedTime)))
+        Option(ProcessDeploymentAction(versionId, "test", fixedTime, user().username, DeploymentAction.Deploy, buildInfo))
+      ).matcher[Option[ProcessDeploymentAction]]
+    ).compose[Option[ProcessDeploymentAction]](_.map(_.copy(deployedAt = fixedTime)))
 
   test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
-        val oldDeployments = getHistoryDeployments
-        decodeDetails.deployment shouldBe deployedWithVersions(2)
-        oldDeployments.size shouldBe 1
+        decodeDetails.lastAction shouldBe deployedWithVersions(2)
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
-            decodeDetails.deployment shouldBe deployedWithVersions(2)
-
-            val currentDeployments = getHistoryDeployments
-            currentDeployments.size shouldBe 2
-            currentDeployments.head.deployedAt should not be oldDeployments.head.deployedAt
-            val buildInfo = currentDeployments.head.buildInfo
-            buildInfo("engine-version") should not be empty
+            decodeDetails.lastAction shouldBe deployedWithVersions(2)
           }
         }
       }
@@ -101,7 +93,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[ProcessDetails]
-        processDetails.deployment shouldBe deployedWithVersions(1)
+        processDetails.lastAction shouldBe deployedWithVersions(1)
         processDetails.isDeployed shouldBe true
       }
     }
@@ -112,10 +104,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
-        decodeDetails.deployment shouldBe deployedWithVersions(2)
+        decodeDetails.lastAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
-            decodeDetails.deployment should not be None
+            decodeDetails.lastAction should not be None
             decodeDetails.isCanceled shouldBe  true
           }
         }
@@ -128,10 +120,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getProcesses ~> check {
-        decodeDetailsFromAll.deployment shouldBe deployedWithVersions(2)
+        decodeDetailsFromAll.lastAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcesses ~> check {
-            decodeDetailsFromAll.deployment should not be None
+            decodeDetailsFromAll.lastAction should not be None
             decodeDetailsFromAll.isCanceled shouldBe true
           }
         }
@@ -226,8 +218,6 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       status shouldEqual StatusCodes.OK
     }
   }
-
-  private def getHistoryDeployments: List[ProcessDeployment] = decodeDetails.history.flatMap(_.deployments)
 
   def decodeDetails: ProcessDetails = responseAs[ProcessDetails]
 

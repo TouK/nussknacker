@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeploymentAction}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{DeployedProcessInfoEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
@@ -85,16 +85,15 @@ class ManagementActor(environment: String,
       implicit val loggedUser: LoggedUser = user
 
       val processStatus = for {
-        deployedVersions <- processRepository.fetchDeploymentHistory(id.id)
-        deployedVersion = deployedVersions.headOption.filter(_.deploymentAction == DeploymentAction.Deploy)
+        actions <- processRepository.fetchProcessActions(id.id)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
-        _ <- handleFinishedProcess(id, state, manager.processStateDefinitionManager)
-      } yield state.map(ProcessStatus.create(_, deployedVersion.map(_.processVersionId)))
+        _ <- handleFinishedProcess(id, state)
+      } yield handleObsoleteStatus(state, actions.headOption)
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
-      implicit val loggedUser = user
+      implicit val loggedUser: LoggedUser = user
       result match {
         case Left(failure) =>
           logger.error(s"Action: ${beingDeployed.get(process.name)} of $process finished with failure", failure)
@@ -118,9 +117,18 @@ class ManagementActor(environment: String,
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
   }
 
+  //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessDeploymentAction]): Option[ProcessStatus] =
+    (processState, lastAction) match {
+      case (Some(state), _)  => Option(ProcessStatus.create(state, lastAction.map(_.processVersionId)))
+      case (None, Some(action)) if action.isCanceled => Option(ProcessStatus.canceled)
+      case _ => Option.empty
+    }
+
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState], processStateConfigurator: ProcessStateDefinitionManager): Future[Unit] = {
+  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
       case Some(state) if state.status.isFinished =>
@@ -166,11 +174,10 @@ class ManagementActor(environment: String,
     } yield result
   }
 
-  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser) : Future[Option[Long]] = for {
+  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[Long]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-    currentDeploymentInfo = process.flatMap(_.deployment)
-  } yield (currentDeploymentInfo.map(_.processVersionId))
-
+    lastAction = process.flatMap(_.lastAction)
+  } yield lastAction.map(_.processVersionId)
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])
                            (implicit user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
@@ -215,7 +222,7 @@ class ManagementActor(environment: String,
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 
-  private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser) = {
+  private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessManager] = {
     processRepository.fetchProcessingType(processId).map(managers)
   }
 

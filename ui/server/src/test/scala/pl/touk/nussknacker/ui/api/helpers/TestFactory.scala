@@ -83,9 +83,9 @@ object TestFactory extends TestPermissions{
 
 
   //FIXME: update
-  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(id, username, permissions)
+  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty): LoggedUser = LoggedUser(id, username, permissions)
 
-  def adminUser(id: String = "1", username: String = "admin") = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
+  def adminUser(id: String = "1", username: String = "admin"): LoggedUser = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
   object MockProcessManager {
     val savepointPath = "savepoints/123-savepoint"
@@ -97,17 +97,15 @@ object TestFactory extends TestPermissions{
     import MockProcessManager._
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
-      Some(SimpleProcessState(DeploymentId("1"), managerProcessState.get(), Some(ProcessVersion.empty)))
+      managerProcessState.get().map(st => SimpleProcessState(DeploymentId("1"), st, Some(ProcessVersion.empty)))
     )
-
-    import ExecutionContext.Implicits.global
 
     override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] =
       deployResult
 
     private var deployResult: Future[Unit] = Future.successful()
 
-    private val managerProcessState = new AtomicReference[StateStatus](SimpleStateStatus.Running)
+    private val managerProcessState = new AtomicReference[Option[StateStatus]](Some(SimpleStateStatus.Running))
 
     def withWaitForDeployFinish[T](action: => T): T = {
       val promise = Promise[Unit]
@@ -131,10 +129,19 @@ object TestFactory extends TestPermissions{
 
     def withProcessFinished[T](action: => T): T = {
       try {
-        managerProcessState.set(SimpleStateStatus.Finished)
+        managerProcessState.set(Some(SimpleStateStatus.Finished))
         action
       } finally {
-        managerProcessState.set(SimpleStateStatus.Running)
+        managerProcessState.set(Some(SimpleStateStatus.Running))
+      }
+    }
+
+    def withCleanedProcessState[T](action: => T): T = {
+      try {
+        managerProcessState.set(Option.empty)
+        action
+      } finally {
+        managerProcessState.set(Some(SimpleStateStatus.Canceled))
       }
     }
 

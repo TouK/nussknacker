@@ -49,6 +49,11 @@ export default {
     return this.getProcessAction(process) === this.ACTIONS.DEPLOY
   },
 
+  isActionDeployed(deploymentAction) {
+    const action = _.get(deploymentAction, "action")
+    return action && action === this.ACTIONS.DEPLOY
+  },
+
   getStatusTooltip(status) {
     return _.get(this.DEFAULT_STATUS_TOOLTIPS, status, this.DEFAULT_STATUS_TOOLTIPS[this.STATUSES.UNKNOWN])
   },
@@ -89,7 +94,7 @@ export default {
   },
 
   getProcessAction(process) {
-    return _.get(process, "deployment.action", null)
+    return _.get(process, "lastAction.action", null)
   },
 
   getProcessTooltip(process) {

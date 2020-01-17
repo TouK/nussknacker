@@ -23,6 +23,25 @@ object ProcessState {
   def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], allowedActions: List[StateAction]): ProcessState =
     ProcessState(DeploymentId(deploymentId), status, version, allowedActions)
 
+  def apply(deploymentId: DeploymentId,
+            status: StateStatus,
+            version: Option[ProcessVersion],
+            definitionManager: ProcessStateDefinitionManager,
+            startTime: Option[Long],
+            attributes: Option[Json],
+            errorMessage: Option[String]): ProcessState =
+    ProcessState(
+      deploymentId,
+      status,
+      version,
+      definitionManager.statusActions(status),
+      definitionManager.statusIcon(status),
+      definitionManager.statusTooltip(status),
+      startTime,
+      attributes,
+      errorMessage
+    )
+
   @JsonCodec case class StateStatusCodec(clazz: String, value: String)
 }
 
@@ -34,7 +53,9 @@ object ProcessState {
                                    tooltip: Option[String] = Option.empty,
                                    startTime: Option[Long] = Option.empty,
                                    attributes: Option[Json] = Option.empty,
-                                   errorMessage: Option[String] = Option.empty)
+                                   errorMessage: Option[String] = Option.empty) {
+  def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
+}
 
 object StateAction extends Enumeration {
   implicit val typeEncoder: Encoder[StateAction.Value] = Encoder.enumEncoder(StateAction)
