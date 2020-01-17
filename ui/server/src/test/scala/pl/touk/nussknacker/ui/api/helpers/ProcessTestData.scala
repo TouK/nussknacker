@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import java.time.LocalDateTime
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -37,6 +38,7 @@ object ProcessTestData {
   }
 
   val existingSourceFactory = "barSource"
+  val otherExistingSourceFactory = "fooSource"
   val existingSinkFactory = "barSink"
   val otherExistingSinkFactory = "barSink"
   val existingServiceId = "barService"
@@ -48,18 +50,19 @@ object ProcessTestData {
   val otherExistingStreamTransformer2 = "otherTransformer2"
 
   val processDefinition = ProcessDefinitionBuilder.empty
-        .withSourceFactory(existingSourceFactory)
-        .withSinkFactory(otherExistingSinkFactory)
-        .withSinkFactory(existingSinkFactory)
-        .withService(existingServiceId)
-        .withService(otherExistingServiceId)
-        .withService(processorId, classOf[Void])
-        .withCustomStreamTransformer(existingStreamTransformer, classOf[String],  CustomTransformerAdditionalData(Set("query1", "query2"),
-          clearsContext = false, manyInputs = false))
-        .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
-          clearsContext = false, manyInputs = false))
-        .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"),
-          clearsContext = false, manyInputs = false))
+    .withSourceFactory(existingSourceFactory)
+    .withSourceFactory(otherExistingSourceFactory)
+    .withSinkFactory(otherExistingSinkFactory)
+    .withSinkFactory(existingSinkFactory)
+    .withService(existingServiceId)
+    .withService(otherExistingServiceId)
+    .withService(processorId, classOf[Void])
+    .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
+      clearsContext = false, manyInputs = false))
+    .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
+      clearsContext = false, manyInputs = false))
+    .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"),
+      clearsContext = false, manyInputs = false))
 
   val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
 
@@ -134,6 +137,24 @@ object ProcessTestData {
 
   import spel.Implicits._
 
+  val multipleSourcesValidProcess = toValidatedDisplayable(EspProcess(MetaData("fooProcess", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    GraphBuilder
+      .source("source1", existingSourceFactory)
+      .branchEnd("branch1", "join1"),
+    GraphBuilder
+      .source("source2", existingSourceFactory)
+      .branchEnd("branch2", "join1"),
+    GraphBuilder
+      .branch("join1", "union", Some("outPutVar"),
+        List(
+          "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
+          "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
+        )
+      )
+      .filter("always-true-filter", """#outPutVar.key != "not key1 or key2"""")
+      .emptySink("sink1", existingSinkFactory))
+  ))
+
   val technicalValidProcess =
     EspProcessBuilder
       .id("fooProcess")
@@ -155,7 +176,7 @@ object ProcessTestData {
       ))
 
   val invalidProcess = {
-    val missingSourceFactory = "fooSource"
+    val missingSourceFactory = "missingSource"
     val missingSinkFactory = "fooSink"
 
     EspProcessBuilder

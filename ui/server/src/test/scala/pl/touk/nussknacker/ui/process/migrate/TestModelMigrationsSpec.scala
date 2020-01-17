@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{SubprocessInput, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Source, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
@@ -25,6 +24,16 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val results = testMigration.testMigrations(List(process), List())
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty)
+  }
+
+  test("should perform test migration on multiple source process") {
+    val testMigration = newTestModelMigrations(new TestMigrations(8))
+    val process = ProcessTestData.toDetails(ProcessTestData.multipleSourcesValidProcess)
+
+    val results = testMigration.testMigrations(List(process), List())
+
+    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty)
+    results.head.converted.nodes.collect { case s: Source => s.ref.typ } shouldBe List(ProcessTestData.otherExistingSourceFactory, ProcessTestData.otherExistingSourceFactory)
   }
 
   test("should perform migration that should fail on new errors") {
@@ -45,6 +54,16 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val results = testMigration.testMigrations(List(process), List())
 
     errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
+    results.head.shouldFail shouldBe true
+  }
+
+  test("should detect failed migration on multiple sources process") {
+    val testMigration = newTestModelMigrations(new TestMigrations(9))
+    val process = ProcessTestData.toDetails(ProcessTestData.multipleSourcesValidProcess)
+
+    val results = testMigration.testMigrations(List(process), List())
+
+    errorTypes(results.head.newErrors) shouldBe Map("source1" -> List(classOf[RedundantParameters].getSimpleName), "source2" -> List(classOf[RedundantParameters].getSimpleName))
     results.head.shouldFail shouldBe true
   }
 

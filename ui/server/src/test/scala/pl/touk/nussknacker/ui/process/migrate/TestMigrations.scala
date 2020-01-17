@@ -4,8 +4,9 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{Processor, SubprocessInput, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Processor, Source, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.migration.{NodeMigration, ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 
@@ -20,7 +21,9 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
     4 -> Migration4,
     5 -> Migration5,
     6 -> Migration6,
-    7 -> Migration7
+    7 -> Migration7,
+    8 -> Migration8,
+    9 -> Migration9
   ).filter(m => migrationsToAdd.contains(m._1))
 
   object Migration1 extends NodeMigration {
@@ -106,6 +109,30 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
 
       case sub@SubprocessInput(_, ref, _,_, _) if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>
         sub.copy(ref = sub.ref.copy(parameters = sub.ref.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p)))
+    }
+  }
+
+  object Migration8 extends NodeMigration {
+
+    override val description = "testMigration8"
+
+    override def failOnNewValidationError: Boolean = true
+
+    override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
+      case n@Source(_, ref@SourceRef(ProcessTestData.existingSourceFactory, _), _) =>
+        n.copy(ref = ref.copy(typ = ProcessTestData.otherExistingSourceFactory))
+    }
+  }
+
+  object Migration9 extends NodeMigration {
+
+    override val description = "testMigration9"
+
+    override def failOnNewValidationError: Boolean = true
+
+    override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
+      case n@Source(_, ref@SourceRef(ProcessTestData.existingSourceFactory, parameters), _) =>
+        n.copy(ref = ref.copy(parameters = Parameter("newParam", "'abc'") :: parameters))
     }
   }
 
