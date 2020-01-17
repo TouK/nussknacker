@@ -51,6 +51,7 @@ object ProcessTestData {
 
   val processDefinition = ProcessDefinitionBuilder.empty
     .withSourceFactory(existingSourceFactory)
+    .withSourceFactory(otherExistingSourceFactory)
     .withSinkFactory(otherExistingSinkFactory)
     .withSinkFactory(existingSinkFactory)
     .withService(existingServiceId)
@@ -175,7 +176,7 @@ object ProcessTestData {
       ))
 
   val invalidProcess = {
-    val missingSourceFactory = "fooSource"
+    val missingSourceFactory = "missingSource"
     val missingSinkFactory = "fooSink"
 
     EspProcessBuilder
