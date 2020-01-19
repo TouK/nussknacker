@@ -180,7 +180,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("processes" / Segment / "deployments") { processName =>
           processId(processName) { processId =>
             complete {
-              processRepository.fetchDeploymentHistory(processId.id)
+              processRepository.fetchProcessActions(processId.id)
             }
           }
         } ~ path("processes" / Segment) { processName =>
@@ -207,15 +207,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             } ~ parameter('businessView ? false) { (businessView) =>
               get {
                 complete {
-                  processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id, businessView)
-                    .map[ToResponseMarshallable] {
-                    case Some(process) =>
-                      // todo: we should really clearly separate backend objects from ones returned to the front
-                      validateAndReverseResolve(enrichDetailsWithProcessState(process), businessView)
-                        .map { validatedProcess =>
-                          val historyWithoutId = validatedProcess.history.map(_.copy(processId = processName))
-                          validatedProcess.copy(id = processName, history = historyWithoutId)
-                        }
+                  processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id, businessView).map[ToResponseMarshallable] {
+                    case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process), businessView) // todo: we should really clearly separate backend objects from ones returned to the front
                     case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
                   }
                 }
@@ -240,13 +233,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             parameter('businessView ? false) { businessView =>
               complete {
                 processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId, businessView).map[ToResponseMarshallable] {
-                  case Some(process) =>
-                    // todo: we should really clearly separate backend objects from ones returned to the front
-                    validateAndReverseResolve(process, businessView)
-                      .map { validatedProcess =>
-                        val historyWithoutId = validatedProcess.history.map(_.copy(processId = processName))
-                        validatedProcess.copy(id = processName, history = historyWithoutId)
-                      }
+                  case Some(process) => validateAndReverseResolve(process, businessView) // todo: we should really clearly separate backend objects from ones returned to the front
                   case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
                 }
               }

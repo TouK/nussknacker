@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeploymentAction, ProcessHistoryEntry, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessVersion, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
@@ -31,25 +31,30 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
       .filter(_.processId === processId.value)
       .sortBy(_.createDate.desc)
 
-
-  protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
-    fetchLastActionPerProcessQuery.filter(_._2.deploymentAction === ProcessActionType.Deploy)
+  protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[Long], (ProcessActionEntityFactory#ProcessActionEntity, api.Rep[Option[CommentEntityFactory#CommentEntity]])), (Long, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
+    fetchLastActionPerProcessQuery.filter(_._2._1.action === ProcessActionType.Deploy)
 
   protected def fetchLastActionPerProcessQuery: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
-    deployedProcessesTable
+    processActionsTable
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.deployedAt).max) }
-      .join(deployedProcessesTable)
+      .join(processActionsTable)
       .on { case ((processId, latestDeployedAt), deployAction) => deployAction.processId === processId && deployAction.deployedAt === latestDeployedAt } //We fetch exactly this one  with max deployment
       .map { case ((processId, _), deployAction) => processId -> deployAction }
+      .joinLeft(commentsTable)
+      .on { case ((_, action), comment) => action.commentId === comment.id }
+      .map{ case ((processId, action), comment) => processId -> (action, comment) }
 
-  protected def fetchProcessLatestDeployActionsQuery(processId: ProcessId): Query[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity, DeployedProcessInfoEntityData, Seq] =
-    deployedProcessesTable
+  protected def fetchProcessLatestActionsQuery(processId: ProcessId): Query[(ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]]), (ProcessActionEntityData, Option[CommentEntityData]), Seq] =
+    processActionsTable
       .filter(_.processId === processId.value)
       .sortBy(_.deployedAt.desc)
+      .joinLeft(commentsTable)
+      .on { case (action, comment) => action.commentId === comment.id }
+      .map{ case (action, comment) => (action, comment) }
 
   protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-                                          lastActionPerProcess: Seq[(Long, DeployedProcessInfoEntityData)],
+                                          lastDeployedActionPerProcess: Seq[(Long, (ProcessActionEntityData, Option[CommentEntityData]))],
                                           isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[Long], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((Long, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
     processVersionsTableNoJson
       .groupBy(_.processId)
@@ -61,7 +66,7 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
       .filter{ case ((_, _), process) =>
         isDeployed match {
           case None => true: Rep[Boolean]
-          case Some(dep) => process.id.inSet(lastActionPerProcess.filter(_._2.isDeployed).map(_._1)) === dep
+          case Some(dep) => process.id.inSet(lastDeployedActionPerProcess.map(_._1)) === dep
         }
       }
 
@@ -87,21 +92,21 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
 object ProcessRepository {
 
-  def toProcessHistoryEntry(process: ProcessEntityData, processVersion: ProcessVersionEntityData): ProcessHistoryEntry = ProcessHistoryEntry(
-    processId = process.id.toString,
-    processVersionId = processVersion.id,
-    processName = process.name,
-    createDate = DateUtils.toLocalDateTime(processVersion.createDate),
-    user = processVersion.user
+  def toProcessVersion(versionEntity: ProcessVersionEntityData): ProcessVersion = ProcessVersion(
+    processVersionId = versionEntity.id,
+    createDate = DateUtils.toLocalDateTime(versionEntity.createDate),
+    modelVersion = versionEntity.modelVersion,
+    user = versionEntity.user
   )
 
-  def toDeploymentEntry(deployedProcessInfoEntityData: DeployedProcessInfoEntityData): ProcessDeploymentAction = ProcessDeploymentAction(
-    processVersionId = deployedProcessInfoEntityData.processVersionId,
-    environment = deployedProcessInfoEntityData.environment,
-    deployedAt = deployedProcessInfoEntityData.deployedAtTime,
-    user = deployedProcessInfoEntityData.user,
-    action = deployedProcessInfoEntityData.deploymentAction,
-    buildInfo = deployedProcessInfoEntityData.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
+  def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
+    processVersionId = actionData._1.processVersionId,
+    createdAt = actionData._1.deployedAtTime,
+    user = actionData._1.user,
+    action = actionData._1.action,
+    commentId = actionData._2.map(_.id),
+    comment = actionData._2.map((_.content)),
+    buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
   )
 
   case class ProcessNotFoundError(id: String) extends Exception(s"No process $id found") with NotFoundError

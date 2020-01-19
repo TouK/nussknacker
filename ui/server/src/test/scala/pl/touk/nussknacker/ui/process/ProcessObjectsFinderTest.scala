@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction}
 
 class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -37,7 +37,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .customNode("custom2", "out2", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process1deployed = process1.copy(lastAction = Option(ProcessDeploymentAction(1, "test", LocalDateTime.now(), "user", ProcessActionType.Deploy, Map.empty)))
+  private val process1deployed = process1.copy(lastAction = Option(ProcessAction(1, LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
   private val process2 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess2").exceptionHandler()

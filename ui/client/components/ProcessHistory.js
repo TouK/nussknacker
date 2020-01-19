@@ -8,6 +8,7 @@ import * as DialogMessages from "../common/DialogMessages"
 import ProcessUtils from "../common/ProcessUtils"
 import "../stylesheets/processHistory.styl"
 import Date from "./common/Date"
+import i18next from "i18next"
 
 export class ProcessHistory_ extends Component {
 
@@ -50,8 +51,10 @@ export class ProcessHistory_ extends Component {
 
   processVersionOnTimeline(process, index) {
     if (_.isEmpty(this.state.currentProcess)) {
+      // eslint-disable-next-line i18next/no-literal-string
       return index == 0 ? "current" : "past"
     } else {
+      // eslint-disable-next-line i18next/no-literal-string
       return _.isEqual(process.createDate, this.state.currentProcess.createDate) ? "current" : process.createDate < this.state.currentProcess.createDate ? "past" : "future";
     }
   }
@@ -80,8 +83,8 @@ export class ProcessHistory_ extends Component {
                 {
                   historyEntry.processVersionId === _.get(this.props.lastDeployedAction, "processVersionId") ?
                     <small key={index}>
-                      <i><Date date={this.props.lastDeployedAction.deployedAt}/></i>
-                      <span className="label label-info">{this.props.lastDeployedAction.environment}</span>
+                      <i><Date date={this.props.lastDeployedAction.createdAt}/></i>
+                      <span className="label label-info">{ i18next.t("Last deployed")}</span>
                     </small> : null
                 }
               </li>

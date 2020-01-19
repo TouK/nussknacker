@@ -20,19 +20,19 @@ trait CommentEntityFactory {
 
   class CommentEntity(tag: Tag) extends Table[CommentEntityData](tag, "process_comments") {
 
-    def id = column[Long]("id", O.PrimaryKey)
+    def id: Rep[Long] = column[Long]("id", O.PrimaryKey)
 
-    def processId = column[Long]("process_id", NotNull)
+    def processId: Rep[Long] = column[Long]("process_id", NotNull)
 
-    def processVersionId = column[Long]("process_version_id", NotNull)
+    def processVersionId: Rep[Long] = column[Long]("process_version_id", NotNull)
 
-    def content = column[String]("content", NotNull)
+    def content: Rep[String] = column[String]("content", NotNull)
 
-    def createDate = column[Timestamp]("create_date", NotNull)
+    def createDate: Rep[Timestamp] = column[Timestamp]("create_date", NotNull)
 
-    def user = column[String]("user", NotNull)
+    def user: Rep[String] = column[String]("user", NotNull)
 
-    def * = (id, processId, processVersionId, content, user, createDate) <> (CommentEntityData.tupled, CommentEntityData.unapply)
+    override def * = (id, processId, processVersionId, content, user, createDate) <> (CommentEntityData.tupled, CommentEntityData.unapply)
 
   }
 

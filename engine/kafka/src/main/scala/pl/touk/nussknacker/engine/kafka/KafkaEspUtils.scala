@@ -88,7 +88,6 @@ object KafkaEspUtils extends LazyLogging {
     props
   }
 
-
   def readLastMessages(topic: String, size: Int, config: KafkaConfig) : List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
@@ -176,5 +175,4 @@ object KafkaEspUtils extends LazyLogging {
         promise.complete(result)
       }
     }
-
 }

@@ -8,8 +8,9 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, DeployedProcessInfoEntityData}
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -31,32 +32,32 @@ class DeployedProcessRepository(val dbConfig: DbConfig,
 
   def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType,
                             environment: String, comment: Option[String])
-                           (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessInfoEntityData]
-  = action(processId, processVersion, environment, comment.map("Deployment: " + _), ProcessActionType.Deploy,
+                           (implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData]
+  = action(processId, processVersion, environment, comment, ProcessActionType.Deploy,
     buildInfos.get(processingType).map(BuildInfo.writeAsJson))
 
 
   def markProcessAsCancelled(processId: ProcessId, processVersion: Long, environment: String, comment: Option[String])
-                            (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessInfoEntityData]
-  = action(processId, processVersion, environment, comment.map("Stop: " + _), ProcessActionType.Cancel, None)
+                            (implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData]
+  = action(processId, processVersion, environment, comment, ProcessActionType.Cancel, None)
 
   private def action(processId: ProcessId, processVersion: Long, environment: String,
                      comment: Option[String], action: ProcessActionType.Value, buildInfo: Option[String])
-                    (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
+                    (implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] = {
     val actionToRun = for {
       commentId <- withComment(processId, processVersion, comment)
-      deployedActionData = DeployedProcessInfoEntityData(
+      processActionData = ProcessActionEntityData(
         processId = processId.value,
         processVersionId = processVersion,
-        environment = environment,
         user = user.username,
         deployedAt = Timestamp.valueOf(LocalDateTime.now()),
-        deploymentAction = action,
+        action = action,
         commentId = commentId,
-        buildInfo = buildInfo
+        buildInfo = buildInfo,
+        environment = "test"
       )
-      _ <- deployedProcessesTable += deployedActionData
-    } yield deployedActionData
+      _ <- processActionsTable += processActionData
+    } yield processActionData
     run(actionToRun)
   }
 
@@ -65,5 +66,4 @@ class DeployedProcessRepository(val dbConfig: DbConfig,
     case None => DBIOAction.successful(None)
     case Some(comm) => newCommentAction(processId, processVersion, comm)
   }
-
 }

@@ -11,7 +11,7 @@ import slick.jdbc.{JdbcProfile, JdbcType}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.{NotNull, Nullable}
 
-trait ProcessDeploymentInfoEntityFactory {
+trait ProcessActionEntityFactory {
 
   protected val profile: JdbcProfile
   import profile.api._
@@ -19,14 +19,14 @@ trait ProcessDeploymentInfoEntityFactory {
   implicit def deploymentMapper: JdbcType[ProcessActionType] with BaseTypedType[ProcessActionType] =
     MappedColumnType.base[ProcessActionType, String](_.toString, ProcessActionType.withName)
 
-  val deployedProcessesTable: LTableQuery[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity] =
-    LTableQuery(new ProcessDeploymentInfoEntity(_))
+  val processActionsTable: LTableQuery[ProcessActionEntityFactory#ProcessActionEntity] =
+    LTableQuery(new ProcessActionEntity(_))
 
   val processVersionsTable: LTableQuery[ProcessVersionEntityFactory#ProcessVersionEntity]
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
   val environmentsTable: LTableQuery[EnvironmentsEntityFactory#EnvironmentsEntity]
 
-  class ProcessDeploymentInfoEntity(tag: Tag) extends Table[DeployedProcessInfoEntityData](tag, "process_deployment_info") {
+  class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_deployment_info") {
     def processId: Rep[Long] = column[Long]("process_id", NotNull)
 
     def processVersionId: Rep[Long] = column[Long]("process_version_id", Nullable)
@@ -39,7 +39,7 @@ trait ProcessDeploymentInfoEntityFactory {
 
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info", Nullable)
 
-    def deploymentAction: Rep[ProcessActionType] = column[ProcessActionType]("deployment_action", NotNull)
+    def action: Rep[ProcessActionType] = column[ProcessActionType]("deployment_action", NotNull)
 
     def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id", Nullable)
 
@@ -63,21 +63,21 @@ trait ProcessDeploymentInfoEntityFactory {
       onDelete = ForeignKeyAction.NoAction
     )
 
-    def * : ProvenShape[DeployedProcessInfoEntityData] = (processId, processVersionId, environment, user, deployedAt, deploymentAction, commentId, buildInfo) <> (
-      DeployedProcessInfoEntityData.tupled, DeployedProcessInfoEntityData.unapply)
+    def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, environment, user, deployedAt, action, commentId, buildInfo) <> (
+      ProcessActionEntityData.tupled, ProcessActionEntityData.unapply)
   }
 }
 
-case class DeployedProcessInfoEntityData(processId: Long,
-                                         processVersionId: Long,
-                                         environment: String,
-                                         user: String,
-                                         deployedAt: Timestamp,
-                                         deploymentAction: ProcessActionType,
-                                         commentId: Option[Long],
-                                         buildInfo: Option[String]) {
+case class ProcessActionEntityData(processId: Long,
+                                   processVersionId: Long,
+                                   environment: String,
+                                   user: String,
+                                   deployedAt: Timestamp,
+                                   action: ProcessActionType,
+                                   commentId: Option[Long],
+                                   buildInfo: Option[String]) {
 
   lazy val deployedAtTime: LocalDateTime = DateUtils.toLocalDateTime(deployedAt)
-  lazy val isDeployed: Boolean = deploymentAction.equals(ProcessActionType.Deploy)
-  lazy val isCanceled: Boolean = deploymentAction.equals(ProcessActionType.Cancel)
+  lazy val isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
+  lazy val isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
 }
