@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react"
 import Dotdotdot from "react-dotdotdot"
 import PropTypes from "prop-types"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"

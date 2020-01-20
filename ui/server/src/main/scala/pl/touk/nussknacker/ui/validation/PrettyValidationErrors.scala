@@ -19,7 +19,7 @@ object PrettyValidationErrors {
       case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
         s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
       case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
-        node("Ivalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
+        node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
       case EmptyProcess => node("Empty process", "Process is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Process can start only from source node")

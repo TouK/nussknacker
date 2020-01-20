@@ -4,9 +4,9 @@ import NodeUtils from "../components/graph/NodeUtils";
 import * as SubprocessSchemaAligner from "../components/graph/SubprocessSchemaAligner";
 import _ from "lodash";
 import * as UndoRedoActions from "./undoRedoActions";
-import * as VisualizationUrl from '../common/VisualizationUrl';
+import * as VisualizationUrl from "../common/VisualizationUrl";
 import {dateFormat} from "../config";
-import history from '../history'
+import history from "../history"
 import User from "../common/models/User";
 import Metrics from "../containers/Metrics"
 import {events} from "../analytics/TrackingEvents"
@@ -243,7 +243,7 @@ export function finishGrouping() {
 }
 
 export function addToGroup(nodeId) {
-  return { type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
+  return {type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
 }
 
 export function ungroup(node) {
@@ -262,11 +262,11 @@ export function ungroup(node) {
 }
 
 export function expandSelection(nodeId) {
-  return { type: "EXPAND_SELECTION", nodeId }
+  return {type: "EXPAND_SELECTION", nodeId}
 }
 
 export function resetSelection(nodeId) {
-  return { type: "RESET_SELECTION", nodeId }
+  return {type: "RESET_SELECTION", nodeId}
 }
 
 //TODO: is it ok how we process validations here? first we *simulate* reducer on
@@ -578,7 +578,7 @@ export function urlChange(location) {
     dispatch(handleHTTPError(null))
 
     dispatch({
-      type: 'URL_CHANGED',
+      type: "URL_CHANGED",
       location: location
     })
   }

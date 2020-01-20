@@ -10,7 +10,7 @@ export default function TestErrors(props) {
     <div className="node-table-body">
       <div className="node-row">
         <div className="node-label">
-          <NodeTip title={'Test case error'} icon={InlinedSvgs.tipsWarning}/>
+          <NodeTip title={"Test case error"} icon={InlinedSvgs.tipsWarning}/>
         </div>
         <div className="node-value">
           <div className="node-error">{resultsToShow.error}</div>

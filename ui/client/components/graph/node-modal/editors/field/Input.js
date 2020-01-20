@@ -4,32 +4,34 @@ import ValidationLabels from "../../../../modals/ValidationLabels"
 import PropTypes from "prop-types"
 
 export const Input = (props) => {
-  const {isMarked, showValidation, className, placeholder, autoFocus, onChange, value, validators, readOnly} = props
+  const {isMarked, showValidation, className, placeholder, autoFocus, onChange, value, validators, readOnly, formattedValue} = props
 
   return (
     <div className={className}>
       <div className={isMarked ? " marked" : ""}>
         {
-          readOnly ?
-            <div className="read-only" title={value}>{value}</div> :
             <input
               autoFocus={autoFocus}
               type="text"
+              readOnly={readOnly}
               placeholder={placeholder}
-              className={!showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"}
+              className={!showValidation || allValid(validators, [formattedValue ? formattedValue : value]) ? "node-input" : "node-input node-input-with-error"}
               value={value || ""}
               onChange={onChange}
             />
         }
       </div>
-      {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
+      {showValidation && <ValidationLabels validators={validators} values={[formattedValue ? formattedValue : value]}/>}
     </div>
   )
 }
 
 Input.propTypes = {
   isMarked: PropTypes.bool,
-  value: PropTypes.string,
+  value: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number
+  ]),
   readOnly: PropTypes.bool,
   autoFocus: PropTypes.bool,
   showValidation: PropTypes.bool,

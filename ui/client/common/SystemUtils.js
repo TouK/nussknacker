@@ -2,7 +2,7 @@ import api from "../api"
 import {v4 as uuid4} from "uuid"
 
 const ACCESS_TOKEN_NAMESPACE = "accessToken"
-const BEARER_CASE = 'Bearer'
+const BEARER_CASE = "Bearer"
 const userId = "userId"
 
 class SystemUtils {
@@ -26,7 +26,7 @@ class SystemUtils {
     this.removeAccessToken()
 
     api.interceptors.request.use(function (config) {
-      delete config['headers']['Authorization']
+      delete config["headers"]["Authorization"]
       return config
     })
   }
@@ -36,7 +36,7 @@ class SystemUtils {
     this.saveAccessToken(token)
 
     api.interceptors.request.use(function (config) {
-      config['headers']['Authorization'] = self.authorizationToken()
+      config["headers"]["Authorization"] = self.authorizationToken()
       return config
     })
   }

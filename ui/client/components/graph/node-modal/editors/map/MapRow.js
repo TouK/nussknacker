@@ -30,7 +30,7 @@ export default function MapRow(props) {
 
       {
         readOnly ? null :
-          <div className={"node-value fieldRemove" + (isMarked(paths) ? " marked" : "")}>
+          <div className={`node-value fieldRemove${  isMarked(paths) ? " marked" : ""}`}>
             <button
               className="addRemoveButton"
               title="Remove field"

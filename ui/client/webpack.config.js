@@ -1,23 +1,25 @@
-const path = require('path');
-const webpack = require('webpack');
-const childProcess = require('child_process');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
+/* eslint-disable i18next/no-literal-string */
+const path = require("path");
+const webpack = require("webpack");
+const childProcess = require("child_process");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 
 
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const GIT_HASH = childProcess.execSync('git log -1 --format=%H').toString();
-const GIT_DATE = childProcess.execSync('git log -1 --format=%cd').toString();
-const isProd = NODE_ENV === 'production';
+const NODE_ENV = process.env.NODE_ENV || "development";
+const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString();
+const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString();
+const isProd = NODE_ENV === "production";
 
 const entry = {
-  main: path.resolve(__dirname,'./index.js'),
+  main: path.resolve(__dirname,"./index.js"),
 }
 
 let previouslyPrintedPercentage = 0;
 
 if (!isProd) {
-  entry['developer-tools'] = [
+  entry["developer-tools"] = [
     "webpack-dev-server/client?http://localhost:3000",
     "react-hot-loader/patch",
   ]
@@ -30,8 +32,8 @@ module.exports = {
       cacheGroups: {
         commons: {
           test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all'
+          name: "vendors",
+          chunks: "all"
         }
       }
     },
@@ -41,7 +43,7 @@ module.exports = {
       //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
       terserOptions: {
         mangle: {
-          reserved: ['Td', 'Tr', 'Th', 'Thead', 'Table'],
+          reserved: ["Td", "Tr", "Th", "Thead", "Table"],
         }
       }
     })]
@@ -52,32 +54,32 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'react-dom': '@hot-loader/react-dom'
+      "react-dom": "@hot-loader/react-dom"
     }
   },
   entry: entry,
   output: {
     //by default we use default webpack value, but we want to be able to override it for building frontend via sbt
-    path: process.env.OUTPUT_PATH ? path.join(process.env.OUTPUT_PATH, 'classes', 'web', 'static') : path.join(process.cwd(), 'dist'),
-    filename: '[name].js',
+    path: process.env.OUTPUT_PATH ? path.join(process.env.OUTPUT_PATH, "classes", "web", "static") : path.join(process.cwd(), "dist"),
+    filename: "[name].js",
     //see config.js
-    publicPath: isProd ? '__publicPath__/static/' : '/static/',
+    publicPath: isProd ? "__publicPath__/static/" : "/static/",
   },
-  devtool: isProd ? 'hidden-source-map' : 'eval-source-map',
+  devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
     contentBase: __dirname,
     historyApiFallback: {
-      index: '/static/main.html'
+      index: "/static/main.html"
     },
     hot: true,
     hotOnly: true,
     port: 3000,
     proxy: {
-      '/api': {
+      "/api": {
         target: process.env.PROXY_API_DOMAIN,
         changeOrigin: true,
         pathRewrite: {
-          '^/api': ''
+          "^/api": ""
         }
       }
     }
@@ -86,19 +88,22 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       hash: true,
-      filename: 'main.html',
+      filename: "main.html",
       template: "index_template_no_doctype.ejs"
     }),
     isProd ? null : new webpack.NamedModulesPlugin(),
     isProd ? null : new webpack.HotModuleReplacementPlugin(),
+    new CopyPlugin([
+      {from: "translations", to: "assets/locales"},
+    ]),
     new webpack.DefinePlugin({
-      '__DEV__': !isProd,
-      'process.env': {
-        'NODE_ENV': JSON.stringify(NODE_ENV)
+      __DEV__: !isProd,
+      "process.env": {
+        NODE_ENV: JSON.stringify(NODE_ENV)
       },
-      'GIT': {
-        'HASH': JSON.stringify(GIT_HASH),
-        'DATE': JSON.stringify(GIT_DATE)
+      GIT: {
+        HASH: JSON.stringify(GIT_HASH),
+        DATE: JSON.stringify(GIT_DATE)
       }
     }),
     // each 10% log entry in separate line - fix for travis no output problem
@@ -124,22 +129,22 @@ module.exports = {
       },
       {
         test: /\.css?$/,
-        loaders: ['style-loader', 'raw-loader'],
+        loaders: ["style-loader", "raw-loader"],
         include: __dirname
       },
       {
         test: /\.styl$/,
-        loaders: ['style-loader', 'css-loader', 'stylus-loader'],
+        loaders: ["style-loader", "css-loader", "stylus-loader"],
         include: __dirname
       },
       {
         test: /\.less$/,
-        loaders: ['style-loader', 'css-loader', 'less-loader'],
+        loaders: ["style-loader", "css-loader", "less-loader"],
         include: __dirname
       },
       {
         test: /\.(eot|svg|png|ttf|woff|woff2)$/,
-        loader: 'file-loader?name=assets/fonts/[name].[ext]',
+        loader: "file-loader?name=assets/fonts/[name].[ext]",
         include: __dirname
       }
     ]

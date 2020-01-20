@@ -1,7 +1,7 @@
-import * as joint from 'jointjs/index'
+import * as joint from "jointjs/index"
 
 export function findLinkBelowCell(jointJsGraph, cellView, paper) {
-  return jointJsGraph.get('cells').find((cell) => {
+  return jointJsGraph.get("cells").find((cell) => {
     if (cell.id === cellView.model.id) {
       return false
     } else if (cell instanceof joint.dia.Link) {
@@ -36,7 +36,7 @@ function cellHorizontalLines(cellAttributes) {
 }
 
 export function findCell(jointJsGraph, cellId) {
-  return jointJsGraph.get('cells').find((cell) => {
+  return jointJsGraph.get("cells").find((cell) => {
     return cell.id === cellId
   })
 }

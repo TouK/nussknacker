@@ -1,5 +1,5 @@
 import createProcessIcon from "../../assets/img/create-process.svg"
-import React from 'react';
+import React from "react";
 
 export default class AddProcessButton extends React.Component {
 

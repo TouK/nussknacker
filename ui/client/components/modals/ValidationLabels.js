@@ -8,7 +8,7 @@ export default class ValidationLabels extends React.Component {
     return (
       <div className={"validation-labels"}>
         {validators.map(validator => validator.isValid(...values) ?
-          null : <span key={uuid4()} className='validation-label' title={validator.description}>{validator.message}</span>)}
+          null : <span key={uuid4()} className="validation-label" title={validator.description}>{validator.message}</span>)}
       </div>
     )
   }

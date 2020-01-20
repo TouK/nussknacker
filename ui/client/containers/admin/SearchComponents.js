@@ -1,6 +1,6 @@
 import React from "react"
-import {withRouter} from 'react-router-dom'
-import * as  queryString from 'query-string'
+import {withRouter} from "react-router-dom"
+import * as  queryString from "query-string"
 import {Table, Td, Tr} from "reactable"
 import "../../stylesheets/processes.styl"
 import HttpService from "../../http/HttpService"
@@ -71,8 +71,8 @@ class SearchComponents extends BaseAdminTab {
 
         <Table
           className="esp-table"
-          sortable={['processName', 'nodeId', 'processCategory']}
-          filterable={['processName', 'nodeId', 'processCategory']}
+          sortable={["processName", "nodeId", "processCategory"]}
+          filterable={["processName", "nodeId", "processCategory"]}
           noDataText="No matching records found."
           hideFilterInput
           hidden={this.state.showLoader || this.state.componentToFind == null}

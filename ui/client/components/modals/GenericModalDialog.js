@@ -5,7 +5,7 @@ import ActionsUtils from "../../actions/ActionsUtils";
 import "../../stylesheets/visualization.styl";
 import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 import Draggable from "react-draggable";
 
 class GenericModalDialog extends React.Component {
@@ -50,21 +50,21 @@ class GenericModalDialog extends React.Component {
   }
 
   render() {
-    const style = 'espModal ' + (this.props.style || 'confirmationModal')
+    const style = `espModal ${  this.props.style || "confirmationModal"}`
     return (
       <Modal isOpen={this.props.modalDialog.openDialog === this.props.type}
              shouldCloseOnOverlayClick={false}
              onRequestClose={this.closeDialog}>
         <div className="draggable-container">
-          <Draggable bounds="parent" cancel={preventFromMoveSelectors}>
+          <Draggable bounds="parent" handle=".modal-draggable-handle">
             <div className={style}>
-              {this.props.header ? (<div className="modal-title" style={{color: 'white', 'backgroundColor': '#70c6ce'}}>
+              {this.props.header ? (<div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70c6ce"}}>
                 <span>{this.props.header}</span>
               </div>) : null}
               <div className="modalContentDark">
                 {this.props.children}
                 <div className="confirmationButtons">
-                  <button type="button" title="CANCEL" className='modalButton' onClick={this.closeDialog}>CANCEL
+                  <button type="button" title="CANCEL" className="modalButton" onClick={this.closeDialog}>CANCEL
                   </button>
                   {this.props.confirm ? this.renderOkBtn() : null}
                 </div>
@@ -86,8 +86,6 @@ function mapState(state) {
     modalDialog: state.ui.modalDialog || {},
   }
 }
-
-export const preventFromMoveSelectors = "input, textarea, #brace-editor, .datePickerContainer, svg, img, .node-value-select, #ace-editor, .row-ace-editor"
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(GenericModalDialog);
 

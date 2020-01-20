@@ -1,6 +1,6 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import _ from 'lodash'
+import React from "react"
+import PropTypes from "prop-types"
+import _ from "lodash"
 import "ladda/dist/ladda.min.css"
 import {notEmptyValidator} from "../../../common/Validators"
 import EditableExpression from "./editors/expression/EditableExpression"
@@ -24,7 +24,7 @@ export default class EdgeDetailsContent extends React.Component {
   render() {
     const {edge, edgeErrors, readOnly, updateEdgeProp, showValidation, showSwitch, changeEdgeTypeValue} = this.props
 
-    switch (_.get(edge.edgeType, 'type')) {
+    switch (_.get(edge.edgeType, "type")) {
       case "SwitchDefault": {
         return (
           <BaseModalContent
@@ -64,11 +64,11 @@ export default class EdgeDetailsContent extends React.Component {
         )
       }
       default:
-        return ''
+        return ""
     }
   }
 
   renderFieldLabel = (label) => <div className="node-label">{label}</div>
 }
 
-const edgeName = (edge) => edge.from + "-" + edge.to
+const edgeName = (edge) => `${edge.from  }-${  edge.to}`

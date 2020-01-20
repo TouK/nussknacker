@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import io.circe.{Decoder, Json, JsonObject}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchemaWrapper
+import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed._
@@ -28,7 +28,7 @@ object sources {
     @MethodToInvoke
     def create(processMetaData: MetaData,  @ParamName("topic") topic: String,
                @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
-      val schema = new KeyedDeserializationSchemaWrapper(JsonTypedMapDeserialization)
+      val schema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
       new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema, None) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }

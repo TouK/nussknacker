@@ -1,6 +1,6 @@
 import React from "react";
 import {connect} from "react-redux"
-import {default as ReactNotifications} from 'react-notification-system-redux';
+import {default as ReactNotifications} from "react-notification-system-redux";
 import HttpService from "../http/HttpService";
 import ActionsUtils from "../actions/ActionsUtils";
 

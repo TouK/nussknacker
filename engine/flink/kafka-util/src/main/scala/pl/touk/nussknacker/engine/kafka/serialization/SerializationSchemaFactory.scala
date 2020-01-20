@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
+
 import java.nio.charset.StandardCharsets
-import java.util
+import java.{lang, util}
 import java.util.UUID
 
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
@@ -14,9 +16,9 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   *
   * @tparam T type of serialized object
   */
-trait SerializationSchemaFactory[T] {
+trait SerializationSchemaFactory[T] extends Serializable {
 
-  def create(topic: String, kafkaConfig: KafkaConfig): KeyedSerializationSchema[T]
+  def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T]
 
 }
 
@@ -26,10 +28,10 @@ trait SerializationSchemaFactory[T] {
   * @param deserializationSchema schema which will be returned.
   * @tparam T type of serialized object
   */
-case class FixedSerializationSchemaFactory[T](deserializationSchema: KeyedSerializationSchema[T])
+case class FixedSerializationSchemaFactory[T](deserializationSchema: String => KafkaSerializationSchema[T])
   extends SerializationSchemaFactory[T] {
 
-  override def create(topic: String, kafkaConfig: KafkaConfig): KeyedSerializationSchema[T] = deserializationSchema
+  override def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] = deserializationSchema(topic)
 
 }
 
@@ -46,22 +48,20 @@ abstract class KafkaSerializationSchemaFactoryBase[T] extends SerializationSchem
 
   protected def createKeySerializer(topic: String, kafkaConfig: KafkaConfig): Serializer[T] = new UUIDSerializer[T]
 
-  override def create(topic: String, kafkaConfig: KafkaConfig): KeyedSerializationSchema[T] = {
-    new KeyedSerializationSchema[T] {
+  override def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] = {
+    new KafkaSerializationSchema[T] {
 
       private lazy val valueSerializer = createValueSerializer(topic, kafkaConfig)
 
       private lazy val keySerializer = createKeySerializer(topic, kafkaConfig)
 
-      override def serializeKey(element: T): Array[Byte] = {
-        keySerializer.serialize(topic, element)
-      }
+      override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+        new ProducerRecord[Array[Byte], Array[Byte]](topic,
+          keySerializer.serialize(topic, element),
+          valueSerializer.serialize(topic, element)
 
-      override def serializeValue(element: T): Array[Byte] = {
-        valueSerializer.serialize(topic, element)
+        )
       }
-
-      override def getTargetTopic(element: T): String = null
     }
   }
 
@@ -96,22 +96,22 @@ abstract class KafkaKeyValueSerializationSchemaFactoryBase[T] extends Serializat
 
   protected def extractValue(obj: T, topic: String): V
 
-  override def create(topic: String, kafkaConfig: KafkaConfig): KeyedSerializationSchema[T] = {
-    new KeyedSerializationSchema[T] {
+  override def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] = {
+    new KafkaSerializationSchema[T] {
       private lazy val keySerializer = createKeySerializer(topic, kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(topic, kafkaConfig)
 
-      override def serializeKey(element: T): Array[Byte] = {
+      override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         val key = extractKey(element, topic)
-        keySerializer.serialize(topic, key)
-      }
-
-      override def serializeValue(element: T): Array[Byte] = {
         val value = extractValue(element, topic)
-        valueSerializer.serialize(topic, value)
-      }
+        //Kafka timestamp has to be >= 0, while Flink can use Long.MinValue
+        val timestampForKafka = Math.max(0, timestamp)
 
-      override def getTargetTopic(element: T): String = null
+        new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestampForKafka,
+          keySerializer.serialize(topic, key),
+          valueSerializer.serialize(topic, value)
+        )
+      }
     }
   }
 

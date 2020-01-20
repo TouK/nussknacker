@@ -1,4 +1,4 @@
-import NodeUtils from './NodeUtils'
+import NodeUtils from "./NodeUtils"
 
 export function mapProcessWithNewNode(process, before, after) {
   return {
@@ -38,11 +38,11 @@ export function deleteNode(process, id) {
   }
 }
 
-export function canInjectNode(process, source, middleMan, target, processDefinitionData) {
-  const processAfterDisconnection = deleteEdge(process, source.id, target.id)
-  const canConnectSourceToMiddleMan = NodeUtils.canMakeLink(source.id, middleMan.id, processAfterDisconnection, processDefinitionData)
-  const processWithConnectedSourceAndMiddleMan = addEdge(processAfterDisconnection, source.id, middleMan.id)
-  const canConnectMiddleManToTarget = NodeUtils.canMakeLink(middleMan.id, target.id, processWithConnectedSourceAndMiddleMan, processDefinitionData)
+export function canInjectNode(process, sourceId, middleManId, targetId, processDefinitionData) {
+  const processAfterDisconnection = deleteEdge(process, sourceId, targetId)
+  const canConnectSourceToMiddleMan = NodeUtils.canMakeLink(sourceId, middleManId, processAfterDisconnection, processDefinitionData)
+  const processWithConnectedSourceAndMiddleMan = addEdge(processAfterDisconnection, sourceId, middleManId)
+  const canConnectMiddleManToTarget = NodeUtils.canMakeLink(middleManId, targetId, processWithConnectedSourceAndMiddleMan, processDefinitionData)
   return canConnectSourceToMiddleMan && canConnectMiddleManToTarget
 }
 
@@ -64,7 +64,7 @@ export function computeBoundingRect(expandedGroup, layout, nodes, nodeHeight, ma
 
   const widthsHeights = expandedGroup.nodes
     .map(n => {
-      const bbox = nodes.find(node => node.id == n).get('size')
+      const bbox = nodes.find(node => node.id == n).get("size")
       const layoutForNode = ((layout || []).find(k => k.id == n) || {}).position || {}
       return {height: nodeHeight, width: bbox.width, x: layoutForNode.x || 0, y: layoutForNode.y || 0}
     })
@@ -72,6 +72,6 @@ export function computeBoundingRect(expandedGroup, layout, nodes, nodeHeight, ma
   const y =  _.min(widthsHeights.map(wh => wh.y)) - margin
   const width = _.max(widthsHeights.map((wh) => wh.x + wh.width - x)) + margin
   const height = _.max(widthsHeights.map((wh) => wh.y + wh.height - y)) + margin
-  return { x, y, width, height}
+  return {x, y, width, height}
 
 }

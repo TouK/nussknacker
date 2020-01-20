@@ -133,10 +133,9 @@ val forkSettings = Seq(
   )
 )
 
-val akkaV = "2.4.20" //same version as in Flink
-val flinkV = "1.7.2"
-val kafkaMajorV = "0.11"
-val kafkaV = s"$kafkaMajorV.0.2"
+val akkaV = "2.5.21" //same version as in Flink
+val flinkV = "1.9.1"
+val kafkaV = "2.2.0"
 val springV = "5.1.4.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
@@ -155,7 +154,7 @@ val configV = "1.3.0"
 val commonsLangV = "3.3.2"
 val dropWizardV = "3.1.5"
 
-val akkaHttpV = "10.0.10"
+val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
 val slickV = "3.2.3"
 val hsqldbV = "2.3.4"
@@ -282,6 +281,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
         "com.typesafe.akka" %% "akka-stream" % akkaV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
@@ -382,7 +382,10 @@ lazy val demo = (project in engine("demo")).
       Seq(
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
+        "ch.qos.logback" % "logback-classic" % logbackV % "test"
       )
     },
     test in assembly := {},
@@ -487,7 +490,8 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
         ),
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
-        "org.apache.flink" %% s"flink-connector-kafka-$kafkaMajorV" % flinkV % "test"
+        "org.apache.flink" %% s"flink-connector-kafka" % flinkV % "test",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   ).
@@ -499,8 +503,9 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
     name := "nussknacker-kafka-flink-util",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% s"flink-connector-kafka-$kafkaMajorV" % flinkV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+        "org.apache.flink" %% s"flink-connector-kafka" % flinkV,
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   ).
@@ -567,6 +572,8 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        //intellij has some problems with provided...
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV,
         "org.apache.flink" %% "flink-test-utils" % flinkV,
         "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
@@ -582,7 +589,8 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
         //akka-http is only for StandaloneRequestResponseLogger
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force()
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force(),
+        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force()
       )
     }
   ).dependsOn(util, standaloneApi, testUtil % "test")
@@ -622,6 +630,7 @@ lazy val security = (project in engine("security")).
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
         "com.typesafe.akka" %% "akka-stream" % akkaV force(),
@@ -629,6 +638,7 @@ lazy val security = (project in engine("security")).
         "org.mindrot" % "jbcrypt" % jbcryptV,
         //Packages below are only for plugin providers purpose
         "io.circe" %% "circe-core" % circeV,
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
       )
     }
@@ -783,6 +793,8 @@ lazy val ui = (project in file("ui/server"))
         "org.apache.xmlgraphics" % "fop" % "2.3",
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
+
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test"

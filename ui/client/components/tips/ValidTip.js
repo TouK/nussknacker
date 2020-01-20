@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import HeaderIcon from "./HeaderIcon";
 import PropTypes from "prop-types";
 

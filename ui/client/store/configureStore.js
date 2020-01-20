@@ -1,8 +1,8 @@
-import {applyMiddleware, createStore} from 'redux';
-import {composeWithDevTools} from 'redux-devtools-extension';
-import thunk from 'redux-thunk';
+import {applyMiddleware, createStore} from "redux";
+import {composeWithDevTools} from "redux-devtools-extension";
+import thunk from "redux-thunk";
 
-import {reducer} from '../reducers';
+import {reducer} from "../reducers";
 import {analyticsMiddleware} from "../analytics/AnalyticsMiddleware";
 
 export default function configureStore() {
@@ -15,7 +15,8 @@ export default function configureStore() {
   );
 
   if (module.hot) {
-    module.hot.accept('../reducers', () =>
+    // eslint-disable-next-line i18next/no-literal-string
+    module.hot.accept("../reducers", () =>
       store.replaceReducer(reducer)
     );
   }

@@ -10,7 +10,7 @@ class SideNodeDetails extends Component {
       if (_.isArray(val)) {
         if (_.isEqual(key, "ids")) {
           return val.join(",")
-        } else if (val.every(value => typeof value === 'string')) {
+        } else if (val.every(value => typeof value === "string")) {
           return _.concat(new FlatObjectEntry(null, key), val.map(nodeName => new FlatObjectEntry("id", nodeName)))
         } else {
           return _.concat(new FlatObjectEntry(null, key), _.flatMap(val, this.flatObject))
@@ -45,7 +45,7 @@ class SideNodeDetails extends Component {
             return (
               <div key={index}>
                 {index == 0 ? <p className="node-label">Main</p> : null}
-                <p className="node-key">{obj.key + ": "}</p>
+                <p className="node-key">{`${obj.key  }: `}</p>
                 <p className="node-value">{obj.value ? obj.value.toString() : obj.value}</p>
               </div>
             )

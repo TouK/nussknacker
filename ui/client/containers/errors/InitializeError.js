@@ -1,5 +1,5 @@
-import React from 'react'
-import {withRouter} from 'react-router-dom'
+import React from "react"
+import {withRouter} from "react-router-dom"
 
 class InitializeError extends React.Component {
   defaultOnButtonClick = () => {
@@ -23,7 +23,7 @@ class InitializeError extends React.Component {
               <div
                 className="big-blue-button"
                 role="button"
-                style={{"float": "0 auto"}}
+                style={{float: "0 auto"}}
                 onClick={this.props.error.buttonOnClick || this.defaultOnButtonClick}
               >
                 {

@@ -1,6 +1,6 @@
 import React from "react"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
-import * as  queryString from 'query-string'
+import * as  queryString from "query-string"
 
 class BaseAdminTab extends React.Component {
 
@@ -18,7 +18,7 @@ class BaseAdminTab extends React.Component {
 
   prepareState() {
     const query = queryString.parse(this.props.history.location.search, {
-      arrayFormat: 'comma',
+      arrayFormat: "comma",
       parseNumbers: true,
       parseBooleans: true
     })
