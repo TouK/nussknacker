@@ -13,7 +13,7 @@ export default function SwitchIcon(props) {
       <button className={`inlined switch-icon${displayRawEditor ? " active " : ""}${readOnly ? " read-only " : ""}`}
               onClick={onClick}
               disabled={!switchable || readOnly}
-              title={title(readOnly)}>
+              title={title()}>
         <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
       </button> : null
   )
