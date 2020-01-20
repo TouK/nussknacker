@@ -100,11 +100,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         new SimpleStringSchema, None, TestParsingUtils.newLineSplit)),
       "kafka-transaction" -> all(FlinkSourceFactory.noParam(prepareNotEndingSource)),
       "boundedSource" -> all(BoundedSource),
-      "oneSource" -> all(FlinkSourceFactory.noParam(new FlinkSource[String] {
+      "oneSource" -> all(FlinkSourceFactory.noParam(new BasicFlinkSource[String] {
 
         override def timestampAssigner = None
 
-        override def toFlinkSource = new SourceFunction[String] {
+        override def flinkSourceFunction = new SourceFunction[String] {
 
           var run = true
 
@@ -125,12 +125,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
         override val typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
       })),
-      "csv-source" -> all(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord]
+      "csv-source" -> all(FlinkSourceFactory.noParam(new BasicFlinkSource[CsvRecord]
         with TestDataParserProvider[CsvRecord] with TestDataGenerator {
 
         override val typeInformation: TypeInformation[CsvRecord] = implicitly[TypeInformation[CsvRecord]]
 
-        override def toFlinkSource = new SourceFunction[CsvRecord] {
+        override def flinkSourceFunction = new SourceFunction[CsvRecord] {
           override def cancel() = {}
 
           override def run(ctx: SourceContext[CsvRecord]) = {}
@@ -152,8 +152,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
 
   //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
-  def prepareNotEndingSource: FlinkSource[String] = {
-    new FlinkSource[String] with TestDataParserProvider[String] {
+  def prepareNotEndingSource: BasicFlinkSource[String] = {
+    new BasicFlinkSource[String] with TestDataParserProvider[String] {
       override val typeInformation = implicitly[TypeInformation[String]]
 
       override def timestampAssigner = Option(new BoundedOutOfOrdernessTimestampExtractor[String](Time.minutes(10)) {
@@ -164,7 +164,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         override def parseElement(testElement: String): String = testElement
       }
 
-      override def toFlinkSource = new SourceFunction[String] {
+      override def flinkSourceFunction = new SourceFunction[String] {
         var running = true
         var counter = new AtomicLong()
         val afterFirstRun = new AtomicBoolean(false)
@@ -268,7 +268,6 @@ object BoundedSource extends FlinkSourceFactory[Any] {
   def source(@ParamName("elements") elements: java.util.List[Any]) =
     new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements.asScala.toList, None, Unknown)
 
-  override def timestampAssigner: Option[TimestampAssigner[Any]] = None
 }
 
 case object StatefulTransformer extends CustomStreamTransformer with LazyLogging {

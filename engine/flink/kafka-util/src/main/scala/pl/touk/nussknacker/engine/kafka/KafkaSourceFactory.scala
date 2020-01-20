@@ -11,7 +11,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, FixedDeserializationSchemaFactory}
 
@@ -89,11 +89,11 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
   }
 
   class KafkaSource(consumerGroupId: String, topics: List[String], schema: KafkaDeserializationSchema[T], recordFormatterOpt: Option[RecordFormatter])
-    extends FlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
+    extends BasicFlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
 
     override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
-    override def toFlinkSource: SourceFunction[T] = {
+    override def flinkSourceFunction: SourceFunction[T] = {
       topics.foreach(KafkaEspUtils.setToLatestOffsetIfNeeded(config, _, consumerGroupId))
       createFlinkSource()
     }
