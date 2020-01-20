@@ -1,32 +1,46 @@
-import React from "react"
+import React, {ReactNode} from "react"
 import ProcessUtils from "../../../../../common/ProcessUtils"
-import {editors, editorType, Types} from "./EditorType"
+import {editors, editorType, EditorTypes, SimpleEditorTypes} from "./EditorType"
 import SwitchIcon from "./SwitchIcon"
 
-export default class EditableExpression extends React.Component {
+class EditableExpression extends React.Component {
 
   constructor(props) {
     super(props)
     this.state = {
-      displayRawEditor: true,
+      displayRawEditor: undefined
     }
   }
 
-  render() {
-    const {fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param, renderFieldLabel, fieldLabel, readOnly} = this.props
-    const type = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : Types.EXPRESSION)
+  toggleEditor = (_) => this.setState({
+    displayRawEditor: !this.state.displayRawEditor,
+  })
 
-    const basicEditor = Object.entries(editors).find(
-      ([editorName, value]) => value.isSupported(type) && editorName !== Types.RAW_EDITOR)
-    const editorName = (!this.state.displayRawEditor && !_.isEmpty(basicEditor)) || type === Types.EXPRESSION_WITH_FIXED_VALUES ?
-      basicEditor[0] : Types.RAW_EDITOR
-    const editor = _.get(editors, editorName)
+  showSwitch = (paramType, showSwitch, parameterEditorType) => showSwitch
+      && editorType.basicEditorSupported(paramType)
+      && parameterEditorType.showSwitch()
+
+  render() {
+    const {
+      fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param, renderFieldLabel, fieldLabel, readOnly,
+      values
+    } = this.props
+
+    const paramType = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : SimpleEditorTypes.EXPRESSION)
+
+    const parameterEditorType = paramType === SimpleEditorTypes.FIXED_VALUES_EDITOR ?
+      EditorTypes.find(editor => editor.type === "SimpleParameterEditor") :
+      (!_.isEmpty(param) && !_.isEmpty(param.editor) ?
+          EditorTypes.find(editor => editor.type === param.editor.type) :
+          EditorTypes.find(editor => editor.type === "RawParameterEditor"))
+
+    const shouldShowSwitch = this.showSwitch(paramType, showSwitch, parameterEditorType)
+
+    const editor = _.get(editors, parameterEditorType.editorName(param, values, this.state.displayRawEditor))
     const Editor = editor.editor
 
-    const switchableToEditorName = editor.switchableToEditors.find(editor => editors[editor].isSupported(type)) || Types.RAW_EDITOR
+    const switchableToEditorName = editor.switchableToEditors.find(editor => editors[editor].isSupported(paramType)) || SimpleEditorTypes.RAW_EDITOR
     const switchableToEditor = _.get(editors, switchableToEditorName)
-
-    const shouldShowSwitch = this.showSwitch(type, showSwitch)
 
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
@@ -34,6 +48,7 @@ export default class EditableExpression extends React.Component {
         <Editor toggleEditor={this.toggleEditor}
                 className={`${valueClassName ? valueClassName : "node-value"} ${shouldShowSwitch ? "switchable " : ""}`}
                 {...this.props}
+                values={parameterEditorType.values(param, values)}
         />
         <SwitchIcon
           switchable={switchableToEditor.switchableTo(expressionObj)}
@@ -46,10 +61,6 @@ export default class EditableExpression extends React.Component {
       </div>
     )
   }
-
-  toggleEditor = (_) => this.setState({
-    displayRawEditor: !this.state.displayRawEditor,
-  })
-
-  showSwitch = (fieldType, showSwitch) => showSwitch && editorType.basicEditorSupported(fieldType)
 }
+
+export default EditableExpression

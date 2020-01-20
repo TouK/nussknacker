@@ -1,7 +1,7 @@
 import PropTypes from "prop-types"
 import React from "react"
 import Creatable from "react-select/creatable"
-import {Types} from "./EditorType"
+import {SimpleEditorTypes} from "./EditorType"
 
 const getOptions = (values) => {
   return values.map((value) => ({
@@ -10,27 +10,28 @@ const getOptions = (values) => {
   }))
 }
 
-export default class ExpressionWithFixedValues extends React.Component {
+export default class FixedValuesEditor extends React.Component {
 
   constructor(props) {
     super(props)
     this.options = getOptions(props.values)
   }
 
-  currentOption = (expressionObj, defaultValue) => {
+  currentOption = () => {
+    const {expressionObj, defaultValue, param} = this.props
     //TODO: is it ok to put not-existing option here?
     const defaultOption = {
-      value: (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.expression) || "",
-      label: (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.label) || "",
+      value: (_.get(_.head(_.get(param, "editor.possibleValues")), "expression")) || (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.expression) || "",
+      label: (_.get(_.head(_.get(param, "editor.possibleValues")), "label")) || (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.label) || "",
     }
     return this.options.find((option) => expressionObj && option.value === expressionObj.expression) || defaultOption
   }
 
   render() {
     const {
-      expressionObj, readOnly, onValueChange, defaultValue, className,
+      readOnly, onValueChange, className,
     } = this.props
-    const option = this.currentOption(expressionObj, defaultValue)
+    const option = this.currentOption()
 
     return (
       <Creatable
@@ -54,4 +55,4 @@ export default class ExpressionWithFixedValues extends React.Component {
   }
 }
 
-ExpressionWithFixedValues.isSupported = (fieldType) => fieldType === Types.EXPRESSION_WITH_FIXED_VALUES
+FixedValuesEditor.isSupported = (fieldType) => fieldType === SimpleEditorTypes.FIXED_VALUES_EDITOR
