@@ -2,9 +2,9 @@ import axios from "axios"
 import SystemUtils from "./common/SystemUtils"
 import {API_URL} from "./config"
 
-let headers = {}
+const headers = {}
 if (SystemUtils.hasAccessToken()) {
-  headers.authorization = SystemUtils.authorizationToken()
+  headers[SystemUtils.getAuthorizationHeader()] = SystemUtils.authorizationToken()
 }
 
 const configuration = {
