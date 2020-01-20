@@ -40,12 +40,18 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
       case Nil =>
         Right(Unknown)
       case _ =>
+        val isClass = clazzDefinitions.map(k => Typed(k.clazzName)).exists(_.canBeSubclassOf(Typed[Class[_]]))
+        val display = clazzDefinitions.map(k => Typed(k.clazzName)).map(_.display).mkString(", ")
         clazzDefinitions.flatMap(_.methods.get(methodReference.getName)) match {
-          case Nil => Right(Unknown)
+          //Static method can be invoked - we cannot find them ATM
+          case Nil if isClass => Right(Unknown)
+          case Nil  => Left(s"Unknown method '${methodReference.getName}' in $display")
           case methodInfoes => typeFromMethodInfoes(methodInfoes)
         }
     }
 
+  //TODO: we check only arity, but don't check if any of overloaded methods has matching signature
+  //this will lead to erros if we have different return types for different signatures!
   private def typeFromMethodInfoes(methodInfoes: List[MethodInfo]): Either[String, TypingResult] =
     methodInfoes.filter(_.parameters.size <= paramsCount) match {
       case Nil =>

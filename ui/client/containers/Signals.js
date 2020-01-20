@@ -1,16 +1,16 @@
+import _ from "lodash"
 import React from "react"
-import {connect} from "react-redux";
-import ActionsUtils from "../actions/ActionsUtils";
-import HttpService from "../http/HttpService";
-import QueriedStateTable from "../components/QueriedStateTable";
-import _ from "lodash";
-import {nkPath} from "../config";
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import QueriedStateTable from "../components/QueriedStateTable"
+import {nkPath} from "../config"
+import HttpService from "../http/HttpService"
 
 //this needs some love
 class Signals extends React.Component {
 
   constructor(props) {
-    super(props);
+    super(props)
     this.state = this.initialState(props)
   }
 
@@ -21,7 +21,7 @@ class Signals extends React.Component {
       this.setState({
         signals: signals,
         signalType: firstSignal,
-        processId: signals[firstSignal].availableProcesses[0]
+        processId: signals[firstSignal].availableProcesses[0],
       })
     })
   }
@@ -52,7 +52,7 @@ class Signals extends React.Component {
                     this.setState({
                       signalType: nextSignalType,
                       signalParams: {},
-                      processId: this.firstProcessForSignal(nextSignalType)
+                      processId: this.firstProcessForSignal(nextSignalType),
                     })
                   }}>
                     {_.map(_.keys(this.state.signals), (sig, index) => (
@@ -114,7 +114,6 @@ class Signals extends React.Component {
     this.setState({signalParams: newSignalParams})
   }
 
-
 }
 
 Signals.path = `${nkPath}/signals`
@@ -123,7 +122,7 @@ Signals.header = "Signals"
 function mapState(state) {
   return {
     processingType: "streaming",
-  };
+  }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Signals);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Signals)

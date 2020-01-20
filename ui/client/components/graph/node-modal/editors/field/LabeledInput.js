@@ -1,5 +1,5 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 import Input from "./Input"
 
 export const LabeledInput = (props) => {
@@ -27,13 +27,13 @@ LabeledInput.propTypes = {
   readOnly: PropTypes.bool,
   value: PropTypes.oneOfType([
     PropTypes.string,
-    PropTypes.number
+    PropTypes.number,
   ]),
   autofocus: PropTypes.bool,
   showValidation: PropTypes.bool,
   validators: PropTypes.array,
   onChange: PropTypes.func,
-  placeholder: PropTypes.string
+  placeholder: PropTypes.string,
 }
 
 export default LabeledInput

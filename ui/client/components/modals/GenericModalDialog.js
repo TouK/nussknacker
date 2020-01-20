@@ -1,20 +1,20 @@
-import React from "react";
-import Modal from "react-modal";
-import {connect} from "react-redux";
-import ActionsUtils from "../../actions/ActionsUtils";
-import "../../stylesheets/visualization.styl";
-import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import PropTypes from "prop-types";
-import Draggable from "react-draggable";
+import PropTypes from "prop-types"
+import React from "react"
+import Draggable from "react-draggable"
+import LaddaButton from "react-ladda"
+import Modal from "react-modal"
+import {connect} from "react-redux"
+import ActionsUtils from "../../actions/ActionsUtils"
+import "../../stylesheets/visualization.styl"
 
 class GenericModalDialog extends React.Component {
 
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
-      pendingRequest: false
-    };
+      pendingRequest: false,
+    }
   }
 
   closeDialog = () => {
@@ -73,12 +73,12 @@ class GenericModalDialog extends React.Component {
           </Draggable>
         </div>
       </Modal>
-    );
+    )
   }
 }
 
 GenericModalDialog.propTypes = {
-  okBtnConfig: PropTypes.object
+  okBtnConfig: PropTypes.object,
 }
 
 function mapState(state) {
@@ -87,5 +87,5 @@ function mapState(state) {
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(GenericModalDialog);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(GenericModalDialog)
 

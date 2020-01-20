@@ -70,7 +70,8 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
         // TODO JOIN: for branchParams we should rather look at Map's value type
         val paramType = extractParameterType(p)
         val restrictions = ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name))
-        Parameter(name, Typed(paramType), p.getType, restrictions, additionalVariables(p), branchParamName.isDefined)
+        val editor = EditorExtractor.extract(p)
+        Parameter(name, Typed(paramType), p.getType, restrictions, editor, additionalVariables(p), branchParamName.isDefined)
       }
     }.toList
 

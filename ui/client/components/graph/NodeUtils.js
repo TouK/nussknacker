@@ -1,7 +1,7 @@
 import _ from "lodash"
 import fp from "lodash/fp"
+import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils"
 import ProcessUtils from "../../common/ProcessUtils.js"
-import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
 
 class NodeUtils {
 
@@ -10,12 +10,12 @@ class NodeUtils {
   }
 
   nodeType = (node) => {
-    return node.type ? node.type : "Properties";
+    return node.type ? node.type : "Properties"
   }
 
   nodeIsProperties = (node) => {
     const type = node && this.nodeType(node)
-    return type === "Properties";
+    return type === "Properties"
   }
 
   isPlainNode = (node) => {
@@ -33,7 +33,7 @@ class NodeUtils {
       nodes = nodes.filter(node => !_.includes(group.nodes, node.id))
       nodes = nodes.concat([this.createGroupNode(process.nodes, group)])
     })
-    return nodes;
+    return nodes
   }
 
   createGroupNode = (nodes, group) => {
@@ -43,7 +43,7 @@ class NodeUtils {
       id: groupId,
       type: "_group",
       nodes: groupNodes,
-      ids: group.nodes
+      ids: group.nodes,
     }
   }
 
@@ -58,7 +58,7 @@ class NodeUtils {
         to: _.includes(group.nodes, edge.to) ? id : edge.to,
       })).filter(a => !(_.eq(a.from, a.to)))
     })
-    return edges;
+    return edges
   }
 
   getNodeById = (nodeId, process) => this.nodesFromProcess(process).find(n => n.id === nodeId)
@@ -123,11 +123,11 @@ class NodeUtils {
   }
 
   updateGroupsAfterNodeIdChange = (process, oldNodeId, newNodeId) => {
-    return this._changeGroupNodes(process, (nodes) => nodes.map((n) => n === oldNodeId ? newNodeId : n));
+    return this._changeGroupNodes(process, (nodes) => nodes.map((n) => n === oldNodeId ? newNodeId : n))
   }
 
   updateGroupsAfterNodeDelete = (process, idToDelete) => {
-    return this._changeGroupNodes(process, (nodes) => nodes.filter((n) => n !== idToDelete));
+    return this._changeGroupNodes(process, (nodes) => nodes.filter((n) => n !== idToDelete))
   }
 
   edgesForNode = (node, processDefinitionData, forInput) => {
@@ -136,8 +136,8 @@ class NodeUtils {
     const data =  (processDefinitionData.edgesForNodes
       .filter(e => !forInput || e.isForInputDefinition === forInput)
       //here we use == in second comparison, as we sometimes compare null to undefined :|
-      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition)) || {edges: [null], canChooseNodes: false}
-    return data
+      .find(e => e.nodeId.type === _.get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition))
+    return data || {edges: [null], canChooseNodes: false}
   }
 
   edgeLabel = (edge) => {
@@ -149,22 +149,21 @@ class NodeUtils {
       FilterTrue: "true",
       SwitchDefault: "default",
       SubprocessOutput: _.get(edge, "edgeType.name"),
-      NextSwitch: _.get(edge, "edgeType.condition.expression")
-    };
+      NextSwitch: _.get(edge, "edgeType.condition.expression"),
+    }
     return edgeTypeToLabel[edgeType] || ""
   }
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
   //TODO remove type (Source, Sink) comparisons
   canMakeLink = (fromId, toId, process, processDefinitionData) => {
-    const nodeInputs = this._nodeInputs(toId, process);
-    const nodeOutputs = this._nodeOutputs(fromId, process);
+    const nodeInputs = this._nodeInputs(toId, process)
+    const nodeOutputs = this._nodeOutputs(fromId, process)
 
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)
     return (fromId !== toId) && this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
   }
-
 
   //TODO: this function should already exists in lodash?
   _update = (path, fun, object) => {
@@ -175,9 +174,9 @@ class NodeUtils {
     return this._update("properties.additionalFields.groups",
       (groups) => (groups || []).map(group => ({
                     ...group,
-                    nodes: nodeOperation(group.nodes)
-                  })), processToDisplay
-    );
+                    nodes: nodeOperation(group.nodes),
+                  })), processToDisplay,
+    )
   }
 
   _canHaveMoreInputs = (nodeTo, nodeInputs, processDefinitionData) => {
@@ -204,10 +203,20 @@ class NodeUtils {
     return `${edge.from}-${edge.to}`
   }
 
-  //TODO: methods below should be based on backend data, e.g. Subprocess can have outputs or not - based on individual subprocess...
-  hasInputs = (node) => (node.type !== "Source" && node.type !== "SubprocessInputDefinition")
+  groupIncludesOneOfNodes = (nodeGroup, nodeIds)  => _.some(nodeGroup.nodes, (node) => _.includes(nodeIds, _.get(node, "id") || node))
 
-  hasOutputs = (node) => (node.type !== "Sink" && node.type !== "SubprocessOutputDefinition")
+  groupIncludesAllOfNodes = (nodeGroup, nodeIds) => _.every(nodeGroup.nodes, (node) => _.includes(nodeIds, _.get(node, "id") || node))
+
+  nodesAreInOneGroup = (process, nodeIds) => _.some(this.getAllGroups(process), (group) => this.groupIncludesAllOfNodes(group, nodeIds))
+
+  noInputNodeTypes = ["Source", "SubprocessInputDefinition"]
+
+  noOutputNodeTypes = ["Sink", "SubprocessOutputDefinition"]
+
+  //TODO: methods below should be based on backend data, e.g. Subprocess can have outputs or not - based on individual subprocess...
+  hasInputs = (node) => !_.some(this.noInputNodeTypes, (nodeType) => _.isEqual(nodeType, _.get(node, "type")))
+
+  hasOutputs = (node) => !_.some(this.noOutputNodeTypes, (nodeType) => _.isEqual(nodeType, _.get(node, "type")))
 
 }
 

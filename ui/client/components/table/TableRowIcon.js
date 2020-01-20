@@ -1,5 +1,5 @@
-import {Glyphicon} from "react-bootstrap"
 import React from "react"
+import {Glyphicon} from "react-bootstrap"
 
 export default function TableRowIcon(props) {
 

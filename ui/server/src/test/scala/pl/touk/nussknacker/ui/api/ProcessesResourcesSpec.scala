@@ -87,6 +87,34 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       responseAs[String] shouldEqual s"Process ${processName.value} already exists"
     }
   }
+
+  test("should allow rename not deployed process") {
+    saveProcess(processName, ProcessTestData.validProcess)(succeed)
+    val newName = "ProcessChangedName"
+
+    Put(s"/processes/${processName.value}/rename/${newName}") ~> routeWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+    }
+  }
+
+  test("should not allow rename deployed process") {
+    val newName = "ProcessChangedName"
+    createDeployedProcess(processName, false)
+
+    Put(s"/processes/${processName.value}/rename/${newName}") ~> routeWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.BadRequest
+    }
+  }
+
+  test("should allow rename canceled process") {
+    val newName = "ProcessChangedName"
+    createDeployedCanceledProcess(processName, false)
+
+    Put(s"/processes/${processName.value}/rename/${newName}") ~> routeWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+    }
+  }
+
   test("return list of subprocess without archived process") {
     val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
     saveSubProcess(sampleSubprocess) {

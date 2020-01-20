@@ -1,4 +1,3 @@
-
 export function loadNodeSvgContent(fileName) {
   return loadSvgContent(`nodes/${fileName}`)
 }

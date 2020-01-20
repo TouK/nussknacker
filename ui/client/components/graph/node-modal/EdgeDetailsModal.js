@@ -1,34 +1,34 @@
-import React from "react";
-import PropTypes from "prop-types";
-import {connect} from "react-redux";
-import Modal from "react-modal";
-import _ from "lodash";
-import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
-import ActionsUtils from "../../../actions/ActionsUtils";
-import NodeUtils from "../NodeUtils";
+import _ from "lodash"
+import PropTypes from "prop-types"
+import React from "react"
+import Draggable from "react-draggable"
+import LaddaButton from "react-ladda"
+import Modal from "react-modal"
+import {connect} from "react-redux"
+import ActionsUtils from "../../../actions/ActionsUtils"
 import EspModalStyles from "../../../common/EspModalStyles"
-import EdgeDetailsContent from "./EdgeDetailsContent";
-import Draggable from "react-draggable";
+import NodeUtils from "../NodeUtils"
+import EdgeDetailsContent from "./EdgeDetailsContent"
 
-//TODO: this is still pretty switch-specific. 
+//TODO: this is still pretty switch-specific.
 class EdgeDetailsModal extends React.Component {
 
   static propTypes = {
-    edgeToDisplay: PropTypes.object.isRequired
+    edgeToDisplay: PropTypes.object.isRequired,
   }
 
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       pendingRequest: false,
-      editedEdge: props.edgeToDisplay
-    };
+      editedEdge: props.edgeToDisplay,
+    }
   }
 
   componentWillReceiveProps(props) {
     this.setState({
-      editedEdge: props.edgeToDisplay
+      editedEdge: props.edgeToDisplay,
     })
   }
 
@@ -43,9 +43,9 @@ class EdgeDetailsModal extends React.Component {
   }
 
   performEdgeEdit = () => {
-    this.setState( {pendingRequest: true});
+    this.setState( {pendingRequest: true})
     this.props.actions.editEdge(this.props.processToDisplay, this.props.edgeToDisplay, this.state.editedEdge).then (() => {
-      this.setState( {pendingRequest: false});
+      this.setState( {pendingRequest: false})
       this.closeModal()
     })
   }
@@ -65,10 +65,10 @@ class EdgeDetailsModal extends React.Component {
         </LaddaButton>,
         <button key="3" type="button" title="Cancel edge details" className="modalButton" onClick={this.closeModal}>
           Cancel
-        </button>
-      ] );
+        </button>,
+      ] )
     } else {
-      return null;
+      return null
     }
   }
 
@@ -84,7 +84,7 @@ class EdgeDetailsModal extends React.Component {
       .edgesForNode(fromNode, this.props.processDefinitionData).edges.find(e => e.type === edgeTypeValue)
     const newEdge = {
       ...this.state.editedEdge,
-      edgeType: defaultEdgeType
+      edgeType: defaultEdgeType,
     }
     this.setState({editedEdge: newEdge})
   }
@@ -130,7 +130,7 @@ class EdgeDetailsModal extends React.Component {
           </div>
         </Modal>
       </div>
-    );
+    )
   }
 }
 
@@ -144,8 +144,8 @@ function mapState(state) {
     edgeErrors: errors,
     readOnly: !state.settings.loggedUser.canWrite(processCategory),
     processDefinitionData: state.settings.processDefinitionData,
-    showEdgeDetailsModal: state.ui.showEdgeDetailsModal
-  };
+    showEdgeDetailsModal: state.ui.showEdgeDetailsModal,
+  }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EdgeDetailsModal);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EdgeDetailsModal)

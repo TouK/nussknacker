@@ -1,7 +1,7 @@
-import React from "react";
 import PropTypes from "prop-types"
-import InlinedSvgs from "../../assets/icons/InlinedSvgs";
-import ValidTip from "./ValidTip";
+import React from "react"
+import InlinedSvgs from "../../assets/icons/InlinedSvgs"
+import ValidTip from "./ValidTip"
 
 export default function ValidTips(props) {
   const {hasNeitherErrorsNorWarnings, testing, grouping} = props
@@ -17,5 +17,5 @@ export default function ValidTips(props) {
 
 ValidTips.propTypes = {
   grouping: PropTypes.bool.isRequired,
-  testing: PropTypes.bool.isRequired
+  testing: PropTypes.bool.isRequired,
 }

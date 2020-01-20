@@ -1,14 +1,14 @@
+import axios from "axios"
+import * as  queryString from "query-string"
 import React from "react"
 import {withRouter} from "react-router-dom"
-import * as  queryString from "query-string"
 import {Table, Td, Tr} from "reactable"
-import "../../stylesheets/processes.styl"
-import HttpService from "../../http/HttpService"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import LoaderSpinner from "../../components/Spinner"
-import BaseAdminTab from "./BaseAdminTab"
-import axios from "axios"
 import SearchFilter from "../../components/table/SearchFilter"
+import HttpService from "../../http/HttpService"
+import "../../stylesheets/processes.styl"
+import BaseAdminTab from "./BaseAdminTab"
 
 class SearchComponents extends BaseAdminTab {
   constructor(props) {
@@ -19,7 +19,7 @@ class SearchComponents extends BaseAdminTab {
     this.state = Object.assign({
       componentToFind: query.componentToFind,
       processesComponents: [],
-      componentIds: []
+      componentIds: [],
     }, this.prepareState(), {showLoader: false})
   }
 
@@ -33,7 +33,7 @@ class SearchComponents extends BaseAdminTab {
       this.setState({
         showLoader: false,
         componentIds: idsResponse.data,
-        processesComponents: _.get(componentsResponse, "data", [])
+        processesComponents: _.get(componentsResponse, "data", []),
       })
     }))
   }
@@ -46,7 +46,7 @@ class SearchComponents extends BaseAdminTab {
     HttpService.fetchProcessesComponents(componentToFind).then((response) => {
       this.setState({
         processesComponents: response.data,
-        showLoader: false
+        showLoader: false,
       })
     })
   }

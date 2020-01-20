@@ -1,5 +1,5 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 
 export const Checkbox = (props) => {
   const {renderFieldLabel, autofocus, isMarked, value, onChange, readOnly} = props
@@ -25,7 +25,7 @@ Checkbox.propTypes = {
   isMarked: PropTypes.bool,
   readOnly: PropTypes.bool,
   autoFocus: PropTypes.bool,
-  onChange: PropTypes.func
+  onChange: PropTypes.func,
 }
 
 export default Checkbox

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.batch
 
 import java.nio.file.Files
 
-import org.apache.flink.runtime.jobgraph.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
@@ -10,12 +9,11 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.BatchProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with BatchDockerTest {
-
   import pl.touk.nussknacker.engine.spel.Implicits._
-
   import scala.collection.JavaConverters._
   import scala.concurrent.duration._
 
@@ -46,7 +44,8 @@ class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with BatchDock
     assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath = None).isReadyWithin(100 seconds))
     eventually {
       val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
-      jobStatus.map(_.status) shouldBe Some(JobStatus.FINISHED.name())
+      jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Finished.name)
+      jobStatus.map(_.status.isFinished) shouldBe Some(true)
     }
   }
 

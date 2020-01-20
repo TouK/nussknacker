@@ -1,14 +1,14 @@
+import * as queryString from "query-string"
 import React from "react"
-import {withRouter} from "react-router-dom"
+import {hot} from "react-hot-loader"
 import {connect} from "react-redux"
-import {hot} from "react-hot-loader";
-import ActionsUtils from "../actions/ActionsUtils";
-import HttpService from "../http/HttpService";
-import InitializeError from "./errors/InitializeError";
-import api from "../api";
-import * as queryString from "query-string";
-import LoaderSpinner from "../components/Spinner";
-import SystemUtils from "../common/SystemUtils";
+import {withRouter} from "react-router-dom"
+import ActionsUtils from "../actions/ActionsUtils"
+import api from "../api"
+import SystemUtils from "../common/SystemUtils"
+import LoaderSpinner from "../components/Spinner"
+import HttpService from "../http/HttpService"
+import InitializeError from "./errors/InitializeError"
 
 const OAUTH2_BACKEND = "OAuth2"
 const HTTP_UNAUTHORIZED_CODE = 401
@@ -24,22 +24,22 @@ class NussknackerInitializer extends React.Component {
     401: {
       message: "Unauthorized Error",
       description: "It seems you are not authenticated... Why not try to authenticate again?",
-      buttonLabel: "Try authenticate again"
+      buttonLabel: "Try authenticate again",
     },
      504: {
        message: "504 Gateway Timeout Error",
-       description: "It seems server has some problems... Why not to try refreshing your page? Or you can contact with system administrators."
+       description: "It seems server has some problems... Why not to try refreshing your page? Or you can contact with system administrators.",
      },
     500: {
       message: "Application Unexpected Error",
-      showButton: false
+      showButton: false,
     },
     accessToken: {
       message: "Authentication Error",
       buttonOnClick: this.redirectToAuthorizeUrl,
       buttonLabel: "Go to authentication page",
-      description: "It seems application has some problem with authentication. Please contact with system administrators."
-    }
+      description: "It seems application has some problem with authentication. Please contact with system administrators.",
+    },
   }
 
   constructor(props) {
@@ -47,7 +47,7 @@ class NussknackerInitializer extends React.Component {
 
     this.state = {
       error: null,
-      initialized: false
+      initialized: false,
     }
   }
 
@@ -70,7 +70,7 @@ class NussknackerInitializer extends React.Component {
     const code = _.get(error, "response.status")
     const showError = (code !== HTTP_UNAUTHORIZED_CODE || !redirect)
     this.setState({
-      error: showError ? _.get(this.errors, code, this.errors[HTTP_APPLICATION_CODE]) : null
+      error: showError ? _.get(this.errors, code, this.errors[HTTP_APPLICATION_CODE]) : null,
     })
   }
 
@@ -124,13 +124,13 @@ class NussknackerInitializer extends React.Component {
       return this.props.children
     }
 
-    return <LoaderSpinner show={this.state.initialized === false} />
+    return <LoaderSpinner show={this.state.initialized === false}/>
   }
 }
 
 function mapState(state) {
   return {
-    authenticationSettings: state.settings.authenticationSettings
+    authenticationSettings: state.settings.authenticationSettings,
   }
 }
 

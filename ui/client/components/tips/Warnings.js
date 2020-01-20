@@ -1,10 +1,10 @@
-import InlinedSvgs from "../../assets/icons/InlinedSvgs"
-import React from "react"
-import HeaderIcon from "./HeaderIcon"
-import {v4 as uuid4} from "uuid";
-import {Link} from "react-router-dom"
-import NodeUtils from "../graph/NodeUtils"
 import PropTypes from "prop-types"
+import React from "react"
+import {Link} from "react-router-dom"
+import {v4 as uuid4} from "uuid"
+import InlinedSvgs from "../../assets/icons/InlinedSvgs"
+import NodeUtils from "../graph/NodeUtils"
+import HeaderIcon from "./HeaderIcon"
 
 export default class Warnings extends React.Component {
 
@@ -49,5 +49,5 @@ export default class Warnings extends React.Component {
   }
 }
 
-const headerMessageByWarningMessage = new Map([["Node is disabled", "Node disabled: "]]);
+const headerMessageByWarningMessage = new Map([["Node is disabled", "Node disabled: "]])
 

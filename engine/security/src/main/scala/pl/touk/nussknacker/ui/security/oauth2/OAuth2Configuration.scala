@@ -34,6 +34,7 @@ case class OAuth2Configuration(method: AuthenticationMethod,
 
 object OAuth2Configuration {
   import AuthenticationConfiguration._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._

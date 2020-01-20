@@ -1,6 +1,5 @@
-import React from "react"
 import PropTypes from "prop-types"
-import Field from "../field/Field"
+import React from "react"
 import Input from "../field/Input"
 
 export default function MapKey(props) {
@@ -25,5 +24,5 @@ MapKey.propTypes = {
   showValidation: PropTypes.bool,
   validators: PropTypes.array,
   readOnly: PropTypes.bool,
-  onChange: PropTypes.func
+  onChange: PropTypes.func,
 }

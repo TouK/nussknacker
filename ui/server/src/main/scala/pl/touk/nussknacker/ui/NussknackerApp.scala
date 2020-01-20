@@ -48,9 +48,13 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   private val config = system.settings.config.withFallback(ConfigFactory.load("defaultConfig.conf"))
 
-  private val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer")
-    .map(DatabaseServer(_))
-  hsqlServer.foreach(_.start())
+  private val hsqlEnabled = config.getAs[Boolean]("jdbcServer.enabled")
+  private val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer").map(DatabaseServer(_))
+
+  // Default true because of back compatibility
+  if (hsqlEnabled.getOrElse(true)) {
+    hsqlServer.foreach(_.start())
+  }
 
   private val route = initializeRoute(config)
 
@@ -134,7 +138,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, modelData, processRepository, processValidation, jobStatusService)
+    val appResources = new AppResources(config, typeToConfig, modelData, processRepository, processValidation, jobStatusService)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(

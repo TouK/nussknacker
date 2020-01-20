@@ -1,27 +1,28 @@
-import React from "react"
-import {Table, Td, Tr} from "reactable"
-import {connect} from "react-redux"
-import HttpService from "../http/HttpService"
-import ActionsUtils from "../actions/ActionsUtils"
-import LoaderSpinner from "../components/Spinner.js"
-import AddProcessDialog from "../components/AddProcessDialog.js"
-import HealthCheck from "../components/HealthCheck.js"
-import "../stylesheets/processes.styl"
-import {withRouter} from "react-router-dom"
-import ProcessUtils from "../common/ProcessUtils"
-import BaseProcesses from "./BaseProcesses"
 import * as  queryString from "query-string"
-import {nkPath} from "../config"
-import AddProcessButton from "../components/table/AddProcessButton"
-import TableSelect from "../components/table/TableSelect"
-import SearchFilter from "../components/table/SearchFilter"
+import React from "react"
+import {connect} from "react-redux"
+import {withRouter} from "react-router-dom"
+import {Table, Td, Tr} from "reactable"
+import ActionsUtils from "../actions/ActionsUtils"
+import ProcessUtils from "../common/ProcessUtils"
+import AddProcessDialog from "../components/AddProcessDialog.js"
 import Date from "../components/common/Date"
+import HealthCheck from "../components/HealthCheck.js"
+import ListState from "../components/Process/ListState"
+import LoaderSpinner from "../components/Spinner.js"
+import AddProcessButton from "../components/table/AddProcessButton"
+import SearchFilter from "../components/table/SearchFilter"
 import TableRowIcon from "../components/table/TableRowIcon"
+import TableSelect from "../components/table/TableSelect"
+import {nkPath} from "../config"
+import HttpService from "../http/HttpService"
+import "../stylesheets/processes.styl"
+import BaseProcesses from "./BaseProcesses"
 
 class Processes extends BaseProcesses {
   queries = {
     isSubprocess: false,
-    isArchived: false
+    isArchived: false,
   }
 
   page = "processes"
@@ -54,19 +55,19 @@ class Processes extends BaseProcesses {
   }
 
   processNameChanged = (name, e) => {
-    const newName = e.target.value;
+    const newName = e.target.value
     this.updateProcess(name, process => process.editedName = newName)
   }
 
   changeProcessName = (process, e) => {
-    e.persist();
+    e.persist()
     if (e.key === "Enter" && process.editedName !== process.name) {
       HttpService.changeProcessName(process.name, process.editedName).then((isSuccess) => {
         if (isSuccess) {
           this.updateProcess(process.name, (process) => process.name = process.editedName)
-          e.target.blur();
+          e.target.blur()
         }
-      });
+      })
     }
   }
 
@@ -122,7 +123,7 @@ class Processes extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={["name", "category", "modifyDate", "createDate", "createdBy"]}
+          sortable={["name", "category", "modifyDate", "createdAt", "createdBy"]}
           filterable={["name", "category", "createdBy"]}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
@@ -134,7 +135,7 @@ class Processes extends BaseProcesses {
             {key: "modifyDate", label: "Last modification"},
             {key: "status", label: "Status"},
             {key: "edit", label: "Edit"},
-            {key: "metrics", label: "Metrics"}
+            {key: "metrics", label: "Metrics"},
           ]}
         >
           {this.state.processes.map((process, index) => {
@@ -158,7 +159,11 @@ class Processes extends BaseProcesses {
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  <div className={this.processStatusClass(process)} title={this.processStatusTitle(process)}/>
+                  <ListState
+                    process={process}
+                    state={this.getProcessState(process)}
+                    isStateLoaded={this.state.statusesLoaded}
+                  />
                 </Td>
                 <Td column="edit" className="edit-column">
                   <TableRowIcon
@@ -189,7 +194,7 @@ Processes.header = "Processes"
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,
   featuresSettings: state.settings.featuresSettings,
-  filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
+  filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser),
 })
 
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Processes))

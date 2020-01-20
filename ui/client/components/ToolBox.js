@@ -1,25 +1,24 @@
-import React from "react"
-import {render} from "react-dom";
-import PropTypes from "prop-types";
-import {connect} from "react-redux";
 import _ from "lodash"
-import "../stylesheets/toolBox.styl";
-import Tool from "./Tool"
+import PropTypes from "prop-types"
+import React from "react"
+import {connect} from "react-redux"
 
 import TreeView from "react-treeview"
-import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils";
+import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils"
+import "../stylesheets/toolBox.styl"
+import Tool from "./Tool"
 
 class ToolBox extends React.Component {
 
   static propTypes = {
     processDefinitionData: PropTypes.object.isRequired,
-    processCategory: PropTypes.string.isRequired
+    processCategory: PropTypes.string.isRequired,
   }
 
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
-      openedNodeGroups: {}
+      openedNodeGroups: {},
     }
   }
 
@@ -27,9 +26,9 @@ class ToolBox extends React.Component {
     if (!this.nodeGroupIsEmpty(nodeGroup)) {
       const newOpenedNodeGroups = {
         ...this.state.openedNodeGroups,
-        [nodeGroup.name]: !this.state.openedNodeGroups[nodeGroup.name]
+        [nodeGroup.name]: !this.state.openedNodeGroups[nodeGroup.name],
       }
-      this.setState({openedNodeGroups: newOpenedNodeGroups});
+      this.setState({openedNodeGroups: newOpenedNodeGroups})
     }
   }
 
@@ -53,14 +52,14 @@ class ToolBox extends React.Component {
                 onClick={this.toggleGroup.bind(this, nodeGroup)}
               >
                 {nodeGroup.possibleNodes.map(node =>
-                  <Tool nodeModel={node.node} label={node.label} key={node.type + node.label}/>
+                  <Tool nodeModel={node.node} label={node.label} key={node.type + node.label}/>,
                 )}
               </TreeView>
-            );
+            )
           })}
         </div>
       </div>
-    );
+    )
   }
 }
 
@@ -71,8 +70,8 @@ function mapState(state) {
   return {
     processDefinitionData: processDefinitionData,
     processCategory: processCategory,
-    nodesToAdd: nodesToAdd
+    nodesToAdd: nodesToAdd,
   }
 }
 
-export default connect(mapState, () => ({}))(ToolBox);
+export default connect(mapState, () => ({}))(ToolBox)

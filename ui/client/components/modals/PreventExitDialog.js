@@ -1,14 +1,14 @@
-import React from "react";
-import Modal from "react-modal";
-import DialogMessages from "../../common/DialogMessages";
-import PropTypes from "prop-types";
+import PropTypes from "prop-types"
+import React from "react"
+import Modal from "react-modal"
+import * as DialogMessages from "../../common/DialogMessages"
 
 class PreventExitDialog extends React.Component {
 
   static propTypes = {
     onCancel : PropTypes.func,
     onConfirm: PropTypes.func,
-    visible: PropTypes.bool
+    visible: PropTypes.bool,
   }
 
   closeDialog = () => {
@@ -35,11 +35,8 @@ class PreventExitDialog extends React.Component {
           </div>
         </div>
       </Modal>
-    );
+    )
   }
-
-
-
 
 }
 

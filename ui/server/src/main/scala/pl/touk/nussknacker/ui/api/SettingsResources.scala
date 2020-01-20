@@ -39,7 +39,6 @@ class SettingsResources(config: FeatureTogglesConfig,
           )
 
           val analyticsSettings = analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
-
           UISettings(toggleOptions, authenticationSettings, analyticsSettings)
         }
       }
@@ -71,9 +70,12 @@ class SettingsResources(config: FeatureTogglesConfig,
                                  attachments: Boolean,
                                  signals: Boolean)
 
-
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 
 @JsonCodec case class AuthenticationSettings(backend: String, authorizeUrl: Option[String])
 
-@JsonCodec case class UISettings(features: ToggleFeaturesOptions, authentication: AuthenticationSettings, analytics: Option[AnalyticsSettings])
+@JsonCodec case class ProcessStateSettings(icons: Map[String, Map[String, String]], tooltips: Map[String, Map[String, String]])
+
+@JsonCodec case class UISettings(features: ToggleFeaturesOptions,
+                                 authentication: AuthenticationSettings,
+                                 analytics: Option[AnalyticsSettings])

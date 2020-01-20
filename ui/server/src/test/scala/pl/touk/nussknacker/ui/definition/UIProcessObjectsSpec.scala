@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.definition
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -25,7 +26,26 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
   object TestService extends Service {
 
     @MethodToInvoke
-    def method(@ParamName("param") input: String, @PossibleValues(value = Array("a", "b", "c")) @ParamName("param2") param2: String): Future[String] = ???
+    def method(@ParamName("param")
+               @DualEditor(
+                 simpleEditor = new SimpleEditor(
+                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+                   possibleValues = Array(new LabeledExpression(expression = "expression", label = "label"))
+                 ),
+                 defaultMode = DualEditorMode.SIMPLE
+               )
+               input: String,
+
+               @PossibleValues(value = Array("a", "b", "c"))
+               @ParamName("param2")
+               @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+               param2: String,
+
+               @ParamName("param3")
+               @RawEditor
+               param3: String,
+
+               @ParamName("param4") param4: String): Future[String] = ???
   }
 
 
@@ -56,17 +76,44 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
         FixedExpressionValue("'a'", "a"),
         FixedExpressionValue("'b'", "b"),
         FixedExpressionValue("'c'", "c")
-      )))
+      ))),
+      "param3" -> None,
+      "param4" -> None
     )
 
 
     processObjects.nodesToAdd.find(_.name == "enrichers")
       .flatMap(_.possibleNodes.find(_.label == "enricher"))
       .map(_.node.asInstanceOf[Enricher].service.parameters) shouldBe Some(List(Parameter("param", Expression("spel", "'default value'")),
-      Parameter("param2", Expression("spel", "'a'"))))
+      Parameter("param2", Expression("spel", "'a'")),
+      Parameter("param3", Expression("spel", "''")),
+      Parameter("param4", Expression("spel", "''"))
+    ))
 
   }
 
+  test("should read editor from config") {
+    val model : ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator() {
+      override def services(config: Config): Map[String, WithCategories[Service]] =
+        Map("enricher" -> WithCategories(TestService))
+    })
+
+    val processObjects =
+      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false,
+        new ProcessTypesForCategories(ConfigWithScalaVersion.config))
+
+    processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.editor)).toMap shouldBe Map(
+      "param" -> Some(DualParameterEditor(
+        simpleEditor = SimpleParameterEditor(
+          simpleEditorType = SimpleEditorType.FIXED_VALUES_EDITOR,
+          possibleValues = List(FixedExpressionValue("expression", "label"))),
+        defaultMode = DualEditorMode.SIMPLE
+      )),
+      "param2" -> Some(SimpleParameterEditor(simpleEditorType = SimpleEditorType.STRING_EDITOR, possibleValues = List.empty)),
+      "param3" -> Some(RawParameterEditor),
+      "param4" -> None
+    )
+  }
 
   test("should read restrictions from config for subprocess") {
 

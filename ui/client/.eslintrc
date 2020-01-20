@@ -1,14 +1,21 @@
 {
   "env": {
     "browser": true,
-    "es6": true
+    "es6": true,
+    "node": true
   },
   "parser": "babel-eslint",
   "extends": [
+    "plugin:import/errors",
+    "plugin:import/warnings"
   ],
   "globals": {
     "Atomics": "readonly",
-    "SharedArrayBuffer": "readonly"
+    "SharedArrayBuffer": "readonly",
+    "__webpack_public_path__": "readonly",
+    "__DEV__": "readonly",
+    "__GIT__": "readonly",
+    "_": "readonly" // TODO: remove lodash from global, fix imports
   },
   "parserOptions": {
     "ecmaFeatures": {
@@ -18,10 +25,27 @@
     "sourceType": "module"
   },
   "plugins": [
+    "@typescript-eslint",
     "react",
+    "import",
     "i18next"
   ],
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".ts", ".tsx", ".js", ".jsx", ".json"]
+      }
+    }
+  },
   "rules": {
+    "react/jsx-tag-spacing": ["warn", {
+      "beforeSelfClosing": "never"
+    }],
+    "no-undef": "error",
+    "comma-dangle": ["warn", "always-multiline"],
+    "no-multiple-empty-lines": ["warn", { "max": 1, "maxEOF": 1, "maxBOF": 0}],
+    "eol-last": ["warn", "always"],
+    "semi": ["warn", "never"],
     "quotes": ["error", "double", { "avoidEscape": true }],
     "jsx-quotes": ["error", "prefer-double"],
     "prefer-template": "error",
@@ -29,7 +53,7 @@
     "no-template-curly-in-string": "error",
     "quote-props": ["error", "as-needed"],
     "object-curly-spacing": ["error", "never"],
-    "i18next/no-literal-string": ["warn", {
+    "i18next/no-literal-string": ["error", {
       "ignore": [
         "-icon", "glyphicon",
         ".svg", ".jpg", ".jpeg", ".png"
@@ -37,13 +61,28 @@
       "ignoreCallee": [
         "t", "withTranslation", "useTranslation",
         "reportEvent", "headerStyles",
-        "_.get",
-        "api.get",
-        "describe", "it", "expect", "toBe", "toEqual"
+        "_.get", "_.pick", "_.has",
+        "api.get", "api.post",
+        "describe"
       ],
       "ignoreAttribute": [
-        "svgFile", "bounds"
+        "svgFile", "bounds", "handle", "column", "glyph", "value",
+        "classNames", "className", "valueClassName", "rowClassName", "fieldType", "classNamePrefix"
       ]
     }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "parser": "@typescript-eslint/parser",
+      "extends": [
+        "plugin:import/typescript",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:react/recommended"
+      ],
+       "rules": {
+        "@typescript-eslint/explicit-function-return-type": 0
+      }
+    }
+  ]
 }

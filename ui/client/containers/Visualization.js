@@ -1,35 +1,35 @@
-import React from "react"
-import Graph from "../components/graph/Graph"
-import UserRightPanel from "../components/right-panel/UserRightPanel"
-import UserLeftPanel from "../components/UserLeftPanel"
-import HttpService from "../http/HttpService"
 import _ from "lodash"
+import React from "react"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
-import ProcessUtils from "../common/ProcessUtils"
-import "../stylesheets/visualization.styl"
-import NodeUtils from "../components/graph/NodeUtils"
-import * as VisualizationUrl from "../common/VisualizationUrl"
-import SpinnerWrapper from "../components/SpinnerWrapper"
-import * as JsonUtils from "../common/JsonUtils"
-import RouteLeavingGuard from "../components/RouteLeavingGuard"
-import ClipboardUtils from "../common/ClipboardUtils"
 import {events} from "../analytics/TrackingEvents"
+import ClipboardUtils from "../common/ClipboardUtils"
+import * as JsonUtils from "../common/JsonUtils"
+import ProcessUtils from "../common/ProcessUtils"
+import * as VisualizationUrl from "../common/VisualizationUrl"
+import Graph from "../components/graph/Graph"
+import NodeUtils from "../components/graph/NodeUtils"
+import UserRightPanel from "../components/right-panel/UserRightPanel"
+import RouteLeavingGuard from "../components/RouteLeavingGuard"
+import SpinnerWrapper from "../components/SpinnerWrapper"
+import UserLeftPanel from "../components/UserLeftPanel"
+import HttpService from "../http/HttpService"
+import "../stylesheets/visualization.styl"
 
 class Visualization extends React.Component {
 
   constructor(props) {
-    super(props);
-    this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false};
-    this.graphRef = React.createRef();
-    this.bindShortCuts();
+    super(props)
+    this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false}
+    this.graphRef = React.createRef()
+    this.bindShortCuts()
   }
 
   bindShortCuts() {
     this.windowListeners = {
       copy: this.bindCopyShortcut(),
       paste: this.bindPasteShortcut(),
-      cut: this.bindCutShortcut()
+      cut: this.bindCutShortcut(),
     }
   }
 
@@ -39,7 +39,7 @@ class Visualization extends React.Component {
       if (this.isNotThisCopyEvent(event, copyNodeElementId)) {
         this.props.actions.copySelection(
           () => this.copySelection(event, true),
-          {category: events.categories.keyboard, action: events.actions.keyboard.copy}
+          {category: events.categories.keyboard, action: events.actions.keyboard.copy},
         )
       }
     }
@@ -48,14 +48,14 @@ class Visualization extends React.Component {
   bindPasteShortcut() {
     return (event) => this.props.actions.pasteSelection(
       () => this.pasteSelection(event),
-      {category: events.categories.keyboard, action: events.actions.keyboard.paste}
+      {category: events.categories.keyboard, action: events.actions.keyboard.paste},
     )
   }
 
   bindCutShortcut() {
     return (event) => this.props.actions.cutSelection(
       () => this.cutSelection(event),
-      {category: events.categories.keyboard, action: events.actions.keyboard.cut}
+      {category: events.categories.keyboard, action: events.actions.keyboard.cut},
     )
   }
 
@@ -67,11 +67,11 @@ class Visualization extends React.Component {
       this.props.actions.fetchProcessDefinition(
         details.fetchedProcessDetails.processingType,
         _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
-        this.props.subprocessVersions
+        this.props.subprocessVersions,
       ).then(() => {
         this.setState({dataResolved: true})
-        this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json);
-        this.showCountsIfNeeded(details.fetchedProcessDetails.json);
+        this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
+        this.showCountsIfNeeded(details.fetchedProcessDetails.json)
       })
 
       this.fetchProcessStatus()
@@ -111,10 +111,10 @@ class Visualization extends React.Component {
   }
 
   showCountsIfNeeded(process) {
-    const countParams = VisualizationUrl.extractCountParams(this.props.location.search);
+    const countParams = VisualizationUrl.extractCountParams(this.props.location.search)
     if (countParams) {
-      const {from, to} = countParams;
-      this.props.actions.fetchAndDisplayProcessCounts(process.id, from, to);
+      const {from, to} = countParams
+      this.props.actions.fetchAndDisplayProcessCounts(process.id, from, to)
     }
   }
 
@@ -130,7 +130,7 @@ class Visualization extends React.Component {
       if (event.key === "Delete" && !_.isEmpty(this.props.selectionState) && this.props.canDelete) {
         this.props.actions.deleteSelection(
           this.props.selectionState,
-          {category: events.categories.keyboard, action: events.actions.keyboard.delete}
+          {category: events.categories.keyboard, action: events.actions.keyboard.delete},
         )
       }
     }
@@ -163,7 +163,7 @@ class Visualization extends React.Component {
     //this `if` should be closer to reducer?
     if (this.props.undoRedoAvailable) {
       this.props.undoRedoActions.undo(
-        {category: events.categories.keyboard, action: events.actions.keyboard.undo}
+        {category: events.categories.keyboard, action: events.actions.keyboard.undo},
       )
     }
   }
@@ -171,7 +171,7 @@ class Visualization extends React.Component {
   redo() {
     if (this.props.undoRedoAvailable) {
       this.props.undoRedoActions.redo(
-        {category: events.categories.keyboard, action: events.actions.keyboard.redo}
+        {category: events.categories.keyboard, action: events.actions.keyboard.redo},
       )
     }
   }
@@ -191,7 +191,7 @@ class Visualization extends React.Component {
     const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(nodeIds, process)
     const selection = {
       nodes: selectedNodes,
-      edges: edgesForNodes
+      edges: edgesForNodes,
     }
     ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
     if (shouldCreateNotification) {
@@ -204,7 +204,7 @@ class Visualization extends React.Component {
   }
 
   successMessage(action, selectedNodes) {
-    return `${action} ${selectedNodes.length} ${selectedNodes.length === 1 ? "node" : "nodes"}`;
+    return `${action} ${selectedNodes.length} ${selectedNodes.length === 1 ? "node" : "nodes"}`
   }
 
   canCopySelection() {
@@ -231,7 +231,7 @@ class Visualization extends React.Component {
     if (!this.props.allModalsClosed) {
       return
     }
-    const clipboardText = ClipboardUtils.readText(event);
+    const clipboardText = ClipboardUtils.readText(event)
     this.pasteSelectionFromText(clipboardText)
   }
 
@@ -270,7 +270,7 @@ class Visualization extends React.Component {
   }
 
   render() {
-    const {leftPanelIsOpened, actions, loggedUser} = this.props;
+    const {leftPanelIsOpened, actions, loggedUser} = this.props
 
     //it has to be that way, because graph is redux component
     const getGraph = () => this.graphRef.current.getDecoratedComponentInstance()
@@ -279,7 +279,7 @@ class Visualization extends React.Component {
     const zoomOutFun = () => this.props.actions.zoomOut(getGraph())
     const zoomInFun = () => this.props.actions.zoomIn(getGraph())
 
-    const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading;
+    const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading
 
     return (
       <div className={"Page graphPage"}>
@@ -310,7 +310,7 @@ class Visualization extends React.Component {
             cut: () => this.cutSelection(null),
             canCut: this.canCutSelection(),
             paste: () => this.pasteSelectionFromClipboard(null),
-            canPaste: true
+            canPaste: true,
           }}
           copySelection={() => this.copySelection(null, true)}
           cutSelection={() => this.cutSelection(null)}
@@ -321,7 +321,7 @@ class Visualization extends React.Component {
           <Graph ref={this.graphRef} capabilities={this.props.capabilities}/>
         </SpinnerWrapper>
       </div>
-    );
+    )
   }
 }
 
@@ -329,11 +329,11 @@ Visualization.path = VisualizationUrl.visualizationPath
 Visualization.header = "Visualization"
 
 function mapState(state) {
-  const processCategory = _.get(state, "graphReducer.fetchedProcessDetails.processCategory");
+  const processCategory = _.get(state, "graphReducer.fetchedProcessDetails.processCategory")
   const canDelete = state.ui.allModalsClosed
     && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
-    && state.settings.loggedUser.canWrite(processCategory);
-  const loggedUser = state.settings.loggedUser;
+    && state.settings.loggedUser.canWrite(processCategory)
+  const loggedUser = state.settings.loggedUser
   const isArchived = _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
   return {
     processCategory: processCategory,
@@ -353,10 +353,10 @@ function mapState(state) {
     capabilities: {
       write: loggedUser.canWrite(processCategory) && !isArchived,
       deploy: loggedUser.canDeploy(processCategory) && !isArchived,
-    }
-  };
+    },
+  }
 }
 
 const copyNodeElementId = "copy-node"
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization)

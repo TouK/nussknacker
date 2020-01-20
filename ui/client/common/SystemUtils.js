@@ -1,5 +1,6 @@
-import api from "../api"
+/* eslint-disable i18next/no-literal-string */
 import {v4 as uuid4} from "uuid"
+import api from "../api"
 
 const ACCESS_TOKEN_NAMESPACE = "accessToken"
 const BEARER_CASE = "Bearer"

@@ -3,14 +3,14 @@ import * as _ from "lodash"
 const emptyHistory = {
   history: {
     past: [],
-    future: []
-  }
+    future: [],
+  },
 }
 
 const espUndoableConfig = {
   blacklist: [
-    "CLEAR_PROCESS", "PROCESS_LOADING", "URL_CHANGED"
-  ]
+    "CLEAR_PROCESS", "PROCESS_LOADING", "URL_CHANGED",
+  ],
 }
 
 export function undoRedoReducer (reducer, config = espUndoableConfig) {
@@ -32,8 +32,8 @@ export function undoRedoReducer (reducer, config = espUndoableConfig) {
                 ...stateBasedOnPast,
                 history: {
                   past: newPast,
-                  future: _.concat(futurePartFromPast, state.history.future)
-                }
+                  future: _.concat(futurePartFromPast, state.history.future),
+                },
               }
             }
             case "FUTURE": {
@@ -45,8 +45,8 @@ export function undoRedoReducer (reducer, config = espUndoableConfig) {
                 ...stateBasedOnPast,
                 history: {
                   past: newPast,
-                  future: newFuture
-                }
+                  future: newFuture,
+                },
               }
             }
           }
@@ -55,14 +55,14 @@ export function undoRedoReducer (reducer, config = espUndoableConfig) {
           return undoableFun(state, {
             type: "JUMP_TO_STATE",
             index: nextIndex < 0 ? 1 : nextIndex,
-            direction: "PAST"
+            direction: "PAST",
           })
         case "REDO":
           return undoableFun(state, {type: "JUMP_TO_STATE", index: 0, direction: "FUTURE"})
         case "CLEAR":
           return {
             ...state,
-            ...emptyHistory
+            ...emptyHistory,
           }
         default: {
           const newState = reducer(state, action)
@@ -71,8 +71,8 @@ export function undoRedoReducer (reducer, config = espUndoableConfig) {
             history: {
               ...state.history,
               past: _.concat(state.history.past, action),
-              future: []
-            }
+              future: [],
+            },
           }
         }
       }

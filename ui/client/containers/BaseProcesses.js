@@ -1,11 +1,11 @@
-import React from "react"
-import * as VisualizationUrl from "../common/VisualizationUrl"
 import * as _ from "lodash"
 import * as  queryString from "query-string"
+import React from "react"
+import ProcessStateUtils from "../common/ProcessStateUtils"
+import * as VisualizationUrl from "../common/VisualizationUrl"
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
 import history from "../history"
 import HttpService from "../http/HttpService"
-import ProcessStateUtils from "../common/ProcessStateUtils"
 import Metrics from "./Metrics"
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
@@ -25,22 +25,23 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     const query = queryString.parse(this.props.history.location.search, {
       arrayFormat: "comma",
       parseNumbers: true,
-      parseBooleans: true
+      parseBooleans: true,
     })
 
     let state = {
+      statuses: null,
       processes: [],
       clashedNames: [],
       showLoader: true,
       showAddProcess: false,
       search: query.search || "",
       page: query.page || 0,
-      sort: {column: query.column || "name", direction: query.direction || 1}
+      sort: {column: query.column || "name", direction: query.direction || 1},
     }
 
     if (withoutCategories == null) {
       Object.assign(state, {
-        selectedCategories: this.retrieveSelectedCategories(query.categories)
+        selectedCategories: this.retrieveSelectedCategories(query.categories),
       })
     }
 
@@ -98,7 +99,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     const data = Object.assign(query, searchParams)
     fetch(data).then(response => {
       this.setState((prevState, props) => ({
-        clashedNames: prevState.clashedNames.concat(response.data.map(process => process.name))
+        clashedNames: prevState.clashedNames.concat(response.data.map(process => process.name)),
       }))
     })
   }
@@ -159,21 +160,19 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     history.push(VisualizationUrl.visualizationUrl(process.name))
   }
 
-  processStatusClass = (process) => {
-    const processName = process.name
-    const shouldRun = ProcessStateUtils.isDeployed(process)
-    return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
-  }
-
-  processStatusTitle = (process) => {
-    const processName = process.name
-    const shouldRun = ProcessStateUtils.isDeployed(process)
-    return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
-  }
-
   getIntervalTime() {
     return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
   }
+
+  getProcessState = (process) => {
+    if (this.state.statuses == null) {
+      return null
+    }
+
+    return _.get(this.state.statuses, process.name, undefined) //Unknown means that process was not found
+  }
+
+  isRunning = (process) => ProcessStateUtils.isDeployed(process) && ProcessStateUtils.isRunning(this.getProcessState(process))
 }
 
 const defaultProcessesSearchParams = {isSubprocess: false, isArchived: false}

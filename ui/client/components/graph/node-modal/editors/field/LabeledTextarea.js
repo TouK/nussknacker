@@ -35,7 +35,7 @@ LabeledTextarea.propTypes = {
   onChange: PropTypes.func.isRequired,
   className: PropTypes.string,
   rows: PropTypes.number,
-  cols: PropTypes.number
+  cols: PropTypes.number,
 }
 
 LabeledTextarea.defaultProps = {

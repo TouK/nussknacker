@@ -5,14 +5,14 @@ import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import sttp.client.circe._
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
-import sttp.model.{StatusCode, Uri}
+import sttp.model.Uri
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -44,7 +44,6 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-
   override def deploy(deploymentData: DeploymentData): Future[Unit] = {
     Future.sequence(clients.map(_.deploy(deploymentData))).map(_ => ())
   }
@@ -63,14 +62,16 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
           logger.warn(s"Inconsistent states found: $a")
           val warningMessage = a.map {
             case None => "empty"
-            case Some(state) => s"state: ${state.status}, startTime: ${state.startTime}"
+            case Some(state) => s"state: ${state.status.name}, startTime: ${state.startTime.getOrElse(None)}"
           }.mkString("; ")
-          Some(ProcessState(DeploymentId(name.value), runningState = RunningState.Error, "INCONSISTENT", 0L, None,
-            message = Some(s"Inconsistent states between servers: $warningMessage")))
+          Some(SimpleProcessState(
+            DeploymentId(name.value),
+            SimpleStateStatus.Failed,
+            errorMessage = Some(s"Inconsistent states between servers: $warningMessage")
+          ))
       }
     }
   }
-
 }
 
 class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
@@ -101,6 +102,5 @@ class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: S
       .send()
       .flatMap(SttpJson.failureToFuture)
   }
-
 }
 

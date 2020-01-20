@@ -1,21 +1,21 @@
 import React from "react"
-import {Table, Td, Tr} from "reactable"
-import {withRouter} from "react-router-dom"
-import HttpService from "../../http/HttpService"
-import DateUtils from "../../common/DateUtils"
-import LoaderSpinner from "../../components/Spinner.js"
-import HealthCheck from "../../components/HealthCheck.js"
-import DialogMessages from "../../common/DialogMessages"
 import {Glyphicon} from "react-bootstrap"
+import {connect} from "react-redux"
+import {withRouter} from "react-router-dom"
+import {Table, Td, Tr} from "reactable"
+import ActionsUtils from "../../actions/ActionsUtils"
+import * as DialogMessages from "../../common/DialogMessages"
+import Date from "../../components/common/Date"
+import HealthCheck from "../../components/HealthCheck.js"
+import ListState from "../../components/Process/ListState"
+import LoaderSpinner from "../../components/Spinner.js"
+import SearchFilter from "../../components/table/SearchFilter"
+import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
 import BaseProcesses from "./../BaseProcesses"
-import {connect} from "react-redux"
-import ActionsUtils from "../../actions/ActionsUtils";
-import SearchFilter from "../../components/table/SearchFilter"
-import Date from "../../components/common/Date"
 
 class CustomProcesses extends BaseProcesses {
-
+  shouldReloadStatuses = true
   page = "custom"
 
   constructor(props) {
@@ -37,13 +37,13 @@ class CustomProcesses extends BaseProcesses {
     }).catch(() => this.setState({showLoader: false}))
   }
 
-  deploy = (process) => {
+  deploy = (process) => () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.name), () => {
       return HttpService.deploy(process.name).then(() => this.reload())
     })
   }
 
-  cancel = (process) => {
+  cancel = (process) => () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.name), () => {
       return HttpService.cancel(process.name).then(() => this.reload())
     })
@@ -73,7 +73,7 @@ class CustomProcesses extends BaseProcesses {
           pageButtonLimit={5}
           previousPageLabel="<"
           nextPageLabel=">"
-          sortable={["name", "category", "modifyDate", "createDate"]}
+          sortable={["name", "category", "modifyDate", "createdAt"]}
           filterable={["name", "category"]}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
@@ -84,7 +84,7 @@ class CustomProcesses extends BaseProcesses {
             {key: "modifyDate", label: "Last modification"},
             {key: "status", label: "Status"},
             {key: "deploy", label: "Deploy"},
-            {key: "cancel", label: "Cancel"}
+            {key: "cancel", label: "Cancel"},
           ]}
         >
           {
@@ -100,21 +100,21 @@ class CustomProcesses extends BaseProcesses {
                     <Date date={process.modificationDate}/>
                   </Td>
                   <Td column="status" className="status-column">
-                    <div
-                      className={this.processStatusClass(process)}
-                      title={this.processStatusTitle(process)}
+                    <ListState
+                      process={process}
+                      state={this.getProcessState(process)}
+                      isStateLoaded={this.state.statusesLoaded}
                     />
                   </Td>
                   <Td column="deploy" className="deploy-column">
-                    <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy.bind(this, process)}/>
+                    <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)}/>
                   </Td>
                   {
-                    (this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses) === "status-running") ?
-                      (
-                        <Td column="cancel" className="cancel-column">
-                          <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel.bind(this, process)}/>
-                        </Td>
-                      ) : []
+                    this.isRunning(process) ? (
+                      <Td column="cancel" className="cancel-column">
+                        <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)}/>
+                      </Td>
+                    ): null
                   }
                 </Tr>
               )
@@ -130,6 +130,7 @@ CustomProcesses.key = "custom-processes"
 
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,
-  featuresSettings: state.settings.featuresSettings
+  featuresSettings: state.settings.featuresSettings,
 })
+
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CustomProcesses))

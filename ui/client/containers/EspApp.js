@@ -81,7 +81,7 @@ class EspApp extends React.Component {
     return this.props.resolved ? (
       <div id="app-container">
         <nav id="main-menu" className="navbar navbar-default">
-          <div id="git" className="hide">{JSON.stringify(GIT)}</div>
+          <div id="git" className="hide">{JSON.stringify(__GIT__)}</div>
           <div className="container-fluid">
             <div className="navbar-header">
               {this.renderTopLeftButton()}
@@ -154,7 +154,7 @@ function mapState(state) {
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
     featuresSettings: state.settings.featuresSettings,
     loggedUser: loggedUser,
-    resolved: !_.isEmpty(loggedUser)
+    resolved: !_.isEmpty(loggedUser),
   }
 }
 

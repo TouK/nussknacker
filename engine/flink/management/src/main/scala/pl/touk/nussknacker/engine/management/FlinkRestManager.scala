@@ -2,21 +2,19 @@ package pl.touk.nussknacker.engine.management
 
 import java.io.File
 
-import sttp.client._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
+import io.circe.generic.JsonCodec
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.runtime.jobgraph.JobStatus
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment._
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import sttp.client._
 import sttp.client.circe._
-import io.circe.generic.JsonCodec
 import sttp.model.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -47,7 +45,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
   private def checkIfJarExists(jarId: String): Future[String] = {
-
     basicRequest
       .get(flinkUrl.path("jars"))
       .response(asJson[JarsResponse])
@@ -80,7 +77,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     uploadedJar
   }
 
-
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     basicRequest
       .get(flinkUrl.path("jobs", "overview"))
@@ -88,59 +84,76 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .send()
       .flatMap(SttpJson.failureToFuture)
       .flatMap { jobs =>
-      val jobsForName = jobs.jobs
-        .filter(_.name == name.value)
-        .sortBy(_.`last-modification`).reverse
 
-      val runningOrFinished = jobsForName
-        .filter(status => !status.state.isGloballyTerminalState || status.state == JobStatus.FINISHED)
+        val jobsForName = jobs.jobs
+          .filter(_.name == name.value)
+          .sortBy(_.`last-modification`)
+          .reverse
 
-      runningOrFinished match {
-        case Nil => Future.successful(None)
-        case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
-          Future.successful(Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`, None,
-            Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))))
-        case one::_ =>
-          val runningState = one.state match {
-            case JobStatus.RUNNING => RunningState.Running
-            case JobStatus.FINISHED => RunningState.Finished
-            case _ => RunningState.Error
-          }
-          checkVersion(one.jid, name).map { version =>
-            //TODO: return error when there's no correct version in process
-            //currently we're rather lax on this, so that this change is backward-compatible
-            //we log debug here for now, since it's invoked v. often
-            if (version.isEmpty) {
-              logger.debug(s"No correct version in deployed process: ${one.name}")
+        jobsForName match {
+          case Nil => Future.successful(None)
+          case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
+            Future.successful(Some(ProcessState(
+              DeploymentId(duplicates.head.jid),
+              FlinkStateStatus.Failed,
+              definitionManager = processStateDefinitionManager,
+              version = Option.empty,
+              attributes = Option.empty,
+              startTime = Some(duplicates.head.`start-time`),
+              errorMessage = Some(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
+            ))
+          case one::_ =>
+            val stateStatus = one.state match {
+              case JobStatus.RUNNING => FlinkStateStatus.Running
+              case JobStatus.FINISHED => FlinkStateStatus.Finished
+              case JobStatus.RESTARTING => FlinkStateStatus.Restarting
+              case JobStatus.CANCELED => FlinkStateStatus.Canceled
+              case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
+              case _ => FlinkStateStatus.Failed
             }
-            Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`, version))
-          }
+            checkVersion(one.jid, name).map { version =>
+              //TODO: return error when there's no correct version in process
+              //currently we're rather lax on this, so that this change is backward-compatible
+              //we log debug here for now, since it's invoked v. often
+              if (version.isEmpty) {
+                logger.debug(s"No correct version in deployed process: ${one.name}")
+              }
+
+              Some(ProcessState(
+                DeploymentId(one.jid),
+                stateStatus,
+                version = version,
+                definitionManager = processStateDefinitionManager,
+                startTime = Some(one.`start-time`),
+                attributes = Option.empty,
+                errorMessage = Option.empty
+              ))
+            }
+        }
       }
-    }
   }
 
   //TODO: cache by jobId?
   private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
-
     basicRequest
       .get(flinkUrl.path("jobs", jobId, "config"))
       .response(asJson[JobConfig])
       .send()
       .flatMap(SttpJson.failureToFuture)
       .map { config =>
-      val userConfig = config.`execution-config`.`user-config`
-      for {
-        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong)
-        user <- userConfig.get("user").map(_.asString.getOrElse(""))
-        modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
-      } yield ProcessVersion(version, name, user, modelVersion)
-
-    }
-
+        val userConfig = config.`execution-config`.`user-config`
+        for {
+          version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong)
+          user <- userConfig.get("user").map(_.asString.getOrElse(""))
+          modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
+        } yield {
+          ProcessVersion(version, name, user, modelVersion)
+        }
+      }
   }
 
   //FIXME: get rid of sleep, refactor?
-  private def waitForSavepoint(jobId: DeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[String] = {
+  private def waitForSavepoint(jobId: DeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[SavepointResult] = {
     val start = System.currentTimeMillis()
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
@@ -156,7 +169,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         //getOrElse is not really needed since isCompletedSuccessfully returns true only if it's defined
         val location = resp.operation.flatMap(_.location).getOrElse("")
         logger.info(s"Savepoint $savepointId for $jobId finished in $location")
-        Future.successful(location)
+        Future.successful(SavepointResult(location))
       } else if (resp.isFailed) {
         Future.failed(new RuntimeException(s"Failed to complete savepoint: ${resp.operation}"))
       } else {
@@ -168,23 +181,34 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   override protected def cancel(job: ProcessState): Future[Unit] = {
     basicRequest
-      .patch(flinkUrl.path("jobs", job.id.value))
+      .patch(flinkUrl.path("jobs", job.deploymentId.value))
       .send()
       .flatMap(handleUnitResponse)
   }
 
-  override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
-    basicRequest
-      .post(flinkUrl.path("jobs", job.id.value, "savepoints"))
-      .body("""{"cancel-job": false}""")
+  override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
+    val savepointRequest = basicRequest
+      .post(flinkUrl.path("jobs", job.deploymentId.value, "savepoints"))
+      .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
+    processSavepointRequest(job, savepointRequest)
+  }
+
+  override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
+    val stopRequest = basicRequest
+      .post(flinkUrl.path("jobs", job.deploymentId.value, "stop"))
+      .body(StopRequest(targetDirectory = savepointDir, drain = false))
+    processSavepointRequest(job, stopRequest)
+  }
+
+  private def processSavepointRequest(job: ProcessState, request: RequestT[Identity, Either[String, String], Nothing]): Future[SavepointResult] = {
+    request
       .response(asJson[SavepointTriggerResponse])
       .send()
       .flatMap(SttpJson.failureToFuture)
       .flatMap { response =>
-        waitForSavepoint(job.id, response.`request-id`)
+        waitForSavepoint(job.deploymentId, response.`request-id`)
       }
   }
-
 
   override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
     val program =
@@ -209,7 +233,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     case Right(_) => Future.successful(())
     case Left(error) => Future.failed(new RuntimeException(s"Request failed: $error, code: ${response.code}"))
   }
-
 }
 
 object flinkRestModel {
@@ -217,6 +240,10 @@ object flinkRestModel {
   implicit val jobStatusDecoder: Decoder[JobStatus] = Decoder.decodeString.map(JobStatus.valueOf)
 
   @JsonCodec(encodeOnly = true) case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
+
+  @JsonCodec(encodeOnly = true) case class SavepointTriggerRequest(`target-directory`: Option[String], `cancel-job`: Boolean)
+
+  @JsonCodec(encodeOnly = true) case class StopRequest(targetDirectory: Option[String], drain: Boolean)
 
   @JsonCodec(decodeOnly = true) case class SavepointTriggerResponse(`request-id`: String)
 
@@ -249,8 +276,4 @@ object flinkRestModel {
   @JsonCodec(decodeOnly = true) case class UploadJarResponse(filename: String)
 
   @JsonCodec(decodeOnly = true) case class JarFile(id: String)
-
-
 }
-
-

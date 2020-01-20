@@ -1,10 +1,10 @@
-import React from "react";
-import Modal from "react-modal";
-import {connect} from "react-redux";
-import ActionsUtils from "../../actions/ActionsUtils";
-import ProcessUtils from "../../common/ProcessUtils";
-import "../../stylesheets/visualization.styl";
-import ProcessDialogWarnings from "./ProcessDialogWarnings";
+import React from "react"
+import Modal from "react-modal"
+import {connect} from "react-redux"
+import ActionsUtils from "../../actions/ActionsUtils"
+import ProcessUtils from "../../common/ProcessUtils"
+import "../../stylesheets/visualization.styl"
+import ProcessDialogWarnings from "./ProcessDialogWarnings"
 
 //TODO: consider extending GenericModalDialog
 class ConfirmDialog extends React.Component {
@@ -28,7 +28,7 @@ class ConfirmDialog extends React.Component {
   }
 
   render() {
-    const confirmDialog = this.props.confirmDialog;
+    const confirmDialog = this.props.confirmDialog
     return (
       <Modal isOpen={confirmDialog.isOpen}
              shouldCloseOnOverlayClick={false}
@@ -46,7 +46,7 @@ class ConfirmDialog extends React.Component {
           </div>
         </div>
       </Modal>
-    );
+    )
   }
 }
 
@@ -55,9 +55,8 @@ function mapState(state) {
   return {
     confirmDialog: state.ui.confirmDialog,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    processHasWarnings: !processHasNoWarnings
+    processHasWarnings: !processHasNoWarnings,
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ConfirmDialog);
-
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ConfirmDialog)

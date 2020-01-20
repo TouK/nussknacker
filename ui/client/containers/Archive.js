@@ -1,23 +1,23 @@
-import React from "react"
-import {Table, Td, Tr} from "reactable"
-import {connect} from "react-redux"
-import ActionsUtils from "../actions/ActionsUtils"
-import LoaderSpinner from "../components/Spinner.js"
 import * as  queryString from "query-string"
-import "../stylesheets/processes.styl"
-import {withRouter} from "react-router-dom"
+import React from "react"
 import {Glyphicon} from "react-bootstrap"
-import BaseProcesses from "./BaseProcesses"
+import {connect} from "react-redux"
+import {withRouter} from "react-router-dom"
+import {Table, Td, Tr} from "reactable"
+import ActionsUtils from "../actions/ActionsUtils"
 import ProcessUtils from "../common/ProcessUtils"
-import {nkPath} from "../config"
-import TableSelect from "../components/table/TableSelect"
-import SearchFilter from "../components/table/SearchFilter"
 import Date from "../components/common/Date"
+import LoaderSpinner from "../components/Spinner.js"
+import SearchFilter from "../components/table/SearchFilter"
 import TableRowIcon from "../components/table/TableRowIcon"
+import TableSelect from "../components/table/TableSelect"
+import {nkPath} from "../config"
+import "../stylesheets/processes.styl"
+import BaseProcesses from "./BaseProcesses"
 
 class Archive extends BaseProcesses {
   queries = {
-    isArchived: true
+    isArchived: true,
   }
 
   searchItems = ["categories", "isSubprocess"]
@@ -30,7 +30,7 @@ class Archive extends BaseProcesses {
     const query = queryString.parse(this.props.history.location.search, {parseBooleans: true})
 
     this.state = Object.assign({
-      selectedIsSubrocess: _.find(this.filterIsSubprocessOptions, {value: query.isSubprocess})
+      selectedIsSubrocess: _.find(this.filterIsSubprocessOptions, {value: query.isSubprocess}),
     }, this.prepareState())
   }
 
@@ -119,7 +119,7 @@ Archive.header = "Archive"
 const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,
   featuresSettings: state.settings.featuresSettings,
-  filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
+  filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser),
 })
 
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Archive))

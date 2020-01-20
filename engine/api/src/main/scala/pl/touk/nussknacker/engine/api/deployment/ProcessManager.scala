@@ -16,8 +16,12 @@ trait ProcessManager {
   def findJobStatus(name: ProcessName) : Future[Option[ProcessState]]
 
   //TODO: this is very flink specific, how can we handle that differently?
-  def savepoint(name: ProcessName, savepointDir: String): Future[String]
+  def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult]
+
+  def stop(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult]
 
   def cancel(name: ProcessName) : Future[Unit]
+
+  def processStateDefinitionManager: ProcessStateDefinitionManager
 
 }

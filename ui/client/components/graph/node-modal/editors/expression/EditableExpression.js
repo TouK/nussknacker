@@ -1,6 +1,6 @@
 import React from "react"
-import {editors, editorType, Types} from "./EditorType"
 import ProcessUtils from "../../../../../common/ProcessUtils"
+import {editors, editorType, Types} from "./EditorType"
 import SwitchIcon from "./SwitchIcon"
 
 export default class EditableExpression extends React.Component {
@@ -8,7 +8,7 @@ export default class EditableExpression extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      displayRawEditor: true
+      displayRawEditor: true,
     }
   }
 
@@ -48,7 +48,7 @@ export default class EditableExpression extends React.Component {
   }
 
   toggleEditor = (_) => this.setState({
-    displayRawEditor: !this.state.displayRawEditor
+    displayRawEditor: !this.state.displayRawEditor,
   })
 
   showSwitch = (fieldType, showSwitch) => showSwitch && editorType.basicEditorSupported(fieldType)

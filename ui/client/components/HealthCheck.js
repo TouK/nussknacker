@@ -1,9 +1,9 @@
 import React from "react"
 import {connect} from "react-redux"
-import HttpService from "../http/HttpService"
+import ActionsUtils from "../actions/ActionsUtils"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
+import HttpService from "../http/HttpService"
 import PeriodicallyReloadingComponent from "./PeriodicallyReloadingComponent"
-import ActionsUtils from "../actions/ActionsUtils";
 
 class HealthCheck extends PeriodicallyReloadingComponent {
 
@@ -31,13 +31,12 @@ class HealthCheck extends PeriodicallyReloadingComponent {
 
     return (
       <div className="healthCheck">
-        <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}} />
+        <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
         <span className="errorText">{healthCheck.error || "State unknown"}</span>
       </div>
     )
   }
 }
-
 
 const mapState = state => ({
   featuresSettings: state.settings.featuresSettings,

@@ -1,5 +1,5 @@
-import NodeDetailsContent from "./NodeDetailsContent"
 import React from "react"
+import NodeDetailsContent from "./NodeDetailsContent"
 
 export default function NodeGroupDetailsContent(props) {
 
@@ -24,7 +24,7 @@ export default function NodeGroupDetailsContent(props) {
                                   nodeErrors={props.nodeErrors}
                                   testResults={testResults(node.id)}/>
               <hr/>
-            </div>
+            </div>,
           )}
         </div>
       </div>

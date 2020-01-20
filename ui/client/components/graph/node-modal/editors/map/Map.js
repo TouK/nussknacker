@@ -48,11 +48,11 @@ Map.propTypes = {
   readOnly: PropTypes.bool,
   expressionValue: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
-  showSwitch: PropTypes.bool
+  showSwitch: PropTypes.bool,
 }
 
 Map.defaultProps = {
-  readOnly: false
+  readOnly: false,
 }
 
 export default Map

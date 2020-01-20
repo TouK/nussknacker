@@ -1,12 +1,12 @@
 import React from "react"
-import {withRouter} from "react-router-dom"
-import "../../stylesheets/processes.styl"
-import {connect} from "react-redux"
 import JSONTree from "react-json-tree"
+import {connect} from "react-redux"
+import {withRouter} from "react-router-dom"
 import ActionsUtils from "../../actions/ActionsUtils"
+import * as JsonUtils from "../../common/JsonUtils"
 import ProcessUtils from "../../common/ProcessUtils"
 import HttpService from "../../http/HttpService"
-import * as JsonUtils from "../../common/JsonUtils"
+import "../../stylesheets/processes.styl"
 import BaseAdminTab from "./BaseAdminTab"
 
 class Services extends BaseAdminTab {
@@ -16,8 +16,8 @@ class Services extends BaseAdminTab {
       fontWeight: "normal",
     },
     tree: {
-      backgroundColor: "none"
-    }
+      backgroundColor: "none",
+    },
   }
 
   constructor(props) {
@@ -30,8 +30,8 @@ class Services extends BaseAdminTab {
       parametersValues: [],
       queryResult: {
         response: {},
-        errorMessage: null
-      }
+        errorMessage: null,
+      },
     }
   }
 
@@ -50,8 +50,8 @@ class Services extends BaseAdminTab {
       expression: {
         //TODO: is it always fixed?
         language: "spel",
-        expression: ""
-      }
+        expression: "",
+      },
     }
 
     const initializeParametersValues = params => _.map(params, p => initializeParameter(p.name))
@@ -63,8 +63,8 @@ class Services extends BaseAdminTab {
         parametersValues: initializeParametersValues(service.parameters || []),
         queryResult: {
           response: {},
-          errorMessage: null
-        }
+          errorMessage: null,
+        },
       })
   }
 
@@ -97,8 +97,8 @@ class Services extends BaseAdminTab {
                 value={this.findParamExpression(param.name)}
                 onChange={e => setParam(param.name)(e.target.value)}
               />
-            </span>
-          )
+            </span>,
+          ),
         )}
       </span>
     )
@@ -108,7 +108,7 @@ class Services extends BaseAdminTab {
     HttpService.invokeService(
       this.state.processingType,
       this.state.serviceName,
-      this.state.parametersValues
+      this.state.parametersValues,
     ).then(response => {
       this.cacheServiceParams(this.state.serviceName, this.state.processingType, this.state.parametersValues)
       this.setState({queryResult: {response: response.data, errorMessage: null}})
@@ -166,7 +166,7 @@ class Services extends BaseAdminTab {
             !_.isEmpty(this.state.queryResult.response) ? [
               this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result"),
               <hr key="separator"/>,
-              this.prettyPrint("collectedResults", JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results")
+              this.prettyPrint("collectedResults", JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results"),
             ] : null
           }
           {this.state.queryResult.errorMessage ?
@@ -214,13 +214,13 @@ export function mapProcessDefinitionToServices(services) {
           categories: service.categories,
           parameters: _.map(service.parameters, p => ({
             name: p.name,
-            refClazzName: p.typ.refClazzName
+            refClazzName: p.typ.refClazzName,
           })),
           returnClassName: service.returnType == null ? null : service.returnType.refClazzName,
-          processingType: processingType
-        })
-      )
-    ), s => s.name
+          processingType: processingType,
+        }),
+      ),
+    ), s => s.name,
   )
 }
 

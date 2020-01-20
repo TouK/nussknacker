@@ -1,4 +1,4 @@
-import _ from "lodash";
+import _ from "lodash"
 
 export default (comment, {requireComment, matchExpression}) => {
   let validated  = {isValid: true, toolTip: undefined}
@@ -14,5 +14,4 @@ export default (comment, {requireComment, matchExpression}) => {
 
   return validated
 }
-
 

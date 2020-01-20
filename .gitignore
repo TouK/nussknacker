@@ -14,7 +14,6 @@ dist/
 **/db.tmp
 dbFiles/*
 *.jar
-ui/server/src/main/resources/web
 **/npm-debug.log
 ui/server/work
 ui/develConf/*.jar
