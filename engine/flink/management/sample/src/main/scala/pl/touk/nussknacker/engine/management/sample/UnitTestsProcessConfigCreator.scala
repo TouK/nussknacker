@@ -144,7 +144,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
         override val typeInformation = implicitly[TypeInformation[T]]
 
-        override def toFlinkSource = new SourceFunction[T] {
+        override def flinkSourceFunction = new SourceFunction[T] {
 
           var running = true
 

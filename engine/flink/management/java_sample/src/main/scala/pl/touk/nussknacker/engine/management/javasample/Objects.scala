@@ -14,7 +14,7 @@ class Objects extends Serializable {
 
   def source : WithCategories[SourceFactory[_]] = WithCategories(FlinkSourceFactory.noParam(new BasicFlinkSource[Model] {
 
-    override def toFlinkSource: SourceFunction[Model] = new SourceFunction[Model] {
+    override def flinkSourceFunction: SourceFunction[Model] = new SourceFunction[Model] {
 
       override def cancel(): Unit = {}
 

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
 
 case class EmptySource[T:TypeInformation](returnType: TypingResult) extends BasicFlinkSource[T] with ReturningType {
 
-  override def toFlinkSource: SourceFunction[T] = new EmptySourceFunction[T]
+  override def flinkSourceFunction: SourceFunction[T] = new EmptySourceFunction[T]
 
   override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 

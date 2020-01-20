@@ -29,7 +29,7 @@ trait FlinkSource[T] extends Source[T] {
   */
 trait BasicFlinkSource[T] extends FlinkSource[T] {
 
-  def toFlinkSource: SourceFunction[T]
+  def flinkSourceFunction: SourceFunction[T]
 
   //TODO: typeInformation can be directly accessed from FlinkSourceFactory?
   def typeInformation: TypeInformation[T]
@@ -43,7 +43,7 @@ trait BasicFlinkSource[T] extends FlinkSource[T] {
     env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
 
     val newStart = env
-      .addSource[T](toFlinkSource)(typeInformation)
+      .addSource[T](flinkSourceFunction)(typeInformation)
       .name(s"${metaData.id}-source")
 
     timestampAssigner.map {

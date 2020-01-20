@@ -104,7 +104,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
         override def timestampAssigner = None
 
-        override def toFlinkSource = new SourceFunction[String] {
+        override def flinkSourceFunction = new SourceFunction[String] {
 
           var run = true
 
@@ -130,7 +130,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
         override val typeInformation: TypeInformation[CsvRecord] = implicitly[TypeInformation[CsvRecord]]
 
-        override def toFlinkSource = new SourceFunction[CsvRecord] {
+        override def flinkSourceFunction = new SourceFunction[CsvRecord] {
           override def cancel() = {}
 
           override def run(ctx: SourceContext[CsvRecord]) = {}
@@ -164,7 +164,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         override def parseElement(testElement: String): String = testElement
       }
 
-      override def toFlinkSource = new SourceFunction[String] {
+      override def flinkSourceFunction = new SourceFunction[String] {
         var running = true
         var counter = new AtomicLong()
         val afterFirstRun = new AtomicBoolean(false)

@@ -14,7 +14,7 @@ case class CollectionSource[T: TypeInformation](config: ExecutionConfig,
                                                 list: List[T],
                                                 timestampAssigner: Option[TimestampAssigner[T]], returnType: TypingResult) extends BasicFlinkSource[T] with ReturningType {
 
-  override def toFlinkSource = new FromElementsFunction[T](
+  override def flinkSourceFunction = new FromElementsFunction[T](
     typeInformation.createSerializer(config), list.filterNot(_ == null).asJava)
 
   override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]

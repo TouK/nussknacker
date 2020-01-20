@@ -93,7 +93,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
 
     override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
-    override def toFlinkSource: SourceFunction[T] = {
+    override def flinkSourceFunction: SourceFunction[T] = {
       topics.foreach(KafkaEspUtils.setToLatestOffsetIfNeeded(config, _, consumerGroupId))
       createFlinkSource()
     }
