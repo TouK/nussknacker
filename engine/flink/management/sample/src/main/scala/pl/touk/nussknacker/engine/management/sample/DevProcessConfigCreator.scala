@@ -268,7 +268,6 @@ object BoundedSource extends FlinkSourceFactory[Any] {
   def source(@ParamName("elements") elements: java.util.List[Any]) =
     new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements.asScala.toList, None, Unknown)
 
-  override def timestampAssigner: Option[TimestampAssigner[Any]] = None
 }
 
 case object StatefulTransformer extends CustomStreamTransformer with LazyLogging {

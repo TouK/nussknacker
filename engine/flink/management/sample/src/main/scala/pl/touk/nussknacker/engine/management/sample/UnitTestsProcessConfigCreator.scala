@@ -160,7 +160,11 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
             ctx.collect(generate(count))
           }
         }
-        
+
+        override val timestampAssigner = Some(new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
+          override def extractTimestamp(element: T): Long = timestamp(element)
+        })
+
         override def generateTestData(size: Int): Array[Byte] = {
           (1 to size).map(generate).map(_.originalDisplay.getOrElse("")).mkString("\n").getBytes(StandardCharsets.UTF_8)
         }

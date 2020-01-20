@@ -16,7 +16,10 @@ trait FlinkSource[T] extends Source[T] {
 
   def sourceStream(env: StreamExecutionEnvironment, metaData: MetaData): DataStream[T]
 
-  def testSourceStream(env: StreamExecutionEnvironment, metaData: MetaData): DataStream[T]
+  //TODO: design better way of handling test data in generic FlinkSource
+  //Probably we *still* want to use CollectionSource (and have some custom logic in parser if needed), but timestamps
+  //have to be handled here for now
+  def timestampAssignerForTest : Option[TimestampAssigner[T]]
 
 }
 
@@ -28,10 +31,12 @@ trait BasicFlinkSource[T] extends FlinkSource[T] {
 
   def toFlinkSource: SourceFunction[T]
 
-  //TODO: typeInformation&&timestampAssigner can be directly accessed from FlinkSourceFactory?
+  //TODO: typeInformation can be directly accessed from FlinkSourceFactory?
   def typeInformation: TypeInformation[T]
 
   def timestampAssigner : Option[TimestampAssigner[T]]
+
+  def timestampAssignerForTest : Option[TimestampAssigner[T]] = timestampAssigner
 
   override def sourceStream(env: StreamExecutionEnvironment, metaData: MetaData): DataStream[T] = {
 
