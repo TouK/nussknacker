@@ -17,6 +17,7 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     group.gauge[T, Y](name, gauge)
   }
 
+  //currently not used - maybe we should? :)
   def meter(nameParts: NonEmptyList[String], tags: Map[String, String], meter: Meter): Meter = {
     val (group, name) = groupsWithName(nameParts, tags)
     group.meter(name, meter)
@@ -39,9 +40,9 @@ class MetricUtils(runtimeContext: RuntimeContext) {
   }
 
   private def tagMode(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
-    val lastName = nameParts.reverse.head
+    val lastName = nameParts.last
     //all but last
-    val metricNameParts = nameParts.reverse.tail.reverse
+    val metricNameParts = nameParts.init
     val groupWithNameParts = metricNameParts.foldLeft(runtimeContext.getMetricGroup)(_.addGroup(_))
 
     val finalGroup = tags.toList.sortBy(_._1).foldLeft(groupWithNameParts) {

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.standalone
 
-import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
+import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
@@ -77,8 +77,10 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     creator.processorService.invocationsCount.get() shouldBe 1
 
     eventually {
-      metricRegistry.getGauges().get("proc1.serviceInstant.success").getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get("proc1.serviceTimes.success").getCount shouldBe 1
+      metricRegistry.getGauges().get(MetricRegistry.name("serviceInstant", "success")
+              .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
+      metricRegistry.getHistograms().get(MetricRegistry.name("serviceTimes", "success")
+              .tagged("processId", "proc1")).getCount shouldBe 1
     }
 
     interpreter.close()
@@ -128,10 +130,14 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     result shouldBe Right(List("initialized!"))
 
     eventually {
-      metricRegistry.getGauges().get("proc1.serviceInstant.success").getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get("proc1.serviceTimes.success").getCount shouldBe 1
-      metricRegistry.getGauges().get("proc1.serviceInstant.enricherWithOpenService.OK").getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get("proc1.serviceTimes.enricherWithOpenService.OK").getCount shouldBe 1
+      metricRegistry.getGauges().get(MetricRegistry.name("serviceInstant", "success")
+        .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
+      metricRegistry.getHistograms().get(MetricRegistry.name("serviceTimes", "success")
+        .tagged("processId", "proc1")).getCount shouldBe 1
+      metricRegistry.getGauges().get(MetricRegistry.name("serviceInstant", "OK")
+        .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
+      metricRegistry.getHistograms().get(MetricRegistry.name("serviceTimes", "OK")
+              .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
     }
     interpreter.close()
   }
