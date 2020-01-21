@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 
 class NodesConfigCombinerTest extends FunSuite with Matchers {

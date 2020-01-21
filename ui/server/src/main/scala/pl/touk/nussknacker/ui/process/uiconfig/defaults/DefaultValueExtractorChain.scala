@@ -11,7 +11,7 @@ object DefaultValueExtractorChain extends LazyLogging {
       .load[ParameterDefaultValueExtractorStrategy](modelClassLoader.classLoader)
     val nkStrategies = Seq(
       new ConfigParameterDefaultValueExtractor(defaultParametersValues),
-      RestrictionBasedDefaultValueExtractor,
+      EditorPossibleValuesBasedDefaultValueExtractor,
       TypeRelatedParameterValueExtractor
     )
 

@@ -69,9 +69,8 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
         // TODO JOIN: for branchParams we should rather look at Map's value type
         val paramType = extractParameterType(p)
-        val restrictions = ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name))
         val editor = EditorExtractor.extract(p)
-        Parameter(name, Typed(paramType), p.getType, restrictions, editor, additionalVariables(p), branchParamName.isDefined)
+        Parameter(name, Typed(paramType), p.getType, editor, additionalVariables(p), branchParamName.isDefined)
       }
     }.toList
 

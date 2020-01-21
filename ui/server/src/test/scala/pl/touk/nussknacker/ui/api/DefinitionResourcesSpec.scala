@@ -7,8 +7,11 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.EspItTest
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestProcessingTypes}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -41,7 +44,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
-  it("should return info about raw editor") {
+  it("should return info about raw editor based on annotation") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
@@ -57,7 +60,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
-  it("should return info about simple editor") {
+  it("should return info about simple editor based on annotation") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
@@ -69,15 +72,11 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
         .downField("editor")
         .focus.get
 
-      editor shouldBe Json.obj(
-        "simpleEditorType" -> Json.fromString("BOOL_EDITOR"),
-        "possibleValues" -> Json.fromValues(List.empty),
-        "type" -> Json.fromString("SimpleParameterEditor")
-      )
+      editor shouldBe Json.obj("type" -> Json.fromString("BoolParameterEditor"))
     }
   }
 
-  it("should return info about dual editor") {
+  it("should return info about dual editor based on annotation") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
@@ -90,12 +89,168 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
         .focus.get
 
       editor shouldBe Json.obj(
-        "simpleEditor" -> Json.obj(
-          "simpleEditorType" -> Json.fromString("STRING_EDITOR"),
-          "possibleValues" -> Json.fromValues(List.empty)
-        ),
+        "simpleEditor" -> Json.obj("type" -> Json.fromString("StringParameterEditor")),
         "defaultMode" -> Json.fromString("SIMPLE"),
         "type" -> Json.fromString("DualParameterEditor")
+      )
+    }
+  }
+
+  it("should return info about editor based on config file") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("enricher")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "param")
+        .downField("editor")
+        .focus.get
+      (List(FixedExpressionValue("test", "test")))
+
+      editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
+    }
+  }
+
+  it("should return info about editor based on subprocess node configuration") {
+    val processName = ProcessName(SampleProcess.process.id)
+    val processWithSubProcess = ProcessTestData.validProcessWithSubprocess(processName)
+    val displayableSubProcess = ProcessConverter.toDisplayable(processWithSubProcess.subprocess, TestProcessingTypes.Streaming)
+    saveSubProcess(displayableSubProcess)(succeed)
+    saveProcess(processName, processWithSubProcess.process)(succeed)
+
+    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val response = responseAs[Json].hcursor
+
+      val editor = response
+        .downField("processDefinition")
+        .downField("subprocessInputs")
+        .downField("sub1")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "param1")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
+    }
+  }
+
+  it("should return info about editor based on dev config") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("multipleParamsService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "foo")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj(
+        "type" -> Json.fromString("FixedValuesParameterEditor"),
+        "possibleValues" -> Json.arr(
+          Json.obj(
+            "expression" -> Json.fromString("test"),
+            "label" -> Json.fromString("test")
+          )
+        )
+      )
+    }
+  }
+
+  it("should override annotation config with dev config") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("multipleParamsService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "bar")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
+    }
+  }
+
+  it("should override dev config with config from file") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("multipleParamsService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "baz")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj(
+        "type" -> Json.fromString("FixedValuesParameterEditor"),
+        "possibleValues" -> Json.arr(
+          Json.obj(
+            "expression" -> Json.fromString("1"),
+            "label" -> Json.fromString("1")
+          ),
+          Json.obj(
+            "expression" -> Json.fromString("2"),
+            "label" -> Json.fromString("2")
+          )
+        )
+      )
+    }
+  }
+
+  it("should return info about editor based on enum type") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("echoEnumService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "id")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj(
+        "type" -> Json.fromString("FixedValuesParameterEditor"),
+        "possibleValues" -> Json.arr(
+          Json.obj(
+            "expression" -> Json.fromString("T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE"),
+            "label" -> Json.fromString("first_value")
+          ),
+          Json.obj(
+            "expression" -> Json.fromString("T(pl.touk.sample.JavaSampleEnum).SECOND_VALUE"),
+            "label" -> Json.fromString("second_value")
+          )
+        )
+      )
+    }
+  }
+
+  it("should return info about editor based on string type") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val params = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("multipleParamsService")
+        .downField("parameters")
+      val editor: Json = params
+        .downAt(_.hcursor.get[String]("name").right.value == "quax")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj(
+        "simpleEditor" -> Json.obj("type" -> Json.fromString("StringParameterEditor")),
+        "type" -> Json.fromString("DualParameterEditor"),
+        "defaultMode" -> Json.fromString("RAW")
       )
     }
   }

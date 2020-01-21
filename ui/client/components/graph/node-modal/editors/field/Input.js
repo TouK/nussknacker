@@ -38,6 +38,8 @@ Input.propTypes = {
   validators: PropTypes.array,
   onChange: PropTypes.func,
   placeholder: PropTypes.string,
+  formattedValue: PropTypes.string,
+  className: PropTypes.string,
 }
 
 export default Input

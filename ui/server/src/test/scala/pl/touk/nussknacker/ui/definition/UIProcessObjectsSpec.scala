@@ -6,17 +6,10 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig, WithCategories}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{Enricher, SubprocessInput, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.api.process.{SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
@@ -26,7 +19,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
   object TestService extends Service {
 
     @MethodToInvoke
-    def method(@ParamName("param")
+    def method(@ParamName("paramDualEditor")
                @DualEditor(
                  simpleEditor = new SimpleEditor(
                    `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
@@ -36,115 +29,39 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
                )
                input: String,
 
-               @PossibleValues(value = Array("a", "b", "c"))
-               @ParamName("param2")
-               @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+               @SimpleEditor(
+                 `type` = SimpleEditorType.STRING_EDITOR
+               )
+               @ParamName("paramStringEditor")
                param2: String,
 
-               @ParamName("param3")
+               @ParamName("paramRawEditor")
                @RawEditor
-               param3: String,
-
-               @ParamName("param4") param4: String): Future[String] = ???
+               param3: String): Future[String] = ???
   }
 
-
-  test("should read restrictions from config") {
-
-    val model : ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator() {
+  test("should read editor from annotations") {
+    val model: ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator() {
       override def services(config: Config): Map[String, WithCategories[Service]] =
         Map("enricher" -> WithCategories(TestService))
     })
 
-    val processObjects =
-      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false,
-        new ProcessTypesForCategories(ConfigWithScalaVersion.config))
-
-    processObjects.nodesConfig("enricher").params shouldBe Some(Map("param" -> ParameterConfig(Some("'default value'"),
-      Some(FixedExpressionValues(List(
-        FixedExpressionValue("'default value'", "first"),
-        FixedExpressionValue("'other value'", "second")
-      )))
-    )))
-
-    processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.restriction)).toMap shouldBe Map(
-      "param" -> Some(FixedExpressionValues(List(
-        FixedExpressionValue("'default value'", "first"),
-        FixedExpressionValue("'other value'", "second")
-      ))),
-      "param2" -> Some(FixedExpressionValues(List(
-        FixedExpressionValue("'a'", "a"),
-        FixedExpressionValue("'b'", "b"),
-        FixedExpressionValue("'c'", "c")
-      ))),
-      "param3" -> None,
-      "param4" -> None
+    val processObjects = UIProcessObjects.prepareUIProcessObjects(
+      model,
+      TestFactory.user("userId"),
+      Set(),
+      false,
+      new ProcessTypesForCategories(ConfigWithScalaVersion.config)
     )
-
-
-    processObjects.nodesToAdd.find(_.name == "enrichers")
-      .flatMap(_.possibleNodes.find(_.label == "enricher"))
-      .map(_.node.asInstanceOf[Enricher].service.parameters) shouldBe Some(List(Parameter("param", Expression("spel", "'default value'")),
-      Parameter("param2", Expression("spel", "'a'")),
-      Parameter("param3", Expression("spel", "''")),
-      Parameter("param4", Expression("spel", "''"))
-    ))
-
-  }
-
-  test("should read editor from config") {
-    val model : ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator() {
-      override def services(config: Config): Map[String, WithCategories[Service]] =
-        Map("enricher" -> WithCategories(TestService))
-    })
-
-    val processObjects =
-      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false,
-        new ProcessTypesForCategories(ConfigWithScalaVersion.config))
 
     processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.editor)).toMap shouldBe Map(
-      "param" -> Some(DualParameterEditor(
-        simpleEditor = SimpleParameterEditor(
-          simpleEditorType = SimpleEditorType.FIXED_VALUES_EDITOR,
-          possibleValues = List(FixedExpressionValue("expression", "label"))),
+      "paramDualEditor" -> DualParameterEditor(
+        simpleEditor = FixedValuesParameterEditor(possibleValues = List(FixedExpressionValue("expression", "label"))),
         defaultMode = DualEditorMode.SIMPLE
-      )),
-      "param2" -> Some(SimpleParameterEditor(simpleEditorType = SimpleEditorType.STRING_EDITOR, possibleValues = List.empty)),
-      "param3" -> Some(RawParameterEditor),
-      "param4" -> None
+      ),
+      "paramStringEditor" -> StringParameterEditor,
+      "paramRawEditor" -> RawParameterEditor
     )
-  }
-
-  test("should read restrictions from config for subprocess") {
-
-    val model : ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator())
-
-    val processObjects =
-      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(
-        SubprocessDetails(CanonicalProcess(MetaData("enricher", null, isSubprocess = true), null, List(FlatNode(SubprocessInputDefinition("", List(
-          SubprocessParameter("param", SubprocessClazzRef[String])
-        )))), None), "")
-      ), false, new ProcessTypesForCategories(ConfigWithScalaVersion.config))
-
-    processObjects.processDefinition.subprocessInputs("enricher").parameters.map(p => (p.name, p.restriction)).toMap shouldBe Map(
-      "param" -> Some(FixedExpressionValues(List(
-        FixedExpressionValue("'default value'", "first"),
-        FixedExpressionValue("'other value'", "second")
-      )))
-    )
-
-
-    processObjects.nodesConfig("enricher").params shouldBe Some(Map("param" -> ParameterConfig(Some("'default value'"),
-      Some(FixedExpressionValues(List(
-        FixedExpressionValue("'default value'", "first"),
-        FixedExpressionValue("'other value'", "second")
-      )))
-    )))
-
-    processObjects.nodesToAdd.find(_.name == "subprocesses")
-      .flatMap(_.possibleNodes.find(_.label == "enricher"))
-      .map(_.node.asInstanceOf[SubprocessInput].ref.parameters) shouldBe Some(List(Parameter("param", Expression("spel", "'default value'"))))
-
   }
 
   test("should hide node in hidden category") {
