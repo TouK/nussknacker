@@ -1,10 +1,10 @@
 import axios from "axios"
-import SystemUtils from "./common/SystemUtils"
+import SystemUtils, {AUTHORIZATION_HEADER_NAMESPACE} from "./common/SystemUtils"
 import {API_URL} from "./config"
 
 const headers = {}
 if (SystemUtils.hasAccessToken()) {
-  headers[SystemUtils.getAuthorizationHeader()] = SystemUtils.authorizationToken()
+  headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken()
 }
 
 const configuration = {

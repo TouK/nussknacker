@@ -1,29 +1,28 @@
 /* eslint-disable i18next/no-literal-string */
+import {AxiosRequestConfig} from "axios"
 import {v4 as uuid4} from "uuid"
 import api from "../api"
 import _ from "lodash"
-import {AxiosRequestConfig} from "axios"
-
-const AUTHORIZATION_HEADER_NAMESPACE = "Authorization"
-const ACCESS_TOKEN_NAMESPACE = "accessToken"
-const BEARER_CASE = "Bearer"
-const userId = "userId"
 
 class SystemUtils {
+  public static AUTHORIZATION_HEADER_NAMESPACE = "Authorization"
+  public static ACCESS_TOKEN_NAMESPACE = "accessToken"
+  public static USER_ID_NAMESPACE = "userId"
+  public static BEARER_CASE = "Bearer"
 
-  public authorizationToken = (): string => `${BEARER_CASE} ${this.getAccessToken()}`
+  public authorizationToken = (): string => `${SystemUtils.BEARER_CASE} ${this.getAccessToken()}`
 
-  public saveAccessToken = (token): void => localStorage.setItem(ACCESS_TOKEN_NAMESPACE, token)
+  public saveAccessToken = (token): void => localStorage.setItem(SystemUtils.ACCESS_TOKEN_NAMESPACE, token)
 
-  public getAccessToken = (): string => localStorage.getItem(ACCESS_TOKEN_NAMESPACE)
+  public getAccessToken = (): string => localStorage.getItem(SystemUtils.ACCESS_TOKEN_NAMESPACE)
 
   public hasAccessToken = (): boolean => this.getAccessToken() !== null
 
-  public removeAccessToken = () => localStorage.removeItem(ACCESS_TOKEN_NAMESPACE)
+  public removeAccessToken = () => localStorage.removeItem(SystemUtils.ACCESS_TOKEN_NAMESPACE)
 
   public clearAuthorizationToken = (): void => {
     api.interceptors.request.use((config: AxiosRequestConfig) => {
-      delete config.headers[this.getAuthorizationHeader()]
+      delete config.headers[SystemUtils.AUTHORIZATION_HEADER_NAMESPACE]
       return config
     })
 
@@ -32,7 +31,7 @@ class SystemUtils {
 
   public setAuthorizationToken = (token): void => {
     api.interceptors.request.use((config: AxiosRequestConfig) => {
-      _.set(config.headers, this.getAuthorizationHeader(), this.authorizationToken())
+      _.set(config.headers, SystemUtils.AUTHORIZATION_HEADER_NAMESPACE, this.authorizationToken())
       return config
     })
 
@@ -40,13 +39,13 @@ class SystemUtils {
   }
 
   public getUserId = (): string => {
-    if (_.isEmpty(localStorage.getItem(userId))) {
-      localStorage.setItem(userId, uuid4())
+    if (_.isEmpty(localStorage.getItem(SystemUtils.USER_ID_NAMESPACE))) {
+      localStorage.setItem(SystemUtils.USER_ID_NAMESPACE, uuid4())
     }
-    return localStorage.getItem(userId)
+    
+    return localStorage.getItem(SystemUtils.USER_ID_NAMESPACE)
   }
-
-  public getAuthorizationHeader = (): string => AUTHORIZATION_HEADER_NAMESPACE
 }
 
+export const AUTHORIZATION_HEADER_NAMESPACE = SystemUtils.AUTHORIZATION_HEADER_NAMESPACE
 export default new SystemUtils()
