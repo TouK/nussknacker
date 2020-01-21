@@ -50,11 +50,10 @@ class DeployedProcessRepository(val dbConfig: DbConfig,
         processId = processId.value,
         processVersionId = processVersion,
         user = user.username,
-        deployedAt = Timestamp.valueOf(LocalDateTime.now()),
+        createdAt = Timestamp.valueOf(LocalDateTime.now()),
         action = action,
         commentId = commentId,
         buildInfo = buildInfo,
-        environment = "test"
       )
       _ <- processActionsTable += processActionData
     } yield processActionData

@@ -26,53 +26,45 @@ trait ProcessActionEntityFactory {
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
   val environmentsTable: LTableQuery[EnvironmentsEntityFactory#EnvironmentsEntity]
 
-  class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_deployment_info") {
+  class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
     def processId: Rep[Long] = column[Long]("process_id", NotNull)
 
     def processVersionId: Rep[Long] = column[Long]("process_version_id", Nullable)
 
-    def deployedAt: Rep[Timestamp] = column[Timestamp]("deploy_at", NotNull)
-
-    def environment: Rep[String] = column[String]("environment", NotNull)
+    def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
 
     def user: Rep[String] = column[String]("user", NotNull)
 
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info", Nullable)
 
-    def action: Rep[ProcessActionType] = column[ProcessActionType]("deployment_action", NotNull)
+    def action: Rep[ProcessActionType] = column[ProcessActionType]("action", NotNull)
 
     def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id", Nullable)
 
-    def pk = primaryKey("pk_deployed_process_version", (processId, processVersionId, environment, deployedAt))
+    def pk = primaryKey("process_actions_pk", (processId, processVersionId, createdAt))
 
-    def processes_fk: ForeignKeyQuery[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData] = foreignKey("proc_ver_in_deployed_proc_fk", (processId, processVersionId), processVersionsTable)(
+    def processes_fk: ForeignKeyQuery[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData] = foreignKey("process_actions_version_fk", (processId, processVersionId), processVersionsTable)(
       procV => (procV.processId, procV.id),
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.NoAction
     )
 
-    def comment_fk: ForeignKeyQuery[CommentEntityFactory#CommentEntity, CommentEntityData] = foreignKey("comment_in_deployed_proc_fk", commentId, commentsTable)(
+    def comment_fk: ForeignKeyQuery[CommentEntityFactory#CommentEntity, CommentEntityData] = foreignKey("process_actions_comment_fk", commentId, commentsTable)(
       _.id.?,
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.SetNull
     )
 
-    def environment_fk: ForeignKeyQuery[EnvironmentsEntityFactory#EnvironmentsEntity, EnvironmentsEntityData] = foreignKey("env_in_deployed_proc_fk", environment, environmentsTable)(
-      _.name,
-      onUpdate = ForeignKeyAction.Cascade,
-      onDelete = ForeignKeyAction.NoAction
+    def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, user, createdAt, action, commentId, buildInfo) <> (
+      ProcessActionEntityData.tupled, ProcessActionEntityData.unapply
     )
-
-    def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, environment, user, deployedAt, action, commentId, buildInfo) <> (
-      ProcessActionEntityData.tupled, ProcessActionEntityData.unapply)
   }
 }
 
 case class ProcessActionEntityData(processId: Long,
                                    processVersionId: Long,
-                                   environment: String,
                                    user: String,
-                                   deployedAt: Timestamp,
+                                   createdAt: Timestamp,
                                    action: ProcessActionType,
                                    commentId: Option[Long],
                                    buildInfo: Option[String]) {

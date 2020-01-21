@@ -37,9 +37,9 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
   protected def fetchLastActionPerProcessQuery: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
     processActionsTable
       .groupBy(_.processId)
-      .map { case (processId, group) => (processId, group.map(_.deployedAt).max) }
+      .map { case (processId, group) => (processId, group.map(_.createdAt).max) }
       .join(processActionsTable)
-      .on { case ((processId, latestDeployedAt), deployAction) => deployAction.processId === processId && deployAction.deployedAt === latestDeployedAt } //We fetch exactly this one  with max deployment
+      .on { case ((processId, latestDeployedAt), deployAction) => deployAction.processId === processId && deployAction.createdAt === latestDeployedAt } //We fetch exactly this one  with max deployment
       .map { case ((processId, _), deployAction) => processId -> deployAction }
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
@@ -48,7 +48,7 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
   protected def fetchProcessLatestActionsQuery(processId: ProcessId): Query[(ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]]), (ProcessActionEntityData, Option[CommentEntityData]), Seq] =
     processActionsTable
       .filter(_.processId === processId.value)
-      .sortBy(_.deployedAt.desc)
+      .sortBy(_.createdAt.desc)
       .joinLeft(commentsTable)
       .on { case (action, comment) => action.commentId === comment.id }
       .map{ case (action, comment) => (action, comment) }
