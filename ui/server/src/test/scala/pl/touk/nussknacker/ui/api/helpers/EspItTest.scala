@@ -56,7 +56,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val processManager = new MockProcessManager
   val processChangeListener = new TestProcessChangeListener()
   def createManagementActorRef = {
-    system.actorOf(ManagementActor.props(env,
+    system.actorOf(ManagementActor.props(
       Map(TestProcessingTypes.Streaming -> processManager),
       processRepository,
       deploymentProcessRepository,
@@ -246,10 +246,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   def prepareDeploy(id: process.ProcessId): Future[ProcessActionEntityData] =
-    deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", env, Some("Deploy comment"))
+    deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", Some("Deploy comment"))
 
   def prepareCancel(id: process.ProcessId): Future[ProcessActionEntityData] =
-    deploymentProcessRepository.markProcessAsCancelled(id, 1, env, Some("Cancel comment"))
+    deploymentProcessRepository.markProcessAsCancelled(id, 1, Some("Cancel comment"))
 
   def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue

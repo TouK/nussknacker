@@ -22,9 +22,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   private implicit val system: ActorSystem = ActorSystem()
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
   private implicit val ds: ExecutionContextExecutor = system.dispatcher
-
-  private val env = "test1"
-  val processName = ProcessName("proces1")
+  val processName: ProcessName = ProcessName("proces1")
 
   private val processManager = new MockProcessManager
   private val processRepository = newProcessRepository(db)
@@ -34,7 +32,6 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
   private val managementActor = system.actorOf(
       ManagementActor.props(
-        env,
         Map(TestProcessingTypes.Streaming -> processManager),
         processRepository,
         deploymentProcessRepository,
@@ -114,13 +111,13 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   private def prepareDeployedProcess(processName: ProcessName): Future[process.ProcessId] =
     for {
       id <- prepareProcess(processName)
-      _ <- deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", env, Some("Deployed"))
+      _ <- deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", Some("Deployed"))
     }  yield id
 
   private def prepareCanceledProcess(processName: ProcessName): Future[process.ProcessId] =
     for {
       id <- prepareDeployedProcess(processName)
-      _ <- deploymentProcessRepository.markProcessAsCancelled(id, 1, "stream", Some("Canceled"))
+      _ <- deploymentProcessRepository.markProcessAsCancelled(id, 1, Some("Canceled"))
     } yield id
 
   private def prepareProcess(processName: ProcessName): Future[process.ProcessId] =

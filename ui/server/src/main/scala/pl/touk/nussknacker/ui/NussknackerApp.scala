@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, PullProcessRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, ProcessActionRepository, ProcessActivityRepository, PullProcessRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
@@ -119,7 +119,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)
 
-    val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
+    val deploymentProcessRepository = ProcessActionRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
 
     val authenticator = AuthenticatorProvider(config, getClass.getClassLoader, typesForCategories.getAllCategories)
@@ -133,8 +133,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
       NussknackerServices(new PullProcessRepository(processRepository))
     )
 
-    val managementActor = system.actorOf(
-      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver, processChangeListener), "management")
+    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, deploymentProcessRepository, subprocessResolver, processChangeListener), "management")
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
