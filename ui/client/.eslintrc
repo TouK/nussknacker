@@ -67,7 +67,7 @@
       ],
       "ignoreAttribute": [
         "svgFile", "bounds", "handle", "column", "glyph", "value",
-        "classNames", "className", "valueClassName", "rowClassName", "fieldType", "classNamePrefix"
+        "style", "classNames", "className", "valueClassName", "rowClassName", "fieldType", "classNamePrefix"
       ]
     }]
   },

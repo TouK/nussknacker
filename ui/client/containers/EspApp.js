@@ -2,6 +2,7 @@ import React from "react"
 import {matchPath, NavLink, Route, Switch, withRouter} from "react-router-dom"
 import _ from "lodash"
 import Processes from "./Processes"
+import {Redirect} from "react-router"
 import SubProcesses from "./SubProcesses"
 import NotFound from "./errors/NotFound"
 import {nkPath} from "../config";
@@ -133,7 +134,7 @@ class EspApp extends React.Component {
                         <Route path={Search.path} component={Search} exact/>
                         <Route path={Signals.path} component={Signals} exact/>
                         <Route path={AdminPage.path} component={AdminPage} exact/>
-                        <Route path={EspApp.path} component={Processes} exact/>
+                        <Redirect from={EspApp.path} to={Processes.path} exact/>
                         <Route component={NotFound}/>
                       </Switch>
                     </CSSTransition>
@@ -162,3 +163,4 @@ EspApp.path = `${nkPath}/`
 EspApp.header = "ESP"
 
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EspApp))
+
