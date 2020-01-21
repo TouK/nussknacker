@@ -13,3 +13,5 @@ export const mapDispatchWithEspActions = function (dispatch: Dispatch<Action>) {
 }
 
 export default {mapDispatchWithEspActions}
+
+export type EspActionsProps = ReturnType<typeof mapDispatchWithEspActions>
