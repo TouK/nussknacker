@@ -39,7 +39,7 @@ class RowSelect extends React.Component {
           <Select
             className="node-value node-value-select node-value-type-select"
             classNamePrefix="node-value-select"
-            disabled={readOnly}
+            isDisabled={readOnly}
             maxMenuHeight={190}
             onChange={(option) => changeValue(option.value)}
             onMenuOpen={() => toogleCloseOnEsc()}
@@ -71,7 +71,7 @@ class RowSelect extends React.Component {
 }
 
 const MovableRow =
-  new DropTarget(
+  DropTarget(
     "field", {
       // http://react-dnd.github.io/react-dnd/examples/sortable/simple
       hover(props, monitor, component) {
@@ -116,7 +116,7 @@ const MovableRow =
       connectDropTarget: connect.dropTarget(),
     }),
   )(
-  new DragSource(
+  DragSource(
     "field", {
     beginDrag: (props) => ({
       index: props.index,

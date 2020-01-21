@@ -161,6 +161,7 @@ class NodeDetailsModal extends React.Component {
                           testResults={nodeTestResults}
                           node={this.state.editedNode}
                           onChange={this.onNodeGroupChange}
+                          readOnly={readOnly}
                         /> :
                         <NodeDetailsContent isEditMode={!readOnly}
                                             showValidation={true}

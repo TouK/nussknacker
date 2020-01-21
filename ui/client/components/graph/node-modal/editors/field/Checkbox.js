@@ -7,7 +7,7 @@ export const Checkbox = (props) => {
   return (
     <div className="node-row">
       {renderFieldLabel()}
-      <div className={`node-value${  isMarked ? " marked" : ""}`}>
+      <div className={`node-value${  isMarked ? " marked" : ""}${readOnly ? " read-only " : ""}`}>
         <input
           autoFocus={autofocus}
           type="checkbox"
