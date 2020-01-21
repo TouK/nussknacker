@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.metrics
 
+import cats.data.NonEmptyList
 import org.apache.flink.metrics.{Counter, Gauge, MetricGroup}
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
@@ -7,8 +8,10 @@ class InstantRateMeter extends pl.touk.nussknacker.engine.util.metrics.GenericIn
 
 object InstantRateMeterWithCount {
 
-  def register(metricGroup: MetricGroup) : InstantRateMeterWithCount = {
-    new InstantRateMeterWithCount(metricGroup.gauge[Double, InstantRateMeter]("instantRate", new InstantRateMeter), metricGroup.counter("count"))
+  def register(tags: Map[String, String], name: List[String], metricUtils: MetricUtils) : InstantRateMeterWithCount = {
+    val rateMeter = metricUtils.gauge[Double, InstantRateMeter](NonEmptyList.ofInitLast(name, "instantRate"), tags, new InstantRateMeter)
+    val counter = metricUtils.counter(NonEmptyList.ofInitLast(name, "count"), tags)
+    new InstantRateMeterWithCount(rateMeter, counter)
   }
 }
 

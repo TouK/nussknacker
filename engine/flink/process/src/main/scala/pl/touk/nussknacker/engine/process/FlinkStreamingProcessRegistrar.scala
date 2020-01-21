@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process
 import java.util.Collections
 import java.util.concurrent.TimeUnit
 
+import cats.data.NonEmptyList
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -12,18 +13,16 @@ import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
-import org.apache.flink.runtime.state.{AbstractStateBackend, StateBackend}
+import org.apache.flink.runtime.state.StateBackend
+import org.apache.flink.streaming.api.datastream
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
+import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
-import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, ProcessFunction}
-import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator, StreamOperatorFactory}
+import org.apache.flink.streaming.api.operators.StreamOperatorFactory
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
-import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.{TimeCharacteristic, datastream}
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
@@ -34,7 +33,7 @@ import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
-import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
+import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, MetricUtils}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar._
@@ -357,9 +356,9 @@ object FlinkStreamingProcessRegistrar {
     var lastElementTime : Option[Long] = None
 
     override def open(parameters: Configuration): Unit = {
-      val group = getRuntimeContext.getMetricGroup.addGroup(groupId)
-      group.histogram("histogram", histogramMeter)
-      group.gauge[Long, Gauge[Long]]("minimalDelay", minimalDelayGauge)
+      val metrics = new MetricUtils(getRuntimeContext)
+      metrics.histogram(NonEmptyList.of(groupId, "histogram"), Map.empty, histogramMeter)
+      metrics.gauge[Long, Gauge[Long]](NonEmptyList.of(groupId, "minimalDelay"), Map.empty, minimalDelayGauge)
     }
 
     override def processElement(value: T, ctx: ProcessFunction[T, T]#Context, out: Collector[T]): Unit = {
@@ -381,16 +380,16 @@ object FlinkStreamingProcessRegistrar {
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
 
-      val parentGroupForNormalEnds = getRuntimeContext.getMetricGroup.addGroup("end")
-      val parentGroupForDeadEnds = getRuntimeContext.getMetricGroup.addGroup("dead_end")
+      val parentGroupForNormalEnds = "end"
+      val parentGroupForDeadEnds = "dead_end"
 
-      def registerRateMeter(end: End) = {
+      def registerRateMeter(end: End): InstantRateMeterWithCount = {
         val baseGroup = end match {
-          case normal: NormalEnd => parentGroupForNormalEnds
-          case dead: DeadEnd => parentGroupForDeadEnds
-          case e: BranchEnd => parentGroupForDeadEnds
+          case _: NormalEnd => parentGroupForNormalEnds
+          case _: DeadEnd => parentGroupForDeadEnds
+          case _: BranchEnd => parentGroupForDeadEnds
         }
-        InstantRateMeterWithCount.register(baseGroup.addGroup(end.nodeId))
+        InstantRateMeterWithCount.register(Map("nodeId" -> end.nodeId), List(baseGroup), new MetricUtils(getRuntimeContext))
       }
 
       meterByReference = ends.map { end =>
@@ -403,7 +402,7 @@ object FlinkStreamingProcessRegistrar {
       }.toMap[PartReference, RateMeter]
     }
 
-    override def map(value: InterpretationResult) = {
+    override def map(value: InterpretationResult): InterpretationResult = {
       val meter = meterByReference.getOrElse(value.reference, throw new IllegalArgumentException("Unexpected reference: " + value.reference))
       meter.mark()
       value

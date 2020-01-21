@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.standalone.utils.service
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.{JobData, Service}
 import pl.touk.nussknacker.engine.standalone.utils.metrics.WithEspTimers
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle}
@@ -14,6 +15,5 @@ trait TimeMeasuringService extends GenericTimeMeasuringService with StandaloneCo
     context = runtimeContext
   }
 
-  override def espTimer(name: String): EspTimer = espTimer(serviceName, name)
-
+  override def espTimer(tags: Map[String, String], name: String): EspTimer = espTimer(tags, NonEmptyList.of(name))
 }

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util.service
 
-import pl.touk.nussknacker.engine.util.metrics.{GenericInstantRateMeter, RateMeter}
+import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -10,15 +10,21 @@ trait GenericTimeMeasuringService {
   @transient lazy val metrics : collection.concurrent.TrieMap[String, EspTimer] = collection.concurrent.TrieMap()
 
   protected def measuring[T](actionFun: => Future[T])(implicit ec: ExecutionContext) : Future[T] = {
+    measuring(tags)(actionFun)
+  }
+
+  protected def measuring[T](tags: Map[String, String])(actionFun: => Future[T])(implicit ec: ExecutionContext) : Future[T] = {
     val start = System.nanoTime()
     val action = actionFun
     action.onComplete { result =>
       detectMeterName(result).foreach { meterName =>
-        getOrCreateTimer(meterName).update(start)
+        getOrCreateTimer(tags, meterName).update(start)
       }
     }
     action
   }
+
+  protected def tags: Map[String, String] = Map()
 
   protected def serviceName: String
 
@@ -29,10 +35,11 @@ trait GenericTimeMeasuringService {
     case Failure(_) => Some("FAIL")
   }
 
-  private def getOrCreateTimer(name: String) : EspTimer = metrics.getOrElseUpdate(name, espTimer(name))
+  private def getOrCreateTimer(tags: Map[String, String], name: String) : EspTimer = metrics.getOrElseUpdate(name,
+    espTimer(tags + ("serviceName" -> serviceName), name))
 
 
-  def espTimer(name: String) : EspTimer
+  def espTimer(tags: Map[String, String], name: String) : EspTimer
 
 }
 

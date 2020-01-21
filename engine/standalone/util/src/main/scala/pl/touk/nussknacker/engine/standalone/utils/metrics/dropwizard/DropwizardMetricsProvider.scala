@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard
 
 import java.util.concurrent.TimeUnit
 
+import cats.data.NonEmptyList
 import com.codahale.metrics._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.standalone.utils.metrics.MetricsProvider
@@ -9,10 +10,11 @@ import pl.touk.nussknacker.engine.util.service.EspTimer
 
 class DropwizardMetricsProvider(metricRegistry: MetricRegistry) extends MetricsProvider with LazyLogging {
 
-  override def espTimer(processId: String, instantTimerWindowInSeconds: Long, name: String*): EspTimer = {
+  override def espTimer(processId: String, instantTimerWindowInSeconds: Long, tags: Map[String, String], name: NonEmptyList[String]): EspTimer = {
     val histogram = new Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS))
-    val registered = register(processId, MetricRegistry.name("serviceTimes", name: _*), histogram)
-    val meter = register(processId, MetricRegistry.name("serviceInstant", name: _*), new InstantRateMeter)
+    //FIXME: implement me :P
+    val registered = register(processId, MetricRegistry.name("serviceTimes", name.toList.toArray: _*), histogram)
+    val meter = register(processId, MetricRegistry.name("serviceInstant", name.toList.toArray: _*), new InstantRateMeter)
     EspTimer(meter, registered.update)
   }
 

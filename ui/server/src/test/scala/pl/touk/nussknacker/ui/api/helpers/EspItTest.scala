@@ -277,5 +277,5 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     createDeployedCanceledProcess(processName, testCategoryName, isSubprocess)
 
   def cancelProcess(id: process.ProcessId): Assertion =
-    prepareCancel(id).map(_ => ()).futureValue shouldBe ()
+    prepareCancel(id).map(_ => ()).futureValue shouldBe (())
 }
