@@ -52,7 +52,7 @@ class ToolBox extends React.Component {
                 onClick={this.toggleGroup.bind(this, nodeGroup)}
               >
                 {nodeGroup.possibleNodes.map(node =>
-                  <Tool nodeModel={node.node} label={node.label} key={node.type + node.label}/>,
+                  <Tool nodeModel={node.node} label={node.label} key={node.type + node.label} processDefinitionData={this.props.processDefinitionData}/>,
                 )}
               </TreeView>
             )

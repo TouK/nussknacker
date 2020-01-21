@@ -54,9 +54,9 @@ class Graph extends React.Component {
 
   componentDidMount() {
     this.processGraphPaper = this.createPaper()
-    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, true, [])
+    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, true, [])
     this._prepareContentForExport()
-    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, false, this.props.expandedGroups)
+    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, false, this.props.expandedGroups)
     this.panAndZoom = this.enablePanZoom()
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
@@ -68,7 +68,7 @@ class Graph extends React.Component {
 
   updateDimensions() {
     this.processGraphPaper.fitToContent()
-    this.svgDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    this.updateSvgDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
     if (this.props.parent !== subprocessParent) {
       this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
     }
@@ -96,9 +96,10 @@ class Graph extends React.Component {
       !_.isEqual(this.props.layout, nextProps.layout) ||
       !_.isEqual(this.props.processCounts, nextProps.processCounts) ||
       !_.isEqual(this.props.groupingState, nextProps.groupingState) ||
-      !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups)
+      !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
+      !_.isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
     if (processChanged) {
-      this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, false, nextProps.expandedGroups)
+      this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, nextProps.processDefinitionData, false, nextProps.expandedGroups)
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
@@ -249,7 +250,7 @@ class Graph extends React.Component {
     return now
   }
 
-  drawGraph = (process, layout, processCounts, forExport, expandedGroups) => {
+  drawGraph = (process, layout, processCounts, processDefinitionData, forExport, expandedGroups) => {
     this.redrawing = true
     //leaving performance debug for now, as there is still room for improvement:
     //handling forExport and processCounts without need of full redraw
@@ -261,7 +262,7 @@ class Graph extends React.Component {
     t = this.time(t, "start")
 
     const nodes = _.map(nodesWithGroups, (n) => {
-      return EspNode.makeElement(n, processCounts[n.id], forExport, this.props.processDefinitionData.nodesConfig || {})
+      return EspNode.makeElement(n, processCounts[n.id], forExport, processDefinitionData.nodesConfig || {})
     })
 
     t = this.time(t, "nodes")
@@ -336,18 +337,19 @@ class Graph extends React.Component {
     //we fit to content to be able to export svg nicely...
     this.processGraphPaper.fitToContent()
 
-    this.svgDimensions(oldWidth, oldHeight)
+    //Hack for FOP to properly export image from svg xml
+    let svg = this.updateSvgDimensions(oldWidth, oldHeight)
+    this.setState({exported: SVGUtils.toXml(svg)})
 
     //we have to set former width/height
     this.processGraphPaper.setDimensions(oldWidth, oldHeight)
   }
 
-  //Hack for FOP to properly export image from svg xml
-  svgDimensions = (width, height) => {
+  updateSvgDimensions = (width, height) => {
     let svg = this.getEspGraphRef().getElementsByTagName("svg")[0]
     svg.setAttribute("width", width)
     svg.setAttribute("height", height)
-    this.setState({exported: SVGUtils.toXml(svg)})
+    return svg
   }
 
   highlightNodes = (data, nodeToDisplay, groupingState, selectionState) => {
