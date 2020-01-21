@@ -1,7 +1,7 @@
 import i18next from "i18next"
 import {isEmpty} from "lodash"
 import React, {ReactNode} from "react"
-import ExpressionWithFixedValues from "./ExpressionWithFixedValues"
+import ExpressionWithFixedValues from "./FixedValuesEditor"
 
 type Props = {
   expressionObj: {};

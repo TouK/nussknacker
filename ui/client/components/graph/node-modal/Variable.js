@@ -4,7 +4,7 @@ import React from "react"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import {errorValidator, notEmptyValidator} from "../../../common/Validators"
 import EditableExpression from "./editors/expression/EditableExpression"
-import {Types} from "./editors/expression/EditorType"
+import {SimpleEditorTypes} from "./editors/expression/EditorType"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 
@@ -28,7 +28,7 @@ const Variable = (props) => {
                     showValidation={showValidation}
                     validators={[notEmptyValidator, errorValidator(errors, "varName")]}/>
       <EditableExpression
-        fieldType={Types.RAW_EDITOR}
+        fieldType={SimpleEditorTypes.RAW_EDITOR}
         fieldName="Expression"
         fieldLabel={"Expression"}
         renderFieldLabel={renderFieldLabel}

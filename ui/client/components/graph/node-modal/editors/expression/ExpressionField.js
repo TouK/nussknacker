@@ -2,7 +2,7 @@ import _ from "lodash"
 import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableExpression from "./EditableExpression"
-import {Types} from "./EditorType"
+import {SimpleEditorTypes} from "./EditorType"
 
 export default class ExpressionField extends React.Component {
 
@@ -20,8 +20,9 @@ export default class ExpressionField extends React.Component {
     if (restriction.hasFixedValues)
       return (
         <EditableExpression
-          fieldType={"expressionWithFixedValues"}
+          fieldType={SimpleEditorTypes.FIXED_VALUES_EDITOR}
           fieldLabel={fieldLabel}
+          param={this.findParamByName(fieldLabel)}
           expressionObj={expressionObj}
           renderFieldLabel={renderFieldLabel}
           values={restriction.values}
@@ -41,7 +42,7 @@ export default class ExpressionField extends React.Component {
         <EditableExpression
           fieldType={fieldType}
           param={this.findParamByName(fieldLabel)}
-          editorName={Types.RAW_EDITOR}
+          editorName={SimpleEditorTypes.RAW_EDITOR}
           renderFieldLabel={renderFieldLabel}
           fieldLabel={fieldLabel}
           fieldName={fieldName}
