@@ -37,9 +37,9 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
   protected def fetchLastActionPerProcessQuery: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
     processActionsTable
       .groupBy(_.processId)
-      .map { case (processId, group) => (processId, group.map(_.createdAt).max) }
+      .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
       .join(processActionsTable)
-      .on { case ((processId, latestDeployedAt), deployAction) => deployAction.processId === processId && deployAction.createdAt === latestDeployedAt } //We fetch exactly this one  with max deployment
+      .on { case ((processId, latestDeployedAt), deployAction) => deployAction.processId === processId && deployAction.performedAt === latestDeployedAt } //We fetch exactly this one  with max deployment
       .map { case ((processId, _), deployAction) => processId -> deployAction }
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
@@ -48,7 +48,7 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
   protected def fetchProcessLatestActionsQuery(processId: ProcessId): Query[(ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]]), (ProcessActionEntityData, Option[CommentEntityData]), Seq] =
     processActionsTable
       .filter(_.processId === processId.value)
-      .sortBy(_.createdAt.desc)
+      .sortBy(_.performedAt.desc)
       .joinLeft(commentsTable)
       .on { case (action, comment) => action.commentId === comment.id }
       .map{ case (action, comment) => (action, comment) }
@@ -101,7 +101,7 @@ object ProcessRepository {
 
   def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
     processVersionId = actionData._1.processVersionId,
-    createdAt = actionData._1.deployedAtTime,
+    performedAt = actionData._1.deployedAtTime,
     user = actionData._1.user,
     action = actionData._1.action,
     commentId = actionData._2.map(_.id),

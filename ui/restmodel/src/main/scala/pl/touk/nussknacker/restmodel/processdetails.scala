@@ -67,9 +67,9 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
     implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveDecoder
   }
 
-  case class BaseProcessDetails[ProcessShape](id: String, //TODO: replace it by Long / ProcessId
+  case class BaseProcessDetails[ProcessShape](id: String, //It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
                                               name: String,
-                                              processId: ApiProcessId,
+                                              processId: ApiProcessId, //TODO: Remove it when we will support Long / ProcessId
                                               processVersionId: Long,
                                               isLatestVersion: Boolean,
                                               description: Option[String],
@@ -118,7 +118,7 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
 
   @JsonCodec case class ProcessAction( //processId: Long, //TODO: support it when will support processId as Long / ProcessId
                                        processVersionId: Long,
-                                       createdAt: LocalDateTime,
+                                       performedAt: LocalDateTime,
                                        user: String,
                                        action: ProcessActionType,
                                        commentId: Option[Long],

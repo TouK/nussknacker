@@ -31,7 +31,7 @@ trait ProcessActionEntityFactory {
 
     def processVersionId: Rep[Long] = column[Long]("process_version_id", Nullable)
 
-    def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
+    def performedAt: Rep[Timestamp] = column[Timestamp]("performed_at", NotNull)
 
     def user: Rep[String] = column[String]("user", NotNull)
 
@@ -41,7 +41,7 @@ trait ProcessActionEntityFactory {
 
     def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id", Nullable)
 
-    def pk = primaryKey("process_actions_pk", (processId, processVersionId, createdAt))
+    def pk = primaryKey("process_actions_pk", (processId, processVersionId, performedAt))
 
     def processes_fk: ForeignKeyQuery[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData] = foreignKey("process_actions_version_fk", (processId, processVersionId), processVersionsTable)(
       procV => (procV.processId, procV.id),
@@ -55,7 +55,7 @@ trait ProcessActionEntityFactory {
       onDelete = ForeignKeyAction.SetNull
     )
 
-    def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, user, createdAt, action, commentId, buildInfo) <> (
+    def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, user, performedAt, action, commentId, buildInfo) <> (
       ProcessActionEntityData.tupled, ProcessActionEntityData.unapply
     )
   }
@@ -64,12 +64,12 @@ trait ProcessActionEntityFactory {
 case class ProcessActionEntityData(processId: Long,
                                    processVersionId: Long,
                                    user: String,
-                                   createdAt: Timestamp,
+                                   performedAt: Timestamp,
                                    action: ProcessActionType,
                                    commentId: Option[Long],
                                    buildInfo: Option[String]) {
 
-  lazy val deployedAtTime: LocalDateTime = DateUtils.toLocalDateTime(deployedAt)
+  lazy val deployedAtTime: LocalDateTime = DateUtils.toLocalDateTime(performedAt)
   lazy val isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
   lazy val isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
 }

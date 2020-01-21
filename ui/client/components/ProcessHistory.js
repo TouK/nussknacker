@@ -83,8 +83,8 @@ export class ProcessHistory_ extends Component {
                 {
                   historyEntry.processVersionId === _.get(this.props.lastDeployedAction, "processVersionId") ?
                     <small key={index}>
-                      <i><Date date={this.props.lastDeployedAction.createdAt}/></i>
-                      <span className="label label-info">{ i18next.t("Last deployed")}</span>
+                      <i><Date date={this.props.lastDeployedAction.performedAt}/></i>
+                      <span className="label label-info">{i18next.t("processHistory.lastDeployed", "Last deployed")}</span>
                     </small> : null
                 }
               </li>
