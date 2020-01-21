@@ -1,20 +1,23 @@
 package pl.touk.nussknacker.engine.types
 
+import java.util
 import java.util.regex.Pattern
 
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate}
+import org.scalatest.{FunSuite, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate, SuperClassPatternPredicate}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
+import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
+import pl.touk.nussknacker.engine.types.TypesInformationExtractor._
 
-import scala.annotation.meta.{field, getter}
+import scala.annotation.meta.getter
 import scala.concurrent.Future
 import scala.reflect.runtime.universe._
 
-class EspTypeUtilsSpec extends FunSuite with Matchers {
+class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
   val signatures = Table(("signature", "value", "matches"),
     (java.lang.Boolean.TYPE, classOf[java.lang.Boolean], true),
@@ -55,29 +58,26 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   }
 
   test("should extract public fields from scala case class") {
-    val infos = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleClass]))(ClassExtractionSettings.Default)
-    val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains("SampleClass")).get
+    val sampleClassInfo = singleClassDefinition[SampleClass]
 
-    sampleClassInfo.methods shouldBe Map(
+    sampleClassInfo.value.methods shouldBe Map(
       "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None),
       "bar" -> MethodInfo(List.empty, ClazzRef[String], None),
       "toString" -> MethodInfo(List(), ClazzRef[String], None)
     )
   }
 
-  //this test fails when is runned from Intellij Idea
   test("shoud detect java beans and fields in java class") {
-    EspTypeUtils.clazzDefinition(classOf[JavaSampleClass])(ClassExtractionSettings.Default).methods shouldBe Map(
-      "getNotProperty" -> MethodInfo(List(Parameter("foo", ClazzRef[Int])), ClazzRef[String], None),
-      "bar" -> MethodInfo(List(), ClazzRef[String], None),
-      "getBeanProperty" -> MethodInfo(List(), ClazzRef[String], None),
-      "beanProperty" -> MethodInfo(List(), ClazzRef[String], None),
-      "isBooleanProperty" -> MethodInfo(List(), ClazzRef[Boolean], None),
-      "booleanProperty" -> MethodInfo(List(), ClazzRef[Boolean], None),
-      "foo" -> MethodInfo(List(), ClazzRef(Integer.TYPE), None),
-      "toString" -> MethodInfo(List(), ClazzRef[String], None)
-    )
-
+    val methods = singleClassDefinition[JavaSampleClass].value.methods
+    //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
+//    methods.get("getNotProperty").value shouldBe MethodInfo(List(Parameter("foo", ClazzRef[Int])), ClazzRef[String], None)
+    methods.get("bar").value shouldBe MethodInfo(List(), ClazzRef[String], None)
+    methods.get("getBeanProperty").value shouldBe MethodInfo(List(), ClazzRef[String], None)
+    methods.get("beanProperty").value shouldBe MethodInfo(List(), ClazzRef[String], None)
+    methods.get("isBooleanProperty").value shouldBe MethodInfo(List(), ClazzRef[Boolean], None)
+    methods.get("booleanProperty").value shouldBe MethodInfo(List(), ClazzRef[Boolean], None)
+    methods.get("foo").value shouldBe MethodInfo(List(), ClazzRef(Integer.TYPE), None)
+    methods.get("toString").value shouldBe MethodInfo(List(), ClazzRef[String], None)
   }
 
   test("should skip blacklisted properties") {
@@ -94,11 +94,13 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     forAll(testCasses) { (clazz, clazzName) =>
       forAll(testClassPatterns) { classPattern =>
-        val infos = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings(Seq(
-          ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("ba.*")),
-          ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("get.*")),
-          ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("is.*"))
-        )))
+        val infos = clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings(
+          ClassExtractionSettings.DefaultBlacklistedClasses,
+          ClassExtractionSettings.DefaultBlacklistedMembers ++ Seq(
+          ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("ba.*")),
+          ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("get.*")),
+          ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("is.*"))
+        ), ClassExtractionSettings.DefaultWhitelistedMembers))
         val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
@@ -111,7 +113,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
   test("should extract parameters from embedded lists") {
 
-    val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Embeddable]))(ClassExtractionSettings.Default)
+    val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]
 
     typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
       "string" -> MethodInfo(List(), ClazzRef[String], None),
@@ -123,9 +125,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   }
 
   test("should not discover hidden fields") {
-    val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[ClassWithHiddenFields]))(ClassExtractionSettings.Default)
+    val typeUtils = singleClassDefinition[ClassWithHiddenFields]
 
-    typeUtils.find(_.clazzName == ClazzRef[ClassWithHiddenFields]) shouldBe Some(ClazzDefinition(ClazzRef[ClassWithHiddenFields], Map(
+    typeUtils shouldBe Some(ClazzDefinition(ClazzRef[ClassWithHiddenFields], Map(
       "normalField" -> MethodInfo(List(), ClazzRef[String], None),
       "normalParam" -> MethodInfo(List(), ClazzRef[String], None),
       "toString" -> MethodInfo(List(), ClazzRef[String], None)
@@ -195,11 +197,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   }
 
   test("should extract description and params from method") {
-    val scalaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[ScalaSampleDocumentedClass]))(ClassExtractionSettings.Default)
-    val scalaClazzInfo = scalaExtractedInfo.find(_.clazzName == ClazzRef[ScalaSampleDocumentedClass]).get
+    val scalaClazzInfo = singleClassDefinition[ScalaSampleDocumentedClass].value
 
-    val javaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[JavaSampleDocumentedClass]))(ClassExtractionSettings.Default)
-    val javaClazzInfo = javaExtractedInfo.find(_.clazzName == ClazzRef[JavaSampleDocumentedClass]).get
+    val javaClazzInfo = singleClassDefinition[JavaSampleDocumentedClass].value
 
     val table = Table(
       ("method", "methodInfo"),
@@ -218,8 +218,49 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     }
   }
 
+  test("enabled by default classes") {
+    val emptyDef = singleClassAndItsChildrenDefinition[EmptyClass]
+    // We want to use boxed primitive classes even if they wont be discovered in any place
+    val boxedIntDef = emptyDef.find(_.clazzName.clazz == classOf[Integer])
+    boxedIntDef shouldBe defined
+  }
+
+  test("blacklisted by default classes") {
+    val metaSpelDef = singleClassAndItsChildrenDefinition[ServiceWithMetaSpelParam]
+    // These params are used programmable - user can't create instance of this type
+    metaSpelDef.exists(_.clazzName.clazz == classOf[SpelExpressionRepr]) shouldBe false
+  }
+
+  test("should extract basic methods from standard collection types") {
+    val javaListDef = singleClassDefinition[util.List[_]].value
+    javaListDef.methods.get("contains") shouldBe defined
+    val scalaListDef = singleClassDefinition[List[_]].value
+    scalaListDef.methods.get("contains") shouldBe defined
+    val scalaOptionDef = singleClassDefinition[Option[_]].value
+    scalaOptionDef.methods.get("contains") shouldBe defined
+  }
+
+  class EmptyClass {
+    def invoke(): Unit = ???
+  }
+
+  class ServiceWithMetaSpelParam {
+    def invoke(@ParamName("expression") expr: SpelExpressionRepr): Unit = ???
+  }
+
   private def param[T: TypeTag](name: String): Parameter = {
     Parameter(name, ClazzRef.fromDetailedType[T])
+  }
+
+  private def singleClassDefinition[T: TypeTag]: Option[ClazzDefinition] = {
+    val ref = ClazzRef.fromDetailedType[T]
+    // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
+    clazzAndItsChildrenDefinition(List(Typed(ref)))(ClassExtractionSettings.Default).find(_.clazzName.refClazzName == ref.refClazzName)
+  }
+
+  private def singleClassAndItsChildrenDefinition[T: TypeTag] = {
+    val ref = ClazzRef.fromDetailedType[T]
+    clazzAndItsChildrenDefinition(List(Typed(ref)))(ClassExtractionSettings.Default)
   }
 
 }

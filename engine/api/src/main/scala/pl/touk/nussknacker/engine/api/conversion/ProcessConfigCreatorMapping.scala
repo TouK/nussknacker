@@ -56,7 +56,10 @@ object ProcessConfigCreatorMapping {
       }
       override def classExtractionSettings(config: Config): ClassExtractionSettings = {
         val jSettings = jcreator.classExtractionSettings(config)
-        ClassExtractionSettings(jSettings.getBlacklistedClassMemberPredicates.asScala)
+        ClassExtractionSettings(
+          jSettings.getBlacklistedClassPredicates.asScala,
+          jSettings.getBlacklistedClassMemberPredicates.asScala,
+          jSettings.getWhitelistedClassMemberPredicates.asScala)
       }
     }
     creator
