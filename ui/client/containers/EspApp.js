@@ -6,7 +6,7 @@ import {MenuBar} from "../components/MenuBar"
 import Processes from "./Processes"
 import SubProcesses from "./SubProcesses"
 import NotFound from "./errors/NotFound"
-import {nkPath} from "../config";
+import {nkPath} from "../config"
 import {CSSTransition, TransitionGroup} from "react-transition-group"
 import Metrics from "./Metrics"
 import Search from "./Search"
@@ -27,7 +27,7 @@ import "../stylesheets/main.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
 
-class EspApp extends React.Component {
+export class EspApp extends React.Component {
 
   componentDidMount() {
     this.mountedHistory = this.props.history.listen((location, action) => {

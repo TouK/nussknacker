@@ -15,7 +15,7 @@ import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
 
-class Archive extends BaseProcesses {
+export class Archive extends BaseProcesses {
   queries = {
     isArchived: true,
   }

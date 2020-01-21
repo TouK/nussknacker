@@ -5,7 +5,7 @@ import {withRouter} from "react-router"
 import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 
-class Metrics extends React.Component {
+export class Metrics extends React.Component {
 
   static propTypes = {
     settings: PropTypes.object.isRequired,

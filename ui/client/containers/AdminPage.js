@@ -9,7 +9,7 @@ import SearchComponents from "./admin/SearchComponents"
 import Services from "./admin/Services"
 import UnusedComponents from "./admin/UnusedComponents"
 
-class AdminPage extends React.Component {
+export class AdminPage extends React.Component {
   tabs = [
     {key: SearchComponents.key, title: SearchComponents.header, component: <SearchComponents/>},
     {key: UnusedComponents.key, title: UnusedComponents.header, component: <UnusedComponents/>},

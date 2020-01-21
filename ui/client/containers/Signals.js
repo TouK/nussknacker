@@ -7,7 +7,7 @@ import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 
 //this needs some love
-class Signals extends React.Component {
+export class Signals extends React.Component {
 
   constructor(props) {
     super(props)
