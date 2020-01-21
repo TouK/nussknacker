@@ -33,7 +33,7 @@ trait DbTesting
       val session = db.db.createSession()
       session.prepareStatement("""delete from "process_attachments"""").execute()
       session.prepareStatement("""delete from "process_comments"""").execute()
-      session.prepareStatement("""delete from "process_deployment_info"""").execute()
+      session.prepareStatement("""delete from "process_actions"""").execute()
       session.prepareStatement("""delete from "process_versions"""").execute()
       session.prepareStatement("""delete from "tags"""").execute()
       session.prepareStatement("""delete from "environments"""").execute()
