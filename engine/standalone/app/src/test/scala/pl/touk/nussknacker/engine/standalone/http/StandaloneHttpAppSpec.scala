@@ -9,7 +9,6 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.MethodRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -28,6 +27,7 @@ import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResp
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
 import io.circe._
 import io.circe.parser._
+import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 
 class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach with FailFastCirceSupport {

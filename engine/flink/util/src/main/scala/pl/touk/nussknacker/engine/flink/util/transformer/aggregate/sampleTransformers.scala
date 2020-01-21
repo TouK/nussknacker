@@ -26,6 +26,7 @@ object sampleTransformers {
       case "Max" => aggregates.MaxAggregator
       case "Min" => aggregates.MinAggregator
       case "Set" => aggregates.SetAggregator
+      case "Sum" => aggregates.SumAggregator
       case "ApproximateSetCardinality" => HyperLogLogPlusAggregator()
       case _ => throw new IllegalArgumentException(s"Unknown aggregate type: $aggregatorType")
     }

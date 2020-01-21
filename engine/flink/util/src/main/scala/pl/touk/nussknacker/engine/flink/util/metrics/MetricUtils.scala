@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.metrics
 
+import java.util.ServiceLoader
+
 import cats.data.NonEmptyList
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.metrics.{Counter, Gauge, Histogram, Meter, MetricGroup}
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
+
+trait UseLegacyMetricsMarker
 
 class MetricUtils(runtimeContext: RuntimeContext) {
 
@@ -27,9 +31,8 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     val (group, name) = groupsWithName(nameParts, tags)
     group.histogram(name, histogram)
   }
-
-  private val useLegacyMode: Boolean = !Option(runtimeContext.getExecutionConfig.getGlobalJobParameters)
-    .map(_.toMap).map(_.get("useLegacyMetrics")).contains("false")
+  
+  private val useLegacyMode: Boolean = ServiceLoader.load(classOf[UseLegacyMetricsMarker], runtimeContext.getUserCodeClassLoader).iterator().hasNext
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
     if (useLegacyMode) {
