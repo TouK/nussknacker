@@ -10,6 +10,21 @@
   border-radius: 0
   margin-bottom: 0
   z-index: 100
+  user-select none
+
+  .expand-button
+    font-size 20px
+    display none
+    margin 0
+    padding 1em
+    background none
+    border none
+    height 100%
+    &:hover
+    &:focus
+      background-color: menuActiveItem
+    @media (max-width: 750px)
+      display block
 
 #brand-name
   color: menuTxtColor
@@ -29,24 +44,57 @@
 
 #menu-items
   height: 100%
+  list-style: none
+  padding: 0
+  margin: 0
+  display: flex
+  align-items: center
+  flex: 1
+  justify-content flex-end
+  @media (max-width: 750px)
+    .expanded &
+      position absolute
+      top menuBarHeight
+      right 0
+      left 0
+      background rgba(menuBkgColor, .9)
+      backdrop-filter blur(4px)
+      box-shadow 0 2px 1px rgba(black, .25)
+      flex-direction column
+      height auto
+      align-items stretch
+    .collapsed &
+      display none
   li
-    height: 100%
+    display: flex
+    align-items center
     margin: 0
+    height: 100%
+    @media (max-width: 750px)
+      height: menuBarHeight
   a
+    flex 1
+    display: flex
+    align-items center
+    justify-content center
+    height 100%
     color: menuTxtColor
     font-weight: 400
     font-size: 18px
-    line-height: menuBarHeight
-    padding: 0 40px
+    text-decoration none
+    padding: 0 1.2em
     border-radius: 0
-    @media (max-width: 1400px)
-      padding 0 25px
+    @media (max-width: 1200px)
+      padding: 0 1em
     @media (max-width: 1000px)
-      padding 0 20px
-      font-size 15px
-    @media (max-width: 850px)  
+      font-size 16px
+    @media (max-width: 850px)
       font-size 14px
-      padding 0 10px
+      padding: 0 .8em
+    @media (max-width: 750px)
+      font-size 22px
+      padding: 0 1.5em
+
     &:hover
       background-color: menuActiveItem
   .active
@@ -82,3 +130,9 @@
   background-image: none
   border: 1px solid transparent
   border-radius: 4px
+  overflow hidden
+  text-overflow ellipsis
+  @media (max-width: 1400px)
+    max-width menuBarHeight
+  @media (max-width: 750px)
+    max-width none
