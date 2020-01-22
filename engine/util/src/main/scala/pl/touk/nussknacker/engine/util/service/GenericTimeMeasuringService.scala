@@ -1,11 +1,14 @@
 package pl.touk.nussknacker.engine.util.service
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 trait GenericTimeMeasuringService {
+
+  protected def metricName: NonEmptyList[String] = NonEmptyList.of("service")
 
   @transient lazy val metrics : collection.concurrent.TrieMap[String, EspTimer] = collection.concurrent.TrieMap()
 
@@ -35,11 +38,19 @@ trait GenericTimeMeasuringService {
     case Failure(_) => Some("FAIL")
   }
 
-  private def getOrCreateTimer(tags: Map[String, String], name: String) : EspTimer = metrics.getOrElseUpdate(name,
-    espTimer(tags + ("serviceName" -> serviceName), name))
+  private def getOrCreateTimer(tags: Map[String, String], meterType: String) : EspTimer = metrics.getOrElseUpdate(meterType,
+    espTimer(tags + ("serviceName" -> serviceName), metricName :+ meterType))
 
 
-  def espTimer(tags: Map[String, String], name: String) : EspTimer
+  def espTimer(tags: Map[String, String], metricName: NonEmptyList[String]) : EspTimer
+
+}
+
+object EspTimer {
+
+  val histogramSuffix = "histogram"
+
+  val instantRateSuffix = "instantRate"
 
 }
 

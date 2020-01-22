@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.metrics
 
 import cats.data.NonEmptyList
-import org.apache.flink.metrics.{Counter, Gauge, MetricGroup}
+import org.apache.flink.metrics.{Counter, Gauge}
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
+//TODO: add also "normal" rate meter here (such as in dropwizard etc)
 class InstantRateMeter extends pl.touk.nussknacker.engine.util.metrics.GenericInstantRateMeter with Gauge[Double]
 
 object InstantRateMeterWithCount {

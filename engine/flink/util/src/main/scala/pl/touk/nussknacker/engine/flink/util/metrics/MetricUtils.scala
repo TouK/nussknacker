@@ -7,7 +7,7 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.metrics.{Counter, Gauge, Histogram, Meter, MetricGroup}
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 
-trait UseLegacyMetricsMarker
+trait UseNewMetrics
 
 class MetricUtils(runtimeContext: RuntimeContext) {
 
@@ -31,14 +31,15 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     val (group, name) = groupsWithName(nameParts, tags)
     group.histogram(name, histogram)
   }
-  
-  private val useLegacyMode: Boolean = ServiceLoader.load(classOf[UseLegacyMetricsMarker], runtimeContext.getUserCodeClassLoader).iterator().hasNext
+
+  private val useNewMetricsMode: Boolean = ServiceLoader.load(classOf[UseNewMetrics], runtimeContext.getUserCodeClassLoader).iterator().hasNext
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
-    if (useLegacyMode) {
-      groupsWithNameForLegacyMode(nameParts, tags)
-    } else {
+    if (useNewMetricsMode) {
       tagMode(nameParts, tags)
+    } else {
+      groupsWithNameForLegacyMode(nameParts, tags)
+
     }
   }
 
@@ -75,8 +76,8 @@ class MetricUtils(runtimeContext: RuntimeContext) {
       case l@NonEmptyList("nodeCount", _) =>insertNodeId(l)
 
       //GenericTimeMeasuringService
-      case l@NonEmptyList("serviceInstant", _) => insertServiceName(l)
-      case l@NonEmptyList("serviceTimes", _) => insertServiceName(l)
+      case l@NonEmptyList("service", name :: "instantRate" :: Nil) => tagMode(NonEmptyList("serviceInstant",  tags("serviceName") :: name :: Nil), Map.empty)
+      case l@NonEmptyList("service", name :: "histogram" :: Nil) => tagMode(NonEmptyList("serviceTimes", tags("serviceName") :: name :: Nil), Map.empty)
 
       case l@NonEmptyList("error", List("instantRate")) => tagMode(l, Map.empty)
       case l@NonEmptyList("error", List("instantRateByNode")) => insertNodeId(l)

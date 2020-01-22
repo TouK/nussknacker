@@ -32,7 +32,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     invoke(process, data)
 
     MockService.data shouldNot be('empty)
-    val histogram = TestReporter.taskManagerReporter.testHistogram("serviceTimes.serviceName.mockService.OK")
+    val histogram = TestReporter.taskManagerReporter.testHistogram("serviceTimes.mockService.OK")
     histogram.getCount shouldBe 1
 
   }
@@ -55,7 +55,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
       val totalGauges = TestReporter.taskManagerReporter.testGauges("error.instantRate")
       totalGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
 
-      val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.nodeId.proc2.instantRateByNode")
+      val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.proc2.instantRateByNode")
       nodeGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
     }
 
@@ -88,12 +88,12 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
       TestReporter.taskManagerReporter.testCounters(name).map(_.getCount).find(_ > 0).getOrElse(0)
 
     eventually {
-      counter("nodeId.source1.nodeCount") shouldBe 2L
-      counter("nodeId.filter1.nodeCount") shouldBe 2L
-      counter("nodeId.split1.nodeCount") shouldBe 1L
-      counter("nodeId.proc2.nodeCount") shouldBe 1L
-      counter("nodeId.out.nodeCount") shouldBe 1L
-      counter("nodeId.out2.nodeCount") shouldBe 1L
+      counter("nodeCount.source1") shouldBe 2L
+      counter("nodeCount.filter1") shouldBe 2L
+      counter("nodeCount.split1") shouldBe 1L
+      counter("nodeCount.proc2") shouldBe 1L
+      counter("nodeCount.out") shouldBe 1L
+      counter("nodeCount.out2") shouldBe 1L
     }
   }
 

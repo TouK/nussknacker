@@ -13,8 +13,8 @@ class DropwizardMetricsProvider(metricRegistry: MetricRegistry) extends MetricsP
 
   override def espTimer(processId: String, instantTimerWindowInSeconds: Long, tags: Map[String, String], name: NonEmptyList[String]): EspTimer = {
     val histogram = new Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS))
-    val registered = register(processId, tags, NonEmptyList("serviceTimes", name.toList), histogram)
-    val meter = register(processId, tags, NonEmptyList("serviceInstant", name.toList), new InstantRateMeter)
+    val registered = register(processId, tags, name :+ EspTimer.histogramSuffix, histogram)
+    val meter = register(processId, tags, name :+ EspTimer.instantRateSuffix, new InstantRateMeter)
     EspTimer(meter, registered.update)
   }
 
