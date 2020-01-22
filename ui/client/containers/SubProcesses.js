@@ -16,7 +16,7 @@ import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
 
-class SubProcesses extends BaseProcesses {
+export class SubProcesses extends BaseProcesses {
   queries = {
     isSubprocess: true,
     isArchived: false,

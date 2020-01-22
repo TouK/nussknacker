@@ -2,7 +2,7 @@ import PropTypes from "prop-types"
 import React from "react"
 import {connect} from "react-redux"
 
-class Search extends React.Component {
+export class Search extends React.Component {
   render() {
     if (this.props.settings.url) {
       return (

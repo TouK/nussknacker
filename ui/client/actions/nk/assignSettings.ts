@@ -13,7 +13,7 @@ type FeaturesType = {
   search: { url: string };
   metrics: MetricsType;
   remoteEnvironment: { targetEnvironmentId: "development" | string };
-  environmentAlert: { content: string; "cssClass": string };
+  environmentAlert: { content: string; cssClass: string };
   commentSettings: { matchExpression: string; link: string };
   intervalTimeSettings: { processes: number; healthCheck: number };
   deploySettings: $TodoType;

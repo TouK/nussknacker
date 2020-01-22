@@ -19,7 +19,7 @@ import HttpService from "../http/HttpService"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
 
-class Processes extends BaseProcesses {
+export class Processes extends BaseProcesses {
   queries = {
     isSubprocess: false,
     isArchived: false,
