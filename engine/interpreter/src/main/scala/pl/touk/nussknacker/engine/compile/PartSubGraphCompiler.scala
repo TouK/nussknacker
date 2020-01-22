@@ -48,6 +48,59 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     compile(n, ctx).map(_ => ())
   }
 
+  def validate(data: NodeData, ctx: ValidationContext) : CompilationResult[Unit] = {
+    implicit val nodeId: NodeId = NodeId(data.id)
+
+    data match {
+      case n: graph.node.OneOutputSubsequentNode => validate(n, ctx)
+      case n: graph.node.EndingNodeData => validate(n, ctx)
+    }
+  }
+
+  private def validate(data: OneOutputSubsequentNodeData, ctx: ValidationContext)(implicit nodeId: NodeId): CompilationResult[Unit] = {
+    implicit val nodeId: NodeId = NodeId(data.id)
+    data match {
+      case graph.node.Variable(_, name, expression, _) =>
+        val (expressionTypingResult, validatedExpression) = compile(expression, Option(name), ctx, Unknown)
+        val typingInfo = expressionTypingResult.toDefaultExpressionTypingInfoEntry.toMap
+        val outContext = ValidationContext(Map(name -> expressionTypingResult.typingResult))
+        toNodeCompilationResult(outContext, validatedExpression, typingInfo)
+
+      case graph.node.VariableBuilder(_, name, fields, _) =>
+        val (fieldsTyping, compiledFields) = fields.map(f => compile(f, ctx)).unzip
+        val typingResult = TypedObjectTypingResult(fieldsTyping.map(f => f.fieldName -> f.typingResult).toMap)
+        val expressionsTypingInfo = fieldsTyping.flatMap(_.toExpressionTypingInfoEntry).toMap
+        val (outContext, combinedCompiledFields) = withVariableCombined(ValidationContext(), name, typingResult, compiledFields.sequence)
+        toNodeCompilationResult(outContext, combinedCompiledFields, expressionsTypingInfo)
+
+      case graph.node.Processor(_, ref, _, _) =>
+        val (typingResult, validatedServiceRef) = compile(ref, ctx)
+        toNodeCompilationResult(ValidationContext(), validatedServiceRef, typingResult.expressionsTypingInfo)
+
+      case graph.node.Enricher(_, ref, outName, _) =>
+        val (typingResult, validatedServiceRef) = compile(ref, ctx)
+        val (outCtx, combinedValidatedServiceRef) = withVariableCombined(ValidationContext(), outName, typingResult.returnType, validatedServiceRef)
+        toNodeCompilationResult(outCtx, combinedValidatedServiceRef, typingResult.expressionsTypingInfo)
+    }
+  }
+
+  private def validate(data: EndingNodeData, ctx: ValidationContext)(implicit nodeId: NodeId): CompilationResult[Unit] = {
+    data match {
+      case graph.node.Sink(_, _, optionalExpression, _, _) =>
+        val (expressionTypingInfoEntry, validatedOptionalExpression) = optionalExpression.map { oe =>
+          val (expressionTyping, validatedExpression) = compile(oe, Some(DefaultExpressionId), ctx, Unknown)
+          (expressionTyping.toDefaultExpressionTypingInfoEntry, validatedExpression.map(expr => Some((expr, expressionTyping.typingResult))))
+        }.getOrElse {
+          (None, Valid(None))
+        }
+        toNodeCompilationResult(ValidationContext(), validatedOptionalExpression, expressionTypingInfoEntry.toMap)
+    }
+  }
+
+
+  private def toNodeCompilationResult[T](validationContext: ValidationContext, validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
+    CompilationResult(Map(PartSubGraphCompiler.DefaultNodeValidationId -> NodeTypingInfo(validationContext, expressionsTypingInfo)), validated).map(_ => ())
+
   protected def createServiceInvoker(obj: ObjectWithMethodDef) = ServiceInvoker(obj)
 
   /* TODO:
@@ -324,5 +377,7 @@ object PartSubGraphCompiler {
   }
 
   private case class ServiceTypingResult(returnType: TypingResult, expressionsTypingInfo: Map[String, ExpressionTypingInfo])
+
+  val DefaultNodeValidationId = "$"
 
 }

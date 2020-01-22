@@ -9,8 +9,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
+import pl.touk.nussknacker.engine.graph.NodeValidationContext
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, UiNodeContext}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
@@ -42,6 +43,18 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new ProcessValidation(
     validators.mapValues(_.withExpressionParsers(modify)), additionalFieldsConfig, subprocessResolver, customProcessNodesValidators)
+
+  def validateNode(ctx: UiNodeContext): ValidationResult = {
+    validators.get(ctx.processingType) match {
+      case None =>
+        ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(ctx.processingType)))
+      case Some(processValidator) =>
+        val validated = processValidator.validate(NodeValidationContext(ctx.nodeData, ctx.validationContext))
+        validated.result.fold(formatErrors, _ => ValidationResult.success)
+          .withTypes(validated.variablesInNodes)
+          .withTypingInfo(validated.expressionsInNodes)
+    }
+  }
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     validateWithTypingInfo(displayable).withClearedTypingInfo

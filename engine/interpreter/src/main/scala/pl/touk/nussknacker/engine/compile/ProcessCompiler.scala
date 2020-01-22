@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{Sink => _, Source => _, _}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
+import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam, NodeValidationContext}
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
@@ -64,6 +64,9 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
   override def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessCompiler =
     new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), definitions, objectParametersExpressionCompiler.withExpressionParsers(modify))
 
+  override def compile(nodeContext: NodeValidationContext): CompilationResult[Unit] = {
+    super.compile(nodeContext)
+  }
 }
 
 trait ProcessValidator extends LazyLogging {
@@ -85,6 +88,18 @@ trait ProcessValidator extends LazyLogging {
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessValidator
 
   protected def compile(process : EspProcess): CompilationResult[_]
+
+  def validate(nodeContext : NodeValidationContext): CompilationResult[Unit] = {
+    try {
+      compile(nodeContext)
+    } catch {
+      case NonFatal(e) =>
+        logger.warn(s"Unexpected error during compilation of node ${nodeContext.nodeData.id}", e)
+        CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
+    }
+  }
+
+  protected def compile(nodeValidationContext: NodeValidationContext) : CompilationResult[Unit]
 
 }
 
@@ -118,6 +133,21 @@ protected trait ProcessCompilerBase {
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
       compile(ProcessSplitter.split(process))
+    }
+  }
+
+  protected def compile(nodeContext: NodeValidationContext) : CompilationResult[Unit] = {
+    ThreadUtils.withThisAsContextClassLoader(classLoader) {
+      compileNode(nodeContext)
+    }
+  }
+
+  private def compileNode(nodeValidationContext: NodeValidationContext): CompilationResult[Unit] = {
+    nodeValidationContext.nodeData match {
+      case a: graph.node.Source =>
+        SourceNodeCompiler.compileNodeSource(a, ValidationContext(nodeValidationContext.context))
+      case default =>
+        sub.validate(nodeValidationContext.nodeData, ValidationContext(nodeValidationContext.context))
     }
   }
 
@@ -192,6 +222,12 @@ protected trait ProcessCompilerBase {
   }
 
   object SourceNodeCompiler {
+
+    def compileNodeSource(data: graph.node.Source, ctx: ValidationContext):  CompilationResult[Unit] = {
+      implicit val nodeId: NodeId = NodeId(data.id)
+      // TODO handle source node validation
+      sub.validate(data, ctx)
+    }
 
     def compileSourcePart(part: SourcePart, node: splittednode.SourceNode[StartingNodeData],
                           sourceData: SourceNodeData)

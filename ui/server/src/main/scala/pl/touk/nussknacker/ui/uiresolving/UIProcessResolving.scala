@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, UiNodeContext, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -46,6 +46,10 @@ class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingT
     val displayable = ProcessConverter.toDisplayable(substituted, processingType, businessView)
     val uiValidations = validation.uiValidation(displayable)
     new ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult).withClearedTypingInfo)
+  }
+
+  def validateNode(context: UiNodeContext): ValidationResult = {
+    validation.validateNode(context)
   }
 
 }
