@@ -280,9 +280,11 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def cancelProcess(id: process.ProcessId): Assertion =
     prepareCancel(id).map(_ => ()).futureValue shouldBe ()
 
-  def parseResponseToListJsonProcess(response: String): List[ProcessJson] = (for {
-      data <- parser.decode[List[Json]](response)
-    } yield data.map(item => ProcessJson(item))).right.get
+  def parseResponseToListJsonProcess(response: String): List[ProcessJson] =
+    parser.decode[List[Json]](response) match {
+      case Right(processes) => processes.map(json => ProcessJson(json))
+      case Left(error) => throw new RuntimeException(error.getMessage)
+    }
 
   //TODO: In future we should identify process by id..
   def findJsonProcess(response: String, processId: String = SampleProcess.process.id): Option[ProcessJson] =
