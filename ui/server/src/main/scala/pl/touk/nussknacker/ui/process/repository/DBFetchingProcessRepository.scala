@@ -173,7 +173,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       lastDeployedActionData = actions.headOption.find(_._1.isDeployed),
       isLatestVersion = isLatestVersion,
       tags = tags,
-      history = processVersions.map(ProcessRepository.toProcessVersion),
+      history = processVersions.map(ProcessRepository.toProcessVersion(_, actions.toList)),
       businessView = businessView
     )
   }

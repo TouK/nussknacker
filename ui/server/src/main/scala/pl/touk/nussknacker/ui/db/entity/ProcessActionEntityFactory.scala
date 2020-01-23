@@ -69,7 +69,7 @@ case class ProcessActionEntityData(processId: Long,
                                    commentId: Option[Long],
                                    buildInfo: Option[String]) {
 
-  lazy val deployedAtTime: LocalDateTime = DateUtils.toLocalDateTime(performedAt)
+  lazy val performedAtTime: LocalDateTime = DateUtils.toLocalDateTime(performedAt)
   lazy val isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
   lazy val isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
 }

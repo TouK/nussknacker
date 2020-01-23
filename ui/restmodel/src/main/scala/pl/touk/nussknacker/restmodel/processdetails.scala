@@ -114,7 +114,8 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                        processVersionId: Long,
                                        createDate: LocalDateTime,
                                        user: String,
-                                       modelVersion: Option[Int])
+                                       modelVersion: Option[Int],
+                                       actions: List[ProcessAction])
 
   @JsonCodec case class ProcessAction( //processId: Long, //TODO: support it when will support processId as Long / ProcessId
                                        processVersionId: Long,

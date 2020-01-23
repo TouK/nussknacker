@@ -92,16 +92,17 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
 object ProcessRepository {
 
-  def toProcessVersion(versionEntity: ProcessVersionEntityData): ProcessVersion = ProcessVersion(
-    processVersionId = versionEntity.id,
-    createDate = DateUtils.toLocalDateTime(versionEntity.createDate),
-    modelVersion = versionEntity.modelVersion,
-    user = versionEntity.user
+  def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[(ProcessActionEntityData, Option[CommentEntityData])]): ProcessVersion = ProcessVersion(
+    processVersionId = versionData.id,
+    createDate = DateUtils.toLocalDateTime(versionData.createDate),
+    modelVersion = versionData.modelVersion,
+    user = versionData.user,
+    actions = actions.map(toProcessAction)
   )
 
   def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
     processVersionId = actionData._1.processVersionId,
-    performedAt = actionData._1.deployedAtTime,
+    performedAt = actionData._1.performedAtTime,
     user = actionData._1.user,
     action = actionData._1.action,
     commentId = actionData._2.map(_.id),
