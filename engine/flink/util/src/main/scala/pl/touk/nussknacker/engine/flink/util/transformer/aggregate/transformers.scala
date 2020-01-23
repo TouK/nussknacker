@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.Duration
 
-//TODO: think aboud merging these with TransformStateFunction and/or PreviousValueFunction
+//TODO: think about merging these with TransformStateFunction and/or PreviousValueFunction
 object transformers {
 
   def slidingTransformer(keyBy: LazyParameter[String],

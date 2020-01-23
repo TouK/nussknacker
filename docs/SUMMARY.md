@@ -4,8 +4,9 @@
 * [Quickstart](Quickstart.md)
 * [UI Manual](UI.md)
 * [Designing processes](DesigningProcesses.md)
-  * [Subprocesses](Subprocesses.md)
-  * [Flink custom transformers](customTransformers/FlinkCustomTransformers.md)
+  * [Basic nodes](designingProcesses/BasicNodes.md)
+  * [Subprocesses](designingProcesses/Subprocesses.md)
+  * [Flink custom transformers](designingProcesses/FlinkCustomTransformers.md)
 * [Configuration](Configuration.md)
 * [Security](Security.md)
 

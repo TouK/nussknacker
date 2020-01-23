@@ -7,8 +7,8 @@ Features
 - list of editable and custom non-editable processes
 - search 
 - filter by category
-- process status indication - if it's running processes have green status indicator, 
-if process crashed there will be red status indicator
+- information about author and creation / modification dates
+- process status indication
 - edit action
 - link to process' metric dashboard 
 
@@ -16,17 +16,18 @@ if process crashed there will be red status indicator
 - list of editable and custom non-editable subprocesses
 - search 
 - filter by category
+- information about author and creation / modification dates
 - edit action
 
 #Process editing
 ##Left panel
-- creator panel - with all nodes available for chosen process category. Just drag & drop it to create process 
+- creator panel - with all nodes available for chosen process category 
 - versions - every saved version of process is persisted
 - comments
 - attachments
 
 ##Right panel
-- business view - enable to view simpler version of process without variable and enricher nodes
+- business view - enable simpler version of process without variable and enricher nodes
 
 ###Deployment
 - deploy - deploy process to runtime engine (e.g. Flink, Standalone)
@@ -40,15 +41,14 @@ if process crashed there will be red status indicator
 - import - import process from json file
 - JSON - export process to json file
 - PDF - export process graph to PDF with all process details
-- zoomIn/zoomOut
-- archive
+- archive - move the process to the archive
 
 ###Edit
 - undo/redo - undo/redo graph process actions
-- align - automatically layout the process
+- layout - automatically layout the process
 - properties - edit properties of the process
 - duplicate - duplicate node 
-- copy/cut/delete/paste - editing operations, they can work on sets of nodes
+- copy/cut/delete/paste - editing operations, they can work on sets of nodes, nodes can be copied between processes
 
 ###Test
 - from file - test process from file input
