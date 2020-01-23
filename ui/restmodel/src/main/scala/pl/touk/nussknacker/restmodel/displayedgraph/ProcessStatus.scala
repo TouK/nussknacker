@@ -49,18 +49,8 @@ object ProcessStatus {
       errorMessage
     )
 
-  def isStateAfterDeploy(processState: ProcessState): Boolean =
-    processState.status.isDuringDeploy || processState.status.isRunning || processState.status.isFinished
-
   def create(processState: ProcessState, lastAction: Option[ProcessDeploymentAction]): ProcessStatus = {
-    //TODO: Move this logic to another place.. This should be moved together with ManagementActor.handleObsoleteStatus
-    val versionMatchMessage = (processState.processVersionId, lastAction) match {
-      case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId => None
-      case (Some(stateVersion), Some(action)) if action.isDeployed && !isStateAfterDeploy(processState) => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), but currently not working")
-      case (Some(stateVersion), Some(action)) if action.isDeployed && stateVersion.versionId != action.processVersionId => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version ${action.processVersionId}")
-      case (Some(stateVersion), None) if processState.isDeployed => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed")
-      case _ => None
-    }
+    val mismatchMessage = deployedVersionMismatchMessage(processState, lastAction)
 
     ProcessStatus(
       deploymentId = Some(processState.deploymentId.value),
@@ -70,8 +60,23 @@ object ProcessStatus {
       tooltip = processState.tooltip,
       startTime = processState.startTime,
       attributes = processState.attributes,
-      errorMessage = List(versionMatchMessage, processState.errorMessage).flatten.reduceOption(_ + ", " + _)
+      errorMessage = List(mismatchMessage, processState.errorMessage).flatten.reduceOption(_ + ", " + _)
     )
+  }
+
+  private def isFollowingDeployAction(processState: ProcessState): Boolean =
+    processState.status.isDuringDeploy || processState.status.isRunning || processState.status.isFinished
+
+  //TODO: Move this logic to another place.. This should be moved together with ManagementActor.handleObsoleteStatus
+  private def deployedVersionMismatchMessage(processState: ProcessState, lastAction: Option[ProcessDeploymentAction]) = {
+    (processState.processVersionId, lastAction) match {
+      case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId => None
+      case (Some(stateVersion), Some(action)) if action.isDeployed && !isFollowingDeployAction(processState) => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), but currently not working")
+      case (Some(stateVersion), Some(action)) if action.isDeployed && stateVersion.versionId != action.processVersionId => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version ${action.processVersionId}")
+      case (Some(stateVersion), None) if processState.isDeployed => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed")
+      case (None, None) => None
+      case _ => None //We verify only deployed process
+    }
   }
 
   def canceled(processStateDefinitionManager: ProcessStateDefinitionManager): ProcessStatus =

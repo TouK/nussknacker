@@ -11,6 +11,7 @@ import io.circe.Json
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -54,6 +55,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   ignore("provie more information about excisting process" ) {
     fail()
   }
+
   ignore("not allow to archive still used subprocess") {
     val processWithSubreocess = ProcessTestData.validProcessWithSubprocess(processName)
     val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubreocess.subprocess, TestProcessingTypes.Streaming)
@@ -64,6 +66,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       responseAs[List[String]] shouldEqual List(processName) // returns list of porcesses using subprocess
     }
   }
+
   test("allow to archive subprocess used in archived process") {
     val processWithSubreocess = ProcessTestData.validProcessWithSubprocess(processName)
     val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubreocess.subprocess, TestProcessingTypes.Streaming)
@@ -76,6 +79,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
     }
   }
+
   test("or not allow to create new process named as archived one") {
     val process = ProcessTestData.validProcess
     saveProcess(processName, process)(succeed)
@@ -210,19 +214,19 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     Get(s"/processes?categories=$testCategoryName") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[Json]]
+      val data = responseAs[List[Json]]
       data.size shouldBe 1
     }
 
     Get(s"/processes?categories=$secondTestCategoryName") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[Json]]
+      val data = responseAs[List[Json]]
       data.size shouldBe 1
     }
 
     Get(s"/processes?categories=$secondTestCategoryName,$testCategoryName") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[Json]]
+      val data = responseAs[List[Json]]
       data.size shouldBe 2
     }
   }
@@ -233,27 +237,36 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     val thirdProcessor = ProcessName("Processor3")
 
     createProcess(firstProcessor, testCategoryName, false)
-    createProcess(secondProcessor, testCategoryName, false)
+    createDeployedCanceledProcess(secondProcessor, testCategoryName, false)
     createDeployedProcess(thirdProcessor, testCategoryName, false)
 
     Get(s"/processes") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[Json]]
+      val data = responseAs[List[Json]]
       data.size shouldBe 3
+
+      val process = findJsonProcess(responseAs[String], firstProcessor.value)
+      process.flatMap(_.stateStatus) shouldBe Some(SimpleStateStatus.NotDeployed.name)
     }
 
     Get(s"/processes?isDeployed=true") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[List[Json]].size shouldBe 1
+
       val process = findJsonProcess(responseAs[String], thirdProcessor.value)
-      process.flatMap(_.name) shouldBe Some(thirdProcessor.value)
+      process.map(_.name) shouldBe Some(thirdProcessor.value)
+      process.flatMap(_.stateStatus) shouldBe Some(SimpleStateStatus.Running.name)
     }
 
     Get(s"/processes?isDeployed=false") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[List[Json]].size shouldBe 2
+
       val process = findJsonProcess(responseAs[String], thirdProcessor.value)
-      process.flatMap(_.name) shouldBe Option.empty
+      process.map(_.name) shouldBe Option.empty
+
+      val canceledProcess = findJsonProcess(responseAs[String], secondProcessor.value)
+      canceledProcess.flatMap(_.stateStatus) shouldBe Some(SimpleStateStatus.Canceled.name)
     }
   }
 
@@ -316,7 +329,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       val resp = findJsonProcess(responseAs[String])
 
       withClue(resp) {
-        resp.count(_.name.exists(_ == SampleProcess.process.id)) shouldBe 1
+        resp.count(_.name.exists(_ === SampleProcess.process.id)) shouldBe 1
       }
     }
   }
@@ -498,7 +511,6 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
-
   }
 
   test("save new process with empty json") {

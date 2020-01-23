@@ -111,7 +111,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                   isDeployed,
                   categories,
                   processingTypes
-                ).map(_.map(enrichProcess)).toBasicProcess //TODO: Remove enrichProcess when we will support cache for state
+                ).map(_.map(enrichDetailsWithProcessState)).toBasicProcess //TODO: Remove enrichProcess when we will support cache for state
               }
             }
           }
@@ -384,9 +384,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     GraphProcess(ProcessMarshaller.toJson(emptyCanonical).noSpaces)
   }
 
-  //This is temporary function to enriching process status data
+  //This is temporary function to enriching process state data
   //TODO: Remove it when we will support cache for state
-  private def enrichProcess(process: BaseProcessDetails[_]): BaseProcessDetails[_] =
+  private def enrichDetailsWithProcessState(process: BaseProcessDetails[_]): BaseProcessDetails[_] =
     process.copy(state = processManager(process.processingType).map(m => ProcessStatus.create(
       m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action)),
       m.processStateDefinitionManager

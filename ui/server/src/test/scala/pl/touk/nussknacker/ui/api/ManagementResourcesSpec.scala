@@ -122,13 +122,13 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       getProcesses ~> check {
         val process = findJsonProcess(responseAs[String])
         process.flatMap(_.lastActionVersionId) shouldBe Some(2L)
-        process.flatMap(_.lastActionType) shouldBe Some(ProcessActionType.Deploy.toString)
+        process.exists(_.isDeployed) shouldBe true
 
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcesses ~> check {
             val reprocess = findJsonProcess(responseAs[String])
             reprocess.flatMap(_.lastActionVersionId) shouldBe Some(2L)
-            reprocess.flatMap(_.lastActionType) shouldBe Some(ProcessActionType.Cancel.toString)
+            reprocess.exists(_.isCanceled) shouldBe true
           }
         }
       }

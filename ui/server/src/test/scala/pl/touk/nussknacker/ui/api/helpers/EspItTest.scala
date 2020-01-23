@@ -12,7 +12,7 @@ import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
@@ -28,6 +28,7 @@ import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+
 import scala.concurrent.Future
 
 
@@ -248,9 +249,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def prepareCancel(id: process.ProcessId): Future[DeployedProcessInfoEntityData] =
     deploymentProcessRepository.markProcessAsCancelled(id, 1, env, Some("Cancel comment"))
 
-  def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId = {
+  def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue
-  }
 
   def createDeployedProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : process.ProcessId = {
     (for {
@@ -282,24 +282,32 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   def parseResponseToListJsonProcess(response: String): List[ProcessJson] = (for {
       data <- parser.decode[List[Json]](response).toTry
-    } yield data.map(ProcessJson)).get
+    } yield data.map(item => ProcessJson(item))).get
 
   //TODO: In future we should identify process by id..
   def findJsonProcess(response: String, processId: String = SampleProcess.process.id): Option[ProcessJson] =
     parseResponseToListJsonProcess(response)
-      .find(item => item.name.exists(_ === processId))
+      .find(item => item.name === processId)
 }
 
-case class ProcessJson(process: Json) {
-  def lastActionVersionId: Option[Long] =
-    process.hcursor.downField("lastAction").downField("processVersionId").as[Option[Long]].getOrElse(Option.empty)
+object ProcessJson{
+  def apply(process: Json): ProcessJson = {
+    new ProcessJson(
+      process.hcursor.downField("id").as[Long].right.get,
+      process.hcursor.downField("name").as[String].right.get,
+      process.hcursor.downField("lastAction").downField("processVersionId").as[Option[Long]].getOrElse(Option.empty),
+      process.hcursor.downField("lastAction").downField("action").as[Option[String]].getOrElse(Option.empty),
+      process.hcursor.downField("state").downField("status").downField("value").as[Option[String]].getOrElse(Option.empty)
+    )
+  }
+}
 
-  def lastActionType: Option[String] =
-    process.hcursor.downField("lastAction").downField("action").as[Option[String]].getOrElse(Option.empty)
+case class ProcessJson(id: Long,
+                       name: String,
+                       lastActionVersionId: Option[Long],
+                       lastActionType: Option[String],
+                       stateStatus: Option[String]) {
 
-  def name: Option[String] =
-    process.hcursor.downField("name").as[Option[String]].getOrElse(Option.empty)
-
-  def id: Option[String] =
-    process.hcursor.downField("id").as[Option[String]].getOrElse(Option.empty)
+  def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
+  def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)
 }
