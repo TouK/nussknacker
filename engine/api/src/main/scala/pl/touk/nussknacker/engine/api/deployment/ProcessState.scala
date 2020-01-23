@@ -78,6 +78,11 @@ sealed trait StateStatus {
   def name: String
 }
 
+trait StateStatusFollowingDeployAction {
+  def isFollowingDeployAction(stateStatus: StateStatus): Boolean =
+    stateStatus.isDuringDeploy || stateStatus.isRunning || stateStatus.isFinished
+}
+
 final class NotEstablishedStateStatus(val name: String) extends StateStatus
 
 final class StoppedStateStatus(val name: String) extends StateStatus {

@@ -281,8 +281,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     prepareCancel(id).map(_ => ()).futureValue shouldBe ()
 
   def parseResponseToListJsonProcess(response: String): List[ProcessJson] = (for {
-      data <- parser.decode[List[Json]](response).toTry
-    } yield data.map(item => ProcessJson(item))).get
+      data <- parser.decode[List[Json]](response)
+    } yield data.map(item => ProcessJson(item))).right.get
 
   //TODO: In future we should identify process by id..
   def findJsonProcess(response: String, processId: String = SampleProcess.process.id): Option[ProcessJson] =
@@ -292,12 +292,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
 object ProcessJson{
   def apply(process: Json): ProcessJson = {
+    val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].right.get
+    
     new ProcessJson(
       process.hcursor.downField("id").as[Long].right.get,
       process.hcursor.downField("name").as[String].right.get,
-      process.hcursor.downField("lastAction").downField("processVersionId").as[Option[Long]].getOrElse(Option.empty),
-      process.hcursor.downField("lastAction").downField("action").as[Option[String]].getOrElse(Option.empty),
-      process.hcursor.downField("state").downField("status").downField("value").as[Option[String]].getOrElse(Option.empty)
+      lastAction.map(_.hcursor.downField("processVersionId").as[Long].right.get),
+      lastAction.map(_.hcursor.downField("action").as[String].right.get),
+      process.hcursor.downField("state").downField("status").downField("value").as[Option[String]].right.get
     )
   }
 }

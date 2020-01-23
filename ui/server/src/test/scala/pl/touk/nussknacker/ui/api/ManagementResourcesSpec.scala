@@ -9,7 +9,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{ACursor, Json}
+import io.circe.{Json}
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
@@ -121,14 +121,14 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       status shouldBe StatusCodes.OK
       getProcesses ~> check {
         val process = findJsonProcess(responseAs[String])
-        process.flatMap(_.lastActionVersionId) shouldBe Some(2L)
-        process.exists(_.isDeployed) shouldBe true
+        process.value.lastActionVersionId shouldBe Some(2L)
+        process.value.isDeployed shouldBe true
 
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcesses ~> check {
             val reprocess = findJsonProcess(responseAs[String])
-            reprocess.flatMap(_.lastActionVersionId) shouldBe Some(2L)
-            reprocess.exists(_.isCanceled) shouldBe true
+            reprocess.value.lastActionVersionId shouldBe Some(2L)
+            reprocess.value.isCanceled shouldBe true
           }
         }
       }

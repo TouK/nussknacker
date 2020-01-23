@@ -246,7 +246,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       data.size shouldBe 3
 
       val process = findJsonProcess(responseAs[String], firstProcessor.value)
-      process.flatMap(_.stateStatus) shouldBe Some(SimpleStateStatus.NotDeployed.name)
+      process.value.stateStatus shouldBe Some(SimpleStateStatus.NotDeployed.name)
     }
 
     Get(s"/processes?isDeployed=true") ~> routeWithAllPermissions ~> check {
@@ -254,19 +254,18 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       responseAs[List[Json]].size shouldBe 1
 
       val process = findJsonProcess(responseAs[String], thirdProcessor.value)
-      process.map(_.name) shouldBe Some(thirdProcessor.value)
-      process.flatMap(_.stateStatus) shouldBe Some(SimpleStateStatus.Running.name)
+      process.value.name shouldBe thirdProcessor.value
+      process.value.stateStatus shouldBe Some(SimpleStateStatus.Running.name)
     }
 
     Get(s"/processes?isDeployed=false") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[List[Json]].size shouldBe 2
 
-      val process = findJsonProcess(responseAs[String], thirdProcessor.value)
-      process.map(_.name) shouldBe Option.empty
+      findJsonProcess(responseAs[String], thirdProcessor.value) shouldBe Option.empty
 
       val canceledProcess = findJsonProcess(responseAs[String], secondProcessor.value)
-      canceledProcess.flatMap(_.stateStatus) shouldBe Some(SimpleStateStatus.Canceled.name)
+      canceledProcess.value.stateStatus shouldBe Some(SimpleStateStatus.Canceled.name)
     }
   }
 
@@ -326,10 +325,10 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     Get("/processes") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val resp = findJsonProcess(responseAs[String])
+      val process = findJsonProcess(responseAs[String])
 
-      withClue(resp) {
-        resp.count(_.name.exists(_ === SampleProcess.process.id)) shouldBe 1
+      withClue(process) {
+        process.isDefined shouldBe true
       }
     }
   }
