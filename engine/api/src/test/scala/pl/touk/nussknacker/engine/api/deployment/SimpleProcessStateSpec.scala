@@ -12,18 +12,18 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
   it ("process state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)
     state.status.isDuringDeploy shouldBe true
-    state.allowedActions shouldBe List(StateAction.Cancel)
+    state.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
   it ("process state should be running") {
     val state = createProcessState(SimpleStateStatus.Running)
     state.status.isRunning shouldBe true
-    state.allowedActions shouldBe List(StateAction.Cancel, StateAction.Pause)
+    state.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Pause)
   }
 
   it ("process state should be finished") {
     val state = createProcessState(SimpleStateStatus.Finished)
     state.status.isFinished shouldBe true
-    state.allowedActions shouldBe List(StateAction.Deploy)
+    state.allowedActions shouldBe List(ProcessActionType.Deploy)
   }
 }

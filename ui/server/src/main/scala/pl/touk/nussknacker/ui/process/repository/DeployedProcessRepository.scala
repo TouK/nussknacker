@@ -6,8 +6,8 @@ import java.time.LocalDateTime
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, DeployedProcessInfoEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
@@ -32,16 +32,16 @@ class DeployedProcessRepository(val dbConfig: DbConfig,
   def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType,
                             environment: String, comment: Option[String])
                            (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessInfoEntityData]
-  = action(processId, processVersion, environment, comment.map("Deployment: " + _), DeploymentAction.Deploy,
+  = action(processId, processVersion, environment, comment.map("Deployment: " + _), ProcessActionType.Deploy,
     buildInfos.get(processingType).map(BuildInfo.writeAsJson))
 
 
   def markProcessAsCancelled(processId: ProcessId, processVersion: Long, environment: String, comment: Option[String])
                             (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessInfoEntityData]
-  = action(processId, processVersion, environment, comment.map("Stop: " + _), DeploymentAction.Cancel, None)
+  = action(processId, processVersion, environment, comment.map("Stop: " + _), ProcessActionType.Cancel, None)
 
   private def action(processId: ProcessId, processVersion: Long, environment: String,
-                     comment: Option[String], action: DeploymentAction.Value, buildInfo: Option[String])
+                     comment: Option[String], action: ProcessActionType.Value, buildInfo: Option[String])
                     (implicit ec: ExecutionContext, user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
     val actionToRun = for {
       commentId <- withComment(processId, processVersion, comment)

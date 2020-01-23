@@ -152,7 +152,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
           processAuthorizer = processAuthorizer,
-          processChangeListener = processChangeListener
+          processChangeListener = processChangeListener,
+          typeToConfig = typeToConfig
         ),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository),

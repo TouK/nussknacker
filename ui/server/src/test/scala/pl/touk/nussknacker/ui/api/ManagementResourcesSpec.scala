@@ -9,11 +9,11 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
+import io.circe.{ACursor, Json}
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
-import pl.touk.nussknacker.engine.api.deployment.CustomProcess
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -35,7 +35,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeploymentAction]] =
     BeMatcher(equal(
-        Option(ProcessDeploymentAction(versionId, "test", fixedTime, user().username, DeploymentAction.Deploy, buildInfo))
+        Option(ProcessDeploymentAction(versionId, "test", fixedTime, user().username, ProcessActionType.Deploy, buildInfo))
       ).matcher[Option[ProcessDeploymentAction]]
     ).compose[Option[ProcessDeploymentAction]](_.map(_.copy(deployedAt = fixedTime)))
 
@@ -70,8 +70,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             val deploymentHistory = responseAs[List[DeploymentHistoryEntry]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
-              DeploymentHistoryEntry(2, curTime, user().username, DeploymentAction.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
-              DeploymentHistoryEntry(2, curTime, user().username, DeploymentAction.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
+              DeploymentHistoryEntry(2, curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
+              DeploymentHistoryEntry(2, curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
             )
           }
         }
@@ -120,11 +120,15 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getProcesses ~> check {
-        decodeDetailsFromAll.lastAction shouldBe deployedWithVersions(2)
+        val process = findJsonProcess(responseAs[String])
+        process.flatMap(_.lastActionVersionId) shouldBe Some(2L)
+        process.flatMap(_.lastActionType) shouldBe Some(ProcessActionType.Deploy.toString)
+
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcesses ~> check {
-            decodeDetailsFromAll.lastAction should not be None
-            decodeDetailsFromAll.isCanceled shouldBe true
+            val reprocess = findJsonProcess(responseAs[String])
+            reprocess.flatMap(_.lastActionVersionId) shouldBe Some(2L)
+            reprocess.flatMap(_.lastActionType) shouldBe Some(ProcessActionType.Cancel.toString)
           }
         }
       }
@@ -220,6 +224,4 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   def decodeDetails: ProcessDetails = responseAs[ProcessDetails]
-
-  def decodeDetailsFromAll: BasicProcess = responseAs[List[BasicProcess]].find(_.name.value == SampleProcess.process.id).get
 }

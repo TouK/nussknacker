@@ -9,7 +9,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.{EitherT, Validated}
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -21,6 +21,7 @@ import EspErrorToHttp._
 import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process._
@@ -52,7 +53,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer,
                          val processAuthorizer:AuthorizeProcess,
-                         processChangeListener: ProcessChangeListener)
+                         processChangeListener: ProcessChangeListener,
+                         typeToConfig: Map[String, ProcessingTypeData])
                         (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -109,7 +111,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                   isDeployed,
                   categories,
                   processingTypes
-                ).toBasicProcess
+                ).map(_.map(enrichProcess)).toBasicProcess //TODO: Remove enrichProcess when we will support cache for state
               }
             }
           }
@@ -382,6 +384,17 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     GraphProcess(ProcessMarshaller.toJson(emptyCanonical).noSpaces)
   }
 
+  //This is temporary function to enriching process status data
+  //TODO: Remove it when we will support cache for state
+  private def enrichProcess(process: BaseProcessDetails[_]): BaseProcessDetails[_] =
+    process.copy(state = processManager(process.processingType).map(m => ProcessStatus.create(
+      m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action)),
+      m.processStateDefinitionManager
+    )))
+
+  private def processManager(processingType: ProcessingType): Option[ProcessManager] =
+    typeToConfig.get(processingType).map(_.processManager)
+
   private def withJson(processId: ProcessId, version: Long, businessView: Boolean)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
   = processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version, businessView).map { maybeProcess =>
@@ -417,5 +430,4 @@ object ProcessesResources {
   case class ProcessNotInitializedError(id: String) extends Exception(s"Process $id is not initialized") with NotFoundError
 
   case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside process $processId") with NotFoundError
-
 }

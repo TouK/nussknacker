@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.management
 
 import java.net.URI
 
-import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, StateAction, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, ProcessActionType, StateStatus}
 
 object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager  {
-  val statusActionsMap: Map[StateStatus, List[StateAction]] = Map(
-    FlinkStateStatus.Restarting -> List(StateAction.Cancel)
+  val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
+    FlinkStateStatus.Restarting -> List(ProcessActionType.Cancel)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
@@ -25,6 +25,9 @@ object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
     statusIconsMap.get(stateStatus).map(URI.create).orElse(SimpleProcessStateDefinitionManager.statusIcon(stateStatus))
 
-  override def statusActions(stateStatus: StateStatus): List[StateAction] =
+  override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsMap.getOrElse(stateStatus, SimpleProcessStateDefinitionManager.statusActions(stateStatus))
+
+  override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
+    SimpleProcessStateDefinitionManager.mapActionToStatus(stateAction)
 }

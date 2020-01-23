@@ -251,5 +251,5 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   }
 
   private def processVersion(processId: ProcessName): Option[ProcessVersion] =
-    processManager.findJobStatus(processId).futureValue.flatMap(_.version)
+    processManager.findJobStatus(processId).futureValue.flatMap(_.processVersionId)
 }

@@ -1,26 +1,29 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import java.net.URI
+
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 trait ProcessStateDefinitionManager {
-  def statusActions(stateStatus: StateStatus): List[StateAction]
+  def statusActions(stateStatus: StateStatus): List[ProcessActionType]
   def statusTooltip(stateStatus: StateStatus): Option[String]
   def statusIcon(stateStatus: StateStatus): Option[URI]
+  def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus
 }
 
 object ProcessState {
   import io.circe.syntax._
 
   implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getName, st.name).asJson)
-  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeNone.map(_ => null) //TODO: Add decode implementation by clazz and value. At now we don't need it.
+  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeNone.map(st => SimpleStateStatus.Unknown) //TODO: Add decode implementation by clazz and value. At now we don't need it.
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
-  def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], allowedActions: List[StateAction]): ProcessState =
+  def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], allowedActions: List[ProcessActionType]): ProcessState =
     ProcessState(DeploymentId(deploymentId), status, version, allowedActions)
 
   def apply(deploymentId: DeploymentId,
@@ -47,8 +50,8 @@ object ProcessState {
 
 @JsonCodec case class ProcessState(deploymentId: DeploymentId,
                                    status: StateStatus,
-                                   version: Option[ProcessVersion] = Option.empty,
-                                   allowedActions: List[StateAction] = List.empty,
+                                   processVersionId: Option[ProcessVersion] = Option.empty,
+                                   allowedActions: List[ProcessActionType] = List.empty,
                                    icon: Option[URI] = Option.empty,
                                    tooltip: Option[String] = Option.empty,
                                    startTime: Option[Long] = Option.empty,
@@ -57,11 +60,11 @@ object ProcessState {
   def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
 }
 
-object StateAction extends Enumeration {
-  implicit val typeEncoder: Encoder[StateAction.Value] = Encoder.enumEncoder(StateAction)
-  implicit val typeDecoder: Decoder[StateAction.Value] = Decoder.enumDecoder(StateAction)
+object ProcessActionType extends Enumeration {
+  implicit val typeEncoder: Encoder[ProcessActionType.Value] = Encoder.enumEncoder(ProcessActionType)
+  implicit val typeDecoder: Decoder[ProcessActionType.Value] = Decoder.enumDecoder(ProcessActionType)
 
-  type StateAction = Value
+  type ProcessActionType = Value
   val Deploy: Value = Value("DEPLOY")
   val Cancel: Value = Value("CANCEL")
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..

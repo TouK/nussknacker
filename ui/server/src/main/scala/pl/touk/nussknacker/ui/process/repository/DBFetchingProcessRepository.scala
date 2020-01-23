@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.time.LocalDateTime
-
 import cats.Monad
 import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging

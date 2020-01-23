@@ -6,26 +6,36 @@ type MetricsType = {
   processingTypeToDashboard: {};
 }
 
-type FeaturesType = {
+type FeaturesSettings = {
   counts: boolean;
   attachments: boolean;
   signals: boolean;
   search: { url: string };
   metrics: MetricsType;
-  remoteEnvironment: { targetEnvironmentId: "development" | string };
+  remoteEnvironment: { targetEnvironmentId: string };
   environmentAlert: { content: string; cssClass: string };
   commentSettings: { matchExpression: string; link: string };
   intervalTimeSettings: { processes: number; healthCheck: number };
   deploySettings: $TodoType;
 }
 
+type AuthenticationSettings = {
+  backend: string;
+  authorizeUrl?: URL;
+}
+
+type EngineData = {
+  actionTooltips: Record<string, string>;
+  actionMessages: Record<string, string>;
+  actionNames: Record<string, string>;
+  actionIcons: Record<string, URL>;
+}
+
 type SettingsData = {
-  features: FeaturesType;
-  authentication: {
-    backend: string;
-    authorizeUrl: string;
-  };
-  analytics: $TodoType;
+  features: FeaturesSettings;
+  authentication: AuthenticationSettings;
+  engines: Record<string, EngineData>;
+  analytics?: $TodoType;
 }
 
 export type UiSettingsAction = {

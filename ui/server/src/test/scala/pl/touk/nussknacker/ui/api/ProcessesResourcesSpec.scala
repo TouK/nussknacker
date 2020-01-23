@@ -7,6 +7,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Json
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -203,25 +204,25 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     Get(s"/processes") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data = responseAs[List[BasicProcess]]
+      val data = responseAs[List[Json]]
       data.size shouldBe 2
     }
 
     Get(s"/processes?categories=$testCategoryName") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[BasicProcess]]
+      val data =responseAs[List[Json]]
       data.size shouldBe 1
     }
 
     Get(s"/processes?categories=$secondTestCategoryName") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[BasicProcess]]
+      val data =responseAs[List[Json]]
       data.size shouldBe 1
     }
 
     Get(s"/processes?categories=$secondTestCategoryName,$testCategoryName") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[BasicProcess]]
+      val data =responseAs[List[Json]]
       data.size shouldBe 2
     }
   }
@@ -237,22 +238,22 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     Get(s"/processes") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[BasicProcess]]
+      val data =responseAs[List[Json]]
       data.size shouldBe 3
     }
 
     Get(s"/processes?isDeployed=true") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[BasicProcess]]
-      data.map{proc => proc.name}.contains(thirdProcessor) shouldBe true
-      data.size shouldBe 1
+      responseAs[List[Json]].size shouldBe 1
+      val process = findJsonProcess(responseAs[String], thirdProcessor.value)
+      process.flatMap(_.name) shouldBe Some(thirdProcessor.value)
     }
 
     Get(s"/processes?isDeployed=false") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val data =responseAs[List[BasicProcess]]
-      data.map{proc => proc.name}.contains(thirdProcessor) shouldBe false
-      data.size shouldBe 2
+      responseAs[List[Json]].size shouldBe 2
+      val process = findJsonProcess(responseAs[String], thirdProcessor.value)
+      process.flatMap(_.name) shouldBe Option.empty
     }
   }
 
@@ -305,15 +306,17 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
+
     updateProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
     }
 
     Get("/processes") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val resp =responseAs[List[BasicProcess]]
+      val resp = findJsonProcess(responseAs[String])
+
       withClue(resp) {
-        resp.count(_.name.value == SampleProcess.process.id) shouldBe 1
+        resp.count(_.name.exists(_ == SampleProcess.process.id)) shouldBe 1
       }
     }
   }

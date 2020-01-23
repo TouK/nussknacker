@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeploymentAction}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{DeployedProcessInfoEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
@@ -89,7 +90,7 @@ class ManagementActor(environment: String,
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state)
-      } yield handleObsoleteStatus(state, actions.headOption)
+      } yield handleObsoleteStatus(state, manager.processStateDefinitionManager, actions.headOption)
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
@@ -119,10 +120,10 @@ class ManagementActor(environment: String,
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessDeploymentAction]): Option[ProcessStatus] =
+  private def handleObsoleteStatus(processState: Option[ProcessState], processStateDefinitionManager: ProcessStateDefinitionManager, lastAction: Option[ProcessDeploymentAction]): Option[ProcessStatus] =
     (processState, lastAction) match {
-      case (Some(state), _)  => Option(ProcessStatus.create(state, lastAction.map(_.processVersionId)))
-      case (None, Some(action)) if action.isCanceled => Option(ProcessStatus.canceled)
+      case (Some(state), _)  => Option(ProcessStatus.create(state, lastAction))
+      case (None, Some(action)) if action.isCanceled => Option(ProcessStatus.canceled(processStateDefinitionManager))
       case _ => Option.empty
     }
 
@@ -253,8 +254,7 @@ case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
 case class Test[T](id: ProcessIdWithName, processJson: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
-import pl.touk.nussknacker.restmodel.processdetails.{ DeploymentAction => Action }
-case class DeploymentDetails(version: Long, comment: Option[String], deployedAt: LocalDateTime, action: Action.Value)
+case class DeploymentDetails(version: Long, comment: Option[String], deployedAt: LocalDateTime, action: ProcessActionType)
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 
 case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)

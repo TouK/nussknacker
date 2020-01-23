@@ -8,7 +8,7 @@ import ProcessUtils from "../common/ProcessUtils"
 import AddProcessDialog from "../components/AddProcessDialog.js"
 import Date from "../components/common/Date"
 import HealthCheck from "../components/HealthCheck.js"
-import ListState from "../components/Process/ListState"
+import ListState from "../components/Process/State/ListState"
 import LoaderSpinner from "../components/Spinner.js"
 import AddProcessButton from "../components/table/AddProcessButton"
 import SearchFilter from "../components/table/SearchFilter"
@@ -161,7 +161,7 @@ export class Processes extends BaseProcesses {
                 <Td column="status" className="status-column">
                   <ListState
                     process={process}
-                    state={this.getProcessState(process)}
+                    processState={this.getProcessState(process)}
                     isStateLoaded={this.state.statusesLoaded}
                   />
                 </Td>

@@ -15,7 +15,7 @@ object SimpleProcessState {
     ProcessState(
       deploymentId = deploymentId,
       status = status,
-      version = version,
+      processVersionId = version,
       allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
       icon = SimpleProcessStateDefinitionManager.statusIcon(status),
       tooltip = SimpleProcessStateDefinitionManager.statusTooltip(status),
