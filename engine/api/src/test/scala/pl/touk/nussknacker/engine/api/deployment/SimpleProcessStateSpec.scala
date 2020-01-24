@@ -4,8 +4,11 @@ import org.scalatest.{FunSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 
 import scala.collection.immutable.List
+import io.circe.parser
 
 class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
+  import ProcessState._
+
   def createProcessState(stateStatus: StateStatus): ProcessState =
     SimpleProcessState(DeploymentId("12"), stateStatus)
 
@@ -25,5 +28,39 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
     val state = createProcessState(SimpleStateStatus.Finished)
     state.status.isFinished shouldBe true
     state.allowedActions shouldBe List(ProcessActionType.Deploy)
+  }
+
+  it ("should properly decode StateStatus") {
+    val json = s"""
+      {
+        "clazz": "${SimpleStateStatus.Canceled.getClass.getCanonicalName}",
+        "value": "${SimpleStateStatus.Canceled.name}"
+      }
+    """
+
+    val decodedStatus = parser.decode[StateStatus](json) match {
+      case Right(status) => status
+      case Left(error) => throw error
+    }
+
+    decodedStatus.getClass shouldBe SimpleStateStatus.Canceled.getClass
+    decodedStatus.name shouldBe SimpleStateStatus.Canceled.name
+  }
+
+  it ("StateStatus class is undefined then should be decode Unknown type") {
+    val json = s"""
+      {
+        "clazz": "testClass",
+        "value": "${SimpleStateStatus.Canceled.name}"
+      }
+    """
+
+    val decodedStatus = parser.decode[StateStatus](json) match {
+      case Right(status) => status
+      case Left(error) => throw error
+    }
+
+    decodedStatus.getClass shouldBe SimpleStateStatus.Unknown.getClass
+    decodedStatus.name shouldBe SimpleStateStatus.Unknown.name
   }
 }

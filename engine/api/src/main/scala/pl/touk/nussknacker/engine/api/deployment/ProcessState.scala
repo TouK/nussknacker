@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.api.deployment
-
 import java.net.URI
 
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessState.StateStatusCodec
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+
+import scala.util.{Failure, Success}
 
 trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
@@ -18,8 +20,14 @@ trait ProcessStateDefinitionManager {
 object ProcessState {
   import io.circe.syntax._
 
-  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getName, st.name).asJson)
-  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeNone.map(st => SimpleStateStatus.Unknown) //TODO: Add decode implementation by clazz and value. At now we don't need it.
+  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getCanonicalName, st.name).asJson)
+  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeJson
+    .map(json => json.as[StateStatusCodec].toTry)
+    .map {
+      case Success(codec) => StateStatus.codecToStateStatus(codec)
+      case Failure(exception) => throw exception
+    }
+
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
@@ -70,12 +78,30 @@ object ProcessActionType extends Enumeration {
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 }
 
+
 sealed trait StateStatus {
   def isDuringDeploy: Boolean = false
   def isFinished: Boolean = false
   def isRunning: Boolean = false
   def canDeploy: Boolean = false
   def name: String
+}
+
+object StateStatus {
+  //This field keeps all available statuses. Remember!! If you want add new status class you have to add it also here!
+  val availableStatusClasses = List(
+    classOf[NotEstablishedStateStatus],
+    classOf[StoppedStateStatus],
+    classOf[DuringDeployStateStatus],
+    classOf[FinishedStateStatus],
+    classOf[RunningStateStatus]
+  )
+  
+  def codecToStateStatus(codec: StateStatusCodec): StateStatus =
+    availableStatusClasses
+      .find(_.getCanonicalName == codec.clazz)
+      .map(_.getConstructor(classOf[String]).newInstance(codec.value))
+      .getOrElse(SimpleStateStatus.Unknown)
 }
 
 trait StateStatusFollowingDeployAction {
