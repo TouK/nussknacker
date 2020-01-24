@@ -152,6 +152,8 @@ val scalaCompatV = "0.8.0"
 val ficusV = "1.4.1"
 val configV = "1.3.0"
 val commonsLangV = "3.3.2"
+//we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
+//In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
 
 val akkaHttpV = "10.1.8"

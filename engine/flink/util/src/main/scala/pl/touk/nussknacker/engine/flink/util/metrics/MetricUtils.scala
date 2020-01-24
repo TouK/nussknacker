@@ -7,8 +7,18 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.metrics.{Counter, Gauge, Histogram, Meter, MetricGroup}
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 
+//Configure this as Service to use new reporting for Flink
+//this is a bit weird way, but it's temporary and passing configuration would be cumbersome
 trait UseNewMetrics
 
+/*
+  IMPORTANT: PLEASE keep Metrics.md up to date
+
+  Handling Flink metrics is a bit tricky. For long time we parsed tags directly in Influx, via graphite plugin
+  This is complex and error prone, so we'd like to switch to passing flink metric variables as tags via native influx API
+  Unfortunately, current Flink Influx report doesn't allow for elastic configuration, so for now
+  we translate by default to `old` way in groupsWithNameForLegacyMode
+ */
 class MetricUtils(runtimeContext: RuntimeContext) {
 
   def counter(nameParts: NonEmptyList[String], tags: Map[String, String]): Counter = {
@@ -59,7 +69,6 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     def insertTag(tagId: String)(nameParts: NonEmptyList[String]): (MetricGroup, String)
       = tagMode(NonEmptyList(nameParts.head, tags(tagId)::nameParts.tail), Map.empty)
     val insertNodeId = insertTag("nodeId") _
-    val insertServiceName = insertTag("serviceName") _
 
     nameParts match {
 
