@@ -176,7 +176,7 @@ class ManagementActor(environment: String,
 
   private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[Long]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-    lastAction = process.flatMap(_.lastAction)
+    lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(_.processVersionId)
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])

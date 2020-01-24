@@ -9,7 +9,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDeploymentProcessRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDeploymentProcessRepository, newProcessRepository, newWriteProcessRepository, newProcessActivityRepository, testCategoryName}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.JobStatusService
@@ -30,6 +30,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   private val processRepository = newProcessRepository(db)
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val deploymentProcessRepository = newDeploymentProcessRepository(db)
+  private val activityRepository = newProcessActivityRepository(db)
+
   private val managementActor = system.actorOf(
       ManagementActor.props(
         env,
@@ -63,13 +65,20 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     processManager.withProcessFinished {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(false)
+      //we simulate what happens when retrieveStatus is called mulitple times to check only one comment is added
+      (1 to 5).foreach { _ =>
+        jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(false)
+      }
     }
 
     val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.lastAction should not be None
     processDetails.isCanceled shouldBe true
+    processDetails.lastDeployedAction should be (None)
+    //one for deploy, one for cancel
+    activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
   }
+
 
   test("Should return canceled status for canceled process with not founded state - cleaned state") {
     val id: process.ProcessId = prepareCanceledProcess(processName).futureValue
