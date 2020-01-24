@@ -8,8 +8,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.ProcessState.StateStatusCodec
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
-import scala.util.{Failure, Success}
-
 trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
   def statusTooltip(stateStatus: StateStatus): Option[String]
@@ -20,13 +18,14 @@ trait ProcessStateDefinitionManager {
 object ProcessState {
   import io.circe.syntax._
 
-  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getCanonicalName, st.name).asJson)
+  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getSimpleName, st.name).asJson)
   implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeJson
-    .map(json => json.as[StateStatusCodec].toTry)
-    .map {
-      case Success(codec) => StateStatus.codecToStateStatus(codec)
-      case Failure(exception) => throw exception
+    .map(json => json.as[StateStatusCodec])
+    .map{
+      case Right(codec) => codec
+      case Left(exception) => throw exception
     }
+    .map(StateStatus.codecToStateStatus)
 
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
@@ -78,7 +77,6 @@ object ProcessActionType extends Enumeration {
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 }
 
-
 sealed trait StateStatus {
   def isDuringDeploy: Boolean = false
   def isFinished: Boolean = false
@@ -89,17 +87,19 @@ sealed trait StateStatus {
 
 object StateStatus {
   //This field keeps all available statuses. Remember!! If you want add new status class you have to add it also here!
-  val availableStatusClasses = List(
+  val availableStatusClasses: Map[String, Class[_ <: StateStatus]] = List(
     classOf[NotEstablishedStateStatus],
     classOf[StoppedStateStatus],
     classOf[DuringDeployStateStatus],
     classOf[FinishedStateStatus],
     classOf[RunningStateStatus]
   )
+    .map(clz => clz.getSimpleName -> clz)
+    .toMap[String, Class[_ <: StateStatus]]
   
   def codecToStateStatus(codec: StateStatusCodec): StateStatus =
     availableStatusClasses
-      .find(_.getCanonicalName == codec.clazz)
+      .get(codec.clazz)
       .map(_.getConstructor(classOf[String]).newInstance(codec.value))
       .getOrElse(SimpleStateStatus.Unknown)
 }

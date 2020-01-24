@@ -33,7 +33,7 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
   it ("should properly decode StateStatus") {
     val json = s"""
       {
-        "clazz": "${SimpleStateStatus.Canceled.getClass.getCanonicalName}",
+        "clazz": "${SimpleStateStatus.Canceled.getClass.getSimpleName}",
         "value": "${SimpleStateStatus.Canceled.name}"
       }
     """
@@ -43,7 +43,7 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
       case Left(error) => throw error
     }
 
-    decodedStatus.getClass shouldBe SimpleStateStatus.Canceled.getClass
+    decodedStatus.getClass.getSimpleName shouldBe SimpleStateStatus.Canceled.getClass.getSimpleName
     decodedStatus.name shouldBe SimpleStateStatus.Canceled.name
   }
 
@@ -60,7 +60,7 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
       case Left(error) => throw error
     }
 
-    decodedStatus.getClass shouldBe SimpleStateStatus.Unknown.getClass
+    decodedStatus.getClass.getSimpleName shouldBe SimpleStateStatus.Unknown.getClass.getSimpleName
     decodedStatus.name shouldBe SimpleStateStatus.Unknown.name
   }
 }
