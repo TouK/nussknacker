@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import org.scalatest.{FunSpec, Inside, Matchers}
+import io.circe.parser.decode
+import org.scalatest.{EitherValues, FunSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-
 import scala.collection.immutable.List
-import io.circe.parser
 
-class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
+class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with EitherValues {
   import ProcessState._
 
   def createProcessState(stateStatus: StateStatus): ProcessState =
@@ -38,16 +37,14 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
       }
     """
 
-    val decodedStatus = parser.decode[StateStatus](json) match {
-      case Right(status) => status
-      case Left(error) => throw error
-    }
+    val decodedStatus = decode[StateStatus](json)
 
-    decodedStatus.getClass.getSimpleName shouldBe SimpleStateStatus.Canceled.getClass.getSimpleName
-    decodedStatus.name shouldBe SimpleStateStatus.Canceled.name
+    decodedStatus.isRight shouldBe true
+    decodedStatus.right.value.getClass.getSimpleName shouldBe SimpleStateStatus.Canceled.getClass.getSimpleName
+    decodedStatus.right.value.name shouldBe SimpleStateStatus.Canceled.name
   }
 
-  it ("StateStatus class is undefined then should be decode Unknown type") {
+  it ("should decode Unknown type for undefined not known clazz name") {
     val json = s"""
       {
         "clazz": "testClass",
@@ -55,12 +52,19 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
       }
     """
 
-    val decodedStatus = parser.decode[StateStatus](json) match {
-      case Right(status) => status
-      case Left(error) => throw error
-    }
-
-    decodedStatus.getClass.getSimpleName shouldBe SimpleStateStatus.Unknown.getClass.getSimpleName
-    decodedStatus.name shouldBe SimpleStateStatus.Unknown.name
+    val decodedStatus = decode[StateStatus](json)
+    decodedStatus.isRight shouldBe false
   }
+
+  it ("shouldn't parse wrong json structure") {
+    val json = s"""
+      {
+        "clazzez": "testClass",
+        "value": "${SimpleStateStatus.Canceled.name}"
+      }
+    """
+
+    val decodedStatus = decode[StateStatusCodec](json)
+    decodedStatus.isRight shouldBe false
+   }
 }

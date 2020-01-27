@@ -2,11 +2,10 @@ package pl.touk.nussknacker.engine.api.deployment
 import java.net.URI
 
 import io.circe.generic.JsonCodec
-import io.circe.{Decoder, Encoder, Json}
+import io.circe._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessState.StateStatusCodec
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
@@ -16,17 +15,6 @@ trait ProcessStateDefinitionManager {
 }
 
 object ProcessState {
-  import io.circe.syntax._
-
-  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getSimpleName, st.name).asJson)
-  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeJson
-    .map(json => json.as[StateStatusCodec])
-    .map{
-      case Right(codec) => codec
-      case Left(exception) => throw exception
-    }
-    .map(StateStatus.codecToStateStatus)
-
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
@@ -86,6 +74,11 @@ sealed trait StateStatus {
 }
 
 object StateStatus {
+  import io.circe.syntax._
+
+  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getSimpleName, st.name).asJson)
+  implicit val statusDecoder: Decoder[StateStatus] = (c: HCursor) => cursorToFailureOrStatus(c)
+
   //This field keeps all available statuses. Remember!! If you want add new status class you have to add it also here!
   val availableStatusClasses: Map[String, Class[_ <: StateStatus]] = List(
     classOf[NotEstablishedStateStatus],
@@ -96,12 +89,22 @@ object StateStatus {
   )
     .map(clz => clz.getSimpleName -> clz)
     .toMap[String, Class[_ <: StateStatus]]
-  
-  def codecToStateStatus(codec: StateStatusCodec): StateStatus =
-    availableStatusClasses
-      .get(codec.clazz)
-      .map(_.getConstructor(classOf[String]).newInstance(codec.value))
-      .getOrElse(SimpleStateStatus.Unknown)
+
+  private def cursorToFailureOrStatus(cursor: HCursor): Either[DecodingFailure, StateStatus] = {
+    cursor.as[StateStatusCodec] match {
+      case Left(failure) => Left(failure)
+      case Right(codec) => availableStatusClasses
+        .get(codec.clazz)
+        .map(clazz => {
+          try {
+            Right(clazz.getConstructor(classOf[String]).newInstance(codec.value))
+          } catch {
+            case exc: Exception => Left(DecodingFailure(s"Failed to decode StateStatus. Error: ${exc.getMessage}", cursor.history))
+          }
+        })
+        .getOrElse(Left(DecodingFailure(s"Failed to decode StateStatus. Error: class $codec doesn't exist.", cursor.history)))
+    }
+  }
 }
 
 trait StateStatusFollowingDeployAction {
