@@ -6,6 +6,9 @@ import io.circe._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessState.StateStatusCodec
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.availableStatusClasses
+
+import scala.util.{Failure, Success, Try}
 
 trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
@@ -77,7 +80,17 @@ object StateStatus {
   import io.circe.syntax._
 
   implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getSimpleName, st.name).asJson)
-  implicit val statusDecoder: Decoder[StateStatus] = (c: HCursor) => cursorToFailureOrStatus(c)
+  implicit val statusDecoder: Decoder[StateStatus] = Decoder[StateStatusCodec].emap(codec =>
+    availableStatusClasses
+      .get(codec.clazz)
+      .map(clazz =>
+        Try(clazz.getConstructor(classOf[String]).newInstance(codec.value)) match {
+          case Failure(exception) => Left(s"Failed to decode StateStatus. Error: ${exception.getMessage}.")
+          case Success(stateStatus) => Right(stateStatus)
+        }
+      )
+      .getOrElse(Left(s"Failed to decode StateStatus. Error: class ${codec.clazz} doesn't exist."))
+  )
 
   //This field keeps all available statuses. Remember!! If you want add new status class you have to add it also here!
   val availableStatusClasses: Map[String, Class[_ <: StateStatus]] = List(
@@ -89,22 +102,6 @@ object StateStatus {
   )
     .map(clz => clz.getSimpleName -> clz)
     .toMap[String, Class[_ <: StateStatus]]
-
-  private def cursorToFailureOrStatus(cursor: HCursor): Either[DecodingFailure, StateStatus] = {
-    cursor.as[StateStatusCodec] match {
-      case Left(failure) => Left(failure)
-      case Right(codec) => availableStatusClasses
-        .get(codec.clazz)
-        .map(clazz => {
-          try {
-            Right(clazz.getConstructor(classOf[String]).newInstance(codec.value))
-          } catch {
-            case exc: Exception => Left(DecodingFailure(s"Failed to decode StateStatus. Error: ${exc.getMessage}", cursor.history))
-          }
-        })
-        .getOrElse(Left(DecodingFailure(s"Failed to decode StateStatus. Error: class $codec doesn't exist.", cursor.history)))
-    }
-  }
 }
 
 trait StateStatusFollowingDeployAction {

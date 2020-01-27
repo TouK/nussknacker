@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import io.circe.parser.decode
+import io.circe.parser.{decode}
 import org.scalatest.{EitherValues, FunSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import scala.collection.immutable.List
+import io.circe.syntax._
 
 class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with EitherValues {
   import ProcessState._
@@ -29,6 +30,15 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with Eith
     state.allowedActions shouldBe List(ProcessActionType.Deploy)
   }
 
+  it ("should properly encode StateStatus") {
+    val json = StateStatus.statusEncoder(SimpleStateStatus.Running).toString.replaceAll("\\s", "")
+
+    json shouldBe s"""{
+      "clazz" : "${SimpleStateStatus.Running.getClass.getSimpleName}",
+      "value" : "${SimpleStateStatus.Running.name}"
+    }""".replaceAll("\\s", "")
+  }
+
   it ("should properly decode StateStatus") {
     val json = s"""
       {
@@ -44,7 +54,7 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with Eith
     decodedStatus.right.value.name shouldBe SimpleStateStatus.Canceled.name
   }
 
-  it ("should decode Unknown type for undefined not known clazz name") {
+  it ("shouldn't decode not known clazz name") {
     val json = s"""
       {
         "clazz": "testClass",
@@ -56,7 +66,7 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with Eith
     decodedStatus.isRight shouldBe false
   }
 
-  it ("shouldn't parse wrong json structure") {
+  it ("shouldn't decode wrong json structure") {
     val json = s"""
       {
         "clazzez": "testClass",
