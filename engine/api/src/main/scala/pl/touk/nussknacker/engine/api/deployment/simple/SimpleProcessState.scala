@@ -16,11 +16,9 @@ object SimpleProcessState {
       deploymentId = deploymentId,
       status = status,
       version = version,
-      allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
-      icon = SimpleProcessStateDefinitionManager.statusIcon(status),
-      tooltip = SimpleProcessStateDefinitionManager.statusTooltip(status),
+      definitionManager = SimpleProcessStateDefinitionManager,
       startTime = startTime,
       attributes = attributes,
-      errorMessage = errorMessage
+      errors = errorMessage
     )
 }

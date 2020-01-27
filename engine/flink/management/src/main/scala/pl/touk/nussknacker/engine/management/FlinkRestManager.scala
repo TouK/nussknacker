@@ -97,10 +97,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               DeploymentId(duplicates.head.jid),
               FlinkStateStatus.Failed,
               definitionManager = processStateDefinitionManager,
-              version = Option.empty,
+              processVersionId = Option.empty,
               attributes = Option.empty,
               startTime = Some(duplicates.head.`start-time`),
-              errorMessage = Some(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
+              errors = Some(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
             ))
           case one::_ =>
             val stateStatus = one.state match {
@@ -122,11 +122,11 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               Some(ProcessState(
                 DeploymentId(one.jid),
                 stateStatus,
-                version = version,
+                processVersionId = version,
                 definitionManager = processStateDefinitionManager,
                 startTime = Some(one.`start-time`),
                 attributes = Option.empty,
-                errorMessage = Option.empty
+                errors = Option.empty
               ))
             }
         }

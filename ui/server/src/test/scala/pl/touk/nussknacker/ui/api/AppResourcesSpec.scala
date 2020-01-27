@@ -27,13 +27,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   def processStatus(deploymentId: Option[String], status: StateStatus): ProcessStatus =
-    ProcessStatus(
-      status,
-      deploymentId,
-      allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
-      SimpleProcessStateDefinitionManager.statusIcon(status),
-      SimpleProcessStateDefinitionManager.statusTooltip(status)
-    )
+    ProcessStatus.simple(status, deploymentId, Option.empty)
 
   test("it should return healthcheck also if cannot retrieve statuses") {
     val statusCheck = TestProbe()

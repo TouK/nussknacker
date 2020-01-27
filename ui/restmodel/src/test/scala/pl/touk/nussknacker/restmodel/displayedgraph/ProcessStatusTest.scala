@@ -14,14 +14,14 @@ class ProcessStatusTest extends FunSuite with Matchers {
   private def sampleState(status: StateStatus, version: Long, errorMessage: Option[String]): ProcessState = SimpleProcessState(
     DeploymentId("12345"),
     status,
-    version = Option(ProcessVersion(version, ProcessName("process"), "user", None)),
+    processVersionId = Option(ProcessVersion(version, ProcessName("process"), "user", None)),
     errorMessage = errorMessage
   )
 
   private def sampleStatus(status: StateStatus, errorMessage: Option[String] = Option.empty): ProcessStatus = ProcessStatus.simple(
     deploymentId = Some("12345"),
     status = status,
-    errorMessage = errorMessage
+    errors = errorMessage
   )
 
   private def sampleProcessAction(versionId: Long, action: ProcessActionType = ProcessActionType.Deploy): Option[ProcessDeploymentAction] =

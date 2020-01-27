@@ -82,7 +82,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
     processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion)) => SimpleProcessState(
         deploymentId = DeploymentId(processName.value),
         status = SimpleStateStatus.Running,
-        version = Option(processVersion),
+        processVersionId = Option(processVersion),
         startTime = Some(deploymentTime)
       )
     }

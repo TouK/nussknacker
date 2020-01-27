@@ -11,42 +11,46 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
 
 //TODO: Do we really  we need ProcessStatus and ProcessState - Do these DTO's do the same things?
 @JsonCodec case class ProcessStatus(status: StateStatus,
-                                    deploymentId: Option[String] = Option.empty,
-                                    allowedActions: List[ProcessActionType] = List.empty,
-                                    icon: Option[URI] = Option.empty,
-                                    tooltip: Option[String] = Option.empty,
-                                    startTime: Option[Long] = Option.empty,
-                                    attributes: Option[Json] = Option.empty,
-                                    errorMessage: Option[String] = Option.empty)
+                                    name: String,
+                                    deploymentId: Option[String],
+                                    allowedActions: List[ProcessActionType],
+                                    icon: Option[URI],
+                                    tooltip: Option[String],
+                                    message: Option[String],
+                                    startTime: Option[Long],
+                                    attributes: Option[Json],
+                                    errors: Option[String])
 
 object ProcessStatus {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
-  def simple(status: StateStatus, deploymentId: Option[String], errorMessage: Option[String]): ProcessStatus =
-    create(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, errorMessage)
+  def simple(status: StateStatus, deploymentId: Option[String], errors: Option[String]): ProcessStatus =
+    ProcessStatus(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, errors)
 
   def simple(status: StateStatus): ProcessStatus =
-    create(status, SimpleProcessStateDefinitionManager)
+    ProcessStatus(status, SimpleProcessStateDefinitionManager)
 
-  def create(status: StateStatus, processStateDefinitionManager: ProcessStateDefinitionManager): ProcessStatus =
-    create(status, processStateDefinitionManager, Option.empty, Option.empty, Option.empty, Option.empty)
+  def apply(status: StateStatus, processStateDefinitionManager: ProcessStateDefinitionManager): ProcessStatus =
+    ProcessStatus(status, processStateDefinitionManager, Option.empty, Option.empty, Option.empty, Option.empty)
 
-  def create(status: StateStatus,
-             processStateDefinitionManager: ProcessStateDefinitionManager,
-             deploymentId: Option[String],
-             startTime: Option[Long],
-             attributes: Option[Json],
-             errorMessage: Option[String]): ProcessStatus =
+  def apply(status: StateStatus,
+            processStateDefinitionManager: ProcessStateDefinitionManager,
+            deploymentId: Option[String],
+            startTime: Option[Long],
+            attributes: Option[Json],
+            errors: Option[String]): ProcessStatus =
     ProcessStatus(
       status,
+      processStateDefinitionManager.statusName(status),
       deploymentId,
       allowedActions = processStateDefinitionManager.statusActions(status),
       icon = processStateDefinitionManager.statusIcon(status),
       tooltip = processStateDefinitionManager.statusTooltip(status),
+      message = processStateDefinitionManager.statusMessage(status),
       startTime,
       attributes,
-      errorMessage
+      errors
     )
 
   def create(processState: ProcessState, lastAction: Option[ProcessDeploymentAction]): ProcessStatus = {
@@ -55,12 +59,14 @@ object ProcessStatus {
     ProcessStatus(
       deploymentId = Some(processState.deploymentId.value),
       status = processState.status,
+      name = processState.name,
       allowedActions = processState.allowedActions,
       icon = processState.icon,
       tooltip = processState.tooltip,
+      message = processState.message,
       startTime = processState.startTime,
       attributes = processState.attributes,
-      errorMessage = List(mismatchMessage, processState.errorMessage).flatten.reduceOption(_ + ", " + _)
+      errors = List(mismatchMessage, processState.errors).flatten.reduceOption(_ + ", " + _)
     )
   }
 
@@ -77,7 +83,7 @@ object ProcessStatus {
   }
 
   def canceled(processStateDefinitionManager: ProcessStateDefinitionManager): ProcessStatus =
-    create(SimpleStateStatus.Canceled, processStateDefinitionManager)
+    ProcessStatus(SimpleStateStatus.Canceled, processStateDefinitionManager)
 
   val unknown: ProcessStatus = simple(SimpleStateStatus.Unknown)
 

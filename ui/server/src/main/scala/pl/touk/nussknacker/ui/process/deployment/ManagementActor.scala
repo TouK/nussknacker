@@ -72,13 +72,13 @@ class ManagementActor(environment: String,
 
       val processStatus = for {
         manager <- processManager(id.id)
-      } yield Some(ProcessStatus.create(
+      } yield Some(ProcessStatus.apply(
         SimpleStateStatus.DuringDeploy,
         manager.processStateDefinitionManager,
         deploymentId = Option.empty,
         startTime = Some(info.time),
         attributes = Option.empty,
-        errorMessage = Option.empty
+        errors = Option.empty
       ))
       reply(processStatus)
 

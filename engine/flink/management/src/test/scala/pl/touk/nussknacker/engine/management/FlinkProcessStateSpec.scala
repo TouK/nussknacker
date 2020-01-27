@@ -9,7 +9,7 @@ import scala.collection.immutable.List
 
 class FlinkProcessStateSpec extends FunSpec with Matchers with Inside {
   def createProcessState(stateStatus: StateStatus): ProcessState =
-    ProcessState("12", stateStatus, Some(ProcessVersion.empty), FlinkProcessStateDefinitionManager.statusActions(stateStatus))
+    ProcessState("12", stateStatus, Some(ProcessVersion.empty), FlinkProcessStateDefinitionManager)
 
   it ("process state should be during deploy") {
     val state = createProcessState(FlinkStateStatus.DuringDeploy)
