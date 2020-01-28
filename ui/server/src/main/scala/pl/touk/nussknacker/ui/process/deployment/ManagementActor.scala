@@ -78,7 +78,7 @@ class ManagementActor(environment: String,
         deploymentId = Option.empty,
         startTime = Some(info.time),
         attributes = Option.empty,
-        errors = Option.empty
+        errors = List.empty
       ))
       reply(processStatus)
 

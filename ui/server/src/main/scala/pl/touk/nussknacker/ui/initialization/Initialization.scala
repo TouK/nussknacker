@@ -157,7 +157,7 @@ class AutomaticMigration(migrations: Map[ProcessingType, ProcessMigrations],
 
   private def migrateOne(processDetails: ProcessDetails)(implicit ec: ExecutionContext, lu: LoggedUser) : DB[Unit] = {
     // todo: unsafe processId?
-    migrator.migrateProcess(processDetails).map(_.toUpdateAction(ProcessId(processDetails.id.toLong))) match {
+    migrator.migrateProcess(processDetails).map(_.toUpdateAction(ProcessId(processDetails.processId.value))) match {
       case Some(action) => repository.updateProcess(action).flatMap {
         case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processDetails.name}: $error"))
         case Right(_) => DBIOAction.successful(())

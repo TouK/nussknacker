@@ -11,7 +11,7 @@ object SimpleProcessState {
             version: Option[ProcessVersion] = Option.empty,
             startTime: Option[Long] = Option.empty,
             attributes: Option[Json] = Option.empty,
-            errorMessage: Option[String] = Option.empty): ProcessState =
+            errors: List[String] = List.empty): ProcessState =
     ProcessState(
       deploymentId = deploymentId,
       status = status,
@@ -19,6 +19,6 @@ object SimpleProcessState {
       definitionManager = SimpleProcessStateDefinitionManager,
       startTime = startTime,
       attributes = attributes,
-      errors = errorMessage
+      errors = errors
     )
 }

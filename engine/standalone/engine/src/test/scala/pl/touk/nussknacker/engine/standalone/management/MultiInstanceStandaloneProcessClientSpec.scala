@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers with PatientScalaFutures {
 
-  val failClient = new StandaloneProcessClient {
+  val failClient: StandaloneProcessClient = new StandaloneProcessClient {
 
     override def cancel(name: ProcessName): Future[Unit] = {
       name shouldBe id
@@ -34,8 +34,8 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
   def processVersion(versionId: Option[Long]): Option[ProcessVersion] = versionId.map(id => ProcessVersion(id, ProcessName(""), "", None))
 
-  def processState(deploymentId: DeploymentId, status: StateStatus, client: StandaloneProcessClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errorMessage: Option[String] = Option.empty): ProcessState =
-    SimpleProcessState(deploymentId, status, processVersion(versionId), startTime = startTime, errorMessage = errorMessage)
+  def processState(deploymentId: DeploymentId, status: StateStatus, client: StandaloneProcessClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errors: List[String] = List.empty): ProcessState =
+    SimpleProcessState(deploymentId, status, processVersion(versionId), startTime = startTime, errors = errors)
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
@@ -68,7 +68,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       okClient(Some(processState(jobId, SimpleStateStatus.Running, okClient(), Some(1))))
     ))
 
-    val excepted = processState(jobId, SimpleStateStatus.Failed, multiClient, errorMessage = Some("Inconsistent states between servers: empty; state: RUNNING, startTime: None"))
+    val excepted = processState(jobId, SimpleStateStatus.Failed, multiClient, errors = List("Inconsistent states between servers: empty; state: RUNNING, startTime: None."))
     multiClient.findStatus(id).futureValue shouldBe Some(excepted)
   }
 
@@ -78,7 +78,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       okClient(Some(processState(jobId, SimpleStateStatus.Running, okClient(), Some(1))))
     ))
 
-    val excepted = processState(jobId, SimpleStateStatus.Failed, multiClient, errorMessage = Some("Inconsistent states between servers: state: RUNNING, startTime: 5000; state: RUNNING, startTime: None"))
+    val excepted = processState(jobId, SimpleStateStatus.Failed, multiClient, errors = List("Inconsistent states between servers: state: RUNNING, startTime: 5000; state: RUNNING, startTime: None."))
     multiClient.findStatus(id).futureValue shouldBe Some(excepted)
   }
 
@@ -91,7 +91,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   private val id = ProcessName("id")
   private val jobId = DeploymentId("id")
 
-  def okClient(status: Option[ProcessState] = None, expectedTime: Long = 1000) = new StandaloneProcessClient {
+  def okClient(status: Option[ProcessState] = None, expectedTime: Long = 1000): StandaloneProcessClient = new StandaloneProcessClient {
 
     override def cancel(name: ProcessName): Future[Unit] = {
       name shouldBe id

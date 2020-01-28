@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import java.net.URI
+
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -290,27 +292,43 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def findJsonProcess(response: String, processId: String = SampleProcess.process.id): Option[ProcessJson] =
     parseResponseToListJsonProcess(response)
       .find(item => item.name === processId)
+
+  def decodeJsonProcess(response: String): ProcessJson =
+    parser.decode[Json](response) match {
+      case Right(json) => ProcessJson(json)
+      case Left(error) => throw new RuntimeException(error.getMessage)
+    }
 }
 
 object ProcessJson{
   def apply(process: Json): ProcessJson = {
     val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].right.get
-    
+
     new ProcessJson(
-      process.hcursor.downField("id").as[Long].right.get,
+      process.hcursor.downField("id").as[String].right.get,
       process.hcursor.downField("name").as[String].right.get,
+      process.hcursor.downField("processId").as[Long].right.get,
       lastAction.map(_.hcursor.downField("processVersionId").as[Long].right.get),
       lastAction.map(_.hcursor.downField("action").as[String].right.get),
-      process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].right.get
+      process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].right.get,
+      process.hcursor.downField("state").downField("icon").as[Option[String]].right.get.map(URI.create),
+      process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
+      process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
+      process.hcursor.downField("state").downField("name").as[Option[String]].right.get
     )
   }
 }
 
-case class ProcessJson(id: Long,
+case class ProcessJson(id: String,
                        name: String,
+                       processId: Long,
                        lastActionVersionId: Option[Long],
                        lastActionType: Option[String],
-                       stateStatus: Option[String]) {
+                       stateStatus: Option[String],
+                       stateIcon: Option[URI],
+                       stateTooltip: Option[String],
+                       stateDescription: Option[String],
+                       stateName: Option[String]) {
 
   def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
   def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)

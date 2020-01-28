@@ -57,8 +57,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Unknown -> "Unknown state of the process..",
     SimpleStateStatus.NotDeployed -> "Process has never been deployed.",
     SimpleStateStatus.DuringDeploy -> "Process is being deployed.",
-    SimpleStateStatus.Running -> "Process is running.",
-    SimpleStateStatus.Canceled -> "Process was canceled.",
+    SimpleStateStatus.Running -> "Process currently is running.",
+    SimpleStateStatus.Canceled -> "Process currently is not running.",
     SimpleStateStatus.DuringCancel -> "Process is being canceled.",
     SimpleStateStatus.Failed -> "Process was failed.",
     SimpleStateStatus.Finished -> "Process is finished.",
@@ -79,7 +79,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
       .map(sa => actionStatusMap.getOrElse(sa, SimpleStateStatus.Unknown))
       .getOrElse(SimpleStateStatus.NotDeployed)
 
-  override def statusMessage(stateStatus: StateStatus): Option[String] =
+  override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusMessagesMap.get(stateStatus)
 
   override def statusName(stateStatus: StateStatus): String = {

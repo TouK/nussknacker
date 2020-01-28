@@ -16,30 +16,30 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
                                     allowedActions: List[ProcessActionType],
                                     icon: Option[URI],
                                     tooltip: Option[String],
-                                    message: Option[String],
+                                    description: Option[String],
                                     startTime: Option[Long],
                                     attributes: Option[Json],
-                                    errors: Option[String])
+                                    errors: List[String])
 
 object ProcessStatus {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
-  def simple(status: StateStatus, deploymentId: Option[String], errors: Option[String]): ProcessStatus =
+  def simple(status: StateStatus, deploymentId: Option[String], errors: List[String]): ProcessStatus =
     ProcessStatus(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, errors)
 
   def simple(status: StateStatus): ProcessStatus =
     ProcessStatus(status, SimpleProcessStateDefinitionManager)
 
   def apply(status: StateStatus, processStateDefinitionManager: ProcessStateDefinitionManager): ProcessStatus =
-    ProcessStatus(status, processStateDefinitionManager, Option.empty, Option.empty, Option.empty, Option.empty)
+    ProcessStatus(status, processStateDefinitionManager, Option.empty, Option.empty, Option.empty, List.empty)
 
   def apply(status: StateStatus,
             processStateDefinitionManager: ProcessStateDefinitionManager,
             deploymentId: Option[String],
             startTime: Option[Long],
             attributes: Option[Json],
-            errors: Option[String]): ProcessStatus =
+            errors: List[String]): ProcessStatus =
     ProcessStatus(
       status,
       processStateDefinitionManager.statusName(status),
@@ -47,7 +47,7 @@ object ProcessStatus {
       allowedActions = processStateDefinitionManager.statusActions(status),
       icon = processStateDefinitionManager.statusIcon(status),
       tooltip = processStateDefinitionManager.statusTooltip(status),
-      message = processStateDefinitionManager.statusMessage(status),
+      description = processStateDefinitionManager.statusDescription(status),
       startTime,
       attributes,
       errors
@@ -63,10 +63,10 @@ object ProcessStatus {
       allowedActions = processState.allowedActions,
       icon = processState.icon,
       tooltip = processState.tooltip,
-      message = processState.message,
+      description = processState.description,
       startTime = processState.startTime,
       attributes = processState.attributes,
-      errors = List(mismatchMessage, processState.errors).flatten.reduceOption(_ + ", " + _)
+      errors = processState.errors ++ mismatchMessage.map(error => List(error)).getOrElse(List.empty)
     )
   }
 

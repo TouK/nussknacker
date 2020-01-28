@@ -43,7 +43,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
                    status: StateStatus,
                    version: Option[ProcessVersion] = Option.empty,
                    startTime: Option[Long] = Option.empty,
-                   errors: Option[String] = Option.empty): ProcessState =
+                   errors: List[String] = List.empty): ProcessState =
     ProcessState(
       deploymentId,
       status,
@@ -107,7 +107,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING))
 
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
-      manager, DeploymentId("1111"), FlinkStateStatus.Failed, startTime = Some(30L), errors = Some("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
+      manager, DeploymentId("1111"), FlinkStateStatus.Failed, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
     ))
   }
 

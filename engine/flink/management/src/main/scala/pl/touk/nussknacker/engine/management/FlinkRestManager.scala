@@ -100,7 +100,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               processVersionId = Option.empty,
               attributes = Option.empty,
               startTime = Some(duplicates.head.`start-time`),
-              errors = Some(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
+              errors = List(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
             ))
           case one::_ =>
             val stateStatus = one.state match {
@@ -126,7 +126,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
                 definitionManager = processStateDefinitionManager,
                 startTime = Some(one.`start-time`),
                 attributes = Option.empty,
-                errors = Option.empty
+                errors = List.empty
               ))
             }
         }

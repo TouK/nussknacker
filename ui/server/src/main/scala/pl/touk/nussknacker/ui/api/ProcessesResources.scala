@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessShapeFetchStrategy, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
@@ -111,7 +111,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                   isDeployed,
                   categories,
                   processingTypes
-                ).map(_.map(enrichDetailsWithProcessState)).toBasicProcess //TODO: Remove enrichProcess when we will support cache for state
+                ).map(_.map(enrichDetailsWithProcessState[Unit])).toBasicProcess //TODO: Remove enrichProcess when we will support cache for state
               }
             }
           }
@@ -207,10 +207,11 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             } ~ parameter('businessView ? false) { (businessView) =>
               get {
                 complete {
-                  processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id, businessView).map[ToResponseMarshallable] {
+                  processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id, businessView)
+                    .map[ToResponseMarshallable] {
                     case Some(process) =>
                       // todo: we should really clearly separate backend objects from ones returned to the front
-                      validateAndReverseResolve(process, businessView)
+                      validateAndReverseResolve(enrichDetailsWithProcessState(process), businessView)
                         .map { validatedProcess =>
                           val historyWithoutId = validatedProcess.history.map(_.copy(processId = processName))
                           validatedProcess.copy(id = processName, history = historyWithoutId)
@@ -386,7 +387,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
 
   //This is temporary function to enriching process state data
   //TODO: Remove it when we will support cache for state
-  private def enrichDetailsWithProcessState(process: BaseProcessDetails[_]): BaseProcessDetails[_] =
+  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
     process.copy(state = processManager(process.processingType).map(m => ProcessStatus.apply(
       m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action)),
       m.processStateDefinitionManager
