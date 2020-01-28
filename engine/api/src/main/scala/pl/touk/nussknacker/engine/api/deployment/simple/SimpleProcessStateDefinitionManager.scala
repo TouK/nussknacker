@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import java.net.URI
 
+import org.apache.commons.text.CaseUtils
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, ProcessActionType, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStateDefinitionManager, StateStatus}
 
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
   val defaultActions = List()
@@ -53,15 +54,15 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   val statusMessagesMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "Failed to get state of process..",
-    SimpleStateStatus.NotFound -> "Process was not found..",
-    SimpleStateStatus.Unknown -> "Unknown state of the process..",
+    SimpleStateStatus.NotFound -> "State was not found..",
+    SimpleStateStatus.Unknown -> "Unknown state of the prsocess..",
     SimpleStateStatus.NotDeployed -> "Process has never been deployed.",
     SimpleStateStatus.DuringDeploy -> "Process is being deployed.",
-    SimpleStateStatus.Running -> "Process currently is running.",
+    SimpleStateStatus.Running -> "Process has been successfully deployed.",
     SimpleStateStatus.Canceled -> "Process currently is not running.",
     SimpleStateStatus.DuringCancel -> "Process is being canceled.",
-    SimpleStateStatus.Failed -> "Process was failed.",
-    SimpleStateStatus.Finished -> "Process is finished.",
+    SimpleStateStatus.Failed -> "There are some problems with process..",
+    SimpleStateStatus.Finished -> "Process has been successfully finished job.",
     SimpleStateStatus.Error -> "There are some errors.."
   )
 
@@ -82,15 +83,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusMessagesMap.get(stateStatus)
 
-  override def statusName(stateStatus: StateStatus): String = {
-    def loop(x : List[Char]): List[Char] = (x: @unchecked) match {
-      case '_' :: '_' :: rest => loop('_' :: rest)
-      case '_' :: c :: rest => Character.toUpperCase(c) :: loop(rest)
-      case '_' :: Nil => Nil
-      case c :: rest => c.toLower :: loop(rest)
-      case Nil => Nil
-    }
-
-    loop('_' :: stateStatus.name.toList).mkString
-  }
+  override def statusName(stateStatus: StateStatus): String =
+    CaseUtils.toCamelCase(stateStatus.name,  true, {'_'})
 }

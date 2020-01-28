@@ -6,13 +6,13 @@ import {Table, Td, Tr} from "reactable"
 import ActionsUtils from "../../actions/ActionsUtils"
 import * as DialogMessages from "../../common/DialogMessages"
 import Date from "../../components/common/Date"
-import HealthCheck from "../../components/HealthCheck.js"
-import ListState from "../../components/Process/State/ListState"
-import LoaderSpinner from "../../components/Spinner.js"
+import HealthCheck from "../../components/HealthCheck"
+import LoaderSpinner from "../../components/Spinner"
 import SearchFilter from "../../components/table/SearchFilter"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
 import BaseProcesses from "./../BaseProcesses"
+import StateIcon from "../../components/Process/State/StateIcon"
 
 class CustomProcesses extends BaseProcesses {
   shouldReloadStatuses = true
@@ -100,7 +100,7 @@ class CustomProcesses extends BaseProcesses {
                     <Date date={process.modificationDate}/>
                   </Td>
                   <Td column="status" className="status-column">
-                    <ListState
+                    <StateIcon
                       process={process}
                       processState={this.getProcessState(process)}
                       isStateLoaded={this.state.statusesLoaded}

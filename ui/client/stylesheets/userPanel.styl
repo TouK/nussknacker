@@ -79,32 +79,36 @@ sidenavMixin()
     width: 100%
     height: 100%
 
+.panel-state
+  padding: 5px 15px
+  height: 56px;
+  .state-icon
+    float: left
+    padding: 5px
+
+  .state-text
+    padding: 2px
+    font-size: 15px
+    font-weight: bold
+    color: #999
+    float: left
+
+    .state-description
+      font-size: 11px
+
 .panel-properties
   padding: 0 0 0 buttonPadding
   margin-top 5px
   margin-bottom 5px
 
-  label
-    display inline-block
-    font-weight normal
-  espCheckbox(15px)
-  input[type='checkbox']
-    display inline
-    margin-right 3px
-  input[type="text"]
-    display inline-block
-    border none
-    background-color modalInputBkgColor
-    float: right
-    margin-right 10px
-  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button
-    -webkit-appearance: none;
-    margin: 0;
+  .business-switch-text
+    padding-left: 5px
 
 .panel-body
   padding: 0 0 0 buttonPadding !important
   background-color: panelBkgColor
   border: none !important
+
 
 .panel
   margin-bottom: 1px !important

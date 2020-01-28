@@ -1,15 +1,14 @@
-
 export enum ActionType {
   Deploy = "DEPLOY",
-  Cancel = "CANCEL"
+  Cancel = "CANCEL",
 }
 
 export enum StatusType {
   Running = "RUNNING",
-  Unknown = "UNKNOWN"
+  Unknown = "UNKNOWN",
 }
 
-export type ProcessAction = {
+export type ProcessActionType = {
   performedAt: Date;
   user: string;
   action: ActionType;
@@ -18,9 +17,10 @@ export type ProcessAction = {
   buildInfo?: {};
 }
 
-export interface Process {
-  id: number;
+export interface ProcessType {
+  id: string;
   name: string;
+  processId: number;
   processVersionId: number;
   isArchived: boolean;
   isSubprocess: boolean;
@@ -29,31 +29,23 @@ export interface Process {
   modificationDate: number;
   createdAt: Date;
   createdBy: string;
-  lastAction?: ProcessAction;
-  lastDeployedAction?: ProcessAction;
-  state: ProcessState;
+  lastAction?: ProcessActionType;
+  lastDeployedAction?: ProcessActionType;
+  state: ProcessStateType;
 }
 
-export type ListProcess  = {
-  [P in keyof Process]?: Process[P];
-}
-
-export type ProcessDetails = {
-  [P in keyof Process]?: Process[P];
-} & {
-  json: {};
-}
-
-export type ProcessState = {
+export type ProcessStateType = {
   status: {
     name: string;
     type: string;
   };
+  name: string;
   deploymentId?: string;
   allowedActions: Array<ActionType>;
   icon?: string;
   tooltip?: string;
+  description?: string;
   startTime?: Date;
   attributes?: {};
-  errorMessage?: string;
+  errors?: Array<string>;
 }

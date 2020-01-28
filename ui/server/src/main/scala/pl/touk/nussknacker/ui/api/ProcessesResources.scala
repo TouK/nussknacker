@@ -388,7 +388,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
   //This is temporary function to enriching process state data
   //TODO: Remove it when we will support cache for state
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
-    process.copy(state = processManager(process.processingType).map(m => ProcessStatus.apply(
+    process.copy(state = processManager(process.processingType).map(m => ProcessStatus(
       m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action)),
       m.processStateDefinitionManager
     )))

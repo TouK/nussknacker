@@ -5,11 +5,10 @@ import {withRouter} from "react-router-dom"
 import {Table, Td, Tr} from "reactable"
 import ActionsUtils from "../actions/ActionsUtils"
 import ProcessUtils from "../common/ProcessUtils"
-import AddProcessDialog from "../components/AddProcessDialog.js"
+import AddProcessDialog from "../components/AddProcessDialog"
 import Date from "../components/common/Date"
-import HealthCheck from "../components/HealthCheck.js"
-import ListState from "../components/Process/State/ListState"
-import LoaderSpinner from "../components/Spinner.js"
+import HealthCheck from "../components/HealthCheck"
+import LoaderSpinner from "../components/Spinner"
 import AddProcessButton from "../components/table/AddProcessButton"
 import SearchFilter from "../components/table/SearchFilter"
 import TableRowIcon from "../components/table/TableRowIcon"
@@ -18,6 +17,7 @@ import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
+import StateIcon from "../components/Process/State/StateIcon"
 
 export class Processes extends BaseProcesses {
   queries = {
@@ -159,7 +159,7 @@ export class Processes extends BaseProcesses {
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  <ListState
+                  <StateIcon
                     process={process}
                     processState={this.getProcessState(process)}
                     isStateLoaded={this.state.statusesLoaded}

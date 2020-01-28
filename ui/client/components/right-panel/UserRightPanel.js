@@ -5,7 +5,7 @@ import {Panel} from "react-bootstrap"
 import {Scrollbars} from "react-custom-scrollbars"
 import Dropzone from "react-dropzone"
 import {connect} from "react-redux"
-
+import Switch from "react-switch"
 import ActionsUtils from "../../actions/ActionsUtils"
 import {events} from "../../analytics/TrackingEvents"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
@@ -23,10 +23,13 @@ import SpinnerWrapper from "../SpinnerWrapper"
 import SvgDiv from "../SvgDiv"
 import TogglePanel from "../TogglePanel"
 import SideNodeDetails from "./SideNodeDetails"
+import ProcessState from "../Process/State/ProcessState"
 
 class UserRightPanel extends Component {
 
   static propTypes = {
+    isStateLoaded: PropTypes.bool.isRequired,
+    processState: PropTypes.object,
     isOpened: PropTypes.bool.isRequired,
     graphLayoutFunction: PropTypes.func.isRequired,
     layout: PropTypes.array.isRequired,
@@ -46,8 +49,12 @@ class UserRightPanel extends Component {
   };
 
   render() {
-    const {isOpened, actions, isReady} = this.props
+    const {isOpened, actions, isReady, fetchedProcessDetails, processState, isStateLoaded} = this.props
     const config = this.getConfig()
+
+    if (fetchedProcessDetails == null) {
+      return null
+    }
 
     return (
       <div id="espRightNav" className={cn("rightSidenav", {"is-opened": isOpened})}>
@@ -56,16 +63,31 @@ class UserRightPanel extends Component {
           <SvgDiv className={"zoom"} title={"zoom-out"} svgFile={"buttons/zoomout.svg"} onClick={this.props.zoomOut}/>
         </div>
         <SpinnerWrapper isReady={isReady}>
+
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
             <div className="panel-properties">
               <label>
-                  <input disabled={!this.props.nothingToSave} type="checkbox" defaultChecked={this.props.businessView} onChange={(e) => {
-                    this.props.actions.businessViewChanged(e.target.checked)
-                    this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
-                  }}/>
-                Business view
+                <Switch
+                  disabled={!this.props.nothingToSave}
+                  uncheckedIcon={false}
+                  checkedIcon={false}
+                  height={14}
+                  width={28}
+                  offColor="#333"
+                  onColor="#333"
+                  offHandleColor="#999"
+                  onHandleColor="#999"
+                  checked={this.props.businessView} onChange={(checked) => {
+                    this.props.actions.businessViewChanged(checked)
+                    this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), checked)
+                  }}
+                />
+                <span className="business-switch-text">Switch Business View</span>
               </label>
             </div>
+
+            <ProcessState process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
+
             {config.filter(panel => panel).map ((panel, panelIdx) => {
                 const visibleButtons = panel.buttons.filter(button => button.visible !== false)
                 return _.isEmpty(visibleButtons) ? null : (
