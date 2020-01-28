@@ -7,14 +7,14 @@ Subprocess first has to be designed (you can access subprocesses via Subprocesse
 ##Inputs
 Subprocess can have one input. You can define parameters of a subprocess:
 
-![subprocess input](img/subprocess_input.png)
+![subprocess input](../img/subprocess_input.png)
 
 Currently they have to be given as fully qualified Java type e.g. `java.lang.String`, `java.lang.Long`
 
 ##Outputs
 Subprocess can define zero, one or more outputs. Each of them has a name, main process can then choose appropriate output. Below you can see subprocess with two outputs:
 
-![subprocess output](img/subprocess_output.png)
+![subprocess output](../img/subprocess_output.png)
 
 ##Limitations of subprocesses
 - They cannot access variables from the main process if they are not passed as parameters.
