@@ -36,6 +36,7 @@ class ExpressionSuggest extends React.Component {
     validators: PropTypes.array,
     showValidation: PropTypes.bool,
     processingType: PropTypes.string,
+    isMarked: PropTypes.bool,
   }
 
   customAceEditorCompleter = {

@@ -1,7 +1,17 @@
-import PropTypes from "prop-types"
 import React from "react"
 import Creatable from "react-select/creatable"
-import {SimpleEditorTypes} from "./EditorType"
+import _ from "lodash";
+import {$TodoType} from "../../../../../actions/migrationTypes";
+
+type Props = {
+  values?: $TodoType,
+  expressionObj: $TodoType,
+  onValueChange: Function,
+  readOnly: boolean,
+  className: string,
+  defaultValue?: $TodoType,
+  param?: $TodoType,
+}
 
 const getOptions = (values) => {
   return values.map((value) => ({
@@ -10,7 +20,13 @@ const getOptions = (values) => {
   }))
 }
 
-export default class FixedValuesEditor extends React.Component {
+export default class FixedValuesEditor extends React.Component<Props> {
+
+  public static switchableTo = (expressionObj, values) => values.includes(expressionObj.expression)
+  public static switchableToHint = "Switch to basic mode"
+  public static notSwitchableToHint = "Expression must be one of the expression possible values to switch basic mode"
+
+  private readonly options: any;
 
   constructor(props) {
     super(props)
@@ -45,14 +61,4 @@ export default class FixedValuesEditor extends React.Component {
       />
     )
   }
-
-  static propTypes = {
-    values: PropTypes.array,
-    expressionObj: PropTypes.object,
-    onValueChange: PropTypes.func,
-    readOnly: PropTypes.bool,
-    className: PropTypes.string,
-  }
 }
-
-FixedValuesEditor.isSupported = (fieldType) => fieldType === SimpleEditorTypes.FIXED_VALUES_EDITOR

@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.definition
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.LazyParameter
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, RawParameterEditor, SimpleParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, RawParameterEditor, SimpleParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.process.ParameterConfig
 
 class EditorExtractorTest extends FunSuite with Matchers {
 
@@ -50,8 +51,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
 
     EditorExtractor.extract(paramDualEditorAnnotated) shouldBe
       Some(DualParameterEditor(
-        simpleEditor = SimpleParameterEditor(
-          simpleEditorType = SimpleEditorType.FIXED_VALUES_EDITOR,
+        simpleEditor = FixedValuesParameterEditor(
           possibleValues = List(FixedExpressionValue("test", "test2"))
         ),
         defaultMode = DualEditorMode.SIMPLE
@@ -59,10 +59,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
 
     EditorExtractor.extract(paramDualEditorLazyAnnotated) shouldBe
       Some(DualParameterEditor(
-        simpleEditor = SimpleParameterEditor(
-          simpleEditorType = SimpleEditorType.STRING_EDITOR,
-          possibleValues = List.empty
-        ),
+        simpleEditor = StringParameterEditor,
         defaultMode = DualEditorMode.SIMPLE
       ))
   }
@@ -70,16 +67,10 @@ class EditorExtractorTest extends FunSuite with Matchers {
   test("detect @SimpleEditor annotation") {
 
     EditorExtractor.extract(paramSimpleEditorAnnotated) shouldBe
-      Some(SimpleParameterEditor(
-        simpleEditorType = SimpleEditorType.BOOL_EDITOR,
-        possibleValues = List.empty
-      ))
+      Some(BoolParameterEditor)
 
     EditorExtractor.extract(paramSimpleEditorLazyAnnotated) shouldBe
-      Some(SimpleParameterEditor(
-        simpleEditorType = SimpleEditorType.BOOL_EDITOR,
-        possibleValues = List.empty
-      ))
+      Some(BoolParameterEditor)
   }
 
   test("detect @RawEditor annotation") {

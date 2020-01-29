@@ -1,8 +1,22 @@
 import PropTypes from "prop-types"
 import React from "react"
 import Input from "../field/Input"
+import _ from "lodash";
+import {$TodoType} from "../../../../../actions/migrationTypes";
 
-export default function StringEditor(props) {
+type StringEditor<P> = React.ComponentType<P> & {
+  switchableTo: Function
+  switchableToHint: string
+  notSwitchableToHint: string
+}
+
+type Props = {
+  expressionObj: $TodoType
+  onValueChange: Function
+  className: string
+}
+
+const StringEditor: StringEditor<Props> = (props) => {
 
   const {expressionObj, onValueChange, className} = props
 
@@ -36,12 +50,8 @@ const parseable = (expressionObj) => {
   return stringPattern.test(expression) && language === "spel"
 }
 
-const supportedFieldType = "String"
-
 StringEditor.switchableTo = (expressionObj) => parseable(expressionObj)
-
 StringEditor.switchableToHint = "Switch to basic mode"
-
 StringEditor.notSwitchableToHint = "Expression must be a simple string literal i.e. text surrounded by single or double quotation marks to switch to basic mode"
 
-StringEditor.isSupported = (fieldType) => fieldType === supportedFieldType
+export default StringEditor

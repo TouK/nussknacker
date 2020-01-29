@@ -2,9 +2,29 @@ import _ from "lodash"
 import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableExpression from "./EditableExpression"
-import {SimpleEditorTypes} from "./EditorType"
+import {editorTypes} from "./EditorType"
+import {$TodoType} from "../../../../../actions/migrationTypes";
 
-export default class ExpressionField extends React.Component {
+type Props = {
+  fieldName: string
+  fieldLabel: string
+  exprPath: string
+  validators: Array<$TodoType>
+  isEditMode: boolean
+  editedNode: $TodoType
+  isMarked: Function
+  showValidation: boolean
+  showSwitch: boolean
+  nodeObjectDetails: $TodoType
+  setNodeDataAt: Function
+  testResultsToShow: $TodoType
+  testResultsToHide: $TodoType
+  toggleTestResult: Function
+  renderFieldLabel: Function
+  fieldType: string
+}
+
+class ExpressionField extends React.Component<Props> {
 
   render() {
     const {
@@ -15,17 +35,17 @@ export default class ExpressionField extends React.Component {
     const exprTextPath = `${exprPath}.expression`
     const expressionObj = _.get(editedNode, exprPath)
     const marked = isMarked(exprTextPath)
-    const restriction = this.getRestriction(fieldName)
+    const editor = this.findParamByName(fieldName)?.editor || {}
 
-    if (restriction.hasFixedValues)
+    if (editor.type === editorTypes.FIXED_VALUES_PARAMETER_EDITOR)
       return (
         <EditableExpression
-          fieldType={SimpleEditorTypes.FIXED_VALUES_EDITOR}
+          fieldType={editorTypes.FIXED_VALUES_PARAMETER_EDITOR}
           fieldLabel={fieldLabel}
           param={this.findParamByName(fieldLabel)}
           expressionObj={expressionObj}
           renderFieldLabel={renderFieldLabel}
-          values={restriction.values}
+          values={editor.possibleValues}
           isMarked={marked}
           showSwitch={showSwitch}
           readOnly={readOnly}
@@ -42,7 +62,7 @@ export default class ExpressionField extends React.Component {
         <EditableExpression
           fieldType={fieldType}
           param={this.findParamByName(fieldLabel)}
-          editorName={SimpleEditorTypes.RAW_EDITOR}
+          editorName={editorTypes.RAW_PARAMETER_EDITOR}
           renderFieldLabel={renderFieldLabel}
           fieldLabel={fieldLabel}
           fieldName={fieldName}
@@ -58,14 +78,8 @@ export default class ExpressionField extends React.Component {
     )
   }
 
-  getRestriction = (fieldName) => {
-    const restriction = (this.findParamByName(fieldName) || {}).restriction
-    return {
-      hasFixedValues: restriction && restriction.type === "FixedExpressionValues",
-      values: restriction && restriction.values,
-    }
-  }
-
   findParamByName = (paramName) => (_.get(this.props, "nodeObjectDetails.parameters", []))
     .find((param) => param.name === paramName)
 }
+
+export default ExpressionField

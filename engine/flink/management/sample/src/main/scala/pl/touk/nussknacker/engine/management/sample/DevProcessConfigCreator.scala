@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
-import java.time.{LocalDate, LocalDateTime, LocalTime, Period, ZonedDateTime}
+import java.time._
 import java.util
 import java.util.Optional
-import java.time.LocalDateTime
-import java.{lang, util}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.Config
@@ -18,35 +16,19 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
-import org.apache.flink.api.common.serialization.SimpleStringSchema
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, Parameter, RawParameterEditor, ServiceWithExplicitMethod, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
+import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
-import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
-import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
-
-import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.streaming.api.functions.TimestampAssigner
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
-import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, LabeledExpression, RawEditor, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -196,7 +178,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "serviceModelService" -> all(EmptyService),
       "paramService" -> all(OneParamService),
       "enricher" -> all(Enricher),
-      "multipleParamsService" -> all(MultipleParamsService),
+      "multipleParamsService" -> all(MultipleParamsService)
+        .withNodeConfig(SingleNodeConfig.zero.copy(
+          params = Some(Map(
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test"))))),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor)),
+            "baz" -> ParameterConfig(None, Some(StringParameterEditor))
+          )))
+        ),
       "complexReturnObjectService" -> all(ComplexReturnObjectService),
       "unionReturnObjectService" -> all(UnionReturnObjectService),
       "listReturnObjectService" -> all(ListReturnObjectService),
@@ -361,7 +350,15 @@ case object EmptyService extends Service {
 
 case object OneParamService extends Service {
   @MethodToInvoke
-  def invoke(@PossibleValues(value = Array("a", "b", "c")) @ParamName("param") param: String) = Future.successful(param)
+  def invoke(@SimpleEditor(
+               `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+               possibleValues = Array(
+                 new LabeledExpression(expression = "a", label = "a"),
+                 new LabeledExpression(expression = "b", label = "b"),
+                 new LabeledExpression(expression = "c", label = "c")
+               )
+             )
+             @ParamName("param") param: String) = Future.successful(param)
 }
 
 case object Enricher extends Service {
@@ -442,7 +439,12 @@ object ComplexObject {
 case object MultipleParamsService extends Service {
   @MethodToInvoke
   def invoke(@ParamName("foo") foo: String,
-             @ParamName("bar") bar: String,
+             @ParamName("bar")
+             @DualEditor(
+               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+               defaultMode = DualEditorMode.SIMPLE
+             )
+             bar: String,
              @ParamName("baz") baz: String,
              @ParamName("quax") quax: String) = Future.successful(Unit)
 }
