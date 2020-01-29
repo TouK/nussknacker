@@ -42,6 +42,12 @@ case object BoolParameterEditor extends SimpleParameterEditor
 
 case object StringParameterEditor extends SimpleParameterEditor
 
+case object DateParameterEditor extends SimpleParameterEditor
+
+case object TimeParameterEditor extends SimpleParameterEditor
+
+case object DateTimeParameterEditor extends SimpleParameterEditor
+
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue]) extends SimpleParameterEditor
 
 @JsonCodec case class FixedExpressionValue(expression: String, label: String)

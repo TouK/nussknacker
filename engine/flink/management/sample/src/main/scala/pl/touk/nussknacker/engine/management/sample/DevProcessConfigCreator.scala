@@ -538,9 +538,24 @@ class CollectionTypesService extends Service with Serializable {
 
 class DatesTypesService extends Service with Serializable {
   @MethodToInvoke
-  def invoke(@ParamName("dateTimeParam") dateTimeParam: LocalDateTime,
-             @ParamName("dateParam") dateParam: LocalDate,
-             @ParamName("timeParam") timeParam: LocalTime,
+  def invoke(@ParamName("dateTimeParam")
+             @DualEditor(
+               simpleEditor = new  SimpleEditor(`type` = SimpleEditorType.DATE_TIME_EDITOR),
+               defaultMode = DualEditorMode.SIMPLE
+             ) dateTimeParam: LocalDateTime,
+
+             @ParamName("dateParam")
+             @DualEditor(
+               simpleEditor = new  SimpleEditor(`type` = SimpleEditorType.DATE_EDITOR),
+               defaultMode = DualEditorMode.SIMPLE
+             ) dateParam: LocalDate,
+
+             @ParamName("timeParam")
+             @DualEditor(
+               simpleEditor = new  SimpleEditor(`type` = SimpleEditorType.TIME_EDITOR),
+               defaultMode = DualEditorMode.SIMPLE
+             ) timeParam: LocalTime,
+
              @ParamName("zonedDataTimeParam") zonedDataTimeParam: ZonedDateTime,
              @ParamName("durationParam") duration: Duration,
              @ParamName("periodParam") period: Period,

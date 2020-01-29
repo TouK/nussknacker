@@ -33,6 +33,9 @@ object EditorExtractor {
           .map(value => FixedExpressionValue(value.expression(), value.label()))
           .toList
       )
+      case SimpleEditorType.DATE_EDITOR => DateParameterEditor
+      case SimpleEditorType.TIME_EDITOR => TimeParameterEditor
+      case SimpleEditorType.DATE_TIME_EDITOR => DateTimeParameterEditor
     }
   }
 }
