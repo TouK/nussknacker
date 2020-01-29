@@ -14,7 +14,10 @@ type SettingsState = {
 const initialState: SettingsState = {
   loggedUser: {},
   featuresSettings: {},
-  authenticationSettings: {},
+  authenticationSettings: {
+    // eslint-disable-next-line i18next/no-literal-string
+    backend: "BasicAuth"
+  },
   analyticsSettings: {},
   processDefinitionData: {},
   availableQueryableStates: {},

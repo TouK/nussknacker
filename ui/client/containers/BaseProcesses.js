@@ -1,7 +1,7 @@
 import * as _ from "lodash"
 import * as  queryString from "query-string"
 import React from "react"
-import ProcessStateUtils from "../common/ProcessStateUtils"
+import ProcessStateUtils from "../components/Process/State/ProcessStateUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
 import history from "../history"

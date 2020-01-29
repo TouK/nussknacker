@@ -2,9 +2,10 @@ package pl.touk.nussknacker.ui.process.repository
 
 import java.sql.Timestamp
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{DeploymentAction, ProcessDeploymentAction, ProcessHistoryEntry, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeploymentAction, ProcessHistoryEntry, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
@@ -32,7 +33,7 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
 
   protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
-    fetchLastActionPerProcessQuery.filter(_._2.deploymentAction === DeploymentAction.Deploy)
+    fetchLastActionPerProcessQuery.filter(_._2.deploymentAction === ProcessActionType.Deploy)
 
   protected def fetchLastActionPerProcessQuery: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
     deployedProcessesTable

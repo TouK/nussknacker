@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.db.entity
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
-import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
-import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction.DeploymentAction
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.ast.BaseTypedType
 import slick.jdbc.{JdbcProfile, JdbcType}
@@ -16,8 +16,8 @@ trait ProcessDeploymentInfoEntityFactory {
   protected val profile: JdbcProfile
   import profile.api._
 
-  implicit def deploymentMapper: JdbcType[DeploymentAction] with BaseTypedType[DeploymentAction] =
-    MappedColumnType.base[DeploymentAction, String](_.toString, DeploymentAction.withName)
+  implicit def deploymentMapper: JdbcType[ProcessActionType] with BaseTypedType[ProcessActionType] =
+    MappedColumnType.base[ProcessActionType, String](_.toString, ProcessActionType.withName)
 
   val deployedProcessesTable: LTableQuery[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity] =
     LTableQuery(new ProcessDeploymentInfoEntity(_))
@@ -39,7 +39,7 @@ trait ProcessDeploymentInfoEntityFactory {
 
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info", Nullable)
 
-    def deploymentAction: Rep[DeploymentAction] = column[DeploymentAction]("deployment_action", NotNull)
+    def deploymentAction: Rep[ProcessActionType] = column[ProcessActionType]("deployment_action", NotNull)
 
     def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id", Nullable)
 
@@ -73,11 +73,11 @@ case class DeployedProcessInfoEntityData(processId: Long,
                                          environment: String,
                                          user: String,
                                          deployedAt: Timestamp,
-                                         deploymentAction: DeploymentAction,
+                                         deploymentAction: ProcessActionType,
                                          commentId: Option[Long],
                                          buildInfo: Option[String]) {
 
   lazy val deployedAtTime: LocalDateTime = DateUtils.toLocalDateTime(deployedAt)
-  lazy val isDeployed: Boolean = deploymentAction.equals(DeploymentAction.Deploy)
-  lazy val isCanceled: Boolean = deploymentAction.equals(DeploymentAction.Cancel)
+  lazy val isDeployed: Boolean = deploymentAction.equals(ProcessActionType.Deploy)
+  lazy val isCanceled: Boolean = deploymentAction.equals(ProcessActionType.Cancel)
 }

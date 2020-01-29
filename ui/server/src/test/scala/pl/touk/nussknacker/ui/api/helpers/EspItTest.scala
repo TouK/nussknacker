@@ -7,12 +7,12 @@ import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Json, Printer}
+import io.circe.{Json, Printer, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
@@ -69,6 +69,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     Map("streaming" -> Map.empty)
   )
 
+  val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
+  val typeToConfig = ProcessingTypeDeps(testConfig, featureTogglesConfig.standaloneMode)
+
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
   val processesRoute = new ProcessesResources(
@@ -81,14 +84,13 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     typesForCategories = typesForCategories,
     newProcessPreparer = newProcessPreparer,
     processAuthorizer = processAuthorizer,
-    processChangeListener = processChangeListener
+    processChangeListener = processChangeListener,
+    typeToConfig = typeToConfig
   )
 
   val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)
   val analyticsConfig = AnalyticsConfig(testConfig)
 
-  val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
-  val typeToConfig = ProcessingTypeDeps(testConfig, featureTogglesConfig.standaloneMode)
   val usersRoute = new UserResources(typesForCategories)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig, analyticsConfig)
 
@@ -247,9 +249,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def prepareCancel(id: process.ProcessId): Future[DeployedProcessInfoEntityData] =
     deploymentProcessRepository.markProcessAsCancelled(id, 1, env, Some("Cancel comment"))
 
-  def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId = {
+  def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue
-  }
 
   def createDeployedProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : process.ProcessId = {
     (for {
@@ -278,4 +279,39 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   def cancelProcess(id: process.ProcessId): Assertion =
     prepareCancel(id).map(_ => ()).futureValue shouldBe ()
+
+  def parseResponseToListJsonProcess(response: String): List[ProcessJson] =
+    parser.decode[List[Json]](response) match {
+      case Right(processes) => processes.map(json => ProcessJson(json))
+      case Left(error) => throw new RuntimeException(error.getMessage)
+    }
+
+  //TODO: In future we should identify process by id..
+  def findJsonProcess(response: String, processId: String = SampleProcess.process.id): Option[ProcessJson] =
+    parseResponseToListJsonProcess(response)
+      .find(item => item.name === processId)
+}
+
+object ProcessJson{
+  def apply(process: Json): ProcessJson = {
+    val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].right.get
+    
+    new ProcessJson(
+      process.hcursor.downField("id").as[Long].right.get,
+      process.hcursor.downField("name").as[String].right.get,
+      lastAction.map(_.hcursor.downField("processVersionId").as[Long].right.get),
+      lastAction.map(_.hcursor.downField("action").as[String].right.get),
+      process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].right.get
+    )
+  }
+}
+
+case class ProcessJson(id: Long,
+                       name: String,
+                       lastActionVersionId: Option[Long],
+                       lastActionType: Option[String],
+                       stateStatus: Option[String]) {
+
+  def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
+  def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)
 }

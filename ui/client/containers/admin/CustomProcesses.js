@@ -7,7 +7,7 @@ import ActionsUtils from "../../actions/ActionsUtils"
 import * as DialogMessages from "../../common/DialogMessages"
 import Date from "../../components/common/Date"
 import HealthCheck from "../../components/HealthCheck.js"
-import ListState from "../../components/Process/ListState"
+import ListState from "../../components/Process/State/ListState"
 import LoaderSpinner from "../../components/Spinner.js"
 import SearchFilter from "../../components/table/SearchFilter"
 import HttpService from "../../http/HttpService"
@@ -102,7 +102,7 @@ class CustomProcesses extends BaseProcesses {
                   <Td column="status" className="status-column">
                     <ListState
                       process={process}
-                      state={this.getProcessState(process)}
+                      processState={this.getProcessState(process)}
                       isStateLoaded={this.state.statusesLoaded}
                     />
                   </Td>

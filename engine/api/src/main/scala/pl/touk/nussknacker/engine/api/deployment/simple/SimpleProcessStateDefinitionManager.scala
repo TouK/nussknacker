@@ -2,20 +2,25 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import java.net.URI
 
-import pl.touk.nussknacker.engine.api.deployment.StateAction.StateAction
-import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, StateAction, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, ProcessActionType, StateStatus}
 
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
   val defaultActions = List()
 
-  val statusActionsMap: Map[StateStatus, List[StateAction]] = Map(
-    SimpleStateStatus.Unknown -> List(StateAction.Deploy),
-    SimpleStateStatus.NotDeployed -> List(StateAction.Deploy),
-    SimpleStateStatus.DuringDeploy -> List(StateAction.Cancel),
-    SimpleStateStatus.Running -> List(StateAction.Cancel, StateAction.Pause),
-    SimpleStateStatus.Canceled -> List(StateAction.Deploy),
-    SimpleStateStatus.Failed -> List(StateAction.Deploy),
-    SimpleStateStatus.Finished -> List(StateAction.Deploy)
+  val actionStatusMap: Map[ProcessActionType, StateStatus] = Map(
+    ProcessActionType.Deploy -> SimpleStateStatus.Running,
+    ProcessActionType.Cancel -> SimpleStateStatus.Canceled
+  )
+
+  val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
+    SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Cancel),
+    SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause),
+    SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.Failed -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.Finished -> List(ProcessActionType.Deploy)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
@@ -52,6 +57,11 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
     statusIconsMap.get(stateStatus).map(URI.create)
 
-  override def statusActions(stateStatus: StateStatus): List[StateAction] =
+  override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsMap.getOrElse(stateStatus, defaultActions)
+
+  override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
+    stateAction
+      .map(sa => actionStatusMap.getOrElse(sa, SimpleStateStatus.Unknown))
+      .getOrElse(SimpleStateStatus.NotDeployed)
 }
