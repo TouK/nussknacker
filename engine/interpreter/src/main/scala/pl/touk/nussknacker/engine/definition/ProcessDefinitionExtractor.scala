@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -81,10 +81,16 @@ object ProcessDefinitionExtractor {
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
     import net.ceedubs.ficus.readers.ValueReader
 
-    implicit val nodeConfig: ValueReader[ParameterEditor] = ValueReader.relative(config => {
+    implicit val paramEditorReader: ValueReader[ParameterEditor] = ValueReader.relative(config => {
       val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-      CirceUtil.decodeJsonUnsafe[ParameterEditor](json, "invalid process config")
+      CirceUtil.decodeJsonUnsafe[ParameterEditor](json, "invalid parameter editor config")
     })
+
+    implicit val paramValidatorReader: ValueReader[ParameterValidator] = ValueReader.relative(config => {
+      val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
+      CirceUtil.decodeJsonUnsafe[ParameterValidator](json, "invalid parameter validator config")
+    })
+
     processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
   }
 

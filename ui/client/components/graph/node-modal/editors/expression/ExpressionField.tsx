@@ -8,7 +8,6 @@ type Props = {
   fieldName: string,
   fieldLabel: string,
   exprPath: string,
-  validators: Array<$TodoType>,
   isEditMode: boolean,
   editedNode: $TodoType,
   isMarked: Function,
@@ -21,14 +20,16 @@ type Props = {
   toggleTestResult: Function,
   renderFieldLabel: Function,
   fieldType: string,
+  errors: Array<$TodoType>,
 }
 
 class ExpressionField extends React.Component<Props> {
 
   render() {
     const {
-      fieldName, fieldLabel, exprPath, validators, isEditMode, editedNode, isMarked, showValidation, showSwitch,
+      fieldName, fieldLabel, exprPath, isEditMode, editedNode, isMarked, showValidation, showSwitch,
       nodeObjectDetails, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel, fieldType,
+      errors,
     } = this.props
     const readOnly = !isEditMode
     const exprTextPath = `${exprPath}.expression`
@@ -41,6 +42,7 @@ class ExpressionField extends React.Component<Props> {
         <EditableExpression
           fieldType={editorTypes.FIXED_VALUES_PARAMETER_EDITOR}
           fieldLabel={fieldLabel}
+          fieldName={fieldName}
           param={this.findParamByName(fieldLabel)}
           expressionObj={expressionObj}
           renderFieldLabel={renderFieldLabel}
@@ -49,6 +51,7 @@ class ExpressionField extends React.Component<Props> {
           showSwitch={showSwitch}
           readOnly={readOnly}
           onValueChange={(newValue) => setNodeDataAt(exprTextPath, newValue)}
+          errors={errors}
         />
       )
 
@@ -67,12 +70,12 @@ class ExpressionField extends React.Component<Props> {
           fieldLabel={fieldLabel}
           fieldName={fieldName}
           expressionObj={expressionObj}
-          validators={validators}
           isMarked={marked}
           showValidation={showValidation}
           showSwitch={showSwitch}
           readOnly={readOnly}
           onValueChange={(newValue) => setNodeDataAt(exprTextPath, newValue)}
+          errors={errors}
         />
       </ExpressionTestResults>
     )

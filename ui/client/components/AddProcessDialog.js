@@ -6,13 +6,14 @@ import Modal from "react-modal"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import EspModalStyles from "../common/EspModalStyles"
-import {duplicateValue, notEmptyValidator} from "../common/Validators"
+import {notEmptyValidator} from "./graph/node-modal/editors/Validators"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 
 import history from "../history"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import ValidationLabels from "./modals/ValidationLabels"
+import i18next from "i18next"
 
 //TODO: Consider integrating with GenericModalDialog
 class AddProcessDialog extends React.Component {
@@ -124,7 +125,7 @@ const validators = [
   },
   {
     isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),
-    message: duplicateValue,
+    message: i18next.t("validation.duplicateValue", "This value is already taken"),
   },
 ]
 

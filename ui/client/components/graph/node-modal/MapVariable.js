@@ -2,7 +2,7 @@ import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import {v4 as uuid4} from "uuid"
-import {errorValidator, notEmptyValidator} from "../../../common/Validators"
+import {errorValidator, notEmptyValidator} from "./editors/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import Map from "./editors/map/Map"
@@ -44,7 +44,8 @@ const MapVariable = (props) => {
            isMarked={isMarked}
            readOnly={readOnly}
            showValidation={showValidation}
-           showSwitch={false}/>
+           showSwitch={false}
+           errors={errors}/>
 
       <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
                        value={_.get(props.node, "additionalFields.description", "")}

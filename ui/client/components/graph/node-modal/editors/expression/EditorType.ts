@@ -27,6 +27,7 @@ type EditorConfig = {
   switchableTo?: (expressionObj: ExpressionObj, param?: ParamType, values?: ValuesType) => boolean,
   values?: (param: ParamType, values: ValuesType) => $TodoType,
   switchable?: Function,
+  validators?: Function,
 }
 
 export enum dualEditorMode {
@@ -46,22 +47,34 @@ export enum editorTypes {
   DUAL_PARAMETER_EDITOR = "DualParameterEditor",
 }
 
+const simpleEditorValidators = (param: $TodoType, errors: Array<$TodoType>, fieldLabel: String): Array<Validator> =>
+  _.concat(
+    param === undefined ?
+      validators[validatorType.NOT_EMPTY_VALIDATOR]() :
+      param.validators.map(validator => validators[validator.type]()),
+    validators[validatorType.ERROR_VALIDATOR](errors, fieldLabel)
+  )
+
+export const editors: Record<editorTypes, Editor> = {
 /* eslint-enable i18next/no-literal-string */
 
 export const editors: Record<editorTypes, EditorConfig> = {
   [editorTypes.RAW_PARAMETER_EDITOR]: {
     editor: () => RawEditor,
     hint: () => i18next.t("editors.raw.switchableToHint", "Switch to expression mode"),
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
   [editorTypes.BOOL_PARAMETER_EDITOR]: {
     editor: () => BoolEditor,
     hint: (switchable) => switchable ? BoolEditor.switchableToHint : BoolEditor.notSwitchableToHint,
     switchableTo: (expressionObj) => BoolEditor.switchableTo(expressionObj),
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
   [editorTypes.STRING_PARAMETER_EDITOR]: {
     editor: () => StringEditor,
     hint: (switchable) => switchable ? StringEditor.switchableToHint : StringEditor.notSwitchableToHint,
     switchableTo: (expressionObj) => StringEditor.switchableTo(expressionObj),
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
   [editorTypes.FIXED_VALUES_PARAMETER_EDITOR]: {
     editor: () => FixedValuesEditor,
@@ -71,6 +84,7 @@ export const editors: Record<editorTypes, EditorConfig> = {
       !_.isEmpty(values) ? values : param.editor.possibleValues,
     ),
     values: (param, values) => !_.isEmpty(values) ? values : param.editor.possibleValues,
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
   [editorTypes.DUAL_PARAMETER_EDITOR]: {
     editor: (param, displayRawEditor) => displayRawEditor ?
@@ -84,6 +98,9 @@ export const editors: Record<editorTypes, EditorConfig> = {
       editors[param.editor.simpleEditor.type].switchableTo(expressionObj) :
       true,
     values: (param) => param.editor.simpleEditor.possibleValues,
+    validators: (param, errors, fieldLabel, displayRawEditor) => displayRawEditor ?
+      editors[editorTypes.RAW_PARAMETER_EDITOR].validators(param, errors, fieldLabel) :
+      editors[param.editor.simpleEditor.type].validators(param, errors, fieldLabel),
   },
   [editorTypes.DATE]: {
     editor: () => DateEditor,

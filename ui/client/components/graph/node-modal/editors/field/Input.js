@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
-import {allValid} from "../../../../../common/Validators"
+import {allValid} from "../Validators"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 
 export const Input = (props) => {

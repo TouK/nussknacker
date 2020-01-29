@@ -25,6 +25,7 @@ case class Parameter(name: String,
                      typ: TypingResult,
                      runtimeClass: Class[_],
                      editor: Option[ParameterEditor] = None,
+                     validators: Option[List[ParameterValidator]] = None,
                      additionalVariables: Map[String, TypingResult] = Map.empty,
                      branchParam: Boolean = false) extends NodeDependency {
 
@@ -65,3 +66,7 @@ object DualParameterEditor {
     Decoder.decodeString.emapTry(name => Try(DualEditorMode.fromName(name)))
   }
 }
+
+@ConfiguredJsonCodec sealed trait ParameterValidator
+
+case object NotEmptyValidator extends ParameterValidator

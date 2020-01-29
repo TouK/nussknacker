@@ -254,4 +254,68 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       )
     }
   }
+
+  it("return NotEmptyValidator by default") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("datesTypesService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "periodParam")
+        .downField("validators")
+        .focus.get
+
+      editor shouldBe Json.arr(Json.obj("type" -> Json.fromString("NotEmptyValidator")))
+    }
+  }
+
+  it("not return NotEmptyValidator for parameter marked with @Nullable") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("optionalTypesService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "nullableParam")
+        .downField("validators")
+        .focus.get
+
+      editor shouldBe Json.arr()
+    }
+  }
+
+  it("override validator based on annotation with validator based on dev config") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("multipleParamsService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "foo")
+        .downField("validators")
+        .focus.get
+
+      editor shouldBe Json.arr(Json.obj("type" -> Json.fromString("NotEmptyValidator")))
+    }
+  }
+
+  it("override validator based on dev config with validator based on file config") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("multipleParamsService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "baz")
+        .downField("validators")
+        .focus.get
+
+      editor shouldBe Json.arr()
+    }
+  }
 }

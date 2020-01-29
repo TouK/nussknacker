@@ -2,7 +2,7 @@ import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
-import {errorValidator, notEmptyValidator} from "../../../common/Validators"
+import {errorValidator, notEmptyValidator} from "./editors/Validators"
 import EditableExpression from "./editors/expression/EditableExpression"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
@@ -28,8 +28,7 @@ const Variable = (props) => {
                     showValidation={showValidation}
                     validators={[notEmptyValidator, errorValidator(errors, "varName")]}/>
       <EditableExpression
-        fieldType={editorTypes.RAW_PARAMETER_EDITOR}
-        fieldName="Expression"
+        fieldName="expression"
         fieldLabel={"Expression"}
         renderFieldLabel={renderFieldLabel}
         expressionObj={node.value}
@@ -37,7 +36,7 @@ const Variable = (props) => {
         readOnly={readOnly}
         showValidation={showValidation}
         showSwitch={false}
-        validators={[notEmptyValidator, errorValidator(errors, DEFAULT_EXPRESSION_ID)]}
+        errors={errors}
       />
       <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
                        value={_.get(node, "additionalFields.description", "")}

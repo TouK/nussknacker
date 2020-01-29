@@ -2,7 +2,6 @@ import "ladda/dist/ladda.min.css"
 import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
-import {notEmptyValidator} from "../../../common/Validators"
 import BaseModalContent from "./BaseModalContent"
 import EditableExpression from "./editors/expression/EditableExpression"
 
@@ -54,7 +53,6 @@ export default class EdgeDetailsContent extends React.Component {
               renderFieldLabel={this.renderFieldLabel}
               expressionObj={expressionObj}
               readOnly={readOnly}
-              validators={[notEmptyValidator]}
               isMarked={this.isMarked("edgeType.condition.expression")}
               showValidation={showValidation}
               showSwitch={showSwitch}

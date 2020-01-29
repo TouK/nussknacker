@@ -2,7 +2,7 @@ import update from "immutability-helper"
 import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
-import {notEmptyValidator} from "../../../../common/Validators"
+import {notEmptyValidator} from "../editors/Validators"
 import MovableRow from "./MovableRow"
 
 const FieldsSelect = (props) => {

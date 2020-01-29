@@ -8,7 +8,7 @@ import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import * as JsonUtils from "../../../common/JsonUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
-import {allValid, errorValidator, notEmptyValidator} from "../../../common/Validators"
+import {allValid, errorValidator, notEmptyValidator} from "./editors/Validators"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
 import Variable from "./../node-modal/Variable"
@@ -156,7 +156,7 @@ export class NodeDetailsContent extends React.Component {
                     "expression",
                     "Expression",
                     "endResult",
-                    [notEmptyValidator, errorValidator(fieldErrors, DEFAULT_EXPRESSION_ID)],
+                  fieldErrors
                 ) : null
               }
               {this.createField("checkbox", "Disabled", "isDisabled")}
@@ -199,7 +199,7 @@ export class NodeDetailsContent extends React.Component {
                   "expression",
                   "Expression",
                   "expression",
-                  [notEmptyValidator, errorValidator(fieldErrors, DEFAULT_EXPRESSION_ID)],
+                fieldErrors
               )}
               {this.createField("checkbox", "Disabled", "isDisabled")}
               {this.descriptionField()}
@@ -217,7 +217,7 @@ export class NodeDetailsContent extends React.Component {
                           param.name,
                           "expression",
                           `service.parameters[${index}]`,
-                          [notEmptyValidator, errorValidator(fieldErrors, param.name)],
+                        fieldErrors
                       )}
                     </div>
                 )
@@ -243,11 +243,11 @@ export class NodeDetailsContent extends React.Component {
                   editedNode={this.state.editedNode}
                   savedNode={this.state.editedNode}
                   setNodeState={newParams => this.setNodeDataAt("ref.parameters", newParams)}
-                  createListField={(param, index) => this.createExpressionListField(
+                  createListField={(param, index) => this. createExpressionListField(
                       param.name,
                       "expression",
                       `ref.parameters[${index}]`,
-                      [notEmptyValidator, errorValidator(fieldErrors, param.name)],
+                    fieldErrors
                   )}
                   createReadOnlyField={params => (
                       <div className="node-row">{this.renderFieldLabel(params.name)}
@@ -266,46 +266,46 @@ export class NodeDetailsContent extends React.Component {
       case "Join":
       case "CustomNode":
         return (
-            <div className="node-table-body">
-              {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+          <div className="node-table-body">
+            {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
 
-              {
-                this.showOutputVar && this.createField(
-                    "input",
-                    "Output",
-                    "outputVar",
-                    false,
-                    [notEmptyValidator, errorValidator(fieldErrors, "outputVar")],
-                    "outputVar",
-                    false,
-                    null,
-                )
-              }
-              {NodeUtils.nodeType(this.props.node) === "Join" &&
-              <BranchParameters
-                  onChange={this.setNodeDataAt}
-                  node={this.state.editedNode}
-                  joinDef={this.nodeDef}
-                  isMarked={this.isMarked}
-                  showValidation={showValidation}
-                  showSwitch={showSwitch}
-                  errors={fieldErrors}
-              />
-              }
-              {(this.state.editedNode.parameters).map((param, index) => {
-                return (
-                    <div className="node-block" key={this.props.node.id + param.name + index}>
-                      {this.createExpressionListField(
-                          param.name,
-                          "expression",
-                          `parameters[${index}]`,
-                          [notEmptyValidator, errorValidator(fieldErrors, param.name)],
-                      )}
-                    </div>
-                )
-              })}
-              {this.descriptionField()}
-            </div>
+            {
+              this.showOutputVar && this.createField(
+                "input",
+                "Output",
+                "outputVar",
+                false,
+                [notEmptyValidator, errorValidator(fieldErrors, "outputVar")],
+                "outputVar",
+                false,
+                null,
+              )
+            }
+            {NodeUtils.nodeType(this.props.node) === "Join" &&
+            <BranchParameters
+              onChange={this.setNodeDataAt}
+              node={this.state.editedNode}
+              joinDef={this.nodeDef}
+              isMarked={this.isMarked}
+              showValidation={showValidation}
+              showSwitch={showSwitch}
+              errors={fieldErrors}
+            />
+            }
+            {(this.state.editedNode.parameters).map((param, index) => {
+              return (
+                <div className="node-block" key={this.props.node.id + param.name + index}>
+                  {this.createExpressionListField(
+                    param.name,
+                    "expression",
+                    `parameters[${index}]`,
+                    fieldErrors
+                  )}
+                </div>
+              )
+            })}
+            {this.descriptionField()}
+          </div>
         )
       case "VariableBuilder":
         return <MapVariable
@@ -337,7 +337,7 @@ export class NodeDetailsContent extends React.Component {
                   "expression",
                   "Expression",
                   "expression",
-                  [notEmptyValidator, errorValidator(fieldErrors, DEFAULT_EXPRESSION_ID)],
+                fieldErrors
               )}
               {this.createField("input", "exprVal", "exprVal", false, [notEmptyValidator, errorValidator(fieldErrors, "exprVal")])}
               {this.descriptionField()}
@@ -415,30 +415,30 @@ export class NodeDetailsContent extends React.Component {
         )
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
-            <div className="node-table-body">
-              {_.concat(fields, commonFields, additionalFields)}
-              {hasExceptionHandlerParams ?
-                  (<div className="node-row">
-                    <div className="node-label">Exception handler:</div>
-                    <div className="node-group">
-                      {this.state.editedNode.exceptionHandler.parameters.map((param, index) => {
-                        return (
-                            <div className="node-block" key={this.props.node.id + param.name + index}>
-                              {this.createExpressionListField(
-                                  param.name,
-                                  "expression",
-                                  `exceptionHandler.parameters[${index}]`,
-                                  [notEmptyValidator, errorValidator(fieldErrors, param.name)],
-                                  "String",
-                              )}
-                            </div>
-                        )
-                      })}
-                    </div>
-                  </div>) : null
-              }
-              {this.descriptionField()}
-            </div>
+          <div className="node-table-body">
+            {_.concat(fields, commonFields, additionalFields)}
+            {hasExceptionHandlerParams ?
+              (<div className="node-row">
+                <div className="node-label">Exception handler:</div>
+                <div className="node-group">
+                  {this.state.editedNode.exceptionHandler.parameters.map((param, index) => {
+                    return (
+                      <div className="node-block" key={this.props.node.id + param.name + index}>
+                        {this.createExpressionListField(
+                          param.name,
+                          "expression",
+                          `exceptionHandler.parameters[${index}]`,
+                          fieldErrors,
+                          "String",
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>) : null
+            }
+            {this.descriptionField()}
+          </div>
         )
       default:
         return (
@@ -470,6 +470,7 @@ export class NodeDetailsContent extends React.Component {
               key={key}
               showSwitch={showSwitch}
               showValidation={showValidation}
+              errors={fieldErrors}
           />
       )
     } else {
@@ -514,11 +515,11 @@ export class NodeDetailsContent extends React.Component {
           {this.state.editedNode.ref.parameters.map((param, index) => {
             return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
-                  {this.createExpressionListField(
+                  {this. createExpressionListField(
                       param.name,
                       "expression",
                       `ref.parameters[${index}]`,
-                      [notEmptyValidator, errorValidator(fieldErrors, param.name)],
+                    fieldErrors
                   )}
                 </div>
             )
@@ -562,13 +563,13 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
-  createExpressionField = (fieldName, fieldLabel, expressionProperty, validators) =>
-      this.doCreateExpressionField(fieldName, fieldLabel, `${expressionProperty}`, validators)
+  createExpressionField = (fieldName, fieldLabel, expressionProperty, fieldErrors) =>
+      this.doCreateExpressionField(fieldName, fieldLabel, `${expressionProperty}`, fieldErrors)
 
-  createExpressionListField = (fieldName, expressionProperty, listFieldPath, validators, fieldType) =>
-      this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`, validators, fieldType)
+  createExpressionListField = (fieldName, expressionProperty, listFieldPath, fieldErrors, fieldType) =>
+      this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`, fieldErrors, fieldType)
 
-  doCreateExpressionField = (fieldName, fieldLabel, exprPath, validators, fieldType) => {
+  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, fieldType) => {
     const {showValidation, showSwitch, isEditMode} = this.props
     return (
         <ExpressionField
@@ -576,7 +577,6 @@ export class NodeDetailsContent extends React.Component {
             fieldLabel={fieldLabel}
             fieldType={fieldType}
             exprPath={exprPath}
-            validators={validators}
             isEditMode={isEditMode}
             editedNode={this.state.editedNode}
             isMarked={this.isMarked}
@@ -588,6 +588,7 @@ export class NodeDetailsContent extends React.Component {
             testResultsToHide={this.state.testResultsToHide}
             toggleTestResult={this.toggleTestResult}
             renderFieldLabel={this.renderFieldLabel}
+            errors={fieldErrors}
         />
     )
   }

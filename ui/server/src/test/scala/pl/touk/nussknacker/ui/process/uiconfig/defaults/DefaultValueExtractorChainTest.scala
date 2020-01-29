@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 class DefaultValueExtractorChainTest extends FlatSpec with Matchers {
   behavior of "DefaultValueExtractorChainTest"
-  private val confMap = Map("node1" -> Map("param1" -> ParameterConfig(defaultValue = Some("123"), editor = None)))
+  private val confMap = Map("node1" -> Map("param1" -> ParameterConfig(defaultValue = Some("123"), editor = None, None)))
   private val param1 = Parameter("param1", ClazzRef(Integer.TYPE))
   private val param2 = Parameter("param=2", ClazzRef(Integer.TYPE))
   private val node = NodeDefinition("node1", List(param1, param2))
