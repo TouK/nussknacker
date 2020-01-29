@@ -74,7 +74,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
       Set.empty
     } else {
       collectedSoFar += clazzRef
-      val definitionsForClass = if (settings.isBlacklisted(clazzRef.clazz)) {
+      val definitionsForClass = if (settings.isHidden(clazzRef.clazz)) {
         Set.empty
       } else {
         val classDefinition = clazzDefinitionWithLogging(clazzRef.clazz)(path)

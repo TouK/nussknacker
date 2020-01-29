@@ -80,7 +80,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     methods.get("toString").value shouldBe MethodInfo(List(), ClazzRef[String], None)
   }
 
-  test("should skip blacklisted properties") {
+  test("should skip hidden properties") {
     val testCasses = Table(("class", "className"),
       (Typed[SampleClass], "SampleClass"),
       (Typed[JavaSampleClass], "JavaSampleClass")
@@ -95,12 +95,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     forAll(testCasses) { (clazz, clazzName) =>
       forAll(testClassPatterns) { classPattern =>
         val infos = clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings(
-          ClassExtractionSettings.DefaultBlacklistedClasses,
-          ClassExtractionSettings.DefaultBlacklistedMembers ++ Seq(
+          ClassExtractionSettings.DefaultExcludedClasses,
+          ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
           ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("ba.*")),
           ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("get.*")),
           ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("is.*"))
-        ), ClassExtractionSettings.DefaultWhitelistedMembers))
+        ), ClassExtractionSettings.DefaultIncludedMembers))
         val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
@@ -225,7 +225,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     boxedIntDef shouldBe defined
   }
 
-  test("blacklisted by default classes") {
+  test("hidden by default classes") {
     val metaSpelDef = singleClassAndItsChildrenDefinition[ServiceWithMetaSpelParam]
     // These params are used programmable - user can't create instance of this type
     metaSpelDef.exists(_.clazzName.clazz == classOf[SpelExpressionRepr]) shouldBe false

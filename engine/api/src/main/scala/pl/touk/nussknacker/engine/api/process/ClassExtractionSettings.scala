@@ -3,32 +3,36 @@ package pl.touk.nussknacker.engine.api.process
 import java.lang.reflect.Member
 import java.util.regex.Pattern
 
+import cats.data.NonEmptyList
+
 /**
   * Settings for class extraction which is done to handle e.g. syntax suggestions in UI
-  * @param blacklistedClassPredicates - sequence of predicates to recognize blacklisted classes
-  * @param blacklistedClassMemberPredicates - sequence of predicates to recognize blacklisted class members - will be
- *                                            used all predicates that matches given class
-  * @param whitelistedClassMemberPredicates - sequence of predicates to recognize whitelisted class members - will be
- *                                            used first predicate that matches given class
+  * @param excludeClassPredicates - sequence of predicates to determine hidden classes
+  * @param excludeClassMemberPredicates - sequence of predicates to determine excluded class members - will be
+  *                                       used all predicates that matches given class
+  * @param includeClassMemberPredicates - sequence of predicates to determine included class members - will be
+  *                                       used all predicates that matches given class. If none is matching,
+  *                                       all non-excluded members will be visible.
   */
-case class ClassExtractionSettings(blacklistedClassPredicates: Seq[ClassPredicate],
-                                   blacklistedClassMemberPredicates: Seq[ClassMemberPredicate],
-                                   whitelistedClassMemberPredicates: Seq[ClassMemberPredicate]) {
+case class ClassExtractionSettings(excludeClassPredicates: Seq[ClassPredicate],
+                                   excludeClassMemberPredicates: Seq[ClassMemberPredicate],
+                                   includeClassMemberPredicates: Seq[ClassMemberPredicate]) {
 
-  def isBlacklisted(clazz: Class[_]): Boolean =
-    blacklistedClassPredicates.exists(_.matches(clazz))
+  def isHidden(clazz: Class[_]): Boolean =
+    excludeClassPredicates.exists(_.matches(clazz))
 
-  def visibleMembersPredicate(clazz: Class[_]): VisibleMembersPredicate =
+  def visibleMembersPredicate(clazz: Class[_]): VisibleMembersPredicate = {
     VisibleMembersPredicate(
-      blacklistedClassMemberPredicates.filter(p => p.matchesClass(clazz)),
-      whitelistedClassMemberPredicates.find(p => p.matchesClass(clazz)))
+      excludeClassMemberPredicates.filter(p => p.matchesClass(clazz)),
+      NonEmptyList.fromList(includeClassMemberPredicates.filter(p => p.matchesClass(clazz)).toList))
+  }
 
 }
 
-case class VisibleMembersPredicate(blacklist: Seq[ClassMemberPredicate], whitelist: Option[ClassMemberPredicate]) {
+case class VisibleMembersPredicate(excludePredicates: Seq[ClassMemberPredicate], includePredicates: Option[NonEmptyList[ClassMemberPredicate]]) {
 
   def shouldBeVisible(member: Member): Boolean =
-    !blacklist.exists(_.matchesMember(member)) && whitelist.forall(_.matchesMember(member))
+    !excludePredicates.exists(_.matchesMember(member)) && includePredicates.forall(_.exists(_.matchesMember(member)))
 
 }
 
@@ -36,9 +40,9 @@ object ClassExtractionSettings {
 
   val ToStringMethod = "toString"
 
-  val Default: ClassExtractionSettings = ClassExtractionSettings(DefaultBlacklistedClasses, DefaultBlacklistedMembers, DefaultWhitelistedMembers)
+  val Default: ClassExtractionSettings = ClassExtractionSettings(DefaultExcludedClasses, DefaultExcludedMembers, DefaultIncludedMembers)
 
-  lazy val DefaultBlacklistedClasses: List[ClassPredicate] =
+  lazy val DefaultExcludedClasses: List[ClassPredicate] =
     List(
       // Void types
       ClassPatternPredicate(Pattern.compile("void")),
@@ -62,15 +66,15 @@ object ClassExtractionSettings {
       ClassPatternPredicate(Pattern.compile("cats\\..*"))
     )
 
-  lazy val DefaultBlacklistedMembers: List[ClassMemberPredicate] = CommonBlacklistedMembers ++ AvroBlacklistedMembers
+  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ AvroExcludedMembers
 
-  lazy val CommonBlacklistedMembers: List[ClassMemberPredicate] =
+  lazy val CommonExcludedMembers: List[ClassMemberPredicate] =
     List(
       // We want to hide all technical methods in every class, toString can be useful so we will leave it
       AllMethodNamesPredicate(classOf[DumpCaseClass], Set(ToStringMethod))
     )
 
-  lazy val AvroBlacklistedMembers: List[ClassMemberPredicate] =
+  lazy val AvroExcludedMembers: List[ClassMemberPredicate] =
     List(
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.generic\\.IndexedRecord")),
@@ -80,9 +84,9 @@ object ClassExtractionSettings {
         Pattern.compile("(getConverion|getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)"))
     )
 
-  lazy val DefaultWhitelistedMembers: List[ClassMemberPredicate] = WhitelistedUtilMembers ++ WhitelistedSerializableMembers ++ WhitelistedStdMembers
+  lazy val DefaultIncludedMembers: List[ClassMemberPredicate] = IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers
 
-  lazy val WhitelistedUtilMembers: List[ClassMemberPredicate] =
+  lazy val IncludedUtilsMembers: List[ClassMemberPredicate] =
     List(
       // For numeric types, strings an collections, date types we want to see all useful methods
       ClassMemberPatternPredicate(
@@ -97,19 +101,19 @@ object ClassExtractionSettings {
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("java\\.lang\\.CharSequence")),
         Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|isEmpty|lastIndexOf|length|matches|" +
-          s"replaceAll|replaceFirst|split|startsWith|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
+          s"replaceAll|replaceFirst|split|startsWith|substring|toLowerCase|toUpperCase|trim")),
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Collection")),
-        Pattern.compile(s"contains|containsAll|get|getOrDefault|indexOf|isEmpty|size|$ToStringMethod")),
+        Pattern.compile(s"contains|containsAll|get|getOrDefault|indexOf|isEmpty|size")),
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Optional")),
-        Pattern.compile(s"get|isPresent|orElse|$ToStringMethod")),
+        Pattern.compile(s"get|isPresent|orElse")),
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("(scala\\.collection\\.Traversable|scala\\.Option)")),
-        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|$ToStringMethod"))
+        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size"))
     )
 
-  lazy val WhitelistedSerializableMembers: List[ClassMemberPredicate] =
+  lazy val IncludedSerializableMembers: List[ClassMemberPredicate] =
     List(
       ClassMemberPatternPredicate(
         ClassPatternPredicate(Pattern.compile("scala\\.xml\\..*")),
@@ -119,7 +123,7 @@ object ClassExtractionSettings {
         Pattern.compile(s"noSpaces|spaces2|spaces4|$ToStringMethod"))
     )
 
-  lazy val WhitelistedStdMembers: List[ClassMemberPredicate] =
+  lazy val IncludedStdMembers: List[ClassMemberPredicate] =
     List(
       // For other std types we don't want to see anything but toString method
       ClassMemberPatternPredicate(
