@@ -392,7 +392,10 @@ class UserRightPanel extends Component {
     )
   }
 
-  isRunning = () => ProcessStateUtils.isDeployed(this.props.fetchedProcessDetails)
+  isRunning = () => {
+    const {isStateLoaded, processState, fetchedProcessDetails} = this.props
+    return fetchedProcessDetails ? (isStateLoaded ? ProcessStateUtils.isStateRunning(processState) : ProcessStateUtils.isProcessRunning(fetchedProcessDetails)) : false
+  }
 
   showProperties = () => {
     this.props.actions.displayModalNodeDetails(

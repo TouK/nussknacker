@@ -83,6 +83,8 @@ class Visualization extends React.Component {
         this.showCountsIfNeeded(details.fetchedProcessDetails.json)
       })
 
+      this.fetchProcessStatus()
+
       this.state.processStateIntervalId = setInterval(
         () => this.fetchProcessStatus(),
         this.state.processStateIntervalTime

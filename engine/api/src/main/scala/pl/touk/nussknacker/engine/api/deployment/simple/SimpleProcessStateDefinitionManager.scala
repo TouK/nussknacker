@@ -55,7 +55,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   val statusMessagesMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "Failed to get state of process..",
     SimpleStateStatus.NotFound -> "State was not found..",
-    SimpleStateStatus.Unknown -> "Unknown state of the prsocess..",
+    SimpleStateStatus.Unknown -> "Unknown state of the process..",
     SimpleStateStatus.NotDeployed -> "Process has never been deployed.",
     SimpleStateStatus.DuringDeploy -> "Process is being deployed.",
     SimpleStateStatus.Running -> "Process has been successfully deployed.",

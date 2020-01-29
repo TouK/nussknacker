@@ -40,6 +40,9 @@ class StateIcon extends React.Component<Props, State> {
     width: 24,
   }
 
+  // eslint-disable-next-line i18next/no-literal-string
+  static popoverConfigs = {placement: "bottom", triggers: ["click"]}
+
   state = {
     animationTimeout: {
       enter: 500,
@@ -66,20 +69,11 @@ class StateIcon extends React.Component<Props, State> {
     return absoluteBePath(processState?.icon || ProcessStateUtils.UNKNOWN_ICON)
   }
 
-  render() {
-    const {t, animation, process, processState, isStateLoaded, height, width} = this.props
-    const icon = this.getIcon(process, processState, isStateLoaded)
-    const tooltip = this.getTooltip(process, processState, isStateLoaded)
-    const name = (isStateLoaded ? processState?.name : process?.state?.name) || unknownName()
-    const errors = (isStateLoaded ? processState?.errors : process?.state?.errors) || []
+  popoverOverlay = (name: string, tooltip: string, errors: Array<string>) => {
+    const {t} = this.props
 
-    // eslint-disable-next-line i18next/no-literal-string
-    const iconClass = `state-list${isStateLoaded === false ? " state-pending" : ""}`
-    const transitionKey = `${process.id}-${icon}`
-
-    const popoverHoverFocus = (
-      // eslint-disable-next-line i18next/no-literal-string
-      <Popover id="popover-trigger-focus"  title={name}>
+    return (
+      <Popover id="state-icon-popover" title={name}>
         <strong>{tooltip}</strong>
         { errors.length !== 0 ?
           <div>
@@ -94,16 +88,26 @@ class StateIcon extends React.Component<Props, State> {
         }
       </Popover>
     )
+  }
+
+  render() {
+    const {animation, process, processState, isStateLoaded, height, width} = this.props
+    const icon = this.getIcon(process, processState, isStateLoaded)
+    const tooltip = this.getTooltip(process, processState, isStateLoaded)
+    const name = (isStateLoaded ? processState?.name : process?.state?.name) || unknownName()
+    const errors = (isStateLoaded ? processState?.errors : process?.state?.errors) || []
+
+    // eslint-disable-next-line i18next/no-literal-string
+    const iconClass = `state-icon${isStateLoaded === false ? " state-pending" : ""}`
+    const transitionKey = `${process.id}-${icon}`
 
     const image = (
       <OverlayTrigger
-        // eslint-disable-next-line i18next/no-literal-string
-        trigger={["hover", "focus"]}
-        // eslint-disable-next-line i18next/no-literal-string
-        placement="bottom"
-        overlay={popoverHoverFocus}
+        trigger={StateIcon.popoverConfigs.triggers}
+        placement={StateIcon.popoverConfigs.placement}
+        overlay={this.popoverOverlay(name, tooltip, errors)}
       >
-        <img src={icon} className={iconClass} height={height} width={width}/>
+        <img src={icon} alt={tooltip} title={tooltip} className={iconClass} height={height} width={width}/>
       </OverlayTrigger>
     )
 

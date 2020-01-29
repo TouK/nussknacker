@@ -4,9 +4,11 @@ class ProcessStateUtils {
 
   UNKNOWN_ICON = "/assets/states/status-unknown.svg"
 
-  public isRunning = (state: ProcessStateType) => this.getStateStatus(state) === StatusType.Running.toString()
+  public isStateRunning = (state: ProcessStateType) => this.getStateStatus(state) === StatusType.Running.toString()
 
   public isDeployed = (process: ProcessType) => process?.lastAction?.action === ActionType.Deploy
+
+  public isProcessRunning = (process: ProcessType) => this.isStateRunning(process.state)
 
   private getStateStatus = (state: ProcessStateType) => {
     const status = state?.status.name
