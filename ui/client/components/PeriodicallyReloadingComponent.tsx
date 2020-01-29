@@ -6,9 +6,11 @@ abstract class PeriodicallyReloadingComponent<P, S> extends React.Component<P, S
 
   abstract getIntervalTime(): number
 
-  abstract onMount(): void
-
   abstract reload(): void
+
+  onMount(): void {
+    //Default empty implementation onMount
+  }
 
   componentDidMount() {
     this.onMount()

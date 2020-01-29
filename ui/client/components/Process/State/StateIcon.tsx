@@ -111,19 +111,13 @@ class StateIcon extends React.Component<Props, State> {
       </OverlayTrigger>
     )
 
-    if (animation === false) {
-      return (
-        image
-      )
-    }
-
-    return (
+    return animation === true ? (
       <SwitchTransition>
         <CSSTransition key={transitionKey} classNames="fade" timeout={this.state.animationTimeout} addEndListener={this.animationListener}>
           {image}
         </CSSTransition>
       </SwitchTransition>
-    )
+    ): image
   }
 }
 
