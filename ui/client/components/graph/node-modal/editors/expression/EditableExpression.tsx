@@ -31,16 +31,19 @@ type State = {
 
 class EditableExpression extends React.Component<Props, State> {
 
-  state = {
-    displayRawEditor: undefined
+  constructor(props) {
+    super(props);
+
+    const {param, expressionObj, values} = this.props
+    this.state = {
+      displayRawEditor: !(param?.editor.defaultMode === dualEditorMode.SIMPLE
+        && editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values))
+    }
   }
 
   toggleEditor = (_) => {
-    const {param} = this.props
     this.setState({
-      displayRawEditor: this.state.displayRawEditor === undefined ?
-        (param.editor.defaultMode === dualEditorMode.SIMPLE) :
-        !this.state.displayRawEditor
+      displayRawEditor: !this.state.displayRawEditor
     })
   }
 
