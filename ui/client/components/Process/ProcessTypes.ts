@@ -46,7 +46,8 @@ export type ProcessDetails = {
 
 export type ProcessState = {
   status: {
-    value: string;
+    name: string;
+    type: string;
   };
   deploymentId?: string;
   allowedActions: Array<ActionType>;

@@ -2,11 +2,11 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 
 import java.net.URI
 
-import io.circe.Json
 import io.circe.generic.JsonCodec
+import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus, StateStatusFollowingDeployAction}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
 
 //TODO: Do we really  we need ProcessStatus and ProcessState - Do these DTO's do the same things?
@@ -19,9 +19,9 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
                                     attributes: Option[Json] = Option.empty,
                                     errorMessage: Option[String] = Option.empty)
 
-object ProcessStatus extends StateStatusFollowingDeployAction {
-  //It's necessary to encode / decode StateStatus
-  import ProcessState._
+object ProcessStatus {
+  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
+  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
   def simple(status: StateStatus, deploymentId: Option[String], errorMessage: Option[String]): ProcessStatus =
     create(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, errorMessage)
@@ -66,9 +66,9 @@ object ProcessStatus extends StateStatusFollowingDeployAction {
 
   //TODO: Move this logic to another place.. This should be moved together with ManagementActor.handleObsoleteStatus
   private def deployedVersionMismatchMessage(processState: ProcessState, lastAction: Option[ProcessDeploymentAction]) = {
-    (processState.processVersionId, lastAction) match {
+    (processState.version, lastAction) match {
       case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId => None
-      case (Some(stateVersion), Some(action)) if action.isDeployed && !isFollowingDeployAction(processState.status) => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), but currently not working")
+      case (Some(stateVersion), Some(action)) if action.isDeployed && !processState.status.isFollowingDeployAction => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), but currently not working")
       case (Some(stateVersion), Some(action)) if action.isDeployed && stateVersion.versionId != action.processVersionId => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version ${action.processVersionId}")
       case (Some(stateVersion), None) if processState.isDeployed => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed")
       case (None, None) => None

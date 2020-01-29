@@ -50,5 +50,5 @@ class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with BatchDock
   }
 
   private def processVersion(processName: ProcessName): Option[ProcessVersion] =
-    processManager.findJobStatus(processName).futureValue.flatMap(_.processVersionId)
+    processManager.findJobStatus(processName).futureValue.flatMap(_.version)
 }

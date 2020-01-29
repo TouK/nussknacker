@@ -9,7 +9,7 @@ class ProcessStateUtils {
   public isDeployed = (process: Process) => process?.lastAction?.action === ActionType.Deploy
 
   private getStateStatus = (state: ProcessState) => {
-    const status = state.status.value
+    const status = state?.status.name
 
     if (status === null) {
       return StatusType.Unknown.toString()

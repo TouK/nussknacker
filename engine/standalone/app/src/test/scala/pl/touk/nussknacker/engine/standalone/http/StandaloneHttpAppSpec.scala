@@ -134,8 +134,8 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
         cursorState.downField("deploymentId").downField("value").focus shouldBe Some(Json.fromString(procId.value))
         cursorState.downField("startTime").focus shouldBe Some(Json.fromBigDecimal(testEpoch))
-        cursorState.downField("status").downField("clazz").focus shouldBe Some(Json.fromString(SimpleStateStatus.Running.getClass.getSimpleName))
-        cursorState.downField("status").downField("value").focus shouldBe Some(Json.fromString(SimpleStateStatus.Running.name))
+        cursorState.downField("status").downField("type").focus shouldBe Some(Json.fromString(SimpleStateStatus.Running.getClass.getSimpleName))
+        cursorState.downField("status").downField("name").focus shouldBe Some(Json.fromString(SimpleStateStatus.Running.name))
       }
 
       Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {

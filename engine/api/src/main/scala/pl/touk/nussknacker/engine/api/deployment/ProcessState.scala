@@ -1,19 +1,17 @@
 package pl.touk.nussknacker.engine.api.deployment
 import java.net.URI
 
-import io.circe.generic.JsonCodec
 import io.circe._
+import io.circe.generic.JsonCodec
+import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.ProcessState.StateStatusCodec
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.availableStatusClasses
-
-import scala.util.{Failure, Success, Try}
 
 trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
   def statusTooltip(stateStatus: StateStatus): Option[String]
   def statusIcon(stateStatus: StateStatus): Option[URI]
+  //Temporary mapping ProcessActionType to StateStatus. TODO: Remove it when we will support state cache
   def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus
 }
 
@@ -48,7 +46,7 @@ object ProcessState {
 
 @JsonCodec case class ProcessState(deploymentId: DeploymentId,
                                    status: StateStatus,
-                                   processVersionId: Option[ProcessVersion] = Option.empty,
+                                   version: Option[ProcessVersion] = Option.empty,
                                    allowedActions: List[ProcessActionType] = List.empty,
                                    icon: Option[URI] = Option.empty,
                                    tooltip: Option[String] = Option.empty,
@@ -68,62 +66,39 @@ object ProcessActionType extends Enumeration {
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 }
 
-sealed trait StateStatus {
+object StateStatus {
+  implicit val configuration: Configuration = Configuration
+    .default
+    .withDefaults
+    .withDiscriminator("type")
+}
+
+@ConfiguredJsonCodec sealed trait StateStatus {
   def isDuringDeploy: Boolean = false
   def isFinished: Boolean = false
   def isRunning: Boolean = false
   def canDeploy: Boolean = false
   def name: String
+
+  def isFollowingDeployAction: Boolean =
+    isDuringDeploy || isRunning || isFinished
 }
 
-object StateStatus {
-  import io.circe.syntax._
+final case class NotEstablishedStateStatus(val name: String) extends StateStatus
 
-  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeJson.contramap(st => StateStatusCodec(st.getClass.getSimpleName, st.name).asJson)
-  implicit val statusDecoder: Decoder[StateStatus] = Decoder[StateStatusCodec].emap(codec =>
-    availableStatusClasses
-      .get(codec.clazz)
-      .map(clazz =>
-        Try(clazz.getConstructor(classOf[String]).newInstance(codec.value)) match {
-          case Failure(exception) => Left(s"Failed to decode StateStatus. Error: ${exception.getMessage}.")
-          case Success(stateStatus) => Right(stateStatus)
-        }
-      )
-      .getOrElse(Left(s"Failed to decode StateStatus. Error: class ${codec.clazz} doesn't exist."))
-  )
-
-  //This field keeps all available statuses. Remember!! If you want add new status class you have to add it also here!
-  val availableStatusClasses: Map[String, Class[_ <: StateStatus]] = List(
-    classOf[NotEstablishedStateStatus],
-    classOf[StoppedStateStatus],
-    classOf[DuringDeployStateStatus],
-    classOf[FinishedStateStatus],
-    classOf[RunningStateStatus]
-  )
-    .map(clz => clz.getSimpleName -> clz)
-    .toMap[String, Class[_ <: StateStatus]]
-}
-
-trait StateStatusFollowingDeployAction {
-  def isFollowingDeployAction(stateStatus: StateStatus): Boolean =
-    stateStatus.isDuringDeploy || stateStatus.isRunning || stateStatus.isFinished
-}
-
-final class NotEstablishedStateStatus(val name: String) extends StateStatus
-
-final class StoppedStateStatus(val name: String) extends StateStatus {
+final case class StoppedStateStatus(val name: String) extends StateStatus {
   override def canDeploy: Boolean = true
 }
 
-final class DuringDeployStateStatus(val name: String) extends StateStatus {
+final case class DuringDeployStateStatus(val name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true
 }
 
-final class FinishedStateStatus(val name: String) extends StateStatus {
+final case class FinishedStateStatus(val name: String) extends StateStatus {
   override def isFinished: Boolean = true
   override def canDeploy: Boolean = true
 }
 
-final class RunningStateStatus(val name: String) extends StateStatus {
+final case class RunningStateStatus(val name: String) extends StateStatus {
   override def isRunning: Boolean = true
 }

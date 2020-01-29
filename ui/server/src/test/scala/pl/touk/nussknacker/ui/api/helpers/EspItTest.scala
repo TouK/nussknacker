@@ -301,7 +301,7 @@ object ProcessJson{
       process.hcursor.downField("name").as[String].right.get,
       lastAction.map(_.hcursor.downField("processVersionId").as[Long].right.get),
       lastAction.map(_.hcursor.downField("action").as[String].right.get),
-      process.hcursor.downField("state").downField("status").downField("value").as[Option[String]].right.get
+      process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].right.get
     )
   }
 }
