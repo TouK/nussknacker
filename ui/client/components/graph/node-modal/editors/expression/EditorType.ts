@@ -6,6 +6,9 @@ import _ from "lodash"
 import {ExpressionObj} from "./types"
 import i18next from "i18next"
 import React from "react"
+import {DateEditor} from "./DateTimeEditor/DateEditor"
+import {TimeEditor} from "./DateTimeEditor/TimeEditor"
+import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
 
 type ParamType = $TodoType
 type ValuesType = $TodoType
@@ -37,6 +40,9 @@ export enum editorTypes {
   BOOL_PARAMETER_EDITOR = "BoolParameterEditor",
   STRING_PARAMETER_EDITOR = "StringParameterEditor",
   FIXED_VALUES_PARAMETER_EDITOR = "FixedValuesParameterEditor",
+  DATE = "DateParameterEditor",
+  TIME = "TimeParameterEditor",
+  DATE_TIME = "DateTimeParameterEditor",
   DUAL_PARAMETER_EDITOR = "DualParameterEditor",
 }
 
@@ -45,7 +51,7 @@ export enum editorTypes {
 export const editors: Record<editorTypes, EditorConfig> = {
   [editorTypes.RAW_PARAMETER_EDITOR]: {
     editor: () => RawEditor,
-    hint: () => i18next.t("editors.raw.hint", "Switch to expression mode"),
+    hint: () => i18next.t("editors.raw.switchableToHint", "Switch to expression mode"),
     showSwitch: false,
   },
   [editorTypes.BOOL_PARAMETER_EDITOR]: {
@@ -82,5 +88,23 @@ export const editors: Record<editorTypes, EditorConfig> = {
         editors[param.editor.simpleEditor.type].switchableTo(expressionObj) :
         true,
     values: (param) => param.editor.simpleEditor.possibleValues,
+  },
+  [editorTypes.DATE]: {
+    editor: () => DateEditor,
+    hint: switchable => switchable ? DateEditor.switchableToHint : DateEditor.notSwitchableToHint,
+    showSwitch: true,
+    switchableTo: DateEditor.switchableTo,
+  },
+  [editorTypes.TIME]: {
+    editor: () => TimeEditor,
+    hint: switchable => switchable ? TimeEditor.switchableToHint : TimeEditor.notSwitchableToHint,
+    showSwitch: true,
+    switchableTo: TimeEditor.switchableTo,
+  },
+  [editorTypes.DATE_TIME]: {
+    editor: () => DateTimeEditor,
+    hint: switchable => switchable ? DateTimeEditor.switchableToHint : DateTimeEditor.notSwitchableToHint,
+    showSwitch: true,
+    switchableTo: DateTimeEditor.switchableTo,
   },
 }
