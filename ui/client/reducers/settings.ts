@@ -1,4 +1,3 @@
-import {$TodoType} from "../actions/migrationTypes"
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 

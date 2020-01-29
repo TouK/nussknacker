@@ -1,7 +1,6 @@
 import {events} from "../../analytics/TrackingEvents"
 import NodeUtils from "../../components/graph/NodeUtils"
 import HttpService from "../../http/HttpService"
-import {$TodoType} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 import {GroupId, GroupType, NodeId, NodeType, Process} from "./models"
 import {reportEvent} from "./reportEvent"

@@ -3,8 +3,7 @@ import ProcessUtils from "../../../../../common/ProcessUtils"
 import {dualEditorMode, editors, editorTypes} from "./EditorType"
 import SwitchIcon from "./SwitchIcon"
 import FixedValuesEditor from "./FixedValuesEditor"
-import _ from "lodash";
-import {$TodoType} from "../../../../../actions/migrationTypes";
+import _ from "lodash"
 
 type Props = {
   fieldType: string
@@ -32,12 +31,12 @@ type State = {
 class EditableExpression extends React.Component<Props, State> {
 
   constructor(props) {
-    super(props);
+    super(props)
 
     const {param, expressionObj, values} = this.props
     this.state = {
       displayRawEditor: !(param?.editor.defaultMode === dualEditorMode.SIMPLE
-        && editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values))
+          && editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
     }
   }
 
@@ -50,38 +49,38 @@ class EditableExpression extends React.Component<Props, State> {
   render() {
     const {
       fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param, renderFieldLabel, fieldLabel, readOnly,
-      values
+      values,
     } = this.props
 
     const paramType = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression")
 
     const editorType = paramType === editorTypes.FIXED_VALUES_PARAMETER_EDITOR ?
-      editorTypes.FIXED_VALUES_PARAMETER_EDITOR :
-      (!_.isEmpty(param) ? param.editor.type : editorTypes.RAW_PARAMETER_EDITOR)
+        editorTypes.FIXED_VALUES_PARAMETER_EDITOR :
+        (!_.isEmpty(param) ? param.editor.type : editorTypes.RAW_PARAMETER_EDITOR)
     const editor = editors[editorType]
 
     const Editor = editor.editor(param, this.state.displayRawEditor)
 
     return (
-      <div className={`${rowClassName ? rowClassName : " node-row"}`}>
-        {fieldLabel && renderFieldLabel(fieldLabel)}
-        <Editor toggleEditor={this.toggleEditor}
-                className={`${valueClassName ? valueClassName : "node-value"} ${editor.showSwitch ? "switchable " : ""}`}
-                {...this.props}
-                values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
-        />
-        {
-          param?.editor?.type === editorTypes.DUAL_PARAMETER_EDITOR &&
-          <SwitchIcon
-            switchable={editor.switchable(Editor, param, expressionObj)}
-            hint={editor.hint(editor.switchable(Editor, param, expressionObj), Editor, param)}
-            onClick={this.toggleEditor}
-            shouldShowSwitch={editor.showSwitch}
-            displayRawEditor={this.state.displayRawEditor}
-            readOnly={readOnly}
+        <div className={`${rowClassName ? rowClassName : " node-row"}`}>
+          {fieldLabel && renderFieldLabel(fieldLabel)}
+          <Editor toggleEditor={this.toggleEditor}
+                  className={`${valueClassName ? valueClassName : "node-value"} ${editor.showSwitch ? "switchable " : ""}`}
+                  {...this.props}
+                  values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
           />
-        }
-      </div>
+          {
+            param?.editor?.type === editorTypes.DUAL_PARAMETER_EDITOR &&
+            <SwitchIcon
+                switchable={editor.switchable(Editor, param, expressionObj)}
+                hint={editor.hint(editor.switchable(Editor, param, expressionObj), Editor, param)}
+                onClick={this.toggleEditor}
+                shouldShowSwitch={editor.showSwitch}
+                displayRawEditor={this.state.displayRawEditor}
+                readOnly={readOnly}
+            />
+          }
+        </div>
     )
   }
 }

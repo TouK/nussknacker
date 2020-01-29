@@ -1,6 +1,5 @@
 import HttpService from "../../http/HttpService"
 import {Attachment} from "../../reducers/processActivity"
-import {$TodoType} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export type DisplayProcessActivityAction = {

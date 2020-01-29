@@ -3,7 +3,6 @@ import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableExpression from "./EditableExpression"
 import {editorTypes} from "./EditorType"
-import {$TodoType} from "../../../../../actions/migrationTypes";
 
 type Props = {
   fieldName: string

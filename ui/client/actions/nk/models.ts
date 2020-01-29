@@ -1,5 +1,3 @@
-import {$TodoType} from "../migrationTypes"
-
 export type Edge = $TodoType;
 
 export type GroupId = string;

@@ -1,5 +1,3 @@
-import {$TodoType} from "../migrationTypes"
-
 type MetricsType = {
   url: string;
   defaultDashboard: string;

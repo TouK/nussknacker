@@ -1,4 +1,3 @@
-import {$TodoType} from "../actions/migrationTypes"
 import {GroupId} from "../actions/nk/models"
 import {Action} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"

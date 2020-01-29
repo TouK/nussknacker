@@ -1,7 +1,6 @@
 import moment from "moment"
 import {dateFormat} from "../../config"
 import HttpService from "../../http/HttpService"
-import {$TodoType} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export function displayProcessCounts(processCounts: $TodoType): $TodoType {

@@ -1,21 +1,16 @@
 import i18next from "i18next"
 import {isEmpty} from "lodash"
 import React from "react"
-import FixedValuesEditor from "./FixedValuesEditor";
-import {$TodoType} from "../../../../../actions/migrationTypes";
-
-type BoolEditor<P> = React.ComponentType<P> & {
-  switchableTo: Function
-  switchableToHint: string
-  notSwitchableToHint: string
-}
+import FixedValuesEditor from "./FixedValuesEditor"
+import {ExpressionObj} from "./types"
+import {EditorType} from "./EditorType"
 
 type Props = {
-  expressionObj: $TodoType
-  onValueChange: Function
-  readOnly: boolean
-  className: string
-  values?: any
+  expressionObj: ExpressionObj,
+  onValueChange: Function,
+  readOnly: boolean,
+  className: string,
+  values?: $TodoType,
 }
 
 const SUPPORTED_LANGUAGE = "spel"
@@ -28,25 +23,24 @@ const parseable = (expressionObj) => {
   return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE
 }
 
-const BoolEditor: BoolEditor<Props> = (props: Props) => {
-
+const BoolEditor: EditorType<Props> = (props: Props) => {
   const {expressionObj, readOnly, onValueChange, className} = props
 
   const trueValue = {expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true")}
   const falseValue = {expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false")}
 
   return (
-    <FixedValuesEditor
-      values={[
-        trueValue,
-        falseValue,
-      ]}
-      defaultValue={trueValue}
-      expressionObj={expressionObj}
-      onValueChange={onValueChange}
-      readOnly={readOnly}
-      className={className}
-    />
+      <FixedValuesEditor
+          values={[
+            trueValue,
+            falseValue,
+          ]}
+          defaultValue={trueValue}
+          expressionObj={expressionObj}
+          onValueChange={onValueChange}
+          readOnly={readOnly}
+          className={className}
+      />
   )
 }
 

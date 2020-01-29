@@ -1,6 +1,7 @@
+import cn from "classnames"
 import React from "react"
 import ExpressionSuggest from "./ExpressionSuggest"
-import {$TodoType} from "../../../../../actions/migrationTypes";
+import {EditorType} from "./EditorType"
 
 type Props = {
   fieldName: string
@@ -15,35 +16,32 @@ type Props = {
   className: string
 }
 
-export default function RawEditor(props: Props) {
+const RawEditor = (props: Props) => {
 
   const {
     fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows, cols, className,
+    onValueChange, rows = 1, cols = 50, className,
   } = props
 
   return (
-    <div className={className}>
-      <ExpressionSuggest
-        fieldName={fieldName}
-        inputProps={{
-          rows: rows,
-          cols: cols,
-          className: "node-input",
-          value: expressionObj.expression,
-          language: expressionObj.language,
-          onValueChange: onValueChange,
-          readOnly: readOnly,
-        }}
-        validators={validators}
-        isMarked={isMarked}
-        showValidation={showValidation}
-      />
-    </div>
+      <div className={className}>
+        <ExpressionSuggest
+            fieldName={fieldName}
+            inputProps={{
+              rows: rows,
+              cols: cols,
+              className: cn("node-input"),
+              value: expressionObj.expression,
+              language: expressionObj.language,
+              onValueChange: onValueChange,
+              readOnly: readOnly,
+            }}
+            validators={validators}
+            isMarked={isMarked}
+            showValidation={showValidation}
+        />
+      </div>
   )
 }
 
-RawEditor.defaultProps = {
-  rows: 1,
-  cols: 50,
-}
+export default RawEditor as EditorType<Props>

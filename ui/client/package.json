@@ -44,6 +44,8 @@
     "react-bootstrap": "~0.33.1",
     "react-custom-scrollbars": "~4.2.1",
     "react-datepicker": "~2.8.0",
+    "react-datetime": "^2.16.3",
+    "react-datetime-picker": "^2.9.0",
     "react-dnd": "~7.6.0",
     "react-dnd-html5-backend": "~7.6.0",
     "react-dom": "^16.12.0",
@@ -74,6 +76,7 @@
     "svg-pan-zoom": "~3.6.0",
     "url-join": "^4.0.1",
     "url-loader": "^3.0.0",
+    "use-debounce": "^3.3.0",
     "uuid": "^3.3.2"
   },
   "devDependencies": {
@@ -99,6 +102,7 @@
     "@babel/preset-env": "^7.8.2",
     "@babel/preset-react": "^7.8.0",
     "@babel/preset-typescript": "^7.8.0",
+    "@types/classnames": "^2.2.9",
     "@types/i18next-xhr-backend": "^1.4.2",
     "@types/lodash": "^4.14.149",
     "@types/react": "^16.9.17",

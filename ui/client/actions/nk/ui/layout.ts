@@ -1,7 +1,6 @@
 import {events} from "../../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../../common/VisualizationUrl"
 import history from "../../../history"
-import {$TodoType} from "../../migrationTypes"
 import {ThunkAction} from "../../reduxTypes"
 import {reportEvent} from "../reportEvent"
 

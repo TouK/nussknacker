@@ -1,5 +1,4 @@
 import {isEmpty} from "lodash"
-import {$TodoType} from "../../migrationTypes"
 import {ThunkAction} from "../../reduxTypes"
 import {EventInfo, reportEvent} from "../reportEvent"
 

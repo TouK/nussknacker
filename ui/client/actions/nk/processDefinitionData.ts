@@ -1,5 +1,4 @@
 import HttpService from "../../http/HttpService"
-import {$TodoType} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export type ProcessDefinitionDataAction = {

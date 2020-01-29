@@ -333,7 +333,7 @@ class Visualization extends React.Component {
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          {!_.isEmpty(this.props.processDefinitionData) && <Graph ref={this.graphRef} capabilities={this.props.capabilities}/>}
+          {!_.isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
         </SpinnerWrapper>
       </div>
     )

@@ -1,7 +1,7 @@
 import React from "react"
 import Creatable from "react-select/creatable"
-import _ from "lodash";
-import {$TodoType} from "../../../../../actions/migrationTypes";
+import _ from "lodash"
+import {ExpressionObj} from "./types"
 
 type Props = {
   values?: $TodoType,
@@ -22,7 +22,7 @@ const getOptions = (values) => {
 
 export default class FixedValuesEditor extends React.Component<Props> {
 
-  public static switchableTo = (expressionObj, values) => values.includes(expressionObj.expression)
+  public static switchableTo = (expressionObj: ExpressionObj, values) => values.includes(expressionObj.expression)
   public static switchableToHint = "Switch to basic mode"
   public static notSwitchableToHint = "Expression must be one of the expression possible values to switch basic mode"
 
