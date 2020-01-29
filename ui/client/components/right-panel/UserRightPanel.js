@@ -82,7 +82,7 @@ class UserRightPanel extends Component {
                     this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), checked)
                   }}
                 />
-                <span className="business-switch-text">Switch Business View</span>
+                <span className="business-switch-text">Business View</span>
               </label>
             </div>
 

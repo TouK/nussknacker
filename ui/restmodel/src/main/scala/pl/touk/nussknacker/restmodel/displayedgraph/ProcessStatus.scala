@@ -74,9 +74,9 @@ object ProcessStatus {
   private def deployedVersionMismatchMessage(processState: ProcessState, lastAction: Option[ProcessDeploymentAction]) = {
     (processState.version, lastAction) match {
       case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId => None
-      case (Some(stateVersion), Some(action)) if action.isDeployed && !processState.status.isFollowingDeployAction => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), but currently not working")
-      case (Some(stateVersion), Some(action)) if action.isDeployed && stateVersion.versionId != action.processVersionId => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version ${action.processVersionId}")
-      case (Some(stateVersion), None) if processState.isDeployed => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed")
+      case (Some(stateVersion), Some(action)) if action.isDeployed && !processState.status.isFollowingDeployAction => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), but currently not working.")
+      case (Some(stateVersion), Some(action)) if action.isDeployed && stateVersion.versionId != action.processVersionId => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version ${action.processVersionId}.")
+      case (Some(stateVersion), None) if processState.isDeployed => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed.")
       case (None, None) => None
       case _ => None //We verify only deployed process
     }

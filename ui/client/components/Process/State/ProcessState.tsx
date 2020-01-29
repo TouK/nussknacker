@@ -25,8 +25,8 @@ class ProcessState extends React.Component<OwnProps, State> {
   static defaultProps = {
     isStateLoaded: false,
     processState: null,
-    iconHeight: 30,
-    iconWidth: 30,
+    iconHeight: 32,
+    iconWidth: 32,
   }
 
   state = {

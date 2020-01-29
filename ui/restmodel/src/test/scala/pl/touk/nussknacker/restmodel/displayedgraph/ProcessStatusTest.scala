@@ -14,7 +14,7 @@ class ProcessStatusTest extends FunSuite with Matchers {
   private def sampleState(status: StateStatus, version: Long, errors: List[String]): ProcessState = SimpleProcessState(
     DeploymentId("12345"),
     status,
-    processVersionId = Option(ProcessVersion(version, ProcessName("process"), "user", None)),
+    version = Option(ProcessVersion(version, ProcessName("process"), "user", None)),
     errors = errors
   )
 

@@ -97,7 +97,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               DeploymentId(duplicates.head.jid),
               FlinkStateStatus.Failed,
               definitionManager = processStateDefinitionManager,
-              processVersionId = Option.empty,
+              version = Option.empty,
               attributes = Option.empty,
               startTime = Some(duplicates.head.`start-time`),
               errors = List(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
@@ -122,7 +122,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               Some(ProcessState(
                 DeploymentId(one.jid),
                 stateStatus,
-                processVersionId = version,
+                version = version,
                 definitionManager = processStateDefinitionManager,
                 startTime = Some(one.`start-time`),
                 attributes = Option.empty,
