@@ -18,7 +18,7 @@ object PartitionByKeyFlinkKafkaProducer {
     val props = new Properties()
     props.setProperty("bootstrap.servers", kafkaAddress)
     props.setProperty("client.id", clientId)
-    kafkaProperties.map(_.asJava).foreach(props.putAll)
+    kafkaProperties.foreach(_.foreach { case (k, v) => props.setProperty(k, v)})
     new FlinkKafkaProducer[T](topic, serializationSchema, props, semantic)
   }
 

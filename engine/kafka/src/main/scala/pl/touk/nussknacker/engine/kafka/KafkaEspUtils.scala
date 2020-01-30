@@ -56,7 +56,7 @@ object KafkaEspUtils extends LazyLogging {
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("auto.offset.reset", "earliest")
     groupId.foreach(props.setProperty("group.id", _))
-    config.kafkaProperties.map(_.asJava).foreach(props.putAll)
+    config.kafkaProperties.foreach(_.foreach { case (k, v) => props.setProperty(k, v)})
     props
   }
 
