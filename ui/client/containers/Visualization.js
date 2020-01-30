@@ -213,7 +213,7 @@ class Visualization extends React.Component {
   }
 
   isNotThisCopyEvent(event, copyNodeElementId) {
-    return event == null || (event.target && event.target.id !== copyNodeElementId)
+    return event == null || event.target && event.target.id !== copyNodeElementId
   }
 
   successMessage(action, selectedNodes) {
@@ -227,10 +227,10 @@ class Visualization extends React.Component {
   }
 
   cutSelection = (event) => {
-    if (this.canCutSelection() ) {
+    if (this.canCutSelection()) {
       this.copySelection(event, false)
       const nodeIds = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
-          .map(node => node.id)
+        .map(node => node.id)
       this.props.actions.deleteNodes(nodeIds)
       this.props.notificationActions.success(this.successMessage("Cut", nodeIds))
     }

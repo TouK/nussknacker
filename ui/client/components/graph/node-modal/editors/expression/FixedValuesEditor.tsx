@@ -37,8 +37,8 @@ export default class FixedValuesEditor extends React.Component<Props> {
     const {expressionObj, defaultValue, param} = this.props
     //TODO: is it ok to put not-existing option here?
     const defaultOption = {
-      value: (_.get(_.head(_.get(param, "editor.possibleValues")), "expression")) || (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.expression) || "",
-      label: (_.get(_.head(_.get(param, "editor.possibleValues")), "label")) || (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.label) || "",
+      value: _.get(_.head(_.get(param, "editor.possibleValues")), "expression") || expressionObj && expressionObj.expression || defaultValue && defaultValue.expression || "",
+      label: _.get(_.head(_.get(param, "editor.possibleValues")), "label") || expressionObj && expressionObj.expression || defaultValue && defaultValue.label || "",
     }
     return this.options.find((option) => expressionObj && option.value === expressionObj.expression) || defaultOption
   }

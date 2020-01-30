@@ -57,7 +57,8 @@ class ExpressionField extends React.Component<Props> {
         fieldName={fieldName}
         resultsToShow={testResultsToShow}
         resultsToHide={testResultsToHide}
-        toggleResult={toggleTestResult}>
+        toggleResult={toggleTestResult}
+      >
         <EditableExpression
           fieldType={fieldType}
           param={this.findParamByName(fieldLabel)}
@@ -77,7 +78,7 @@ class ExpressionField extends React.Component<Props> {
     )
   }
 
-  findParamByName = (paramName) => (_.get(this.props, "nodeObjectDetails.parameters", []))
+  findParamByName = (paramName) => _.get(this.props, "nodeObjectDetails.parameters", [])
     .find((param) => param.name === paramName)
 }
 

@@ -12,12 +12,12 @@ export type ToggleConfirmDialogAction = {
 }
 
 export function toggleConfirmDialog(
-    isOpen: boolean,
-    text: string,
-    action: string,
-    confirmText = "Yes",
-    denyText = "No",
-    event: EventInfo,
+  isOpen: boolean,
+  text: string,
+  action: string,
+  confirmText = "Yes",
+  denyText = "No",
+  event: EventInfo,
 ): ThunkAction {
   return (dispatch) => {
     !isEmpty(event) && dispatch(reportEvent(event))

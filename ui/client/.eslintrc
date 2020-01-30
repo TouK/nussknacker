@@ -45,6 +45,17 @@
     }
   },
   "rules": {
+    "no-extra-parens": [
+      "warn",
+      "all",
+      {
+        "ignoreJSX": "all"
+      }
+    ],
+    "function-call-argument-newline": [
+      "warn",
+      "consistent"
+    ],
     "react/jsx-closing-bracket-location": [
       "warn",
       "tag-aligned"
@@ -72,7 +83,13 @@
         "when": "multiline"
       }
     ],
-    "indent": ["warn", 2],
+    "indent": [
+      "warn",
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
     "react/jsx-indent": [
       "warn",
       2
@@ -102,7 +119,25 @@
     "no-undef": "error",
     "comma-dangle": [
       "warn",
-      "always-multiline"
+      {
+        "arrays": "always-multiline",
+        "objects": "always-multiline",
+        "imports": "always-multiline",
+        "exports": "always-multiline",
+        "functions": "only-multiline"
+      }
+    ],
+    "function-paren-newline": [
+      "warn",
+      "consistent"
+    ],
+    "space-in-parens": [
+      "warn",
+      "never"
+    ],
+    "implicit-arrow-linebreak": [
+      "warn",
+      "beside"
     ],
     "no-multiple-empty-lines": [
       "warn",

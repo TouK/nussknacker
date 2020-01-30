@@ -17,9 +17,8 @@ type ProcessingType = string
 
 export function fetchProcessDefinition(processingType: ProcessingType, isSubprocess: boolean, subprocessVersions: $TodoType): ThunkAction {
   return (dispatch) => {
-    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then((response) => (
-            dispatch(processDefinitionData(response.data))
-        ),
+    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then(
+      (response) => dispatch(processDefinitionData(response.data))
     )
   }
 }

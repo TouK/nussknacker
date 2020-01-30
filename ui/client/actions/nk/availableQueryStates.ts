@@ -15,8 +15,6 @@ export function availableQueryStates(data: $TodoType): AvailableQueryStatesActio
 
 export function fetchAvailableQueryStates(): ThunkAction {
   return (dispatch) => {
-    return HttpService.availableQueryableStates().then((response) =>
-        dispatch(availableQueryStates(response.data)),
-    )
+    return HttpService.availableQueryableStates().then((response) => dispatch(availableQueryStates(response.data)))
   }
 }

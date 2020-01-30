@@ -27,7 +27,7 @@ export default function SwitchIcon(props: Props) {
       onClick={onClick}
       disabled={!switchable || readOnly}
       title={title}
-      >
+    >
       <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
     </button>
   )

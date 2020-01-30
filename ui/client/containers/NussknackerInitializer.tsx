@@ -56,16 +56,16 @@ class NussknackerInitializer extends React.Component<Props, State> {
         401: {
           message: t("nussknackerInitializer.errors.401.message", "Unauthorized Error"),
           description: t(
-              "nussknackerInitializer.errors.401.description",
-              "It seems you are not authenticated... Why not try to authenticate again?",
+            "nussknackerInitializer.errors.401.description",
+            "It seems you are not authenticated... Why not try to authenticate again?",
           ),
           buttonLabel: t("nussknackerInitializer.errors.401.buttonLabel", "Try authenticate again"),
         },
         504: {
           message: t("nussknackerInitializer.errors.504.message", "504 Gateway Timeout Error"),
           description: t(
-              "nussknackerInitializer.errors.504.description",
-              "It seems server has some problems... Why not to try refreshing your page? Or you can contact with system administrators.",
+            "nussknackerInitializer.errors.504.description",
+            "It seems server has some problems... Why not to try refreshing your page? Or you can contact with system administrators.",
           ),
         },
         500: {
@@ -77,8 +77,8 @@ class NussknackerInitializer extends React.Component<Props, State> {
           buttonOnClick: this.redirectToAuthorizeUrl,
           buttonLabel: t("nussknackerInitializer.errors.504.buttonLabel", "Go to authentication page"),
           description: t(
-              "nussknackerInitializer.errors.504.description",
-              "It seems application has some problem with authentication. Please contact with system administrators.",
+            "nussknackerInitializer.errors.504.description",
+            "It seems application has some problem with authentication. Please contact with system administrators.",
           ),
         },
       },
@@ -102,7 +102,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
 
   httpErrorHandler = (error: object, redirect: boolean) => {
     const code: number = _.get(error, "response.status")
-    const showError: boolean = (code !== NussknackerInitializer.HTTP_UNAUTHORIZED_CODE || !redirect)
+    const showError: boolean = code !== NussknackerInitializer.HTTP_UNAUTHORIZED_CODE || !redirect
 
     this.setState({
       error: showError ? this.state.errors[NussknackerInitializer.HTTP_APPLICATION_CODE]: null,
@@ -112,7 +112,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
   authenticationStrategy = (settings): Promise<$TodoType> => {
     // Automatically redirect user when he is not authenticated and backend is OAUTH2
     api.interceptors.response.use(response => response, (error) => {
-      if ( _.get(error, "response.status") === NussknackerInitializer.HTTP_UNAUTHORIZED_CODE && settings.backend === NussknackerInitializer.OAUTH2_BACKEND) {
+      if (_.get(error, "response.status") === NussknackerInitializer.HTTP_UNAUTHORIZED_CODE && settings.backend === NussknackerInitializer.OAUTH2_BACKEND) {
         window.location.replace(settings.authorizeUrl)
       }
 
@@ -152,7 +152,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
           message={this.state.error.message}
           description={this.state.error.description}
           showButton={this.state.error.showButton}
-          />
+        />
       )
     }
 
@@ -173,10 +173,10 @@ function mapState(state) {
 type Props = OwnProps & ReturnType<typeof mapState> & EspActionsProps &  WithTranslation & RouteComponentProps
 
 const enhance = compose(
-    hot(module),
-    withRouter,
-    connect(mapState, ActionsUtils.mapDispatchWithEspActions),
-    withTranslation(),
+  hot(module),
+  withRouter,
+  connect(mapState, ActionsUtils.mapDispatchWithEspActions),
+  withTranslation(),
 )
 
 export default enhance(NussknackerInitializer)

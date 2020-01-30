@@ -56,7 +56,7 @@ class EditableExpression extends React.Component<Props, State> {
 
     const editorType = paramType === editorTypes.FIXED_VALUES_PARAMETER_EDITOR ?
       editorTypes.FIXED_VALUES_PARAMETER_EDITOR :
-      (!_.isEmpty(param) ? param.editor.type : editorTypes.RAW_PARAMETER_EDITOR)
+      !_.isEmpty(param) ? param.editor.type : editorTypes.RAW_PARAMETER_EDITOR
     const editor = editors[editorType]
 
     const Editor = editor.editor(param, this.state.displayRawEditor)
