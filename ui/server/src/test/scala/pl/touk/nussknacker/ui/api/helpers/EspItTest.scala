@@ -283,10 +283,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     prepareCancel(id).map(_ => ()).futureValue shouldBe ()
 
   def parseResponseToListJsonProcess(response: String): List[ProcessJson] =
-    parser.decode[List[Json]](response) match {
-      case Right(processes) => processes.map(json => ProcessJson(json))
-      case Left(error) => throw new RuntimeException(error.getMessage)
-    }
+    parser.decode[List[Json]](response).right.get.map(j => ProcessJson(j))
 
   //TODO: In future we should identify process by id..
   def findJsonProcess(response: String, processId: String = SampleProcess.process.id): Option[ProcessJson] =
@@ -294,10 +291,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       .find(item => item.name === processId)
 
   def decodeJsonProcess(response: String): ProcessJson =
-    parser.decode[Json](response) match {
-      case Right(json) => ProcessJson(json)
-      case Left(error) => throw new RuntimeException(error.getMessage)
-    }
+    ProcessJson(parser.decode[Json](response).right.get)
 }
 
 object ProcessJson{
@@ -313,8 +307,7 @@ object ProcessJson{
       process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].right.get,
       process.hcursor.downField("state").downField("icon").as[Option[String]].right.get.map(URI.create),
       process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
-      process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
-      process.hcursor.downField("state").downField("displayName").as[Option[String]].right.get
+      process.hcursor.downField("state").downField("description").as[Option[String]].right.get
     )
   }
 }
@@ -327,8 +320,7 @@ case class ProcessJson(id: String,
                        stateStatus: Option[String],
                        stateIcon: Option[URI],
                        stateTooltip: Option[String],
-                       stateDescription: Option[String],
-                       stateDisplayName: Option[String]) {
+                       stateDescription: Option[String]) {
 
   def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
   def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)

@@ -3,7 +3,7 @@ import {ProcessStateType, ProcessType} from "../ProcessTypes"
 import StateIcon from "./StateIcon"
 import {CSSTransition, SwitchTransition} from "react-transition-group"
 import ProcessStateUtils from "./ProcessStateUtils"
-import {unknownDescription, unknownName} from "../ProcessMessages"
+import {unknownDescription} from "../ProcessMessages"
 
 type State = {
   animationTimeout: {
@@ -43,7 +43,6 @@ class ProcessState extends React.Component<OwnProps, State> {
     const {process, processState, isStateLoaded, iconHeight, iconWidth} = this.props
     const transitionKey = `${process.id}-${processState?.icon || process?.state?.icon || ProcessStateUtils.UNKNOWN_ICON}`
     const description = isStateLoaded ? processState?.description : process?.state?.description || unknownDescription()
-    const displayName = isStateLoaded ? processState?.displayName : process?.state?.displayName || unknownName()
 
     return (
         <SwitchTransition>
@@ -51,6 +50,7 @@ class ProcessState extends React.Component<OwnProps, State> {
             <div className={"panel-state"}>
               <div className={"state-icon"}>
                 <StateIcon
+                  popover={false}
                   animation={false}
                   process={process}
                   processState={processState}
@@ -60,7 +60,7 @@ class ProcessState extends React.Component<OwnProps, State> {
                 />
               </div>
               <div className={"state-text"}>
-                <span className={"state-name"}>{displayName}</span>
+                <span className={"state-name"}>{process.name}</span>
                 <br/>
                 <span className={"state-description"}>{description}</span>
               </div>

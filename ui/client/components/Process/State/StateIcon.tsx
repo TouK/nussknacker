@@ -7,7 +7,7 @@ import {compose} from "redux"
 import ProcessStateUtils from "./ProcessStateUtils"
 import {ProcessStateType, ProcessType} from "../ProcessTypes"
 import {absoluteBePath} from "../../../common/UrlUtils"
-import {unknownName, unknownTooltip} from "../ProcessMessages"
+import {unknownTooltip} from "../ProcessMessages"
 
 import {Popover} from "react-bootstrap"
 import {OverlayTrigger} from "react-bootstrap/lib"
@@ -27,6 +27,7 @@ type OwnProps = {
   animation: boolean,
   height: number,
   width: number,
+  popover: boolean,
 }
 
 type Props = OwnProps & WithTranslation
@@ -38,6 +39,7 @@ class StateIcon extends React.Component<Props, State> {
     animation: true,
     height: 24,
     width: 24,
+    popover: false,
   }
 
   // eslint-disable-next-line i18next/no-literal-string
@@ -69,11 +71,11 @@ class StateIcon extends React.Component<Props, State> {
     return absoluteBePath(processState?.icon || ProcessStateUtils.UNKNOWN_ICON)
   }
 
-  popoverOverlay = (displayName: string, tooltip: string, errors: Array<string>) => {
+  imageWithPopover = (image, processName: string, tooltip: string, errors: Array<string>) => {
     const {t} = this.props
 
-    return (
-      <Popover id="state-icon-popover" title={displayName}>
+    const overlay = (
+      <Popover id="state-icon-popover" title={processName}>
         <strong>{tooltip}</strong>
         { errors.length !== 0 ?
           <div>
@@ -88,33 +90,41 @@ class StateIcon extends React.Component<Props, State> {
         }
       </Popover>
     )
+
+    return (
+      <OverlayTrigger
+        trigger={StateIcon.popoverConfigs.triggers}
+        placement={StateIcon.popoverConfigs.placement}
+        overlay={overlay}
+      >
+        {image}
+      </OverlayTrigger>
+    )
   }
 
   render() {
-    const {animation, process, processState, isStateLoaded, height, width} = this.props
+    const {animation, process, processState, isStateLoaded, height, width, popover} = this.props
     const icon = this.getIcon(process, processState, isStateLoaded)
     const tooltip = this.getTooltip(process, processState, isStateLoaded)
-    const displayName = (isStateLoaded ? processState?.displayName : process?.state?.displayName) || unknownName()
     const errors = (isStateLoaded ? processState?.errors : process?.state?.errors) || []
 
     // eslint-disable-next-line i18next/no-literal-string
     const iconClass = `state-icon${isStateLoaded === false ? " state-pending" : ""}`
     const transitionKey = `${process.id}-${icon}`
 
-    const image = (
-      <OverlayTrigger
-        trigger={StateIcon.popoverConfigs.triggers}
-        placement={StateIcon.popoverConfigs.placement}
-        overlay={this.popoverOverlay(displayName, tooltip, errors)}
-      >
-        <img src={icon} alt={tooltip} title={tooltip} className={iconClass} height={height} width={width}/>
-      </OverlayTrigger>
-    )
+    const image = <img
+      src={icon}
+      alt={tooltip}
+      title={tooltip}
+      className={iconClass}
+      height={height}
+      width={width}
+    />
 
     return animation === true ? (
       <SwitchTransition>
         <CSSTransition key={transitionKey} classNames="fade" timeout={this.state.animationTimeout} addEndListener={this.animationListener}>
-          {image}
+          { popover === true ? this.imageWithPopover(image, process.name, tooltip, errors) : image }
         </CSSTransition>
       </SwitchTransition>
     ): image

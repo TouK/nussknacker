@@ -11,7 +11,6 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
 
 //TODO: Do we really  we need ProcessStatus and ProcessState - Do these DTO's do the same things?
 @JsonCodec case class ProcessStatus(status: StateStatus,
-                                    displayName: String,
                                     deploymentId: Option[String],
                                     allowedActions: List[ProcessActionType],
                                     icon: Option[URI],
@@ -42,7 +41,6 @@ object ProcessStatus {
             errors: List[String]): ProcessStatus =
     ProcessStatus(
       status,
-      processStateDefinitionManager.statusDisplayName(status),
       deploymentId,
       allowedActions = processStateDefinitionManager.statusActions(status),
       icon = processStateDefinitionManager.statusIcon(status),
@@ -59,7 +57,6 @@ object ProcessStatus {
     ProcessStatus(
       deploymentId = Some(processState.deploymentId.value),
       status = processState.status,
-      displayName = processState.displayName,
       allowedActions = processState.allowedActions,
       icon = processState.icon,
       tooltip = processState.tooltip,

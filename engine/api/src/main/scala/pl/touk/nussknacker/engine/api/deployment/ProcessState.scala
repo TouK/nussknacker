@@ -12,7 +12,6 @@ trait ProcessStateDefinitionManager {
   def statusTooltip(stateStatus: StateStatus): Option[String]
   def statusDescription(stateStatus: StateStatus): Option[String]
   def statusIcon(stateStatus: StateStatus): Option[URI]
-  def statusDisplayName(stateStatus: StateStatus): String
   //Temporary mapping ProcessActionType to StateStatus. TODO: Remove it when we will support state cache
   def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus
 }
@@ -34,7 +33,6 @@ object ProcessState {
     ProcessState(
       deploymentId,
       status,
-      definitionManager.statusDisplayName(status),
       version,
       definitionManager.statusActions(status),
       definitionManager.statusIcon(status),
@@ -50,7 +48,6 @@ object ProcessState {
 
 @JsonCodec case class ProcessState(deploymentId: DeploymentId,
                                    status: StateStatus,
-                                   displayName: String,
                                    version: Option[ProcessVersion],
                                    allowedActions: List[ProcessActionType],
                                    icon: Option[URI],
@@ -90,21 +87,21 @@ object StateStatus {
     isDuringDeploy || isRunning || isFinished
 }
 
-final case class NotEstablishedStateStatus(val name: String) extends StateStatus
+final case class NotEstablishedStateStatus(name: String) extends StateStatus
 
-final case class StoppedStateStatus(val name: String) extends StateStatus {
+final case class StoppedStateStatus(name: String) extends StateStatus {
   override def canDeploy: Boolean = true
 }
 
-final case class DuringDeployStateStatus(val name: String) extends StateStatus {
+final case class DuringDeployStateStatus(name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true
 }
 
-final case class FinishedStateStatus(val name: String) extends StateStatus {
+final case class FinishedStateStatus(name: String) extends StateStatus {
   override def isFinished: Boolean = true
   override def canDeploy: Boolean = true
 }
 
-final case class RunningStateStatus(val name: String) extends StateStatus {
+final case class RunningStateStatus(name: String) extends StateStatus {
   override def isRunning: Boolean = true
 }

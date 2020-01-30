@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import java.net.URI
 
-import org.apache.commons.text.CaseUtils
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStateDefinitionManager, StateStatus}
 
@@ -52,18 +51,18 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process."
   )
 
-  val statusMessagesMap: Map[StateStatus, String] = Map(
+  val statusDescriptionsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "Failed to get state of process..",
-    SimpleStateStatus.NotFound -> "State was not found..",
+    SimpleStateStatus.NotFound -> "Process state was not found..",
     SimpleStateStatus.Unknown -> "Unknown state of the process..",
     SimpleStateStatus.NotDeployed -> "Process has never been deployed.",
     SimpleStateStatus.DuringDeploy -> "Process is being deployed.",
-    SimpleStateStatus.Running -> "Process has been successfully deployed.",
-    SimpleStateStatus.Canceled -> "Process currently is not running.",
+    SimpleStateStatus.Running -> "Process currently is running.",
+    SimpleStateStatus.Canceled -> "Process currently is canceled.",
     SimpleStateStatus.DuringCancel -> "Process is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with process..",
     SimpleStateStatus.Finished -> "Process has been successfully finished job.",
-    SimpleStateStatus.Error -> "There are some errors.."
+    SimpleStateStatus.Error -> "There are some errors with process.."
   )
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =
@@ -81,8 +80,5 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
       .getOrElse(SimpleStateStatus.NotDeployed)
 
   override def statusDescription(stateStatus: StateStatus): Option[String] =
-    statusMessagesMap.get(stateStatus)
-
-  override def statusDisplayName(stateStatus: StateStatus): String =
-    CaseUtils.toCamelCase(stateStatus.name,  true, {'_'})
+    statusDescriptionsMap.get(stateStatus)
 }
