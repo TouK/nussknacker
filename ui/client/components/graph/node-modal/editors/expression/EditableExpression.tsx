@@ -6,26 +6,26 @@ import FixedValuesEditor from "./FixedValuesEditor"
 import _ from "lodash"
 
 type Props = {
-  fieldType: string
-  expressionObj: $TodoType
-  showSwitch: boolean
-  renderFieldLabel: Function
-  fieldLabel: string
-  readOnly: boolean
-  rowClassName?: string
-  valueClassName?: string
-  param?: $TodoType
-  values?: Array<$TodoType>
-  editorName?: string
-  fieldName?: string
-  isMarked?: boolean
-  validators?: Array<$TodoType>
-  showValidation?: boolean
-  onValueChange: Function
+  fieldType: string,
+  expressionObj: $TodoType,
+  showSwitch: boolean,
+  renderFieldLabel: Function,
+  fieldLabel: string,
+  readOnly: boolean,
+  rowClassName?: string,
+  valueClassName?: string,
+  param?: $TodoType,
+  values?: Array<$TodoType>,
+  editorName?: string,
+  fieldName?: string,
+  isMarked?: boolean,
+  validators?: Array<$TodoType>,
+  showValidation?: boolean,
+  onValueChange: Function,
 }
 
 type State = {
-  displayRawEditor: boolean
+  displayRawEditor: boolean,
 }
 
 class EditableExpression extends React.Component<Props, State> {
@@ -35,14 +35,14 @@ class EditableExpression extends React.Component<Props, State> {
 
     const {param, expressionObj, values} = this.props
     this.state = {
-      displayRawEditor: !(param?.editor.defaultMode === dualEditorMode.SIMPLE
-          && editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
+      displayRawEditor: !(param?.editor.defaultMode === dualEditorMode.SIMPLE &&
+          editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
     }
   }
 
   toggleEditor = (_) => {
     this.setState({
-      displayRawEditor: !this.state.displayRawEditor
+      displayRawEditor: !this.state.displayRawEditor,
     })
   }
 

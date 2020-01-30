@@ -345,9 +345,9 @@ Visualization.header = "Visualization"
 
 function mapState(state) {
   const processCategory = _.get(state, "graphReducer.fetchedProcessDetails.processCategory")
-  const canDelete = state.ui.allModalsClosed
-    && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
-    && state.settings.loggedUser.canWrite(processCategory)
+  const canDelete = state.ui.allModalsClosed &&
+      !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
+      state.settings.loggedUser.canWrite(processCategory)
   const loggedUser = state.settings.loggedUser
   const isArchived = _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
   return {

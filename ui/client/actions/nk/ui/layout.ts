@@ -4,12 +4,12 @@ import history from "../../../history"
 import {ThunkAction} from "../../reduxTypes"
 import {reportEvent} from "../reportEvent"
 
-export type Layout = $TodoType;
-export type GraphLayoutFunction = $TodoType;
-export type BusinessView = $TodoType;
+export type Layout = $TodoType
+export type GraphLayoutFunction = $TodoType
+export type BusinessView = $TodoType
 
-export type LayoutChangedAction = { layout: Layout; type: "LAYOUT_CHANGED" }
-export type TogglePanelAction = {type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL"}
+export type LayoutChangedAction = { layout: Layout, type: "LAYOUT_CHANGED" }
+export type TogglePanelAction = { type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL" }
 
 export function layoutChanged(layout: Layout): LayoutChangedAction {
   return {

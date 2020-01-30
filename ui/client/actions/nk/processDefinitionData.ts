@@ -2,8 +2,8 @@ import HttpService from "../../http/HttpService"
 import {ThunkAction} from "../reduxTypes"
 
 export type ProcessDefinitionDataAction = {
-  type: "PROCESS_DEFINITION_DATA";
-  processDefinitionData: $TodoType;
+  type: "PROCESS_DEFINITION_DATA",
+  processDefinitionData: $TodoType,
 }
 
 export function processDefinitionData(data: $TodoType): ProcessDefinitionDataAction {

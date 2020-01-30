@@ -1,14 +1,14 @@
-export type Edge = $TodoType;
+export type Edge = $TodoType
 
-export type GroupId = string;
+export type GroupId = string
 export type GroupType = {
-  id: GroupId;
-};
+  id: GroupId,
+}
 
-export type NodeId = string;
+export type NodeId = string
 export type NodeType = {
-  id: NodeId;
-};
+  id: NodeId,
+}
 
 export type Process = $TodoType
 export type ProcessId = string

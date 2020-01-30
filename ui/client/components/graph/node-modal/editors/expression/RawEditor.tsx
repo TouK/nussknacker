@@ -4,16 +4,16 @@ import ExpressionSuggest from "./ExpressionSuggest"
 import {EditorType} from "./EditorType"
 
 type Props = {
-  fieldName: string
-  expressionObj: $TodoType
-  validators: Array<$TodoType>
-  isMarked: boolean
-  showValidation: boolean
-  readOnly: boolean
-  onValueChange: Function
-  rows: number
-  cols: number
-  className: string
+  fieldName: string,
+  expressionObj: $TodoType,
+  validators: Array<$TodoType>,
+  isMarked: boolean,
+  showValidation: boolean,
+  readOnly: boolean,
+  onValueChange: Function,
+  rows: number,
+  cols: number,
+  className: string,
 }
 
 const RawEditor = (props: Props) => {

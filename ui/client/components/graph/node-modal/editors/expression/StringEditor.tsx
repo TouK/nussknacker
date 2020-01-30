@@ -4,9 +4,9 @@ import _ from "lodash"
 import {EditorType} from "./EditorType"
 
 type Props = {
-  expressionObj: $TodoType
-  onValueChange: Function
-  className: string
+  expressionObj: $TodoType,
+  onValueChange: Function,
+  className: string,
 }
 
 const StringEditor: EditorType<Props> = (props: Props) => {

@@ -34,10 +34,10 @@ export default function SwitchIcon(props: Props) {
 }
 
 type Props = {
-  onClick: MouseEventHandler<HTMLButtonElement>;
-  hint: string;
-  switchable?: boolean;
-  shouldShowSwitch?: boolean;
-  displayRawEditor?: boolean;
-  readOnly?: boolean;
+  onClick: MouseEventHandler<HTMLButtonElement>,
+  hint: string,
+  switchable?: boolean,
+  shouldShowSwitch?: boolean,
+  displayRawEditor?: boolean,
+  readOnly?: boolean,
 }

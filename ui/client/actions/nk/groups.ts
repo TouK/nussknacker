@@ -47,8 +47,8 @@ export function finishGrouping(): ThunkAction {
   }
 }
 
-export type AddNodeToGroupAction = { type: "ADD_NODE_TO_GROUP"; nodeId: NodeId }
-export type UnGroupAction = { type: "UNGROUP"; groupToRemove: NodeId }
+export type AddNodeToGroupAction = { type: "ADD_NODE_TO_GROUP", nodeId: NodeId }
+export type UnGroupAction = { type: "UNGROUP", groupToRemove: NodeId }
 
 export function addToGroup(nodeId: NodeId): AddNodeToGroupAction {
   return {type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
@@ -70,8 +70,8 @@ export function ungroup(node: NodeType): ThunkAction {
 }
 
 export type ToggleGroupAction = {
-  type: "EXPAND_GROUP" | "COLLAPSE_GROUP";
-  id: GroupId;
+  type: "EXPAND_GROUP" | "COLLAPSE_GROUP",
+  id: GroupId,
 }
 
 export function expandGroup(id: GroupId) {
@@ -83,10 +83,10 @@ export function collapseGroup(id: GroupId) {
 }
 
 export type EditGroupAction = {
-  type: "EDIT_GROUP";
-  oldGroupId: GroupId;
-  newGroup: GroupType;
-  validationResult: $TodoType;
+  type: "EDIT_GROUP",
+  oldGroupId: GroupId,
+  newGroup: GroupType,
+  validationResult: $TodoType,
 }
 
 export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupType): ThunkAction {

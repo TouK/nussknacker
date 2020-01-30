@@ -3,12 +3,12 @@ import {ThunkAction} from "../../reduxTypes"
 import {EventInfo, reportEvent} from "../reportEvent"
 
 export type ToggleConfirmDialogAction = {
-  type: "TOGGLE_CONFIRM_DIALOG";
-  isOpen: boolean;
-  text: string;
-  confirmText: string;
-  denyText: string;
-  onConfirmCallback: $TodoType;
+  type: "TOGGLE_CONFIRM_DIALOG",
+  isOpen: boolean,
+  text: string,
+  confirmText: string,
+  denyText: string,
+  onConfirmCallback: $TodoType,
 }
 
 export function toggleConfirmDialog(

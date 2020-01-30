@@ -28,11 +28,11 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
 }
 
 type Props = {
-  app: typeof EspApp;
-  rightElement?: ReactNode;
-  leftElement?: ReactNode;
-  loggedUser: $TodoType;
-  featuresSettings: $TodoType;
+  app: typeof EspApp,
+  rightElement?: ReactNode,
+  leftElement?: ReactNode,
+  loggedUser: $TodoType,
+  featuresSettings: $TodoType,
 }
 
 const Spacer = () => <Flex flex={1}/>
@@ -75,7 +75,7 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
   )
 }
 
-function MenuItem({title, path}: { title: string; path: string }) {
+function MenuItem({title, path}: { title: string, path: string }) {
   return <li key={title}><NavLink to={path}>{title}</NavLink></li>
 }
 

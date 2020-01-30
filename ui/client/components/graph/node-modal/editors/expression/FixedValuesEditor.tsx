@@ -26,7 +26,7 @@ export default class FixedValuesEditor extends React.Component<Props> {
   public static switchableToHint = "Switch to basic mode"
   public static notSwitchableToHint = "Expression must be one of the expression possible values to switch basic mode"
 
-  private readonly options: any;
+  private readonly options: any
 
   constructor(props) {
     super(props)

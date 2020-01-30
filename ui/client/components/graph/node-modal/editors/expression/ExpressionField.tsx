@@ -5,22 +5,22 @@ import EditableExpression from "./EditableExpression"
 import {editorTypes} from "./EditorType"
 
 type Props = {
-  fieldName: string
-  fieldLabel: string
-  exprPath: string
-  validators: Array<$TodoType>
-  isEditMode: boolean
-  editedNode: $TodoType
-  isMarked: Function
-  showValidation: boolean
-  showSwitch: boolean
-  nodeObjectDetails: $TodoType
-  setNodeDataAt: Function
-  testResultsToShow: $TodoType
-  testResultsToHide: $TodoType
-  toggleTestResult: Function
-  renderFieldLabel: Function
-  fieldType: string
+  fieldName: string,
+  fieldLabel: string,
+  exprPath: string,
+  validators: Array<$TodoType>,
+  isEditMode: boolean,
+  editedNode: $TodoType,
+  isMarked: Function,
+  showValidation: boolean,
+  showSwitch: boolean,
+  nodeObjectDetails: $TodoType,
+  setNodeDataAt: Function,
+  testResultsToShow: $TodoType,
+  testResultsToHide: $TodoType,
+  toggleTestResult: Function,
+  renderFieldLabel: Function,
+  fieldType: string,
 }
 
 class ExpressionField extends React.Component<Props> {

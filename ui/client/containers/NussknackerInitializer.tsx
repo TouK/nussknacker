@@ -16,19 +16,19 @@ import HttpService from "../http/HttpService"
 import InitializeError from "./errors/InitializeError"
 
 type Error = {
-  message: string;
-  description?: string;
-  buttonLabel?: string;
-  showButton?: boolean;
-  buttonOnClick?: (event) => void;
+  message: string,
+  description?: string,
+  buttonLabel?: string,
+  showButton?: boolean,
+  buttonOnClick?: (event) => void,
 }
 
 type OwnProps = {}
 
 type State = {
-  errors: Record<number, Error>;
-  error?: Error;
-  initialized: boolean;
+  errors: Record<number, Error>,
+  error?: Error,
+  initialized: boolean,
 }
 
 class NussknackerInitializer extends React.Component<Props, State> {
@@ -159,7 +159,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
       return this.props.children
     }
 
-    return <LoaderSpinner show={this.state.initialized === false} />
+    return <LoaderSpinner show={this.state.initialized === false}/>
   }
 }
 
