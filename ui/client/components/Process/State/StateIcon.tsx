@@ -14,19 +14,19 @@ import {OverlayTrigger} from "react-bootstrap/lib"
 
 type State = {
   animationTimeout: {
-    enter: number;
-    appear: number;
-    exit: number;
-  };
+    enter: number,
+    appear: number,
+    exit: number,
+  },
 }
 
 type OwnProps = {
-  processState?: ProcessStateType;
-  isStateLoaded: boolean;
-  process: ProcessType;
-  animation: boolean;
-  height: number;
-  width: number;
+  processState?: ProcessStateType,
+  isStateLoaded: boolean,
+  process: ProcessType,
+  animation: boolean,
+  height: number,
+  width: number,
 }
 
 type Props = OwnProps & WithTranslation
@@ -69,11 +69,11 @@ class StateIcon extends React.Component<Props, State> {
     return absoluteBePath(processState?.icon || ProcessStateUtils.UNKNOWN_ICON)
   }
 
-  popoverOverlay = (name: string, tooltip: string, errors: Array<string>) => {
+  popoverOverlay = (displayName: string, tooltip: string, errors: Array<string>) => {
     const {t} = this.props
 
     return (
-      <Popover id="state-icon-popover" title={name}>
+      <Popover id="state-icon-popover" title={displayName}>
         <strong>{tooltip}</strong>
         { errors.length !== 0 ?
           <div>
@@ -94,7 +94,7 @@ class StateIcon extends React.Component<Props, State> {
     const {animation, process, processState, isStateLoaded, height, width} = this.props
     const icon = this.getIcon(process, processState, isStateLoaded)
     const tooltip = this.getTooltip(process, processState, isStateLoaded)
-    const name = (isStateLoaded ? processState?.name : process?.state?.name) || unknownName()
+    const displayName = (isStateLoaded ? processState?.displayName : process?.state?.displayName) || unknownName()
     const errors = (isStateLoaded ? processState?.errors : process?.state?.errors) || []
 
     // eslint-disable-next-line i18next/no-literal-string
@@ -105,7 +105,7 @@ class StateIcon extends React.Component<Props, State> {
       <OverlayTrigger
         trigger={StateIcon.popoverConfigs.triggers}
         placement={StateIcon.popoverConfigs.placement}
-        overlay={this.popoverOverlay(name, tooltip, errors)}
+        overlay={this.popoverOverlay(displayName, tooltip, errors)}
       >
         <img src={icon} alt={tooltip} title={tooltip} className={iconClass} height={height} width={width}/>
       </OverlayTrigger>

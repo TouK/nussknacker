@@ -12,7 +12,7 @@ trait ProcessStateDefinitionManager {
   def statusTooltip(stateStatus: StateStatus): Option[String]
   def statusDescription(stateStatus: StateStatus): Option[String]
   def statusIcon(stateStatus: StateStatus): Option[URI]
-  def statusName(stateStatus: StateStatus): String
+  def statusDisplayName(stateStatus: StateStatus): String
   //Temporary mapping ProcessActionType to StateStatus. TODO: Remove it when we will support state cache
   def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus
 }
@@ -34,7 +34,7 @@ object ProcessState {
     ProcessState(
       deploymentId,
       status,
-      definitionManager.statusName(status),
+      definitionManager.statusDisplayName(status),
       version,
       definitionManager.statusActions(status),
       definitionManager.statusIcon(status),
@@ -50,7 +50,7 @@ object ProcessState {
 
 @JsonCodec case class ProcessState(deploymentId: DeploymentId,
                                    status: StateStatus,
-                                   name: String,
+                                   displayName: String,
                                    version: Option[ProcessVersion],
                                    allowedActions: List[ProcessActionType],
                                    icon: Option[URI],

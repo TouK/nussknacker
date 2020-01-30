@@ -83,6 +83,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusMessagesMap.get(stateStatus)
 
-  override def statusName(stateStatus: StateStatus): String =
+  override def statusDisplayName(stateStatus: StateStatus): String =
     CaseUtils.toCamelCase(stateStatus.name,  true, {'_'})
 }

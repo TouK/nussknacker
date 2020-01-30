@@ -38,6 +38,6 @@ object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager 
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusMessagesMap.get(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusDescription(stateStatus))
 
-  override def statusName(stateStatus: StateStatus): String =
-    SimpleProcessStateDefinitionManager.statusName(stateStatus)
+  override def statusDisplayName(stateStatus: StateStatus): String =
+    SimpleProcessStateDefinitionManager.statusDisplayName(stateStatus)
 }

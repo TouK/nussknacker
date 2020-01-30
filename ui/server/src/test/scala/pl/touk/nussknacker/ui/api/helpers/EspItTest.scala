@@ -314,7 +314,7 @@ object ProcessJson{
       process.hcursor.downField("state").downField("icon").as[Option[String]].right.get.map(URI.create),
       process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
       process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
-      process.hcursor.downField("state").downField("name").as[Option[String]].right.get
+      process.hcursor.downField("state").downField("displayName").as[Option[String]].right.get
     )
   }
 }
@@ -328,7 +328,7 @@ case class ProcessJson(id: String,
                        stateIcon: Option[URI],
                        stateTooltip: Option[String],
                        stateDescription: Option[String],
-                       stateName: Option[String]) {
+                       stateDisplayName: Option[String]) {
 
   def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
   def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)
