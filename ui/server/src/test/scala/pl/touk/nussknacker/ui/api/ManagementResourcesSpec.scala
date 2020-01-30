@@ -35,9 +35,9 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] =
     BeMatcher(equal(
-        Option(ProcessAction(versionId, "test", fixedTime, user().username, ProcessActionType.Deploy, buildInfo))
+        Option(ProcessAction(versionId, fixedTime, user().username, ProcessActionType.Deploy, Option.empty, Option.empty, buildInfo))
       ).matcher[Option[ProcessAction]]
-    ).compose[Option[ProcessAction]](_.map(_.copy(createdAt = fixedTime)))
+    ).compose[Option[ProcessAction]](_.map(_.copy(performedAt = fixedTime)))
 
   test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
