@@ -2,9 +2,10 @@ package pl.touk.nussknacker.ui.process.repository
 
 import java.sql.Timestamp
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeployment, ProcessHistoryEntry, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeploymentAction, ProcessHistoryEntry, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
@@ -25,12 +26,16 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
     }
   }
 
-  protected def fetchProcessLatestVersions(processId: ProcessId)(implicit fetchShape: ProcessShapeFetchStrategy[_]): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
+  protected def fetchProcessLatestVersionsQuery(processId: ProcessId)(implicit fetchShape: ProcessShapeFetchStrategy[_]): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processVersionsTableQuery
       .filter(_.processId === processId.value)
       .sortBy(_.createDate.desc)
 
-  protected def fetchLastDeploymentActionPerProcess: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
+
+  protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
+    fetchLastActionPerProcessQuery.filter(_._2.deploymentAction === ProcessActionType.Deploy)
+
+  protected def fetchLastActionPerProcessQuery: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
     deployedProcessesTable
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.deployedAt).max) }
@@ -38,14 +43,14 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
       .on { case ((processId, latestDeployedAt), deployAction) => deployAction.processId === processId && deployAction.deployedAt === latestDeployedAt } //We fetch exactly this one  with max deployment
       .map { case ((processId, _), deployAction) => processId -> deployAction }
 
-  protected def fetchProcessLatestDeployActions(processId: Long): Query[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity, DeployedProcessInfoEntityData, Seq] =
+  protected def fetchProcessLatestDeployActionsQuery(processId: ProcessId): Query[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity, DeployedProcessInfoEntityData, Seq] =
     deployedProcessesTable
-      .filter(_.processId === processId)
+      .filter(_.processId === processId.value)
       .sortBy(_.deployedAt.desc)
 
-  protected def fetchLatestProcesses(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-                                     deploymentsPerEnv: Seq[(Long, DeployedProcessInfoEntityData)],
-                                     isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[Long], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((Long, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
+  protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+                                          lastActionPerProcess: Seq[(Long, DeployedProcessInfoEntityData)],
+                                          isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[Long], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((Long, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
     processVersionsTableNoJson
       .groupBy(_.processId)
       .map { case (n, group) => (n, group.map(_.createDate).max) }
@@ -56,7 +61,7 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
       .filter{ case ((_, _), process) =>
         isDeployed match {
           case None => true: Rep[Boolean]
-          case Some(dep) => process.id.inSet(deploymentsPerEnv.filter(_._2.isDeployed).map(_._1)) === dep
+          case Some(dep) => process.id.inSet(lastActionPerProcess.filter(_._2.isDeployed).map(_._1)) === dep
         }
       }
 
@@ -71,7 +76,7 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
         processVersionsTableNoJson.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
     }
 
-  protected def latestProcessVersionsNoJson(processName: ProcessName): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
+  protected def latestProcessVersionsNoJsonQuery(processName: ProcessName): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processesTable
       .filter(_.name === processName.value)
       .join(processVersionsTableNoJson)
@@ -82,18 +87,15 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
 object ProcessRepository {
 
-  def toProcessHistoryEntry(process: ProcessEntityData, processVersion: ProcessVersionEntityData, allDeployments: List[DeployedProcessInfoEntityData]): ProcessHistoryEntry = ProcessHistoryEntry(
+  def toProcessHistoryEntry(process: ProcessEntityData, processVersion: ProcessVersionEntityData): ProcessHistoryEntry = ProcessHistoryEntry(
     processId = process.id.toString,
     processVersionId = processVersion.id,
     processName = process.name,
     createDate = DateUtils.toLocalDateTime(processVersion.createDate),
-    user = processVersion.user,
-    deployments = allDeployments.collect {
-      case deployedVersion if deployedVersion.processVersionId.equals(processVersion.id) => toDeploymentEntry(deployedVersion)
-    }
+    user = processVersion.user
   )
 
-  def toDeploymentEntry(deployedProcessInfoEntityData: DeployedProcessInfoEntityData): ProcessDeployment = ProcessDeployment(
+  def toDeploymentEntry(deployedProcessInfoEntityData: DeployedProcessInfoEntityData): ProcessDeploymentAction = ProcessDeploymentAction(
     processVersionId = deployedProcessInfoEntityData.processVersionId,
     environment = deployedProcessInfoEntityData.environment,
     deployedAt = deployedProcessInfoEntityData.deployedAtTime,

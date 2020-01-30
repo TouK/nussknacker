@@ -9,11 +9,11 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
+import io.circe.{Json}
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
-import pl.touk.nussknacker.engine.api.deployment.CustomProcess
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -33,30 +33,22 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private val fixedTime = LocalDateTime.now()
 
-  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeployment]] =
+  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeploymentAction]] =
     BeMatcher(equal(
-        Option(ProcessDeployment(versionId, "test", fixedTime, user().username, DeploymentAction.Deploy, buildInfo))
-      ).matcher[Option[ProcessDeployment]]
-    ).compose[Option[ProcessDeployment]](_.map(_.copy(deployedAt = fixedTime)))
+        Option(ProcessDeploymentAction(versionId, "test", fixedTime, user().username, ProcessActionType.Deploy, buildInfo))
+      ).matcher[Option[ProcessDeploymentAction]]
+    ).compose[Option[ProcessDeploymentAction]](_.map(_.copy(deployedAt = fixedTime)))
 
   test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
-        val oldDeployments = getHistoryDeployments
-        decodeDetails.deployment shouldBe deployedWithVersions(2)
-        oldDeployments.size shouldBe 1
+        decodeDetails.lastAction shouldBe deployedWithVersions(2)
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
-            decodeDetails.deployment shouldBe deployedWithVersions(2)
-
-            val currentDeployments = getHistoryDeployments
-            currentDeployments.size shouldBe 2
-            currentDeployments.head.deployedAt should not be oldDeployments.head.deployedAt
-            val buildInfo = currentDeployments.head.buildInfo
-            buildInfo("engine-version") should not be empty
+            decodeDetails.lastAction shouldBe deployedWithVersions(2)
           }
         }
       }
@@ -78,8 +70,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             val deploymentHistory = responseAs[List[DeploymentHistoryEntry]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
-              DeploymentHistoryEntry(2, curTime, user().username, DeploymentAction.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
-              DeploymentHistoryEntry(2, curTime, user().username, DeploymentAction.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
+              DeploymentHistoryEntry(2, curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
+              DeploymentHistoryEntry(2, curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
             )
           }
         }
@@ -101,7 +93,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[ProcessDetails]
-        processDetails.deployment shouldBe deployedWithVersions(1)
+        processDetails.lastAction shouldBe deployedWithVersions(1)
         processDetails.isDeployed shouldBe true
       }
     }
@@ -112,10 +104,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
-        decodeDetails.deployment shouldBe deployedWithVersions(2)
+        decodeDetails.lastAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
-            decodeDetails.deployment should not be None
+            decodeDetails.lastAction should not be None
             decodeDetails.isCanceled shouldBe  true
           }
         }
@@ -128,11 +120,15 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getProcesses ~> check {
-        decodeDetailsFromAll.deployment shouldBe deployedWithVersions(2)
+        val process = findJsonProcess(responseAs[String])
+        process.value.lastActionVersionId shouldBe Some(2L)
+        process.value.isDeployed shouldBe true
+
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcesses ~> check {
-            decodeDetailsFromAll.deployment should not be None
-            decodeDetailsFromAll.isCanceled shouldBe true
+            val reprocess = findJsonProcess(responseAs[String])
+            reprocess.value.lastActionVersionId shouldBe Some(2L)
+            reprocess.value.isCanceled shouldBe true
           }
         }
       }
@@ -153,6 +149,22 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       deployProcess(SampleProcess.process.id) ~> check {
         status shouldBe StatusCodes.InternalServerError
       }
+    }
+  }
+
+  test("snaphots process") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    snapshot(SampleProcess.process.id) ~> check {
+      status shouldBe StatusCodes.OK
+      responseAs[String] shouldBe MockProcessManager.savepointPath
+    }
+  }
+
+  test("stops process") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    stop(SampleProcess.process.id) ~> check {
+      status shouldBe StatusCodes.OK
+      responseAs[String] shouldBe MockProcessManager.stopSavepointPath
     }
   }
 
@@ -211,9 +223,5 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  private def getHistoryDeployments: List[ProcessDeployment] = decodeDetails.history.flatMap(_.deployments)
-
   def decodeDetails: ProcessDetails = responseAs[ProcessDetails]
-
-  def decodeDetailsFromAll: BasicProcess = responseAs[List[BasicProcess]].find(_.name.value == SampleProcess.process.id).get
 }

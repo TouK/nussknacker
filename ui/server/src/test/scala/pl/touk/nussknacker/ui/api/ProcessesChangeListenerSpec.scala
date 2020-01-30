@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
@@ -86,7 +86,7 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val comment = Some("deployComment")
 
     deployProcess(processName.value, true, comment) ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, 1L, `comment`, _, DeploymentAction.Deploy) => }
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, 1L, `comment`, _, ProcessActionType.Deploy) => }
     }
   }
   test("listen to deployment failure") {
@@ -104,7 +104,7 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val comment = Some("deployComment")
 
     cancelProcess(SampleProcess.process.id, true, comment) ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, 1L, `comment`, _, DeploymentAction.Cancel) => }
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, 1L, `comment`, _, ProcessActionType.Cancel) => }
     }
   }
 

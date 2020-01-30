@@ -1,7 +1,8 @@
+/* eslint-disable i18next/no-literal-string */
 export const events = {
   categories: {
     rightPanel: "right_panel",
-    keyboard: "keyboard"
+    keyboard: "keyboard",
   },
   actions: {
     buttonClick: "button_click",
@@ -11,7 +12,7 @@ export const events = {
      paste: "ctrl+v",
      delete: "delete",
      undo: "ctrl+z",
-     redo: "ctrl+shift+z"
-    }
-  }
+     redo: "ctrl+shift+z",
+    },
+  },
 }

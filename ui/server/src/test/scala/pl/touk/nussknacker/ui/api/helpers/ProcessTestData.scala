@@ -104,7 +104,8 @@ object ProcessTestData {
       createdAt = LocalDateTime.now(),
       createdBy = "user1",
       tags = List(),
-      deployment = None,
+      lastAction = None,
+      lastDeployedAction = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None
@@ -126,7 +127,8 @@ object ProcessTestData {
       createdAt = LocalDateTime.now(),
       createdBy = "user1",
       tags = List(),
-      deployment = None,
+      lastAction = None,
+      lastDeployedAction = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None

@@ -1,6 +1,6 @@
-import React from "react";
-import HeaderIcon from "./HeaderIcon";
-import PropTypes from "prop-types";
+import PropTypes from "prop-types"
+import React from "react"
+import HeaderIcon from "./HeaderIcon"
 
 export default function ValidTip(props) {
   const {icon, message} = props
@@ -15,5 +15,5 @@ export default function ValidTip(props) {
 
 ValidTip.propTypes = {
   icon: PropTypes.string.isRequired,
-  message: PropTypes.string.isRequired
+  message: PropTypes.string.isRequired,
 }

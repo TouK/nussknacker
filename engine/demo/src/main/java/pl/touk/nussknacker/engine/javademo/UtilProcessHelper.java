@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public class UtilProcessHelper {
 
-    public static String mapToJson(java.util.Map<String, String> map) throws IOException {
+    public String mapToJson(java.util.Map<String, String> map) throws IOException {
         return new ObjectMapper().writeValueAsString(map);
     }
 }

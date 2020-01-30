@@ -1,30 +1,30 @@
 package pl.touk.nussknacker.ui.definition
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
-import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
-import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
-import pl.touk.nussknacker.engine.api.{MetaData, definition}
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor}
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.definition.{ParameterTypeMapper, ProcessDefinitionExtractor}
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.ui.definition.editor.ParameterEditorExtractorChain
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object UIProcessObjects {
   
@@ -40,7 +40,7 @@ object UIProcessObjects {
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
-    val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
+    val uiProcessDefinition: UIProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
 
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
 
@@ -73,24 +73,24 @@ object UIProcessObjects {
         subprocessesDetails = subprocessesDetails))
   }
 
-  private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails], classLoader: ClassLoader, config: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
+  private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
+                                    classLoader: ClassLoader,
+                                    fixedNodesConfig: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
-        val clazzRefParams = parameters.map(extractParam(classLoader, config.get(id)))
-        (id, ObjectDefinition(clazzRefParams, ClazzRef[java.util.Map[String, Any]], List(category)))
+        val clazzRefParams = parameters.map(extractSubprocessParam(classLoader))
+        (id, new ObjectDefinition(clazzRefParams, Typed(ClazzRef[java.util.Map[String, Any]]), List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
     }.toMap
     subprocessInputs
   }
 
-  private def extractParam(classLoader: ClassLoader, nodeConfig: Option[SingleNodeConfig])(p: SubprocessParameter) = {
+  private def extractSubprocessParam(classLoader: ClassLoader)(p: SubprocessParameter) = {
     val runtimeClass = p.typ.toRuntimeClass(classLoader)
     //TODO: currently if we cannot parse parameter class we assume it's unknown
     val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
-    val parameterConfig = nodeConfig.map(_.paramConfig(p.name)).getOrElse(ParameterConfig.empty)
-    val restrictions = runtimeClass.toOption.flatMap(ParameterTypeMapper.prepareRestrictions(_, None, parameterConfig))
-    definition.Parameter(p.name, typ, runtimeClass.toOption.getOrElse(classOf[Any]), restrictions)
+    //subprocess parameter name and editor yet can not be configured via annotation or process creator
+    definition.Parameter(p.name, typ, runtimeClass.toOption.getOrElse(classOf[Any]))
   }
-
 }
 
 @JsonCodec(encodeOnly = true) case class UIProcessObjects(nodesToAdd: List[NodeGroup],
@@ -123,7 +123,7 @@ object UIProcessObjects {
 object UIObjectDefinition {
   def apply(objectDefinition: ObjectDefinition): UIObjectDefinition = {
     UIObjectDefinition(
-      parameters = objectDefinition.parameters.map(UIParameter(_)),
+      parameters = objectDefinition.parameters.map(param => UIParameter(param, objectDefinition.nodeConfig.paramConfig(param.name))),
       returnType = if (objectDefinition.hasNoReturn) None else Some(objectDefinition.returnType),
       categories = objectDefinition.categories,
       nodeConfig = objectDefinition.nodeConfig
@@ -132,17 +132,17 @@ object UIObjectDefinition {
 }
 
 @JsonCodec(encodeOnly = true) case class UIParameter(name: String,
-                       typ: TypingResult,
-                       restriction: Option[ParameterRestriction],
-                       additionalVariables: Map[String, TypingResult],
-                       branchParam: Boolean)
+                                                     typ: TypingResult,
+                                                     editor: ParameterEditor,
+                                                     additionalVariables: Map[String, TypingResult],
+                                                     branchParam: Boolean)
 
 object UIParameter {
-  def apply(parameter: Parameter): UIParameter = {
+  def apply(parameter: Parameter, paramConfig: ParameterConfig): UIParameter = {
     UIParameter(
       name = parameter.name,
       typ = parameter.typ,
-      restriction = parameter.restriction,
+      editor = ParameterEditorExtractorChain(paramConfig).evaluateEditor(parameter),
       additionalVariables = parameter.additionalVariables,
       branchParam = parameter.branchParam
     )

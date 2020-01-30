@@ -12,10 +12,10 @@ export function findLinkBelowCell(jointJsGraph, cellView, paper) {
         const linkLine = joint.g.line(linkView.sourcePoint, linkView.targetPoint)
         return linkLine.intersection(cellTopSideLine) || linkLine.intersection(cellBottomSideLine)
       } else {
-        return false;
+        return false
       }
     } else {
-      return false;
+      return false
     }
   })
 }
@@ -31,7 +31,7 @@ function cellHorizontalLines(cellAttributes) {
   const cellBottomSideLine =  joint.g.line(cellBottomLeftPoint, cellBottomRightPoint)
   return {
     cellTopSideLine: cellTopSideLine,
-    cellBottomSideLine: cellBottomSideLine
+    cellBottomSideLine: cellBottomSideLine,
   }
 }
 

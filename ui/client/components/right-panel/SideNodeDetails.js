@@ -1,6 +1,6 @@
+import _ from "lodash"
 import React, {Component} from "react"
 import {connect} from "react-redux"
-import _ from "lodash"
 import ActionsUtils from "../../actions/ActionsUtils"
 
 class SideNodeDetails extends Component {
@@ -67,7 +67,7 @@ class FlatObjectEntry {
 
 function mapState(state) {
   return {
-    nodeToDisplay: state.graphReducer.nodeToDisplay
+    nodeToDisplay: state.graphReducer.nodeToDisplay,
   }
 }
 

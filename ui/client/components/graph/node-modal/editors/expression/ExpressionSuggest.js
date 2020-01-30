@@ -19,7 +19,6 @@ import ValidationLabels from "../../../../modals/ValidationLabels"
 import HttpService from "../../../../../http/HttpService"
 import {allValid} from "../../../../../common/Validators"
 
-
 //to reconsider
 // - respect categories for global variables?
 // - maybe ESC should be allowed to hide suggestions but leave modal open?
@@ -36,9 +35,9 @@ class ExpressionSuggest extends React.Component {
     fieldName: PropTypes.string,
     validators: PropTypes.array,
     showValidation: PropTypes.bool,
-    processingType: PropTypes.string
+    processingType: PropTypes.string,
+    isMarked: PropTypes.bool,
   }
-
 
   customAceEditorCompleter = {
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
@@ -59,7 +58,7 @@ class ExpressionSuggest extends React.Component {
               meta: returnType,
               description: s.description,
               parameters: s.parameters,
-              returnType: returnType
+              returnType: returnType,
             }
           }))
         } finally {
@@ -81,7 +80,7 @@ class ExpressionSuggest extends React.Component {
           </div>
         ))
       }
-    }
+    },
   }
 
   constructor(props) {
@@ -89,7 +88,7 @@ class ExpressionSuggest extends React.Component {
     inputExprIdCounter += 1
     this.state = {
       value: props.inputProps.value,
-      id: `inputExpr${inputExprIdCounter}`
+      id: `inputExpr${inputExprIdCounter}`,
     }
     this.expressionSuggester = this.createExpressionSuggester(props)
   }
@@ -115,7 +114,7 @@ class ExpressionSuggest extends React.Component {
 
   onChange = (newValue) => {
     this.setState({
-      value: newValue
+      value: newValue,
     })
   }
 
@@ -143,7 +142,7 @@ class ExpressionSuggest extends React.Component {
                        highlightGutterLine={false}
                        wrapEnabled={true}
                        editorProps={{
-                         $blockScrolling: "Infinity"
+                         $blockScrolling: "Infinity",
                        }}
                        className={inputProps.readOnly ? " read-only" : ""}
                        setOptions={{
@@ -154,7 +153,7 @@ class ExpressionSuggest extends React.Component {
                          showLineNumbers: false,
                          fontSize: 16,
                          fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
-                         readOnly: inputProps.readOnly
+                         readOnly: inputProps.readOnly,
                        }}
                        onFocus={this.setEditorFocus(true)}
                        onBlur={this.setEditorFocus(false)}/>
@@ -183,7 +182,7 @@ function mapState(state, props) {
     typesInformation: typesInformation,
     dataResolved: dataResolved,
     variables: variables,
-    processingType: state.graphReducer.processToDisplay.processingType
+    processingType: state.graphReducer.processToDisplay.processingType,
   }
 }
 

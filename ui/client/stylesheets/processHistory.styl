@@ -3,58 +3,62 @@
 #process-history
   process-history-color=defaultTextColor
   font-size 12px
-  padding: 0
-  list-style: none
-  margin: 25px 0
+  padding 0
+  list-style none
+  margin 25px 0
+
   li.future
-    opacity 0.3
+    color rgba(process-history-color,0.3)
+
   li.past
-    opacity 0.80
+    color rgba(process-history-color, 0.8)
+
   li
     cursor pointer
-    overflow: hidden
-    position: relative
-    padding: 0 0 10px 35px
+    overflow hidden
+    position relative
+    padding 5px 0 5px 35px
+    .date
+      pointer-events none
+
   li::before
-       content: '';
-       position: absolute;
-       left: 7px;
-       top: 7px;
-       width: 20px;
-       height: 999px;
-       border: 2px solid defaultTextColor;
-       border-width: 0px 0 0 2px;
+       content ''
+       position absolute
+       left 7px
+       top 0
+       width 20px
+       height 999px
+       border 2px solid defaultTextColor
+       border-width 0px 0 0 2px
+       padding-left 10px
+
   li:last-child::before
-    border-width: 0 0 0;
+    height 14px
+
+  li:first-child::before
+    top 14px
+
   li::after
-       content: '';
-       position: absolute;
-       left: 0;
-       top: 0;
-       width: 16px;
-       height: 16px;
-       background: #fff;
-       border: 2px solid defaultTextColor;
-       border-radius: 50%;
+       content ''
+       position absolute
+       left 0
+       top 14px
+       width 16px
+       height 16px
+       background panelBkgColor
+       border 2px solid defaultTextColor
+       border-radius 50%
+       padding-left 10px
 
-  li.current,
-  li.past {
-    color: defaultTextColor;
-  }
+  li.current
+    color defaultTextColor
+    &:hover::after
+    &::after
+      background-color #fff
 
-  li.current::before {
-    border-color: process-history-color;
-  }
+  li:hover
+    background-color toolHoverBkgColor
+    box-sizing border-box
 
-  li.current::after {
-    border-color: process-history-color;
-    background-color defaultTextColor
-  }
-
-  li.past::before,
-  li.past::after {
-    border-color: process-history-color;
-  }
-
-  li.past::after
-    background-color #444444
+  li:hover::after
+    background-color #8d8d8d

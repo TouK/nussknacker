@@ -1,14 +1,14 @@
-import InlinedSvgs from "../../assets/icons/InlinedSvgs"
-import HeaderIcon from "./HeaderIcon"
+import PropTypes from "prop-types"
 import React from "react"
 import {v4 as uuid4} from "uuid"
-import PropTypes from "prop-types"
+import InlinedSvgs from "../../assets/icons/InlinedSvgs"
+import HeaderIcon from "./HeaderIcon"
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection"
 
 export default class Errors extends React.Component {
 
   static propTypes = {
-    errors: PropTypes.object.isRequired
+    errors: PropTypes.object.isRequired,
   }
 
   render() {
@@ -96,6 +96,6 @@ Errors.defaultProps = {
   errors: {
     globalErrors: [],
     invalidNodes: {},
-    processPropertiesErrors: []
-  }
+    processPropertiesErrors: [],
+  },
 }

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListener
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -30,11 +30,11 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfi
     val originalSourceFactory = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]
     implicit val typeInfo: TypeInformation[Object] = originalSourceFactory.typeInformation
     overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, realReturnType) => {
-      val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional)
+      val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional).asInstanceOf[FlinkSource[Object]]
       originalSource match {
         case testDataParserProvider: TestDataParserProvider[Object@unchecked] =>
           val testObjects = testDataParserProvider.testDataParser.parseTestData(testData.testData)
-          CollectionSource[Object](executionConfig, testObjects, originalSourceFactory.timestampAssigner, realReturnType())
+          CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssignerForTest, realReturnType())
         case _ =>
           throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it does'n provide test data parser")
       }

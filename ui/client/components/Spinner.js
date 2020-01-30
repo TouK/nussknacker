@@ -1,5 +1,4 @@
-import React, {Component} from "react"
-import {render} from "react-dom"
+import React from "react"
 import "../stylesheets/spinner.styl"
 
 export default class LoaderSpinner extends React.Component {
@@ -21,6 +20,6 @@ export default class LoaderSpinner extends React.Component {
         <div className="preloader-spin__petal"></div>
         <div className="preloader-spin__petal"></div>
       </div>
-    );
+    )
   }
 }

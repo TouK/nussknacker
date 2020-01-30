@@ -5,18 +5,20 @@
   and __webpack_public_path__).
   It's not really elegant, but we don't see better way without moving to hash router.
  */
-let nkPath = __DEV__ ? "" : window.nkPath
+const nkPath = __DEV__ ? "" : window.nkPath
 
 //https://webpack.js.org/guides/public-path/#on-the-fly
 __webpack_public_path__ = `${nkPath}/static/`
 
-let API_URL = `${nkPath}/api`
+const API_URL = `${nkPath}/api`
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss"
-const DISPLAY_DATE_FORMAT = "YYYY-MM-DD|HH:mm";
+const DISPLAY_DATE_FORMAT = "YYYY-MM-DD|HH:mm"
+const BACKEND_STATIC_URL = __DEV__ ? `${nkPath}/be-static/` : `${nkPath}/static/`
 
 export {
   API_URL,
+  BACKEND_STATIC_URL,
   DATE_FORMAT as dateFormat,
   DISPLAY_DATE_FORMAT as displayDateFormat,
-  nkPath
+  nkPath,
 }

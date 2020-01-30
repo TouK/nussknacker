@@ -1,10 +1,10 @@
-import React from "react";
-import {v4 as uuid4} from "uuid";
+import React from "react"
+import {v4 as uuid4} from "uuid"
 
 export default class ValidationLabels extends React.Component {
 
   render() {
-    const {validators, values} = this.props;
+    const {validators, values} = this.props
     return (
       <div className={"validation-labels"}>
         {validators.map(validator => validator.isValid(...values) ?

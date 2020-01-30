@@ -1,4 +1,4 @@
-import NodeUtils from "../NodeUtils";
+import NodeUtils from "../NodeUtils"
 
 class JoinDef {
 

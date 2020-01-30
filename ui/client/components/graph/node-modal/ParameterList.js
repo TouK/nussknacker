@@ -1,5 +1,5 @@
-import React from "react";
-import _ from "lodash";
+import _ from "lodash"
+import React from "react"
 
 const parametersEquals = (oldParameter, newParameter) =>
   oldParameter
@@ -20,12 +20,12 @@ export default function ParameterList(props) {
       .node
   }
 
-  const savedParameters = nodeDefinitionParameters(props.savedNode);
-  const definitionParameters = nodeDefinitionParameters(nodeDefinitionByName(props.savedNode));
+  const savedParameters = nodeDefinitionParameters(props.savedNode)
+  const definitionParameters = nodeDefinitionParameters(nodeDefinitionByName(props.savedNode))
   const diffParams = {
     added: newFields(savedParameters, definitionParameters),
     removed: removedFields(savedParameters, definitionParameters),
-    unchanged: unchangedFields(savedParameters, definitionParameters)
+    unchanged: unchangedFields(savedParameters, definitionParameters),
   }
   const newParams = _.concat(diffParams.unchanged, diffParams.added)
   if (!_.zip(newParams, nodeDefinitionParameters(props.editedNode)).reduce((acc, params) => acc && parametersEquals(params[0], params[1]), true)) {

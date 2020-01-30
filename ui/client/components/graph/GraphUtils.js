@@ -13,7 +13,7 @@ export function mapProcessWithNewNode(process, before, after) {
       }
     }),
     nodes: _.map(process.nodes, (n) => { return _.isEqual(n, before) ? after : n }),
-    properties: NodeUtils.nodeIsProperties(before) ? after : process.properties
+    properties: NodeUtils.nodeIsProperties(before) ? after : process.properties,
   }
 }
 
@@ -26,7 +26,7 @@ export function mapProcessWithNewEdge(process, before, after) {
       } else {
         return e
       }
-    })
+    }),
   }
 }
 
@@ -34,29 +34,29 @@ export function deleteNode(process, id) {
   return {
     ...process,
     edges: _.filter(process.edges, (e) => !_.isEqual(e.from, id) && !_.isEqual(e.to, id)),
-    nodes: _.filter(process.nodes, (n) => !_.isEqual(n.id, id))
+    nodes: _.filter(process.nodes, (n) => !_.isEqual(n.id, id)),
   }
 }
 
-export function canInjectNode(process, source, middleMan, target, processDefinitionData) {
-  const processAfterDisconnection = deleteEdge(process, source.id, target.id)
-  const canConnectSourceToMiddleMan = NodeUtils.canMakeLink(source.id, middleMan.id, processAfterDisconnection, processDefinitionData)
-  const processWithConnectedSourceAndMiddleMan = addEdge(processAfterDisconnection, source.id, middleMan.id)
-  const canConnectMiddleManToTarget = NodeUtils.canMakeLink(middleMan.id, target.id, processWithConnectedSourceAndMiddleMan, processDefinitionData)
+export function canInjectNode(process, sourceId, middleManId, targetId, processDefinitionData) {
+  const processAfterDisconnection = deleteEdge(process, sourceId, targetId)
+  const canConnectSourceToMiddleMan = NodeUtils.canMakeLink(sourceId, middleManId, processAfterDisconnection, processDefinitionData)
+  const processWithConnectedSourceAndMiddleMan = addEdge(processAfterDisconnection, sourceId, middleManId)
+  const canConnectMiddleManToTarget = NodeUtils.canMakeLink(middleManId, targetId, processWithConnectedSourceAndMiddleMan, processDefinitionData)
   return canConnectSourceToMiddleMan && canConnectMiddleManToTarget
 }
 
 function deleteEdge(process, fromId, toId) {
   return {
   ...process,
-    edges: _.reject(process.edges, (e) => e.from === fromId && e.to === toId)
+    edges: _.reject(process.edges, (e) => e.from === fromId && e.to === toId),
   }
 }
 
 function addEdge(process, fromId, toId) {
   return {
     ...process,
-    edges: process.edges.concat({from: fromId, to: toId})
+    edges: process.edges.concat({from: fromId, to: toId}),
   }
 }
 

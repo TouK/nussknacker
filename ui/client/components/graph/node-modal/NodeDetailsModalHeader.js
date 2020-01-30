@@ -1,10 +1,10 @@
-import React from "react"
-import PropTypes from "prop-types"
 import _ from "lodash"
-import EspModalStyles from "../../../common/EspModalStyles"
-import NodeUtils from "../NodeUtils"
+import PropTypes from "prop-types"
+import React from "react"
 import nodeAttributes from "../../../assets/json/nodeAttributes"
+import EspModalStyles from "../../../common/EspModalStyles"
 import SvgDiv from "../../SvgDiv"
+import NodeUtils from "../NodeUtils"
 
 const HeaderType = {
   SUBTYPE_DOCS: 1,

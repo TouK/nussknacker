@@ -57,8 +57,6 @@ object SampleNodes {
       list = List(param),
       timestampAssigner = None, returnType = Typed[Int])
 
-    override def timestampAssigner: Option[TimestampAssigner[Int]] = None
-
   }
 
   class JoinExprBranchFunction(valueByBranchId: Map[String, LazyParameter[_]],
@@ -416,8 +414,6 @@ object SampleNodes {
 
       }
     }
-
-    override def timestampAssigner: Option[TimestampAssigner[TypedMap]] = None
 
     override def returnType: typing.TypingResult = Typed[TypedMap]
   }

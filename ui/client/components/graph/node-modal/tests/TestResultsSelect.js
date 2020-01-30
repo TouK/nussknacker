@@ -14,7 +14,7 @@ export default function TestResultsSelect(props) {
                 value={resultsIdToShow}>
           {
             TestResultUtils.availableContexts(results).map((ctx, idx) => (
-              <option key={idx} value={ctx.id}>{ctx.id} ({ctx.display})</option>)
+              <option key={idx} value={ctx.id}>{ctx.id} ({ctx.display})</option>),
             )
           }
         </select>

@@ -1,21 +1,21 @@
-import React from "react"
-import {connect} from "react-redux"
-import Modal from "react-modal"
-import _ from "lodash"
-import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
+import _ from "lodash"
+import PropTypes from "prop-types"
+import React from "react"
+import {Scrollbars} from "react-custom-scrollbars"
+import Draggable from "react-draggable"
+import LaddaButton from "react-ladda"
+import Modal from "react-modal"
+import {connect} from "react-redux"
 import ActionsUtils from "../../../actions/ActionsUtils"
+import ProcessUtils from "../../../common/ProcessUtils"
+import TestResultUtils from "../../../common/TestResultUtils"
+import HttpService from "../../../http/HttpService"
+import cssVariables from "../../../stylesheets/_variables.styl"
+import {BareGraph} from "../Graph"
 import NodeUtils from "../NodeUtils"
 import NodeDetailsContent from "./NodeDetailsContent"
 import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
-import TestResultUtils from "../../../common/TestResultUtils"
-import {Scrollbars} from "react-custom-scrollbars"
-import cssVariables from "../../../stylesheets/_variables.styl"
-import {BareGraph} from "../Graph"
-import HttpService from "../../../http/HttpService"
-import ProcessUtils from "../../../common/ProcessUtils"
-import PropTypes from "prop-types"
-import Draggable from "react-draggable"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
 
 class NodeDetailsModal extends React.Component {
@@ -25,7 +25,7 @@ class NodeDetailsModal extends React.Component {
     testResults: PropTypes.object,
     processId: PropTypes.string.isRequired,
     nodeErrors: PropTypes.array.isRequired,
-    readOnly: PropTypes.bool.isRequired
+    readOnly: PropTypes.bool.isRequired,
   }
 
   constructor(props) {
@@ -39,7 +39,7 @@ class NodeDetailsModal extends React.Component {
     }
   }
 
-  componentDidMount(): void {
+  componentDidMount() {
     const {nodeToDisplay, showNodeDetailsModal, businessView, subprocessVersions} = this.props
     const isChromium = !!window.chrome
     if (nodeToDisplay && this.state.subprocessContent === null && showNodeDetailsModal && (NodeUtils.nodeType(nodeToDisplay) === "SubprocessInput")) {
@@ -47,7 +47,7 @@ class NodeDetailsModal extends React.Component {
         const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
         HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion, businessView).then((response) => {
             this.setState({...this.state, subprocessContent: response.data.json})
-          }
+          },
         )
       } else {
         console.warn("Displaying subprocesses is available only in Chromium based browser.")
@@ -75,7 +75,7 @@ class NodeDetailsModal extends React.Component {
     actionResult.then (() => {
         this.setState( {pendingRequest: false})
         this.closeModal()
-      }, () => this.setState( {pendingRequest: false})
+      }, () => this.setState( {pendingRequest: false}),
     )
   }
 
@@ -106,8 +106,8 @@ class NodeDetailsModal extends React.Component {
             Apply
           </LaddaButton>
           :
-          null
-    ] );
+          null,
+    ] )
   }
 
   renderGroupUngroup() {
@@ -126,7 +126,7 @@ class NodeDetailsModal extends React.Component {
 
   renderSubprocess() {
     //we don't use _.get here, because currentNodeId can contain spaces etc...
-    const subprocessCounts = (this.props.processCounts[this.state.currentNodeId] || {}).subprocessCounts || {};
+    const subprocessCounts = (this.props.processCounts[this.state.currentNodeId] || {}).subprocessCounts || {}
     return (<BareGraph processCounts={subprocessCounts} processToDisplay={this.state.subprocessContent}/>)
   }
 
@@ -161,6 +161,7 @@ class NodeDetailsModal extends React.Component {
                           testResults={nodeTestResults}
                           node={this.state.editedNode}
                           onChange={this.onNodeGroupChange}
+                          readOnly={readOnly}
                         /> :
                         <NodeDetailsContent isEditMode={!readOnly}
                                             showValidation={true}
@@ -187,7 +188,7 @@ class NodeDetailsModal extends React.Component {
           </div>
         </Modal>
       </div>
-    );
+    )
   }
 }
 
@@ -216,9 +217,9 @@ function mapState(state) {
     processDefinitionData: processDefinitionData,
     expandedGroups: state.ui.expandedGroups,
     processCounts: state.graphReducer.processCounts || {},
-    businessView: state.graphReducer.businessView
+    businessView: state.graphReducer.businessView,
 
-  };
+  }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(NodeDetailsModal);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(NodeDetailsModal)

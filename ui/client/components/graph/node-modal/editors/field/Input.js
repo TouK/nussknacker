@@ -1,7 +1,7 @@
+import PropTypes from "prop-types"
 import React from "react"
 import {allValid} from "../../../../../common/Validators"
 import ValidationLabels from "../../../../modals/ValidationLabels"
-import PropTypes from "prop-types"
 
 export const Input = (props) => {
   const {isMarked, showValidation, className, placeholder, autoFocus, onChange, value, validators, readOnly, formattedValue} = props
@@ -30,15 +30,16 @@ Input.propTypes = {
   isMarked: PropTypes.bool,
   value: PropTypes.oneOfType([
     PropTypes.string,
-    PropTypes.number
+    PropTypes.number,
   ]),
   readOnly: PropTypes.bool,
   autoFocus: PropTypes.bool,
   showValidation: PropTypes.bool,
   validators: PropTypes.array,
   onChange: PropTypes.func,
-  placeholder: PropTypes.string
+  placeholder: PropTypes.string,
+  formattedValue: PropTypes.string,
+  className: PropTypes.string,
 }
-
 
 export default Input

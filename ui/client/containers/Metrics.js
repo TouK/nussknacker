@@ -1,11 +1,11 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 import {connect} from "react-redux"
-import HttpService from "../http/HttpService"
 import {withRouter} from "react-router"
-import {nkPath} from "../config";
+import {nkPath} from "../config"
+import HttpService from "../http/HttpService"
 
-class Metrics extends React.Component {
+export class Metrics extends React.Component {
 
   static propTypes = {
     settings: PropTypes.object.isRequired,
@@ -15,7 +15,7 @@ class Metrics extends React.Component {
     super(props, context)
 
     this.state = {
-      processingType: null
+      processingType: null,
     }
   }
 
@@ -67,13 +67,13 @@ Metrics.header = "Metrics"
 
 function mapState(state) {
   return {
-    settings: state.settings.featuresSettings.metrics || {}
+    settings: state.settings.featuresSettings.metrics || {},
   }
 }
 
 function mapDispatch() {
   return {
-    actions: {}
+    actions: {},
   }
 }
 

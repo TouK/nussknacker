@@ -1,6 +1,5 @@
-
 const initialState = {
-  error: null
+  error: null,
 }
 
 export function reducer(state = initialState, action) {
@@ -8,13 +7,13 @@ export function reducer(state = initialState, action) {
     case "HANDLE_HTTP_ERROR": {
       return {
         ...state,
-        error: action.error
+        error: action.error,
       }
     }
     case "HANDLE_OUATHERROR": {
       return {
         ...state,
-        error: action.error
+        error: action.error,
       }
     }
     default:

@@ -30,8 +30,8 @@ class PdfExporterSpec extends FlatSpec {
 
     val details = BaseProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false, false,
-      ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), LocalDateTime.now(), "user", List(), None, Some(displayable),
-      List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
+      ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), LocalDateTime.now(), "user", List(), None, None, Some(displayable),
+      List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech") ), None
     )
 
     val activities = ProcessActivity(List(
@@ -62,8 +62,8 @@ class PdfExporterSpec extends FlatSpec {
 
     val details = BaseProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false, false,
-      ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), LocalDateTime.now(), "user", List(), None, Some(displayable),
-      List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
+      ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), LocalDateTime.now(), "user", List(), None, None, Some(displayable),
+      List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech")), None
     )
 
     val activities = ProcessActivity(List(), List())

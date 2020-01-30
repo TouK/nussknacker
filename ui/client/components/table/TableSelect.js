@@ -10,14 +10,14 @@ export default class TableSelect extends React.Component {
       minHeight: 45,
       fontSize: 14,
       color: "#555555",
-      borderRadius: 0
+      borderRadius: 0,
     }),
     option: (styles, state) => ({
       ...styles,
       fontSize: 14,
       backgroundColor: state.isSelected ? "#e6ecff" : null,
       color: "#555555",
-    })
+    }),
   }
 
   customSelectTheme(theme) {
@@ -26,7 +26,7 @@ export default class TableSelect extends React.Component {
       colors: {
         ...theme.colors,
         primary: "#0058a9",
-      }
+      },
     }
   }
 

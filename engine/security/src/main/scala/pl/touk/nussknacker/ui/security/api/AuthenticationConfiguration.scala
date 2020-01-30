@@ -35,10 +35,6 @@ object AuthenticationConfiguration {
   import net.ceedubs.ficus.readers.EnumerationReader._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  implicit val uriValueReader: ValueReader[URI] = new ValueReader[URI] {
-    def read(config: Config, path: String): URI = new URI(config.getString(path))
-  }
-
   val authenticationConfigPath = "authentication"
   val methodConfigPath = s"$authenticationConfigPath.method"
   val usersConfigurationPath = "users"

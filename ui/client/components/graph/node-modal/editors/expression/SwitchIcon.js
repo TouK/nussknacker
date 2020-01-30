@@ -1,5 +1,5 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 import * as LoaderUtils from "../../../../../common/LoaderUtils"
 
 export default function SwitchIcon(props) {
@@ -10,10 +10,10 @@ export default function SwitchIcon(props) {
 
   return (
     shouldShowSwitch ?
-      <button className={`inlined switch-icon${displayRawEditor ? " active " : ""}`}
+      <button className={`inlined switch-icon${displayRawEditor ? " active " : ""}${readOnly ? " read-only " : ""}`}
               onClick={onClick}
               disabled={!switchable || readOnly}
-              title={title(readOnly)}>
+              title={title()}>
         <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
       </button> : null
   )
@@ -25,5 +25,5 @@ SwitchIcon.propTypes = {
   onClick: PropTypes.func,
   shouldShowSwitch: PropTypes.bool,
   displayRawEditor: PropTypes.bool,
-  readOnly: PropTypes.bool
+  readOnly: PropTypes.bool,
 }
