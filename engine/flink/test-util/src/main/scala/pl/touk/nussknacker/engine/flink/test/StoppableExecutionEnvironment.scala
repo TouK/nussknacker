@@ -62,10 +62,10 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
   // Running multiple parallel instances of job in one test class can cause stealing of data from sources between those instances.
-  def withJobRunning[T](jobName: String)(action: => T): T = {
+  def withJobRunning[T](jobName: String)(actionToInvokeWithJobRunning: => T): T = {
     val executionResult = executeAndWaitForStart(jobName)
     try {
-      action
+      actionToInvokeWithJobRunning
     } finally {
       cancel(executionResult.getJobID)
       waitForJobState(executionResult.getJobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()

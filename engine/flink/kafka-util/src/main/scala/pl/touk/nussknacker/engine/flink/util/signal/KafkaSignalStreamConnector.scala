@@ -14,11 +14,18 @@ trait KafkaSignalStreamConnector {
   def connectWithSignals[A, B: TypeInformation](start: DataStream[A], processId: String, nodeId: String, schema: DeserializationSchema[B]): ConnectedStreams[A, B] = {
     val signalsSource = new FlinkKafkaConsumer[B](signalsTopic, schema,
       KafkaEspUtils.toProperties(kafkaConfig, Some(s"$processId-$nodeId-signal")))
-    val signals = start.executionEnvironment
+    val signalsStream = start.executionEnvironment
       .addSource(signalsSource).name(s"signals-$processId-$nodeId")
-      //We use ingestion time here, to advance watermarks in connected streams
-      //TODO: this is not always optimal solution, as e.g. in tests periodic watermarks are not the best option
-      .assignTimestampsAndWatermarks(new IngestionTimeExtractor[B])
-    start.connect(signals)
+    val withTimestamps = assignTimestampsAndWatermarks(signalsStream)
+    start.connect(withTimestamps)
   }
+
+  //We use ingestion time here, to advance watermarks in connected streams
+  //This is not always optimal solution, as e.g. in tests periodic watermarks are not the best option, so it can be overridden in implementations
+  //Please note that *in general* it's not OK to assign standard event-based watermark, as signal streams usually
+  //can be idle for long time. This prevent advancement of watermark on connected stream, which can lean to unexpected behaviour e.g. in aggregates
+  protected def assignTimestampsAndWatermarks[B](dataStream: DataStream[B]): DataStream[B] = {
+    dataStream.assignTimestampsAndWatermarks(new IngestionTimeExtractor[B])
+  }
+
 }

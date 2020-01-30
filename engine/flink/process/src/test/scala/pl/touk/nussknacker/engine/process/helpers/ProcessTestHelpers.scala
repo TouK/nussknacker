@@ -51,7 +51,7 @@ object ProcessTestHelpers {
     def invoke(process: EspProcess, creator: ProcessConfigCreator,
                configuration: Configuration,
                processVersion: ProcessVersion,
-               parallelism: Int, action: => Unit): Unit = {
+               parallelism: Int, actionToInvokeWithJobRunning: => Unit): Unit = {
       val env = StoppableExecutionEnvironment(configuration)
       try {
         val config = ConfigFactory.load()
@@ -60,7 +60,7 @@ object ProcessTestHelpers {
 
 
         MockService.clear()
-        env.withJobRunning(process.id)(action)
+        env.withJobRunning(process.id)(actionToInvokeWithJobRunning)
       } finally {
         env.stop()
       }
@@ -120,10 +120,10 @@ object ProcessTestHelpers {
     def invokeWithKafka(process: EspProcess, kafkaConfig: KafkaConfig,
                         config: Configuration = new Configuration(),
                         processVersion: ProcessVersion = ProcessVersion.empty,
-                        parallelism: Int = 1)(action: => Unit): Unit = {
+                        parallelism: Int = 1)(actionToInvokeWithJobRunning: => Unit): Unit = {
 
       val creator: ProcessConfigCreator = prepareCreator(Nil, kafkaConfig)
-      invoke(process, creator, config, processVersion, parallelism, action)
+      invoke(process, creator, config, processVersion, parallelism, actionToInvokeWithJobRunning)
     }
   }
 
