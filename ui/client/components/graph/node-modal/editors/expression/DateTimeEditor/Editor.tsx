@@ -9,6 +9,9 @@ import moment from "moment"
 import {asLocalDateString} from "./DateEditor"
 import {asLocalTimeString} from "./TimeEditor"
 import {asLocalDateTimeString} from "./DateTimeEditor"
+import {allValid, Validator} from "../../../../../../common/Validators"
+import ValidationLabels from "../../../../../modals/ValidationLabels"
+import i18next from "i18next"
 
 /* eslint-disable i18next/no-literal-string */
 export enum JavaTimeTypes {
@@ -24,6 +27,10 @@ export type EditorProps = {
   readOnly: boolean,
   className: string,
   onValueChange,
+  validators: Validator[],
+  showValidation: boolean,
+  isMarked: boolean,
+  editorFocused: boolean,
   expressionType: JavaTimeTypes,
   dateFormat: string,
   timeFormat?: string,
@@ -57,10 +64,17 @@ export const isParseable = (expression: ExpressionObj, expressionType: JavaTimeT
   return date && date.isValid()
 }
 
+const getDateValidator = (value: string | moment.Moment, expressionType: JavaTimeTypes): Validator => ({
+  description: i18next.t("validation.wrongDateFormat", "wrong_date_format"),
+  message: i18next.t("validation.wrongDateFormat", "wrong_date_format"),
+  isValid: () => !!format(value, expressionType),
+})
+
 export function Editor(props: EditorProps) {
   const {i18n} = useTranslation()
-  const {expressionObj, onValueChange, expressionType, readOnly, ...other} = props
+  const {className, expressionObj, onValueChange, expressionType, readOnly, validators, showValidation, isMarked, editorFocused, ...other} = props
   const [value, setValue] = useState<string | moment.Moment>(moment(parse(expressionObj, expressionType)))
+  const {expression} = expressionObj
   const [onChange] = useDebouncedCallback(
       value => {
         const date = format(value, expressionType)
@@ -75,17 +89,39 @@ export function Editor(props: EditorProps) {
       },
       [value],
   )
+
+  const isValid = allValid(validators, [expression])
+
+  const localValidators = [
+    getDateValidator(value, expressionType),
+  ]
+
   return (
-      <DateTimePicker
-          onChange={setValue}
-          value={value}
-          inputProps={{
-            className: classNames("node-input"),
-            readOnly,
-          }}
-          locale={i18n.language}
-          {...other}
-      />
+      <div
+          className={className}
+      >
+        <DateTimePicker
+            onChange={setValue}
+            value={value}
+            inputProps={{
+              className: classNames([
+                "node-input",
+                showValidation && !isValid && "node-input-with-error",
+                isMarked && "marked",
+                editorFocused && "focused",
+                readOnly && "read-only",
+              ]),
+              readOnly,
+              disabled: readOnly,
+            }}
+            locale={i18n.language}
+            {...other}
+        />
+        {showValidation && <ValidationLabels validators={[
+          ...localValidators,
+          ...validators,
+        ]} values={[expression]}/>}
+      </div>
   )
 }
 
