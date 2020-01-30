@@ -24,23 +24,23 @@ const RawEditor = (props: Props) => {
   } = props
 
   return (
-      <div className={className}>
-        <ExpressionSuggest
-            fieldName={fieldName}
-            inputProps={{
-              rows: rows,
-              cols: cols,
-              className: cn("node-input"),
-              value: expressionObj.expression,
-              language: expressionObj.language,
-              onValueChange: onValueChange,
-              readOnly: readOnly,
-            }}
-            validators={validators}
-            isMarked={isMarked}
-            showValidation={showValidation}
-        />
-      </div>
+    <div className={className}>
+      <ExpressionSuggest
+        fieldName={fieldName}
+        inputProps={{
+          rows: rows,
+          cols: cols,
+          className: cn("node-input"),
+          value: expressionObj.expression,
+          language: expressionObj.language,
+          onValueChange: onValueChange,
+          readOnly: readOnly,
+        }}
+        validators={validators}
+        isMarked={isMarked}
+        showValidation={showValidation}
+      />
+    </div>
   )
 }
 

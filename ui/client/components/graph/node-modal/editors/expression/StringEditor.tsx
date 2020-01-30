@@ -21,11 +21,14 @@ const StringEditor: EditorType<Props> = (props: Props) => {
 
   const trim = (value) => value.substring(1, value.length - 1)
 
-  return <Input {...props}
-                onChange={(event) => onValueChange(format(event.target.value))}
-                value={trim(expressionObj.expression)}
-                formattedValue={expressionObj.expression}
-                className={className}/>
+  return (
+    <Input
+      {...props}
+      onChange={(event) => onValueChange(format(event.target.value))}
+      value={trim(expressionObj.expression)}
+      formattedValue={expressionObj.expression}
+      className={className}/>
+)
 }
 
 //TODO handle expressions with escaped '/"

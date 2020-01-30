@@ -145,12 +145,13 @@ class NussknackerInitializer extends React.Component<Props, State> {
   render() {
     if (this.state.error != null) {
       return (
-          <InitializeError error={this.state.error}
-                           buttonLabel={this.state.error.buttonLabel}
-                           buttonOnClick={this.state.error.buttonOnClick}
-                           message={this.state.error.message}
-                           description={this.state.error.description}
-                           showButton={this.state.error.showButton}
+        <InitializeError
+          error={this.state.error}
+          buttonLabel={this.state.error.buttonLabel}
+          buttonOnClick={this.state.error.buttonOnClick}
+          message={this.state.error.message}
+          description={this.state.error.description}
+          showButton={this.state.error.showButton}
           />
       )
     }

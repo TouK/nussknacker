@@ -15,7 +15,8 @@
     "__webpack_public_path__": "readonly",
     "__DEV__": "readonly",
     "__GIT__": "readonly",
-    "_": "readonly" // TODO: remove lodash from global, fix imports
+    "_": "readonly"
+    // TODO: remove lodash from global, fix imports
   },
   "parserOptions": {
     "ecmaFeatures": {
@@ -44,6 +45,34 @@
     }
   },
   "rules": {
+    "react/jsx-closing-bracket-location": [
+      "warn",
+      "tag-aligned"
+    ],
+    "react/jsx-first-prop-new-line": [
+      "warn",
+      "multiline-multiprop"
+    ],
+    "react/jsx-wrap-multilines": [
+      "warn",
+      {
+        "declaration": "parens-new-line",
+        "assignment": "parens-new-line",
+        "return": "parens-new-line",
+        "arrow": "parens-new-line",
+        "condition": "parens-new-line",
+        "logical": "parens-new-line",
+        "prop": "parens-new-line"
+      }
+    ],
+    "react/jsx-max-props-per-line": [
+      "warn",
+      {
+        "maximum": 1,
+        "when": "multiline"
+      }
+    ],
+    "indent": ["warn", 2],
     "react/jsx-indent": [
       "warn",
       2

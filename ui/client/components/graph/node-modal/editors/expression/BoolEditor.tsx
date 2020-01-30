@@ -30,16 +30,16 @@ const BoolEditor: EditorType<Props> = (props: Props) => {
   const falseValue = {expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false")}
 
   return (
-      <FixedValuesEditor
-          values={[
+    <FixedValuesEditor
+      values={[
             trueValue,
             falseValue,
           ]}
-          defaultValue={trueValue}
-          expressionObj={expressionObj}
-          onValueChange={onValueChange}
-          readOnly={readOnly}
-          className={className}
+      defaultValue={trueValue}
+      expressionObj={expressionObj}
+      onValueChange={onValueChange}
+      readOnly={readOnly}
+      className={className}
       />
   )
 }
