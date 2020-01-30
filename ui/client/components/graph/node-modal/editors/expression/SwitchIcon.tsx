@@ -22,14 +22,14 @@ export default function SwitchIcon(props: Props) {
   ])
 
   return (
-      <button
-          className={className}
-          onClick={onClick}
-          disabled={!switchable || readOnly}
-          title={title}
+    <button
+      className={className}
+      onClick={onClick}
+      disabled={!switchable || readOnly}
+      title={title}
       >
-        <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
-      </button>
+      <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
+    </button>
   )
 }
 

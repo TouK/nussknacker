@@ -23,7 +23,7 @@ export type EditorType<P extends EditorProps = EditorProps> = React.ComponentTyp
 type EditorConfig = {
   editor: (param?: ParamType, displayRawEditor?) => EditorType,
   hint: (switchable?: boolean, currentEditor?: EditorType, param?: ParamType) => string,
-  showSwitch: boolean,
+  showSwitch?: boolean,
   switchableTo?: (expressionObj: ExpressionObj, param?: ParamType, values?: ValuesType) => boolean,
   values?: (param: ParamType, values: ValuesType) => $TodoType,
   switchable?: Function,
@@ -52,24 +52,20 @@ export const editors: Record<editorTypes, EditorConfig> = {
   [editorTypes.RAW_PARAMETER_EDITOR]: {
     editor: () => RawEditor,
     hint: () => i18next.t("editors.raw.switchableToHint", "Switch to expression mode"),
-    showSwitch: false,
   },
   [editorTypes.BOOL_PARAMETER_EDITOR]: {
     editor: () => BoolEditor,
     hint: (switchable) => switchable ? BoolEditor.switchableToHint : BoolEditor.notSwitchableToHint,
-    showSwitch: false,
     switchableTo: (expressionObj) => BoolEditor.switchableTo(expressionObj),
   },
   [editorTypes.STRING_PARAMETER_EDITOR]: {
     editor: () => StringEditor,
     hint: (switchable) => switchable ? StringEditor.switchableToHint : StringEditor.notSwitchableToHint,
-    showSwitch: false,
     switchableTo: (expressionObj) => StringEditor.switchableTo(expressionObj),
   },
   [editorTypes.FIXED_VALUES_PARAMETER_EDITOR]: {
     editor: () => FixedValuesEditor,
     hint: (switchable) => switchable ? FixedValuesEditor.switchableToHint : FixedValuesEditor.notSwitchableToHint,
-    showSwitch: false,
     switchableTo: (expressionObj, param, values) => FixedValuesEditor.switchableTo(
         expressionObj,
         !_.isEmpty(values) ? values : param.editor.possibleValues,
@@ -92,19 +88,16 @@ export const editors: Record<editorTypes, EditorConfig> = {
   [editorTypes.DATE]: {
     editor: () => DateEditor,
     hint: switchable => switchable ? DateEditor.switchableToHint : DateEditor.notSwitchableToHint,
-    showSwitch: true,
     switchableTo: DateEditor.switchableTo,
   },
   [editorTypes.TIME]: {
     editor: () => TimeEditor,
     hint: switchable => switchable ? TimeEditor.switchableToHint : TimeEditor.notSwitchableToHint,
-    showSwitch: true,
     switchableTo: TimeEditor.switchableTo,
   },
   [editorTypes.DATE_TIME]: {
     editor: () => DateTimeEditor,
     hint: switchable => switchable ? DateTimeEditor.switchableToHint : DateTimeEditor.notSwitchableToHint,
-    showSwitch: true,
     switchableTo: DateTimeEditor.switchableTo,
   },
 }
