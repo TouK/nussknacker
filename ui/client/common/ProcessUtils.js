@@ -185,8 +185,13 @@ class ProcessUtils {
   findNodeDefinitionIdOrType = (node) =>
     this.findNodeDefinitionId(node) || node.type || null
 
+  getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
+
   findNodeConfigName = (node) => {
-    return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1))
+    // First we try to find id of node (config for specific custom node by id).
+    // If it is falsy then we try to extract config name from node type (config for build-in components e.g. variable, join).
+    // If all above are falsy then it means that node is special process properties node without id and type.
+    return this.findNodeDefinitionId(node) || this.getNodeBaseTypeCamelCase(node) || "$properties"
   }
 
   humanReadableType = (refClazzOrName) => {
