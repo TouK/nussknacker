@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
   def statusTooltip(stateStatus: StateStatus): Option[String]
+  def statusDescription(stateStatus: StateStatus): Option[String]
   def statusIcon(stateStatus: StateStatus): Option[URI]
   //Temporary mapping ProcessActionType to StateStatus. TODO: Remove it when we will support state cache
   def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus
@@ -19,8 +20,8 @@ object ProcessState {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
-  def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], allowedActions: List[ProcessActionType]): ProcessState =
-    ProcessState(DeploymentId(deploymentId), status, version, allowedActions)
+  def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], definitionManager: ProcessStateDefinitionManager): ProcessState =
+    ProcessState(DeploymentId(deploymentId), status, version, definitionManager, Option.empty, Option.empty, List.empty)
 
   def apply(deploymentId: DeploymentId,
             status: StateStatus,
@@ -28,7 +29,7 @@ object ProcessState {
             definitionManager: ProcessStateDefinitionManager,
             startTime: Option[Long],
             attributes: Option[Json],
-            errorMessage: Option[String]): ProcessState =
+            errors: List[String]): ProcessState =
     ProcessState(
       deploymentId,
       status,
@@ -36,9 +37,10 @@ object ProcessState {
       definitionManager.statusActions(status),
       definitionManager.statusIcon(status),
       definitionManager.statusTooltip(status),
+      definitionManager.statusDescription(status),
       startTime,
       attributes,
-      errorMessage
+      errors
     )
 
   @JsonCodec case class StateStatusCodec(clazz: String, value: String)
@@ -46,13 +48,14 @@ object ProcessState {
 
 @JsonCodec case class ProcessState(deploymentId: DeploymentId,
                                    status: StateStatus,
-                                   version: Option[ProcessVersion] = Option.empty,
-                                   allowedActions: List[ProcessActionType] = List.empty,
-                                   icon: Option[URI] = Option.empty,
-                                   tooltip: Option[String] = Option.empty,
-                                   startTime: Option[Long] = Option.empty,
-                                   attributes: Option[Json] = Option.empty,
-                                   errorMessage: Option[String] = Option.empty) {
+                                   version: Option[ProcessVersion],
+                                   allowedActions: List[ProcessActionType],
+                                   icon: Option[URI],
+                                   tooltip: Option[String],
+                                   description: Option[String],
+                                   startTime: Option[Long],
+                                   attributes: Option[Json],
+                                   errors: List[String]) {
   def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
 }
 
@@ -84,21 +87,21 @@ object StateStatus {
     isDuringDeploy || isRunning || isFinished
 }
 
-final case class NotEstablishedStateStatus(val name: String) extends StateStatus
+final case class NotEstablishedStateStatus(name: String) extends StateStatus
 
-final case class StoppedStateStatus(val name: String) extends StateStatus {
+final case class StoppedStateStatus(name: String) extends StateStatus {
   override def canDeploy: Boolean = true
 }
 
-final case class DuringDeployStateStatus(val name: String) extends StateStatus {
+final case class DuringDeployStateStatus(name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true
 }
 
-final case class FinishedStateStatus(val name: String) extends StateStatus {
+final case class FinishedStateStatus(name: String) extends StateStatus {
   override def isFinished: Boolean = true
   override def canDeploy: Boolean = true
 }
 
-final case class RunningStateStatus(val name: String) extends StateStatus {
+final case class RunningStateStatus(name: String) extends StateStatus {
   override def isRunning: Boolean = true
 }

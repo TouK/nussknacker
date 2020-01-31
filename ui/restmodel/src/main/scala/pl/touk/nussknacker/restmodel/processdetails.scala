@@ -24,8 +24,9 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
 
   object BasicProcess {
     def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(
-      id = ApiProcessId(baseProcessDetails.id),
+      id = baseProcessDetails.id,
       name = ProcessName(baseProcessDetails.name),
+      processId = baseProcessDetails.processId,
       processVersionId = baseProcessDetails.processVersionId,
       isSubprocess = baseProcessDetails.isSubprocess,
       isArchived = baseProcessDetails.isArchived,
@@ -41,8 +42,9 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
     )
   }
 
-  @JsonCodec case class BasicProcess(id: ApiProcessId,
+  @JsonCodec case class BasicProcess(id: String,
                                      name: ProcessName,
+                                     processId: ApiProcessId,
                                      processVersionId: Long,
                                      isArchived: Boolean,
                                      isSubprocess: Boolean,
@@ -66,6 +68,7 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
 
   case class BaseProcessDetails[ProcessShape](id: String,
                                               name: String,
+                                              processId: ApiProcessId,
                                               processVersionId: Long,
                                               isLatestVersion: Boolean,
                                               description: Option[String],
@@ -87,7 +90,7 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                              ) extends Process {
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
     // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes
-    def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(id.toLong), ProcessName(name))
+    def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(processId.value), ProcessName(name))
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.

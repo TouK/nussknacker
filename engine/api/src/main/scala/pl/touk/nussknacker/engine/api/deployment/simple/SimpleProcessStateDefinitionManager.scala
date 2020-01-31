@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 import java.net.URI
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessStateDefinitionManager, ProcessActionType, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStateDefinitionManager, StateStatus}
 
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
   val defaultActions = List()
@@ -40,15 +40,29 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   val statusTooltipsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "There are some problems with obtaining process state at engine. Please check if your engine is working properly..",
     SimpleStateStatus.NotFound -> "There are some problems with process. Please check if process really exists..",
-    SimpleStateStatus.Unknown -> "Unknown state of the process..",
+    SimpleStateStatus.Unknown -> "Unknown state of the process.. We can't recognize process state..",
     SimpleStateStatus.NotDeployed -> "The process has never been deployed.",
     SimpleStateStatus.DuringDeploy -> "The process has been already started and currently is being deployed.",
-    SimpleStateStatus.Running -> "The process is running.",
+    SimpleStateStatus.Running -> "The process has been successfully deployed and currently is running.",
     SimpleStateStatus.Canceled -> "The process has been successfully cancelled.",
     SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with checking state of process..",
     SimpleStateStatus.Finished -> "The process completed successfully.",
     SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process."
+  )
+
+  val statusDescriptionsMap: Map[StateStatus, String] = Map(
+    SimpleStateStatus.FailedToGet -> "Failed to get state of process..",
+    SimpleStateStatus.NotFound -> "Process state was not found..",
+    SimpleStateStatus.Unknown -> "Unknown state of the process..",
+    SimpleStateStatus.NotDeployed -> "Process has never been deployed.",
+    SimpleStateStatus.DuringDeploy -> "Process is being deployed.",
+    SimpleStateStatus.Running -> "Process currently is running.",
+    SimpleStateStatus.Canceled -> "Process currently is canceled.",
+    SimpleStateStatus.DuringCancel -> "Process is being canceled.",
+    SimpleStateStatus.Failed -> "There are some problems with process..",
+    SimpleStateStatus.Finished -> "Process has been successfully finished job.",
+    SimpleStateStatus.Error -> "There are some errors with process.."
   )
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =
@@ -64,4 +78,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     stateAction
       .map(sa => actionStatusMap.getOrElse(sa, SimpleStateStatus.Unknown))
       .getOrElse(SimpleStateStatus.NotDeployed)
+
+  override def statusDescription(stateStatus: StateStatus): Option[String] =
+    statusDescriptionsMap.get(stateStatus)
 }

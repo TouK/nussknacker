@@ -16,7 +16,11 @@ object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager 
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
-    FlinkStateStatus.Restarting -> "The process is restarting.."
+    FlinkStateStatus.Restarting -> "Process was deployed and now is still restarting.."
+  )
+
+  val statusDescriptionsMap: Map[StateStatus, String] = Map(
+    FlinkStateStatus.Restarting -> "Process is still restarting.."
   )
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =
@@ -30,4 +34,7 @@ object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager 
 
   override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
     SimpleProcessStateDefinitionManager.mapActionToStatus(stateAction)
+
+  override def statusDescription(stateStatus: StateStatus): Option[String] =
+    statusDescriptionsMap.get(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusDescription(stateStatus))
 }

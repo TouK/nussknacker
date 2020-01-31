@@ -149,7 +149,7 @@ class DBFetchingProcessRepositorySpec
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching.fetchAllProcessesDetails[DisplayableProcess]().futureValue
-        .filter(_.id == processId.value.toString)
+        .filter(_.processId.value == processId.value)
         .flatMap(_.json.toSeq)
         .map(_.metaData.id)
     }

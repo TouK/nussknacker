@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import java.time.LocalDateTime
 
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
@@ -92,6 +92,7 @@ object ProcessTestData {
     BaseProcessDetails[DisplayableProcess](
       id = displayable.id,
       name = displayable.id,
+      processId = ProcessId(1L),
       processVersionId = 1,
       isLatestVersion = true,
       description = None,
@@ -115,6 +116,7 @@ object ProcessTestData {
     BaseProcessDetails[ValidatedDisplayableProcess](
       id = displayable.id,
       name = displayable.id,
+      processId = ProcessId(1L),
       processVersionId = 1,
       isLatestVersion = true,
       description = None,

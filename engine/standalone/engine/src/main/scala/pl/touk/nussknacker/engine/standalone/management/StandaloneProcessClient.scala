@@ -67,7 +67,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
           Some(SimpleProcessState(
             DeploymentId(name.value),
             SimpleStateStatus.Failed,
-            errorMessage = Some(s"Inconsistent states between servers: $warningMessage")
+            errors = List(s"Inconsistent states between servers: $warningMessage.")
           ))
       }
     }

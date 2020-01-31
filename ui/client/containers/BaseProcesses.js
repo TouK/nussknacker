@@ -169,7 +169,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
       return null
     }
 
-    return _.get(this.state.statuses, process.name, undefined) //Unknown means that process was not found
+    return _.get(this.state.statuses, process.name, null)
   }
 
   isRunning = (process) => ProcessStateUtils.isDeployed(process) && ProcessStateUtils.isRunning(this.getProcessState(process))

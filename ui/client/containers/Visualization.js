@@ -18,9 +18,18 @@ import "../stylesheets/visualization.styl"
 
 class Visualization extends React.Component {
 
+  state = {
+    timeoutId: null,
+    intervalId: null,
+    processStateIntervalTime: 15000,
+    processStateIntervalId: null,
+    processState: null,
+    dataResolved: false,
+    isStateLoaded: false
+  }
+
   constructor(props) {
     super(props)
-    this.state = {timeoutId: null, intervalId: null, status: {}, dataResolved: false}
     this.graphRef = React.createRef()
     this.bindShortCuts()
   }
@@ -75,11 +84,18 @@ class Visualization extends React.Component {
       })
 
       this.fetchProcessStatus()
+
+      this.state.processStateIntervalId = setInterval(
+        () => this.fetchProcessStatus(),
+        this.state.processStateIntervalTime
+      )
+
     }).catch((error) => {
       this.props.actions.handleHTTPError(error)
     })
 
     this.bindKeyboardActions()
+
   }
 
   showModalDetailsIfNeeded(process) {
@@ -138,6 +154,7 @@ class Visualization extends React.Component {
   }
 
   componentWillUnmount() {
+    clearInterval(this.state.processStateIntervalId)
     clearTimeout(this.state.timeoutId)
     clearInterval(this.state.intervalId)
     this.props.actions.clearProcess()
@@ -151,12 +168,8 @@ class Visualization extends React.Component {
 
   fetchProcessStatus() {
     HttpService.fetchSingleProcessStatus(this.props.match.params.processId).then((response) => {
-      this.setState({status: response})
+      this.setState({processState: response.data, isStateLoaded: true})
     })
-  }
-
-  isRunning() {
-    return _.get(this.state.status, "isRunning", false)
   }
 
   undo() {
@@ -298,6 +311,8 @@ class Visualization extends React.Component {
         />
 
         <UserRightPanel
+          isStateLoaded={this.state.isStateLoaded}
+          processState={this.state.processState}
           graphLayoutFunction={graphLayoutFun}
           exportGraph={exportGraphFun}
           zoomIn={zoomInFun}
