@@ -6,8 +6,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.runtime.jobgraph.JobStatus
+import org.apache.flink.api.common.{ExecutionConfig, JobStatus}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._

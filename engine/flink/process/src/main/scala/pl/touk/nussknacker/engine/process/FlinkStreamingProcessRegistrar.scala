@@ -79,7 +79,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
   //Maybe it's a bug in flink??
   private def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
     val config = env.getConfig
-    env.getStreamGraph.getAllOperatorFactory.asScala.toSet[tuple.Tuple2[Integer, StreamOperatorFactory[_]]].map(_.f1).collect {
+    env.getStreamGraph("", clearTransformations = false).getAllOperatorFactory.asScala.toSet[tuple.Tuple2[Integer, StreamOperatorFactory[_]]].map(_.f1).collect {
       case window:WindowOperator[_, _, _, _, _] => window.getStateDescriptor.initializeSerializerUnlessSet(config)
     }
   }

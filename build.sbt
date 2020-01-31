@@ -127,14 +127,12 @@ val forkSettings = Seq(
   javaOptions := Seq(
     "-Xmx512M",
     "-XX:ReservedCodeCacheSize=128M",
-    "-Xss4M",
-    "-XX:+UseConcMarkSweepGC",
-    "-XX:+CMSClassUnloadingEnabled"
+    "-Xss4M"
   )
 )
 
 val akkaV = "2.5.21" //same version as in Flink
-val flinkV = "1.9.1"
+val flinkV = "1.10.0"
 val kafkaV = "2.2.0"
 val springV = "5.1.4.RELEASE"
 val scalaTestV = "3.0.8"

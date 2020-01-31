@@ -8,3 +8,5 @@ high-availability.storageDir: file:///tmp/storage
 parallelism.default: 1
 #FIXME: reversing flink default order
 classloader.resolve-order: parent-first
+
+taskmanager.memory.jvm-metaspace.size: 512m
