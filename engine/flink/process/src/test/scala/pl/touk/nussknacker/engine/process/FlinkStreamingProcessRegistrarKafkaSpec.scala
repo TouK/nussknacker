@@ -41,47 +41,47 @@ class FlinkStreamingProcessRegistrarKafkaSpec
     val threshold = slidesInWindow * messagesInSlide
 
     val process = EspProcess(
-      MetaData("proc1", StreamMetaData()),
+      MetaData(getClass.getSimpleName, StreamMetaData()),
       ExceptionHandlerRef(List.empty),
-      NonEmptyList.of(GraphBuilder.source("source", "kafka-keyvalue", "topic" -> inTopic)
-        .processorEnd("service", "mock", "input" -> "#input"))
+      NonEmptyList.of(GraphBuilder.source("source", "kafka-keyvalue", "topic" -> s"""'$inTopic'""")
+        .processorEnd("service", "logService", "all" -> "#input"))
     )
 
-    Future {
-      ProcessTestHelpers.processInvoker.invokeWithKafka(
-        process, KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
-      )
-    }
+    ProcessTestHelpers.processInvoker.invokeWithKafka(
+      process, KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
+    ) {
+      val keys = 10
+      val slides = 100
+      val triggeredRatio = 0.01
+      val outputCount = (keys * triggeredRatio).toInt * (slides - (slidesInWindow - 1))
 
-    val keys = 10
-    val slides = 100
-    val triggeredRatio = 0.01
-    val outputCount = (keys * triggeredRatio).toInt * (slides - (slidesInWindow - 1))
-
-    val messagesStream =
-      for {
-        slide <- (0 until slides).view
-        messageInSlide <- 0 until messagesInSlide
-        key <- 1 to keys
-      } yield {
-        val timestamp = slide * windowWidth.toMillis + messageInSlide
-        val value = if (key.toDouble / keys <= triggeredRatio) "1" else "0"
-        (key.toString, s"$key|$value|$timestamp")
+      val messagesStream =
+        for {
+          slide <- (0 until slides).view
+          messageInSlide <- 0 until messagesInSlide
+          key <- 1 to keys
+        } yield {
+          val timestamp = slide * windowWidth.toMillis + messageInSlide
+          val value = if (key.toDouble / keys <= triggeredRatio) "1" else "0"
+          (key.toString, s"$key|$value|$timestamp")
+        }
+      messagesStream.foreach {
+        case (key, content) =>
+          kafkaClient.sendMessage(inTopic, key, content)
       }
-    messagesStream.foreach {
-      case (key, content) =>
-        kafkaClient.sendMessage(inTopic, key, content)
-    }
-    kafkaClient.flush()
+      kafkaClient.flush()
 
-    def checkResultIsCorrect() = {
-      MockService.data should have length outputCount
-      MockService.data shouldEqual (1 to outputCount).map(_ => threshold).toList
+      def checkResultIsCorrect() = {
+        MockService.data should have length outputCount
+        MockService.data shouldEqual (1 to outputCount).map(_ => threshold).toList
+      }
+
+      eventually {
+        checkResultIsCorrect()
+      }
     }
 
-    eventually {
-      checkResultIsCorrect()
-    }
+
   }
 
 }
