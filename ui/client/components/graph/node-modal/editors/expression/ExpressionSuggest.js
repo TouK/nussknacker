@@ -67,11 +67,11 @@ class ExpressionSuggest extends React.Component {
         const paramsSignature = item.parameters.map(p => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`).join(", ")
         const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`
         item.docHTML = ReactDOMServer.renderToStaticMarkup((
-            <div className="function-docs">
-              <b>{javaStyleSignature}</b>
-              <hr/>
-              <p>{item.description}</p>
-            </div>
+          <div className="function-docs">
+            <b>{javaStyleSignature}</b>
+            <hr/>
+            <p>{item.description}</p>
+          </div>
         ))
       }
     },
@@ -91,8 +91,8 @@ class ExpressionSuggest extends React.Component {
   //this shouldComponentUpdate is for cases when there are multiple instances of suggestion component in one view and to make them not interfere with each other
   //fixme maybe use this.state.id here?
   shouldComponentUpdate(nextProps, nextState) {
-    return !(_.isEqual(this.state.value, nextState.value)) ||
-        !(_.isEqual(this.state.editorFocused, nextState.editorFocused))
+    return !_.isEqual(this.state.value, nextState.value) ||
+        !_.isEqual(this.state.editorFocused, nextState.editorFocused)
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -122,47 +122,50 @@ class ExpressionSuggest extends React.Component {
       const FONT_FAMILY = "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace"
 
       return (
-          <React.Fragment>
-            <div className={cn([
-              "row-ace-editor",
-              showValidation && !allValid(validators, [value]) && "node-input-with-error",
-              isMarked && "marked",
-              editorFocused && "focused",
-              inputProps.readOnly && "read-only",
-            ])}>
-              <AceEditor mode={inputProps.language}
-                         width={"100%"}
-                         minLines={1}
-                         maxLines={50}
-                         theme={THEME}
-                         onChange={this.onChange}
-                         value={value}
-                         showPrintMargin={false}
-                         cursorStart={-1} //line start
-                         showGutter={false}
-                         highlightActiveLine={false}
-                         highlightGutterLine={false}
-                         wrapEnabled={true}
-                         editorProps={{
-                           // eslint-disable-next-line i18next/no-literal-string
-                           $blockScrolling: "Infinity",
-                         }}
-                         className={inputProps.readOnly ? " read-only" : ""}
-                         setOptions={{
-                           indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
-                           enableBasicAutocompletion: [this.customAceEditorCompleter],
-                           enableLiveAutocompletion: true,
-                           enableSnippets: false,
-                           showLineNumbers: false,
-                           fontSize: 16,
-                           fontFamily: FONT_FAMILY,
-                           readOnly: inputProps.readOnly,
-                         }}
-                         onFocus={this.setEditorFocus(true)}
-                         onBlur={this.setEditorFocus(false)}/>
-            </div>
-            {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
-          </React.Fragment>
+        <React.Fragment>
+          <div className={cn([
+            "row-ace-editor",
+            showValidation && !allValid(validators, [value]) && "node-input-with-error",
+            isMarked && "marked",
+            editorFocused && "focused",
+            inputProps.readOnly && "read-only",
+          ])}
+          >
+            <AceEditor
+              mode={inputProps.language}
+              width={"100%"}
+              minLines={1}
+              maxLines={50}
+              theme={THEME}
+              onChange={this.onChange}
+              value={value}
+              showPrintMargin={false}
+              cursorStart={-1} //line start
+              showGutter={false}
+              highlightActiveLine={false}
+              highlightGutterLine={false}
+              wrapEnabled={true}
+              editorProps={{
+                // eslint-disable-next-line i18next/no-literal-string
+                $blockScrolling: "Infinity",
+              }}
+              className={inputProps.readOnly ? " read-only" : ""}
+              setOptions={{
+                indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
+                enableBasicAutocompletion: [this.customAceEditorCompleter],
+                enableLiveAutocompletion: true,
+                enableSnippets: false,
+                showLineNumbers: false,
+                fontSize: 16,
+                fontFamily: FONT_FAMILY,
+                readOnly: inputProps.readOnly,
+              }}
+              onFocus={this.setEditorFocus(true)}
+              onBlur={this.setEditorFocus(false)}
+            />
+          </div>
+          {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
+        </React.Fragment>
       )
     } else {
       return null

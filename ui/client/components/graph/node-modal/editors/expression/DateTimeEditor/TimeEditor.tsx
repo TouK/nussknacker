@@ -15,12 +15,13 @@ export function TimeEditor(props: Omit<EditorProps, "dateFormat" | "expressionTy
 TimeEditor.switchableToHint = i18next.t("editors.LocalTime.switchableToHint", "Switch to basic mode")
 TimeEditor.notSwitchableToHint = i18next.t("editors.LocalTime.notSwitchableToHint", "Expression must be valid time to switch to basic mode")
 TimeEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj, JavaTimeTypes.LOCAL_TIME) || isEmpty(
-    expressionObj.expression)
+  expressionObj.expression
+)
 
 export function asLocalTimeString(m: moment.Moment) {
   return i18next.t(
-      "expressions:LocalTime",
-      "T(java.time.LocalTime).parse('{{date, HH:mm:ss}}')",
-      {date: m.startOf("second")}, // eslint-disable-line i18next/no-literal-string
+    "expressions:LocalTime",
+    "T(java.time.LocalTime).parse('{{date, HH:mm:ss}}')",
+    {date: m.startOf("second")}, // eslint-disable-line i18next/no-literal-string
   )
 }

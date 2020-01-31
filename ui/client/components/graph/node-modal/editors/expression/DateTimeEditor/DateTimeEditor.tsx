@@ -15,16 +15,17 @@ export function DateTimeEditor(props: Omit<EditorProps, "dateFormat" | "expressi
 
 DateTimeEditor.switchableToHint = i18next.t("editors.LocalDateTime.switchableToHint", "Switch to basic mode")
 DateTimeEditor.notSwitchableToHint = i18next.t(
-    "editors.LocalDateTime.notSwitchableToHint",
-    "Expression must be valid dateTime to switch to basic mode",
+  "editors.LocalDateTime.notSwitchableToHint",
+  "Expression must be valid dateTime to switch to basic mode",
 )
 DateTimeEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj, JavaTimeTypes.LOCAL_DATE_TIME) || isEmpty(
-    expressionObj.expression)
+  expressionObj.expression
+)
 
 export function asLocalDateTimeString(m: moment.Moment) {
   return i18next.t(
-      "expressions:LocalDateTime",
-      "T(java.time.LocalDateTime).parse('{{date, YYYY-MM-DDTHH:mm}}')",
-      {date: m.startOf("minute")}, // eslint-disable-line i18next/no-literal-string
+    "expressions:LocalDateTime",
+    "T(java.time.LocalDateTime).parse('{{date, YYYY-MM-DDTHH:mm}}')",
+    {date: m.startOf("minute")}, // eslint-disable-line i18next/no-literal-string
   )
 }

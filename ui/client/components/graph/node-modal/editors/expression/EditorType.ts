@@ -67,22 +67,22 @@ export const editors: Record<editorTypes, EditorConfig> = {
     editor: () => FixedValuesEditor,
     hint: (switchable) => switchable ? FixedValuesEditor.switchableToHint : FixedValuesEditor.notSwitchableToHint,
     switchableTo: (expressionObj, param, values) => FixedValuesEditor.switchableTo(
-        expressionObj,
-        !_.isEmpty(values) ? values : param.editor.possibleValues,
+      expressionObj,
+      !_.isEmpty(values) ? values : param.editor.possibleValues,
     ),
     values: (param, values) => !_.isEmpty(values) ? values : param.editor.possibleValues,
   },
   [editorTypes.DUAL_PARAMETER_EDITOR]: {
     editor: (param, displayRawEditor) => displayRawEditor ?
-        editors[editorTypes.RAW_PARAMETER_EDITOR].editor() :
-        editors[param.editor.simpleEditor.type].editor(),
+      editors[editorTypes.RAW_PARAMETER_EDITOR].editor() :
+      editors[param.editor.simpleEditor.type].editor(),
     hint: (switchable, currentEditor, param) => currentEditor === RawEditor ?
-        editors[param.editor.simpleEditor.type].hint(switchable) :
-        editors[editorTypes.RAW_PARAMETER_EDITOR].hint(),
+      editors[param.editor.simpleEditor.type].hint(switchable) :
+      editors[editorTypes.RAW_PARAMETER_EDITOR].hint(),
     showSwitch: true,
     switchable: (editor, param, expressionObj) => editor === RawEditor ?
-        editors[param.editor.simpleEditor.type].switchableTo(expressionObj) :
-        true,
+      editors[param.editor.simpleEditor.type].switchableTo(expressionObj) :
+      true,
     values: (param) => param.editor.simpleEditor.possibleValues,
   },
   [editorTypes.DATE]: {

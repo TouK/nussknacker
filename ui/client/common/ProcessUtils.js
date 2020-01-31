@@ -28,8 +28,8 @@ class ProcessUtils {
 
   hasNoErrors = (process) => {
     const result = (process.validationResult || {}).errors
-    return !result || (Object.keys(result.invalidNodes || {}).length == 0
-      && (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0)
+    return !result || Object.keys(result.invalidNodes || {}).length == 0 &&
+      (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0
   }
 
   hasNoWarnings = (process) => {
@@ -182,8 +182,7 @@ class ProcessUtils {
     }
   }
 
-  findNodeDefinitionIdOrType = (node) =>
-    this.findNodeDefinitionId(node) || node.type || null
+  findNodeDefinitionIdOrType = (node) => this.findNodeDefinitionId(node) || node.type || null
 
   getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
 

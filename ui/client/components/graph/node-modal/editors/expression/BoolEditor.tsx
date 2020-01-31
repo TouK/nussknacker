@@ -32,15 +32,15 @@ const BoolEditor: EditorType<Props> = (props: Props) => {
   return (
     <FixedValuesEditor
       values={[
-            trueValue,
-            falseValue,
-          ]}
+        trueValue,
+        falseValue,
+      ]}
       defaultValue={trueValue}
       expressionObj={expressionObj}
       onValueChange={onValueChange}
       readOnly={readOnly}
       className={className}
-      />
+    />
   )
 }
 
