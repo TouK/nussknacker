@@ -6,7 +6,7 @@ import java.util.concurrent.TimeoutException
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.Json.fromString
-import org.apache.flink.runtime.jobgraph.JobStatus
+import org.apache.flink.api.common.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, SavepointResult, StateStatus, User}

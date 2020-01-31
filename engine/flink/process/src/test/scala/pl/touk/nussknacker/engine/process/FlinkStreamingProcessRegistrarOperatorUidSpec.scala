@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
-import org.apache.flink.streaming.api.operators.async.AsyncWaitOperator
+import org.apache.flink.streaming.api.operators.async.{AsyncWaitOperator, AsyncWaitOperatorFactory}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
@@ -48,7 +48,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Matche
 
     val graph = streamGraph(process)
     val sourceNode = graph.firstSource
-    val asyncOperators = graph.traverse(sourceNode).filter(_.getOperator.isInstanceOf[AsyncWaitOperator[_, _]]).toList
+    val asyncOperators = graph.traverse(sourceNode).filter(_.getOperatorFactory.isInstanceOf[AsyncWaitOperatorFactory[_, _]]).toList
     val asyncOperatorUids = asyncOperators.map(o => Option(o.getTransformationUID))
     asyncOperatorUids.forall(_.value.endsWith("-$async")) shouldBe true
   }

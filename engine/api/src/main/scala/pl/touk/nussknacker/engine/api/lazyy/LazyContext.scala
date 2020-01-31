@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.engine.api.lazyy
 
-import pl.touk.nussknacker.engine.api.lazyy.LazyContext._
+case class LazyContext(id: String, evaluatedValues: Map[(String, Map[String, Any]), Either[Any, Throwable]] = Map.empty) {
 
-case class LazyContext(id: String, evaluatedValues: Map[LazyContext.Key, Either[Any, Throwable]] = Map.empty) {
+  //TODO: for some strange reason Flink >=1.10 fails on integration tests if those types are defined in companion object...
+  type Params = Map[String, Any]
+  type Key = (String, Params) // (serviceId, params)
 
   def apply[T](serviceId: String, params: Params): T =
     getOrElse(serviceId, params, throw new RuntimeException(s"Value for service: $serviceId is not evaluated yet"))
 
-  def getOrElse[T](serviceId: String, params: Params, default: => T) =
+  def getOrElse[T](serviceId: String, params: Params, default: => T): T =
     get(serviceId, params).getOrElse(default)
 
   def get[T](serviceId: String, params: Params): Option[T] =
@@ -21,13 +23,5 @@ case class LazyContext(id: String, evaluatedValues: Map[LazyContext.Key, Either[
 
   def withEvaluatedValues(otherEvaluatedValues: Map[Key, Either[Any, Throwable]]): LazyContext =
     copy(evaluatedValues = evaluatedValues ++ otherEvaluatedValues)
-
-}
-
-object LazyContext {
-
-  type Key = (String, Params) // (serviceId, params)
-  type Params = Map[String, Any]
-
 
 }
