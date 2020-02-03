@@ -63,7 +63,6 @@ class ProcessState extends React.Component<OwnProps, State> {
                 <div className={"process-name"}>{process.name}</div>
                 <div className={"state-description"}>{description}</div>
               </div>
-              <div className={"cleared"}/>
           </div>
         </CSSTransition>
       </SwitchTransition>

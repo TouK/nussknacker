@@ -145,6 +145,15 @@ object TestFactory extends TestPermissions{
       }
     }
 
+    def withNotDeployedProcessState[T](action: => T): T = {
+      try {
+        managerProcessState.set(Option.empty)
+        action
+      } finally {
+        managerProcessState.set(Some(SimpleStateStatus.NotDeployed))
+      }
+    }
+
     override protected def cancel(job: ProcessState): Future[Unit] = Future.successful(Unit)
 
     override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))

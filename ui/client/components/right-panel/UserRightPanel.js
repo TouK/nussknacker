@@ -24,6 +24,7 @@ import SvgDiv from "../SvgDiv"
 import TogglePanel from "../TogglePanel"
 import SideNodeDetails from "./SideNodeDetails"
 import ProcessState from "../Process/State/ProcessState"
+import ProcessInfo from "../Process/ProcessInfo"
 
 class UserRightPanel extends Component {
 
@@ -65,9 +66,12 @@ class UserRightPanel extends Component {
         <SpinnerWrapper isReady={isReady}>
 
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-            
-            <ProcessState process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
-            
+
+            { fetchedProcessDetails.isArchived || fetchedProcessDetails.isSubprocess ?
+              <ProcessInfo process={fetchedProcessDetails}/> :
+              <ProcessState process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
+            }
+
             <div className="panel-properties">
               <label>
                 <Switch

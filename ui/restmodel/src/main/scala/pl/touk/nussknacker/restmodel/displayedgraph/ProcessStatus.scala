@@ -79,9 +79,6 @@ object ProcessStatus {
     }
   }
 
-  def canceled(processStateDefinitionManager: ProcessStateDefinitionManager): ProcessStatus =
-    ProcessStatus(SimpleStateStatus.Canceled, processStateDefinitionManager)
-
   val unknown: ProcessStatus = simple(SimpleStateStatus.Unknown)
 
   val failedToGet: ProcessStatus = simple(SimpleStateStatus.FailedToGet)

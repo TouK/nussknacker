@@ -83,19 +83,19 @@ class Visualization extends React.Component {
         this.showCountsIfNeeded(details.fetchedProcessDetails.json)
       })
 
-      this.fetchProcessStatus()
-
-      this.state.processStateIntervalId = setInterval(
-        () => this.fetchProcessStatus(),
-        this.state.processStateIntervalTime
-      )
-
+      //We don't need load state for subproces and archived process..
+      if (this.props.fetchedProcessDetails.isSubprocess === false && this.props.fetchedProcessDetails.isArchived === false) {
+        this.fetchProcessStatus()
+        this.state.processStateIntervalId = setInterval(
+          () => this.fetchProcessStatus(),
+          this.state.processStateIntervalTime
+        )
+      }
     }).catch((error) => {
       this.props.actions.handleHTTPError(error)
     })
 
     this.bindKeyboardActions()
-
   }
 
   showModalDetailsIfNeeded(process) {

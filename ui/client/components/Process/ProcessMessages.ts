@@ -6,5 +6,11 @@ export const unknownTooltip = () =>
 export const unknownDescription = () =>
   i18next.t("process.unknownDescription","Unknown state of the process..")
 
-export const unknownName  = () =>
-  i18next.t("process.unknownName","Unknown")
+export const descriptionSubprocess = () =>
+  i18next.t("process.descriptionSubprocess","This is a subprocess")
+
+export const descriptionArchived = () =>
+  i18next.t("process.descriptionArchived","This process was archived")
+
+export const descriptionProcess = (processType: string) =>
+  i18next.t("process.descriptionProcess","This process is type of {{processType}}", {processType})

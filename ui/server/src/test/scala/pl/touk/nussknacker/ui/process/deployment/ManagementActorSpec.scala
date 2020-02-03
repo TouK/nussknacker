@@ -95,6 +95,19 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.isCanceled shouldBe true
   }
 
+  test("Should return not deployed status for process with not founded state - not deployed state") {
+    val id = prepareProcess(processName).futureValue
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
+
+    processManager.withNotDeployedProcessState {
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.NotDeployed)
+    }
+
+    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    processDetails.lastAction shouldBe None
+    processDetails.isNotDeployed shouldBe true
+  }
+
   private def isOkForDeployed(state: ProcessStatus): Boolean =
     state.status.isDuringDeploy || state.status.isRunning
 
