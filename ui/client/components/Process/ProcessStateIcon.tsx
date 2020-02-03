@@ -45,17 +45,15 @@ class ProcessStateIcon extends React.Component<Props, State> {
 
   static unknownIcon =  "/assets/states/status-unknown.svg"
 
-  state = {
-    animationTimeout: {
-      enter: 500,
-      appear: 500,
-      exit: 500,
-    },
+  private animationTimeout = {
+    enter: 500,
+    appear: 500,
+    exit: 500,
   }
 
   animationListener = (node, done) => node.addEventListener("transitionend", done, false)
 
-  getTooltip = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean) => {
+  getTooltip = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string => {
     if (isStateLoaded === false) {
       return process.state?.tooltip || unknownTooltip()
     }
@@ -63,7 +61,7 @@ class ProcessStateIcon extends React.Component<Props, State> {
     return processState?.tooltip || unknownTooltip()
   }
 
-  getIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean) => {
+  getIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string => {
     if (isStateLoaded === false) {
       return absoluteBePath(process.state?.icon || ProcessStateIcon.unknownIcon)
     }
@@ -123,7 +121,7 @@ class ProcessStateIcon extends React.Component<Props, State> {
 
     return animation === true ? (
       <SwitchTransition>
-        <CSSTransition key={transitionKey} classNames="fade" timeout={this.state.animationTimeout} addEndListener={this.animationListener}>
+        <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
           { popover === true ? this.imageWithPopover(image, process.name, tooltip, errors) : image }
         </CSSTransition>
       </SwitchTransition>

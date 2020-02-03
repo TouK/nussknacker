@@ -1,6 +1,11 @@
 import React from "react"
 import {ProcessStateType, ProcessType} from "./ProcessTypes"
-import {descriptionArchived, descriptionSubprocess, unknownDescription} from "./ProcessMessages"
+import {
+  descriptionProcessArchived,
+  descriptionSubprocess,
+  descriptionSubprocessArchived,
+  unknownDescription,
+} from "./ProcessMessages"
 import {CSSTransition, SwitchTransition} from "react-transition-group"
 import ProcessStateIcon, {unknownIcon} from "./ProcessStateIcon"
 import {absoluteBePath} from "../../common/UrlUtils"
@@ -26,18 +31,16 @@ class ProcessInfo extends React.Component<OwnProps, State> {
   static subprocessIcon = "/assets/process/subprocess.svg"
   static archivedIcon = "/assets/process/archived.svg"
 
-  state = {
-    animationTimeout: {
-      enter: 500,
-      appear: 500,
-      exit: 500,
-    },
+  private animationTimeout = {
+    enter: 500,
+    appear: 500,
+    exit: 500,
   }
 
   private animationListener = (node, done) => node.addEventListener("transitionend", done, false)
 
   private getDescription = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string =>
-    process.isArchived ? descriptionArchived() : (
+    process.isArchived ? (process.isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived()) : (
       process.isSubprocess ? descriptionSubprocess() : (
         isStateLoaded ? processState?.description : (
           process?.state?.description || unknownDescription()
@@ -66,7 +69,7 @@ class ProcessInfo extends React.Component<OwnProps, State> {
     )
   }
 
-  private getTransitionKey = (process: ProcessType, processState: ProcessStateType) =>
+  private getTransitionKey = (process: ProcessType, processState: ProcessStateType): string =>
     process.isArchived || process.isSubprocess ? `${process.id}` :
       `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
@@ -78,7 +81,7 @@ class ProcessInfo extends React.Component<OwnProps, State> {
 
     return (
       <SwitchTransition>
-        <CSSTransition key={transitionKey} classNames="fade" timeout={this.state.animationTimeout} addEndListener={this.animationListener}>
+        <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
           <div className={"panel-process-info"}>
             <div className={"process-info-icon"}>
               {icon}

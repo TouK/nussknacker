@@ -9,5 +9,8 @@ export const unknownDescription = () =>
 export const descriptionSubprocess = () =>
   i18next.t("process.descriptionSubprocess","This is a subprocess")
 
-export const descriptionArchived = () =>
-  i18next.t("process.descriptionArchived","This process was archived")
+export const descriptionProcessArchived = () =>
+  i18next.t("process.descriptionProcessArchived","This process was archived")
+
+export const descriptionSubprocessArchived = () =>
+  i18next.t("process.descriptionSubprocessArchived","This subprocess was archived")
