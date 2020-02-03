@@ -60,7 +60,7 @@ class ProcessState extends React.Component<OwnProps, State> {
                 />
               </div>
               <div className={"state-text"}>
-                <div className={"state-name"}>{process.name}</div>
+                <div className={"process-name"}>{process.name}</div>
                 <div className={"state-description"}>{description}</div>
               </div>
               <div className={"cleared"}/>
