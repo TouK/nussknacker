@@ -3,14 +3,20 @@ import React from "react"
 import "../stylesheets/spinner.styl"
 import LoaderSpinner from "./Spinner"
 
-export default class SpinnerWrapper extends React.Component {
+type State = {}
+
+type Props = {
+  isReady: boolean,
+}
+
+export default class SpinnerWrapper extends React.Component<Props, State> {
   static propTypes = {
     isReady: PropTypes.bool.isRequired,
-    children: PropTypes.element.isRequired,
-  };
+  }
 
   render() {
     const spinner = <LoaderSpinner show={true}/>
     return this.props.isReady ? this.props.children : spinner
   }
 }
+
