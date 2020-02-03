@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import _ from "lodash"
+import {omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {nkPath} from "../config"
@@ -7,12 +7,22 @@ import {nkPath} from "../config"
 export const visualizationBasePath = `${nkPath}/visualization`
 export const visualizationPath = `${visualizationBasePath  }/:processId`
 
-function nodeIdPart(nodeId) {
+function nodeIdPart(nodeId): string {
   return `?nodeId=${encodeURIComponent(nodeId)}`
 }
 
-function edgeIdPart(edgeId) {
+function edgeIdPart(edgeId): string {
   return `?edgeId=${encodeURIComponent(edgeId)}`
+}
+
+function fromTimestampOrDate(tsOrDate) {
+  const asInt = parseInt(tsOrDate)
+
+  if (Number.isInteger(asInt) && !isNaN(tsOrDate)) {
+    return Moment(asInt)
+  }
+
+  return Moment(tsOrDate)
 }
 
 export function visualizationUrl(processName, nodeId, edgeId) {
@@ -23,18 +33,15 @@ export function visualizationUrl(processName, nodeId, edgeId) {
 }
 
 export function extractVisualizationParams(search) {
-  let queryParams = queryString.parse(search)
+  const queryParams = queryString.parse(search)
   const nodeId = queryParams.nodeId
   const edgeId = queryParams.edgeId
   return {nodeId, edgeId}
 }
 
-export function extractBusinessViewParams(queryParams) {
-  if (queryParams.businessView) {
-    return queryParams.businessView.toLowerCase() === "true"
-  }
-
-  return false
+export function extractBusinessViewParams(search) {
+  const queryParams = queryString.parse(search, {parseBooleans: true})
+  return queryParams.businessView
 }
 
 export function extractCountParams(queryParams) {
@@ -47,17 +54,9 @@ export function extractCountParams(queryParams) {
   return null
 }
 
-function fromTimestampOrDate(tsOrDate) {
-  const asInt = parseInt(tsOrDate)
-  if (Number.isInteger(asInt) && !isNaN(tsOrDate))
-    return Moment(asInt)
-  else
-    return Moment(tsOrDate)
-}
-
-export function setAndPreserveLocationParams(params){
-  let queryParams = queryString.parse(window.location.search, {arrayFormat: "comma"})
-  let resultParams = _.omitBy(Object.assign({}, queryParams, params), (e) => {
+export function setAndPreserveLocationParams(params): string {
+  const queryParams = queryString.parse(window.location.search, {arrayFormat: "comma"})
+  const resultParams = omitBy(Object.assign({}, queryParams, params), (e) => {
     return e == null || e === "" || e === 0
   })
 

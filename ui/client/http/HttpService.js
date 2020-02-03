@@ -113,9 +113,8 @@ export default {
   },
 
   fetchProcessDetails(processId, versionId, businessView) {
-    let url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
-    const queryParams = this.businessViewQueryParams(businessView)
-    return api.get(url, {params: queryParams})
+    const url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
+    return api.get(url, {params: {businessView}})
   },
 
   fetchProcessesStatus() {
@@ -267,10 +266,9 @@ export default {
   },
 
   compareProcesses(processId, thisVersion, otherVersion, businessView, remoteEnv) {
-    const queryParams = this.businessViewQueryParams(businessView)
     const path = remoteEnv ? "remoteEnvironment" : "processes"
 
-    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: queryParams})
+    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: {businessView}})
       .catch(error => this.addError("Cannot compare processes", error, true))
   },
 
