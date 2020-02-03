@@ -65,6 +65,9 @@ class UserRightPanel extends Component {
         <SpinnerWrapper isReady={isReady}>
 
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
+            
+            <ProcessState process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
+            
             <div className="panel-properties">
               <label>
                 <Switch
@@ -76,7 +79,7 @@ class UserRightPanel extends Component {
                   offColor="#333"
                   onColor="#333"
                   offHandleColor="#999"
-                  onHandleColor="#999"
+                  onHandleColor="#8fad60"
                   checked={this.props.businessView} onChange={(checked) => {
                     this.props.actions.businessViewChanged(checked)
                     this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), checked)
@@ -85,8 +88,6 @@ class UserRightPanel extends Component {
                 <span className="business-switch-text">Business View</span>
               </label>
             </div>
-
-            <ProcessState process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
 
             {config.filter(panel => panel).map ((panel, panelIdx) => {
                 const visibleButtons = panel.buttons.filter(button => button.visible !== false)
