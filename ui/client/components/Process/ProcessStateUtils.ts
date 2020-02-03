@@ -1,8 +1,6 @@
-import {ActionType, StatusType, ProcessStateType, ProcessType} from "../ProcessTypes"
+import {ActionType, StatusType, ProcessStateType, ProcessType} from "./ProcessTypes"
 
 class ProcessStateUtils {
-
-  UNKNOWN_ICON = "/assets/states/status-unknown.svg"
 
   public isStateRunning = (state: ProcessStateType) => this.getStateStatus(state) === StatusType.Running.toString()
 

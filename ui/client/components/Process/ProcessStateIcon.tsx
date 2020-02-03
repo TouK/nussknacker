@@ -3,11 +3,9 @@ import {CSSTransition, SwitchTransition} from "react-transition-group"
 import {withTranslation} from "react-i18next"
 import {WithTranslation} from "react-i18next/src"
 import {compose} from "redux"
-
-import ProcessStateUtils from "./ProcessStateUtils"
-import {ProcessStateType, ProcessType} from "../ProcessTypes"
-import {absoluteBePath} from "../../../common/UrlUtils"
-import {unknownTooltip} from "../ProcessMessages"
+import {ProcessStateType, ProcessType} from "./ProcessTypes"
+import {absoluteBePath} from "../../common/UrlUtils"
+import {unknownTooltip} from "./ProcessMessages"
 
 import {Popover} from "react-bootstrap"
 import {OverlayTrigger} from "react-bootstrap/lib"
@@ -32,7 +30,7 @@ type OwnProps = {
 
 type Props = OwnProps & WithTranslation
 
-class StateIcon extends React.Component<Props, State> {
+class ProcessStateIcon extends React.Component<Props, State> {
   static defaultProps = {
     isStateLoaded: false,
     processState: null,
@@ -44,6 +42,8 @@ class StateIcon extends React.Component<Props, State> {
 
   // eslint-disable-next-line i18next/no-literal-string
   static popoverConfigs = {placement: "bottom", triggers: ["click"]}
+
+  static unknownIcon =  "/assets/states/status-unknown.svg"
 
   state = {
     animationTimeout: {
@@ -65,10 +65,10 @@ class StateIcon extends React.Component<Props, State> {
 
   getIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean) => {
     if (isStateLoaded === false) {
-      return absoluteBePath(process.state?.icon || ProcessStateUtils.UNKNOWN_ICON)
+      return absoluteBePath(process.state?.icon || ProcessStateIcon.unknownIcon)
     }
 
-    return absoluteBePath(processState?.icon || ProcessStateUtils.UNKNOWN_ICON)
+    return absoluteBePath(processState?.icon || ProcessStateIcon.unknownIcon)
   }
 
   imageWithPopover = (image, processName: string, tooltip: string, errors: Array<string>) => {
@@ -93,8 +93,8 @@ class StateIcon extends React.Component<Props, State> {
 
     return (
       <OverlayTrigger
-        trigger={StateIcon.popoverConfigs.triggers}
-        placement={StateIcon.popoverConfigs.placement}
+        trigger={ProcessStateIcon.popoverConfigs.triggers}
+        placement={ProcessStateIcon.popoverConfigs.placement}
         overlay={overlay}
       >
         {image}
@@ -135,4 +135,6 @@ const enhance = compose(
     withTranslation(),
 )
 
-export default enhance(StateIcon)
+export default enhance(ProcessStateIcon)
+
+export const unknownIcon = ProcessStateIcon.unknownIcon

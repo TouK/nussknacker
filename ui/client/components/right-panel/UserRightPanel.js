@@ -10,7 +10,7 @@ import ActionsUtils from "../../actions/ActionsUtils"
 import {events} from "../../analytics/TrackingEvents"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import * as DialogMessages from "../../common/DialogMessages"
-import ProcessStateUtils from "../Process/State/ProcessStateUtils"
+import ProcessStateUtils from "../Process/ProcessStateUtils"
 import ProcessUtils from "../../common/ProcessUtils"
 import Archive from "../../containers/Archive"
 import history from "../../history"
@@ -23,7 +23,6 @@ import SpinnerWrapper from "../SpinnerWrapper"
 import SvgDiv from "../SvgDiv"
 import TogglePanel from "../TogglePanel"
 import SideNodeDetails from "./SideNodeDetails"
-import ProcessState from "../Process/State/ProcessState"
 import ProcessInfo from "../Process/ProcessInfo"
 
 class UserRightPanel extends Component {
@@ -67,10 +66,7 @@ class UserRightPanel extends Component {
 
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
 
-            { fetchedProcessDetails.isArchived || fetchedProcessDetails.isSubprocess ?
-              <ProcessInfo process={fetchedProcessDetails}/> :
-              <ProcessState process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
-            }
+            <ProcessInfo process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
 
             <div className="panel-properties">
               <label>

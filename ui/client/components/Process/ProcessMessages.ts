@@ -11,6 +11,3 @@ export const descriptionSubprocess = () =>
 
 export const descriptionArchived = () =>
   i18next.t("process.descriptionArchived","This process was archived")
-
-export const descriptionProcess = (processType: string) =>
-  i18next.t("process.descriptionProcess","This process is type of {{processType}}", {processType})
