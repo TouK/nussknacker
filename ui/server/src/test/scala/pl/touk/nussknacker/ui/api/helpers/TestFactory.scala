@@ -100,7 +100,7 @@ object TestFactory extends TestPermissions{
       managerProcessState.get().map(st => SimpleProcessState(DeploymentId("1"), st, Some(ProcessVersion.empty)))
     )
 
-    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] =
+    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: String): Future[Unit] =
       deployResult
 
     private var deployResult: Future[Unit] = Future.successful()

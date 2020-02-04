@@ -58,7 +58,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING))
 
     manager.deploy(ProcessVersion(1, ProcessName("p1"), "user", None),
-      CustomProcess("nothing"), None).failed.futureValue.getMessage shouldBe "Job p1 is not running, status: RESTARTING"
+      CustomProcess("nothing"), None, user = "user1").failed.futureValue.getMessage shouldBe "Job p1 is not running, status: RESTARTING"
   }
 
   test("should make savepoint") {
@@ -100,7 +100,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       Response.ok(Right(toReturn))
     })
 
-    manager.stop(processName, savepointDir = None).futureValue shouldBe SavepointResult(path = savepointPath)
+    manager.stop(processName, savepointDir = None, user = "user1").futureValue shouldBe SavepointResult(path = savepointPath)
   }
 
   test("return failed status if two jobs running") {
