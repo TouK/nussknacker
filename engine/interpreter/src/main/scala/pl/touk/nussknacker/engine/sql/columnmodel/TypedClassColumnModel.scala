@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.sql.columnmodel
 import java.lang.reflect.Member
 
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPredicate, PropertyFromGetterExtractionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
 import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
@@ -22,7 +22,7 @@ private[columnmodel] object TypedClassColumnModel {
   private def getColumns(clazzDefinition: ClazzDefinition): ColumnModel = {
     val columns = for {
       (name, method) <- clazzDefinition.methods
-      typ <- ClazzToSqlType.convert(name, method.refClazz, clazzDefinition.clazzName.refClazzName)
+      typ <- ClazzToSqlType.convert(name, method.refClazz, clazzDefinition.clazzName.getClass.getName)
     } yield Column(name, typ)
     ColumnModel(columns.toList)
   }

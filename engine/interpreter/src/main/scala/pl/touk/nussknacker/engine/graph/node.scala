@@ -4,8 +4,8 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.Configuration
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.util.Try
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe.TypeTag
 
 object node {
 
@@ -185,7 +185,7 @@ object node {
 
     object SubprocessClazzRef {
 
-      def apply[T: TypeTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef.fromDetailedType[T].refClazzName)
+      def apply[T: TypeTag]: SubprocessClazzRef = SubprocessClazzRef(Typed.fromDetailedType[T].klass.getName)
 
     }
 

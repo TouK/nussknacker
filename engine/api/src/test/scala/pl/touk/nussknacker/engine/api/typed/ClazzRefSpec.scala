@@ -1,20 +1,21 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.{FunSpec, Inside, Matchers}
+import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 
 class ClazzRefSpec extends FunSpec with Matchers with Inside {
 
   it ("should deeply extract typ parameters") {
-    inside(ClazzRef.fromDetailedType[Option[Map[String, Int]]]) {
-      case ClazzRef(_, optionClass, mapTypeArg :: Nil) if optionClass == classOf[Option[Any]] =>
+    inside(TypedClass.fromDetailedType[Option[Map[String, Int]]]) {
+      case TypedClass(optionClass, mapTypeArg :: Nil) if optionClass == classOf[Option[Any]] =>
         inside(mapTypeArg) {
-          case ClazzRef(_, optionClass, keyTypeArg :: valueTypeArg :: Nil) if optionClass == classOf[Map[Any, Any]] =>
+          case TypedClass(optionClass, keyTypeArg :: valueTypeArg :: Nil) if optionClass == classOf[Map[Any, Any]] =>
             inside(keyTypeArg) {
-              case ClazzRef(_, keyClass, Nil) =>
+              case TypedClass(keyClass, Nil) =>
                 keyClass shouldBe classOf[String]
             }
             inside(valueTypeArg) {
-              case ClazzRef(_, keyClass, Nil) =>
+              case TypedClass(keyClass, Nil) =>
                 keyClass shouldBe classOf[Int]
             }
         }

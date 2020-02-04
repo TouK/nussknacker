@@ -3,11 +3,9 @@ package pl.touk.nussknacker.ui.definition
 import io.circe.generic.JsonCodec
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -79,7 +77,7 @@ object UIProcessObjects {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
         val clazzRefParams = parameters.map(extractSubprocessParam(classLoader))
-        (id, new ObjectDefinition(clazzRefParams, Typed(ClazzRef[java.util.Map[String, Any]]), List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
+        (id, new ObjectDefinition(clazzRefParams, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
     }.toMap
     subprocessInputs
   }

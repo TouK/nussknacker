@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodT
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 
 import scala.concurrent.Future
@@ -31,7 +30,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   }
 
   test("extract type info from classes from additional variables") {
-    val classDefinition = processDefinition.typesInformation.find(_.clazzName.clazz == classOf[OnlyUsedInAdditionalVariable])
+    val classDefinition = processDefinition.typesInformation.find(_.clazzName.klass == classOf[OnlyUsedInAdditionalVariable])
       classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 
@@ -41,7 +40,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     definition.returnType shouldBe Typed[String]
     definition.methodDef.realReturnType shouldBe Typed.fromDetailedType[Future[String]]
 
-    definition.parameters shouldBe List(Parameter("param1", ClazzRef[Int]))
+    definition.parameters shouldBe List(Parameter("param1", TypedClass[Int]))
   }
 
   object TestCreator extends ProcessConfigCreator {
@@ -51,7 +50,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       )
 
     override def services(config: Config): Map[String, WithCategories[Service]] = Map(
-      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter("param1", ClazzRef[Int])), Typed[String]), "cat")
+      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter("param1", TypedClass[Int])), Typed[String]), "cat")
     )
 
     override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map()

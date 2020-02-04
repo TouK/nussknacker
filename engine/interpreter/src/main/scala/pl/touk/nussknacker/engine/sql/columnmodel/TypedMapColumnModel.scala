@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.sql.columnmodel
 
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
 import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
@@ -13,16 +12,16 @@ private[columnmodel] object TypedMapColumnModel {
   }
 
   private val  columns: TypedObjectTypingResult =>  immutable.Iterable[Column] = typedMap => {
-    val toClasRef: TypingResult => Option[ClazzRef] = {
+    val toTypedClass: TypingResult => Option[TypedClass] = {
       case typedClass: TypedClass =>
-        Some(ClazzRef(typedClass.klass))
+        Some(typedClass)
       case _: TypedObjectTypingResult | _: TypedUnion | Unknown | _:TypedDict | _:TypedTaggedValue =>
         None
     }
     for {
       (name, typ) <- typedMap.fields
-      classRef <- toClasRef(typ)
-      sqlType <- ClazzToSqlType.convert(name, classRef, "TypedMap")
+      typedClass <- toTypedClass(typ)
+      sqlType <- ClazzToSqlType.convert(name, typedClass, "TypedMap")
     } yield Column(name, sqlType)
   }
 }

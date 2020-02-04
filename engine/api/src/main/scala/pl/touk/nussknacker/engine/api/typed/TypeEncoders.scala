@@ -34,8 +34,6 @@ object TypeEncoders {
     case cl: TypedClass => encodeTypedClass(cl)
   }
 
-  implicit val clazzRefEncoder: Encoder[ClazzRef] = Encoder.instance(tc => encodeTypingResult(Typed(tc)))
-
   implicit val typingResultEncoder: Encoder[TypingResult] = Encoder.instance(encodeTypingResult)
 
 }

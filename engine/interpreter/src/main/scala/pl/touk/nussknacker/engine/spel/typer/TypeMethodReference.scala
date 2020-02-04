@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.spel.typer
 import cats.data.NonEmptyList
 import org.springframework.expression.spel.ast.MethodReference
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -62,7 +61,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
         Right(typingResult)
     }
 
-  private def typeFromClazzRefs(clazzRefs: NonEmptyList[ClazzRef]): TypingResult =
-    Typed(clazzRefs.map(Typed(_)).toList.toSet)
+  private def typeFromClazzRefs(clazzRefs: NonEmptyList[TypedClass]): TypingResult =
+    Typed(clazzRefs.toList.toSet)
 
 }

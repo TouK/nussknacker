@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
@@ -49,7 +48,7 @@ object ProcessDefinitionBuilder {
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
     def withService(id: String, returnType: Class[_], params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(services = definition.services + (id -> ObjectDefinition(params.toList, ClazzRef(returnType), List.empty)))
+      definition.copy(services = definition.services + (id -> ObjectDefinition(params.toList, TypedClass(returnType), List.empty)))
 
     def withService(id: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(services = definition.services + (id -> ObjectDefinition.withParams(params.toList)))
@@ -65,10 +64,10 @@ object ProcessDefinitionBuilder {
 
     def withCustomStreamTransformer(id: String, returnType: Class[_], additionalData: CustomTransformerAdditionalData, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, ClazzRef(returnType), List()), additionalData)))
+        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, TypedClass(returnType), List()), additionalData)))
 
     def withSignalsWithTransformers(id: String, returnType: Class[_], transformers: Set[String], params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, ClazzRef(returnType), List()), transformers)))
+      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, TypedClass(returnType), List()), transformers)))
 
   }
 

@@ -5,9 +5,9 @@ import java.util.regex.Pattern
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate, PropertyFromGetterExtractionStrategy, SuperClassPatternPredicate}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
@@ -54,17 +54,17 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val extractedType = EspTypeUtils.getGenericType(method.getGenericReturnType).get
 
-    extractedType.clazz shouldBe classOf[java.util.List[_]]
-    extractedType.params shouldBe List(ClazzRef[SampleClass])
+    extractedType.klass shouldBe classOf[java.util.List[_]]
+    extractedType.params shouldBe List(TypedClass[SampleClass])
   }
 
   test("should extract public fields from scala case class") {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
     sampleClassInfo.value.methods shouldBe Map(
-      "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None),
-      "bar" -> MethodInfo(List.empty, ClazzRef[String], None),
-      "toString" -> MethodInfo(List(), ClazzRef[String], None)
+      "foo" -> MethodInfo(List.empty, TypedClass(Integer.TYPE), None),
+      "bar" -> MethodInfo(List.empty, TypedClass[String], None),
+      "toString" -> MethodInfo(List(), TypedClass[String], None)
     )
   }
 
@@ -102,11 +102,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
           ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("get.*")),
           ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("is.*"))
         )))
-        val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
+        val sampleClassInfo = infos.find(_.clazzName.klass.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
-          "toString" -> MethodInfo(List(), ClazzRef[String], None),
-          "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None)
+          "toString" -> MethodInfo(List(), TypedClass[String], None),
+          "foo" -> MethodInfo(List.empty, TypedClass(Integer.TYPE), None)
         )
       }
     }
@@ -116,11 +116,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
-    typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
-      "string" -> MethodInfo(List(), ClazzRef[String], None),
-      "javaList" -> MethodInfo(List(), ClazzRef.fromDetailedType[java.util.List[String]], None),
-      "scalaList" -> MethodInfo(List(), ClazzRef.fromDetailedType[List[String]], None),
-      "toString" -> MethodInfo(List(), ClazzRef[String], None)
+    typeUtils.find(_.clazzName == TypedClass[TestEmbedded]) shouldBe Some(ClazzDefinition(TypedClass[TestEmbedded], Map(
+      "string" -> MethodInfo(List(), TypedClass[String], None),
+      "javaList" -> MethodInfo(List(), TypedClass.fromDetailedType[java.util.List[String]], None),
+      "scalaList" -> MethodInfo(List(), TypedClass.fromDetailedType[List[String]], None),
+      "toString" -> MethodInfo(List(), TypedClass[String], None)
     )))
 
   }
@@ -128,10 +128,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   test("should not discover hidden fields") {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
-    typeUtils shouldBe Some(ClazzDefinition(ClazzRef[ClassWithHiddenFields], Map(
-      "normalField" -> MethodInfo(List(), ClazzRef[String], None),
-      "normalParam" -> MethodInfo(List(), ClazzRef[String], None),
-      "toString" -> MethodInfo(List(), ClazzRef[String], None)
+    typeUtils shouldBe Some(ClazzDefinition(TypedClass[ClassWithHiddenFields], Map(
+      "normalField" -> MethodInfo(List(), TypedClass[String], None),
+      "normalParam" -> MethodInfo(List(), TypedClass[String], None),
+      "toString" -> MethodInfo(List(), TypedClass[String], None)
     )))
   }
 
@@ -205,13 +205,13 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val table = Table(
       ("method", "methodInfo"),
       //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
-      //("foo", MethodInfo(parameters = List(param[String]("fooParam1")), refClazz = ClazzRef[Long], description = None)),
-      ("bar", MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = ClazzRef[String], description = None)),
-      ("baz", MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.bazDocs))),
+      //("foo", MethodInfo(parameters = List(param[String]("fooParam1")), refClazz = TypedClass[Long], description = None)),
+      ("bar", MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = TypedClass[String], description = None)),
+      ("baz", MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = TypedClass[Long], description = Some(ScalaSampleDocumentedClass.bazDocs))),
       //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
-      //("qux", MethodInfo(parameters = List(param[String]("quxParam1")), refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
-      ("field1", MethodInfo(parameters = List.empty, refClazz = ClazzRef[Long], description = None)),
-      ("field2", MethodInfo(parameters = List.empty, refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.field2Docs)))
+      //("qux", MethodInfo(parameters = List(param[String]("quxParam1")), refClazz = TypedClass[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
+      ("field1", MethodInfo(parameters = List.empty, refClazz = TypedClass[Long], description = None)),
+      ("field2", MethodInfo(parameters = List.empty, refClazz = TypedClass[Long], description = Some(ScalaSampleDocumentedClass.field2Docs)))
     )
     forAll(table){ case (method, methodInfo) =>
         scalaClazzInfo.methods(method) shouldBe methodInfo
@@ -222,14 +222,14 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   test("enabled by default classes") {
     val emptyDef = singleClassAndItsChildrenDefinition[EmptyClass]()
     // We want to use boxed primitive classes even if they wont be discovered in any place
-    val boxedIntDef = emptyDef.find(_.clazzName.clazz == classOf[Integer])
+    val boxedIntDef = emptyDef.find(_.clazzName.klass == classOf[Integer])
     boxedIntDef shouldBe defined
   }
 
   test("hidden by default classes") {
     val metaSpelDef = singleClassAndItsChildrenDefinition[ServiceWithMetaSpelParam]()
     // These params are used programmable - user can't create instance of this type
-    metaSpelDef.exists(_.clazzName.clazz == classOf[SpelExpressionRepr]) shouldBe false
+    metaSpelDef.exists(_.clazzName.klass == classOf[SpelExpressionRepr]) shouldBe false
   }
 
   test("should extract basic methods from standard collection types") {
@@ -263,17 +263,17 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   }
 
   private def param[T: TypeTag](name: String): Parameter = {
-    Parameter(name, ClazzRef.fromDetailedType[T])
+    Parameter(name, TypedClass.fromDetailedType[T])
   }
 
   private def singleClassDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default): Option[ClazzDefinition] = {
-    val ref = ClazzRef.fromDetailedType[T]
+    val ref = TypedClass.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
     clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.clazzName.refClazzName == ref.refClazzName)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default) = {
-    val ref = ClazzRef.fromDetailedType[T]
+    val ref = TypedClass.fromDetailedType[T]
     clazzAndItsChildrenDefinition(List(Typed(ref)))(settings)
   }
 

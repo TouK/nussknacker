@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import java.util
 
 import io.circe.Encoder
-import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
+import pl.touk.nussknacker.engine.api.dict.DictInstance
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -75,7 +75,7 @@ object typing {
   }
 
   // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends TypingResult {
+  object Unknown extends TypedClass(classOf[Any], Nil) {
 
     override def canHasAnyPropertyOrField: Boolean = true
 
@@ -123,10 +123,26 @@ object typing {
   object TypedClass {
 
     def apply[T: ClassTag] : TypedClass =
-      TypedClass(ClazzRef[T])
+      apply(implicitly[ClassTag[T]].runtimeClass)
 
-    def apply(klass: ClazzRef) : TypedClass =
-      TypedClass(klass.clazz, klass.params.map(Typed.apply))
+    def apply(klass: Class[_]) : TypedClass =
+      TypedClass(klass, Nil)
+
+    /*using TypeTag can give better description (with extracted generic parameters), however:
+      - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
+      - one should be *very* careful with TypeTag as it degrades performance significantly when on critical path (e.g. SpelExpression.evaluate)
+     */
+    def fromDetailedType[T: TypeTag]: TypedClass = {
+      val tag = typeTag[T]
+      // is it correct mirror?
+      implicit val mirror: Mirror = tag.mirror
+      fromType(tag.tpe)
+    }
+
+    private def fromType(typ: Type)(implicit mirror: Mirror): TypedClass = {
+      val runtimeClass = mirror.runtimeClass(typ.erasure)
+      TypedClass(runtimeClass, typ.typeArgs.map(fromType))
+    }
 
   }
 
@@ -134,14 +150,15 @@ object typing {
 
     def empty = TypedUnion(Set.empty)
 
-    def apply[T: ClassTag]: TypingResult = apply(ClazzRef[T])
+    def apply[T: ClassTag]: TypingResult = apply(TypedClass[T])
 
-    def fromDetailedType[T: TypeTag]: TypingResult = apply(ClazzRef.fromDetailedType[T])
+    def fromDetailedType[T: TypeTag]: TypedClass = TypedClass.fromDetailedType[T]
 
     def apply(klass: Class[_]): TypingResult = {
-      apply(ClazzRef(klass))
+      TypedClass(klass)
     }
 
+    /*
     def apply(klass: ClazzRef): TypingResult = {
       // TODO: make creating unknown type more explicit and fix places where we have Typed type instead of TypedClass | Unknown
       if (klass == ClazzRef.unknown) {
@@ -149,7 +166,7 @@ object typing {
       } else {
         TypedClass(klass)
       }
-    }
+    } */
 
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 

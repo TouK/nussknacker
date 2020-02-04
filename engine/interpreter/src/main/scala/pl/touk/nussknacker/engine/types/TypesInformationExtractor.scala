@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.types
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
@@ -37,18 +36,18 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     classOf[MetaVariables]
   ) ++
     // Literals for primitive types are wrapped to boxed representations
-    primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(ClazzRef(_))
+    primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(TypedClass(_))
 
   def clazzAndItsChildrenDefinition(clazzes: Iterable[TypingResult])
                                    (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     // It's a deep first traversal - to avoid SOF we use mutable collection. It won't be easy to implement it using immutable collections
-    val collectedSoFar = mutable.HashSet.empty[ClazzRef]
+    val collectedSoFar = mutable.HashSet.empty[TypedClass]
     (clazzes.flatMap(clazzRefsFromTypingResult) ++ mandatoryClasses).flatMap { cl =>
       clazzAndItsChildrenDefinitionIfNotCollectedSoFar(cl)(collectedSoFar, DiscoveryPath(List(Clazz(cl))))
     }.toSet
   }
 
-  private def clazzRefsFromTypingResult(typingResult: TypingResult): Set[ClazzRef] = typingResult match {
+  private def clazzRefsFromTypingResult(typingResult: TypingResult): Set[TypedClass] = typingResult match {
     case tc: TypedClass =>
       clazzRefsFromTypedClass(tc)
     case TypedUnion(set) =>
@@ -63,11 +62,11 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
       Set.empty
   }
 
-  private def clazzRefsFromTypedClass(typedClass: TypedClass): Set[ClazzRef]
-    = typedClass.params.flatMap(clazzRefsFromTypingResult).toSet + ClazzRef(typedClass.klass)
+  private def clazzRefsFromTypedClass(typedClass: TypedClass): Set[TypedClass]
+    = typedClass.params.flatMap(clazzRefsFromTypingResult).toSet + TypedClass(typedClass.klass)
 
-  private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(clazzRef: ClazzRef)
-                                                              (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
+  private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(clazzRef: TypedClass)
+                                                              (collectedSoFar: mutable.Set[TypedClass], path: DiscoveryPath)
                                                               (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     if (collectedSoFar.contains(clazzRef)) {
       Set.empty
@@ -77,28 +76,29 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     }
   }
 
-  private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef)
-                                           (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
+  private def clazzAndItsChildrenDefinition(clazzRef: TypedClass)
+                                           (collectedSoFar: mutable.Set[TypedClass], path: DiscoveryPath)
                                            (implicit settings: ClassExtractionSettings) = {
-    val definitionsForClass = if (settings.isHidden(clazzRef.clazz)) {
+    val definitionsForClass = if (settings.isHidden(clazzRef.klass)) {
       Set.empty
     } else {
-      val classDefinition = clazzDefinitionWithLogging(clazzRef.clazz)(path)
+      val classDefinition = clazzDefinitionWithLogging(clazzRef.klass)(path)
       definitionsFromMethods(classDefinition)(collectedSoFar, path) + classDefinition
     }
     definitionsForClass ++ definitionsFromGenericParameters(clazzRef)(collectedSoFar, path)
   }
 
-  private def definitionsFromGenericParameters(clazzRef: ClazzRef)
-                                              (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
+  private def definitionsFromGenericParameters(clazzRef: TypedClass)
+                                              (collectedSoFar: mutable.Set[TypedClass], path: DiscoveryPath)
                                               (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     clazzRef.params.zipWithIndex.flatMap {
-      case (k, idx) => clazzAndItsChildrenDefinitionIfNotCollectedSoFar(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
+      case (k:TypedClass, idx) => clazzAndItsChildrenDefinitionIfNotCollectedSoFar(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
+      case _ => Set.empty[ClazzDefinition]
     }.toSet
   }
 
   private def definitionsFromMethods(classDefinition: ClazzDefinition)
-                                    (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
+                                    (collectedSoFar: mutable.Set[TypedClass], path: DiscoveryPath)
                                     (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     classDefinition.methods.values.flatMap { kl =>
       clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.refClazz)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
@@ -125,15 +125,15 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
 
   private sealed trait DiscoverySegment {
     def print: String
-    protected def classNameWithStrippedPackages(cl: ClazzRef): String =
-      cl.refClazzName.replaceAll("(.).*?\\.", "$1.")
+    protected def classNameWithStrippedPackages(cl: TypedClass): String =
+      cl.klass.getCanonicalName.replaceAll("(.).*?\\.", "$1.")
   }
 
-  private case class Clazz(cl: ClazzRef) extends DiscoverySegment {
+  private case class Clazz(cl: TypedClass) extends DiscoverySegment {
     override def print: String = classNameWithStrippedPackages(cl)
   }
 
-  private case class GenericParameter(cl: ClazzRef, ix: Int) extends DiscoverySegment {
+  private case class GenericParameter(cl: TypedClass, ix: Int) extends DiscoverySegment {
     override def print: String = s"[$ix]${classNameWithStrippedPackages(cl)}"
   }
 
