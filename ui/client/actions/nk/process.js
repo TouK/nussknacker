@@ -14,6 +14,7 @@ export function fetchProcessToDisplay(processId, versionId, businessView) {
     dispatch({
       type: "PROCESS_LOADING",
     })
+
     return HttpService.fetchProcessDetails(processId, versionId, businessView).then((response) => {
       displayTestCapabilites(response.data.json, response.data.processingType)(dispatch)
       return dispatch(displayProcess(response.data))
