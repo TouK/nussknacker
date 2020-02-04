@@ -24,7 +24,6 @@ trait ProcessActionEntityFactory {
 
   val processVersionsTable: LTableQuery[ProcessVersionEntityFactory#ProcessVersionEntity]
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
-  val environmentsTable: LTableQuery[EnvironmentsEntityFactory#EnvironmentsEntity]
 
   class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
     def processId: Rep[Long] = column[Long]("process_id", NotNull)
