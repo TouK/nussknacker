@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import com.whisk.docker.{DockerContainer, VolumeMapping}
 import org.scalatest.Suite
-import pl.touk.nussknacker.engine.api.deployment.ProcessManager
+import pl.touk.nussknacker.engine.api.deployment.{ProcessManager, User}
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkBatchProcessManagerProvider}
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 

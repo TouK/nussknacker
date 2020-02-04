@@ -9,11 +9,11 @@ import scala.concurrent.Future
 trait ProcessManager {
 
   //TODO: savepointPath is very flink specific, how can we handle that differently?
-  def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: String) : Future[Unit]
+  def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: User) : Future[Unit]
 
-  def stop(name: ProcessName, savepointDir: Option[String], user: String): Future[SavepointResult]
+  def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult]
 
-  def cancel(name: ProcessName, user: String) : Future[Unit]
+  def cancel(name: ProcessName, user: User) : Future[Unit]
 
   def test[T](name: ProcessName, json: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]]
 

@@ -27,7 +27,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   private lazy val verification = new FlinkProcessVerifier(modelData)
 
-  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: String): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: User): Future[Unit] = {
     val processName = processVersion.processName
 
     import cats.data.OptionT
@@ -60,7 +60,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  override def stop(processName: ProcessName, savepointDir: Option[String], user: String): Future[SavepointResult] = {
+  override def stop(processName: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
     requireRunningProcess(processName) {
       stop(_, savepointDir)
     }
@@ -70,7 +70,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     testRunner.test(processName, processJson, testData, variableEncoder)
   }
 
-  override def cancel(processName: ProcessName, user: String): Future[Unit] = {
+  override def cancel(processName: ProcessName, user: User): Future[Unit] = {
     findStatusIgnoringTerminal(processName).flatMap {
       case Some(state) if state.status.isRunning =>
         cancel(state)

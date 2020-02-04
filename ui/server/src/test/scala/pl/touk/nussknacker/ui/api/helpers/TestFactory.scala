@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -100,7 +100,7 @@ object TestFactory extends TestPermissions{
       managerProcessState.get().map(st => SimpleProcessState(DeploymentId("1"), st, Some(ProcessVersion.empty)))
     )
 
-    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: String): Future[Unit] =
+    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: User): Future[Unit] =
       deployResult
 
     private var deployResult: Future[Unit] = Future.successful()

@@ -41,7 +41,7 @@ class FlinkBatchProcessManagerSpec extends FunSuite with Matchers with BatchDock
 
   private def deployProcessAndWaitUntilFinished(process: EspProcess, processVersion: ProcessVersion): Unit = {
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath = None).isReadyWithin(100 seconds))
+    assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath = None, user = userToAct).isReadyWithin(100 seconds))
     eventually {
       val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
       jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Finished.name)
