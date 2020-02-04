@@ -6,9 +6,9 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, ProcessActionType, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessActionType, ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
+import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 
 class ProcessStatusTest extends FunSuite with Matchers {
   private def sampleState(status: StateStatus, version: Long, errors: List[String]): ProcessState = SimpleProcessState(
@@ -24,8 +24,8 @@ class ProcessStatusTest extends FunSuite with Matchers {
     errors = errors
   )
 
-  private def sampleProcessAction(versionId: Long, action: ProcessActionType = ProcessActionType.Deploy): Option[ProcessDeploymentAction] =
-    Option(ProcessDeploymentAction(versionId, "test", LocalDateTime.now(), "user", action, Map.empty))
+  private def sampleProcessAction(versionId: Long, action: ProcessActionType = ProcessActionType.Deploy): Option[ProcessAction] =
+    Option(ProcessAction(versionId, LocalDateTime.now(), "user", action, Option.empty, Option.empty, Map.empty))
 
   test("display error when not expected version running") {
     ProcessStatus.create(sampleState(SimpleStateStatus.Canceled, 3, List.empty), sampleProcessAction(5)) shouldBe sampleStatus(SimpleStateStatus.Canceled, List("Process deployed in version 3 (by user), but currently not working."))

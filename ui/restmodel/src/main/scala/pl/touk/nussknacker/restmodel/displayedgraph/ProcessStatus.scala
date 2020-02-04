@@ -7,7 +7,7 @@ import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDeploymentAction
+import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 
 //TODO: Do we really  we need ProcessStatus and ProcessState - Do these DTO's do the same things?
 @JsonCodec case class ProcessStatus(status: StateStatus,
@@ -51,7 +51,7 @@ object ProcessStatus {
       errors
     )
 
-  def create(processState: ProcessState, lastAction: Option[ProcessDeploymentAction]): ProcessStatus = {
+  def create(processState: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus = {
     val mismatchMessage = deployedVersionMismatchMessage(processState, lastAction)
 
     ProcessStatus(
@@ -68,7 +68,7 @@ object ProcessStatus {
   }
 
   //TODO: Move this logic to another place.. This should be moved together with ManagementActor.handleObsoleteStatus
-  private def deployedVersionMismatchMessage(processState: ProcessState, lastAction: Option[ProcessDeploymentAction]) = {
+  private def deployedVersionMismatchMessage(processState: ProcessState, lastAction: Option[ProcessAction]) = {
     (processState.version, lastAction) match {
       case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId => None
       case (Some(stateVersion), Some(action)) if action.isDeployed && !processState.status.isFollowingDeployAction => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), but currently not working.")
@@ -78,9 +78,6 @@ object ProcessStatus {
       case _ => None //We verify only deployed process
     }
   }
-
-  def canceled(processStateDefinitionManager: ProcessStateDefinitionManager): ProcessStatus =
-    ProcessStatus(SimpleStateStatus.Canceled, processStateDefinitionManager)
 
   val unknown: ProcessStatus = simple(SimpleStateStatus.Unknown)
 

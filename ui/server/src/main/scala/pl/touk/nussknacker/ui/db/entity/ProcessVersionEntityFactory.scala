@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import slick.jdbc.JdbcProfile
-import slick.lifted.{TableQuery => LTableQuery}
+import slick.lifted.{ForeignKeyQuery, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 trait ProcessVersionEntityFactory {
@@ -36,21 +36,21 @@ trait ProcessVersionEntityFactory {
 
   abstract class BaseProcessVersionEntity(tag: Tag) extends Table[ProcessVersionEntityData](tag, "process_versions") {
 
-    def id = column[Long]("id", NotNull)
+    def id: Rep[Long] = column[Long]("id", NotNull)
 
-    def mainClass = column[Option[String]]("main_class", O.Length(5000))
+    def mainClass: Rep[Option[String]] = column[Option[String]]("main_class", O.Length(5000))
 
-    def createDate = column[Timestamp]("create_date", NotNull)
+    def createDate: Rep[Timestamp] = column[Timestamp]("create_date", NotNull)
 
-    def user = column[String]("user", NotNull)
+    def user: Rep[String] = column[String]("user", NotNull)
 
-    def processId = column[Long]("process_id", NotNull)
+    def processId: Rep[Long] = column[Long]("process_id", NotNull)
 
-    def modelVersion = column[Option[Int]]("model_version", NotNull)
+    def modelVersion: Rep[Option[Int]] = column[Option[Int]]("model_version", NotNull)
 
     def pk = primaryKey("pk_process_version", (processId, id))
 
-    private def process = foreignKey("process-version-process-fk", processId, processesTable)(
+    private def process: ForeignKeyQuery[ProcessEntityFactory#ProcessEntity, ProcessEntityData] = foreignKey("process-version-process-fk", processId, processesTable)(
       _.id,
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.Cascade
@@ -62,7 +62,6 @@ trait ProcessVersionEntityFactory {
 
   val processVersionsTableNoJson: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityNoJson] =
     LTableQuery(new ProcessVersionEntityNoJson(_))
-
 }
 
 case class ProcessVersionEntityData(id: Long,

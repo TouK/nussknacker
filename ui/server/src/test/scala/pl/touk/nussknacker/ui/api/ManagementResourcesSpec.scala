@@ -33,11 +33,11 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private val fixedTime = LocalDateTime.now()
 
-  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessDeploymentAction]] =
+  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] =
     BeMatcher(equal(
-        Option(ProcessDeploymentAction(versionId, "test", fixedTime, user().username, ProcessActionType.Deploy, buildInfo))
-      ).matcher[Option[ProcessDeploymentAction]]
-    ).compose[Option[ProcessDeploymentAction]](_.map(_.copy(deployedAt = fixedTime)))
+        Option(ProcessAction(versionId, fixedTime, user().username, ProcessActionType.Deploy, Option.empty, Option.empty, buildInfo))
+      ).matcher[Option[ProcessAction]]
+    ).compose[Option[ProcessAction]](_.map(_.copy(performedAt = fixedTime)))
 
   test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
@@ -62,16 +62,16 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
         status shouldBe StatusCodes.OK
         Get(s"/processes/${SampleProcess.process.id}/activity") ~> withAllPermissions(processActivityRoute) ~> check {
           val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
-          comments.map(_.content) shouldBe List("Deployment: deployComment", "Stop: cancelComment")
+          comments.map(_.content) shouldBe List("deployComment", "cancelComment")
 
           val firstCommentId::secondCommentId::Nil = comments.map(_.id)
 
           Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
-            val deploymentHistory = responseAs[List[DeploymentHistoryEntry]]
+            val deploymentHistory = responseAs[List[ProcessAction]]
             val curTime = LocalDateTime.now()
-            deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
-              DeploymentHistoryEntry(2, curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
-              DeploymentHistoryEntry(2, curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
+            deploymentHistory.map(_.copy(performedAt = curTime)) shouldBe List(
+              ProcessAction(2, curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some("cancelComment"), Map()),
+              ProcessAction(2, curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some("deployComment"), TestFactory.buildInfo)
             )
           }
         }

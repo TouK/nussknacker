@@ -1,12 +1,17 @@
+/* eslint-disable i18next/no-literal-string */
 import FileSaver from "file-saver"
-import * as _ from "lodash"
-import * as queryString from "query-string"
-import React from "react"
 import api from "../api"
 import {API_URL} from "../config"
 
 let notificationActions = null
 let notificationReload = null
+
+type Error = {
+  response?: {
+    data?: string,
+  },
+  message: string,
+}
 
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
 export default {
@@ -25,21 +30,21 @@ export default {
     }))
   },
 
-  addInfo(message) {
+  addInfo(message: string) {
     if (notificationActions) {
       notificationActions.success(message)
     }
   },
 
-  addErrorMessage(message, error, showErrorText) {
+  addErrorMessage(message: string, error: string, showErrorText: boolean) {
     if (notificationActions) {
       notificationActions.error(message, error, showErrorText)
     }
   },
 
-  addError(message, error, showErrorText) {
-    console.warn(error)
-    const errorMessage = _.get(error, "response.data") || error.message
+  addError(message: string, error: Error, showErrorText = false) {
+    console.warn(message, error)
+    const errorMessage = error?.response?.data || error.message
     this.addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   },
@@ -104,7 +109,7 @@ export default {
     return api.get(`/processesComponents/${  encodeURIComponent(componentId)}`)
   },
 
-  fetchProcesses(data) {
+  fetchProcesses(data: object) {
     return api.get("/processes", {params: data})
   },
 
@@ -113,9 +118,8 @@ export default {
   },
 
   fetchProcessDetails(processId, versionId, businessView) {
-    let url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
-    const queryParams = this.businessViewQueryParams(businessView)
-    return api.get(url, {params: queryParams})
+    const url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
+    return api.get(url, {params: {businessView}})
   },
 
   fetchProcessesStatus() {
@@ -132,9 +136,10 @@ export default {
     return api.post(`/processManagement/deploy/${processId}`, comment).then(() => {
       this.addInfo(`Process ${processId} was deployed`)
       return {isSuccess: true}
-    }).catch((error) => {
-      this.addError(`Failed to deploy ${processId}`, error, true)
-      return {isSuccess: false}
+    }).catch(error => {
+      return this.addError(`Failed to deploy ${processId}`, error, true).then(() => {
+        return {isSuccess: false}
+      })
     })
   },
 
@@ -165,7 +170,7 @@ export default {
   },
 
   addAttachment(processId, versionId, file) {
-    let data = new FormData()
+    const data = new FormData()
     data.append("attachment", file)
 
     return api.post(`/processes/${processId}/${versionId}/activity/attachments`, data)
@@ -189,8 +194,7 @@ export default {
         return true
       })
       .catch((error) => {
-        this.addError("Failed to change process name:", error, true)
-        return false
+        return this.addError("Failed to change process name:", error, true).then(() => false)
       })
   },
 
@@ -201,10 +205,7 @@ export default {
   },
 
   exportProcessToPdf(processId, versionId, data, businessView) {
-    const url = `/processesExport/pdf/${processId}/${versionId}`
-    const queryParams = this.businessViewQueryParams(businessView)
-
-    return api.post(queryParams ? `${url}?${queryParams}` : url, data, {responseType: "blob"})
+    return api.post(`/processesExport/pdf/${processId}/${versionId}`, data, {responseType: "blob", params: {businessView}})
       .then(response => FileSaver.saveAs(response.data, `${processId}-${versionId}.pdf`))
       .catch(error => this.addError("Failed to export", error))
   },
@@ -257,8 +258,8 @@ export default {
       .catch(error => this.addError("Failed to import", error, true))
   },
 
-  testProcess(processId, file, processJson, callback, errorCallback) {
-    let data = new FormData()
+  testProcess(processId, file, processJson) {
+    const data = new FormData()
     data.append("testData", file)
     data.append("processJson", new Blob([JSON.stringify(processJson)], {type: "application/json"}))
 
@@ -267,10 +268,9 @@ export default {
   },
 
   compareProcesses(processId, thisVersion, otherVersion, businessView, remoteEnv) {
-    const queryParams = this.businessViewQueryParams(businessView)
     const path = remoteEnv ? "remoteEnvironment" : "processes"
 
-    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: queryParams})
+    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: {businessView}})
       .catch(error => this.addError("Cannot compare processes", error, true))
   },
 
@@ -294,10 +294,6 @@ export default {
     return api.post(`/signal/${signalType}/${processId}`, params)
       .then(() => this.addInfo("Signal send"))
       .catch(error => this.addError("Failed to send signal", error))
-  },
-
-  businessViewQueryParams(businessView) {
-    return businessView ? queryString.stringify({businessView}) : null
   },
 
   fetchOAuth2AccessToken(authorizeCode) {

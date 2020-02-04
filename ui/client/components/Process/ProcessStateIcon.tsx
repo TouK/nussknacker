@@ -3,11 +3,9 @@ import {CSSTransition, SwitchTransition} from "react-transition-group"
 import {withTranslation} from "react-i18next"
 import {WithTranslation} from "react-i18next/src"
 import {compose} from "redux"
-
-import ProcessStateUtils from "./ProcessStateUtils"
-import {ProcessStateType, ProcessType} from "../ProcessTypes"
-import {absoluteBePath} from "../../../common/UrlUtils"
-import {unknownTooltip} from "../ProcessMessages"
+import {ProcessStateType, ProcessType} from "./ProcessTypes"
+import {absoluteBePath} from "../../common/UrlUtils"
+import {unknownTooltip} from "./ProcessMessages"
 
 import {Popover} from "react-bootstrap"
 import {OverlayTrigger} from "react-bootstrap/lib"
@@ -32,7 +30,7 @@ type OwnProps = {
 
 type Props = OwnProps & WithTranslation
 
-class StateIcon extends React.Component<Props, State> {
+class ProcessStateIcon extends React.Component<Props, State> {
   static defaultProps = {
     isStateLoaded: false,
     processState: null,
@@ -45,17 +43,17 @@ class StateIcon extends React.Component<Props, State> {
   // eslint-disable-next-line i18next/no-literal-string
   static popoverConfigs = {placement: "bottom", triggers: ["click"]}
 
-  state = {
-    animationTimeout: {
-      enter: 500,
-      appear: 500,
-      exit: 500,
-    },
+  static unknownIcon =  "/assets/states/status-unknown.svg"
+
+  private animationTimeout = {
+    enter: 500,
+    appear: 500,
+    exit: 500,
   }
 
   animationListener = (node, done) => node.addEventListener("transitionend", done, false)
 
-  getTooltip = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean) => {
+  getTooltip = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string => {
     if (isStateLoaded === false) {
       return process.state?.tooltip || unknownTooltip()
     }
@@ -63,12 +61,12 @@ class StateIcon extends React.Component<Props, State> {
     return processState?.tooltip || unknownTooltip()
   }
 
-  getIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean) => {
+  getIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string => {
     if (isStateLoaded === false) {
-      return absoluteBePath(process.state?.icon || ProcessStateUtils.UNKNOWN_ICON)
+      return absoluteBePath(process.state?.icon || ProcessStateIcon.unknownIcon)
     }
 
-    return absoluteBePath(processState?.icon || ProcessStateUtils.UNKNOWN_ICON)
+    return absoluteBePath(processState?.icon || ProcessStateIcon.unknownIcon)
   }
 
   imageWithPopover = (image, processName: string, tooltip: string, errors: Array<string>) => {
@@ -93,8 +91,8 @@ class StateIcon extends React.Component<Props, State> {
 
     return (
       <OverlayTrigger
-        trigger={StateIcon.popoverConfigs.triggers}
-        placement={StateIcon.popoverConfigs.placement}
+        trigger={ProcessStateIcon.popoverConfigs.triggers}
+        placement={ProcessStateIcon.popoverConfigs.placement}
         overlay={overlay}
       >
         {image}
@@ -123,7 +121,7 @@ class StateIcon extends React.Component<Props, State> {
 
     return animation === true ? (
       <SwitchTransition>
-        <CSSTransition key={transitionKey} classNames="fade" timeout={this.state.animationTimeout} addEndListener={this.animationListener}>
+        <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
           { popover === true ? this.imageWithPopover(image, process.name, tooltip, errors) : image }
         </CSSTransition>
       </SwitchTransition>
@@ -135,4 +133,6 @@ const enhance = compose(
     withTranslation(),
 )
 
-export default enhance(StateIcon)
+export default enhance(ProcessStateIcon)
+
+export const unknownIcon = ProcessStateIcon.unknownIcon

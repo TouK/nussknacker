@@ -17,7 +17,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ProcessHistoryEntry, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ProcessVersion, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
@@ -36,7 +36,7 @@ trait RemoteEnvironment {
   def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long],
               businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
 
-  def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessHistoryEntry]]
+  def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessVersion]]
 
   def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
@@ -87,7 +87,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   implicit def materializer: Materializer
 
-  override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] =
+  override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]] =
     invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processName.value), Query(("businessView", true.toString))).map { result =>
       result.fold(_ => List(), _.history)
     }
