@@ -9,12 +9,12 @@ import {WithTranslation} from "react-i18next/src"
 import {compose} from "redux"
 
 type HealthCheckResponse = {
-  state: string;
-  error: string;
+  state: string,
+  error: string,
 }
 
 type State = {
-  healthCheck?: HealthCheckResponse;
+  healthCheck?: HealthCheckResponse,
 }
 
 class HealthCheck extends PeriodicallyReloadingComponent<Props, State> {
@@ -31,7 +31,7 @@ class HealthCheck extends PeriodicallyReloadingComponent<Props, State> {
   render() {
     const {t} = this.props
 
-    return this.state?.healthCheck.state === HealthCheck.stateOk ? (
+    return this.state?.healthCheck && this.state.healthCheck.state !== HealthCheck.stateOk ? (
       <div className="healthCheck">
         <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
         <span className="errorText">{this.state?.healthCheck.error || t("healthCheck.unknownState", "State unknown")}</span>
