@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
+import java.util.concurrent.atomic.{AtomicReference}
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
@@ -36,8 +36,6 @@ object TestFactory extends TestPermissions{
     secondTestCategoryName -> Permission.ALL_PERMISSIONS
   )
 
-  val testEnvironment = "test"
-
   val sampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
 
@@ -62,7 +60,7 @@ object TestFactory extends TestPermissions{
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
   }
 
-  def newDeploymentProcessRepository(db: DbConfig) = new DeployedProcessRepository(db,
+  def newDeploymentProcessRepository(db: DbConfig) = new ProcessActionRepository(db,
     Map(TestProcessingTypes.Streaming -> buildInfo))
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)

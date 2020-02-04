@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessId => ApiProc
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
-import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -94,7 +93,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     (for {
       lastActionPerProcess <- fetchLastActionPerProcessQuery.result
       lastDeployedActionPerProcess <- fetchLastDeployedActionPerProcessQuery.result
-      latestProcesses <- fetchLatestProcessesQuery(query, lastActionPerProcess, isDeployed).result
+      latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess, isDeployed).result
     } yield
       latestProcesses.map { case ((_, processVersion), process) => createFullDetails(
         process,
@@ -138,25 +137,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(processesTable.filter(_.name === processName.value).result.headOption)
   }
 
-  //TODO: Do we really need it? Remove it in future?
-  override def fetchDeploymentHistory(processId: ProcessId)(implicit ec: ExecutionContext): F[List[DeploymentHistoryEntry]] =
-    run(deployedProcessesTable.filter(_.processId === processId.value)
-      .joinLeft(commentsTable)
-      .on { case (deployment, comment) => deployment.commentId === comment.id }
-      .sortBy(_._1.deployedAt.desc)
-      .result.map(_.map { case (de, comment) => DeploymentHistoryEntry(
-        processVersionId = de.processVersionId,
-        time = de.deployedAtTime,
-        user = de.user,
-        deploymentAction = de.deploymentAction,
-        commentId = de.commentId,
-        comment = comment.map(_.content),
-        buildInfo = de.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
-      )}
-      .toList))
-
-  override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessDeploymentAction]] =
-    run(fetchProcessLatestDeployActionsQuery(processId).result.map(_.toList.map(ProcessRepository.toDeploymentEntry)))
+  override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
+    run(fetchProcessLatestActionsQuery(processId).result.map(_.toList.map(ProcessRepository.toProcessAction)))
 
   override def fetchProcessingType(processId: ProcessId)(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
@@ -182,32 +164,34 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(ProcessId(id))(ProcessShapeFetchStrategy.NotFetch).result)
-      deployments <- OptionT.liftF[DB, Seq[DeployedProcessInfoEntityData]](fetchProcessLatestDeployActionsQuery(ProcessId(id)).result)
+      actions <- OptionT.liftF[DB, Seq[(ProcessActionEntityData, Option[CommentEntityData])]](fetchProcessLatestActionsQuery(ProcessId(id)).result)
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
-      lastAction = deployments.headOption,
-      lastDeployedAction = deployments.headOption.find(_.isDeployed),
+      lastActionData = actions.headOption,
+      lastDeployedActionData = actions.headOption.find(_._1.isDeployed),
       isLatestVersion = isLatestVersion,
       tags = tags,
-      history = processVersions.map(pvs => ProcessRepository.toProcessHistoryEntry(process, pvs)),
+      history = processVersions.map(
+        v => ProcessRepository.toProcessVersion(v, actions.filter(p => p._1.processVersionId == v.id).toList)
+      ),
       businessView = businessView
     )
   }
 
   private def createFullDetails[PS: ProcessShapeFetchStrategy](process: ProcessEntityData,
                                                                processVersion: ProcessVersionEntityData,
-                                                               lastAction: Option[DeployedProcessInfoEntityData],
-                                                               lastDeployedAction: Option[DeployedProcessInfoEntityData],
+                                                               lastActionData: Option[(ProcessActionEntityData, Option[CommentEntityData])],
+                                                               lastDeployedActionData: Option[(ProcessActionEntityData, Option[CommentEntityData])],
                                                                isLatestVersion: Boolean,
                                                                tags: Seq[TagsEntityData] = List.empty,
-                                                               history: Seq[ProcessHistoryEntry] = List.empty,
+                                                               history: Seq[ProcessVersion] = List.empty,
                                                                businessView: Boolean = false)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
-      id = process.name,
+      id = process.name, //TODO: replace by Long / ProcessId
+      processId = ApiProcessId(process.id), //TODO: Remove it weh we will support Long / ProcessId
       name = process.name,
-      processId = ApiProcessId(process.id),
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,
@@ -216,8 +200,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       processType = process.processType,
       processingType = process.processingType,
       processCategory = process.processCategory,
-      lastAction = lastAction.map(ProcessRepository.toDeploymentEntry),
-      lastDeployedAction = lastDeployedAction.map(ProcessRepository.toDeploymentEntry),
+      lastAction = lastActionData.map(ProcessRepository.toProcessAction),
+      lastDeployedAction = lastDeployedActionData.map(ProcessRepository.toProcessAction),
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       createdAt = DateUtils.toLocalDateTime(process.createdAt),

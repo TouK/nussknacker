@@ -8,7 +8,7 @@ import io.circe.generic.JsonCodec
 import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 
 object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
   sealed trait Process {
-    val lastAction: Option[ProcessDeploymentAction]
+    val lastAction: Option[ProcessAction]
     def isDeployed: Boolean = !isNotDeployed && lastAction.exists(_.isDeployed)
     def isCanceled: Boolean = !isNotDeployed && lastAction.exists(_.isCanceled)
     def isNotDeployed: Boolean = lastAction.isEmpty
@@ -55,10 +55,10 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                      modificationDate: LocalDateTime,
                                      createdAt: LocalDateTime,
                                      createdBy: String,
-                                     lastAction: Option[ProcessDeploymentAction],
-                                     lastDeployedAction: Option[ProcessDeploymentAction],
+                                     lastAction: Option[ProcessAction],
+                                     lastDeployedAction: Option[ProcessAction],
                                      state: Option[ProcessStatus] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
-                                     ) extends Process
+                                    ) extends Process
 
   object BaseProcessDetails {
     //It's necessary to encode / decode ProcessState
@@ -67,9 +67,9 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
     implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveDecoder
   }
 
-  case class BaseProcessDetails[ProcessShape](id: String,
+  case class BaseProcessDetails[ProcessShape](id: String, //It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
                                               name: String,
-                                              processId: ApiProcessId,
+                                              processId: ApiProcessId, //TODO: Remove it when we will support Long / ProcessId
                                               processVersionId: Long,
                                               isLatestVersion: Boolean,
                                               description: Option[String],
@@ -82,10 +82,10 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                               createdAt: LocalDateTime,
                                               createdBy: String,
                                               tags: List[String],
-                                              lastDeployedAction: Option[ProcessDeploymentAction],
-                                              lastAction: Option[ProcessDeploymentAction],
+                                              lastDeployedAction: Option[ProcessAction],
+                                              lastAction: Option[ProcessAction],
                                               json: Option[ProcessShape],
-                                              history: List[ProcessHistoryEntry],
+                                              history: List[ProcessVersion],
                                               modelVersion: Option[Int],
                                               state: Option[ProcessStatus] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
                                              ) extends Process {
@@ -110,30 +110,21 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
 
   type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
-  @JsonCodec case class ProcessHistoryEntry(processId: String,
-                                            processName: String,
-                                            processVersionId: Long,
-                                            createDate: LocalDateTime,
-                                            user: String)
+  @JsonCodec case class ProcessVersion(//processId: Long, //TODO: support it when will support processId as Long / ProcessId
+                                       processVersionId: Long,
+                                       createDate: LocalDateTime,
+                                       user: String,
+                                       modelVersion: Option[Int],
+                                       actions: List[ProcessAction])
 
-  @JsonCodec case class DeploymentHistoryEntry(processVersionId: Long,
-                                               time: LocalDateTime,
-                                               user: String,
-                                               deploymentAction: ProcessActionType,
-                                               commentId: Option[Long],
-                                               comment: Option[String],
-                                               buildInfo: Map[String, String]) {
-
-    def isDeployed: Boolean = deploymentAction.equals(ProcessActionType.Deploy)
-    def isCanceled: Boolean = deploymentAction.equals(ProcessActionType.Cancel)
-  }
-
-  @JsonCodec case class ProcessDeploymentAction(processVersionId: Long,
-                                                @Deprecated environment: String, //TODO: remove it in future..
-                                                deployedAt: LocalDateTime,
-                                                user: String,
-                                                action: ProcessActionType,
-                                                buildInfo: Map[String, String]) {
+  @JsonCodec case class ProcessAction( //processId: Long, //TODO: support it when will support processId as Long / ProcessId
+                                       processVersionId: Long,
+                                       performedAt: LocalDateTime,
+                                       user: String,
+                                       action: ProcessActionType,
+                                       commentId: Option[Long],
+                                       comment: Option[String],
+                                       buildInfo: Map[String, String]) {
     def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
     def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
   }

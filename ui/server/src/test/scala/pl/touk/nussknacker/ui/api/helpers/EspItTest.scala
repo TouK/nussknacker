@@ -24,7 +24,7 @@ import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
-import pl.touk.nussknacker.ui.db.entity.DeployedProcessInfoEntityData
+import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -56,7 +56,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val processManager = new MockProcessManager
   val processChangeListener = new TestProcessChangeListener()
   def createManagementActorRef = {
-    system.actorOf(ManagementActor.props(env,
+    system.actorOf(ManagementActor.props(
       Map(TestProcessingTypes.Streaming -> processManager),
       processRepository,
       deploymentProcessRepository,
@@ -245,11 +245,11 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id
   }
 
-  def prepareDeploy(id: process.ProcessId): Future[DeployedProcessInfoEntityData] =
-    deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", env, Some("Deploy comment"))
+  def prepareDeploy(id: process.ProcessId): Future[ProcessActionEntityData] =
+    deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", Some("Deploy comment"))
 
-  def prepareCancel(id: process.ProcessId): Future[DeployedProcessInfoEntityData] =
-    deploymentProcessRepository.markProcessAsCancelled(id, 1, env, Some("Cancel comment"))
+  def prepareCancel(id: process.ProcessId): Future[ProcessActionEntityData] =
+    deploymentProcessRepository.markProcessAsCancelled(id, 1, Some("Cancel comment"))
 
   def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue
