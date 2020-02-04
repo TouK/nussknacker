@@ -56,8 +56,7 @@ object KafkaEspUtils extends LazyLogging {
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("auto.offset.reset", "earliest")
     groupId.foreach(props.setProperty("group.id", _))
-    config.kafkaProperties.map(_.asJava).foreach(props.putAll)
-    props
+    withPropertiesFromConfig(props, config)
   }
 
   def toProducerProperties(config: KafkaConfig, clientId: String): Properties = {
@@ -71,7 +70,11 @@ object KafkaEspUtils extends LazyLogging {
     props.setProperty("linger.ms", "1")
     props.setProperty("buffer.memory", "33554432")
     setClientId(props, clientId)
-    config.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
+    withPropertiesFromConfig(props, config)
+  }
+
+  def withPropertiesFromConfig(props: Properties, kafkaConfig: KafkaConfig): Properties = {
+    kafkaConfig.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
       props.setProperty(k, v)
     }
     props
