@@ -57,7 +57,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   //this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
   test("cancel of not existing job should not fail") {
-    processManager.cancel(ProcessName("not existing job")).futureValue shouldBe (())
+    processManager.cancel(ProcessName("not existing job"), user = userToAct).futureValue shouldBe (())
   }
 
   test("be able verify&redeploy kafka process") {
@@ -87,7 +87,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
     messagesFromTopic(outTopic, 2).last shouldBe "2"
 
-    assert(processManager.cancel(ProcessName(kafkaProcess.id)).isReadyWithin(10 seconds))
+    assert(processManager.cancel(ProcessName(kafkaProcess.id), user = userToAct).isReadyWithin(10 seconds))
   }
 
   // TODO: unignore - currently quite often fail during second deployProcessAndWaitIfRunning
@@ -150,7 +150,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
     messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
-    val savepointPath = processManager.stop(ProcessName(processId), savepointDir = None).map(_.path)
+    val savepointPath = processManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
 
     eventually {
       processManager.findJobStatus(ProcessName(processId)).futureValue.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
@@ -177,7 +177,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     logger.info("Starting to redeploy")
 
     val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
-    val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None).failed.futureValue
+    val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None, user = userToAct).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
 
@@ -189,7 +189,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   test("deploy custom process") {
     val processId = "customProcess"
 
-    assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
+    assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None, user = userToAct).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(ProcessName(processId)).futureValue
     jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
@@ -228,7 +228,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
+    assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath, user = userToAct).isReadyWithin(100 seconds))
     eventually {
       val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
       jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
@@ -237,7 +237,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   }
 
   private def cancel(processId: String): Unit = {
-    assert(processManager.cancel(ProcessName(processId)).isReadyWithin(10 seconds))
+    assert(processManager.cancel(ProcessName(processId), user = userToAct).isReadyWithin(10 seconds))
     eventually {
       val jobStatusCanceled = processManager
         .findJobStatus(ProcessName(processId))

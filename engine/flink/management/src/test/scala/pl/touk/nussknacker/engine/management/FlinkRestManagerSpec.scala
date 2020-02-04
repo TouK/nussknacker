@@ -6,7 +6,7 @@ import io.circe.Json.fromString
 import org.apache.flink.runtime.jobgraph.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, SavepointResult, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JobConfig, JobOverview, JobsResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
@@ -58,7 +58,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING))
 
     manager.deploy(ProcessVersion(1, ProcessName("p1"), "user", None),
-      CustomProcess("nothing"), None).failed.futureValue.getMessage shouldBe "Job p1 is not running, status: RESTARTING"
+      CustomProcess("nothing"), None, user = User("user1", "User 1")).failed.futureValue.getMessage shouldBe "Job p1 is not running, status: RESTARTING"
   }
 
   test("should make savepoint") {
@@ -100,7 +100,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       Response.ok(Right(toReturn))
     })
 
-    manager.stop(processName, savepointDir = None).futureValue shouldBe SavepointResult(path = savepointPath)
+    manager.stop(processName, savepointDir = None, user = User("user1", "user")).futureValue shouldBe SavepointResult(path = savepointPath)
   }
 
   test("return failed status if two jobs running") {

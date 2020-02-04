@@ -57,7 +57,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
     case Stop(id, user, savepointDir) =>
-      reply(processManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir)))
+      reply(processManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir, toManagerUser(user))))
     case Cancel(id, user, comment) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
@@ -163,7 +163,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       manager <- processManager(processId.id)
-      _ <- manager.cancel(processId.name)
+      _ <- manager.cancel(processId.name, toManagerUser(user))
       maybeVersion <- findDeployedVersion(processId)
       version <- maybeVersion match {
         case Some(processVersionId) => Future.successful(processVersionId)
@@ -201,7 +201,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
       deploymentResolved <- resolvedDeploymentData
       maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
       processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown process Id ${latestVersion.processId}"))
-      _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentResolved, savepointPath)
+      _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentResolved, savepointPath, toManagerUser(user))
       deployedActionData <- deployedProcessRepository.markProcessAsDeployed(
         ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
       )
@@ -237,6 +237,8 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
       action
     }
   }
+
+  private def toManagerUser(loggedUser: LoggedUser) = User(loggedUser.id, loggedUser.username)
 }
 
 trait DeploymentAction {

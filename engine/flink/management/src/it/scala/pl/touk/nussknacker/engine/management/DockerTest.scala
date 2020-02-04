@@ -14,6 +14,7 @@ import com.whisk.docker.scalatest.DockerTestKit
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver, VolumeMapping}
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.Suite
+import pl.touk.nussknacker.engine.api.deployment.User
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 
@@ -25,6 +26,8 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
   private val flinkEsp = s"flinkesp:1.9.1-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
+
+  protected val userToAct = User("testUser", "Test User")
 
   override implicit val dockerFactory: DockerFactory = new SpotifyDockerFactory(client)
 
