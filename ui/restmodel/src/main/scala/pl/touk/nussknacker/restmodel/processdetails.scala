@@ -18,8 +18,9 @@ import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
   sealed trait Process {
     val lastAction: Option[ProcessDeploymentAction]
-    def isDeployed: Boolean = lastAction.exists(_.isDeployed)
-    def isCanceled: Boolean = lastAction.exists(_.isCanceled)
+    def isDeployed: Boolean = !isNotDeployed && lastAction.exists(_.isDeployed)
+    def isCanceled: Boolean = !isNotDeployed && lastAction.exists(_.isCanceled)
+    def isNotDeployed: Boolean = lastAction.isEmpty
   }
 
   object BasicProcess {

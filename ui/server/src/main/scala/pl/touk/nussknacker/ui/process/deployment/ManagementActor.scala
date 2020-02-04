@@ -90,7 +90,7 @@ class ManagementActor(environment: String,
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state)
-      } yield handleObsoleteStatus(state, manager.processStateDefinitionManager, actions.headOption)
+      } yield Option(handleObsoleteStatus(manager.processStateDefinitionManager, state, actions.headOption))
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
@@ -120,11 +120,11 @@ class ManagementActor(environment: String,
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleObsoleteStatus(processState: Option[ProcessState], processStateDefinitionManager: ProcessStateDefinitionManager, lastAction: Option[ProcessDeploymentAction]): Option[ProcessStatus] =
+  private def handleObsoleteStatus(processStateDefinitionManager: ProcessStateDefinitionManager, processState: Option[ProcessState], lastAction: Option[ProcessDeploymentAction]): ProcessStatus =
     (processState, lastAction) match {
-      case (Some(state), _)  => Option(ProcessStatus.create(state, lastAction))
-      case (None, Some(action)) if action.isCanceled => Option(ProcessStatus.canceled(processStateDefinitionManager))
-      case _ => Option.empty
+      case (Some(state), _)  => ProcessStatus.create(state, lastAction)
+      case (None, Some(action)) if action.isCanceled => ProcessStatus(SimpleStateStatus.Canceled, processStateDefinitionManager)
+      case (None, None) => ProcessStatus(SimpleStateStatus.NotDeployed, processStateDefinitionManager)
     }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history

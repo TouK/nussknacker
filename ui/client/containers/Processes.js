@@ -17,7 +17,7 @@ import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
-import StateIcon from "../components/Process/State/StateIcon"
+import ProcessStateIcon from "../components/Process/ProcessStateIcon"
 
 export class Processes extends BaseProcesses {
   queries = {
@@ -159,7 +159,7 @@ export class Processes extends BaseProcesses {
                   <Date date={process.modificationDate}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  <StateIcon
+                  <ProcessStateIcon
                     process={process}
                     processState={this.getProcessState(process)}
                     isStateLoaded={this.state.statusesLoaded}
