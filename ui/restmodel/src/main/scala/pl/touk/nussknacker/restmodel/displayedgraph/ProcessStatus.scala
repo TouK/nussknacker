@@ -6,8 +6,7 @@ import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
-import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
+import pl.touk.nussknacker.engine.api.deployment.{ErrorStateStatus, ProcessState, ProcessStateDefinitionManager, StateStatus}
 
 //TODO: Do we really  we need ProcessStatus and ProcessState - Do these DTO's do the same things?
 @JsonCodec case class ProcessStatus(status: StateStatus,
@@ -33,6 +32,27 @@ object ProcessStatus {
   def apply(status: StateStatus, processStateDefinitionManager: ProcessStateDefinitionManager): ProcessStatus =
     ProcessStatus(status, processStateDefinitionManager, Option.empty, Option.empty, Option.empty, List.empty)
 
+  def error(status: ErrorStateStatus,
+            processStateDefinitionManager: ProcessStateDefinitionManager,
+            user: String,
+            versionId: Long,
+            processState: Option[ProcessState] = Option.empty,
+            exceptedVersion: Option[Long] = Option.empty): ProcessStatus = {
+    ProcessStatus(
+      status,
+      processState.map(_.deploymentId.value),
+      allowedActions = processStateDefinitionManager.statusActions(status),
+      icon = processStateDefinitionManager.statusIcon(status),
+      tooltip = processStateDefinitionManager.statusTooltip(status).map(_.format(
+        versionId, user, exceptedVersion.map(_.toString).getOrElse(0)
+      )),
+      description = processStateDefinitionManager.statusDescription(status),
+      processState.flatMap(_.startTime),
+      processState.flatMap(_.attributes),
+      processState.map(_.errors).getOrElse(List.empty)
+    )
+  }
+
   def apply(status: StateStatus,
             processStateDefinitionManager: ProcessStateDefinitionManager,
             deploymentId: Option[String],
@@ -51,9 +71,7 @@ object ProcessStatus {
       errors
     )
 
-  def create(processState: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus = {
-    val mismatchMessage = deployedVersionMismatchMessage(processState, lastAction)
-
+  def apply(processState: ProcessState): ProcessStatus = {
     ProcessStatus(
       deploymentId = Some(processState.deploymentId.value),
       status = processState.status,
@@ -63,20 +81,8 @@ object ProcessStatus {
       description = processState.description,
       startTime = processState.startTime,
       attributes = processState.attributes,
-      errors = processState.errors ++ mismatchMessage.map(error => List(error)).getOrElse(List.empty)
+      errors = processState.errors
     )
-  }
-
-  //TODO: Move this logic to another place.. This should be moved together with ManagementActor.handleObsoleteStatus
-  private def deployedVersionMismatchMessage(processState: ProcessState, lastAction: Option[ProcessAction]) = {
-    (processState.version, lastAction) match {
-      case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId => None
-      case (Some(stateVersion), Some(action)) if action.isDeployed && !processState.status.isFollowingDeployAction => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), but currently not working.")
-      case (Some(stateVersion), Some(action)) if action.isDeployed && stateVersion.versionId != action.processVersionId => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version ${action.processVersionId}.")
-      case (Some(stateVersion), None) if processState.isDeployed => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed.")
-      case (None, None) => None
-      case _ => None //We verify only deployed process
-    }
   }
 
   val unknown: ProcessStatus = simple(SimpleStateStatus.Unknown)

@@ -34,7 +34,10 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "/assets/states/stopping-running-animated.svg",
     SimpleStateStatus.Failed -> "/assets/states/failed.svg",
     SimpleStateStatus.Finished -> "/assets/states/success.svg",
-    SimpleStateStatus.Error -> "/assets/states/error.svg"
+    SimpleStateStatus.Error -> "/assets/states/error.svg",
+    SimpleStateStatus.ErrorShouldRunning -> "/assets/states/error.svg",
+    SimpleStateStatus.ErrorShouldNotBeDeployed -> "/assets/states/error.svg",
+    SimpleStateStatus.ErrorMismatchVersion -> "/assets/states/error.svg"
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
@@ -48,7 +51,10 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with checking state of process..",
     SimpleStateStatus.Finished -> "The process completed successfully.",
-    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process."
+    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process!",
+    SimpleStateStatus.ErrorShouldRunning -> "Process deployed in version %s (by %s), but currently is not working!",
+    SimpleStateStatus.ErrorShouldNotBeDeployed -> "Process deployed in version %s (by %s}), should not be deployed!",
+    SimpleStateStatus.ErrorMismatchVersion -> "Process deployed in version %s (by %s), expected version %s!"
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
@@ -62,7 +68,10 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "Process is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with process..",
     SimpleStateStatus.Finished -> "Process has been successfully finished job.",
-    SimpleStateStatus.Error -> "There are some errors with process.."
+    SimpleStateStatus.Error -> "There are some errors with process!",
+    SimpleStateStatus.ErrorShouldRunning -> "Process currently is not working!",
+    SimpleStateStatus.ErrorShouldNotBeDeployed -> "Process should not be deployed!",
+    SimpleStateStatus.ErrorMismatchVersion -> "Process mismatch version!"
   )
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =

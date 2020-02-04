@@ -120,10 +120,32 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleObsoleteStatus(processStateDefinitionManager: ProcessStateDefinitionManager, processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessStatus =
     (processState, lastAction) match {
-      case (Some(state), _)  => ProcessStatus.create(state, lastAction)
+      case (Some(state), _)  => handleMismatchStateVersion(processStateDefinitionManager, state, lastAction)
       case (None, Some(action)) if action.isCanceled => ProcessStatus(SimpleStateStatus.Canceled, processStateDefinitionManager)
+      case (None, Some(act)) if act.isDeployed => ProcessStatus.error(
+        SimpleStateStatus.ErrorShouldRunning, processStateDefinitionManager, act.user, act.processVersionId
+      )
       case (None, None) => ProcessStatus(SimpleStateStatus.NotDeployed, processStateDefinitionManager)
     }
+
+  //This method handles some corner cases for mismatch states version
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleMismatchStateVersion(processStateDefinitionManager: ProcessStateDefinitionManager, processState: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus = {
+    (processState.version, lastAction) match {
+      case (Some(sv), Some(act)) if act.isDeployed && sv.versionId != act.processVersionId => ProcessStatus.error(
+        SimpleStateStatus.ErrorMismatchVersion, processStateDefinitionManager, act.user, act.processVersionId, Option(processState), Option(sv.versionId)
+      )
+      case (Some(_), Some(act)) if act.isDeployed && !processState.status.isFollowingDeployAction => ProcessStatus.error(
+        SimpleStateStatus.ErrorShouldRunning, processStateDefinitionManager, act.user, act.processVersionId, Option(processState)
+      )
+      case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId =>
+        ProcessStatus(processState)
+      case (Some(sv), None) if processState.isDeployed => ProcessStatus.error(
+        SimpleStateStatus.ErrorShouldNotBeDeployed, processStateDefinitionManager, sv.user, sv.versionId, Option(processState)
+      )
+      case _ => ProcessStatus(processState)
+    }
+  }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.

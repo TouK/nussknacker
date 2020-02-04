@@ -105,3 +105,7 @@ final case class FinishedStateStatus(name: String) extends StateStatus {
 final case class RunningStateStatus(name: String) extends StateStatus {
   override def isRunning: Boolean = true
 }
+
+final case class ErrorStateStatus(name: String) extends StateStatus {
+  override def canDeploy: Boolean = true
+}
