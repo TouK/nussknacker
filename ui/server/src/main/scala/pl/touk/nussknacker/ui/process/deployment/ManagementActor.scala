@@ -124,7 +124,7 @@ class ManagementActor(environment: String,
     (processState, lastAction) match {
       case (Some(state), _)  => ProcessStatus.create(state, lastAction)
       case (None, Some(action)) if action.isCanceled => ProcessStatus(SimpleStateStatus.Canceled, processStateDefinitionManager)
-      case _ => ProcessStatus(SimpleStateStatus.NotDeployed, processStateDefinitionManager)
+      case (None, None) => ProcessStatus(SimpleStateStatus.NotDeployed, processStateDefinitionManager)
     }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history

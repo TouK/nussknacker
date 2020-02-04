@@ -20,6 +20,7 @@ type OwnProps = {
   iconWidth: number,
 }
 
+//TODO: In future information about archived process should be return from BE as state.
 class ProcessInfo extends React.Component<OwnProps, State> {
   static defaultProps = {
     isStateLoaded: false,
@@ -48,7 +49,7 @@ class ProcessInfo extends React.Component<OwnProps, State> {
       )
     )
 
-  private getProcessIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean, iconHeight: number, iconWidth:  number, description: string) => {
+  private getIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean, iconHeight: number, iconWidth:  number, description: string) => {
     if (process.isArchived || process.isSubprocess) {
       const icon = absoluteBePath(process.isArchived ? ProcessInfo.archivedIcon : ProcessInfo.subprocessIcon)
       return (
@@ -76,7 +77,7 @@ class ProcessInfo extends React.Component<OwnProps, State> {
   render() {
     const {process, processState, isStateLoaded, iconHeight, iconWidth} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
-    const icon = this.getProcessIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
+    const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
 
     return (
