@@ -9,6 +9,7 @@ import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
+import {Validator, validators, validatorType} from "../Validators";
 
 type ParamType = $TodoType
 type ValuesType = $TodoType
@@ -55,7 +56,6 @@ const simpleEditorValidators = (param: $TodoType, errors: Array<$TodoType>, fiel
     validators[validatorType.ERROR_VALIDATOR](errors, fieldLabel)
   )
 
-export const editors: Record<editorTypes, Editor> = {
 /* eslint-enable i18next/no-literal-string */
 
 export const editors: Record<editorTypes, EditorConfig> = {

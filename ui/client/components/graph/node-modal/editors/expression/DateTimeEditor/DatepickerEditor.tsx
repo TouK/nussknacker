@@ -6,10 +6,10 @@ import "react-datetime/css/react-datetime.css"
 import classNames from "classnames"
 import {useDebouncedCallback} from "use-debounce"
 import moment from "moment"
-import {allValid, Validator} from "../../../../../../common/Validators"
 import ValidationLabels from "../../../../../modals/ValidationLabels"
 import i18next from "i18next"
 import * as ExpressionFormatter from "./dateExpresionFormats"
+import {allValid, Validator} from "../../Validators";
 
 /* eslint-disable i18next/no-literal-string */
 export enum JavaTimeTypes {
