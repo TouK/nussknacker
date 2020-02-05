@@ -2,14 +2,14 @@ import {useTranslation} from "react-i18next"
 import i18next from "i18next"
 import {ExpressionObj} from "../types"
 import React from "react"
-import {EditorProps, Editor, JavaTimeTypes, isParseable} from "./Editor"
 import {isEmpty} from "lodash"
 import moment from "moment"
+import {DatepickerEditorProps, DatepickerEditor, isParseable, JavaTimeTypes} from "./DatepickerEditor"
 
-export function DateEditor(props: Omit<EditorProps, "dateFormat" | "expressionType">) {
+export function DateEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
   const {i18n} = useTranslation()
   const dateFormat = i18n.t("editors.LocalDate.dateFormat", "DD-MM-YYYY")
-  return <Editor {...props} dateFormat={dateFormat} timeFormat={null} expressionType={JavaTimeTypes.LOCAL_DATE}/>
+  return <DatepickerEditor {...props} dateFormat={dateFormat} timeFormat={null} expressionType={JavaTimeTypes.LOCAL_DATE}/>
 }
 
 DateEditor.switchableToHint = i18next.t("editors.LocalDate.switchableToHint", "Switch to basic mode")

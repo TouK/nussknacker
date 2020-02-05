@@ -22,7 +22,7 @@ export enum JavaTimeTypes {
 
 /* eslint-enable i18next/no-literal-string */
 
-export type EditorProps = {
+export type DatepickerEditorProps = {
   expressionObj: ExpressionObj,
   readOnly: boolean,
   className: string,
@@ -70,7 +70,7 @@ const getDateValidator = (value: string | moment.Moment, expressionType: JavaTim
   isValid: () => !!format(value, expressionType),
 })
 
-export function Editor(props: EditorProps) {
+export function DatepickerEditor(props: DatepickerEditorProps) {
   const {i18n} = useTranslation()
   const {className, expressionObj, onValueChange, expressionType, readOnly, validators, showValidation, isMarked, editorFocused, ...other} = props
   const [value, setValue] = useState<string | moment.Moment>(moment(parse(expressionObj, expressionType)))
