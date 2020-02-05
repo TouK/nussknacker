@@ -1,14 +1,13 @@
-import {$TodoType} from "../actions/migrationTypes"
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 
 type SettingsState = {
-  loggedUser: Partial<User>;
-  featuresSettings: $TodoType;
-  authenticationSettings: $TodoType;
-  analyticsSettings: $TodoType;
-  processDefinitionData: $TodoType;
-  availableQueryableStates: $TodoType;
+  loggedUser: Partial<User>,
+  featuresSettings: $TodoType,
+  authenticationSettings: $TodoType,
+  analyticsSettings: $TodoType,
+  processDefinitionData: $TodoType,
+  availableQueryableStates: $TodoType,
 }
 
 const initialState: SettingsState = {
@@ -16,7 +15,7 @@ const initialState: SettingsState = {
   featuresSettings: {},
   authenticationSettings: {
     // eslint-disable-next-line i18next/no-literal-string
-    backend: "BasicAuth"
+    backend: "BasicAuth",
   },
   analyticsSettings: {},
   processDefinitionData: {},

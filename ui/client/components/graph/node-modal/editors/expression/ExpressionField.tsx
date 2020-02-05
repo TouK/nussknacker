@@ -3,25 +3,24 @@ import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableExpression from "./EditableExpression"
 import {editorTypes} from "./EditorType"
-import {$TodoType} from "../../../../../actions/migrationTypes";
 
 type Props = {
-  fieldName: string
-  fieldLabel: string
-  exprPath: string
-  validators: Array<$TodoType>
-  isEditMode: boolean
-  editedNode: $TodoType
-  isMarked: Function
-  showValidation: boolean
-  showSwitch: boolean
-  nodeObjectDetails: $TodoType
-  setNodeDataAt: Function
-  testResultsToShow: $TodoType
-  testResultsToHide: $TodoType
-  toggleTestResult: Function
-  renderFieldLabel: Function
-  fieldType: string
+  fieldName: string,
+  fieldLabel: string,
+  exprPath: string,
+  validators: Array<$TodoType>,
+  isEditMode: boolean,
+  editedNode: $TodoType,
+  isMarked: Function,
+  showValidation: boolean,
+  showSwitch: boolean,
+  nodeObjectDetails: $TodoType,
+  setNodeDataAt: Function,
+  testResultsToShow: $TodoType,
+  testResultsToHide: $TodoType,
+  toggleTestResult: Function,
+  renderFieldLabel: Function,
+  fieldType: string,
 }
 
 class ExpressionField extends React.Component<Props> {
@@ -58,7 +57,8 @@ class ExpressionField extends React.Component<Props> {
         fieldName={fieldName}
         resultsToShow={testResultsToShow}
         resultsToHide={testResultsToHide}
-        toggleResult={toggleTestResult}>
+        toggleResult={toggleTestResult}
+      >
         <EditableExpression
           fieldType={fieldType}
           param={this.findParamByName(fieldLabel)}
@@ -78,7 +78,7 @@ class ExpressionField extends React.Component<Props> {
     )
   }
 
-  findParamByName = (paramName) => (_.get(this.props, "nodeObjectDetails.parameters", []))
+  findParamByName = (paramName) => _.get(this.props, "nodeObjectDetails.parameters", [])
     .find((param) => param.name === paramName)
 }
 

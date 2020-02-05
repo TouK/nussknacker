@@ -1,23 +1,17 @@
-import React from "react"
+import cn from "classnames"
+import _ from "lodash"
 import PropTypes from "prop-types"
+import React from "react"
 import ReactDOMServer from "react-dom/server"
 import {connect} from "react-redux"
-import _ from "lodash"
 import ActionsUtils from "../../../../../actions/ActionsUtils"
 import ProcessUtils from "../../../../../common/ProcessUtils"
-import ExpressionSuggester from "./ExpressionSuggester"
-
-import AceEditor from "react-ace"
-import "ace-builds/src-noconflict/mode-jsx"
-import "ace-builds/src-noconflict/ext-language_tools"
-import "ace-builds/src-noconflict/ext-searchbox"
-
-import "../../../../../brace/mode/spel"
-import "../../../../../brace/mode/sql"
-import "../../../../../brace/theme/nussknacker"
-import ValidationLabels from "../../../../modals/ValidationLabels"
-import HttpService from "../../../../../http/HttpService"
 import {allValid} from "../../../../../common/Validators"
+import HttpService from "../../../../../http/HttpService"
+import ValidationLabels from "../../../../modals/ValidationLabels"
+
+import AceEditor from "./ace"
+import ExpressionSuggester from "./ExpressionSuggester"
 
 //to reconsider
 // - respect categories for global variables?
@@ -97,8 +91,8 @@ class ExpressionSuggest extends React.Component {
   //this shouldComponentUpdate is for cases when there are multiple instances of suggestion component in one view and to make them not interfere with each other
   //fixme maybe use this.state.id here?
   shouldComponentUpdate(nextProps, nextState) {
-    return !(_.isEqual(this.state.value, nextState.value)) ||
-      !(_.isEqual(this.state.editorFocused, nextState.editorFocused))
+    return !_.isEqual(this.state.value, nextState.value) ||
+        !_.isEqual(this.state.editorFocused, nextState.editorFocused)
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -121,44 +115,56 @@ class ExpressionSuggest extends React.Component {
   render() {
     if (this.props.dataResolved) {
       const {isMarked, showValidation, inputProps, validators} = this.props
+      const {editorFocused, value} = this.state
+      const THEME = "nussknacker"
+
+      //monospace font seems to be mandatory to make ace cursor work well,
+      const FONT_FAMILY = "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace"
+
       return (
         <React.Fragment>
-          <div className={`row-ace-editor${
-            !showValidation || allValid(validators, [this.state.value]) ? "" : " node-input-with-error "
-          }${isMarked ? " marked" : ""
-          }${this.state.editorFocused ? " focused" : ""
-          }${inputProps.readOnly ? " read-only" : ""}`}>
-            <AceEditor mode={inputProps.language}
-                       width={"100%"}
-                       minLines={1}
-                       maxLines={50}
-                       theme={"nussknacker"}
-                       onChange={this.onChange}
-                       value={this.state.value}
-                       showPrintMargin={false}
-                       cursorStart={-1} //line start
-                       showGutter={false}
-                       highlightActiveLine={false}
-                       highlightGutterLine={false}
-                       wrapEnabled={true}
-                       editorProps={{
-                         $blockScrolling: "Infinity",
-                       }}
-                       className={inputProps.readOnly ? " read-only" : ""}
-                       setOptions={{
-                         indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
-                         enableBasicAutocompletion: [this.customAceEditorCompleter],
-                         enableLiveAutocompletion: true,
-                         enableSnippets: false,
-                         showLineNumbers: false,
-                         fontSize: 16,
-                         fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
-                         readOnly: inputProps.readOnly,
-                       }}
-                       onFocus={this.setEditorFocus(true)}
-                       onBlur={this.setEditorFocus(false)}/>
+          <div className={cn([
+            "row-ace-editor",
+            showValidation && !allValid(validators, [value]) && "node-input-with-error",
+            isMarked && "marked",
+            editorFocused && "focused",
+            inputProps.readOnly && "read-only",
+          ])}
+          >
+            <AceEditor
+              mode={inputProps.language}
+              width={"100%"}
+              minLines={1}
+              maxLines={50}
+              theme={THEME}
+              onChange={this.onChange}
+              value={value}
+              showPrintMargin={false}
+              cursorStart={-1} //line start
+              showGutter={false}
+              highlightActiveLine={false}
+              highlightGutterLine={false}
+              wrapEnabled={true}
+              editorProps={{
+                // eslint-disable-next-line i18next/no-literal-string
+                $blockScrolling: "Infinity",
+              }}
+              className={inputProps.readOnly ? " read-only" : ""}
+              setOptions={{
+                indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
+                enableBasicAutocompletion: [this.customAceEditorCompleter],
+                enableLiveAutocompletion: true,
+                enableSnippets: false,
+                showLineNumbers: false,
+                fontSize: 16,
+                fontFamily: FONT_FAMILY,
+                readOnly: inputProps.readOnly,
+              }}
+              onFocus={this.setEditorFocus(true)}
+              onBlur={this.setEditorFocus(false)}
+            />
           </div>
-          {showValidation && <ValidationLabels validators={validators} values={[this.state.value]}/>}
+          {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
         </React.Fragment>
       )
     } else {

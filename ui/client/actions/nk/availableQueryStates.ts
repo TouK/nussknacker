@@ -1,10 +1,9 @@
 import HttpService from "../../http/HttpService"
-import {$TodoType} from "../migrationTypes"
 import {ThunkAction} from "../reduxTypes"
 
 export type AvailableQueryStatesAction = {
-  type: "AVAILABLE_QUERY_STATES";
-  availableQueryableStates: $TodoType;
+  type: "AVAILABLE_QUERY_STATES",
+  availableQueryableStates: $TodoType,
 }
 
 export function availableQueryStates(data: $TodoType): AvailableQueryStatesAction {
@@ -16,8 +15,6 @@ export function availableQueryStates(data: $TodoType): AvailableQueryStatesActio
 
 export function fetchAvailableQueryStates(): ThunkAction {
   return (dispatch) => {
-    return HttpService.availableQueryableStates().then((response) =>
-        dispatch(availableQueryStates(response.data)),
-    )
+    return HttpService.availableQueryableStates().then((response) => dispatch(availableQueryStates(response.data)))
   }
 }

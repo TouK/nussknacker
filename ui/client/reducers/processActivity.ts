@@ -1,18 +1,17 @@
-import {$TodoType} from "../actions/migrationTypes"
 import {Action} from "../actions/reduxTypes"
 
 export type Attachment = {
-  processId: $TodoType;
-  processVersionId: $TodoType;
-  id: $TodoType;
-  createDate: $TodoType;
-  user: $TodoType;
-  fileName: string;
+  processId: $TodoType,
+  processVersionId: $TodoType,
+  id: $TodoType,
+  createDate: $TodoType,
+  user: $TodoType,
+  fileName: string,
 }
 
 export type ProcessActivityState = {
-  comments: $TodoType[];
-  attachments: Attachment[];
+  comments: $TodoType[],
+  attachments: Attachment[],
 }
 
 const emptyProcessActivity: ProcessActivityState = {

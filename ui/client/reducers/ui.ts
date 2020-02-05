@@ -1,19 +1,18 @@
-import {$TodoType} from "../actions/migrationTypes"
 import {GroupId} from "../actions/nk/models"
 import {Action} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"
 
 type UiState = {
-  leftPanelIsOpened: boolean;
-  rightPanelIsOpened: boolean;
-  showNodeDetailsModal: boolean;
-  showEdgeDetailsModal: boolean;
-  confirmDialog: Partial<{ isOpen: boolean; text: string; confirmText: string; denyText: string; onConfirmCallback: $TodoType }>;
-  modalDialog: Partial<{ openDialog: DialogType; message: string; action: string; displayWarnings: boolean; text: string }>;
-  expandedGroups: GroupId[];
-  allModalsClosed: boolean;
-  isToolTipsHighlighted: boolean;
-};
+  leftPanelIsOpened: boolean,
+  rightPanelIsOpened: boolean,
+  showNodeDetailsModal: boolean,
+  showEdgeDetailsModal: boolean,
+  confirmDialog: Partial<{ isOpen: boolean, text: string, confirmText: string, denyText: string, onConfirmCallback: $TodoType }>,
+  modalDialog: Partial<{ openDialog: DialogType, message: string, action: string, displayWarnings: boolean, text: string }>,
+  expandedGroups: GroupId[],
+  allModalsClosed: boolean,
+  isToolTipsHighlighted: boolean,
+}
 
 const emptyUiState: UiState = {
   allModalsClosed: true,

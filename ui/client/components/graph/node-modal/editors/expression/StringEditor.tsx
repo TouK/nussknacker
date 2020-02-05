@@ -1,22 +1,15 @@
-import PropTypes from "prop-types"
 import React from "react"
 import Input from "../field/Input"
-import _ from "lodash";
-import {$TodoType} from "../../../../../actions/migrationTypes";
-
-type StringEditor<P> = React.ComponentType<P> & {
-  switchableTo: Function
-  switchableToHint: string
-  notSwitchableToHint: string
-}
+import _ from "lodash"
+import {EditorType} from "./EditorType"
 
 type Props = {
-  expressionObj: $TodoType
-  onValueChange: Function
-  className: string
+  expressionObj: $TodoType,
+  onValueChange: Function,
+  className: string,
 }
 
-const StringEditor: StringEditor<Props> = (props) => {
+const StringEditor: EditorType<Props> = (props: Props) => {
 
   const {expressionObj, onValueChange, className} = props
 
@@ -28,21 +21,19 @@ const StringEditor: StringEditor<Props> = (props) => {
 
   const trim = (value) => value.substring(1, value.length - 1)
 
-  return <Input {...props}
-                onChange={(event) => onValueChange(format(event.target.value))}
-                value={trim(expressionObj.expression)}
-                formattedValue={expressionObj.expression}
-                className={className}/>
+  return (
+    <Input
+      {...props}
+      onChange={(event) => onValueChange(format(event.target.value))}
+      value={trim(expressionObj.expression)}
+      formattedValue={expressionObj.expression}
+      className={className}
+    />
+  )
 }
 
 //TODO handle expressions with escaped '/"
 const stringPattern = /(^'.*'$)|(^".*"$)/
-
-StringEditor.propTypes = {
-  expressionObj: PropTypes.object,
-  onValueChange: PropTypes.func,
-  className: PropTypes.string,
-}
 
 const parseable = (expressionObj) => {
   const expression = expressionObj.expression

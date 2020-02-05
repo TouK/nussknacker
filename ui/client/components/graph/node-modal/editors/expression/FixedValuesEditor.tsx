@@ -1,7 +1,7 @@
 import React from "react"
 import Creatable from "react-select/creatable"
-import _ from "lodash";
-import {$TodoType} from "../../../../../actions/migrationTypes";
+import _ from "lodash"
+import {ExpressionObj} from "./types"
 
 type Props = {
   values?: $TodoType,
@@ -22,11 +22,11 @@ const getOptions = (values) => {
 
 export default class FixedValuesEditor extends React.Component<Props> {
 
-  public static switchableTo = (expressionObj, values) => values.includes(expressionObj.expression)
+  public static switchableTo = (expressionObj: ExpressionObj, values) => values.includes(expressionObj.expression)
   public static switchableToHint = "Switch to basic mode"
   public static notSwitchableToHint = "Expression must be one of the expression possible values to switch basic mode"
 
-  private readonly options: any;
+  private readonly options: any
 
   constructor(props) {
     super(props)
@@ -37,8 +37,8 @@ export default class FixedValuesEditor extends React.Component<Props> {
     const {expressionObj, defaultValue, param} = this.props
     //TODO: is it ok to put not-existing option here?
     const defaultOption = {
-      value: (_.get(_.head(_.get(param, "editor.possibleValues")), "expression")) || (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.expression) || "",
-      label: (_.get(_.head(_.get(param, "editor.possibleValues")), "label")) || (expressionObj && expressionObj.expression) || (defaultValue && defaultValue.label) || "",
+      value: _.get(_.head(_.get(param, "editor.possibleValues")), "expression") || expressionObj && expressionObj.expression || defaultValue && defaultValue.expression || "",
+      label: _.get(_.head(_.get(param, "editor.possibleValues")), "label") || expressionObj && expressionObj.expression || defaultValue && defaultValue.label || "",
     }
     return this.options.find((option) => expressionObj && option.value === expressionObj.expression) || defaultOption
   }

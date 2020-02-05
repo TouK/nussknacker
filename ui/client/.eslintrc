@@ -15,7 +15,8 @@
     "__webpack_public_path__": "readonly",
     "__DEV__": "readonly",
     "__GIT__": "readonly",
-    "_": "readonly" // TODO: remove lodash from global, fix imports
+    "_": "readonly"
+    // TODO: remove lodash from global, fix imports
   },
   "parserOptions": {
     "ecmaFeatures": {
@@ -33,47 +34,200 @@
   "settings": {
     "import/resolver": {
       "node": {
-        "extensions": [".ts", ".tsx", ".js", ".jsx", ".json"]
+        "extensions": [
+          ".ts",
+          ".tsx",
+          ".js",
+          ".jsx",
+          ".json"
+        ]
       }
     }
   },
   "rules": {
-    "react/jsx-tag-spacing": ["warn", {
-      "beforeSelfClosing": "never"
-    }],
+    "no-extra-parens": [
+      "warn",
+      "all",
+      {
+        "ignoreJSX": "all"
+      }
+    ],
+    "function-call-argument-newline": [
+      "warn",
+      "consistent"
+    ],
+    "react/jsx-closing-bracket-location": [
+      "warn",
+      "tag-aligned"
+    ],
+    "react/jsx-first-prop-new-line": [
+      "warn",
+      "multiline-multiprop"
+    ],
+    "react/jsx-wrap-multilines": [
+      "warn",
+      {
+        "declaration": "parens-new-line",
+        "assignment": "parens-new-line",
+        "return": "parens-new-line",
+        "arrow": "parens-new-line",
+        "condition": "parens-new-line",
+        "logical": "parens-new-line",
+        "prop": "parens-new-line"
+      }
+    ],
+    "react/jsx-max-props-per-line": [
+      "warn",
+      {
+        "maximum": 1,
+        "when": "multiline"
+      }
+    ],
+    "indent": [
+      "warn",
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "react/jsx-indent": [
+      "warn",
+      2
+    ],
+    "react/jsx-indent-props": [
+      "warn",
+      2
+    ],
+    "react/jsx-tag-spacing": [
+      "warn",
+      {
+        "beforeSelfClosing": "never"
+      }
+    ],
+    "multiline-ternary": [
+      "warn",
+      "always-multiline"
+    ],
+    "operator-linebreak": [
+      "warn",
+      "after"
+    ],
+    "no-unneeded-ternary": "error",
+    "no-unused-expressions": "warn",
+    "no-unused-vars": "warn",
+    "no-unused-labels": "warn",
     "no-undef": "error",
-    "comma-dangle": ["warn", "always-multiline"],
-    "no-multiple-empty-lines": ["warn", { "max": 1, "maxEOF": 1, "maxBOF": 0}],
-    "eol-last": ["warn", "always"],
-    "semi": ["warn", "never"],
-    "quotes": ["error", "double", { "avoidEscape": true }],
-    "jsx-quotes": ["error", "prefer-double"],
+    "comma-dangle": [
+      "warn",
+      {
+        "arrays": "always-multiline",
+        "objects": "always-multiline",
+        "imports": "always-multiline",
+        "exports": "always-multiline",
+        "functions": "only-multiline"
+      }
+    ],
+    "function-paren-newline": [
+      "warn",
+      "consistent"
+    ],
+    "space-in-parens": [
+      "warn",
+      "never"
+    ],
+    "implicit-arrow-linebreak": [
+      "warn",
+      "beside"
+    ],
+    "no-multiple-empty-lines": [
+      "warn",
+      {
+        "max": 1,
+        "maxEOF": 1,
+        "maxBOF": 0
+      }
+    ],
+    "eol-last": [
+      "warn",
+      "always"
+    ],
+    "semi": [
+      "warn",
+      "never"
+    ],
+    "quotes": [
+      "error",
+      "double",
+      {
+        "avoidEscape": true
+      }
+    ],
+    "jsx-quotes": [
+      "error",
+      "prefer-double"
+    ],
     "prefer-template": "error",
     "no-useless-concat": "error",
     "no-template-curly-in-string": "error",
-    "quote-props": ["error", "as-needed"],
-    "object-curly-spacing": ["error", "never"],
-    "i18next/no-literal-string": ["error", {
-      "ignore": [
-        "-icon", "glyphicon",
-        ".svg", ".jpg", ".jpeg", ".png"
-      ],
-      "ignoreCallee": [
-        "t", "withTranslation", "useTranslation",
-        "reportEvent", "headerStyles",
-        "_.get", "_.pick", "_.has",
-        "api.get", "api.post",
-        "describe"
-      ],
-      "ignoreAttribute": [
-        "svgFile", "bounds", "handle", "column", "glyph", "value",
-        "style", "classNames", "className", "valueClassName", "rowClassName", "fieldType", "classNamePrefix"
-      ]
-    }]
+    "quote-props": [
+      "error",
+      "as-needed"
+    ],
+    "object-curly-spacing": [
+      "error",
+      "never"
+    ],
+    "i18next/no-literal-string": [
+      "error",
+      {
+        "ignore": [
+          "-icon",
+          "glyphicon",
+          ".svg",
+          ".jpg",
+          ".jpeg",
+          ".png"
+        ],
+        "ignoreCallee": [
+          "t",
+          "withTranslation",
+          "useTranslation",
+          "reportEvent",
+          "headerStyles",
+          "_.get",
+          "_.pick",
+          "_.has",
+          "classNames",
+          "classnames",
+          "cn",
+          "api.get",
+          "api.post",
+          "describe"
+        ],
+        "ignoreAttribute": [
+          "svgFile",
+          "bounds",
+          "handle",
+          "column",
+          "glyph",
+          "value",
+          "style",
+          "classNames",
+          "className",
+          "valueClassName",
+          "rowClassName",
+          "fieldType",
+          "classNamePrefix"
+        ]
+      }
+    ]
   },
   "overrides": [
     {
-      "files": ["*.ts", "*.tsx"],
+      "files": [
+        "*.ts",
+        "*.tsx"
+      ],
       "parser": "@typescript-eslint/parser",
       "extends": [
         "plugin:import/typescript",

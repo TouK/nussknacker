@@ -2,9 +2,8 @@ package pl.touk.nussknacker.engine.definition
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.LazyParameter
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, RawParameterEditor, SimpleParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.process.ParameterConfig
 
 class EditorExtractorTest extends FunSuite with Matchers {
 
@@ -19,7 +18,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
   ) param: String) {}
 
   private def dualEditorAnnotatedLazy(@DualEditor(
-    simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+    simpleEditor = new SimpleEditor(`type` = SimpleEditorType.DATE_EDITOR),
     defaultMode = DualEditorMode.SIMPLE
   ) param: LazyParameter[String]) {}
 
@@ -59,7 +58,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
 
     EditorExtractor.extract(paramDualEditorLazyAnnotated) shouldBe
       Some(DualParameterEditor(
-        simpleEditor = StringParameterEditor,
+        simpleEditor = DateParameterEditor,
         defaultMode = DualEditorMode.SIMPLE
       ))
   }

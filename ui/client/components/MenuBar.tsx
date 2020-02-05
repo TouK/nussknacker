@@ -2,7 +2,6 @@ import _ from "lodash"
 import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {NavLink} from "react-router-dom"
-import {$TodoType} from "../actions/migrationTypes"
 import {AdminPage} from "../containers/AdminPage"
 import {Archive} from "../containers/Archive"
 import {EspApp} from "../containers/EspApp"
@@ -29,11 +28,11 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
 }
 
 type Props = {
-  app: typeof EspApp;
-  rightElement?: ReactNode;
-  leftElement?: ReactNode;
-  loggedUser: $TodoType;
-  featuresSettings: $TodoType;
+  app: typeof EspApp,
+  rightElement?: ReactNode,
+  leftElement?: ReactNode,
+  loggedUser: $TodoType,
+  featuresSettings: $TodoType,
 }
 
 const Spacer = () => <Flex flex={1}/>
@@ -49,34 +48,34 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
   const {t} = useTranslation()
 
   return (
-      <header>
-        <nav id="main-menu" className={`navbar navbar-default ${expanded ? "expanded" : "collapsed"}`}>
-          <Flex>
-            {leftElement}
-            <NavLink id="brand-name" className="navbar-brand" to={path}>
-              <span id="app-logo" className="vert-middle">{header}</span>
-            </NavLink>
-            {rightElement}
-            <Spacer/>
-            <button className="expand-button" onClick={() => setExpanded(!expanded)}>
-              <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
-            </button>
-            <ul id="menu-items" onClick={() => setExpanded(false)}>
-              <MenuItem path={Processes.path} title={t("menu.processes", "Processes")}/>
-              <MenuItem path={SubProcesses.path} title={t("menu.subProcesses", "Subprocesses")}/>
-              {showMetrics && <MenuItem path={Metrics.basePath} title={t("menu.metrics", "Metrics")}/>}
-              {showSearch && <MenuItem path={Search.path} title={t("menu.search", "Search")}/>}
-              {showSignals && <MenuItem path={Signals.path} title={t("menu.signals", "Signals")}/>}
-              <MenuItem path={Archive.path} title={t("menu.archive", "Archive")}/>
-              {showAdmin && <MenuItem path={AdminPage.path} title={t("menu.adminPage", "Admin")}/>}
-            </ul>
-          </Flex>
-        </nav>
-      </header>
+    <header>
+      <nav id="main-menu" className={`navbar navbar-default ${expanded ? "expanded" : "collapsed"}`}>
+        <Flex>
+          {leftElement}
+          <NavLink id="brand-name" className="navbar-brand" to={path}>
+            <span id="app-logo" className="vert-middle">{header}</span>
+          </NavLink>
+          {rightElement}
+          <Spacer/>
+          <button className="expand-button" onClick={() => setExpanded(!expanded)}>
+            <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
+          </button>
+          <ul id="menu-items" onClick={() => setExpanded(false)}>
+            <MenuItem path={Processes.path} title={t("menu.processes", "Processes")}/>
+            <MenuItem path={SubProcesses.path} title={t("menu.subProcesses", "Subprocesses")}/>
+            {showMetrics && <MenuItem path={Metrics.basePath} title={t("menu.metrics", "Metrics")}/>}
+            {showSearch && <MenuItem path={Search.path} title={t("menu.search", "Search")}/>}
+            {showSignals && <MenuItem path={Signals.path} title={t("menu.signals", "Signals")}/>}
+            <MenuItem path={Archive.path} title={t("menu.archive", "Archive")}/>
+            {showAdmin && <MenuItem path={AdminPage.path} title={t("menu.adminPage", "Admin")}/>}
+          </ul>
+        </Flex>
+      </nav>
+    </header>
   )
 }
 
-function MenuItem({title, path}: { title: string; path: string }) {
+function MenuItem({title, path}: { title: string, path: string }) {
   return <li key={title}><NavLink to={path}>{title}</NavLink></li>
 }
 

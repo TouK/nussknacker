@@ -213,7 +213,7 @@ class Visualization extends React.Component {
   }
 
   isNotThisCopyEvent(event, copyNodeElementId) {
-    return event == null || (event.target && event.target.id !== copyNodeElementId)
+    return event == null || event.target && event.target.id !== copyNodeElementId
   }
 
   successMessage(action, selectedNodes) {
@@ -227,10 +227,10 @@ class Visualization extends React.Component {
   }
 
   cutSelection = (event) => {
-    if (this.canCutSelection() ) {
+    if (this.canCutSelection()) {
       this.copySelection(event, false)
       const nodeIds = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
-          .map(node => node.id)
+        .map(node => node.id)
       this.props.actions.deleteNodes(nodeIds)
       this.props.notificationActions.success(this.successMessage("Cut", nodeIds))
     }
@@ -333,7 +333,7 @@ class Visualization extends React.Component {
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          {!_.isEmpty(this.props.processDefinitionData) && <Graph ref={this.graphRef} capabilities={this.props.capabilities}/>}
+          {!_.isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
         </SpinnerWrapper>
       </div>
     )
@@ -345,9 +345,9 @@ Visualization.header = "Visualization"
 
 function mapState(state) {
   const processCategory = _.get(state, "graphReducer.fetchedProcessDetails.processCategory")
-  const canDelete = state.ui.allModalsClosed
-    && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
-    && state.settings.loggedUser.canWrite(processCategory)
+  const canDelete = state.ui.allModalsClosed &&
+      !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
+      state.settings.loggedUser.canWrite(processCategory)
   const loggedUser = state.settings.loggedUser
   const isArchived = _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
   return {
