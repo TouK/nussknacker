@@ -47,7 +47,7 @@ export enum editorTypes {
   DUAL_PARAMETER_EDITOR = "DualParameterEditor",
 }
 
-const simpleEditorValidators = (param: $TodoType, errors: Array<$TodoType>, fieldLabel: String): Array<Validator> =>
+const simpleEditorValidators = (param: $TodoType, errors: Array<$TodoType>, fieldLabel: string): Array<Validator> =>
   _.concat(
     param === undefined ?
       validators[validatorType.NOT_EMPTY_VALIDATOR]() :

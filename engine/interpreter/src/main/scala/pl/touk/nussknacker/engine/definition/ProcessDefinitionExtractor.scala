@@ -77,19 +77,9 @@ object ProcessDefinitionExtractor {
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
 
+    import pl.touk.nussknacker.engine.util.config.FicusReaders._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-    import net.ceedubs.ficus.readers.ValueReader
-
-    implicit val paramEditorReader: ValueReader[ParameterEditor] = ValueReader.relative(config => {
-      val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-      CirceUtil.decodeJsonUnsafe[ParameterEditor](json, "invalid parameter editor config")
-    })
-
-    implicit val paramValidatorReader: ValueReader[ParameterValidator] = ValueReader.relative(config => {
-      val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-      CirceUtil.decodeJsonUnsafe[ParameterValidator](json, "invalid parameter validator config")
-    })
 
     processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
   }
