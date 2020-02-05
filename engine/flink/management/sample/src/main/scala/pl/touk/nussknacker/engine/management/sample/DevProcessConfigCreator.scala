@@ -181,9 +181,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "multipleParamsService" -> all(MultipleParamsService)
         .withNodeConfig(SingleNodeConfig.zero.copy(
           params = Some(Map(
-            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), Some(List(MandatoryValueValidator))),
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None),
             "bar" -> ParameterConfig(None, Some(StringParameterEditor), None),
-            "baz" -> ParameterConfig(None, Some(StringParameterEditor), Some(List(MandatoryValueValidator)))
+            "baz" -> ParameterConfig(None, Some(StringParameterEditor), None)
           )))
         ),
       "complexReturnObjectService" -> all(ComplexReturnObjectService),
@@ -193,8 +193,16 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "echoEnumService" -> all(EchoEnumService),
       // types
       "simpleTypesService"  -> all(new SimpleTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
-      "optionalTypesService"  -> all(new OptionalTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
-      "collectionTypesService"  -> all(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+      "optionalTypesService"  -> all(new OptionalTypesService)
+        .withNodeConfig(SingleNodeConfig.zero.copy(
+          category = Some("types"),
+          params = Some(Map(
+            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator))),
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator)))
+          ))
+        )),
+      "collectionTypesService"  -> all(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(
+        category = Some("types"))),
       "datesTypesService"  -> all(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types")))
     )
   }
@@ -438,9 +446,7 @@ object ComplexObject {
 
 case object MultipleParamsService extends Service {
   @MethodToInvoke
-  def invoke(@ParamName("foo")
-             @Nullable
-             foo: String,
+  def invoke(@ParamName("foo") foo: String,
              @ParamName("bar")
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
@@ -525,7 +531,9 @@ class OptionalTypesService extends Service with Serializable {
   @MethodToInvoke
   def invoke(@ParamName("scalaOptionParam") scalaOptionParam: Option[Int],
              @ParamName("javaOptionalParam") javaOptionalParam: Optional[Int],
-             @ParamName("nullableParam") @Nullable nullableParam: Int): Future[Unit] = {
+             @ParamName("nullableParam") @Nullable nullableParam: Int,
+             @ParamName("overriddenByDevConfigParam") overriddenByDevConfigParam: Option[String],
+             @ParamName("overriddenByFileConfigParam") overriddenByFileConfigParam: Option[String]): Future[Unit] = {
     ???
   }
 }

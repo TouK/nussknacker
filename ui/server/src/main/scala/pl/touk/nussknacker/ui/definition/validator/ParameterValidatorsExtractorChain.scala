@@ -5,6 +5,9 @@ import pl.touk.nussknacker.engine.api.process.ParameterConfig
 
 object ParameterValidatorsExtractorChain {
 
+  /**
+   * Caution! File configuration completely overwrites any other validators configuration
+   */
   def apply(parameterConfig: ParameterConfig): ParameterValidatorsExtractorChain = {
     val strategies = Seq(
       new ParameterConfigValidatorsExtractor(parameterConfig),

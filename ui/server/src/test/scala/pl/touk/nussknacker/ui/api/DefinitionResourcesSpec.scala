@@ -255,11 +255,11 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
-  it("return NotEmptyValidator by default") {
+  it("return mandatory value validator by default") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
+      val validator: Json = responseAs[Json].hcursor
         .downField("streaming")
         .downField("datesTypesService")
         .downField("parameters")
@@ -267,15 +267,15 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
         .downField("validators")
         .focus.get
 
-      editor shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
     }
   }
 
-  it("not return NotEmptyValidator for parameter marked with @Nullable") {
+  it("not return mandatory value validator for parameter marked with @Nullable") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
+      val validator: Json = responseAs[Json].hcursor
         .downField("streaming")
         .downField("optionalTypesService")
         .downField("parameters")
@@ -283,7 +283,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
         .downField("validators")
         .focus.get
 
-      editor shouldBe Json.arr()
+      validator shouldBe Json.arr()
     }
   }
 
@@ -291,15 +291,15 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
+      val validator: Json = responseAs[Json].hcursor
         .downField("streaming")
-        .downField("multipleParamsService")
+        .downField("optionalTypesService")
         .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "foo")
+        .downAt(_.hcursor.get[String]("name").right.value == "overriddenByDevConfigParam")
         .downField("validators")
         .focus.get
 
-      editor shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
     }
   }
 
@@ -307,15 +307,15 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
+      val validator: Json = responseAs[Json].hcursor
         .downField("streaming")
-        .downField("multipleParamsService")
+        .downField("optionalTypesService")
         .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "baz")
+        .downAt(_.hcursor.get[String]("name").right.value == "overriddenByFileConfigParam")
         .downField("validators")
         .focus.get
 
-      editor shouldBe Json.arr()
+      validator shouldBe Json.arr()
     }
   }
 }

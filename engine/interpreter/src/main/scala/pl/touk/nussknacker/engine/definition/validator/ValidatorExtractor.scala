@@ -4,8 +4,8 @@ import java.lang.reflect.Parameter
 
 import pl.touk.nussknacker.engine.api.definition.ParameterValidator
 
-trait ValidatorEvaluator {
+trait ValidatorExtractor {
 
-  def evaluate(p: Parameter): Option[ParameterValidator]
+  def extract(p: Parameter): Option[ParameterValidator]
 
 }
