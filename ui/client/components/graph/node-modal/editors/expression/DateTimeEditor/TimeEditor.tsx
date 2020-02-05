@@ -4,7 +4,6 @@ import {ExpressionObj} from "../types"
 import React from "react"
 import {isEmpty} from "lodash"
 import {DatepickerEditor, JavaTimeTypes, isParseable, DatepickerEditorProps} from "./DatepickerEditor"
-import moment from "moment"
 
 export function TimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
   const {i18n} = useTranslation()
@@ -18,10 +17,3 @@ TimeEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressi
     expressionObj.expression,
 )
 
-export function asLocalTimeString(m: moment.Moment) {
-  return i18next.t(
-      "expressions:LocalTime",
-      "T(java.time.LocalTime).parse('{{date, HH:mm:ss}}')",
-      {date: m.startOf("second")}, // eslint-disable-line i18next/no-literal-string
-  )
-}

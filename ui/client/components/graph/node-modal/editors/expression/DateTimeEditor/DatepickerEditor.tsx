@@ -6,12 +6,10 @@ import "react-datetime/css/react-datetime.css"
 import classNames from "classnames"
 import {useDebouncedCallback} from "use-debounce"
 import moment from "moment"
-import {asLocalDateString} from "./DateEditor"
-import {asLocalTimeString} from "./TimeEditor"
-import {asLocalDateTimeString} from "./DateTimeEditor"
 import {allValid, Validator} from "../../../../../../common/Validators"
 import ValidationLabels from "../../../../../modals/ValidationLabels"
 import i18next from "i18next"
+import * as ExpressionFormatter from "./dateExpresionFormats"
 
 /* eslint-disable i18next/no-literal-string */
 export enum JavaTimeTypes {
@@ -37,11 +35,11 @@ export type DatepickerEditorProps = {
 }
 
 const parse = ({expression}: ExpressionObj, expressionType: JavaTimeTypes): moment.Moment | null => {
-  const parseRegExp = i18next.t("expressions:date.parse.regExp", "^T\\(java\\.time\\..*\\)\\.parse\\(['\"](.*)['\"]\\)$")
-  const [fullString, date] = new RegExp(parseRegExp).exec(expression) || []
+  const parseRegExp = ExpressionFormatter.getParseRegExp()
+  const [fullString, date] = parseRegExp.exec(expression) || []
   const formats = expressionType === JavaTimeTypes.LOCAL_TIME ?
-    i18next.t("expressions:date.parse.timeOnlyFormat", "HH:mm:ss") :
-    i18next.t("expressions:date.parse.dateTimeFormat", "YYYY-MM-DDTHH:mm:ss")
+      ExpressionFormatter.getTimeOnlyFormat() :
+      ExpressionFormatter.getDateTimeFormat()
 
   return moment(date, formats) || null
 }
@@ -52,11 +50,11 @@ function format(value: string | moment.Moment, expressionType: JavaTimeTypes): s
   if (m.isValid()) {
     switch (expressionType) {
       case JavaTimeTypes.LOCAL_DATE_TIME:
-        return asLocalDateTimeString(m)
+        return ExpressionFormatter.createLocalDateTime(m)
       case JavaTimeTypes.LOCAL_DATE:
-        return asLocalDateString(m)
+        return ExpressionFormatter.createLocalDate(m)
       case JavaTimeTypes.LOCAL_TIME:
-        return asLocalTimeString(m)
+        return ExpressionFormatter.createLocalTime(m)
     }
   }
   return ""
@@ -79,18 +77,18 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
   const [value, setValue] = useState<string | moment.Moment>(moment(parse(expressionObj, expressionType)))
   const {expression} = expressionObj
   const [onChange] = useDebouncedCallback(
-    value => {
-      const date = format(value, expressionType)
-      onValueChange(date)
-    },
-    200,
+      value => {
+        const date = format(value, expressionType)
+        onValueChange(date)
+      },
+      200,
   )
 
   useEffect(
-    () => {
-      onChange(value)
-    },
-    [value],
+      () => {
+        onChange(value)
+      },
+      [value],
   )
 
   const isValid = allValid(validators, [expression])
@@ -100,36 +98,36 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
   ]
 
   return (
-    <div
-      className={className}
-    >
-      <DateTimePicker
-        onChange={setValue}
-        value={value}
-        inputProps={{
-          className: classNames([
-            "node-input",
-            showValidation && !isValid && "node-input-with-error",
-            isMarked && "marked",
-            editorFocused && "focused",
-            readOnly && "read-only",
-          ]),
-          readOnly,
-          disabled: readOnly,
-        }}
-        locale={i18n.language}
-        {...other}
-      />
-      {showValidation && (
-        <ValidationLabels
-          validators={[
-            ...localValidators,
-            ...validators,
-          ]}
-          values={[expression]}
+      <div
+          className={className}
+      >
+        <DateTimePicker
+            onChange={setValue}
+            value={value}
+            inputProps={{
+              className: classNames([
+                "node-input",
+                showValidation && !isValid && "node-input-with-error",
+                isMarked && "marked",
+                editorFocused && "focused",
+                readOnly && "read-only",
+              ]),
+              readOnly,
+              disabled: readOnly,
+            }}
+            locale={i18n.language}
+            {...other}
         />
-      )}
-    </div>
+        {showValidation && (
+            <ValidationLabels
+                validators={[
+                  ...localValidators,
+                  ...validators,
+                ]}
+                values={[expression]}
+            />
+        )}
+      </div>
   )
 }
 
