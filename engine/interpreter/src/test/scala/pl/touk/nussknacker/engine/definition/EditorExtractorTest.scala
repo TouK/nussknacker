@@ -13,7 +13,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
   private def dualEditorAnnotated(@DualEditor(
     simpleEditor = new SimpleEditor(
       `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-      possibleValues = Array(new LabeledExpression(expression = "test", label = "test2"))
+      possibleValues = Array(new LabeledExpression(expression = "'test'", label = "test2"))
     ),
     defaultMode = DualEditorMode.SIMPLE
   ) param: String) {}
@@ -52,7 +52,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
     EditorExtractor.extract(paramDualEditorAnnotated) shouldBe
       Some(DualParameterEditor(
         simpleEditor = FixedValuesParameterEditor(
-          possibleValues = List(FixedExpressionValue("test", "test2"))
+          possibleValues = List(FixedExpressionValue("'test'", "test2"))
         ),
         defaultMode = DualEditorMode.SIMPLE
       ))

@@ -353,9 +353,9 @@ case object OneParamService extends Service {
   def invoke(@SimpleEditor(
                `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                possibleValues = Array(
-                 new LabeledExpression(expression = "a", label = "a"),
-                 new LabeledExpression(expression = "b", label = "b"),
-                 new LabeledExpression(expression = "c", label = "c")
+                 new LabeledExpression(expression = "'a'", label = "a"),
+                 new LabeledExpression(expression = "'b'", label = "b"),
+                 new LabeledExpression(expression = "'c'", label = "c")
                )
              )
              @ParamName("param") param: String) = Future.successful(param)
@@ -510,7 +510,7 @@ class SimpleTypesService extends Service with Serializable {
              @ParamName("fixedValuesStringParam")
              @SimpleEditor(
                `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-               possibleValues = Array(new LabeledExpression(expression = "Max", label = "Max"), new LabeledExpression(expression = "Min", label = "Min"))
+               possibleValues = Array(new LabeledExpression(expression = "'Max'", label = "Max"), new LabeledExpression(expression = "'Min'", label = "Min"))
              ) fixedValuesStringParam: String,
 
              @ParamName("bigDecimalParam") bigDecimalParam: java.math.BigDecimal,

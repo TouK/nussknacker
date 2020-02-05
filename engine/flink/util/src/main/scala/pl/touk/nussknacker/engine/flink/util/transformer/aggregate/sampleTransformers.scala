@@ -18,10 +18,10 @@ object sampleTransformers {
                 @SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
-                    new LabeledExpression(expression = "Max", label = "Max"),
-                    new LabeledExpression(expression = "Min", label = "Min"),
-                    new LabeledExpression(expression = "ApproximateSetCardinality", label = "ApproximateSetCardinality"),
-                    new LabeledExpression(expression = "Set", label = "Set")
+                    new LabeledExpression(expression = "'Max'", label = "Max"),
+                    new LabeledExpression(expression = "'Min'", label = "Min"),
+                    new LabeledExpression(expression = "'ApproximateSetCardinality'", label = "ApproximateSetCardinality"),
+                    new LabeledExpression(expression = "'Set'", label = "Set")
                   )
                 )
                 @ParamName("aggregator") aggregatorType: String,
