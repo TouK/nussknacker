@@ -20,7 +20,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Failed -> List(ProcessActionType.Deploy),
-    SimpleStateStatus.Finished -> List(ProcessActionType.Deploy)
+    SimpleStateStatus.Finished -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.Error -> List(ProcessActionType.Deploy)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
@@ -34,10 +35,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "/assets/states/stopping-running-animated.svg",
     SimpleStateStatus.Failed -> "/assets/states/failed.svg",
     SimpleStateStatus.Finished -> "/assets/states/success.svg",
-    SimpleStateStatus.Error -> "/assets/states/error.svg",
-    SimpleStateStatus.ErrorShouldRunning -> "/assets/states/error.svg",
-    SimpleStateStatus.ErrorShouldNotBeDeployed -> "/assets/states/error.svg",
-    SimpleStateStatus.ErrorMismatchVersion -> "/assets/states/error.svg"
+    SimpleStateStatus.Error -> "/assets/states/error.svg"
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
@@ -51,10 +49,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with checking state of process..",
     SimpleStateStatus.Finished -> "The process completed successfully.",
-    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process!",
-    SimpleStateStatus.ErrorShouldRunning -> "Process deployed in version %s (by %s), but currently is not working!",
-    SimpleStateStatus.ErrorShouldNotBeDeployed -> "Process deployed in version %s (by %s}), should not be deployed!",
-    SimpleStateStatus.ErrorMismatchVersion -> "Process deployed in version %s (by %s), expected version %s!"
+    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process!"
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
@@ -68,14 +63,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "Process is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with process..",
     SimpleStateStatus.Finished -> "Process has been successfully finished job.",
-    SimpleStateStatus.Error -> "There are some errors with process!",
-    SimpleStateStatus.ErrorShouldRunning -> "Process currently is not working!",
-    SimpleStateStatus.ErrorShouldNotBeDeployed -> "Process should not be deployed!",
-    SimpleStateStatus.ErrorMismatchVersion -> "Process mismatch version!"
+    SimpleStateStatus.Error -> "There are some errors with process!"
   )
-
-  override def statusTooltip(stateStatus: StateStatus): Option[String] =
-    statusTooltipsMap.get(stateStatus)
 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
     statusIconsMap.get(stateStatus).map(URI.create)
@@ -88,6 +77,24 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
       .map(sa => actionStatusMap.getOrElse(sa, SimpleStateStatus.Unknown))
       .getOrElse(SimpleStateStatus.NotDeployed)
 
+  override def statusTooltip(stateStatus: StateStatus): Option[String] =
+    statusTooltipsMap.get(stateStatus)
+
+  def errorShouldRunningTooltip(deployedVersionId: Long, user: String): String =
+    s"Process deployed in version ${deployedVersionId.toString} (by ${user}), but currently is not running!"
+
+  def errorShouldNotBeDeployedTooltip(deployedVersionId: Long, user: String): String =
+    s"Process deployed in version ${deployedVersionId.toString} (by ${user}), should not be deployed!"
+
+  def errorMismatchDeployedVersionTooltip(deployedVersionId: Long, exceptedVersionId: Long, user: String): String =
+    s"Process deployed in version ${deployedVersionId.toString} (by ${user}), expected version ${exceptedVersionId.toString}!"
+
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsMap.get(stateStatus)
+
+  def errorShouldRunningDescription: String = "Process currently is not running!"
+
+  def errorShouldNotBeDeployedDescription: String = "Process should not be deployed!"
+
+  def errorMismatchDeployedVersionDescription: String = "Deployed process mismatch version!"
 }

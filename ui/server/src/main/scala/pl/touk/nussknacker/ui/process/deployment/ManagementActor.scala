@@ -120,30 +120,24 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleObsoleteStatus(processStateDefinitionManager: ProcessStateDefinitionManager, processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessStatus =
     (processState, lastAction) match {
-      case (Some(state), _)  => handleMismatchStateVersion(processStateDefinitionManager, state, lastAction)
-      case (None, Some(action)) if action.isCanceled => ProcessStatus(SimpleStateStatus.Canceled, processStateDefinitionManager)
-      case (None, Some(act)) if act.isDeployed => ProcessStatus.error(
-        SimpleStateStatus.ErrorShouldRunning, processStateDefinitionManager, act.user, act.processVersionId
-      )
-      case (None, None) => ProcessStatus(SimpleStateStatus.NotDeployed, processStateDefinitionManager)
+      case (Some(state), _)  => handleMismatchStateVersion(state, lastAction)
+      case (None, Some(act)) if act.isCanceled => ProcessStatus.simple(SimpleStateStatus.Canceled)
+      case (None, Some(act)) if act.isDeployed => ProcessStatus.simpleErrorShouldRunning(act.processVersionId, act.user, Option.empty)
+      case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
     }
 
   //This method handles some corner cases for mismatch states version
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleMismatchStateVersion(processStateDefinitionManager: ProcessStateDefinitionManager, processState: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus = {
+  private def handleMismatchStateVersion(processState: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus = {
     (processState.version, lastAction) match {
-      case (Some(sv), Some(act)) if act.isDeployed && sv.versionId != act.processVersionId => ProcessStatus.error(
-        SimpleStateStatus.ErrorMismatchVersion, processStateDefinitionManager, act.user, act.processVersionId, Option(processState), Option(sv.versionId)
-      )
-      case (Some(_), Some(act)) if act.isDeployed && !processState.status.isFollowingDeployAction => ProcessStatus.error(
-        SimpleStateStatus.ErrorShouldRunning, processStateDefinitionManager, act.user, act.processVersionId, Option(processState)
-      )
+      case (Some(sv), Some(act)) if act.isDeployed && sv.versionId != act.processVersionId =>
+        ProcessStatus.simpleErrorMismatchDeployedVersion(act.processVersionId, sv.versionId, act.user, Some(processState))
+      case (Some(_), Some(act)) if act.isDeployed && !processState.status.isFollowingDeployAction =>
+        ProcessStatus.simpleErrorShouldRunning(act.processVersionId, act.user, Some(processState))
+      case (Some(version), None) if processState.isDeployed =>
+        ProcessStatus.simpleErrorShouldNotBeDeployed(version.versionId, version.user, Some(processState))
       case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId =>
         ProcessStatus(processState)
-      case (Some(sv), None) if processState.isDeployed => ProcessStatus.error(
-        SimpleStateStatus.ErrorShouldNotBeDeployed, processStateDefinitionManager, sv.user, sv.versionId, Option(processState)
-      )
-      case _ => ProcessStatus(processState)
     }
   }
 
