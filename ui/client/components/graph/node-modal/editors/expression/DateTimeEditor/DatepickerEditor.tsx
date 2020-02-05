@@ -33,12 +33,12 @@ export type DatepickerEditorProps = {
   editorFocused: boolean,
   expressionType: JavaTimeTypes,
   dateFormat: string,
-  timeFormat?: string,
+  timeFormat?: string | boolean,
 }
 
 const parse = ({expression}: ExpressionObj, expressionType: JavaTimeTypes): moment.Moment | null => {
-  const parseRegExp = i18next.t("expressions:date.parse.regExp", "^T\\(java\\.time\\.(.*)\\)\\.parse\\(['\"](.*)['\"]\\)$")
-  const [fullString, type, date] = new RegExp(parseRegExp).exec(expression) || []
+  const parseRegExp = i18next.t("expressions:date.parse.regExp", "^T\\(java\\.time\\..*\\)\\.parse\\(['\"](.*)['\"]\\)$")
+  const [fullString, date] = new RegExp(parseRegExp).exec(expression) || []
   const formats = expressionType === JavaTimeTypes.LOCAL_TIME ?
     i18next.t("expressions:date.parse.timeOnlyFormat", "HH:mm:ss") :
     i18next.t("expressions:date.parse.dateTimeFormat", "YYYY-MM-DDTHH:mm:ss")
