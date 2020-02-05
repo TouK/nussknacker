@@ -19,8 +19,8 @@ class AlertService(alertFile: String) extends Service with TimeMeasuringService 
              @SimpleEditor(
                `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                possibleValues = Array(
-                 new LabeledExpression(expression = "warning", label = "warning"),
-                 new LabeledExpression(expression = "alert", label = "alert")
+                 new LabeledExpression(expression = "'warning'", label = "warning"),
+                 new LabeledExpression(expression = "'alert'", label = "alert")
                )
              )
              category: String)
