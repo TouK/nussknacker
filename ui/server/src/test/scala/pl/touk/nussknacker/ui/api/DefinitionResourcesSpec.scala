@@ -267,7 +267,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
         .downField("validators")
         .focus.get
 
-      editor shouldBe Json.arr(Json.obj("type" -> Json.fromString("NotEmptyValidator")))
+      editor shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
     }
   }
 
@@ -299,7 +299,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
         .downField("validators")
         .focus.get
 
-      editor shouldBe Json.arr(Json.obj("type" -> Json.fromString("NotEmptyValidator")))
+      editor shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
     }
   }
 

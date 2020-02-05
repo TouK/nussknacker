@@ -8,7 +8,7 @@ import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import * as JsonUtils from "../../../common/JsonUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
-import {allValid, errorValidator, notEmptyValidator} from "./editors/Validators"
+import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
 import Variable from "./../node-modal/Variable"
@@ -180,13 +180,13 @@ export class NodeDetailsContent extends React.Component {
       case "SubprocessOutputDefinition":
         return (
             <div className="node-table-body">
-              {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+              {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
               {this.createField(
                   "input",
                   "Output name",
                   "outputName",
                   false,
-                  [notEmptyValidator, errorValidator(fieldErrors, "outputName")],
+                  [mandatoryValueValidator, errorValidator(fieldErrors, "outputName")],
               )}
               {this.descriptionField()}
             </div>
@@ -194,7 +194,7 @@ export class NodeDetailsContent extends React.Component {
       case "Filter":
         return (
             <div className="node-table-body">
-              {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+              {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
               {this.createExpressionField(
                   "expression",
                   "Expression",
@@ -209,7 +209,7 @@ export class NodeDetailsContent extends React.Component {
       case "Processor":
         return (
             <div className="node-table-body">
-              {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+              {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
               {this.state.editedNode.service.parameters.map((param, index) => {
                 return (
                     <div className="node-block" key={this.props.node.id + param.name + index}>
@@ -227,7 +227,7 @@ export class NodeDetailsContent extends React.Component {
                   "Output",
                   "output",
                   false,
-                  [notEmptyValidator, errorValidator(fieldErrors, "output")],
+                  [mandatoryValueValidator, errorValidator(fieldErrors, "output")],
               ) : null}
               {this.props.node.type === "Processor" ? this.createField("checkbox", "Disabled", "isDisabled") : null}
               {this.descriptionField()}
@@ -236,7 +236,7 @@ export class NodeDetailsContent extends React.Component {
       case "SubprocessInput":
         return (
             <div className="node-table-body">
-              {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+              {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
               {this.createField("checkbox", "Disabled", "isDisabled")}
               <ParameterList
                   processDefinitionData={this.props.processDefinitionData}
@@ -267,7 +267,7 @@ export class NodeDetailsContent extends React.Component {
       case "CustomNode":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
 
             {
               this.showOutputVar && this.createField(
@@ -275,7 +275,7 @@ export class NodeDetailsContent extends React.Component {
                 "Output",
                 "outputVar",
                 false,
-                [notEmptyValidator, errorValidator(fieldErrors, "outputVar")],
+                [mandatoryValueValidator, errorValidator(fieldErrors, "outputVar")],
                 "outputVar",
                 false,
                 null,
@@ -332,21 +332,21 @@ export class NodeDetailsContent extends React.Component {
       case "Switch":
         return (
             <div className="node-table-body">
-              {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+              {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
               {this.createExpressionField(
                   "expression",
                   "Expression",
                   "expression",
                 fieldErrors
               )}
-              {this.createField("input", "exprVal", "exprVal", false, [notEmptyValidator, errorValidator(fieldErrors, "exprVal")])}
+              {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
               {this.descriptionField()}
             </div>
         )
       case "Split":
         return (
             <div className="node-table-body">
-              {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "id")])}
+              {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
               {this.descriptionField()}
             </div>
         )
@@ -511,7 +511,7 @@ export class NodeDetailsContent extends React.Component {
   sourceSinkCommon(toAppend, fieldErrors) {
     return (
         <div className="node-table-body">
-          {this.createField("input", "Name", "id", true, [notEmptyValidator, errorValidator(fieldErrors, "Id")])}
+          {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "Id")])}
           {this.state.editedNode.ref.parameters.map((param, index) => {
             return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>

@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
-import {notEmptyValidator} from "../Validators"
+import {mandatoryValueValidator} from "../Validators"
 import MapKey from "./MapKey"
 import MapValue from "./MapValue"
 
@@ -11,7 +11,7 @@ export default function MapRow(props) {
     <div className="node-row movable-row">
       <MapKey rowKey={field}
               showValidation={showValidation}
-              validators={[notEmptyValidator]}
+              validators={[mandatoryValueValidator]}
               autofocus={false}
               isMarked={isMarked(paths)}
               readOnly={readOnly}

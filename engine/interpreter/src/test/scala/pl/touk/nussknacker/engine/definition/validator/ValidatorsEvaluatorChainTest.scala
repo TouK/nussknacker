@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import javax.annotation.Nullable
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.NotEmptyValidator
+import pl.touk.nussknacker.engine.api.definition.MandatoryValueValidator
 
 class ValidatorsEvaluatorChainTest extends FunSuite with Matchers {
 
@@ -20,7 +20,7 @@ class ValidatorsEvaluatorChainTest extends FunSuite with Matchers {
   }
 
   test("evaluate not empty validator by default") {
-    ValidatorsEvaluatorChain.evaluate(notAnnotatedParam) shouldBe Some(List(NotEmptyValidator))
+    ValidatorsEvaluatorChain.evaluate(notAnnotatedParam) shouldBe Some(List(MandatoryValueValidator))
   }
 
   test("evaluate not empty validator to none when @Nullable annotation detected") {

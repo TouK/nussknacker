@@ -1,7 +1,7 @@
 import _ from "lodash"
 
 export enum validatorType {
-  NOT_EMPTY_VALIDATOR = "NotEmptyValidator",
+  MANDATORY_VALUE_VALIDATOR = "MandatoryValueValidator",
   ERROR_VALIDATOR = "ErrorValidator",
 }
 
@@ -19,7 +19,7 @@ export const errorValidator = (errors, fieldName) => ({
   description: error(errors, fieldName)?.description,
 })
 
-export const notEmptyValidator: Validator = {
+export const mandatoryValueValidator: Validator = {
   isValid: value => !_.isEmpty(value),
   message: "This field cannot be empty",
   description: "This field cannot be empty",
@@ -30,6 +30,6 @@ export function allValid(validators: Array<Validator>, values: Array<any>): bool
 }
 
 export const validators: Record<validatorType, Function> = {
-  [validatorType.NOT_EMPTY_VALIDATOR]: () => notEmptyValidator,
+  [validatorType.MANDATORY_VALUE_VALIDATOR]: () => mandatoryValueValidator,
   [validatorType.ERROR_VALIDATOR]: (errors, fieldName) => errorValidator(errors, fieldName),
 }

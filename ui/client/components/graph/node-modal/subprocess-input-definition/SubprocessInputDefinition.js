@@ -5,7 +5,7 @@ import {connect} from "react-redux"
 import {v4 as uuid4} from "uuid"
 import ActionsUtils from "../../../../actions/ActionsUtils"
 import ProcessUtils from "../../../../common/ProcessUtils"
-import {errorValidator, notEmptyValidator} from "../editors/Validators"
+import {errorValidator, mandatoryValueValidator} from "../editors/Validators"
 import LabeledInput from "../editors/field/LabeledInput"
 import LabeledTextarea from "../editors/field/LabeledTextarea"
 import FieldsSelect from "./FieldsSelect"
@@ -54,7 +54,7 @@ class SubprocessInputDefinition extends React.Component {
                       isMarked={isMarked("id")}
                       readOnly={readOnly}
                       showValidation={showValidation}
-                      validators={[notEmptyValidator, errorValidator(errors, "Id")]}/>
+                      validators={[mandatoryValueValidator, errorValidator(errors, "Id")]}/>
 
         <FieldsSelect label="Parameters"
                       onChange={onChange}

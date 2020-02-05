@@ -6,7 +6,7 @@ import Modal from "react-modal"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import EspModalStyles from "../common/EspModalStyles"
-import {notEmptyValidator} from "./graph/node-modal/editors/Validators"
+import {mandatoryValueValidator} from "./graph/node-modal/editors/Validators"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 
 import history from "../history"
@@ -120,8 +120,8 @@ const nameAlreadyExists = (clashedNames, name) => {
 
 const validators = [
   {
-    isValid: (clashedNames, name) => notEmptyValidator.isValid(name),
-    message: notEmptyValidator.message,
+    isValid: (clashedNames, name) => mandatoryValueValidator.isValid(name),
+    message: mandatoryValueValidator.message,
   },
   {
     isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),

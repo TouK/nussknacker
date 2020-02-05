@@ -22,7 +22,7 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, NotEmptyValidator, Parameter, RawParameterEditor, ServiceWithExplicitMethod, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, MandatoryValueValidator, Parameter, RawParameterEditor, ServiceWithExplicitMethod, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.editor._
@@ -181,9 +181,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "multipleParamsService" -> all(MultipleParamsService)
         .withNodeConfig(SingleNodeConfig.zero.copy(
           params = Some(Map(
-            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), Some(List(NotEmptyValidator))),
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), Some(List(MandatoryValueValidator))),
             "bar" -> ParameterConfig(None, Some(StringParameterEditor), None),
-            "baz" -> ParameterConfig(None, Some(StringParameterEditor), Some(List(NotEmptyValidator)))
+            "baz" -> ParameterConfig(None, Some(StringParameterEditor), Some(List(MandatoryValueValidator)))
           )))
         ),
       "complexReturnObjectService" -> all(ComplexReturnObjectService),

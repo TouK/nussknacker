@@ -2,7 +2,7 @@ import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import {v4 as uuid4} from "uuid"
-import {errorValidator, notEmptyValidator} from "./editors/Validators"
+import {errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import Map from "./editors/map/Map"
@@ -25,7 +25,7 @@ const MapVariable = (props) => {
                     isMarked={isMarked("id")}
                     readOnly={readOnly}
                     showValidation={showValidation}
-                    validators={[notEmptyValidator, errorValidator(errors, "id")]}/>
+                    validators={[mandatoryValueValidator, errorValidator(errors, "id")]}/>
 
       <LabeledInput renderFieldLabel={() => renderFieldLabel("Variable Name")}
                     value={node.varName}
@@ -33,7 +33,7 @@ const MapVariable = (props) => {
                     isMarked={isMarked("varName")}
                     readOnly={readOnly}
                     showValidation={showValidation}
-                    validators={[notEmptyValidator, errorValidator(errors, "varName")]}/>
+                    validators={[mandatoryValueValidator, errorValidator(errors, "varName")]}/>
 
       <Map label="Fields"
            onChange={onChange}

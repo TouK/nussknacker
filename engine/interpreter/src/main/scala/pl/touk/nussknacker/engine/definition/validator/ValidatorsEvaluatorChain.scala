@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.definition.ParameterValidator
 
 object ValidatorsEvaluatorChain {
 
-  def evaluate(param: Parameter): Option[List[ParameterValidator]] = {
+  def evaluate(param: Parameter): List[ParameterValidator] = {
     val evaluators = Seq(NotEmptyValidatorEvaluator)
     new ValidatorsEvaluatorChain(evaluators).evaluate(param)
   }
@@ -14,8 +14,7 @@ object ValidatorsEvaluatorChain {
 
 class ValidatorsEvaluatorChain(evaluators: Iterable[ValidatorEvaluator]) {
 
-  def evaluate(parameter: Parameter): Option[List[ParameterValidator]] = {
-    Option(evaluators.flatMap(_.evaluate(parameter)).toList)
-      .filter(_.nonEmpty)
+  def evaluate(parameter: Parameter): List[ParameterValidator] = {
+    evaluators.flatMap(_.evaluate(parameter)).toList
   }
 }
