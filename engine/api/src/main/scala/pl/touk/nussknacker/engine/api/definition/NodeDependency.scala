@@ -5,9 +5,10 @@ import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.typed.typing.{ClassLike, Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
+import scala.reflect.ClassTag
 import scala.util.Try
 
 sealed trait NodeDependency
@@ -17,7 +18,7 @@ case class TypedNodeDependency(clazz: Class[_]) extends NodeDependency
 case object OutputVariableNameDependency extends NodeDependency
 
 object Parameter {
-  def apply(name: String, typ: ClassLike): Parameter = Parameter(name, typ, typ.klass)
+  def apply[T:ClassTag](name: String): Parameter = Parameter(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
 }
 
 case class Parameter(name: String,

@@ -6,10 +6,8 @@ import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, PropertyFromGetterExtractionStrategy, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{ClassLike, Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -37,7 +35,7 @@ object EspTypeUtils {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
-  def getGenericType(genericReturnType: Type): Option[ClassLike] = {
+  def getGenericType(genericReturnType: Type): Option[TypingResult] = {
     val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
     if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
     else None
@@ -114,7 +112,7 @@ object EspTypeUtils {
           class we pick arbitrary one (we sort to avoid randomness)
          */
         methodsForParams.find { case (_, MethodInfo(_, ret, _)) =>
-          methodsForParams.forall(mi => Typed(ret).canBeSubclassOf(Typed(mi._2.refClazz)))
+          methodsForParams.forall(mi => ret.canBeSubclassOf(mi._2.refClazz))
         }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
     }
   }
@@ -145,7 +143,7 @@ object EspTypeUtils {
     }.toMap
   }
 
-  private def getReturnClassForMethod(method: Method): ClassLike = {
+  private def getReturnClassForMethod(method: Method): TypingResult = {
     getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(TypedClass(method.getReturnType))
   }
 
@@ -162,13 +160,13 @@ object EspTypeUtils {
     Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
   }
 
-  private def getReturnClassForField(field: Field): ClassLike = {
+  private def getReturnClassForField(field: Field): TypingResult = {
     getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(TypedClass(field.getType))
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
   //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
-  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[ClassLike] = {
+  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[TypingResult] = {
     val rawType = genericMethodType.getRawType
 
     if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
@@ -186,7 +184,7 @@ object EspTypeUtils {
     else None
   }
 
-  private def extractClass(futureGenericType: Type): Option[ClassLike] = {
+  private def extractClass(futureGenericType: Type): Option[TypingResult] = {
     futureGenericType match {
       case t: Class[_] => Some(TypedClass(t))
       case t: ParameterizedTypeImpl => Some(extractGenericParams(t))
@@ -194,7 +192,7 @@ object EspTypeUtils {
     }
   }
 
-  private def extractGenericParams(paramsType: ParameterizedTypeImpl): ClassLike = {
+  private def extractGenericParams(paramsType: ParameterizedTypeImpl): TypingResult = {
     val rawType = paramsType.getRawType
     if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
       TypedClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))

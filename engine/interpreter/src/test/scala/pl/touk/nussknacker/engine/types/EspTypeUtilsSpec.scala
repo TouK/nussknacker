@@ -8,8 +8,7 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate, PropertyFromGetterExtractionStrategy, SuperClassPatternPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor._
@@ -52,10 +51,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val method = classOf[Returning].getMethod("futureOfList")
 
-    val extractedType = EspTypeUtils.getGenericType(method.getGenericReturnType).get
+    val extractedType = EspTypeUtils.getGenericType(method.getGenericReturnType).get.asInstanceOf[TypedClass]
 
     extractedType.klass shouldBe classOf[java.util.List[_]]
-    extractedType.typedClassUnsafe.params shouldBe List(TypedClass[SampleClass])
+    extractedType.params shouldBe List(TypedClass[SampleClass])
   }
 
   test("should extract public fields from scala case class") {
@@ -102,7 +101,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
           ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("get.*")),
           ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("is.*"))
         )))
-        val sampleClassInfo = infos.find(_.clazzName.klass.getName.contains(clazzName)).get
+        val sampleClassInfo = infos.find(_.clazzName.asInstanceOf[TypedClass].klass.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
           "toString" -> MethodInfo(List(), TypedClass[String], None),
@@ -222,14 +221,14 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   test("enabled by default classes") {
     val emptyDef = singleClassAndItsChildrenDefinition[EmptyClass]()
     // We want to use boxed primitive classes even if they wont be discovered in any place
-    val boxedIntDef = emptyDef.find(_.clazzName.klass == classOf[Integer])
+    val boxedIntDef = emptyDef.find(_.clazzName == Typed[Integer])
     boxedIntDef shouldBe defined
   }
 
   test("hidden by default classes") {
     val metaSpelDef = singleClassAndItsChildrenDefinition[ServiceWithMetaSpelParam]()
     // These params are used programmable - user can't create instance of this type
-    metaSpelDef.exists(_.clazzName.klass == classOf[SpelExpressionRepr]) shouldBe false
+    metaSpelDef.exists(_.clazzName == Typed[SpelExpressionRepr]) shouldBe false
   }
 
   test("should extract basic methods from standard collection types") {
@@ -269,7 +268,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   private def singleClassDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default): Option[ClazzDefinition] = {
     val ref = TypedClass.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.clazzName.klass == ref.klass)
+    clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.clazzName.asInstanceOf[TypedClass].klass == ref.asInstanceOf[TypedClass].klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default) = {

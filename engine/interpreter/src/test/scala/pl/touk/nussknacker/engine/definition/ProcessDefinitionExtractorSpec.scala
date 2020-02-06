@@ -30,7 +30,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   }
 
   test("extract type info from classes from additional variables") {
-    val classDefinition = processDefinition.typesInformation.find(_.clazzName.klass == classOf[OnlyUsedInAdditionalVariable])
+    val classDefinition = processDefinition.typesInformation.find(_.clazzName == Typed[OnlyUsedInAdditionalVariable])
       classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 
@@ -40,7 +40,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     definition.returnType shouldBe Typed[String]
     definition.methodDef.realReturnType shouldBe Typed.fromDetailedType[Future[String]]
 
-    definition.parameters shouldBe List(Parameter("param1", TypedClass[Int]))
+    definition.parameters shouldBe List(Parameter[Int]("param1"))
   }
 
   object TestCreator extends ProcessConfigCreator {
@@ -50,7 +50,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       )
 
     override def services(config: Config): Map[String, WithCategories[Service]] = Map(
-      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter("param1", TypedClass[Int])), Typed[String]), "cat")
+      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter[Int]("param1")), Typed[String]), "cat")
     )
 
     override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map()

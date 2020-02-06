@@ -660,7 +660,7 @@ object InterpreterSpec {
   object WithExplicitDefinitionService extends Service with ServiceWithExplicitMethod {
 
     override def parameterDefinition: List[api.definition.Parameter]
-      = List(api.definition.Parameter("param1", TypedClass[Long]))
+      = List(api.definition.Parameter[Long]("param1"))
 
 
     override def returnType: typing.TypingResult = Typed[String]

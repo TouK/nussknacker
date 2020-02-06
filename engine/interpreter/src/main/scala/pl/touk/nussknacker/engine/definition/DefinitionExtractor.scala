@@ -8,8 +8,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
-import pl.touk.nussknacker.engine.api.typed.TypeEncoders
-import pl.touk.nussknacker.engine.api.typed.typing.{ClassLike, Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -169,19 +168,14 @@ object DefinitionExtractor {
 }
 
 object TypeInfos {
+  
+  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypingResult)
 
-  implicit val typedClassEncoder: Encoder[ClassLike] = TypeEncoders.typingResultEncoder.contramap[ClassLike](_.asInstanceOf[ClassLike])
+  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String])
 
-  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: ClassLike)
+  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo]) {
 
-  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: ClassLike, description: Option[String])
-
-  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: ClassLike, methods: Map[String, MethodInfo]) {
-    def getMethodClazzRef(methodName: String): Option[ClassLike] = {
-      methods.get(methodName).map(_.refClazz)
-    }
-
-    def getPropertyOrFieldClazzRef(methodName: String): Option[ClassLike] = {
+    def getPropertyOrFieldClazzRef(methodName: String): Option[TypingResult] = {
       val filteredMethods = methods.filter(_._2.parameters.isEmpty)
       val methodInfoes = filteredMethods.get(methodName)
       methodInfoes.map(_.refClazz)

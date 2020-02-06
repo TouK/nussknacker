@@ -62,7 +62,7 @@ object CreateColumnModel {
     val DATE: TypedClass = TypedClass[Date]
     val LOCAL_DATE_TIME: TypedClass = TypedClass[LocalDateTime]
 
-    def convert(name: String, arg: ClassLike, className: String): Option[SqlType] = {
+    def convert(name: String, arg: TypingResult, className: String): Option[SqlType] = {
       import SqlType._
       arg match {
         case STRING =>

@@ -27,19 +27,9 @@ object typing {
 
   sealed trait KnownTypingResult extends TypingResult
 
-  sealed trait ClassLike extends TypingResult {
-
-    def klass: Class[_]
-
-    def typedClassUnsafe: TypedClass = this.asInstanceOf[TypedClass]
-
-  }
-
-  sealed trait SingleTypingResult extends KnownTypingResult with ClassLike {
+  sealed trait SingleTypingResult extends KnownTypingResult {
 
     def objType: TypedClass
-
-    override def klass: Class[_] = objType.klass
 
   }
 
@@ -85,13 +75,12 @@ object typing {
   }
 
   // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends ClassLike {
+  case object Unknown extends TypingResult {
 
     override def canHasAnyPropertyOrField: Boolean = true
 
     override val display = "unknown"
 
-    override def klass: Class[_] = classOf[Any]
   }
 
   // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
@@ -111,7 +100,7 @@ object typing {
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
-  case class TypedClass private (override val klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
+  case class TypedClass private (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
     override def canHasAnyPropertyOrField: Boolean =
       CanBeSubclassDeterminer.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
@@ -137,14 +126,14 @@ object typing {
     def apply[T: ClassTag] : TypedClass =
       apply(implicitly[ClassTag[T]].runtimeClass).asInstanceOf[TypedClass]
 
-    def apply(klass: Class[_]) : ClassLike =
+    def apply(klass: Class[_]) : TypingResult =
       if (klass == classOf[Any]) Unknown else TypedClass(klass, Nil)
 
     /*using TypeTag can give better description (with extracted generic parameters), however:
       - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
       - one should be *very* careful with TypeTag as it degrades performance significantly when on critical path (e.g. SpelExpression.evaluate)
      */
-    def fromDetailedType[T: TypeTag]: ClassLike = {
+    def fromDetailedType[T: TypeTag]: TypingResult = {
       val tag = typeTag[T]
       // is it correct mirror?
       implicit val mirror: Mirror = tag.mirror
@@ -164,7 +153,7 @@ object typing {
 
     def apply[T: ClassTag]: TypingResult = apply(TypedClass[T])
 
-    def fromDetailedType[T: TypeTag]: ClassLike = TypedClass.fromDetailedType[T]
+    def fromDetailedType[T: TypeTag]: TypingResult = TypedClass.fromDetailedType[T]
 
     def apply(klass: Class[_]): TypingResult = {
       TypedClass(klass)

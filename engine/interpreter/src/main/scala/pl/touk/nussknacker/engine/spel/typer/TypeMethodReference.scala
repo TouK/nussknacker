@@ -39,8 +39,8 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
       case Nil =>
         Right(Unknown)
       case _ =>
-        val isClass = clazzDefinitions.map(k => Typed(k.clazzName)).exists(_.canBeSubclassOf(Typed[Class[_]]))
-        val display = clazzDefinitions.map(k => Typed(k.clazzName)).map(_.display).mkString(", ")
+        val isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
+        val display = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
         clazzDefinitions.flatMap(_.methods.get(methodReference.getName)) match {
           //Static method can be invoked - we cannot find them ATM
           case Nil if isClass => Right(Unknown)
@@ -61,7 +61,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
         Right(typingResult)
     }
 
-  private def typeFromClazzRefs(clazzRefs: NonEmptyList[ClassLike]): TypingResult =
+  private def typeFromClazzRefs(clazzRefs: NonEmptyList[TypingResult]): TypingResult =
     Typed(clazzRefs.toList.toSet)
 
 }
