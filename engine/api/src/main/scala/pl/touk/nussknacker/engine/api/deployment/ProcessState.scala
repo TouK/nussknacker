@@ -7,6 +7,7 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 
+//@TODO: In future clean up it.
 trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
   def statusTooltip(stateStatus: StateStatus): Option[String]
@@ -104,4 +105,8 @@ final case class FinishedStateStatus(name: String) extends StateStatus {
 
 final case class RunningStateStatus(name: String) extends StateStatus {
   override def isRunning: Boolean = true
+}
+
+final case class ErrorStateStatus(name: String) extends StateStatus {
+  override def canDeploy: Boolean = true
 }

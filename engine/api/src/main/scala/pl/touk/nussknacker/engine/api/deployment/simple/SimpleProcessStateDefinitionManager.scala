@@ -20,7 +20,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Failed -> List(ProcessActionType.Deploy),
-    SimpleStateStatus.Finished -> List(ProcessActionType.Deploy)
+    SimpleStateStatus.Finished -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.Error -> List(ProcessActionType.Deploy)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
@@ -48,7 +49,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with checking state of process..",
     SimpleStateStatus.Finished -> "The process completed successfully.",
-    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process."
+    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process!"
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
@@ -62,11 +63,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "Process is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with process..",
     SimpleStateStatus.Finished -> "Process has been successfully finished job.",
-    SimpleStateStatus.Error -> "There are some errors with process.."
+    SimpleStateStatus.Error -> "There are some errors with process!"
   )
-
-  override def statusTooltip(stateStatus: StateStatus): Option[String] =
-    statusTooltipsMap.get(stateStatus)
 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
     statusIconsMap.get(stateStatus).map(URI.create)
@@ -79,6 +77,29 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
       .map(sa => actionStatusMap.getOrElse(sa, SimpleStateStatus.Unknown))
       .getOrElse(SimpleStateStatus.NotDeployed)
 
+  override def statusTooltip(stateStatus: StateStatus): Option[String] =
+    statusTooltipsMap.get(stateStatus)
+
+  def errorShouldRunningTooltip(deployedVersionId: Long, user: String): String =
+    s"Process deployed in version ${deployedVersionId} (by ${user}), should be running!"
+
+  def errorShouldNotBeRunningTooltip(deployedVersionId: Long, user: String): String =
+    s"Process deployed in version ${deployedVersionId} (by ${user}), should not be running!"
+
+  def errorMismatchDeployedVersionTooltip(deployedVersionId: Long, exceptedVersionId: Long, user: String): String =
+    s"Process deployed in version ${deployedVersionId} (by ${user}), expected version ${exceptedVersionId}!"
+
+  def errorMissingDeployedVersionTooltip(exceptedVersionId: Long, user: String): String =
+    s"Process deployed without version (by ${user}), expected version ${exceptedVersionId}!"
+
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsMap.get(stateStatus)
+
+  def errorShouldRunningDescription: String = "Process currently is not running!"
+
+  def errorShouldNotBeRunningDescription: String = "Process should not be running!"
+
+  def errorMismatchDeployedVersionDescription: String = "Deployed process mismatch version!"
+
+  def errorMissingDeployedVersionDescription: String = "Missing version of deployed process!"
 }
