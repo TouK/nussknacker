@@ -2,14 +2,15 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDeploymentProcessRepository, newProcessRepository, newWriteProcessRepository, newProcessActivityRepository, testCategoryName}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDeploymentProcessRepository, newProcessActivityRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.JobStatusService
@@ -76,20 +77,93 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
   }
 
-
   test("Should return canceled status for canceled process with not founded state - cleaned state") {
-    val id: process.ProcessId = prepareCanceledProcess(processName).futureValue
+    val id = prepareCanceledProcess(processName).futureValue
 
-    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(true)
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
-    processManager.withCleanedProcessState {
+    processManager.withNotFoundProcessState {
       jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
     }
 
     val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.lastAction should not be None
     processDetails.isCanceled shouldBe true
+  }
+
+  test("Should return state with error when state is running and process is canceled") {
+    val id =  prepareCanceledProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Running) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription)
+    }
+  }
+
+  test("Should return state with error when state is running and process is not deployed") {
+    val id = prepareProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Running) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription)
+    }
+  }
+
+  test("Should return state with error when state is not running and process is deployed") {
+    val id = prepareDeployedProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription)
+    }
+  }
+
+  test("Should return state with error when state is null and process is deployed") {
+    val id = prepareDeployedProcess(processName).futureValue
+
+    processManager.withNotFoundProcessState {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription)
+    }
+  }
+
+  test("Should return properly state when state is canceled and process is canceled") {
+    val id =  prepareCanceledProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
+    }
+  }
+
+  test("Should return error state when state is running and process is deployed with mismatch versions") {
+    val id =  prepareDeployedProcess(processName).futureValue
+    val version = Some(ProcessVersion(versionId = 2, processName = ProcessName(""), user = "", modelVersion = None))
+
+    processManager.withProcessStateVersion(SimpleStateStatus.Running, version) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionDescription)
+    }
+  }
+
+  test("Should return error state when state is running with empty version and process is deployed") {
+    val id =  prepareDeployedProcess(processName).futureValue
+
+    processManager.withProcessStateVersion(SimpleStateStatus.Running, Option.empty) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionDescription)
+    }
   }
 
   test("Should return not deployed status for process with not founded state - not deployed state") {

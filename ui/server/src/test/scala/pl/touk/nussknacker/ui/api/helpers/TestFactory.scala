@@ -94,16 +94,21 @@ object TestFactory extends TestPermissions{
 
     import MockProcessManager._
 
-    override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
-      managerProcessState.get().map(st => SimpleProcessState(DeploymentId("1"), st, Some(ProcessVersion.empty)))
-    )
+    private def prepareProcessState(status: StateStatus): Option[ProcessState ]=
+      prepareProcessState(status, Some(ProcessVersion.empty))
+
+    private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
+      Some(SimpleProcessState(DeploymentId("1"), status, version))
+
+    override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
+      Future.successful(managerProcessState.get())
 
     override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: User): Future[Unit] =
       deployResult
 
     private var deployResult: Future[Unit] = Future.successful()
 
-    private val managerProcessState = new AtomicReference[Option[StateStatus]](Some(SimpleStateStatus.Running))
+    private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(SimpleStateStatus.Running))
 
     def withWaitForDeployFinish[T](action: => T): T = {
       val promise = Promise[Unit]
@@ -127,19 +132,37 @@ object TestFactory extends TestPermissions{
 
     def withProcessFinished[T](action: => T): T = {
       try {
-        managerProcessState.set(Some(SimpleStateStatus.Finished))
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Finished))
         action
       } finally {
-        managerProcessState.set(Some(SimpleStateStatus.Running))
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
       }
     }
 
-    def withCleanedProcessState[T](action: => T): T = {
+    def withProcessStateStatus[T](status: StateStatus)(action: => T): T = {
+      try {
+        managerProcessState.set(prepareProcessState(status))
+        action
+      } finally {
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
+      }
+    }
+
+    def withProcessStateVersion[T](status: StateStatus, version: Option[ProcessVersion])(action: => T): T = {
+      try {
+        managerProcessState.set(prepareProcessState(status, version))
+        action
+      } finally {
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
+      }
+    }
+
+    def withNotFoundProcessState[T](action: => T): T = {
       try {
         managerProcessState.set(Option.empty)
         action
       } finally {
-        managerProcessState.set(Some(SimpleStateStatus.Canceled))
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
       }
     }
 
@@ -148,9 +171,10 @@ object TestFactory extends TestPermissions{
         managerProcessState.set(Option.empty)
         action
       } finally {
-        managerProcessState.set(Some(SimpleStateStatus.NotDeployed))
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
       }
     }
+
 
     override protected def cancel(job: ProcessState): Future[Unit] = Future.successful(Unit)
 

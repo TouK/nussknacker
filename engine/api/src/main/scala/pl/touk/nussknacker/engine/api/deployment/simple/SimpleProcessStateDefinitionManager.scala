@@ -81,10 +81,10 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     statusTooltipsMap.get(stateStatus)
 
   def errorShouldRunningTooltip(deployedVersionId: Long, user: String): String =
-    s"Process deployed in version ${deployedVersionId} (by ${user}), but currently is not running!"
+    s"Process deployed in version ${deployedVersionId} (by ${user}), should be running!"
 
-  def errorShouldNotBeDeployedTooltip(deployedVersionId: Long, user: String): String =
-    s"Process deployed in version ${deployedVersionId} (by ${user}), should not be deployed!"
+  def errorShouldNotBeRunningTooltip(deployedVersionId: Long, user: String): String =
+    s"Process deployed in version ${deployedVersionId} (by ${user}), should not be running!"
 
   def errorMismatchDeployedVersionTooltip(deployedVersionId: Long, exceptedVersionId: Long, user: String): String =
     s"Process deployed in version ${deployedVersionId} (by ${user}), expected version ${exceptedVersionId}!"
@@ -97,7 +97,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   def errorShouldRunningDescription: String = "Process currently is not running!"
 
-  def errorShouldNotBeDeployedDescription: String = "Process should not be deployed!"
+  def errorShouldNotBeRunningDescription: String = "Process should not be running!"
 
   def errorMismatchDeployedVersionDescription: String = "Deployed process mismatch version!"
 

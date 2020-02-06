@@ -83,9 +83,15 @@ object ProcessStatus {
     previousState = previousState
   )
 
-  def simpleErrorShouldNotBeDeployed(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeDeployedTooltip(deployedVersionId, user)),
-    description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeDeployedDescription),
+  def simpleErrorShouldNotBeRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningTooltip(deployedVersionId, user)),
+    description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
+    previousState = previousState
+  )
+
+  def simpleErrorShouldNotBeRunning(previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
+    description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
     previousState = previousState
   )
 

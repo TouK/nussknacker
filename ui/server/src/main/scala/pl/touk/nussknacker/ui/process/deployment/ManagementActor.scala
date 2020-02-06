@@ -132,16 +132,11 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
     lastAction match {
       case Some(action) if action.isCanceled =>
-        state.version match {
-          case Some(ver) =>
-            ProcessStatus.simpleErrorShouldNotBeDeployed(ver.versionId, ver.user, Option(state))
-          case None => //TODO: we should remove Option from ProcessVersion?
-            ProcessStatus.simpleErrorShouldNotBeDeployed(action.processVersionId, action.user, Option(state))
-        }
+        ProcessStatus.simpleErrorShouldNotBeRunning(Option(state))
       case Some(_) =>
         ProcessStatus(state)
       case None =>
-        ProcessStatus.simple(SimpleStateStatus.Error)
+        ProcessStatus.simpleErrorShouldNotBeRunning(Option(state))
     }
 
   //This method handles some corner cases for deployed action mismatch state version
@@ -150,8 +145,8 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
     processState match {
       case Some(state) =>
         state.version match {
-          case Some(ver) if !state.status.isFollowingDeployAction =>
-            ProcessStatus.simpleErrorShouldRunning(ver.versionId, action.user, processState)
+          case Some(_) if !state.status.isFollowingDeployAction =>
+            ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId != action.processVersionId =>
             ProcessStatus.simpleErrorMismatchDeployedVersion(ver.versionId, action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId == action.processVersionId =>
