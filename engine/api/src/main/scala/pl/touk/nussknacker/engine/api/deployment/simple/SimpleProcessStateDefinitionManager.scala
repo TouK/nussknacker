@@ -81,13 +81,16 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     statusTooltipsMap.get(stateStatus)
 
   def errorShouldRunningTooltip(deployedVersionId: Long, user: String): String =
-    s"Process deployed in version ${deployedVersionId.toString} (by ${user}), but currently is not running!"
+    s"Process deployed in version ${deployedVersionId} (by ${user}), but currently is not running!"
 
   def errorShouldNotBeDeployedTooltip(deployedVersionId: Long, user: String): String =
-    s"Process deployed in version ${deployedVersionId.toString} (by ${user}), should not be deployed!"
+    s"Process deployed in version ${deployedVersionId} (by ${user}), should not be deployed!"
 
   def errorMismatchDeployedVersionTooltip(deployedVersionId: Long, exceptedVersionId: Long, user: String): String =
-    s"Process deployed in version ${deployedVersionId.toString} (by ${user}), expected version ${exceptedVersionId.toString}!"
+    s"Process deployed in version ${deployedVersionId} (by ${user}), expected version ${exceptedVersionId}!"
+
+  def errorMissingDeployedVersionTooltip(exceptedVersionId: Long, user: String): String =
+    s"Process deployed without version (by ${user}), expected version ${exceptedVersionId}!"
 
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsMap.get(stateStatus)
@@ -97,4 +100,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   def errorShouldNotBeDeployedDescription: String = "Process should not be deployed!"
 
   def errorMismatchDeployedVersionDescription: String = "Deployed process mismatch version!"
+
+  def errorMissingDeployedVersionDescription: String = "Missing version of deployed process!"
 }

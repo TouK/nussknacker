@@ -16,7 +16,4 @@ object FlinkStateStatus  {
   val Canceled: StoppedStateStatus = SimpleStateStatus.Canceled
   val Failed: NotEstablishedStateStatus = SimpleStateStatus.Failed
   val Error: ErrorStateStatus = SimpleStateStatus.Error
-  val ErrorShouldRunning: ErrorStateStatus = SimpleStateStatus.ErrorShouldRunning
-  val ErrorShouldNotBeDeployed: ErrorStateStatus = SimpleStateStatus.ErrorShouldNotBeDeployed
-  val ErrorMismatchVersion: ErrorStateStatus = SimpleStateStatus.ErrorMismatchVersion
 }

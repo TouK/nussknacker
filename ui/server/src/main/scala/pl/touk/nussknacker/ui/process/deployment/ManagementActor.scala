@@ -88,7 +88,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state)
-      } yield Option(handleObsoleteStatus(manager.processStateDefinitionManager, state, actions.headOption))
+      } yield Option(handleObsoleteStatus(state, actions.headOption))
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
@@ -118,28 +118,52 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleObsoleteStatus(processStateDefinitionManager: ProcessStateDefinitionManager, processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessStatus =
+  private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessStatus =
     (processState, lastAction) match {
-      case (Some(state), _)  => handleMismatchStateVersion(state, lastAction)
-      case (None, Some(act)) if act.isCanceled => ProcessStatus.simple(SimpleStateStatus.Canceled)
-      case (None, Some(act)) if act.isDeployed => ProcessStatus.simpleErrorShouldRunning(act.processVersionId, act.user, Option.empty)
+      case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
+      case (Some(state), _) if state.status.isFollowingDeployAction => handleFollowingDeployState(state, lastAction)
+      case (None, Some(action)) if action.isCanceled => ProcessStatus.simple(SimpleStateStatus.Canceled)
+      case (Some(state), _) => ProcessStatus(state)
       case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
     }
 
-  //This method handles some corner cases for mismatch states version
+  //This method handles some corner cases for following deploy state mismatch last action version
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleMismatchStateVersion(processState: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus = {
-    (processState.version, lastAction) match {
-      case (Some(sv), Some(act)) if act.isDeployed && sv.versionId != act.processVersionId =>
-        ProcessStatus.simpleErrorMismatchDeployedVersion(act.processVersionId, sv.versionId, act.user, Some(processState))
-      case (Some(_), Some(act)) if act.isDeployed && !processState.status.isFollowingDeployAction =>
-        ProcessStatus.simpleErrorShouldRunning(act.processVersionId, act.user, Some(processState))
-      case (Some(version), None) if processState.isDeployed =>
-        ProcessStatus.simpleErrorShouldNotBeDeployed(version.versionId, version.user, Some(processState))
-      case (Some(stateVersion), Some(action)) if stateVersion.versionId == action.processVersionId =>
-        ProcessStatus(processState)
+  private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
+    lastAction match {
+      case Some(action) if action.isCanceled =>
+        state.version match {
+          case Some(ver) =>
+            ProcessStatus.simpleErrorShouldNotBeDeployed(ver.versionId, ver.user, Option(state))
+          case None => //TODO: we should remove Option from ProcessVersion?
+            ProcessStatus.simpleErrorShouldNotBeDeployed(action.processVersionId, action.user, Option(state))
+        }
+      case Some(_) =>
+        ProcessStatus(state)
+      case None =>
+        ProcessStatus.simple(SimpleStateStatus.Error)
     }
-  }
+
+  //This method handles some corner cases for deployed action mismatch state version
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleMismatchDeployedLastAction(processState: Option[ProcessState], action: ProcessAction): ProcessStatus =
+    processState match {
+      case Some(state) =>
+        state.version match {
+          case Some(ver) if !state.status.isFollowingDeployAction =>
+            ProcessStatus.simpleErrorShouldRunning(ver.versionId, action.user, processState)
+          case Some(ver) if ver.versionId != action.processVersionId =>
+            ProcessStatus.simpleErrorMismatchDeployedVersion(ver.versionId, action.processVersionId, action.user, processState)
+          case Some(ver) if ver.versionId == action.processVersionId =>
+            ProcessStatus(state)
+          case None => //TODO: we should remove Option from ProcessVersion?
+            ProcessStatus.simpleErrorMissingDeployedVersion(action.processVersionId, action.user, processState)
+          case _ =>
+            ProcessStatus.simple(SimpleStateStatus.Error) //Generic error in other cases
+        }
+      case None =>
+        ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, Option.empty)
+    }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.

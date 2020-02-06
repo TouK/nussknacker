@@ -95,6 +95,12 @@ object ProcessStatus {
     previousState = previousState
   )
 
+  def simpleErrorMissingDeployedVersion(exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    tooltip = Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionTooltip(exceptedVersionId, user)),
+    description = Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionDescription),
+    previousState = previousState
+  )
+
   val unknown: ProcessStatus = simple(SimpleStateStatus.Unknown)
 
   val failedToGet: ProcessStatus = simple(SimpleStateStatus.FailedToGet)
