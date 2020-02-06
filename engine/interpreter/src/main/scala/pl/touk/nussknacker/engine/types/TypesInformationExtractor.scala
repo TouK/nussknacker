@@ -44,7 +44,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     // It's a deep first traversal - to avoid SOF we use mutable collection. It won't be easy to implement it using immutable collections
     val collectedSoFar = mutable.HashSet.empty[ClazzRef]
     (clazzes.flatMap(clazzRefsFromTypingResult) ++ mandatoryClasses).flatMap { cl =>
-      clazzAndItsChildrenDefinition(cl)(collectedSoFar, DiscoveryPath(List(Clazz(cl))))
+      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(cl)(collectedSoFar, DiscoveryPath(List(Clazz(cl))))
     }.toSet
   }
 
@@ -66,29 +66,34 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
   private def clazzRefsFromTypedClass(typedClass: TypedClass): Set[ClazzRef]
     = typedClass.params.flatMap(clazzRefsFromTypingResult).toSet + ClazzRef(typedClass.klass)
 
-  private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef)
-                                           (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
-                                           (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
-    // we not support arrays for now - will looks ugly in UI, so we need to hide it
-    if (clazzRef.clazz.isArray || collectedSoFar.contains(clazzRef)) {
+  private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(clazzRef: ClazzRef)
+                                                              (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
+                                                              (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+    if (collectedSoFar.contains(clazzRef)) {
       Set.empty
     } else {
       collectedSoFar += clazzRef
-      val definitionsForClass = if (settings.isHidden(clazzRef.clazz)) {
-        Set.empty
-      } else {
-        val classDefinition = clazzDefinitionWithLogging(clazzRef.clazz)(path)
-        definitionsFromMethods(classDefinition)(collectedSoFar, path) + classDefinition
-      }
-      definitionsForClass ++ definitionsFromGenericParameters(clazzRef)(collectedSoFar, path)
+      clazzAndItsChildrenDefinition(clazzRef)(collectedSoFar, path)
     }
+  }
+
+  private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef)
+                                           (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
+                                           (implicit settings: ClassExtractionSettings) = {
+    val definitionsForClass = if (settings.isHidden(clazzRef.clazz)) {
+      Set.empty
+    } else {
+      val classDefinition = clazzDefinitionWithLogging(clazzRef.clazz)(path)
+      definitionsFromMethods(classDefinition)(collectedSoFar, path) + classDefinition
+    }
+    definitionsForClass ++ definitionsFromGenericParameters(clazzRef)(collectedSoFar, path)
   }
 
   private def definitionsFromGenericParameters(clazzRef: ClazzRef)
                                               (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
                                               (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     clazzRef.params.zipWithIndex.flatMap {
-      case (k, idx) => clazzAndItsChildrenDefinition(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
+      case (k, idx) => clazzAndItsChildrenDefinitionIfNotCollectedSoFar(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
     }.toSet
   }
 
@@ -96,7 +101,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
                                     (collectedSoFar: mutable.Set[ClazzRef], path: DiscoveryPath)
                                     (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     classDefinition.methods.values.flatMap { kl =>
-      clazzAndItsChildrenDefinition(kl.refClazz)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.refClazz)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
       // TODO verify if parameters are need and if they are not, remove this
 //        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
     }.toSet

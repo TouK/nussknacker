@@ -8,7 +8,7 @@ import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
@@ -58,15 +58,11 @@ object EspTypeUtils {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods = publicMethods(clazz, membersPredicate)
     val fields = publicFields(clazz, membersPredicate)
-    val methodsAndFields = methods ++ fields
-    // we not support arrays for now - will looks ugly in UI, so we need to hide it
-    methodsAndFields.filterNot(_._2.refClazz.clazz.isArray)
+    methods ++ fields
   }
 
   private def publicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val shouldHideToString = classOf[HideToString].isAssignableFrom(clazz)
-
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
            does not contain any implicitly declared methods from {@code Object}.
            The same for primitives - we assume that languages like SpEL will be able to do boxing
@@ -81,9 +77,7 @@ object EspTypeUtils {
     }
     val publicMethods = clazz.getMethods.toList ++ additionalMethods
 
-    val filteredMethods = publicMethods
-      .filter(shouldBeVisible(membersPredicate))
-      .filterNot(m => shouldHideToString && m.getName == "toString" && m.getParameterCount == 0)
+    val filteredMethods = publicMethods.filter(membersPredicate.shouldBeVisible)
 
     val methodNameAndInfoList = filteredMethods.flatMap { method =>
       methodAccessMethods(method).map(_ -> toMethodInfo(method))
@@ -134,18 +128,10 @@ object EspTypeUtils {
 
   private def publicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
                           (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val interestingFields = clazz.getFields.filter(shouldBeVisible(membersPredicate))
+    val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     interestingFields.map { field =>
       field.getName -> MethodInfo(List.empty, getReturnClassForField(field), getNussknackerDocs(field))
     }.toMap
-  }
-
-  private def shouldBeVisible(membersPredicate: VisibleMembersPredicate)
-                             (m: AccessibleObject with Member): Boolean = {
-    !Modifier.isStatic(m.getModifiers) &&
-      m.getAnnotation(classOf[Hidden]) == null &&
-      !m.getName.contains("$") &&
-      membersPredicate.shouldBeVisible(m)
   }
 
   private def getReturnClassForMethod(method: Method): ClazzRef = {

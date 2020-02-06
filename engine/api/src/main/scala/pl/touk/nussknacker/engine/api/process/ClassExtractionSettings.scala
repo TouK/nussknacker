@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.api.process
 
-import java.lang.reflect.Member
+import java.lang.reflect.{AccessibleObject, Field, Member, Method, Modifier}
 import java.util.regex.Pattern
 
 import cats.data.NonEmptyList
+import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
 
 /**
   * Settings for class extraction which is done to handle e.g. syntax suggestions in UI
@@ -42,7 +43,9 @@ object ClassExtractionSettings {
 
   val Default: ClassExtractionSettings = ClassExtractionSettings(DefaultExcludedClasses, DefaultExcludedMembers, DefaultIncludedMembers)
 
-  lazy val DefaultExcludedClasses: List[ClassPredicate] =
+  lazy val DefaultExcludedClasses: List[ClassPredicate] = ExcludedStdClasses ++ ExcludedExtraClasses
+
+  lazy val ExcludedStdClasses: List[ClassPredicate] =
     List(
       // Void types
       ClassPatternPredicate(Pattern.compile("void")),
@@ -50,15 +53,23 @@ object ClassExtractionSettings {
       ClassPatternPredicate(Pattern.compile("scala\\.Unit.*")),
       ClassPatternPredicate(Pattern.compile("scala\\.runtime\\.BoxedUnit")),
 
-      // In case if there is some public method with flink's TypeInformation on serialization purpose
-      ClassPatternPredicate(Pattern.compile("org\\.apache\\.flink\\.api\\.common\\.typeinfo\\.TypeInformation")),
-      // We use this type only programmable
-      ClassPatternPredicate(Pattern.compile("pl\\.touk\\.nussknacker\\.engine\\.spel\\.SpelExpressionRepr")),
       // In case if someone use it for kind of meta programming
       ClassPatternPredicate(Pattern.compile("java\\.lang\\.Class")),
       // In case if someone return function for lazy evaluation purpose
       ClassPatternPredicate(Pattern.compile("java\\.util\\.function\\..*")),
       ClassPatternPredicate(Pattern.compile("scala\\.Function.*")),
+
+      // Arrays are not supported for now
+      ClassPredicate { case cl => cl.isArray },
+
+      // We use this type only programmable
+      ClassPatternPredicate(Pattern.compile("pl\\.touk\\.nussknacker\\.engine\\.spel\\.SpelExpressionRepr"))
+    )
+
+  lazy val ExcludedExtraClasses: List[ClassPredicate] =
+    List(
+      // In case if there is some public method with flink's TypeInformation on serialization purpose
+      ClassPatternPredicate(Pattern.compile("org\\.apache\\.flink\\.api\\.common\\.typeinfo\\.TypeInformation")),
       // java xml api is not easy to use without additional helpers, so we will skip these classes
       ClassPatternPredicate(Pattern.compile("javax\\.xml\\..*")),
       // Not sure why these below exclusions are TODO describe why they should be here or remove it
@@ -71,7 +82,25 @@ object ClassExtractionSettings {
   lazy val CommonExcludedMembers: List[ClassMemberPredicate] =
     List(
       // We want to hide all technical methods in every class, toString can be useful so we will leave it
-      AllMethodNamesPredicate(classOf[DumpCaseClass], Set(ToStringMethod))
+      AllMethodNamesPredicate(classOf[DumpCaseClass], Set(ToStringMethod)),
+      // Static members can be unexpected when someone think about real objects
+      ClassMemberPredicate(ClassPredicate { case _ => true }, {
+        case m => Modifier.isStatic(m.getModifiers)
+      }),
+      // Arrays are not supported for now
+      ClassMemberPredicate(ClassPredicate { case _ => true }, {
+        case m: Method => m.getReturnType.isArray
+        case f: Field => f.getType.isArray
+      }),
+      ClassMemberPredicate(ClassPredicate { case _ => true }, {
+        case m => m.getName.contains("$")
+      }),
+      ClassMemberPredicate(ClassPredicate { case _ => true }, {
+        case m: Member with AccessibleObject => m.getAnnotation(classOf[Hidden]) != null
+      }),
+      ClassMemberPredicate(ClassPredicate { case cl => classOf[HideToString].isAssignableFrom(cl) }, {
+        case m: Method => m.getName == "toString" && m.getParameterCount == 0
+      })
     )
 
   lazy val AvroExcludedMembers: List[ClassMemberPredicate] =
@@ -86,9 +115,21 @@ object ClassExtractionSettings {
 
   lazy val DefaultIncludedMembers: List[ClassMemberPredicate] = IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers
 
+  lazy val IncludedStdMembers: List[ClassMemberPredicate] =
+    List(
+      // For other std types we don't want to see anything but toString method
+      ClassMemberPatternPredicate(
+        ClassPatternPredicate(Pattern.compile("java\\..*")),
+        Pattern.compile(ToStringMethod)),
+      ClassMemberPatternPredicate(
+        ClassPatternPredicate(Pattern.compile("scala\\..*")),
+        Pattern.compile(ToStringMethod))
+    )
+
   lazy val IncludedUtilsMembers: List[ClassMemberPredicate] =
     List(
-      // For numeric types, strings an collections, date types we want to see all useful methods
+      // For numeric types, strings an collections, date types we want to see all useful methods - we need this explicitly define here because
+      // we have another, more general rule: IncludedStdMembers and both predicates are composed
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("(java\\.lang\\.Number|java\\.util\\.Date|java\\.util\\.Calendar|java\\.util\\.concurrent\\.TimeUnit)")),
         Pattern.compile(".*")),
@@ -120,18 +161,7 @@ object ClassExtractionSettings {
         Pattern.compile(ToStringMethod)),
       ClassMemberPatternPredicate(
         ClassPatternPredicate(Pattern.compile("(io\\.circe\\..*|argonaut\\..*)")),
-        Pattern.compile(s"noSpaces|spaces2|spaces4|$ToStringMethod"))
-    )
-
-  lazy val IncludedStdMembers: List[ClassMemberPredicate] =
-    List(
-      // For other std types we don't want to see anything but toString method
-      ClassMemberPatternPredicate(
-        ClassPatternPredicate(Pattern.compile("java\\..*")),
-        Pattern.compile(ToStringMethod)),
-      ClassMemberPatternPredicate(
-        ClassPatternPredicate(Pattern.compile("scala\\..*")),
-        Pattern.compile(ToStringMethod))
+        Pattern.compile(s"noSpaces|nospaces|spaces2|spaces4|$ToStringMethod"))
     )
 
   private case class DumpCaseClass()

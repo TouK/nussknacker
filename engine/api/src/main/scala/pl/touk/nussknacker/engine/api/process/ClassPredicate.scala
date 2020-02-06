@@ -14,6 +14,14 @@ trait ClassPredicate {
 
 }
 
+object ClassPredicate {
+
+  def apply(p: PartialFunction[Class[_], Boolean]): ClassPredicate = new ClassPredicate with Serializable {
+    override def matches(clazz: Class[_]): Boolean = p.lift(clazz).getOrElse(false)
+  }
+
+}
+
 /**
  * Simple implementation of ClassPredicate based on pattern of class name
  * @param classPattern - class name pattern

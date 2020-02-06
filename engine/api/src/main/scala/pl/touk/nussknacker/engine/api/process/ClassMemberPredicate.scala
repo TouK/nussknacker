@@ -14,6 +14,18 @@ trait ClassMemberPredicate {
 
 }
 
+object ClassMemberPredicate {
+
+  def apply(classPredicate: ClassPredicate, p: PartialFunction[Member, Boolean]): ClassMemberPredicate = new ClassMemberPredicate with Serializable {
+
+    override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
+
+    override def matchesMember(member: Member): Boolean = p.lift(member).getOrElse(false)
+
+  }
+
+}
+
 /**
   * Simple implementation of ClassMemberPredicate based on class member's name pattern
   * @param classPredicate - class predicate
