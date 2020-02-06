@@ -59,7 +59,8 @@ object ProcessConfigCreatorMapping {
         ClassExtractionSettings(
           jSettings.getExcludeClassPredicates.asScala,
           jSettings.getExcludeClassMemberPredicates.asScala,
-          jSettings.getIncludeClassMemberPredicates.asScala)
+          jSettings.getIncludeClassMemberPredicates.asScala,
+          jSettings.getPropertyExtractionStrategy)
       }
     }
     creator

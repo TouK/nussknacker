@@ -5,7 +5,8 @@ import java.lang.reflect._
 import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
+import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, PropertyFromGetterExtractionStrategy, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
@@ -120,10 +121,19 @@ object EspTypeUtils {
   private def toMethodInfo(method: Method)
     = MethodInfo(getParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
 
-  private def methodAccessMethods(method: Method): List[String] = {
-    val isGetter = (method.getName.matches("^(get|is).+")) && method.getParameterCount == 0
-    if (isGetter)
-      List(method.getName, StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))) else List(method.getName)
+  private def methodAccessMethods(method: Method)
+                                 (implicit settings: ClassExtractionSettings): List[String] = {
+    val isGetter = method.getName.matches("^(get|is).+") && method.getParameterCount == 0
+    if (isGetter) {
+      val propertyMethod = StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))
+      settings.propertyExtractionStrategy match {
+        case AddPropertyNextToGetter    => List(method.getName, propertyMethod)
+        case ReplaceGetterWithProperty  => List(propertyMethod)
+        case DoNothing                  => List(method.getName)
+      }
+    } else {
+      List(method.getName)
+    }
   }
 
   private def publicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
