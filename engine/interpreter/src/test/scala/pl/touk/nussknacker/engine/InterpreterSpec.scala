@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.engine
 
+import java.util.Optional
+
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
+import javax.annotation.Nullable
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
@@ -50,7 +53,10 @@ class InterpreterSpec extends FunSuite with Matchers {
     "accountService" -> AccountService,
     "dictService" -> NameDictService,
     "spelNodeService" -> SpelNodeService,
-    "withExplicitMethod" -> WithExplicitDefinitionService
+    "withExplicitMethod" -> WithExplicitDefinitionService,
+    "optionTypesService" -> OptionTypesService,
+    "optionalTypesService" -> OptionalTypesService,
+    "nullableTypesService" -> NullableTypesService
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -570,7 +576,35 @@ class InterpreterSpec extends FunSuite with Matchers {
       .sink("end", Expression("literal", testExpression), "dummySink")
 
     interpretSource(process, Transaction()) should equal(testExpression)
-    
+
+  }
+
+  test("accept empty expression for option parameter") {
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "optionTypesService", "expression" -> "")
+      .sink("end", "#rawExpression", "dummySink")
+
+    interpretSource(process, Transaction()) should equal(Option.empty)
+  }
+
+  test("accept empty expression for optional parameter") {
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "optionalTypesService", "expression" -> "")
+      .sink("end", "#rawExpression", "dummySink")
+
+    interpretSource(process, Transaction()) should equal(Optional.empty())
+  }
+
+  test("accept empty expression for nullable parameter") {
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "nullableTypesService", "expression" -> "")
+      .sink("end", "#rawExpression", "dummySink")
+
+    val value1: Any = interpretSource(process, Transaction())
+    interpretSource(process, Transaction()).asInstanceOf[String] shouldBe null
   }
 }
 
@@ -637,15 +671,30 @@ object InterpreterSpec {
       invocations = 0
     }
   }
-  
+
   object SpelNodeService extends Service {
-    
-   
+
+
     @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName("expression") expr: SpelExpressionRepr) = {
       Future.successful(expr.original + " - " + expr.parsed.asInstanceOf[SpelExpression].getAST.getClass.getSimpleName)
     }
-    
+
+  }
+
+  object OptionTypesService extends Service {
+    @MethodToInvoke(returnType = classOf[Option[String]])
+    def invoke(@ParamName("expression") expr: Option[String]) = Future.successful(expr)
+  }
+
+  object OptionalTypesService extends Service {
+    @MethodToInvoke(returnType = classOf[Optional[String]])
+    def invoke(@ParamName("expression") expr: Optional[String]) = Future.successful(expr)
+  }
+
+  object NullableTypesService extends Service {
+    @MethodToInvoke(returnType = classOf[String])
+    def invoke(@ParamName("expression") @Nullable expr: String) = Future.successful(expr)
   }
 
   object TransactionSource extends SourceFactory[Transaction] {

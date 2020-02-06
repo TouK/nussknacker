@@ -41,23 +41,24 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         validatedParts.map(partResults => CollectedTypingResult(Monoid.combineAll(partResults.map(_.intermediateResults)), Typed[String]))
       case e:LiteralExpression =>
         Valid(CollectedTypingResult.withEmptyIntermediateResults(Typed[String]))
+      case e:NullExpression =>
+        Valid(CollectedTypingResult.withEmptyIntermediateResults(Typed[String]))
     }
   }
 
   private def typeExpression(spelExpression: standard.SpelExpression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-    Validated.fromOption(Option(spelExpression.getAST), NonEmptyList.of(ExpressionParseError("Empty expression"))).andThen { ast =>
-      val result = typeNode(ctx, ast, TypingContext(List.empty, Map.empty))
-      logger.whenTraceEnabled {
-        result match {
-          case Valid(collectedResult) =>
-            val printer = new SpelNodePrettyPrinter(n => collectedResult.intermediateResults.get(SpelNodeId(n)).map(_.display).getOrElse("NOT_TYPED"))
-            logger.trace("typed valid expression: " + printer.print(ast))
-          case Invalid(errors) =>
-            logger.trace(s"typed invalid expression: ${spelExpression.getExpressionString}, errors: ${errors.toList.mkString(", ")}")
-        }
+    val ast = spelExpression.getAST
+    val result = typeNode(ctx, ast, TypingContext(List.empty, Map.empty))
+    logger.whenTraceEnabled {
+      result match {
+        case Valid(collectedResult) =>
+          val printer = new SpelNodePrettyPrinter(n => collectedResult.intermediateResults.get(SpelNodeId(n)).map(_.display).getOrElse("NOT_TYPED"))
+          logger.trace("typed valid expression: " + printer.print(ast))
+        case Invalid(errors) =>
+          logger.trace(s"typed invalid expression: ${spelExpression.getExpressionString}, errors: ${errors.toList.mkString(", ")}")
       }
-      result
     }
+    result
   }
 
   private def typeNode(validationContext: ValidationContext, node: SpelNode, current: TypingContext)
