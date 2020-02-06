@@ -14,10 +14,15 @@ import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
   * @param includeClassMemberPredicates - sequence of predicates to determine included class members - will be
   *                                       used all predicates that matches given class. If none is matching,
   *                                       all non-excluded members will be visible.
+  * @param propertyExtractionStrategy - strategy for extraction property based on getter. It can be defined
+  *                                     what will happen if some class has 'getField' or 'isField' method.
+  *                                     It can be: added 'field' property next to 'getField', replaced 'getField' with
+  *                                     'field' or leaved as it is.
   */
 case class ClassExtractionSettings(excludeClassPredicates: Seq[ClassPredicate],
                                    excludeClassMemberPredicates: Seq[ClassMemberPredicate],
-                                   includeClassMemberPredicates: Seq[ClassMemberPredicate]) {
+                                   includeClassMemberPredicates: Seq[ClassMemberPredicate],
+                                   propertyExtractionStrategy: PropertyFromGetterExtractionStrategy) {
 
   def isHidden(clazz: Class[_]): Boolean =
     excludeClassPredicates.exists(_.matches(clazz))
@@ -37,11 +42,25 @@ case class VisibleMembersPredicate(excludePredicates: Seq[ClassMemberPredicate],
 
 }
 
+sealed trait PropertyFromGetterExtractionStrategy
+
+object PropertyFromGetterExtractionStrategy {
+
+  case object AddPropertyNextToGetter extends PropertyFromGetterExtractionStrategy
+
+  case object ReplaceGetterWithProperty extends PropertyFromGetterExtractionStrategy
+
+  case object DoNothing extends PropertyFromGetterExtractionStrategy
+
+}
+
+
 object ClassExtractionSettings {
 
   val ToStringMethod = "toString"
 
-  val Default: ClassExtractionSettings = ClassExtractionSettings(DefaultExcludedClasses, DefaultExcludedMembers, DefaultIncludedMembers)
+  val Default: ClassExtractionSettings = ClassExtractionSettings(DefaultExcludedClasses, DefaultExcludedMembers, DefaultIncludedMembers,
+    PropertyFromGetterExtractionStrategy.AddPropertyNextToGetter)
 
   lazy val DefaultExcludedClasses: List[ClassPredicate] = ExcludedStdClasses ++ ExcludedExtraClasses
 

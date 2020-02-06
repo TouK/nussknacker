@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.sql.columnmodel
 
 import java.lang.reflect.Member
 
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPredicate}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPredicate, PropertyFromGetterExtractionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
@@ -16,7 +16,8 @@ private[columnmodel] object TypedClassColumnModel {
     getColumns(definition)
   }
 
-  private def classExtractionSettings(claz: Class[_]) = ClassExtractionSettings(Seq.empty, Seq(new CreateColumnClassExtractionPredicate(claz)), Seq.empty)
+  private def classExtractionSettings(claz: Class[_]) = ClassExtractionSettings(Seq.empty, Seq(new CreateColumnClassExtractionPredicate(claz)),
+    Seq.empty, PropertyFromGetterExtractionStrategy.AddPropertyNextToGetter)
 
   private def getColumns(clazzDefinition: ClazzDefinition): ColumnModel = {
     val columns = for {
