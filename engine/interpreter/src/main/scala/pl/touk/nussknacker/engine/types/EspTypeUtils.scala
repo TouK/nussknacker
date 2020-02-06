@@ -1,30 +1,20 @@
 package pl.touk.nussknacker.engine.types
 
-import java.lang.reflect
 import java.lang.reflect._
 
-import cats.Eval
 import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 import scala.concurrent.Future
 
 object EspTypeUtils {
-
-  private val blacklistedMethods: Set[String] = {
-    (methodNames(classOf[ScalaCaseClassStub.DumpCaseClass]) ++
-      methodNames(ScalaCaseClassStub.DumpCaseClass.getClass)).toSet.filterNot(
-      //sometimes toString can be pretty useful...
-      List("toString").contains
-    )
-  }
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
@@ -65,30 +55,29 @@ object EspTypeUtils {
 
   private def getPublicMethodAndFields(clazz: Class[_])
                                       (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val methods = publicMethods(clazz)
-    val fields = publicFields(clazz)
+    val membersPredicate = settings.visibleMembersPredicate(clazz)
+    val methods = publicMethods(clazz, membersPredicate)
+    val fields = publicFields(clazz, membersPredicate)
     methods ++ fields
   }
 
-  private def publicMethods(clazz: Class[_])
+  private def publicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val shouldHideToString = classOf[HideToString].isAssignableFrom(clazz)
-
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
-       does not contain any implicitly declared methods from {@code Object}.
-       The same for primitives - we assume that languages like SpEL will be able to do boxing
-       It could be significant only for toString, as we filter out other Object methods, but to be consistent...
-     */
-    val publicMethods = clazz.getMethods.toList ++ (if (clazz.isInterface || clazz.isPrimitive) classOf[Object].getMethods.toList else List.empty)
+           does not contain any implicitly declared methods from {@code Object}.
+           The same for primitives - we assume that languages like SpEL will be able to do boxing
+           It could be significant only for toString, as we filter out other Object methods, but to be consistent...
+         */
+    val additionalMethods = if (clazz.isInterface) {
+      classOf[Object].getMethods.toList
+    } else if (clazz.isPrimitive) {
+      ClassUtils.primitiveToWrapper(clazz).getMethods.toList
+    } else {
+      List.empty
+    }
+    val publicMethods = clazz.getMethods.toList ++ additionalMethods
 
-    val filteredMethods = publicMethods
-      .filterNot(m => Modifier.isStatic(m.getModifiers))
-      .filter(_.getAnnotation(classOf[Hidden]) == null)
-      .filterNot(m => shouldHideToString && m.getName == "toString" && m.getParameterCount == 0)
-      .filterNot(settings.isBlacklisted)
-      .filter(m =>
-        !blacklistedMethods.contains(m.getName) && !m.getName.contains("$")
-      )
+    val filteredMethods = publicMethods.filter(membersPredicate.shouldBeVisible)
 
     val methodNameAndInfoList = filteredMethods.flatMap { method =>
       methodAccessMethods(method).map(_ -> toMethodInfo(method))
@@ -132,20 +121,14 @@ object EspTypeUtils {
     = MethodInfo(getParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
 
   private def methodAccessMethods(method: Method): List[String] = {
-    val isGetter = (method.getName.startsWith("get") || method.getName.startsWith("is")) && method.getParameterCount == 0
+    val isGetter = (method.getName.matches("^(get|is).+")) && method.getParameterCount == 0
     if (isGetter)
       List(method.getName, StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))) else List(method.getName)
   }
 
-  private def publicFields(clazz: Class[_])
+  private def publicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
                           (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val interestingFields = clazz.getFields
-      .filterNot(f => Modifier.isStatic(f.getModifiers))
-      .filter(_.getAnnotation(classOf[Hidden]) == null)
-      .filterNot(settings.isBlacklisted)
-      .filter(m =>
-        !m.getName.contains("$")
-      )
+    val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     interestingFields.map { field =>
       field.getName -> MethodInfo(List.empty, getReturnClassForField(field), getNussknackerDocs(field))
     }.toMap
@@ -207,14 +190,6 @@ object EspTypeUtils {
     } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
       ClazzRef(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else ClazzRef(rawType)
-  }
-
-  private object ScalaCaseClassStub {
-
-    case class DumpCaseClass()
-
-    object DumpCaseClass
-
   }
 
 }

@@ -16,7 +16,7 @@ private[columnmodel] object TypedClassColumnModel {
     getColumns(definition)
   }
 
-  private def classExtractionSettings(claz: Class[_]) = ClassExtractionSettings(Seq(new CreateColumnClassExtractionPredicate(claz)))
+  private def classExtractionSettings(claz: Class[_]) = ClassExtractionSettings(Seq.empty, Seq(new CreateColumnClassExtractionPredicate(claz)), Seq.empty)
 
   private def getColumns(clazzDefinition: ClazzDefinition): ColumnModel = {
     val columns = for {
@@ -26,10 +26,12 @@ private[columnmodel] object TypedClassColumnModel {
     ColumnModel(columns.toList)
   }
 
-  class CreateColumnClassExtractionPredicate(claz: Class[_]) extends ClassMemberPredicate {
-    private val declaredFieldsNames = claz.getDeclaredFields.toList.map(_.getName)
+  class CreateColumnClassExtractionPredicate(clazzDeclaringFields: Class[_]) extends ClassMemberPredicate {
+    private val declaredFieldsNames = clazzDeclaringFields.getDeclaredFields.toList.map(_.getName)
 
-    override def matches(member: Member): Boolean = {
+    override def matchesClass(clazz: Class[_]): Boolean = true
+
+    override def matchesMember(member: Member): Boolean = {
       !declaredFieldsNames.contains(member.getName)
     }
   }

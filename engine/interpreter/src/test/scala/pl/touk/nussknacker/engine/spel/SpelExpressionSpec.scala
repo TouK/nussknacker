@@ -430,6 +430,16 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[String]("#input.ala", ctxWithMap) shouldNot be ('valid)
   }
 
+  test("be able to convert between primitive types") {
+    val ctxWithMap = ValidationContext
+      .empty
+      .withVariable("input", TypedObjectTypingResult(Map("int" -> Typed[Int]))).toOption.get
+
+    val ctx = Context("").withVariable("input", TypedMap(Map("int" -> 1)))
+
+    parseOrFail[Long]("#input.int.longValue", ctxWithMap).evaluateSyncToValue[Long](ctx) shouldBe 1L
+  }
+
   test("evaluate parsed map") {
     val valCtxWithMap = ValidationContext
       .empty

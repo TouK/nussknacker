@@ -1,36 +1,55 @@
 package pl.touk.nussknacker.engine.api.process
 
-import java.lang.reflect.{Field, Member, Method}
+import java.lang.reflect.Member
 import java.util.regex.Pattern
-
-import org.apache.commons.lang3.ClassUtils
 
 /**
   * Predicate for class members (fields & methods)
   */
 trait ClassMemberPredicate {
 
-  def matches(member: Member): Boolean
+  def matchesClass(clazz: Class[_]): Boolean
+
+  def matchesMember(member: Member): Boolean
+
+}
+
+object ClassMemberPredicate {
+
+  def apply(classPredicate: ClassPredicate, p: PartialFunction[Member, Boolean]): ClassMemberPredicate = new ClassMemberPredicate with Serializable {
+
+    override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
+
+    override def matchesMember(member: Member): Boolean = p.lift(member).getOrElse(false)
+
+  }
 
 }
 
 /**
-  * Simple implementation of ClassMemberPredicate based on class name pattern and class member's name pattern
-  * @param classPattern - class name pattern
+  * Simple implementation of ClassMemberPredicate based on class member's name pattern
+  * @param classPredicate - class predicate
   * @param classMemberPattern - class member's name pattern
   */
-case class ClassMemberPatternPredicate(classPattern: Pattern, classMemberPattern: Pattern) extends ClassMemberPredicate {
+case class ClassMemberPatternPredicate(classPredicate: ClassPredicate, classMemberPattern: Pattern) extends ClassMemberPredicate {
 
-  override def matches(member: Member): Boolean = classMatches(member) && classMemberPattern.matcher(member.getName).matches()
+  override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
 
-  private def classMatches(member: Member) =
-    superClasses(member.getDeclaringClass).exists(cl => classPattern.matcher(cl.getName).matches())
+  override def matchesMember(member: Member): Boolean = classMemberPattern.matcher(member.getName).matches()
 
-  private def superClasses(clazz: Class[_]): Seq[Class[_]] = {
-    import scala.collection.JavaConverters._
-    Seq(clazz) ++
-      ClassUtils.getAllSuperclasses(clazz).asScala ++
-      ClassUtils.getAllInterfaces(clazz).asScala
-  }
+}
+
+/**
+ * Implementation of ClassMemberPredicate matching all methods that has the same name as methods in given class
+ * @param clazz - class which method names will match predicate
+ * @param exceptMethodNames - method names that will be excluded from matching
+ */
+case class AllMethodNamesPredicate(clazz: Class[_], exceptMethodNames: Set[String] = Set.empty) extends ClassMemberPredicate {
+
+  private val matchingMethodNames = clazz.getMethods.map(_.getName).toSet -- exceptMethodNames
+
+  override def matchesClass(clazz: Class[_]): Boolean = true
+
+  override def matchesMember(member: Member): Boolean =matchingMethodNames.contains(member.getName)
 
 }
