@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, PropertyFromGetterExtractionStrategy, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.{ClassLike, Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -37,7 +37,7 @@ object EspTypeUtils {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
-  def getGenericType(genericReturnType: Type): Option[TypedClass] = {
+  def getGenericType(genericReturnType: Type): Option[ClassLike] = {
     val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
     if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
     else None
@@ -145,7 +145,7 @@ object EspTypeUtils {
     }.toMap
   }
 
-  private def getReturnClassForMethod(method: Method): TypedClass = {
+  private def getReturnClassForMethod(method: Method): ClassLike = {
     getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(TypedClass(method.getReturnType))
   }
 
@@ -162,13 +162,13 @@ object EspTypeUtils {
     Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
   }
 
-  private def getReturnClassForField(field: Field): TypedClass = {
+  private def getReturnClassForField(field: Field): ClassLike = {
     getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(TypedClass(field.getType))
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
   //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
-  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[TypedClass] = {
+  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[ClassLike] = {
     val rawType = genericMethodType.getRawType
 
     if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
@@ -186,7 +186,7 @@ object EspTypeUtils {
     else None
   }
 
-  private def extractClass(futureGenericType: Type): Option[TypedClass] = {
+  private def extractClass(futureGenericType: Type): Option[ClassLike] = {
     futureGenericType match {
       case t: Class[_] => Some(TypedClass(t))
       case t: ParameterizedTypeImpl => Some(extractGenericParams(t))
@@ -194,7 +194,7 @@ object EspTypeUtils {
     }
   }
 
-  private def extractGenericParams(paramsType: ParameterizedTypeImpl): TypedClass = {
+  private def extractGenericParams(paramsType: ParameterizedTypeImpl): ClassLike = {
     val rawType = paramsType.getRawType
     if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
       TypedClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))

@@ -55,7 +55,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val extractedType = EspTypeUtils.getGenericType(method.getGenericReturnType).get
 
     extractedType.klass shouldBe classOf[java.util.List[_]]
-    extractedType.params shouldBe List(TypedClass[SampleClass])
+    extractedType.typedClassUnsafe.params shouldBe List(TypedClass[SampleClass])
   }
 
   test("should extract public fields from scala case class") {
@@ -269,7 +269,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   private def singleClassDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default): Option[ClazzDefinition] = {
     val ref = TypedClass.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.clazzName.refClazzName == ref.refClazzName)
+    clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.clazzName.klass == ref.klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default) = {

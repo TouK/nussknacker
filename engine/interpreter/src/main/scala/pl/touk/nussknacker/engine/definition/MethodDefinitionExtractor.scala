@@ -7,7 +7,7 @@ import java.lang.reflect.Method
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -89,7 +89,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       .map[TypingResult](Typed(_))
     val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType).map(Typed(_))
 
-    typeFromAnnotation.orElse(typeFromSignature).getOrElse(Typed[Any])
+    typeFromAnnotation.orElse(typeFromSignature).getOrElse(Unknown)
   }
 
   protected def expectedReturnType: Option[Class[_]]

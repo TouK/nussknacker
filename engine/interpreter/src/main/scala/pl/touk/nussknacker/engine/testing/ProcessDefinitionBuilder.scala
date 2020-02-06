@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
@@ -19,9 +19,9 @@ object ProcessDefinitionBuilder {
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
-    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: TypingResult = Typed[Any]) = new ObjectWithMethodDef(null,
+    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: TypingResult = Unknown) = new ObjectWithMethodDef(null,
       MethodDefinition("", (_, _) => null, new OrderedDependencies(objectDefinition.parameters),
-        Typed[Any],
+        Unknown,
         realType, List()), objectDefinition)
 
     val expressionDefinition = ExpressionDefinition(

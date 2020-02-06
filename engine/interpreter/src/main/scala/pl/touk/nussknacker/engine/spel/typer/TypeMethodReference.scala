@@ -61,7 +61,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
         Right(typingResult)
     }
 
-  private def typeFromClazzRefs(clazzRefs: NonEmptyList[TypedClass]): TypingResult =
+  private def typeFromClazzRefs(clazzRefs: NonEmptyList[ClassLike]): TypingResult =
     Typed(clazzRefs.toList.toSet)
 
 }

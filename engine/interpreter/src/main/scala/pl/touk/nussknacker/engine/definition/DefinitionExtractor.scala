@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{ClassLike, Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -154,14 +154,14 @@ object DefinitionExtractor {
 
   object ObjectDefinition {
 
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Any], List(), SingleNodeConfig.zero)
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Unknown, List(), SingleNodeConfig.zero)
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Any], List(), SingleNodeConfig.zero)
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, List(), SingleNodeConfig.zero)
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
       ObjectDefinition(params, Typed[Any], categories, SingleNodeConfig.zero)
 
-    def apply(parameters: List[Parameter], returnType: TypedClass, categories: List[String]): ObjectDefinition = {
+    def apply(parameters: List[Parameter], returnType: TypingResult, categories: List[String]): ObjectDefinition = {
       ObjectDefinition(parameters, returnType, categories, SingleNodeConfig.zero)
     }
   }
@@ -170,18 +170,18 @@ object DefinitionExtractor {
 
 object TypeInfos {
 
-  implicit val typedClassEncoder: Encoder[TypedClass] = TypeEncoders.typingResultEncoder.contramap[TypedClass](_.asInstanceOf[TypingResult])
+  implicit val typedClassEncoder: Encoder[ClassLike] = TypeEncoders.typingResultEncoder.contramap[ClassLike](_.asInstanceOf[ClassLike])
 
-  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypedClass)
+  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: ClassLike)
 
-  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypedClass, description: Option[String])
+  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: ClassLike, description: Option[String])
 
-  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: TypedClass, methods: Map[String, MethodInfo]) {
-    def getMethodClazzRef(methodName: String): Option[TypedClass] = {
+  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: ClassLike, methods: Map[String, MethodInfo]) {
+    def getMethodClazzRef(methodName: String): Option[ClassLike] = {
       methods.get(methodName).map(_.refClazz)
     }
 
-    def getPropertyOrFieldClazzRef(methodName: String): Option[TypedClass] = {
+    def getPropertyOrFieldClazzRef(methodName: String): Option[ClassLike] = {
       val filteredMethods = methods.filter(_._2.parameters.isEmpty)
       val methodInfoes = filteredMethods.get(methodName)
       methodInfoes.map(_.refClazz)

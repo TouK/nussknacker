@@ -44,7 +44,7 @@ object EmbeddedDictDefinition {
 
   def forJavaEnum[T <: Enum[_]](javaEnumClass: Class[T]): EmbeddedDictDefinition = {
     val enumValueByName = javaEnumClass.getEnumConstants.map(e => e.name() -> e).toMap
-    EnumDictDefinition(TypedClass(javaEnumClass), enumValueByName)
+    EnumDictDefinition(TypedClass(javaEnumClass).typedClassUnsafe, enumValueByName)
   }
 
   def forScalaEnum[T <: Enumeration](scalaEnum: Enumeration): ScalaEnumTypedDictBuilder[T] = new ScalaEnumTypedDictBuilder[T](scalaEnum)
@@ -52,7 +52,7 @@ object EmbeddedDictDefinition {
   class ScalaEnumTypedDictBuilder[T <: Enumeration](scalaEnum: Enumeration) {
     def withValueClass[V <: T#Value : ClassTag]: EmbeddedDictDefinition = {
       val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
-      EnumDictDefinition(TypedClass(implicitly[ClassTag[V]].runtimeClass), enumValueByName)
+      EnumDictDefinition(TypedClass(implicitly[ClassTag[V]].runtimeClass).typedClassUnsafe, enumValueByName)
     }
   }
 
@@ -77,7 +77,7 @@ object EmbeddedDictDefinition {
    */
   def forScalaEnum(scalaEnum: Enumeration, valueClass: Class[_]): EmbeddedDictDefinition = {
     val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
-    EnumDictDefinition(TypedClass(valueClass), enumValueByName)
+    EnumDictDefinition(TypedClass(valueClass).typedClassUnsafe, enumValueByName)
   }
 
   def enumDictId(valueClass: Class[_]) = s"enum:${valueClass.getName}"

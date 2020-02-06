@@ -11,7 +11,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion, Unknown}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 
 import scala.util.{Failure, Success, Try}
@@ -101,7 +101,7 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
     val validationContext = ValidationContext.empty
       .withVariable("a", Typed.fromInstance(a)).toOption.get
       .withVariable("b", Typed.fromInstance(b)).toOption.get
-    parser.parse(expr, validationContext, Typed[Any])
+    parser.parse(expr, validationContext, Unknown)
   }
 
 }

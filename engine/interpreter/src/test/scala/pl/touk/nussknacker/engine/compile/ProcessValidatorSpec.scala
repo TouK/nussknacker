@@ -47,7 +47,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map("sampleEnricher" -> ObjectDefinition(List.empty, TypedClass[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
       TypedClass[String])), TypedClass[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, TypedClass[SimpleRecord], List()),
-        "sourceWithParam" -> ObjectDefinition(List(Parameter("param", TypedClass[Any])), TypedClass[SimpleRecord], List()),
+        "sourceWithParam" -> ObjectDefinition(List(Parameter("param", Unknown)), TypedClass[SimpleRecord], List()),
         "typedMapSource" -> ObjectDefinition(List(Parameter("type", TypedClass[TypedObjectDefinition])), TypedClass[TypedMap], List())
     ),
     Map("sink" -> (ObjectDefinition.noParam, SinkAdditionalData(true)),
