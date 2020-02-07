@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.definition.editor
 
+import java.time.{LocalDate, LocalDateTime, LocalTime}
+
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -41,6 +43,42 @@ class ParameterEditorExtractorChainTest extends FlatSpec with Matchers {
       FixedExpressionValue(s"T(${classOf[JavaSampleEnum].getName}).${JavaSampleEnum.FIRST_VALUE.name()}", "first_value"),
       FixedExpressionValue(s"T(${classOf[JavaSampleEnum].getName}).${JavaSampleEnum.SECOND_VALUE.name()}", "second_value")
     ))
+  }
+
+  it should "evaluate editor by type LocalDateTime" in {
+    val param = Parameter("param", ClazzRef[LocalDateTime])
+    val config = ParameterConfig(None, None)
+
+    val extractor = ParameterEditorExtractorChain(config)
+
+    extractor.evaluateEditor(param) shouldBe DualParameterEditor(
+      simpleEditor = DateTimeParameterEditor,
+      defaultMode = DualEditorMode.SIMPLE
+    )
+  }
+
+  it should "evaluate editor by type LocalDate" in {
+    val param = Parameter("param", ClazzRef[LocalDate])
+    val config = ParameterConfig(None, None)
+
+    val extractor = ParameterEditorExtractorChain(config)
+
+    extractor.evaluateEditor(param) shouldBe DualParameterEditor(
+      simpleEditor = DateParameterEditor,
+      defaultMode = DualEditorMode.SIMPLE
+    )
+  }
+
+  it should "evaluate editor by type LocalTime" in {
+    val param = Parameter("param", ClazzRef[LocalTime])
+    val config = ParameterConfig(None, None)
+
+    val extractor = ParameterEditorExtractorChain(config)
+
+    extractor.evaluateEditor(param) shouldBe DualParameterEditor(
+      simpleEditor = TimeParameterEditor,
+      defaultMode = DualEditorMode.SIMPLE
+    )
   }
 
   it should "evaluate editor by type String" in {

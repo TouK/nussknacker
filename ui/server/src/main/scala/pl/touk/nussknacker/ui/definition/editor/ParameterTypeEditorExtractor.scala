@@ -18,6 +18,24 @@ protected object ParameterTypeEditorExtractor extends ParameterEditorExtractorSt
           defaultMode = DualEditorMode.RAW
         )
       )
+      case klazz if klazz == classOf[java.time.LocalDateTime] => Some(
+        DualParameterEditor(
+          simpleEditor = DateTimeParameterEditor,
+          defaultMode = DualEditorMode.SIMPLE
+        )
+      )
+      case klazz if klazz == classOf[java.time.LocalTime] => Some(
+        DualParameterEditor(
+          simpleEditor = TimeParameterEditor,
+          defaultMode = DualEditorMode.SIMPLE
+        )
+      )
+      case klazz if klazz == classOf[java.time.LocalDate] => Some(
+        DualParameterEditor(
+          simpleEditor = DateParameterEditor,
+          defaultMode = DualEditorMode.SIMPLE
+        )
+      )
       case _ => Some(RawParameterEditor)
     }
   }
@@ -26,4 +44,5 @@ protected object ParameterTypeEditorExtractor extends ParameterEditorExtractorSt
     val enumConstName = enumClass.getMethod("name").invoke(enumConst)
     FixedExpressionValue(s"T(${enumClass.getName}).$enumConstName", enumConst.toString)
   }
+
 }
