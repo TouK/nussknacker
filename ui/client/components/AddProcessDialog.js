@@ -13,7 +13,7 @@ import history from "../history"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import ValidationLabels from "./modals/ValidationLabels"
-import i18next from "i18next"
+import * as DialogMessages from "../common/DialogMessages"
 
 //TODO: Consider integrating with GenericModalDialog
 class AddProcessDialog extends React.Component {
@@ -74,7 +74,7 @@ class AddProcessDialog extends React.Component {
                         <input autoFocus={true} type="text" id="newProcessId" className="node-input"
                                value={this.state.processId}
                                onChange={(e) => this.setState({processId: e.target.value})}/>
-                         <ValidationLabels validators={validators} values={[this.props.clashedNames, this.state.processId]}/>
+                         <ValidationLabels validators={validators()} values={[this.props.clashedNames, this.state.processId]}/>
                       </div>
                     </div>
                     <div className="node-row">
@@ -118,14 +118,14 @@ const nameAlreadyExists = (clashedNames, name) => {
   return clashedNames.some(processName => processName === name)
 }
 
-const validators = [
+const validators = () =>  [
   {
     isValid: (clashedNames, name) => mandatoryValueValidator.isValid(name),
     message: mandatoryValueValidator.message,
   },
   {
     isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),
-    message: i18next.t("validation.duplicateValue", "This value is already taken"),
+    message: DialogMessages.valueAlreadyTaken(),
   },
 ]
 

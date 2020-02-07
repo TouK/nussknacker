@@ -21,7 +21,7 @@ type Props = {
   isMarked?: boolean,
   showValidation?: boolean,
   onValueChange: Function,
-  errors?: Array<$TodoType>,
+  errors?: Array<Error>,
 }
 
 type State = {
@@ -69,7 +69,7 @@ class EditableExpression extends React.Component<Props, State> {
           className={`${valueClassName ? valueClassName : "node-value"} ${editor.showSwitch ? "switchable " : ""}`}
           {...this.props}
           values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
-                validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
+          validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
         />
         {
             param?.editor?.type === editorTypes.DUAL_PARAMETER_EDITOR && (

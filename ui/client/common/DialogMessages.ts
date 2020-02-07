@@ -38,3 +38,10 @@ export const cantArchiveRunningProcess = () => {
       "You can't archive running process! Stop it first and then click 'archive' button again.",
   )
 }
+
+export const  valueAlreadyTaken = () => {
+  return i18next.t(
+    "validation.duplicateValue",
+    "This value is already taken"
+  )
+}

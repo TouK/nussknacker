@@ -20,7 +20,7 @@ type Props = {
   toggleTestResult: Function,
   renderFieldLabel: Function,
   fieldType: string,
-  errors: Array<$TodoType>,
+  errors: Array<Error>,
 }
 
 class ExpressionField extends React.Component<Props> {

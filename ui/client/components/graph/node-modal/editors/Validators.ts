@@ -11,9 +11,16 @@ export type Validator = {
   description: string
 }
 
-const error = (errors, fieldName) => errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
+export type Error = {
+  fieldName: string,
+  message: string,
+  description: string,
+}
 
-export const errorValidator = (errors, fieldName) => ({
+const error = (errors: Array<Error>, fieldName: string) =>
+  errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
+
+export const errorValidator = (errors: Array<Error>, fieldName: string) => ({
   isValid: () => !error(errors, fieldName),
   message: error(errors, fieldName)?.message,
   description: error(errors, fieldName)?.description,
@@ -29,7 +36,7 @@ export function allValid(validators: Array<Validator>, values: Array<any>): bool
   return validators.every(validator => validator.isValid(...values))
 }
 
-export const validators: Record<validatorType, Function> = {
+export const validators: Record<validatorType, (errors?: Array<Error>, fieldName?: string) => Validator> = {
   [validatorType.MANDATORY_VALUE_VALIDATOR]: () => mandatoryValueValidator,
   [validatorType.ERROR_VALIDATOR]: (errors, fieldName) => errorValidator(errors, fieldName),
 }

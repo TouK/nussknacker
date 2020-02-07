@@ -9,7 +9,7 @@ import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Validator, validators, validatorType} from "../Validators";
+import {Error, Validator, validators, validatorType} from "../Validators";
 
 type ParamType = $TodoType
 type ValuesType = $TodoType
@@ -27,8 +27,8 @@ type EditorConfig = {
   showSwitch?: boolean,
   switchableTo?: (expressionObj: ExpressionObj, param?: ParamType, values?: ValuesType) => boolean,
   values?: (param: ParamType, values: ValuesType) => $TodoType,
-  switchable?: Function,
-  validators?: Function,
+  switchable?: (editor: EditorType, param: ParamType, expressionObj: ExpressionObj) => boolean,
+  validators?: (param: ParamType, errors: Array<Error>, fieldLabel: string, displayRawEditor?: boolean) => Array<Validator>,
 }
 
 export enum dualEditorMode {
@@ -48,7 +48,7 @@ export enum editorTypes {
   DUAL_PARAMETER_EDITOR = "DualParameterEditor",
 }
 
-const simpleEditorValidators = (param: $TodoType, errors: Array<$TodoType>, fieldLabel: string): Array<Validator> =>
+const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> =>
   _.concat(
     param === undefined ?
       validators[validatorType.MANDATORY_VALUE_VALIDATOR]() :
