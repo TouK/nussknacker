@@ -41,7 +41,7 @@ export function extractVisualizationParams(search) {
 
 export function extractBusinessViewParams(search) {
   const queryParams = queryString.parse(search, {parseBooleans: true})
-  return queryParams.businessView
+  return queryParams.businessView || false
 }
 
 export function extractCountParams(queryParams) {

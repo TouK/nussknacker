@@ -80,7 +80,8 @@ class UserRightPanel extends Component {
                   onColor="#333"
                   offHandleColor="#999"
                   onHandleColor="#8fad60"
-                  checked={this.props.businessView} onChange={(checked) => {
+                  checked={this.props.businessView}
+                  onChange={(checked) => {
                     this.props.actions.businessViewChanged(checked)
                     this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), checked)
                   }}
@@ -121,7 +122,7 @@ class UserRightPanel extends Component {
   getConfigProperties = () => {
     const saveDisabled = this.props.nothingToSave && this.props.processIsLatestVersion
     const hasErrors = !ProcessUtils.hasNoErrors(this.props.processToDisplay)
-    const deployPossible = this.props.processIsLatestVersion && !hasErrors && this.props.nothingToSave
+    const deployPossible = this.props.processIsLatestVersion && !hasErrors && this.props.nothingToSave && this.deployPossible()
 
     let deployToolTip, deployMouseOut, deployMouseOver
     if (hasErrors) {
@@ -155,7 +156,7 @@ class UserRightPanel extends Component {
         panelName: "Deployment",
         buttons:[
           {name: "deploy", visible: this.props.capabilities.deploy, disabled: !conf.deployPossible, icon: InlinedSvgs.buttonDeploy, btnTitle: conf.deployToolTip, onClick: this.deploy, onMouseOver: conf.deployMouseOver, onMouseOut: conf.deployMouseOut},
-          {name: "cancel", visible: this.props.capabilities.deploy, disabled: !this.isRunning(), onClick: this.cancel, icon: InlinedSvgs.buttonCancel},
+          {name: "cancel", visible: this.props.capabilities.deploy, disabled: !this.cancelPossible(), onClick: this.cancel, icon: InlinedSvgs.buttonCancel},
           {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics},
         ],
       }),
@@ -393,10 +394,13 @@ class UserRightPanel extends Component {
     )
   }
 
-  isRunning = () => {
-    const {isStateLoaded, processState, fetchedProcessDetails} = this.props
-    return fetchedProcessDetails ? (isStateLoaded ? ProcessStateUtils.isStateRunning(processState) : ProcessStateUtils.isProcessRunning(fetchedProcessDetails)) : false
-  }
+  deployPossible = () =>  ProcessStateUtils.canDeploy(this.getProcessState())
+
+  cancelPossible = () => ProcessStateUtils.canCancel(this.getProcessState())
+
+  isRunning = () => ProcessStateUtils.isRunning(this.getProcessState())
+
+  getProcessState = () =>  this.props.isStateLoaded ? this.props.processState : _.get(this.props, "fetchedProcessDetails.state")
 
   showProperties = () => {
     this.props.actions.displayModalNodeDetails(
@@ -457,6 +461,7 @@ class UserRightPanel extends Component {
     this.props.actions.exportProcessToPdf(this.processId(), this.versionId(), this.props.exportGraph(), this.props.businessView)
   }
 
+  //TODO: Checking permission to archiwization should be done by check action from state - we should add new action type
   archiveProcess = () => {
     if (!this.isRunning()) {
       this.props.actions.toggleConfirmDialog(
