@@ -38,7 +38,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val definition = processDefinition.services("configurable1")
 
     definition.returnType shouldBe Typed[String]
-    definition.methodDef.realReturnType shouldBe Typed.fromDetailedType[Future[String]]
+    definition.methodDef.realReturnType shouldBe classOf[Future[_]]
 
     definition.parameters shouldBe List(Parameter[Int]("param1"))
   }
@@ -90,7 +90,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   case class EmptyExplicitMethodToInvoke(parameterDefinition: List[Parameter], returnType: TypingResult) extends Service with WithExplicitMethodToInvoke {
 
-    override def realReturnType: TypingResult = Typed.genericTypeClass[Future[_]](List(returnType))
+    override def realReturnType: Class[_] = classOf[Future[_]]
 
     override def additionalDependencies: List[Class[_]] = List()
 

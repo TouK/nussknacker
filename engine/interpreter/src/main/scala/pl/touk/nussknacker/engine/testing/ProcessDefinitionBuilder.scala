@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
@@ -19,10 +19,9 @@ object ProcessDefinitionBuilder {
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
-    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: TypingResult = Unknown) = new ObjectWithMethodDef(null,
+    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: Class[_] = classOf[Any]) = new ObjectWithMethodDef(null,
       MethodDefinition("", (_, _) => null, new OrderedDependencies(objectDefinition.parameters),
-        Unknown,
-        realType, List()), objectDefinition)
+        Unknown, realType, List()), objectDefinition)
 
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(makeDummyDefinition(_)),
@@ -35,7 +34,7 @@ object ProcessDefinitionBuilder {
     )
 
     ProcessDefinition(
-      definition.services.mapValuesNow(makeDummyDefinition(_, Typed[Future[_]])),
+      definition.services.mapValuesNow(makeDummyDefinition(_, classOf[Future[_]])),
       definition.sourceFactories.mapValuesNow(makeDummyDefinition(_)),
       definition.sinkFactories.mapValuesNow { case (sink, additional) => (makeDummyDefinition(sink), additional) },
       definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (makeDummyDefinition(transformer), queryNames) },

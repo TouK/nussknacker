@@ -36,7 +36,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
       MethodDefinition(methodToInvoke.getName,
         (obj, args) => method.invoke(obj, args:_*), extractParameters(obj, method, nodeConfig),
-        extractReturnTypeFromMethod(obj, method), Typed(method.getReturnType), method.getAnnotations.toList)
+        extractReturnTypeFromMethod(obj, method), method.getReturnType, method.getAnnotations.toList)
     }
   }
 
@@ -108,7 +108,7 @@ object MethodDefinitionExtractor {
                               orderedDependencies: OrderedDependencies,
                               // TODO: remove after full switch to ContextTransformation API
                               returnType: TypingResult,
-                              realReturnType: TypingResult,
+                              realReturnType: Class[_],
                               annotations: List[Annotation])
 
   class OrderedDependencies(dependencies: List[NodeDependency]) {
