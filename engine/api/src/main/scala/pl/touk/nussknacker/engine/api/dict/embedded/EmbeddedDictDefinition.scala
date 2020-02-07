@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.dict.embedded
 
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, ReturningKeyWithoutTransformation}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass}
 
 import scala.reflect.ClassTag
 

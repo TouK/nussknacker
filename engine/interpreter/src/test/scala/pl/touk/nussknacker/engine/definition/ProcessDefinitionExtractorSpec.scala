@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodT
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import scala.concurrent.Future
 
@@ -90,7 +90,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   case class EmptyExplicitMethodToInvoke(parameterDefinition: List[Parameter], returnType: TypingResult) extends Service with WithExplicitMethodToInvoke {
 
-    override def realReturnType: TypingResult = TypedClass(classOf[Future[_]], List(returnType))
+    override def realReturnType: TypingResult = Typed.genericTypeClass[Future[_]](List(returnType))
 
     override def additionalDependencies: List[Class[_]] = List()
 

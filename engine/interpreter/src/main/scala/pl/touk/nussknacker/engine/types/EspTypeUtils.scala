@@ -7,7 +7,7 @@ import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -191,9 +191,9 @@ object EspTypeUtils {
   private def extractGenericParams(paramsType: ParameterizedTypeImpl): TypingResult = {
     val rawType = paramsType.getRawType
     if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
-      TypedClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
-      TypedClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else Typed(rawType)
   }
 

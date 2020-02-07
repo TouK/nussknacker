@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.sql
 
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 import scala.reflect.runtime.universe._
 
@@ -9,6 +9,6 @@ object TypedList {
     Typed.fromDetailedType[List[T]]
 
   def apply(fields: Map[String, TypingResult]): TypingResult =
-    TypedClass(classOf[java.util.List[_]], List(TypedObjectTypingResult(fields)))
+    Typed.genericTypeClass[java.util.List[_]](List(TypedObjectTypingResult(fields)))
 
 }

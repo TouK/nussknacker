@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.typing
 
 import java.util
 
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.collection.JavaConverters._
@@ -45,7 +45,7 @@ object TypingUtils {
   private def typeListDefinition(list: Seq[_]): TypingResult = {
     //TODO: how to handle list definitions better?
     val mapTypingResult = typedMapDefinitionFromParameters(list.head)
-    TypedClass(classOf[util.List[_]], List(mapTypingResult))
+    Typed.genericTypeClass[java.util.List[_]](List(mapTypingResult))
   }
 
   //TODO: how to handle classloaders??

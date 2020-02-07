@@ -4,7 +4,6 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.Configuration
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect.ClassTag
 import scala.util.Try
-import scala.reflect.runtime.universe.TypeTag
 
 object node {
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api.ParamName
 
@@ -68,7 +68,7 @@ object aggregates {
     override def result(finalAggregate: Aggregate): Any = finalAggregate.asJava
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
-      = Valid(TypedClass(classOf[java.util.List[_]], List(input)))
+      = Valid(Typed.genericTypeClass[java.util.List[_]](List(input)))
 
   }
 
@@ -87,7 +87,7 @@ object aggregates {
     override def result(finalAggregate: Aggregate): Any = finalAggregate.asJava
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
-      = Valid(TypedClass(classOf[java.util.Set[_]], List(input)))
+      = Valid(Typed.genericTypeClass[java.util.Set[_]](List(input)))
 
   }
 

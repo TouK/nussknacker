@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.variables
 
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithType
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 
 class TypingResultSpec extends FunSuite with Matchers with OptionValues {
 
@@ -12,7 +12,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
 
   private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
 
-  private def list(arg: TypingResult) =TypedClass(classOf[java.util.List[_]], List(arg))
+  private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 
   test("determine if can be subclass for typed object") {
 

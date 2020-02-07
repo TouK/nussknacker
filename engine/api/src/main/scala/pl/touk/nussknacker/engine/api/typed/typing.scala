@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import java.util
 
+import cats.data.NonEmptyList
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 
@@ -100,7 +101,7 @@ object typing {
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
-  case class TypedClass (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
+  case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
     override def canHasAnyPropertyOrField: Boolean =
       CanBeSubclassDeterminer.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
@@ -123,7 +124,7 @@ object typing {
   object Typed {
 
     //TODO: how to assert in compile time that T != Any, AnyRef, Object?
-    def typedClass[T: ClassTag] = TypedClass(implicitly[ClassTag[T]].runtimeClass, Nil)
+    def typedClass[T: ClassTag] = TypedClass(toRuntime[T], Nil)
 
     //TODO: make it more safe??
     def typedClass(klass: Class[_]): TypedClass = if (klass == classOf[Any]) {
@@ -132,9 +133,13 @@ object typing {
       TypedClass(klass, Nil)
     }
 
+    def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypingResult = TypedClass(klass, params)
+
+    def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypingResult = TypedClass(toRuntime[T], params)
+
     def empty = TypedUnion(Set.empty)
 
-    def apply[T: ClassTag]: TypingResult = apply(implicitly[ClassTag[T]].runtimeClass)
+    def apply[T: ClassTag]: TypingResult = apply(toRuntime[T])
 
     /*using TypeTag can give better description (with extracted generic parameters), however:
       - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
@@ -152,6 +157,7 @@ object typing {
       TypedClass(runtimeClass, typ.typeArgs.map(fromType))
     }
 
+    private def toRuntime[T:ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     def apply(klass: Class[_]): TypingResult = {
       if (klass == classOf[Any]) Unknown else TypedClass(klass, Nil)
@@ -198,7 +204,7 @@ object typing {
       }
     }
 
-    private def flatten(possibleTypes: List[KnownTypingResult]) = possibleTypes.flatMap {
+    private def flatten(possibleTypes: List[KnownTypingResult]): List[SingleTypingResult] = possibleTypes.flatMap {
       case TypedUnion(possibleTypes) => possibleTypes
       case other: SingleTypingResult => List(other)
     }

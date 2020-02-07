@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import scala.collection.mutable
 
