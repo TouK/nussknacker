@@ -6,12 +6,12 @@ import ReactDOMServer from "react-dom/server"
 import {connect} from "react-redux"
 import ActionsUtils from "../../../../../actions/ActionsUtils"
 import ProcessUtils from "../../../../../common/ProcessUtils"
-import {allValid} from "../../../../../common/Validators"
 import HttpService from "../../../../../http/HttpService"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 
 import AceEditor from "./ace"
 import ExpressionSuggester from "./ExpressionSuggester"
+import {allValid} from "../Validators"
 
 //to reconsider
 // - respect categories for global variables?

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -77,14 +77,10 @@ object ProcessDefinitionExtractor {
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
 
+    import pl.touk.nussknacker.engine.util.config.FicusReaders._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-    import net.ceedubs.ficus.readers.ValueReader
 
-    implicit val nodeConfig: ValueReader[ParameterEditor] = ValueReader.relative(config => {
-      val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-      CirceUtil.decodeJsonUnsafe[ParameterEditor](json, "invalid process config")
-    })
     processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
   }
 

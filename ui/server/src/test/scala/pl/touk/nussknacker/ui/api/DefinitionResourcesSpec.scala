@@ -254,4 +254,68 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       )
     }
   }
+
+  it("return mandatory value validator by default") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val validator: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("datesTypesService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "periodParam")
+        .downField("validators")
+        .focus.get
+
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
+    }
+  }
+
+  it("not return mandatory value validator for parameter marked with @Nullable") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val validator: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("optionalTypesService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "nullableParam")
+        .downField("validators")
+        .focus.get
+
+      validator shouldBe Json.arr()
+    }
+  }
+
+  it("override validator based on annotation with validator based on dev config") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val validator: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("optionalTypesService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "overriddenByDevConfigParam")
+        .downField("validators")
+        .focus.get
+
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
+    }
+  }
+
+  it("override validator based on dev config with validator based on file config") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val validator: Json = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("optionalTypesService")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "overriddenByFileConfigParam")
+        .downField("validators")
+        .focus.get
+
+      validator shouldBe Json.arr()
+    }
+  }
 }

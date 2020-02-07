@@ -5,7 +5,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.Subproces
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.definition.editor.ParameterEditorExtractorChain
+import pl.touk.nussknacker.ui.definition.validator.ParameterValidatorsExtractorChain
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
@@ -134,6 +135,7 @@ object UIObjectDefinition {
 @JsonCodec(encodeOnly = true) case class UIParameter(name: String,
                                                      typ: TypingResult,
                                                      editor: ParameterEditor,
+                                                     validators: List[ParameterValidator],
                                                      additionalVariables: Map[String, TypingResult],
                                                      branchParam: Boolean)
 
@@ -143,6 +145,7 @@ object UIParameter {
       name = parameter.name,
       typ = parameter.typ,
       editor = ParameterEditorExtractorChain(paramConfig).evaluateEditor(parameter),
+      validators = ParameterValidatorsExtractorChain(paramConfig).evaluate(parameter),
       additionalVariables = parameter.additionalVariables,
       branchParam = parameter.branchParam
     )

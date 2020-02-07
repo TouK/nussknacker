@@ -11,7 +11,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryValueValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -71,7 +71,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "filter" -> SingleNodeConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None),
         "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
         "enricher" -> SingleNodeConfig(
-          Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor)))),
+          Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None))),
           Some("Filter.svg"),
           //docs url comes from reference.conf in managementSample
           Some("https://touk.github.io/nussknacker/enricher"),
@@ -79,9 +79,9 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         ),
         "multipleParamsService" -> SingleNodeConfig(
           Some(Map(
-            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test"))))),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor)),
-            "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))))
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None),
+            "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None)
           )),
           None,
           None,
@@ -90,11 +90,20 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None),
         "sub1" -> SingleNodeConfig(
           Some(Map(
-            "param1" -> ParameterConfig(None, Some(StringParameterEditor))
+            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None)
           )),
           None,
           None,
           None
+        ),
+        "optionalTypesService" -> SingleNodeConfig(
+          Some(Map(
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty)),
+            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator)))
+          )),
+          None,
+          None,
+          Some("types")
         )
       )
 

@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
+import pl.touk.nussknacker.engine.definition.validator.{MandatoryValueValidatorExtractor, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
@@ -70,7 +71,8 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
         // TODO JOIN: for branchParams we should rather look at Map's value type
         val paramType = extractParameterType(p)
         val editor = EditorExtractor.extract(p)
-        Parameter(name, Typed(paramType), p.getType, editor, additionalVariables(p), branchParamName.isDefined)
+        val validators = ValidatorsExtractor.extract(p)
+        Parameter(name, Typed(paramType), p.getType, editor, validators, additionalVariables(p), branchParamName.isDefined)
       }
     }.toList
 

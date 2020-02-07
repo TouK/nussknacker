@@ -6,11 +6,11 @@ import FixedValuesEditor from "./FixedValuesEditor"
 import _ from "lodash"
 
 type Props = {
-  fieldType: string,
+  fieldType?: string,
   expressionObj: $TodoType,
   showSwitch: boolean,
-  renderFieldLabel: Function,
-  fieldLabel: string,
+  renderFieldLabel?: Function,
+  fieldLabel?: string,
   readOnly: boolean,
   rowClassName?: string,
   valueClassName?: string,
@@ -19,9 +19,9 @@ type Props = {
   editorName?: string,
   fieldName?: string,
   isMarked?: boolean,
-  validators?: Array<$TodoType>,
   showValidation?: boolean,
   onValueChange: Function,
+  errors?: Array<Error>,
 }
 
 type State = {
@@ -49,7 +49,7 @@ class EditableExpression extends React.Component<Props, State> {
   render() {
     const {
       fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param, renderFieldLabel, fieldLabel, readOnly,
-      values,
+      values, errors, fieldName,
     } = this.props
 
     const paramType = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression")
@@ -69,6 +69,7 @@ class EditableExpression extends React.Component<Props, State> {
           className={`${valueClassName ? valueClassName : "node-value"} ${editor.showSwitch ? "switchable " : ""}`}
           {...this.props}
           values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
+          validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
         />
         {
             param?.editor?.type === editorTypes.DUAL_PARAMETER_EDITOR && (
