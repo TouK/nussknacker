@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 
-class TypingResultSpec extends FunSuite with Matchers with OptionValues {
+class TypingResultSpec extends FunSuite with Matchers with OptionValues with Inside {
 
   private val commonSuperTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection)
 
@@ -142,6 +142,23 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues {
     Typed.tagged(Typed.typedClass[String], "tag1").canBeSubclassOf(Typed.tagged(Typed.typedClass[Integer], "tag1")) shouldBe false
     Typed.tagged(Typed.typedClass[String], "tag1").canBeSubclassOf(Typed.typedClass[String]) shouldBe true
     Typed.typedClass[String].canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe false
+  }
+
+  test("should deeply extract typ parameters") {
+    inside(Typed.fromDetailedType[Option[Map[String, Int]]]) {
+      case TypedClass(optionClass, mapTypeArg :: Nil) if optionClass == classOf[Option[Any]] =>
+        inside(mapTypeArg) {
+          case TypedClass(optionClass, keyTypeArg :: valueTypeArg :: Nil) if optionClass == classOf[Map[Any, Any]] =>
+            inside(keyTypeArg) {
+              case TypedClass(keyClass, Nil) =>
+                keyClass shouldBe classOf[String]
+            }
+            inside(valueTypeArg) {
+              case TypedClass(keyClass, Nil) =>
+                keyClass shouldBe classOf[Int]
+            }
+        }
+    }
   }
 
   object ClassHierarchy {

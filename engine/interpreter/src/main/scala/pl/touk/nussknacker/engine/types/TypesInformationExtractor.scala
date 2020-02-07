@@ -42,44 +42,44 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
                                    (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     // It's a deep first traversal - to avoid SOF we use mutable collection. It won't be easy to implement it using immutable collections
     val collectedSoFar = mutable.HashSet.empty[TypingResult]
-    (clazzes.flatMap(clazzRefsFromTypingResult) ++ mandatoryClasses).flatMap { cl =>
+    (clazzes.flatMap(typesFromTypingResult) ++ mandatoryClasses).flatMap { cl =>
       clazzAndItsChildrenDefinitionIfNotCollectedSoFar(cl)(collectedSoFar, DiscoveryPath(List(Clazz(cl))))
     }.toSet
   }
 
-  private def clazzRefsFromTypingResult(typingResult: TypingResult): Set[TypingResult] = typingResult match {
+  private def typesFromTypingResult(typingResult: TypingResult): Set[TypingResult] = typingResult match {
     case tc: TypedClass =>
-      clazzRefsFromTypedClass(tc)
+      typesFromTypedClass(tc)
     case TypedUnion(set) =>
-      set.flatMap(clazzRefsFromTypingResult)
+      set.flatMap(typesFromTypingResult)
     case TypedObjectTypingResult(fields, clazz) =>
-      clazzRefsFromTypedClass(clazz) ++ fields.values.flatMap(clazzRefsFromTypingResult)
+      typesFromTypedClass(clazz) ++ fields.values.flatMap(typesFromTypingResult)
     case dict: TypedDict =>
-      clazzRefsFromTypedClass(dict.objType)
+      typesFromTypedClass(dict.objType)
     case TypedTaggedValue(underlying, _) =>
-      clazzRefsFromTypedClass(underlying.objType)
+      typesFromTypedClass(underlying.objType)
     case Unknown =>
       Set.empty
   }
 
-  private def clazzRefsFromTypedClass(typedClass: TypedClass): Set[TypingResult]
-    = typedClass.params.flatMap(clazzRefsFromTypingResult).toSet + Typed(typedClass.klass)
+  private def typesFromTypedClass(typedClass: TypedClass): Set[TypingResult]
+    = typedClass.params.flatMap(typesFromTypingResult).toSet + Typed(typedClass.klass)
 
-  private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(clazzRef: TypingResult)
+  private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(typingResult: TypingResult)
                                                               (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
                                                               (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
-    if (collectedSoFar.contains(clazzRef)) {
+    if (collectedSoFar.contains(typingResult)) {
       Set.empty
     } else {
-      collectedSoFar += clazzRef
-      clazzAndItsChildrenDefinition(clazzRef)(collectedSoFar, path)
+      collectedSoFar += typingResult
+      clazzAndItsChildrenDefinition(typingResult)(collectedSoFar, path)
     }
   }
 
-  private def clazzAndItsChildrenDefinition(clazzRef: TypingResult)
+  private def clazzAndItsChildrenDefinition(typingResult: TypingResult)
                                            (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
                                            (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
-    clazzRef match {
+    typingResult match {
       case e:TypedClass =>
         val definitionsForClass = if (settings.isHidden(e.klass)) {
           Set.empty
@@ -92,10 +92,10 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     }
   }
 
-  private def definitionsFromGenericParameters(clazzRef: TypedClass)
+  private def definitionsFromGenericParameters(typedClass: TypedClass)
                                               (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
                                               (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
-    clazzRef.params.zipWithIndex.flatMap {
+    typedClass.params.zipWithIndex.flatMap {
       case (k:TypedClass, idx) => clazzAndItsChildrenDefinitionIfNotCollectedSoFar(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
       case _ => Set.empty[ClazzDefinition]
     }.toSet

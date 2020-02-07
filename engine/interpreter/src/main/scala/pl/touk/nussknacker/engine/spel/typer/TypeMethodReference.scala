@@ -55,13 +55,11 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
     methodInfoes.filter(_.parameters.size <= paramsCount) match {
       case Nil =>
         Left(s"Invalid arity for '${methodReference.getName}'")
-      case h::t =>
-        val clazzRefs = NonEmptyList(h, t).map(_.refClazz)
-        val typingResult = typeFromClazzRefs(clazzRefs)
+      case nonEmpty =>
+        val returnTypes = nonEmpty.map(_.refClazz)
+        val typingResult = Typed(returnTypes.toSet)
         Right(typingResult)
     }
 
-  private def typeFromClazzRefs(clazzRefs: NonEmptyList[TypingResult]): TypingResult =
-    Typed(clazzRefs.toList.toSet)
 
 }

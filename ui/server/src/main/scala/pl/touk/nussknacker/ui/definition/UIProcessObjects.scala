@@ -77,8 +77,8 @@ object UIProcessObjects {
                                     fixedNodesConfig: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
-        val clazzRefParams = parameters.map(extractSubprocessParam(classLoader))
-        (id, new ObjectDefinition(clazzRefParams, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
+        val typedParameters = parameters.map(extractSubprocessParam(classLoader))
+        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
     }.toMap
     subprocessInputs
   }

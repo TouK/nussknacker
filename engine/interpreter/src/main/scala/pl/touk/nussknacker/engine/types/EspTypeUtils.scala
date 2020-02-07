@@ -148,8 +148,8 @@ object EspTypeUtils {
       param <- method.getParameters.toList
       annotationOption = Option(param.getAnnotation(classOf[ParamName]))
       name = annotationOption.map(_.value).getOrElse(param.getName)
-      clazzRef = Typed(param.getType)
-    } yield Parameter(name, clazzRef)
+      paramType = Typed(param.getType)
+    } yield Parameter(name, paramType)
   }
 
   private def getNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {

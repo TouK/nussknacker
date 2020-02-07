@@ -17,8 +17,8 @@ object TypeRelatedParameterValueExtractor extends ParameterDefaultValueExtractor
     Some(evaluateTypeRelatedParamValue(parameter.name, klass.getName))
   }
 
-  private[defaults] def evaluateTypeRelatedParamValue(name: String, refClassName: String): String = {
-    refClassName match {
+  private[defaults] def evaluateTypeRelatedParamValue(name: String, className: String): String = {
+    className match {
       case "long" | "short" | "int" | "java.lang.Number" => "0"
       case "float" | "double" | "java.math.BigDecimal" => "0.0"
       case "boolean" | "java.lang.Boolean" => "true"

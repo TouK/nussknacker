@@ -175,7 +175,7 @@ object node {
   case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends EndingNodeData with RealNodeData
 
-  //we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has ClazzRef which has *real* class inside  
+  //we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has TypedResult which has *real* class inside
   //TODO: probably should be able to handle class parameters or typed maps
   //shape of this data should probably change, currently we leave it for backward compatibility
   object SubprocessInputDefinition {

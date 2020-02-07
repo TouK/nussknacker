@@ -135,12 +135,12 @@ object DefinitionExtractor {
     }
 
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
-      def clazzRefsFromParameter(parameter: Parameter): Iterable[TypingResult] = {
+      def typesFromParameter(parameter: Parameter): Iterable[TypingResult] = {
         val fromAdditionalVars = parameter.additionalVariables.values
         fromAdditionalVars.toList :+ parameter.typ
       }
 
-      obj.methodDef.returnType :: obj.parameters.flatMap(clazzRefsFromParameter)
+      obj.methodDef.returnType :: obj.parameters.flatMap(typesFromParameter)
     }
   }
 
@@ -168,7 +168,7 @@ object TypeInfos {
 
   @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo]) {
 
-    def getPropertyOrFieldClazzRef(methodName: String): Option[TypingResult] = {
+    def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       val filteredMethods = methods.filter(_._2.parameters.isEmpty)
       val methodInfoes = filteredMethods.get(methodName)
       methodInfoes.map(_.refClazz)

@@ -284,7 +284,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                                    (t: SingleTypingResult) = {
     def extractClass(typedClass: TypedClass) = {
       val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
-      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
+      clazzDefinition.getPropertyOrFieldType(e.getName).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
     }
     t match {
       case typed: SingleTypingResult if typed.canHasAnyPropertyOrField =>
