@@ -22,7 +22,7 @@ object AvroSchemaTypeDefinitionExtractor {
           schema.getFields.asScala.map { field =>
             field.name() -> typeDefinition(field.schema())
           }.toMap,
-          TypedClass[GenericRecord]
+          Typed.typedClass[GenericRecord]
         )
       case Schema.Type.ENUM =>
         Typed[EnumSymbol]

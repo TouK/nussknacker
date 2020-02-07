@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.dict.embedded
 
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, ReturningKeyWithoutTransformation}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypingResult}
 
 import scala.reflect.ClassTag
 
@@ -36,8 +36,6 @@ object EmbeddedDictDefinition {
     SimpleDictDefinition(labelByKey)
   }
 
-  private def toTypedClass(tr: TypingResult): TypedClass = tr.asInstanceOf[TypedClass]
-
   private def checkLabelsAreUnique(labelByKey: Map[String, String]): Unit = {
     val labels = labelByKey.values.toList
     val duplicatedValues = labels.diff(labels.distinct).distinct
@@ -46,7 +44,7 @@ object EmbeddedDictDefinition {
 
   def forJavaEnum[T <: Enum[_]](javaEnumClass: Class[T]): EmbeddedDictDefinition = {
     val enumValueByName = javaEnumClass.getEnumConstants.map(e => e.name() -> e).toMap
-    EnumDictDefinition(toTypedClass(TypedClass(javaEnumClass)), enumValueByName)
+    EnumDictDefinition(Typed.typedClass(javaEnumClass), enumValueByName)
   }
 
   def forScalaEnum[T <: Enumeration](scalaEnum: Enumeration): ScalaEnumTypedDictBuilder[T] = new ScalaEnumTypedDictBuilder[T](scalaEnum)
@@ -54,7 +52,7 @@ object EmbeddedDictDefinition {
   class ScalaEnumTypedDictBuilder[T <: Enumeration](scalaEnum: Enumeration) {
     def withValueClass[V <: T#Value : ClassTag]: EmbeddedDictDefinition = {
       val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
-      EnumDictDefinition(toTypedClass(TypedClass(implicitly[ClassTag[V]].runtimeClass)), enumValueByName)
+      EnumDictDefinition(Typed.typedClass[V], enumValueByName)
     }
   }
 
@@ -79,7 +77,7 @@ object EmbeddedDictDefinition {
    */
   def forScalaEnum(scalaEnum: Enumeration, valueClass: Class[_]): EmbeddedDictDefinition = {
     val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
-    EnumDictDefinition(toTypedClass(TypedClass(valueClass)), enumValueByName)
+    EnumDictDefinition(Typed.typedClass(valueClass), enumValueByName)
   }
 
   def enumDictId(valueClass: Class[_]) = s"enum:${valueClass.getName}"

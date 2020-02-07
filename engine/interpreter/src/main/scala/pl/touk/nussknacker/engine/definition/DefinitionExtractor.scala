@@ -97,13 +97,6 @@ object DefinitionExtractor {
 
   }
 
-  case class PlainClazzDefinition(clazzName: TypedClass, methods: Map[String, TypedClass]) {
-    def getMethod(methodName: String): Option[TypedClass] = {
-      methods.get(methodName)
-    }
-  }
-
-
   case class ObjectDefinition(parameters: List[Parameter],
                                          returnType: TypingResult,
                                          categories: List[String],
@@ -158,7 +151,7 @@ object DefinitionExtractor {
     def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, List(), SingleNodeConfig.zero)
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, Typed[Any], categories, SingleNodeConfig.zero)
+      ObjectDefinition(params, Unknown, categories, SingleNodeConfig.zero)
 
     def apply(parameters: List[Parameter], returnType: TypingResult, categories: List[String]): ObjectDefinition = {
       ObjectDefinition(parameters, returnType, categories, SingleNodeConfig.zero)

@@ -11,9 +11,12 @@ object TypeEncoders {
     "params" -> fromValues(ref.params.map(encodeTypingResult))
   )
 
+  //TODO: maybe we want to treat Unknown differently also on FE?
+  private val encodeUnknown = obj("refClazzName" -> fromString(classOf[Object].getName), "params" -> fromValues(Nil))
+
   private def encodeTypingResult(result: TypingResult): Json = result match {
     case single: SingleTypingResult => encodeSingleTypingResult(single)
-    case typing.Unknown => encodeTypedClass(TypedClass[Any])
+    case typing.Unknown => encodeUnknown
     case TypedUnion(classes) =>
       fromFields(("union" -> fromValues(classes.map(encodeTypingResult).toList))::Nil)
   }

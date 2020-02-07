@@ -1,5 +1,5 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
-case class TypedObjectDefinition(fields: Map[String, TypedClass])
+case class TypedObjectDefinition(fields: Map[String, TypingResult])

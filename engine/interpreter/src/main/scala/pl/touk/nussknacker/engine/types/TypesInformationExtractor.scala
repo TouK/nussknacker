@@ -36,7 +36,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     classOf[MetaVariables]
   ) ++
     // Literals for primitive types are wrapped to boxed representations
-    primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(TypedClass(_))
+    primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(Typed(_))
 
   def clazzAndItsChildrenDefinition(clazzes: Iterable[TypingResult])
                                    (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
@@ -63,7 +63,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
   }
 
   private def clazzRefsFromTypedClass(typedClass: TypedClass): Set[TypingResult]
-    = typedClass.params.flatMap(clazzRefsFromTypingResult).toSet + TypedClass(typedClass.klass)
+    = typedClass.params.flatMap(clazzRefsFromTypingResult).toSet + Typed(typedClass.klass)
 
   private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(clazzRef: TypingResult)
                                                               (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)

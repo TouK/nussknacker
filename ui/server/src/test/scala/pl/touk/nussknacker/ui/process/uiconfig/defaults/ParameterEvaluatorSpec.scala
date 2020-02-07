@@ -45,7 +45,7 @@ class ParameterEvaluatorSpec extends FlatSpec with Matchers {
     )
   )
   behavior of "ParameterEvaluator"
-  testTypeRelatedDefaultValue[Integer](value = 0)
+  testTypeRelatedDefaultValue[Int](value = 0)
   testTypeRelatedDefaultValue[Double](value = 0f)
   testTypeRelatedDefaultValue[Double](value = DEFAULT_PARAMETER_VALUE, nodeName = DEFINED_NODE_NAME)
 }

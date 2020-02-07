@@ -38,6 +38,6 @@ trait ReturningKeyWithoutTransformation { self: DictDefinition =>
   override def value(key: String): Any = key
 
   // TODO: Should not take dictId - see notice in ExpressionConfig
-  override def valueType(dictId: String): SingleTypingResult = Typed.taggedDictValue(TypedClass[String], dictId)
+  override def valueType(dictId: String): SingleTypingResult = Typed.taggedDictValue(Typed.typedClass[String], dictId)
 
 }

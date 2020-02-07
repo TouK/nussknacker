@@ -40,7 +40,7 @@ object typing {
       TypedObjectTypingResult(definition.fields.map { case (k, v) => (k, Typed(v))})
 
     def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, TypedClass[java.util.Map[_, _]])
+      TypedObjectTypingResult(fields, Typed.typedClass[java.util.Map[_, _]])
 
   }
 
@@ -100,7 +100,7 @@ object typing {
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
-  case class TypedClass private (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
+  case class TypedClass (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
     override def canHasAnyPropertyOrField: Boolean =
       CanBeSubclassDeterminer.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
@@ -120,14 +120,21 @@ object typing {
 
   }
 
-  object TypedClass {
+  object Typed {
 
-    //TODO: how to prevent typesafely TypedClass[Any]???
-    def apply[T: ClassTag] : TypedClass =
-      apply(implicitly[ClassTag[T]].runtimeClass).asInstanceOf[TypedClass]
+    //TODO: how to assert in compile time that T != Any, AnyRef, Object?
+    def typedClass[T: ClassTag] = TypedClass(implicitly[ClassTag[T]].runtimeClass, Nil)
 
-    def apply(klass: Class[_]) : TypingResult =
-      if (klass == classOf[Any]) Unknown else TypedClass(klass, Nil)
+    //TODO: make it more safe??
+    def typedClass(klass: Class[_]): TypedClass = if (klass == classOf[Any]) {
+      throw new IllegalArgumentException("Cannot have typed class of Any, use Unknown")
+    } else {
+      TypedClass(klass, Nil)
+    }
+
+    def empty = TypedUnion(Set.empty)
+
+    def apply[T: ClassTag]: TypingResult = apply(implicitly[ClassTag[T]].runtimeClass)
 
     /*using TypeTag can give better description (with extracted generic parameters), however:
       - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
@@ -145,18 +152,9 @@ object typing {
       TypedClass(runtimeClass, typ.typeArgs.map(fromType))
     }
 
-  }
-
-  object Typed {
-
-    def empty = TypedUnion(Set.empty)
-
-    def apply[T: ClassTag]: TypingResult = apply(TypedClass[T])
-
-    def fromDetailedType[T: TypeTag]: TypingResult = TypedClass.fromDetailedType[T]
 
     def apply(klass: Class[_]): TypingResult = {
-      TypedClass(klass)
+      if (klass == classOf[Any]) Unknown else TypedClass(klass, Nil)
     }
 
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
@@ -171,7 +169,7 @@ object typing {
           val fieldTypes = fields.map {
             case (k, v) => k -> fromInstance(v)
           }
-          TypedObjectTypingResult(fieldTypes, TypedClass[TypedMap])
+          TypedObjectTypingResult(fieldTypes, TypedClass(classOf[TypedMap], Nil))
         case dict: DictInstance =>
           TypedDict(dict.dictId, dict.valueType)
         case other =>

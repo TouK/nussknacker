@@ -26,6 +26,6 @@ object MetaVariables {
 
   private def propertiesType(metaData: MetaData) = {
     val definedProperties = metaData.additionalFields.map(_.properties).getOrElse(Map.empty)
-    TypedObjectTypingResult(TypedObjectDefinition(definedProperties.mapValues(_ => TypedClass[String])))
+    TypedObjectTypingResult(TypedObjectDefinition(definedProperties.mapValues(_ => Typed[String])))
   }
 }

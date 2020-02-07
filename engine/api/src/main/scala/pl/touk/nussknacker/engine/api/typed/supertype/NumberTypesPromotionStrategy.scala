@@ -47,7 +47,7 @@ object NumberTypesPromotionStrategy {
       } else if (both.exists(DecimalNumbers.contains) && both.exists(FloatingNumbers.contains)) {
         Typed(both.find(FloatingNumbers.contains).get)
       } else { // unknown Number
-        TypedClass[java.lang.Double]
+        Typed[java.lang.Double]
       }
     }
 
@@ -61,7 +61,7 @@ object NumberTypesPromotionStrategy {
       } else if (right.isAssignableFrom(left)) {
         Typed(right)
       } else {
-        TypedClass[Number]
+        Typed[Number]
       }
     }
 

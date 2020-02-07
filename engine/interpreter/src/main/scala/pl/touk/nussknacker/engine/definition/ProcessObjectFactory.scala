@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -77,7 +77,7 @@ class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDef
 
 class SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]] {
 
-  override def extractReturnTypeFromMethod(sourceFactory: SourceFactory[_], method: Method) = TypedClass(sourceFactory.clazz)
+  override def extractReturnTypeFromMethod(sourceFactory: SourceFactory[_], method: Method) = Typed(sourceFactory.clazz)
 }
 
 object SignalsDefinitionExtractor extends AbstractMethodDefinitionExtractor[ProcessSignalSender] {

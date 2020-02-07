@@ -6,11 +6,13 @@ import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
+import scala.reflect.ClassTag
+
 class DefaultValueExtractorChainTest extends FlatSpec with Matchers {
   behavior of "DefaultValueExtractorChainTest"
   private val confMap = Map("node1" -> Map("param1" -> ParameterConfig(defaultValue = Some("123"), editor = None)))
-  private val param1 = Parameter[Integer]("param1")
-  private val param2 = Parameter[Integer]("param=2")
+  private val param1 = Parameter[Int]("param1")
+  private val param2 = Parameter[Int]("param=2")
   private val node = NodeDefinition("node1", List(param1, param2))
   private val extractor = DefaultValueExtractorChain(ParamDefaultValueConfig(confMap), ModelClassLoader.empty)
   it should "evaluate value by type" in {

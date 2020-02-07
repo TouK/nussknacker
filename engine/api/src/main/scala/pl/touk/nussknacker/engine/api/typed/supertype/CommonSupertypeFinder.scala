@@ -95,7 +95,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     if (List(boxedLeftClass, boxedRightClass).forall(isSimpleType)) {
       commonSuperTypeForSimpleTypes(boxedLeftClass, boxedRightClass) match {
         case tc: TypedClass => Some(tc)
-        case TypedUnion(types) if types.nonEmpty && types.forall(_.canBeSubclassOf(Typed[Number])) => Some(TypedClass[Number])
+        case TypedUnion(types) if types.nonEmpty && types.forall(_.canBeSubclassOf(Typed[Number])) => Some(Typed.typedClass[Number])
         case _ => None // empty e.g. conflicting simple types
       }
     } else {

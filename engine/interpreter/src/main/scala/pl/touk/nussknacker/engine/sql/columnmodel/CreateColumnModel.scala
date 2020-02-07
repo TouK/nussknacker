@@ -47,20 +47,20 @@ object CreateColumnModel {
   object UnknownInner extends InvalidateMessage
 
   object ClazzToSqlType extends LazyLogging {
-    val STRING: TypedClass = TypedClass[String]
-    val INTEGER: TypedClass = TypedClass[Int]
-    val LONG: TypedClass = TypedClass[Long]
-    val DOUBLE: TypedClass = TypedClass[Double]
-    val BIG_DECIMAL: TypedClass = TypedClass[BigDecimal]
-    val J_BIG_DECIMAL: TypedClass = TypedClass[java.math.BigDecimal]
-    val J_LONG: TypedClass = TypedClass[java.lang.Long]
-    val J_INTEGER: TypedClass = TypedClass[java.lang.Integer]
-    val J_DOUBLE: TypedClass = TypedClass[java.lang.Double]
-    val J_BOOLEAN: TypedClass = TypedClass[java.lang.Boolean]
-    val BOOLEAN: TypedClass = TypedClass[Boolean]
-    val NUMBER: TypedClass = TypedClass[Number]
-    val DATE: TypedClass = TypedClass[Date]
-    val LOCAL_DATE_TIME: TypedClass = TypedClass[LocalDateTime]
+    val STRING: TypingResult = Typed[String]
+    val INTEGER: TypingResult = Typed[Int]
+    val LONG: TypingResult = Typed[Long]
+    val DOUBLE: TypingResult = Typed[Double]
+    val BIG_DECIMAL: TypingResult = Typed[BigDecimal]
+    val J_BIG_DECIMAL: TypingResult = Typed[java.math.BigDecimal]
+    val J_LONG: TypingResult = Typed[java.lang.Long]
+    val J_INTEGER: TypingResult = Typed[java.lang.Integer]
+    val J_DOUBLE: TypingResult = Typed[java.lang.Double]
+    val J_BOOLEAN: TypingResult = Typed[java.lang.Boolean]
+    val BOOLEAN: TypingResult = Typed[Boolean]
+    val NUMBER: TypingResult = Typed[Number]
+    val DATE: TypingResult = Typed[Date]
+    val LOCAL_DATE_TIME: TypingResult = Typed[LocalDateTime]
 
     def convert(name: String, arg: TypingResult, className: String): Option[SqlType] = {
       import SqlType._

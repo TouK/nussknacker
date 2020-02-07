@@ -7,7 +7,7 @@ import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -18,7 +18,7 @@ object EspTypeUtils {
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(TypedClass(clazz), getPublicMethodAndFields(clazz))
+    ClazzDefinition(Typed(clazz), getPublicMethodAndFields(clazz))
 
   def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*): Class[_] =
     if (classesToExtractGenericFrom.contains(p.getType)) {
@@ -47,10 +47,6 @@ object EspTypeUtils {
 
     ClassUtils.isAssignable(passedValueClass, signatureType, true) ||
       ClassUtils.isAssignable(unbox(passedValueClass), unbox(signatureType), true)
-  }
-
-  private def methodNames(clazz: Class[_]): List[String] = {
-    clazz.getMethods.map(_.getName).toList
   }
 
   private def getPublicMethodAndFields(clazz: Class[_])
@@ -144,7 +140,7 @@ object EspTypeUtils {
   }
 
   private def getReturnClassForMethod(method: Method): TypingResult = {
-    getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(TypedClass(method.getReturnType))
+    getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(Typed(method.getReturnType))
   }
 
   private def getParameters(method: Method): List[Parameter] = {
@@ -152,7 +148,7 @@ object EspTypeUtils {
       param <- method.getParameters.toList
       annotationOption = Option(param.getAnnotation(classOf[ParamName]))
       name = annotationOption.map(_.value).getOrElse(param.getName)
-      clazzRef = TypedClass(param.getType)
+      clazzRef = Typed(param.getType)
     } yield Parameter(name, clazzRef)
   }
 
@@ -161,7 +157,7 @@ object EspTypeUtils {
   }
 
   private def getReturnClassForField(field: Field): TypingResult = {
-    getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(TypedClass(field.getType))
+    getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(Typed(field.getType))
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
@@ -186,7 +182,7 @@ object EspTypeUtils {
 
   private def extractClass(futureGenericType: Type): Option[TypingResult] = {
     futureGenericType match {
-      case t: Class[_] => Some(TypedClass(t))
+      case t: Class[_] => Some(Typed(t))
       case t: ParameterizedTypeImpl => Some(extractGenericParams(t))
       case t => None
     }
@@ -198,7 +194,7 @@ object EspTypeUtils {
       TypedClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
       TypedClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    } else TypedClass(rawType)
+    } else Typed(rawType)
   }
 
 }

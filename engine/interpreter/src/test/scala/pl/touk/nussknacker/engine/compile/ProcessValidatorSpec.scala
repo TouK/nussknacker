@@ -44,33 +44,33 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
-    Map("sampleEnricher" -> ObjectDefinition(List.empty, TypedClass[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
-      TypedClass[SimpleRecord], List())),
-    Map("source" -> ObjectDefinition(List.empty, TypedClass[SimpleRecord], List()),
-        "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), TypedClass[SimpleRecord], List()),
-        "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), TypedClass[TypedMap], List())
+    Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
+      Typed[SimpleRecord], List())),
+    Map("source" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()),
+        "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord], List()),
+        "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
     ),
     Map("sink" -> (ObjectDefinition.noParam, SinkAdditionalData(true)),
       "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]))), SinkAdditionalData(true))),
 
-    Map("customTransformer" -> (ObjectDefinition(List.empty, TypedClass[SimpleRecord], List()), emptyQueryNamesData()),
-      "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), TypedClass[SimpleRecord], List()), emptyQueryNamesData()),
+    Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData()),
+      "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "manyParams" -> (ObjectDefinition(List(
                 Parameter("par1", Typed[String], classOf[LazyParameter[_]]),
                 Parameter[String]("par2"),
                 Parameter("par3", Typed[String], classOf[LazyParameter[_]]),
-                Parameter[String]("par4")), TypedClass[SimpleRecord], List()), emptyQueryNamesData()),
-      "clearingContextTransformer" -> (ObjectDefinition(List.empty, TypedClass[SimpleRecord], List()), emptyQueryNamesData(true)),
+                Parameter[String]("par4")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
+      "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
         Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]), Parameter("lazyInt", Typed[Integer], classOf[LazyParameter[_]]),
         Parameter[Long]("long"))
-      , TypedClass[SimpleRecord], List()), emptyQueryNamesData(true)),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), TypedClass[Void], List()), emptyQueryNamesData())
+      , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(TypedClass(ProcessHelper.getClass)), List("cat1"), SingleNodeConfig.zero)),
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)),
       List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false
     ),
     TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleEnricher], Typed[SimpleRecord], Typed(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
@@ -99,20 +99,19 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.variablesInNodes shouldBe Map(
-      ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass))),
-      "id1" -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass))),
-      "filter1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass))),
-      "filter2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass))),
-      "filter3" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass))),
-      "sampleProcessor1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass))),
-      "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass))),
-      "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord]),
-      "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord],
+      ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "id1" -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "filter1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "filter2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "filter3" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "sampleProcessor1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord]),
+      "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord],
         "vars" -> TypedObjectTypingResult(Map(
           "v1" -> Typed[Integer],
           "mapVariable" -> TypedObjectTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
-          "spelVariable" ->  Typed(TypedClass[Boolean])
-
+          "spelVariable" ->  Typed[Boolean]
         ))
       )
     )
@@ -187,7 +186,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.variablesInNodes("sink") shouldBe Map(
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(processWithRefToMissingService.metaData),
-      "processHelper" -> Typed(TypedClass(ProcessHelper.getClass)),
+      "processHelper" -> Typed(ProcessHelper.getClass),
       "event" -> Typed[SimpleRecord]
     )
 
@@ -334,8 +333,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass)))
-    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass)))
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
   }
 
   test("validate custom node return type") {
@@ -461,7 +460,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(TypedClass(ProcessHelper.getClass)), "var1" -> Typed[String])
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "var1" -> Typed[String])
   }
 
   test("not allow to overwrite variable by switch node") {
@@ -549,15 +548,15 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.variablesInNodes("id2") shouldBe Map(
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(process.metaData),
-      "processHelper" -> Typed(TypedClass(ProcessHelper.getClass)),
+      "processHelper" -> Typed(ProcessHelper.getClass),
       "var2" -> Typed[String],
       "var3" -> Typed[String])
     compilationResult.variablesInNodes("id3") shouldBe Map(
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(process.metaData),
-      "processHelper" -> Typed(TypedClass(ProcessHelper.getClass)),
+      "processHelper" -> Typed(ProcessHelper.getClass),
       "var2" -> Typed[String],
-      "var3" -> Typed(TypedClass[Int])
+      "var3" -> Typed[Int]
     )
   }
 
