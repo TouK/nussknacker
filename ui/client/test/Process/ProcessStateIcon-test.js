@@ -2,7 +2,7 @@ import React from "react"
 import Enzyme, {mount} from "enzyme"
 import Adapter from "enzyme-adapter-react-16"
 import ProcessStateIcon, {unknownIcon} from "../../components/Process/ProcessStateIcon"
-import {unknownTooltip} from "../../components/Process/ProcessMessages"
+import {unknownTooltip} from "../../components/Process/messages"
 import {absoluteBePath} from "../../common/UrlUtils"
 
 //TODO: In future we shoulde convert it to ts - now, we have some problems with this..

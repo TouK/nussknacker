@@ -19,7 +19,7 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with Eith
   it ("process state should be running") {
     val state = createProcessState(SimpleStateStatus.Running)
     state.status.isRunning shouldBe true
-    state.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Pause)
+    state.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy)
   }
 
   it ("process state should be finished") {

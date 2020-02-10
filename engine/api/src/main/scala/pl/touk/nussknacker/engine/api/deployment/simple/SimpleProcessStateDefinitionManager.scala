@@ -17,7 +17,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
     SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy),
     SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Cancel),
-    SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause),
+    SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Failed -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy),

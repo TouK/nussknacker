@@ -1,11 +1,12 @@
+/* eslint-disable i18next/no-literal-string */
 export enum ActionType {
   Deploy = "DEPLOY",
   Cancel = "CANCEL",
+  Pause = "PAUSE",
 }
 
 export enum StatusType {
-  Running = "RUNNING",
-  Unknown = "UNKNOWN",
+  Running = "RunningStateStatus",
 }
 
 export type ProcessActionType = {
@@ -37,7 +38,7 @@ export interface ProcessType {
 export type ProcessStateType = {
   status: {
     name: string,
-    type: string,
+    type: StatusType,
   },
   deploymentId?: string,
   allowedActions: Array<ActionType>,
