@@ -2,7 +2,7 @@ import React from "react"
 import {DragSource, DropTarget} from "react-dnd"
 import ReactDOM from "react-dom"
 import Select from "react-select"
-import {allValid} from "../../../../common/Validators"
+import {allValid} from "../editors/Validators"
 import ValidationLabels from "../../../modals/ValidationLabels"
 import SvgDiv from "../../../SvgDiv"
 

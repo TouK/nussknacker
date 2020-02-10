@@ -1,11 +1,11 @@
 import React from "react"
-import {ProcessStateType, ProcessType} from "./ProcessTypes"
+import {ProcessStateType, ProcessType} from "./types"
 import {
   descriptionProcessArchived,
   descriptionSubprocess,
   descriptionSubprocessArchived,
   unknownDescription,
-} from "./ProcessMessages"
+} from "./messages"
 import {CSSTransition, SwitchTransition} from "react-transition-group"
 import ProcessStateIcon, {unknownIcon} from "./ProcessStateIcon"
 import {absoluteBePath} from "../../common/UrlUtils"

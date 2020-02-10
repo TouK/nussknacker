@@ -6,13 +6,14 @@ import Modal from "react-modal"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import EspModalStyles from "../common/EspModalStyles"
-import {duplicateValue, notEmptyValidator} from "../common/Validators"
+import {mandatoryValueValidator} from "./graph/node-modal/editors/Validators"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 
 import history from "../history"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import ValidationLabels from "./modals/ValidationLabels"
+import * as DialogMessages from "../common/DialogMessages"
 
 //TODO: Consider integrating with GenericModalDialog
 class AddProcessDialog extends React.Component {
@@ -73,7 +74,7 @@ class AddProcessDialog extends React.Component {
                         <input autoFocus={true} type="text" id="newProcessId" className="node-input"
                                value={this.state.processId}
                                onChange={(e) => this.setState({processId: e.target.value})}/>
-                         <ValidationLabels validators={validators} values={[this.props.clashedNames, this.state.processId]}/>
+                         <ValidationLabels validators={validators()} values={[this.props.clashedNames, this.state.processId]}/>
                       </div>
                     </div>
                     <div className="node-row">
@@ -117,14 +118,14 @@ const nameAlreadyExists = (clashedNames, name) => {
   return clashedNames.some(processName => processName === name)
 }
 
-const validators = [
+const validators = () =>  [
   {
-    isValid: (clashedNames, name) => notEmptyValidator.isValid(name),
-    message: notEmptyValidator.message,
+    isValid: (clashedNames, name) => mandatoryValueValidator.isValid(name),
+    message: mandatoryValueValidator.message,
   },
   {
     isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),
-    message: duplicateValue,
+    message: DialogMessages.valueAlreadyTaken(),
   },
 ]
 

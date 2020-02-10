@@ -25,6 +25,7 @@ case class Parameter(name: String,
                      typ: TypingResult,
                      runtimeClass: Class[_],
                      editor: Option[ParameterEditor] = None,
+                     validators: List[ParameterValidator] = List.empty,
                      additionalVariables: Map[String, TypingResult] = Map.empty,
                      branchParam: Boolean = false) extends NodeDependency {
 
@@ -65,3 +66,13 @@ object DualParameterEditor {
     Decoder.decodeString.emapTry(name => Try(DualEditorMode.fromName(name)))
   }
 }
+
+/**
+ * Extend this trait to configure new parameter validator which should be handled on FE.
+ * Please remember that you have to also add your own [[pl.touk.nussknacker.engine.definition.validator.ValidatorExtractor]]
+ * to [[pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor]] which should decide whether new validator
+ * should appear in configuration for certain parameter
+ */
+@ConfiguredJsonCodec sealed trait ParameterValidator
+
+case object MandatoryValueValidator extends ParameterValidator

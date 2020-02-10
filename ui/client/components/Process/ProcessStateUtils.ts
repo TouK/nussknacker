@@ -1,22 +1,13 @@
-import {ActionType, StatusType, ProcessStateType, ProcessType} from "./ProcessTypes"
+import {ActionType, ProcessStateType, StatusType} from "./types"
 
 class ProcessStateUtils {
 
-  public isStateRunning = (state: ProcessStateType) => this.getStateStatus(state) === StatusType.Running.toString()
+  public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Deploy)
 
-  public isDeployed = (process: ProcessType) => process?.lastAction?.action === ActionType.Deploy
+  public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Cancel)
 
-  public isProcessRunning = (process: ProcessType) => this.isStateRunning(process.state)
+  public isRunning = (state: ProcessStateType): boolean => state?.status.type === StatusType.Running.toString()
 
-  private getStateStatus = (state: ProcessStateType) => {
-    const status = state?.status.name
-
-    if (status == null) {
-      return StatusType.Unknown.toString()
-    }
-
-    return status.toUpperCase()
-  }
 }
 
 export default new ProcessStateUtils()

@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
 
 class DefaultValueExtractorChainTest extends FlatSpec with Matchers {
   behavior of "DefaultValueExtractorChainTest"
-  private val confMap = Map("node1" -> Map("param1" -> ParameterConfig(defaultValue = Some("123"), editor = None)))
+  private val confMap = Map("node1" -> Map("param1" -> ParameterConfig(defaultValue = Some("123"), editor = None, None)))
   private val param1 = Parameter[Int]("param1")
   private val param2 = Parameter[Int]("param=2")
   private val node = NodeDefinition("node1", List(param1, param2))

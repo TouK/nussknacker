@@ -1,6 +1,5 @@
 import PropTypes from "prop-types"
 import React from "react"
-import {errorValidator, notEmptyValidator} from "../../../common/Validators"
 import EditableExpression from "./editors/expression/EditableExpression"
 
 const BranchParameters = (props) => {
@@ -8,10 +7,10 @@ const BranchParameters = (props) => {
   const {node, joinDef, onChange, isMarked, readOnly, showValidation, errors, showSwitch} = props
 
   return (
-    joinDef.branchParameters.map((branchParamDef, paramIndex) => {
+    joinDef.branchParameters.map((param, paramIndex) => {
       return (
-        <div className="node-row" key={branchParamDef.name}>
-          <div className="node-label" title={branchParamDef.name}>{branchParamDef.name}:</div>
+        <div className="node-row" key={param.name}>
+          <div className="node-label" title={param.name}>{param.name}:</div>
           <div className="node-value">
             <div className="fieldsControl">
               {
@@ -20,24 +19,24 @@ const BranchParameters = (props) => {
                     // in the same order as here, but it is true because for filling is used the same JoinDef
                     const path = `branchParameters[${edgeIndex}].parameters[${paramIndex}]`
                     const paramValue = node.branchParameters[edgeIndex].parameters[paramIndex]
-                    const fieldName = `value-${branchParamDef.name}-${edge.from}`
+                    const fieldName = `value-${param.name}-${edge.from}`
                     return (
-                      <div className="branch-parameter-row" key={`${branchParamDef.name}-${edge.from}`}>
+                      <div className="branch-parameter-row" key={`${param.name}-${edge.from}`}>
                         <div className={"branch-param-label"}>{edge.from}</div>
                         <div className={"branch-parameter-expr-container"}>
                           <EditableExpression
                             fieldType={"expression"}
-                            fieldName={fieldName}
+                            fieldName={branchErrorFieldName(param.name, edge.from)}
                             fieldLabel={null}
                             onValueChange={((value) => onChange(`${path}.expression.expression`, value))}
                             expressionObj={paramValue.expression}
                             readOnly={readOnly}
-                            validators={[notEmptyValidator, errorValidator(errors, branchErrorFieldName(branchParamDef.name, edge.from))]}
                             isMarked={isMarked(path)}
                             showValidation={showValidation}
                             rowClassName={"branch-parameter-expr"}
                             valueClassName={"branch-parameter-expr-value"}
                             showSwitch={showSwitch}
+                            errors={errors}
                           />
                         </div>
                       </div>

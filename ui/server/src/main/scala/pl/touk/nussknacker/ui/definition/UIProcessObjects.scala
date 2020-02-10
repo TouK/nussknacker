@@ -5,21 +5,22 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.definition.editor.ParameterEditorExtractorChain
+import pl.touk.nussknacker.ui.definition.validator.ParameterValidatorsExtractorChain
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
@@ -39,7 +40,7 @@ object UIProcessObjects {
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
-    val uiProcessDefinition: UIProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
+    val uiProcessDefinition: UIProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions)
 
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
 
@@ -133,6 +134,7 @@ object UIObjectDefinition {
 @JsonCodec(encodeOnly = true) case class UIParameter(name: String,
                                                      typ: TypingResult,
                                                      editor: ParameterEditor,
+                                                     validators: List[ParameterValidator],
                                                      additionalVariables: Map[String, TypingResult],
                                                      branchParam: Boolean)
 
@@ -142,6 +144,7 @@ object UIParameter {
       name = parameter.name,
       typ = parameter.typ,
       editor = ParameterEditorExtractorChain(paramConfig).evaluateEditor(parameter),
+      validators = ParameterValidatorsExtractorChain(paramConfig).evaluate(parameter),
       additionalVariables = parameter.additionalVariables,
       branchParam = parameter.branchParam
     )
@@ -149,7 +152,7 @@ object UIParameter {
 }
 
 object UIProcessDefinition {
-  def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition]): UIProcessDefinition = {
+  def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition], types: Set[TypeInfos.ClazzDefinition]): UIProcessDefinition = {
     val uiProcessDefinition = UIProcessDefinition(
       services = processDefinition.services.mapValues(UIObjectDefinition(_)),
       sourceFactories = processDefinition.sourceFactories.mapValues(UIObjectDefinition(_)),
@@ -159,7 +162,7 @@ object UIProcessDefinition {
       signalsWithTransformers = processDefinition.signalsWithTransformers.mapValues(e => UIObjectDefinition(e._1)),
       exceptionHandlerFactory = UIObjectDefinition(processDefinition.exceptionHandlerFactory),
       globalVariables = processDefinition.expressionConfig.globalVariables.mapValues(UIObjectDefinition(_)),
-      typesInformation = processDefinition.typesInformation
+      typesInformation = types
     )
     uiProcessDefinition
   }

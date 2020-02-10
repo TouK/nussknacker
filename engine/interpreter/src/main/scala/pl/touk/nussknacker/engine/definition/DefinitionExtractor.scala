@@ -122,15 +122,9 @@ object DefinitionExtractor {
   }
 
   object TypesInformation {
-    def extract(services: Iterable[ObjectWithMethodDef],
-                sourceFactories: Iterable[ObjectWithMethodDef],
-                customNodeTransformers: Iterable[ObjectWithMethodDef],
-                signalsFactories: Iterable[ObjectWithMethodDef],
-                globalProcessVariables: Iterable[TypingResult])
+    def extract(objectToExtractClassesFrom: Iterable[ObjectWithMethodDef])
                (implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
-
-      val objectToExtractClassesFrom = services ++ customNodeTransformers ++ sourceFactories ++ signalsFactories
-      val classesToExtractDefinitions = globalProcessVariables ++ objectToExtractClassesFrom.flatMap(extractTypesFromObjectDefinition)
+      val classesToExtractDefinitions = objectToExtractClassesFrom.flatMap(extractTypesFromObjectDefinition)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
     }
 

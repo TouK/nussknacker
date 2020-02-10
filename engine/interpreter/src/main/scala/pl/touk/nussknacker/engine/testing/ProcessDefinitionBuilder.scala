@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
@@ -15,7 +16,7 @@ object ProcessDefinitionBuilder {
   def empty: ProcessDefinition[ObjectDefinition] =
     ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
       ExpressionDefinition(Map.empty, List.empty, languages = LanguageConfiguration(List.empty),
-        optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false), Set.empty)
+        optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false), ClassExtractionSettings.Default)
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
@@ -41,7 +42,7 @@ object ProcessDefinitionBuilder {
       definition.signalsWithTransformers.mapValuesNow(sign => (makeDummyDefinition(sign._1), sign._2)),
       makeDummyDefinition(definition.exceptionHandlerFactory),
       expressionDefinition,
-      definition.typesInformation
+      definition.settings
     )
   }
 
