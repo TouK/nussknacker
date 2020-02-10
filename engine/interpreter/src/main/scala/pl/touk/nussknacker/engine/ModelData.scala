@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine
 
 import java.net.URL
 
-import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.api.dict.{DictRegistry, UiDictServices}
+import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, DefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -63,6 +63,8 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
     }
 
   lazy val processDefinition: ProcessDefinition[ObjectDefinition] = ProcessDefinitionExtractor.toObjectDefinition(processWithObjectsDefinition)
+
+  lazy val typeDefinitions: Set[TypeInfos.ClazzDefinition] = ProcessDefinitionExtractor.extractTypes(processWithObjectsDefinition)
 
   // We can create dict services here because ModelData is fat object that is created once on start
   lazy val dictServices: UiDictServices =

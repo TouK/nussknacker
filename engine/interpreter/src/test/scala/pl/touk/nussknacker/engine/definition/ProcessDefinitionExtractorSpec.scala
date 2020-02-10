@@ -14,7 +14,7 @@ import scala.concurrent.Future
 
 class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
-  val processDefinition =
+  private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, ConfigFactory.load())
 
   test("extract definitions") {
@@ -31,7 +31,8 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   }
 
   test("extract type info from classes from additional variables") {
-    val classDefinition = processDefinition.typesInformation.find(_.clazzName.clazz == classOf[OnlyUsedInAdditionalVariable])
+    val types = ProcessDefinitionExtractor.extractTypes(processDefinition)
+    val classDefinition = types.find(_.clazzName.clazz == classOf[OnlyUsedInAdditionalVariable])
       classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 

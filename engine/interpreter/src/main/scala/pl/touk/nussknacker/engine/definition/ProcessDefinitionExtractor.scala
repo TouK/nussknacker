@@ -3,16 +3,25 @@ package pl.touk.nussknacker.engine.definition
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
-import pl.touk.nussknacker.engine.api.process.{LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CirceUtil, CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import shapeless.syntax.typeable._
                  
 object ProcessDefinitionExtractor {
+
+  //we don't do it inside extractObjectWithMethods because this is needed only on FE, and can be a bit costly
+  def extractTypes(definition: ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] = {
+    TypesInformation.extract(definition.services.values ++
+      definition.sourceFactories.values ++
+      definition.customStreamTransformers.values.map(_._1) ++
+      definition.signalsWithTransformers.values.map(_._1) ++
+      definition.expressionConfig.globalVariables.values
+    )(definition.settings)
+  }
 
   import pl.touk.nussknacker.engine.util.Implicits._
   //TODO: move it to ProcessConfigCreator??
@@ -55,12 +64,8 @@ object ProcessDefinitionExtractor {
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)
 
-    val typesInformation = TypesInformation.extract(servicesDefs.values,
-      sourceFactoriesDefs.values,
-      customStreamTransformersDefs.values,
-      signalsDefs.values.map(_._1),
-      globalVariablesDefs.values.map(_.methodDef.returnType)
-    )(creator.classExtractionSettings(config))
+    val settings = creator.classExtractionSettings(config)
+
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs,
@@ -72,7 +77,7 @@ object ProcessDefinitionExtractor {
         expressionConfig.optimizeCompilation,
         expressionConfig.strictTypeChecking,
         expressionConfig.dictionaries.mapValuesNow(_.value),
-        expressionConfig.hideMetaVariable), typesInformation)
+        expressionConfig.hideMetaVariable), settings)
   }
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
@@ -111,7 +116,7 @@ object ProcessDefinitionExtractor {
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
                                                     expressionConfig: ExpressionDefinition[T],
-                                                    typesInformation: Set[ClazzDefinition]) {
+                                                    settings: ClassExtractionSettings) {
     def componentIds: List[String] = {
       val ids = services.keys ++
         sourceFactories.keys ++
@@ -140,7 +145,7 @@ object ProcessDefinitionExtractor {
       definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
       definition.exceptionHandlerFactory.objectDefinition,
       expressionDefinition,
-      definition.typesInformation
+      definition.settings
     )
   }
 
