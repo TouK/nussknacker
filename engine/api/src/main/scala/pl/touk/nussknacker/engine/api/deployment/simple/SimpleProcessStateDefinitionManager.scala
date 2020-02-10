@@ -39,9 +39,9 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
-    SimpleStateStatus.FailedToGet -> "There are some problems with obtaining process state at engine. Please check if your engine is working properly..",
-    SimpleStateStatus.NotFound -> "There are some problems with process. Please check if process really exists..",
-    SimpleStateStatus.Unknown -> "Unknown state of the process.. We can't recognize process state..",
+    SimpleStateStatus.FailedToGet -> "There are problems obtaining the process state. Please check if your engine is working properly.",
+    SimpleStateStatus.NotFound -> "Your engine is working but have no information about the process.",
+    SimpleStateStatus.Unknown -> "Unknown state of the process. We can't recognize process state.",
     SimpleStateStatus.NotDeployed -> "The process has never been deployed.",
     SimpleStateStatus.DuringDeploy -> "The process has been already started and currently is being deployed.",
     SimpleStateStatus.Running -> "The process has been successfully deployed and currently is running.",
@@ -53,17 +53,17 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
-    SimpleStateStatus.FailedToGet -> "Failed to get state of process..",
-    SimpleStateStatus.NotFound -> "Process state was not found..",
-    SimpleStateStatus.Unknown -> "Unknown state of the process..",
-    SimpleStateStatus.NotDeployed -> "Process has never been deployed.",
-    SimpleStateStatus.DuringDeploy -> "Process is being deployed.",
-    SimpleStateStatus.Running -> "Process currently is running.",
-    SimpleStateStatus.Canceled -> "Process currently is canceled.",
-    SimpleStateStatus.DuringCancel -> "Process is being canceled.",
-    SimpleStateStatus.Failed -> "There are some problems with process..",
-    SimpleStateStatus.Finished -> "Process has been successfully finished job.",
-    SimpleStateStatus.Error -> "There are some errors with process!"
+    SimpleStateStatus.FailedToGet -> "Failed to get a state of the process.",
+    SimpleStateStatus.NotFound -> "The process state was not found.",
+    SimpleStateStatus.Unknown -> "Unknown state of the process.",
+    SimpleStateStatus.NotDeployed -> "The process has never been deployed.",
+    SimpleStateStatus.DuringDeploy -> "The process is being deployed.",
+    SimpleStateStatus.Running -> "The process is running.",
+    SimpleStateStatus.Canceled -> "The process is canceled.",
+    SimpleStateStatus.DuringCancel -> "The process is being canceled.",
+    SimpleStateStatus.Failed -> "There are problems with the process.",
+    SimpleStateStatus.Finished -> "The process has finished.",
+    SimpleStateStatus.Error -> "There are errors establishing a process state."
   )
 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
