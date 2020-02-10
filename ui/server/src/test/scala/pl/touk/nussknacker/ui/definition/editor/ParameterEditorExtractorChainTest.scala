@@ -45,7 +45,7 @@ class ParameterEditorExtractorChainTest extends FlatSpec with Matchers {
   }
 
   it should "evaluate editor by type LocalDateTime" in {
-    val param = Parameter("param", ClazzRef[LocalDateTime])
+    val param = Parameter[LocalDateTime]("param")
     val config = ParameterConfig.empty
 
     val extractor = ParameterEditorExtractorChain(config)
@@ -57,7 +57,7 @@ class ParameterEditorExtractorChainTest extends FlatSpec with Matchers {
   }
 
   it should "evaluate editor by type LocalDate" in {
-    val param = Parameter("param", ClazzRef[LocalDate])
+    val param = Parameter[LocalDate]("param")
     val config = ParameterConfig.empty
 
     val extractor = ParameterEditorExtractorChain(config)
@@ -69,7 +69,7 @@ class ParameterEditorExtractorChainTest extends FlatSpec with Matchers {
   }
 
   it should "evaluate editor by type LocalTime" in {
-    val param = Parameter("param", ClazzRef[LocalTime])
+    val param = Parameter[LocalTime]("param")
     val config = ParameterConfig.empty
 
     val extractor = ParameterEditorExtractorChain(config)
