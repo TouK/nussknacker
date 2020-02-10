@@ -28,7 +28,7 @@ type EditorConfig = {
   switchableTo?: (expressionObj: ExpressionObj, param?: ParamType, values?: ValuesType) => boolean,
   values?: (param: ParamType, values: ValuesType) => $TodoType,
   switchable?: (editor: EditorType, param: ParamType, expressionObj: ExpressionObj) => boolean,
-  validators?: (param: ParamType, errors: Array<Error>, fieldLabel: string, displayRawEditor?: boolean) => Array<Validator>,
+  validators: (param: ParamType, errors: Array<Error>, fieldLabel: string, displayRawEditor?: boolean) => Array<Validator>,
 }
 
 export enum dualEditorMode {
@@ -106,15 +106,18 @@ export const editors: Record<editorTypes, EditorConfig> = {
     editor: () => DateEditor,
     hint: switchable => switchable ? DateEditor.switchableToHint : DateEditor.notSwitchableToHint,
     switchableTo: DateEditor.switchableTo,
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
   [editorTypes.TIME]: {
     editor: () => TimeEditor,
     hint: switchable => switchable ? TimeEditor.switchableToHint : TimeEditor.notSwitchableToHint,
     switchableTo: TimeEditor.switchableTo,
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
   [editorTypes.DATE_TIME]: {
     editor: () => DateTimeEditor,
     hint: switchable => switchable ? DateTimeEditor.switchableToHint : DateTimeEditor.notSwitchableToHint,
     switchableTo: DateTimeEditor.switchableTo,
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
 }
