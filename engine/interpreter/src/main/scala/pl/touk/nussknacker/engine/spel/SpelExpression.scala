@@ -3,12 +3,14 @@ package pl.touk.nussknacker.engine.spel
 import java.lang.reflect.{Method, Modifier}
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.Collections
 import java.util.concurrent.TimeoutException
+import java.util.{Collections, Optional}
 
+import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, State, StateT, Validated}
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.lang3.StringUtils
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
@@ -24,8 +26,9 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, Expressi
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper, LooseKeysDictTyper}
+import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 
@@ -138,10 +141,18 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   }
 
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
-    baseParse(original).andThen { parsed =>
-      validator.validate(parsed, ctx, expectedType).map((_, parsed))
-    }.map { case (combinedResult, parsed) =>
-      TypedExpression(expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType), combinedResult.finalResult, combinedResult.typingInfo)
+    if (StringUtils.isBlank(original)) {
+      Valid(TypedExpression(
+        NullExpression(original, expectedType, flavour),
+        expectedType,
+        SpelExpressionTypingInfo(Map.empty)
+      ))
+    } else {
+      baseParse(original).andThen { parsed =>
+        validator.validate(parsed, ctx, expectedType).map((_, parsed))
+      }.map { case (combinedResult, parsed) =>
+        TypedExpression(expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType), combinedResult.finalResult, combinedResult.typingInfo)
+      }
     }
   }
 
@@ -181,7 +192,8 @@ object SpelExpressionParser extends LazyLogging {
     parsed match {
       case e:standard.SpelExpression => forceCompile(e)
       case e:CompositeStringExpression => e.getExpressions.foreach(forceCompile)
-      case e:LiteralExpression =>   
+      case e:LiteralExpression =>
+      case e:NullExpression =>
     }
   }
 

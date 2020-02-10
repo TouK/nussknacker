@@ -236,10 +236,8 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   }
 
-  test("return sane error with empty expression ") {
-    parse[Any]("", ctx) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("No node"), Nil)) =>
-    }
+  test("allow empty expression ") {
+    parse[Any]("", ctx) shouldBe 'valid
   }
 
   test("register static variables") {
