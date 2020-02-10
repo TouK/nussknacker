@@ -5,7 +5,6 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.Configuration
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -16,8 +15,8 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
+import scala.reflect.ClassTag
 import scala.util.Try
-import scala.reflect.runtime.universe._
 
 object node {
 
@@ -176,8 +175,8 @@ object node {
   case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends EndingNodeData with RealNodeData
 
-  //we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has ClazzRef which has *real* class inside  
-  //TODO: probably should be able to handle class parameters or typed maps
+  //we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has TypedResult which has *real* class inside
+  //TODO: probably should be able to handle class parameters or typed maps (i.e. use TypingResult inside SubprocessClazzRef)
   //shape of this data should probably change, currently we leave it for backward compatibility
   object SubprocessInputDefinition {
 
@@ -185,7 +184,7 @@ object node {
 
     object SubprocessClazzRef {
 
-      def apply[T: TypeTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef.fromDetailedType[T].refClazzName)
+      def apply[T: ClassTag]: SubprocessClazzRef = SubprocessClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
 

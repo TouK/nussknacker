@@ -7,8 +7,7 @@ import java.lang.reflect.Method
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.validator.{MandatoryValueValidatorExtractor, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -28,7 +27,7 @@ private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor e
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
         new OrderedDependencies(obj.parameterDefinition ++ obj.additionalDependencies.map(TypedNodeDependency)),
-      obj.returnType, obj.realReturnType, List()))
+      obj.returnType, obj.runtimeClass, List()))
   }
 }
 
@@ -38,7 +37,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
       MethodDefinition(methodToInvoke.getName,
         (obj, args) => method.invoke(obj, args:_*), extractParameters(obj, method, nodeConfig),
-        Typed(extractReturnTypeFromMethod(obj, method)), Typed(method.getReturnType), method.getAnnotations.toList)
+        extractReturnTypeFromMethod(obj, method), method.getReturnType, method.getAnnotations.toList)
     }
   }
 
@@ -82,17 +81,17 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   private def additionalVariables(p: reflect.Parameter): Map[String, TypingResult] =
     Option(p.getAnnotation(classOf[AdditionalVariables]))
       .map(_.value().map(additionalVariable =>
-        additionalVariable.name() -> Typed(ClazzRef(additionalVariable.clazz()))).toMap
+        additionalVariable.name() -> Typed(additionalVariable.clazz())).toMap
       ).getOrElse(Map.empty)
 
-  protected def extractReturnTypeFromMethod(obj: T, method: Method): ClazzRef = {
+  protected def extractReturnTypeFromMethod(obj: T, method: Method): TypingResult = {
     val typeFromAnnotation =
       Option(method.getAnnotation(classOf[MethodToInvoke])).map(_.returnType())
       .filterNot(_ == classOf[Object])
-      .map[ClazzRef](ClazzRef(_))
-    val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType)
+      .map[TypingResult](Typed(_))
+    val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType).map(Typed(_))
 
-    typeFromAnnotation.orElse(typeFromSignature).getOrElse(ClazzRef[Any])
+    typeFromAnnotation.orElse(typeFromSignature).getOrElse(Unknown)
   }
 
   protected def expectedReturnType: Option[Class[_]]
@@ -111,7 +110,7 @@ object MethodDefinitionExtractor {
                               orderedDependencies: OrderedDependencies,
                               // TODO: remove after full switch to ContextTransformation API
                               returnType: TypingResult,
-                              realReturnType: TypingResult,
+                              runtimeClass: Class[_],
                               annotations: List[Annotation])
 
   class OrderedDependencies(dependencies: List[NodeDependency]) {

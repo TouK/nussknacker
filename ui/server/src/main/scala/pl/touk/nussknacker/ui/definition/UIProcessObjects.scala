@@ -7,7 +7,6 @@ import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -79,8 +78,8 @@ object UIProcessObjects {
                                     fixedNodesConfig: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
-        val clazzRefParams = parameters.map(extractSubprocessParam(classLoader))
-        (id, new ObjectDefinition(clazzRefParams, Typed(ClazzRef[java.util.Map[String, Any]]), List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
+        val typedParameters = parameters.map(extractSubprocessParam(classLoader))
+        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
     }.toMap
     subprocessInputs
   }

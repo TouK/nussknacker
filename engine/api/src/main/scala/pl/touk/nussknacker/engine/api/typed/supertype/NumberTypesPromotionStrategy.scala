@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import scala.collection.mutable
 
@@ -39,16 +38,16 @@ object NumberTypesPromotionStrategy {
   // See org.springframework.expression.spel.ast.OpPlus and so on for details
   object ToCommonWidestType extends NumberTypesPromotionStrategy {
 
-    override def promote(left: Class[_], right: Class[_]): TypedClass = {
+    override def promote(left: Class[_], right: Class[_]): TypingResult = {
       val both = List(left, right)
       if (both.forall(FloatingNumbers.contains)) {
-        TypedClass(ClazzRef(both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head))
+        Typed(both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head)
       } else if (both.forall(DecimalNumbers.contains)) {
-        TypedClass(ClazzRef(both.map(n => DecimalNumbersKeys.indexOf(n) -> DecimalNumbers(n)).sortBy(_._1).map(_._2).head))
+        Typed(both.map(n => DecimalNumbersKeys.indexOf(n) -> DecimalNumbers(n)).sortBy(_._1).map(_._2).head)
       } else if (both.exists(DecimalNumbers.contains) && both.exists(FloatingNumbers.contains)) {
-        TypedClass(ClazzRef(both.find(FloatingNumbers.contains).get))
+        Typed(both.find(FloatingNumbers.contains).get)
       } else { // unknown Number
-        TypedClass[java.lang.Double]
+        Typed[java.lang.Double]
       }
     }
 
@@ -56,13 +55,13 @@ object NumberTypesPromotionStrategy {
 
   object ToSupertype extends NumberTypesPromotionStrategy {
 
-    override def promote(left: Class[_], right: Class[_]): TypedClass = {
+    override def promote(left: Class[_], right: Class[_]): TypingResult = {
       if (left.isAssignableFrom(right)) {
-        TypedClass(ClazzRef(left))
+        Typed(left)
       } else if (right.isAssignableFrom(left)) {
-        TypedClass(ClazzRef(right))
+        Typed(right)
       } else {
-        TypedClass[Number]
+        Typed[Number]
       }
     }
 

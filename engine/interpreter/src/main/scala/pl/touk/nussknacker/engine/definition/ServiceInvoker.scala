@@ -65,18 +65,14 @@ object ServiceInvoker {
   )
 
   def apply(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None): ServiceInvoker = {
-    val detectedReturnType = (objectWithMethodDef.methodDef.realReturnType match {
-      case tc: SingleTypingResult =>
-        Some(tc.objType.klass)
-      case _ => None
-    }).getOrElse(classOf[Any])
-    if (classOf[Future[_]].isAssignableFrom(detectedReturnType))
+    val detectedRuntimeClass = objectWithMethodDef.methodDef.runtimeClass
+    if (classOf[Future[_]].isAssignableFrom(detectedRuntimeClass))
       new ServiceInvokerImpl(objectWithMethodDef, collector)
-    else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(detectedReturnType))
+    else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(detectedRuntimeClass))
       new JavaServiceInvokerImpl(objectWithMethodDef, collector)
     else
-      throw new IllegalArgumentException("Illegal return type of extracted method: " +
-        detectedReturnType + ". Should be Future or CompletionStage")
+      throw new IllegalArgumentException("Illegal detected runtime class of extracted method: " +
+        detectedRuntimeClass + ". Should be Future or CompletionStage")
   }
 
 

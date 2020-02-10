@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.spel.typer
 import cats.data.NonEmptyList
 import org.springframework.expression.spel.ast.MethodReference
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -40,8 +39,8 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
       case Nil =>
         Right(Unknown)
       case _ =>
-        val isClass = clazzDefinitions.map(k => Typed(k.clazzName)).exists(_.canBeSubclassOf(Typed[Class[_]]))
-        val display = clazzDefinitions.map(k => Typed(k.clazzName)).map(_.display).mkString(", ")
+        val isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
+        val display = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
         clazzDefinitions.flatMap(_.methods.get(methodReference.getName)) match {
           //Static method can be invoked - we cannot find them ATM
           case Nil if isClass => Right(Unknown)
@@ -56,13 +55,11 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
     methodInfoes.filter(_.parameters.size <= paramsCount) match {
       case Nil =>
         Left(s"Invalid arity for '${methodReference.getName}'")
-      case h::t =>
-        val clazzRefs = NonEmptyList(h, t).map(_.refClazz)
-        val typingResult = typeFromClazzRefs(clazzRefs)
+      case nonEmpty =>
+        val returnTypes = nonEmpty.map(_.refClazz)
+        val typingResult = Typed(returnTypes.toSet)
         Right(typingResult)
     }
 
-  private def typeFromClazzRefs(clazzRefs: NonEmptyList[ClazzRef]): TypingResult =
-    Typed(clazzRefs.map(Typed(_)).toList.toSet)
 
 }

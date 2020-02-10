@@ -58,7 +58,8 @@ object ProcessDefinitionExtractor {
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
       val typed = Typed.fromInstance(globalVar.value)
-      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), typed,  typed, List()),
+      val safeClass = Option(globalVar.value).map(_.getClass).getOrElse(classOf[Any])
+      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), typed,  safeClass, List()),
         ObjectDefinition(List(), typed, globalVar.categories, SingleNodeConfig.zero)))
     }
 

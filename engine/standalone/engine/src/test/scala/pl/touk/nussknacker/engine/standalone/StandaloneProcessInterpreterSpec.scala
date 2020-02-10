@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.standalone
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -171,7 +171,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
 
     val interpreter = prepareInterpreter(process = process)
-    interpreter.sinkTypes shouldBe Map("endNodeIID" -> TypedClass[String])
+    interpreter.sinkTypes shouldBe Map("endNodeIID" -> Typed[String])
 
     val process2 = EspProcessBuilder
       .id("proc1")
@@ -181,7 +181,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
 
     val interpreter2 = prepareInterpreter(process = process2)
-    interpreter2.sinkTypes shouldBe Map("endNodeIID" -> TypedObjectTypingResult(Map("str" -> TypedClass[String], "int" -> TypedClass[java.lang.Integer])))
+    interpreter2.sinkTypes shouldBe Map("endNodeIID" -> TypedObjectTypingResult(Map("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
 
   }
 

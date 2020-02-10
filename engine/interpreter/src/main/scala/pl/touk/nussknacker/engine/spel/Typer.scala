@@ -127,7 +127,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: InlineList => withTypedChildren { children =>
         val childrenTypes = children.toSet
         val genericType = if (childrenTypes.contains(Unknown) || childrenTypes.size != 1) Unknown else childrenTypes.head
-        Valid(TypedClass(classOf[java.util.List[_]], List(genericType)))
+        Valid(Typed.genericTypeClass[java.util.List[_]](List(genericType)))
       }
 
       case e: InlineMap =>
@@ -198,7 +198,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case Some(iterateType) =>
           val listType = extractListType(iterateType)
           typeChildren(validationContext, node, current.pushOnStack(listType)) {
-            case result :: Nil => Valid(TypedClass(classOf[java.util.List[_]], List(result)))
+            case result :: Nil => Valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
             case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
           }
       }
@@ -286,7 +286,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                                    (t: SingleTypingResult) = {
     def extractClass(typedClass: TypedClass) = {
       val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
-      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Typed(_)).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
+      clazzDefinition.getPropertyOrFieldType(e.getName).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
     }
     t match {
       case typed: SingleTypingResult if typed.canHasAnyPropertyOrField =>

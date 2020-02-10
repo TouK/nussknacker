@@ -6,7 +6,6 @@ import java.util.Date
 import cats.data._
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.sql.{ColumnModel, SqlType}
 
@@ -48,22 +47,22 @@ object CreateColumnModel {
   object UnknownInner extends InvalidateMessage
 
   object ClazzToSqlType extends LazyLogging {
-    val STRING: ClazzRef = ClazzRef[String]
-    val INTEGER: ClazzRef = ClazzRef[Int]
-    val LONG: ClazzRef = ClazzRef[Long]
-    val DOUBLE: ClazzRef = ClazzRef[Double]
-    val BIG_DECIMAL: ClazzRef = ClazzRef[BigDecimal]
-    val J_BIG_DECIMAL: ClazzRef = ClazzRef[java.math.BigDecimal]
-    val J_LONG: ClazzRef = ClazzRef[java.lang.Long]
-    val J_INTEGER: ClazzRef = ClazzRef[java.lang.Integer]
-    val J_DOUBLE: ClazzRef = ClazzRef[java.lang.Double]
-    val J_BOOLEAN: ClazzRef = ClazzRef[java.lang.Boolean]
-    val BOOLEAN: ClazzRef = ClazzRef[Boolean]
-    val NUMBER: ClazzRef = ClazzRef[Number]
-    val DATE: ClazzRef = ClazzRef[Date]
-    val LOCAL_DATE_TIME: ClazzRef = ClazzRef[LocalDateTime]
+    val STRING: TypingResult = Typed[String]
+    val INTEGER: TypingResult = Typed[Int]
+    val LONG: TypingResult = Typed[Long]
+    val DOUBLE: TypingResult = Typed[Double]
+    val BIG_DECIMAL: TypingResult = Typed[BigDecimal]
+    val J_BIG_DECIMAL: TypingResult = Typed[java.math.BigDecimal]
+    val J_LONG: TypingResult = Typed[java.lang.Long]
+    val J_INTEGER: TypingResult = Typed[java.lang.Integer]
+    val J_DOUBLE: TypingResult = Typed[java.lang.Double]
+    val J_BOOLEAN: TypingResult = Typed[java.lang.Boolean]
+    val BOOLEAN: TypingResult = Typed[Boolean]
+    val NUMBER: TypingResult = Typed[Number]
+    val DATE: TypingResult = Typed[Date]
+    val LOCAL_DATE_TIME: TypingResult = Typed[LocalDateTime]
 
-    def convert(name: String, arg: ClazzRef, className: String): Option[SqlType] = {
+    def convert(name: String, arg: TypingResult, className: String): Option[SqlType] = {
       import SqlType._
       arg match {
         case STRING =>

@@ -5,11 +5,10 @@ import java.util.UUID
 
 import com.typesafe.scalalogging.LazyLogging
 import org.hsqldb.jdbc.JDBCDriver
-import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedObjectDefinition, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition, typing}
 
 import scala.collection.mutable
-import scala.util.Try
 import scala.util.control.Exception._
 
 
@@ -155,18 +154,18 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
       val typ = meta.getColumnType(idx) match {
         case Types.BIT | Types.TINYINT | Types.SMALLINT | Types.INTEGER
              | Types.BIGINT | Types.FLOAT | Types.REAL | Types.DOUBLE | Types.NUMERIC | Types.DECIMAL =>
-          ClazzRef[Number]
+          Typed[Number]
         case Types.VARCHAR | Types.LONGNVARCHAR =>
-          ClazzRef[String]
+          Typed[String]
         case Types.CHAR =>
-          ClazzRef[Char]
+          Typed[Char]
         case Types.BOOLEAN =>
-          ClazzRef[Boolean]
+          Typed[Boolean]
         case Types.DATE | Types.TIMESTAMP =>
-          ClazzRef[java.util.Date]
+          Typed[java.util.Date]
         case a =>
           logger.warn(s"no type mapping for column type: $a, column: ${meta.getColumnName(idx)}")
-          ClazzRef[Any]
+          Typed[Any]
       }
       name -> typ
     }.toMap

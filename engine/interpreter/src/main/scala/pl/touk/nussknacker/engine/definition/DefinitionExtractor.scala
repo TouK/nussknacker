@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -97,13 +97,6 @@ object DefinitionExtractor {
 
   }
 
-  case class PlainClazzDefinition(clazzName: ClazzRef, methods: Map[String, ClazzRef]) {
-    def getMethod(methodName: String): Option[ClazzRef] = {
-      methods.get(methodName)
-    }
-  }
-
-
   case class ObjectDefinition(parameters: List[Parameter],
                                          returnType: TypingResult,
                                          categories: List[String],
@@ -136,43 +129,40 @@ object DefinitionExtractor {
     }
 
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
-      def clazzRefsFromParameter(parameter: Parameter): Iterable[TypingResult] = {
+      def typesFromParameter(parameter: Parameter): Iterable[TypingResult] = {
         val fromAdditionalVars = parameter.additionalVariables.values
         fromAdditionalVars.toList :+ parameter.typ
       }
 
-      obj.methodDef.returnType :: obj.parameters.flatMap(clazzRefsFromParameter)
+      obj.methodDef.returnType :: obj.parameters.flatMap(typesFromParameter)
     }
   }
 
   object ObjectDefinition {
 
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Any], List(), SingleNodeConfig.zero)
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Unknown, List(), SingleNodeConfig.zero)
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Any], List(), SingleNodeConfig.zero)
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, List(), SingleNodeConfig.zero)
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, Typed[Any], categories, SingleNodeConfig.zero)
+      ObjectDefinition(params, Unknown, categories, SingleNodeConfig.zero)
 
-    def apply(parameters: List[Parameter], returnType: ClazzRef, categories: List[String]): ObjectDefinition = {
-      ObjectDefinition(parameters, Typed(returnType), categories, SingleNodeConfig.zero)
+    def apply(parameters: List[Parameter], returnType: TypingResult, categories: List[String]): ObjectDefinition = {
+      ObjectDefinition(parameters, returnType, categories, SingleNodeConfig.zero)
     }
   }
 
 }
 
 object TypeInfos {
+  
+  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypingResult)
 
-  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: ClazzRef)
+  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String])
 
-  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
+  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo]) {
 
-  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
-    def getMethodClazzRef(methodName: String): Option[ClazzRef] = {
-      methods.get(methodName).map(_.refClazz)
-    }
-
-    def getPropertyOrFieldClazzRef(methodName: String): Option[ClazzRef] = {
+    def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       val filteredMethods = methods.filter(_._2.parameters.isEmpty)
       val methodInfoes = filteredMethods.get(methodName)
       methodInfoes.map(_.refClazz)

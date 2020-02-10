@@ -54,7 +54,7 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: Process
     new ObjectWithMethodDef(original.obj, original.methodDef, original.objectDefinition) {
       override def invokeMethod(paramFun: (String) => Option[AnyRef], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any =
         method(paramFun, outputVariableNameOpt, additional, () => {
-          //this is neeeded to be able to handle dynamic types in tests
+          //this is needed to be able to handle dynamic types in tests
           super.invokeMethod(paramFun, outputVariableNameOpt, additional).cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
         })
     }

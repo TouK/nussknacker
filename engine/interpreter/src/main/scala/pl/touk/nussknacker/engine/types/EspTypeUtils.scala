@@ -6,9 +6,8 @@ import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, PropertyFromGetterExtractionStrategy, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -19,7 +18,7 @@ object EspTypeUtils {
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
+    ClazzDefinition(Typed(clazz), getPublicMethodAndFields(clazz))
 
   def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*): Class[_] =
     if (classesToExtractGenericFrom.contains(p.getType)) {
@@ -36,7 +35,7 @@ object EspTypeUtils {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
-  def getGenericType(genericReturnType: Type): Option[ClazzRef] = {
+  def getGenericType(genericReturnType: Type): Option[TypingResult] = {
     val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
     if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
     else None
@@ -48,10 +47,6 @@ object EspTypeUtils {
 
     ClassUtils.isAssignable(passedValueClass, signatureType, true) ||
       ClassUtils.isAssignable(unbox(passedValueClass), unbox(signatureType), true)
-  }
-
-  private def methodNames(clazz: Class[_]): List[String] = {
-    clazz.getMethods.map(_.getName).toList
   }
 
   private def getPublicMethodAndFields(clazz: Class[_])
@@ -113,8 +108,8 @@ object EspTypeUtils {
           class we pick arbitrary one (we sort to avoid randomness)
          */
         methodsForParams.find { case (_, MethodInfo(_, ret, _)) =>
-          methodsForParams.forall(mi => Typed(ret).canBeSubclassOf(Typed(mi._2.refClazz)))
-        }.getOrElse(methodsForParams.minBy(_._2.refClazz.refClazzName))
+          methodsForParams.forall(mi => ret.canBeSubclassOf(mi._2.refClazz))
+        }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
     }
   }
 
@@ -144,8 +139,8 @@ object EspTypeUtils {
     }.toMap
   }
 
-  private def getReturnClassForMethod(method: Method): ClazzRef = {
-    getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(ClazzRef(method.getReturnType))
+  private def getReturnClassForMethod(method: Method): TypingResult = {
+    getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(Typed(method.getReturnType))
   }
 
   private def getParameters(method: Method): List[Parameter] = {
@@ -153,21 +148,21 @@ object EspTypeUtils {
       param <- method.getParameters.toList
       annotationOption = Option(param.getAnnotation(classOf[ParamName]))
       name = annotationOption.map(_.value).getOrElse(param.getName)
-      clazzRef = ClazzRef(param.getType)
-    } yield Parameter(name, clazzRef)
+      paramType = Typed(param.getType)
+    } yield Parameter(name, paramType)
   }
 
   private def getNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
     Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
   }
 
-  private def getReturnClassForField(field: Field): ClazzRef = {
-    getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(ClazzRef(field.getType))
+  private def getReturnClassForField(field: Field): TypingResult = {
+    getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(Typed(field.getType))
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
   //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
-  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[ClazzRef] = {
+  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[TypingResult] = {
     val rawType = genericMethodType.getRawType
 
     if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
@@ -185,21 +180,21 @@ object EspTypeUtils {
     else None
   }
 
-  private def extractClass(futureGenericType: Type): Option[ClazzRef] = {
+  private def extractClass(futureGenericType: Type): Option[TypingResult] = {
     futureGenericType match {
-      case t: Class[_] => Some(ClazzRef(t))
+      case t: Class[_] => Some(Typed(t))
       case t: ParameterizedTypeImpl => Some(extractGenericParams(t))
       case t => None
     }
   }
 
-  private def extractGenericParams(paramsType: ParameterizedTypeImpl): ClazzRef = {
+  private def extractGenericParams(paramsType: ParameterizedTypeImpl): TypingResult = {
     val rawType = paramsType.getRawType
     if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
-      ClazzRef(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
-      ClazzRef(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    } else ClazzRef(rawType)
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+    } else Typed(rawType)
   }
 
 }

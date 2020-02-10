@@ -4,7 +4,6 @@ import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 
 class SqlExpressionParserTest extends FunSuite with Matchers {

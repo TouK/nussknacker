@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -96,7 +95,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     if (List(boxedLeftClass, boxedRightClass).forall(isSimpleType)) {
       commonSuperTypeForSimpleTypes(boxedLeftClass, boxedRightClass) match {
         case tc: TypedClass => Some(tc)
-        case TypedUnion(types) if types.nonEmpty && types.forall(_.canBeSubclassOf(Typed[Number])) => Some(TypedClass[Number])
+        case TypedUnion(types) if types.nonEmpty && types.forall(_.canBeSubclassOf(Typed[Number])) => Some(Typed.typedClass[Number])
         case _ => None // empty e.g. conflicting simple types
       }
     } else {
@@ -124,7 +123,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     if (classOf[Number].isAssignableFrom(left) && classOf[Number].isAssignableFrom(right))
       numberPromotionStrategy.promote(left, right)
     else if (left == right)
-      TypedClass(ClazzRef(left))
+      Typed(left)
     else
       Typed.empty
   }

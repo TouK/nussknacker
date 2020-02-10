@@ -7,8 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodT
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import scala.concurrent.Future
 
@@ -32,7 +31,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   test("extract type info from classes from additional variables") {
     val types = ProcessDefinitionExtractor.extractTypes(processDefinition)
-    val classDefinition = types.find(_.clazzName.clazz == classOf[OnlyUsedInAdditionalVariable])
+    val classDefinition = types.find(_.clazzName == Typed[OnlyUsedInAdditionalVariable])
       classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 
@@ -40,9 +39,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val definition = processDefinition.services("configurable1")
 
     definition.returnType shouldBe Typed[String]
-    definition.methodDef.realReturnType shouldBe Typed.fromDetailedType[Future[String]]
+    definition.methodDef.runtimeClass shouldBe classOf[Future[_]]
 
-    definition.parameters shouldBe List(Parameter("param1", ClazzRef[Int]))
+    definition.parameters shouldBe List(Parameter[Int]("param1"))
   }
 
   object TestCreator extends ProcessConfigCreator {
@@ -52,7 +51,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       )
 
     override def services(config: Config): Map[String, WithCategories[Service]] = Map(
-      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter("param1", ClazzRef[Int])), Typed[String]), "cat")
+      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter[Int]("param1")), Typed[String]), "cat")
     )
 
     override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map()
@@ -92,7 +91,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   case class EmptyExplicitMethodToInvoke(parameterDefinition: List[Parameter], returnType: TypingResult) extends Service with WithExplicitMethodToInvoke {
 
-    override def realReturnType: TypingResult = TypedClass(classOf[Future[_]], List(returnType))
+    override def runtimeClass: Class[_] = classOf[Future[_]]
 
     override def additionalDependencies: List[Class[_]] = List()
 
