@@ -21,7 +21,7 @@ class TypeRelatedParameterValueTest extends FlatSpec with Matchers {
 
   testTypeRelatedDefaultValue("java.lang.String", "''")
   testTypeRelatedDefaultValue("boolean", true)
-  testTypeRelatedDefaultValue("someCrazyValue", "#someCrazyVal", "someCrazyVal")
+  testTypeRelatedDefaultValue("someCrazyValue", "", "someCrazyVal")
   testTypeRelatedDefaultValue("java.util.List", "{}")
   testTypeRelatedDefaultValue("java.util.Map", "{:}")
 }

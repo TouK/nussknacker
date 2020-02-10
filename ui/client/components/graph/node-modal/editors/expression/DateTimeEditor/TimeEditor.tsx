@@ -7,7 +7,7 @@ import {DatepickerEditor, JavaTimeTypes, isParseable, DatepickerEditorProps} fro
 
 export function TimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
   const {i18n} = useTranslation()
-  const timeFormat = i18n.t("editors.LocalTime.timeFormat", "H:mm:ss")
+  const timeFormat = i18n.t("editors.LocalTime.timeFormat", "HH:mm:ss")
   return <DatepickerEditor {...props} dateFormat={null} timeFormat={timeFormat} expressionType={JavaTimeTypes.LOCAL_TIME}/>
 }
 

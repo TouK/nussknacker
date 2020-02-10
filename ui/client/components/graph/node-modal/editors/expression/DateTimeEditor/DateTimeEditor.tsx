@@ -8,7 +8,7 @@ import {isEmpty} from "lodash"
 export function DateTimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
   const {i18n} = useTranslation()
   const dateFormat = i18n.t("editors.LocalDateTime.dateFormat", "DD-MM-YYYY")
-  const timeFormat = i18n.t("editors.LocalDateTime.timeFormat", "H:mm")
+  const timeFormat = i18n.t("editors.LocalDateTime.timeFormat", "HH:mm")
   return <DatepickerEditor {...props} dateFormat={dateFormat} timeFormat={timeFormat} expressionType={JavaTimeTypes.LOCAL_DATE_TIME}/>
 }
 
