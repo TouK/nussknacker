@@ -29,12 +29,12 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfi
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     val originalSourceFactory = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]
     implicit val typeInfo: TypeInformation[Object] = originalSourceFactory.typeInformation
-    overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, realReturnType) => {
+    overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, returnType) => {
       val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional).asInstanceOf[FlinkSource[Object]]
       originalSource match {
         case testDataParserProvider: TestDataParserProvider[Object@unchecked] =>
           val testObjects = testDataParserProvider.testDataParser.parseTestData(testData.testData)
-          CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssignerForTest, realReturnType())
+          CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssignerForTest, returnType())
         case _ =>
           throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it does'n provide test data parser")
       }

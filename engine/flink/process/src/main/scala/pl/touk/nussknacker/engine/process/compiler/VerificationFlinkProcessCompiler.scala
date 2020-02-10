@@ -31,5 +31,5 @@ class VerificationFlinkProcessCompiler(process: EspProcess, executionConfig: Exe
   })
 
   override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef
-    = overrideObjectWithMethod(sourceFactory, (_, _, _, realReturnType) =>  new EmptySource[Object](realReturnType()))
+    = overrideObjectWithMethod(sourceFactory, (_, _, _, returnType) =>  new EmptySource[Object](returnType()))
 }

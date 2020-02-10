@@ -27,7 +27,7 @@ private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor e
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
         new OrderedDependencies(obj.parameterDefinition ++ obj.additionalDependencies.map(TypedNodeDependency)),
-      obj.returnType, obj.realReturnType, List()))
+      obj.returnType, obj.runtimeClass, List()))
   }
 }
 
@@ -110,7 +110,7 @@ object MethodDefinitionExtractor {
                               orderedDependencies: OrderedDependencies,
                               // TODO: remove after full switch to ContextTransformation API
                               returnType: TypingResult,
-                              realReturnType: Class[_],
+                              runtimeClass: Class[_],
                               annotations: List[Annotation])
 
   class OrderedDependencies(dependencies: List[NodeDependency]) {

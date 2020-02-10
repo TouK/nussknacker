@@ -11,22 +11,23 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import scala.reflect.ClassTag
 
 class ParameterEvaluatorSpec extends FlatSpec with Matchers {
+
   private val DEFAULT_PARAMETER_NAME = "parameter"
   private val DEFAULT_NODE_NAME = "undefined"
   private val DEFAULT_PARAMETER_VALUE = "defVal"
   private val DEFINED_NODE_NAME = "defined"
+  private val pv = new ParameterEvaluatorExtractor(
+    DefaultValueExtractorChain(
+      ParamDefaultValueConfig(
+        Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> ParameterConfig(defaultValue = Some(DEFAULT_PARAMETER_VALUE), editor = None, None)))
+      ),
+      ModelClassLoader.empty
+    )
+  )
 
-  private def dummyParam[T:ClassTag](nodeName: String,
-                         paramName: String) =
-    NodeDefinition(nodeName, List(Parameter[T](paramName)))
-
-  private def dummyExpectedParam(paramName: String, value: Any) = {
-    evaluatedparam.Parameter(paramName, Expression("spel", value.toString))
-  }
-
-  private def testTypeRelatedDefaultValue[T:ClassTag](value: Any,
-                                          paramName: String = DEFAULT_PARAMETER_NAME,
-                                          nodeName: String = DEFAULT_NODE_NAME): Unit = {
+  private def testTypeRelatedDefaultValue[T: ClassTag](value: Any,
+                                                       paramName: String = DEFAULT_PARAMETER_NAME,
+                                                       nodeName: String = DEFAULT_NODE_NAME): Unit = {
     it should s"set ${implicitly[ClassTag[T]].runtimeClass} for parameter $paramName as $value in node $nodeName" in {
       val paramIn = dummyParam[T](paramName = paramName,
         nodeName = nodeName)
@@ -36,14 +37,13 @@ class ParameterEvaluatorSpec extends FlatSpec with Matchers {
     }
   }
 
-  private val pv = new ParameterEvaluatorExtractor(
-    DefaultValueExtractorChain(
-      ParamDefaultValueConfig(
-        Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> ParameterConfig(defaultValue = Some(DEFAULT_PARAMETER_VALUE), editor = None, None)))
-      ),
-      ModelClassLoader.empty
-    )
-  )
+  private def dummyParam[T: ClassTag](nodeName: String, paramName: String) =
+    NodeDefinition(nodeName, List(Parameter[T](paramName)))
+
+  private def dummyExpectedParam(paramName: String, value: Any) = {
+    evaluatedparam.Parameter(paramName, Expression("spel", value.toString))
+  }
+
   behavior of "ParameterEvaluator"
   testTypeRelatedDefaultValue[Int](value = 0)
   testTypeRelatedDefaultValue[Double](value = 0f)

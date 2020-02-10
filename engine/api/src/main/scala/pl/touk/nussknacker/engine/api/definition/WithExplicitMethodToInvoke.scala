@@ -21,7 +21,7 @@ trait WithExplicitMethodToInvoke {
 
   def returnType: TypingResult
 
-  def realReturnType: Class[_]
+  def runtimeClass: Class[_]
 
   def additionalDependencies: List[Class[_]]
 
@@ -34,7 +34,7 @@ trait ServiceWithExplicitMethod extends Service with WithExplicitMethodToInvoke 
 
   override final def additionalDependencies: List[Class[_]] = List(classOf[ExecutionContext], classOf[ServiceInvocationCollector], classOf[MetaData])
 
-  override final def realReturnType: Class[_] = classOf[Future[_]]
+  override final def runtimeClass: Class[_] = classOf[Future[_]]
 
   override def invoke(params: List[AnyRef]): AnyRef = {
     val normalParams = params.dropRight(3)
