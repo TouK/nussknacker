@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
@@ -40,7 +40,7 @@ object UIProcessObjects {
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
-    val uiProcessDefinition: UIProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
+    val uiProcessDefinition: UIProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions)
 
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
 
@@ -150,7 +150,7 @@ object UIParameter {
 }
 
 object UIProcessDefinition {
-  def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition]): UIProcessDefinition = {
+  def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition], types: Set[TypeInfos.ClazzDefinition]): UIProcessDefinition = {
     val uiProcessDefinition = UIProcessDefinition(
       services = processDefinition.services.mapValues(UIObjectDefinition(_)),
       sourceFactories = processDefinition.sourceFactories.mapValues(UIObjectDefinition(_)),
@@ -160,7 +160,7 @@ object UIProcessDefinition {
       signalsWithTransformers = processDefinition.signalsWithTransformers.mapValues(e => UIObjectDefinition(e._1)),
       exceptionHandlerFactory = UIObjectDefinition(processDefinition.exceptionHandlerFactory),
       globalVariables = processDefinition.expressionConfig.globalVariables.mapValues(UIObjectDefinition(_)),
-      typesInformation = processDefinition.typesInformation
+      typesInformation = types
     )
     uiProcessDefinition
   }

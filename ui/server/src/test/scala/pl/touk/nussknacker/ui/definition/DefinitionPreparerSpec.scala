@@ -123,7 +123,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[NodeGroup] = {
     // TODO: this is a copy paste from UIProcessObjects.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
-    val uiProcessDefinition = UIProcessDefinition(processDefinition, subprocessInputs)
+    val uiProcessDefinition = UIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
     val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))), dynamicNodesConfig)
 
