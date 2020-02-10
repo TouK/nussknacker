@@ -32,5 +32,5 @@ class TypeRelatedParameterValueTest extends FlatSpec with Matchers {
 
   testTypeRelatedDefaultValue("java.time.LocalDateTime",  s"T(java.time.LocalDateTime).parse('${now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}')")
   testTypeRelatedDefaultValue("java.time.LocalDate",  s"T(java.time.LocalDate).parse('${now.format(DateTimeFormatter.ISO_LOCAL_DATE)}')")
-  testTypeRelatedDefaultValue("java.time.LocalTime",  s"T(java.time.LocalTime).parse('${now.format(DateTimeFormatter.ISO_LOCAL_TIME)}')")
+  testTypeRelatedDefaultValue("java.time.LocalTime",  "T(java.time.LocalTime).parse('00:00')")
 }

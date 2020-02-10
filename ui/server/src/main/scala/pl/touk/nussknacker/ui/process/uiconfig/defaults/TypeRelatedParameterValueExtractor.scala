@@ -28,7 +28,7 @@ object TypeRelatedParameterValueExtractor extends ParameterDefaultValueExtractor
       case "boolean" | "java.lang.Boolean" => "true"
       case "java.time.LocalDateTime" => s"T(java.time.LocalDateTime).parse('${localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}')"
       case "java.time.LocalDate" => s"T(java.time.LocalDate).parse('${localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE)}')"
-      case "java.time.LocalTime" => s"T(java.time.LocalTime).parse('${localDateTime.format(DateTimeFormatter.ISO_LOCAL_TIME)}')"
+      case "java.time.LocalTime" => "T(java.time.LocalTime).parse('00:00')"
       case "java.lang.String" => "''"
       case "java.util.List" => "{}"
       case "java.util.Map" => "{:}"
