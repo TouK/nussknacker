@@ -21,18 +21,14 @@ object TypeRelatedParameterValueExtractor extends ParameterDefaultValueExtractor
   }
 
   private[defaults] def evaluateTypeRelatedParamValue(name: String, refClassName: String): String = {
-    val localDateTime = LocalDateTime.of(LocalDate.now, LocalTime.MIN)
     refClassName match {
       case "long" | "short" | "int" | "java.lang.Number" => "0"
       case "float" | "double" | "java.math.BigDecimal" => "0.0"
       case "boolean" | "java.lang.Boolean" => "true"
-      case "java.time.LocalDateTime" => s"T(java.time.LocalDateTime).parse('${localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}')"
-      case "java.time.LocalDate" => s"T(java.time.LocalDate).parse('${localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE)}')"
-      case "java.time.LocalTime" => "T(java.time.LocalTime).parse('00:00')"
       case "java.lang.String" => "''"
       case "java.util.List" => "{}"
       case "java.util.Map" => "{:}"
-      case _ => s"#$name"
+      case _ => ""
     }
   }
 
