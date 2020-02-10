@@ -230,13 +230,31 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     metaSpelDef.exists(_.clazzName == Typed[SpelExpressionRepr]) shouldBe false
   }
 
+  val listMethods = Table("methodName", "indexOf", "contains", "isEmpty", "size")
+  val mapMethods = Table("methodName", "get", "isEmpty", "size", "values")
+  val optionMethods = Table("methodName", "get", "contains", "isEmpty")
+
   test("should extract basic methods from standard collection types") {
-    val javaListDef = singleClassDefinition[util.List[_]]().value
-    javaListDef.methods.get("contains") shouldBe defined
-    val scalaListDef = singleClassDefinition[List[_]]().value
-    scalaListDef.methods.get("contains") shouldBe defined
-    val scalaOptionDef = singleClassDefinition[Option[_]]().value
-    scalaOptionDef.methods.get("contains") shouldBe defined
+    forAll(mapMethods) { methodName =>
+      val javaMapDef = singleClassDefinition[util.Map[_, _]]().value
+      javaMapDef.methods.get(methodName) shouldBe defined
+
+      val scalaMapDef = singleClassDefinition[Map[_, _]]().value
+      scalaMapDef.methods.get(methodName) shouldBe defined
+
+    }
+    forAll(listMethods) { methodName =>
+      val javaListDef = singleClassDefinition[util.List[_]]().value
+      javaListDef.methods.get(methodName) shouldBe defined
+
+      val scalaListDef = singleClassDefinition[List[_]]().value
+      scalaListDef.methods.get(methodName) shouldBe defined
+    }
+
+    forAll(optionMethods) { methodName =>
+      val scalaOptionDef = singleClassDefinition[Option[_]]().value
+      scalaOptionDef.methods.get(methodName) shouldBe defined
+    }
   }
 
   test("should hide some ugly presented methods") {

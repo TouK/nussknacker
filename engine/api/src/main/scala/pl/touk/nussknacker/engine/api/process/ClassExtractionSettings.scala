@@ -166,11 +166,14 @@ object ClassExtractionSettings {
         SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Collection")),
         Pattern.compile(s"contains|containsAll|get|getOrDefault|indexOf|isEmpty|size")),
       ClassMemberPatternPredicate(
+        SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Map")),
+        Pattern.compile(s"containsKey|containsValue|get|getOrDefault|isEmpty|size|values|keySet")),
+      ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Optional")),
         Pattern.compile(s"get|isPresent|orElse")),
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("(scala\\.collection\\.Traversable|scala\\.Option)")),
-        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size"))
+        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff"))
     )
 
   lazy val IncludedSerializableMembers: List[ClassMemberPredicate] =
