@@ -59,14 +59,18 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   test("Should mark finished process as finished") {
     val id: process.ProcessId = prepareDeployedProcess(processName).futureValue
 
-    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(true)
+    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isFollowingDeploy) shouldBe Some(true)
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     processManager.withProcessFinished {
       //we simulate what happens when retrieveStatus is called mulitple times to check only one comment is added
       (1 to 5).foreach { _ =>
-        jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isOkForDeployed) shouldBe Some(false)
+        jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isFollowingDeploy) shouldBe Some(false)
       }
+      val finishedStatus = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.get
+      finishedStatus.status shouldBe SimpleStateStatus.Finished
+      finishedStatus.allowedActions shouldBe List(ProcessActionType.Deploy)
+
     }
 
     val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
@@ -182,7 +186,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.isNotDeployed shouldBe true
   }
 
-  private def isOkForDeployed(state: ProcessStatus): Boolean =
+  private def isFollowingDeploy(state: ProcessStatus): Boolean =
     state.status.isDuringDeploy || state.status.isRunning
 
   private def prepareDeployedProcess(processName: ProcessName): Future[process.ProcessId] =
