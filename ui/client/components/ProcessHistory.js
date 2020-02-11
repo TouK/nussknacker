@@ -36,7 +36,7 @@ export class ProcessHistory_ extends Component {
 
   doShowProcess(process) {
     this.setState({currentProcess: process})
-    return this.props.actions.fetchProcessToDisplay(process.processId, process.processVersionId, this.props.businessView)
+    return this.props.actions.fetchProcessToDisplay(this.props.processId, process.processVersionId, this.props.businessView)
   }
 
   showProcess(process, index) {
@@ -99,6 +99,7 @@ export class ProcessHistory_ extends Component {
 function mapState(state) {
   return {
     processHistory: _.get(state.graphReducer.fetchedProcessDetails, "history", []),
+    processId: state.graphReducer.fetchedProcessDetails.id,
     lastDeployedAction: _.get(state.graphReducer.fetchedProcessDetails, "lastDeployedAction", null),
     nothingToSave: ProcessUtils.nothingToSave(state),
     businessView: state.graphReducer.businessView
