@@ -212,7 +212,13 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(classLoader: ClassLoader, dictRegistry: DictRegistry, enableSpelForceCompile: Boolean, strictTypeChecking: Boolean, imports: List[String], flavour: Flavour): SpelExpressionParser = {
+  def default(classLoader: ClassLoader,
+              dictRegistry: DictRegistry,
+              enableSpelForceCompile: Boolean,
+              strictTypeChecking: Boolean,
+              imports: List[String],
+              flavour: Flavour,
+              strictMethodsChecking: Boolean): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
       "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
@@ -239,7 +245,7 @@ object SpelExpressionParser extends LazyLogging {
     )
 
     val commonSupertypeFinder = new CommonSupertypeFinder(if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union)
-    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry)))
+    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry), strictMethodsChecking))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour,
       prepareEvaluationContext(classLoader, imports, propertyAccessors, functions))
   }

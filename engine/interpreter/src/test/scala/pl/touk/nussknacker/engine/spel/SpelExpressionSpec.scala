@@ -81,26 +81,32 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private def parseWithDicts[T:TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parseWithDicts[T: TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, dictionaries, Standard)
+    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true)
   }
 
-  private def parse[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    val validationCtx = ValidationContext(context.variables.mapValuesNow(Typed.fromInstance))
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false)
+  }
+
+  private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour)
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true)
   }
 
-  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, Map.empty, Standard)
+  private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true)
   }
 
-  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition], flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
+                                flavour: Flavour, strictMethodsChecking: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true, imports, flavour)
-      .parse(expr, validationCtx, Typed.fromDetailedType[T])
+    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true,
+      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   test("invoke simple expression") {
@@ -169,6 +175,11 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     val invalid = parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)
     invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in pl.touk.nussknacker.engine.spel.SampleGlobalObject$")))
 
+  }
+
+  test("skip MethodReference validation without strictMethodsChecking") {
+    val parsed = parseWithoutStrictMethodsChecking[Any]("#processHelper.notExistent(1, 1)", ctxWithGlobal)
+    parsed.isValid shouldBe true
   }
 
   test("return invalid type for MethodReference with invalid arity ") {
@@ -453,7 +464,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("be able to type toString()") {
     parse[Any]("12.toString()", ctx).toOption.get.returnType shouldBe Typed[String]
   }
-  
+
   test("be able to type string concatenation") {
     parse[Any]("12 + ''", ctx).toOption.get.returnType shouldBe Typed[String]
     parse[Any]("'' + 12", ctx).toOption.get.returnType shouldBe Typed[String]
