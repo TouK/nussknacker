@@ -135,8 +135,13 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   override final val languageId: String = flavour.languageId
 
   override def parseWithoutContextValidation(original: String): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
-    baseParse(original).map { parsed =>
-      expression(ParsedSpelExpression(original, () => baseParse(original), parsed), Unknown)
+    if (StringUtils.isBlank(original)) {
+      // This will work only with @Nullable for now because for Option/Optional is needed expectedType
+      Valid(NullExpression(original, Unknown, flavour))
+    } else {
+      baseParse(original).map { parsed =>
+        expression(ParsedSpelExpression(original, () => baseParse(original), parsed), Unknown)
+      }
     }
   }
 
