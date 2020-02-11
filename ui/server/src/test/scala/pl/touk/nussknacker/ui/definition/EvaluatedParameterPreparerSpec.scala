@@ -1,23 +1,24 @@
-package pl.touk.nussknacker.ui.process.uiconfig.defaults
+package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.defaults.NodeDefinition
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
-import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
 
 import scala.reflect.ClassTag
 
-class ParameterEvaluatorSpec extends FlatSpec with Matchers {
+class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
 
   private val DEFAULT_PARAMETER_NAME = "parameter"
   private val DEFAULT_NODE_NAME = "undefined"
   private val DEFAULT_PARAMETER_VALUE = "defVal"
   private val DEFINED_NODE_NAME = "defined"
-  private val pv = new ParameterEvaluatorExtractor(
-    DefaultValueExtractorChain(
+  private val pv = new EvaluatedParameterPreparer(
+    DefaultValueDeterminerChain(
       ParamDefaultValueConfig(
         Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> ParameterConfig(defaultValue = Some(DEFAULT_PARAMETER_VALUE), editor = None, None)))
       ),
@@ -33,7 +34,7 @@ class ParameterEvaluatorSpec extends FlatSpec with Matchers {
         nodeName = nodeName)
       val paramOut = dummyExpectedParam(paramName = paramName,
         value = value)
-      pv.evaluateParameters(paramIn).head shouldBe paramOut
+      pv.prepareEvaluatedParameter(paramIn).head shouldBe paramOut
     }
   }
 

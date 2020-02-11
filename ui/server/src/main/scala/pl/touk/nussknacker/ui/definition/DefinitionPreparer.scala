@@ -1,30 +1,27 @@
 package pl.touk.nussknacker.ui.definition
 
+import pl.touk.nussknacker.engine.api.defaults.{NodeDefinition, ParameterDefaultValueDeterminer}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, SinkAdditionalData}
-import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
+import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.ParameterEvaluatorExtractor
-import pl.touk.nussknacker.ui.security.api.Permission._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
+import pl.touk.nussknacker.ui.security.api.Permission._
 
 import scala.collection.immutable.ListMap
-import scala.runtime.BoxedUnit
 
 //TODO: some refactoring?
 object DefinitionPreparer {
@@ -33,21 +30,21 @@ object DefinitionPreparer {
                         processDefinition: ProcessDefinition[ObjectDefinition],
                         isSubprocess: Boolean,
                         subprocessInputs: Map[String, ObjectDefinition],
-                        extractorFactory: ParameterDefaultValueExtractorStrategy,
+                        defaultsStrategy: ParameterDefaultValueDeterminer,
                         nodesConfig: Map[String, SingleNodeConfig],
                         nodeCategoryMapping: Map[String, Option[String]],
                         typesForCategories: ProcessTypesForCategories
                        ): List[NodeGroup] = {
-    val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
+    val evaluator = new EvaluatedParameterPreparer(defaultsStrategy)
     val readCategories = typesForCategories.getAllCategories.filter(user.can(_, Read))
 
     def filterCategories(objectDefinition: ObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 
     def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
-      evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters))
+      evaluator.prepareEvaluatedParameter(NodeDefinition(id, objDefinition.parameters))
 
     def objDefBranchParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
-      evaluator.evaluateBranchParameters(NodeDefinition(id, objDefinition.parameters))
+      evaluator.prepareEvaluatedBranchParameter(NodeDefinition(id, objDefinition.parameters))
 
     def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
@@ -121,7 +118,7 @@ object DefinitionPreparer {
         NodeGroup("subprocesses",
           subprocessInputs.map {
             case (id, definition) =>
-              val nodes = evaluator.evaluateParameters(NodeDefinition(id, definition.parameters))
+              val nodes = evaluator.prepareEvaluatedParameter(NodeDefinition(id, definition.parameters))
               NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
           }.toList))
     } else {

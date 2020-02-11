@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcess
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
+import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions{
@@ -132,7 +132,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       processDefinition = processDefinition,
       isSubprocess = false,
       subprocessInputs = subprocessInputs,
-      extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
+      defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = nodesConfig,
       nodeCategoryMapping = nodeCategoryMapping,
       typesForCategories = processTypesForCategories
@@ -148,7 +148,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s)),
       isSubprocess = false,
       subprocessInputs = Map(),
-      extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
+      defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = Map(),
       nodeCategoryMapping =  Map(),
       typesForCategories = processTypesForCategories
