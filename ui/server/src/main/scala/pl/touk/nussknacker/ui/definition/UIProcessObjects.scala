@@ -19,11 +19,11 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.definition.editor.ParameterEditorExtractorChain
 import pl.touk.nussknacker.ui.definition.validator.ParameterValidatorsExtractorChain
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object UIProcessObjects {
@@ -47,7 +47,7 @@ object UIProcessObjects {
     val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
     val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.params.getOrElse(Map.empty)) })
-    val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues, modelDataForType.modelClassLoader)
+    val defaultParametersFactory = DefaultValueDeterminerChain(defaultParametersValues, modelDataForType.modelClassLoader)
 
     val nodeCategoryMapping = processConfig.getOrElse[Map[String, Option[String]]]("nodeCategoryMapping", Map.empty)
     val additionalPropertiesConfig = processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty)
@@ -58,7 +58,7 @@ object UIProcessObjects {
         processDefinition = chosenProcessDefinition,
         isSubprocess = isSubprocess,
         subprocessInputs = subprocessInputs,
-        extractorFactory = defaultParametersFactory,
+        defaultsStrategy = defaultParametersFactory,
         nodesConfig = nodesConfig,
         nodeCategoryMapping = nodeCategoryMapping,
         typesForCategories = typesForCategories

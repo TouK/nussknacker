@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.uiconfig.defaults
+package pl.touk.nussknacker.ui.definition.defaults
 
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
