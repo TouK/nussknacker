@@ -18,8 +18,6 @@ export enum JavaTimeTypes {
   LOCAL_TIME = "LocalTime",
 }
 
-/* eslint-enable i18next/no-literal-string */
-
 export type DatepickerEditorProps = {
   expressionObj: ExpressionObj,
   readOnly: boolean,
@@ -41,7 +39,8 @@ const parse = ({expression}: ExpressionObj, expressionType: JavaTimeTypes): mome
     ExpressionFormatter.getTimeOnlyFormat() :
     ExpressionFormatter.getDateTimeFormat()
 
-  return moment(date, formats) || null
+  const m = moment(date, formats)
+  return m.isValid() ? m : null
 }
 
 function format(value: string | moment.Moment, expressionType: JavaTimeTypes): string {
@@ -65,15 +64,15 @@ export const isParseable = (expression: ExpressionObj, expressionType: JavaTimeT
 }
 
 const getDateValidator = (value: string | moment.Moment, expressionType: JavaTimeTypes): Validator => ({
-  description: i18next.t("validation.wrongDateFormat", "wrong_date_format"),
-  message: i18next.t("validation.wrongDateFormat", "wrong_date_format"),
-  isValid: () => !!format(value, expressionType),
+  description: i18next.t("validation.wrongDateFormat", "Wrong date format"),
+  message: i18next.t("validation.wrongDateFormat", "Wrong date format"),
+  isValid: () => !value || !!format(value, expressionType),
 })
 
 export function DatepickerEditor(props: DatepickerEditorProps) {
   const {i18n} = useTranslation()
   const {className, expressionObj, onValueChange, expressionType, readOnly, validators, showValidation, isMarked, editorFocused, ...other} = props
-  const [value, setValue] = useState<string | moment.Moment>(moment(parse(expressionObj, expressionType)))
+  const [value, setValue] = useState<string | moment.Moment>(parse(expressionObj, expressionType))
   const {expression} = expressionObj
   const [onChange] = useDebouncedCallback(
     value => {

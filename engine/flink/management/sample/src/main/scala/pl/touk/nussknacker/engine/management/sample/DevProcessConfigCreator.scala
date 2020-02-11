@@ -536,6 +536,7 @@ class OptionalTypesService extends Service with Serializable {
   def invoke(@ParamName("scalaOptionParam") scalaOptionParam: Option[Int],
              @ParamName("javaOptionalParam") javaOptionalParam: Optional[Int],
              @ParamName("nullableParam") @Nullable nullableParam: Int,
+             @ParamName("dateTimeParam") @Nullable dateTimeParam: LocalDateTime,
              @ParamName("overriddenByDevConfigParam") overriddenByDevConfigParam: Option[String],
              @ParamName("overriddenByFileConfigParam") overriddenByFileConfigParam: Option[String]): Future[Unit] = {
     ???
