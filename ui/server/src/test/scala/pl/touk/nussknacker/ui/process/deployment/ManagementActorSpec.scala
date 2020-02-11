@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.CustomProcess
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
@@ -89,6 +89,9 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.lastAction should not be None
     processDetails.isCanceled shouldBe true
+    processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
+    //one for deploy, one for cancel
+    activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
   }
 
   test("Should return state with error when state is running and process is canceled") {
