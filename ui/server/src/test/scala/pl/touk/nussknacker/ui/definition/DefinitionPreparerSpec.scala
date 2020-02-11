@@ -82,7 +82,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       Map("barService" -> "foo", "barSource" -> "fooBar"),
       Map("custom" -> Some("base")))
 
-    validateGroups(groups, 6)
+    validateGroups(groups, 7)
 
     groups.exists(_.name == "custom") shouldBe false
 

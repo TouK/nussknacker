@@ -65,7 +65,7 @@ object aggregates {
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
 
-    override def result(finalAggregate: Aggregate): Any = finalAggregate.asJava
+    override def result(finalAggregate: Aggregate): Any = new java.util.ArrayList[Any](finalAggregate.asJava)
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(Typed.genericTypeClass[java.util.List[_]](List(input)))
@@ -84,7 +84,7 @@ object aggregates {
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
 
-    override def result(finalAggregate: Aggregate): Any = finalAggregate.asJava
+    override def result(finalAggregate: Aggregate): Any = new java.util.HashSet(finalAggregate.asJava)
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(Typed.genericTypeClass[java.util.Set[_]](List(input)))
