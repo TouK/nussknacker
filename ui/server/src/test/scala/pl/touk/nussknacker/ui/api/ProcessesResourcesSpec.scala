@@ -324,6 +324,15 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
+  test("return details of process with empty expression") {
+    saveProcess(processName, ProcessTestData.validProcessWithEmptyExpr) {
+      Get(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[String] should include(processName.value)
+      }
+    }
+  }
+
   test("save invalid process json with ok status but with non empty invalid nodes") {
     saveProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
