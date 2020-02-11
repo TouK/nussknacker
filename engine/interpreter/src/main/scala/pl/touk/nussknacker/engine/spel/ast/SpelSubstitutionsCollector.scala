@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.spel.ast
 
+import org.apache.commons.lang3.StringUtils
 import org.springframework.expression.spel.SpelNode
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.expression.{ExpressionSubstitution, ExpressionSubstitutionsCollector}
@@ -15,7 +16,7 @@ class SpelSubstitutionsCollector(typeForNode: SpelNode => Option[TypingResult],
   private lazy val parser = new org.springframework.expression.spel.standard.SpelExpressionParser
 
   override def collectSubstitutions(expression: Expression): List[ExpressionSubstitution] =
-    collectSubstitutions(expression.expression)
+    if(StringUtils.isBlank(expression.expression)) List.empty else collectSubstitutions(expression.expression)
 
   private[engine] def collectSubstitutions(expression: String): List[ExpressionSubstitution] =
     collectSubstitutions(parser.parseRaw(expression).getAST, Nil, Nil)._2
