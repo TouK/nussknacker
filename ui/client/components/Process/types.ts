@@ -18,6 +18,14 @@ export type ProcessActionType = {
   buildInfo?: {},
 }
 
+export type ProcessVersionType = {
+  createDate: Date,
+  user: string,
+  actions: Array<ProcessActionType>
+  modelVersion: number,
+  processVersionId: number,
+}
+
 export interface ProcessType {
   id: string,
   name: string,

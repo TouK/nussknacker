@@ -14,7 +14,7 @@ export type ToggleConfirmDialogAction = {
 export function toggleConfirmDialog(
   isOpen: boolean,
   text: string,
-  action: string,
+  action: () => void,
   confirmText = "Yes",
   denyText = "No",
   event: EventInfo,
