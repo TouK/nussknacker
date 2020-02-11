@@ -78,7 +78,9 @@ object ProcessDefinitionExtractor {
         expressionConfig.optimizeCompilation,
         expressionConfig.strictTypeChecking,
         expressionConfig.dictionaries.mapValuesNow(_.value),
-        expressionConfig.hideMetaVariable), settings)
+        expressionConfig.hideMetaVariable,
+        expressionConfig.strictMethodsChecking
+      ), settings)
   }
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
@@ -136,7 +138,8 @@ object ProcessDefinitionExtractor {
       definition.expressionConfig.optimizeCompilation,
       definition.expressionConfig.strictTypeChecking,
       definition.expressionConfig.dictionaries,
-      definition.expressionConfig.hideMetaVariable
+      definition.expressionConfig.hideMetaVariable,
+      definition.expressionConfig.strictMethodsChecking
     )
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
@@ -152,6 +155,6 @@ object ProcessDefinitionExtractor {
 
   case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], languages: LanguageConfiguration,
                                                         optimizeCompilation: Boolean, strictTypeChecking: Boolean, dictionaries: Map[String, DictDefinition],
-                                                        hideMetaVariable: Boolean)
+                                                        hideMetaVariable: Boolean, strictMethodsChecking: Boolean)
 
 }

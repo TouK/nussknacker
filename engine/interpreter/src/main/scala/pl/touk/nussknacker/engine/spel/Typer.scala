@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 import scala.reflect.runtime._
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
-                          dictTyper: SpelDictTyper) extends LazyLogging {
+                          dictTyper: SpelDictTyper, strictMethodsChecking: Boolean) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -154,7 +154,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: MethodReference =>
         TypeMethodReference(e, current.stack) match {
           case Right(typingResult) => fixedWithNewCurrent(current.popStack)(typingResult)
-          case Left(errorMsg) => invalid(errorMsg)
+          case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else fixedWithNewCurrent(current.popStack)(Unknown)
         }
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
@@ -337,7 +337,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = true)
 
 }
 
