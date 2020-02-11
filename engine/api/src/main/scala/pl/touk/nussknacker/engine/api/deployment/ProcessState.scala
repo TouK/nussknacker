@@ -84,8 +84,7 @@ object StateStatus {
   def canDeploy: Boolean = false
   def name: String
 
-  def isFollowingDeployAction: Boolean =
-    isDuringDeploy || isRunning || isFinished
+  def isFollowingDeployAction: Boolean = isDuringDeploy || isRunning
 }
 
 final case class NotEstablishedStateStatus(name: String) extends StateStatus
