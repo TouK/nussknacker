@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 class ParameterBasedValidatorsDeterminerChainTest extends FunSuite with Matchers {
 
   test("determine validators based on parameter") {
-    val param = new Parameter("param", Typed[String], classOf[String], None, List(MandatoryValueValidator))
+    val param = Parameter[String]("param")
     val config = ParameterConfig.empty
 
     val validators = ParameterValidatorsDeterminerChain(config).determineValidators(param)
@@ -18,7 +18,7 @@ class ParameterBasedValidatorsDeterminerChainTest extends FunSuite with Matchers
   }
 
   test("determine validators based on config") {
-    val param = new Parameter("param", Typed[String], classOf[String], None)
+    val param = Parameter.optional[String]("param")
     val config = ParameterConfig(None, None, Some(List(MandatoryValueValidator)))
 
     val validators = ParameterValidatorsDeterminerChain(config).determineValidators(param)
@@ -27,7 +27,7 @@ class ParameterBasedValidatorsDeterminerChainTest extends FunSuite with Matchers
   }
 
   test("override validators based on annotation with those from config") {
-    val param = new Parameter("param", Typed[String], classOf[String], None, List(MandatoryValueValidator))
+    val param = Parameter[String]("param")
     val config = ParameterConfig(None, None, Some(List.empty))
 
     val validators = ParameterValidatorsDeterminerChain(config).determineValidators(param)

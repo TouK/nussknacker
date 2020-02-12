@@ -33,7 +33,7 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends FunSuite with 
   private def determine(editor: Option[ParameterEditor]) = {
     EditorPossibleValuesBasedDefaultValueDeterminer.determineParameterDefaultValue(
       definition,
-      Parameter("id", Typed[String], classOf[String], editor)
+      Parameter("id", Typed[String], classOf[String], editor, validators = List.empty, additionalVariables = Map.empty, branchParam = false)
     )
   }
 }

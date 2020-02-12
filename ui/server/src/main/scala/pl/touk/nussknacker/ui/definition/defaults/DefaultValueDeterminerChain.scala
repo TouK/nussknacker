@@ -11,6 +11,7 @@ object DefaultValueDeterminerChain extends LazyLogging {
       .load[ParameterDefaultValueDeterminer](modelClassLoader.classLoader)
     val nkStrategies = Seq(
       new ConfigParameterDefaultValueDeterminer(defaultParametersValues),
+      OptionalityBasedDefaultValueDeterminer,
       EditorPossibleValuesBasedDefaultValueDeterminer,
       TypeRelatedParameterValueDeterminer
     )
