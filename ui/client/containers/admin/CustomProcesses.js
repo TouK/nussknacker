@@ -13,6 +13,7 @@ import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
 import BaseProcesses from "./../BaseProcesses"
 import ProcessStateIcon from "../../components/Process/ProcessStateIcon"
+import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 
 class CustomProcesses extends BaseProcesses {
   shouldReloadStatuses = true
@@ -107,15 +108,17 @@ class CustomProcesses extends BaseProcesses {
                     />
                   </Td>
                   <Td column="deploy" className="deploy-column">
-                    <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)}/>
+                    { ProcessStateUtils.canDeploy(this.getProcessState(process)) ? (
+                      <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)}/>
+                      ): null
+                    }
                   </Td>
-                  {
-                    this.isRunning(process) ? (
-                      <Td column="cancel" className="cancel-column">
-                        <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)}/>
-                      </Td>
-                    ): null
-                  }
+                  <Td column="cancel" className="cancel-column">
+                    { ProcessStateUtils.canCancel(this.getProcessState(process)) ? (
+                      <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)}/>
+                      ): null
+                    }
+                  </Td>
                 </Tr>
               )
             })}
