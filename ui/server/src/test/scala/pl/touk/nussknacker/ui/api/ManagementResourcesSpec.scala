@@ -60,9 +60,12 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id, true, Some("deployComment")) ~> check {
       cancelProcess(SampleProcess.process.id, true, Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
+        //TODO: remove Deployment:, Stop: after adding custom icons
+        val expectedDeployComment = "Deployment: deployComment"
+        val expectedStopComment = "Stop: cancelComment"
         Get(s"/processes/${SampleProcess.process.id}/activity") ~> withAllPermissions(processActivityRoute) ~> check {
           val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
-          comments.map(_.content) shouldBe List("deployComment", "cancelComment")
+          comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
 
           val firstCommentId::secondCommentId::Nil = comments.map(_.id)
 
@@ -70,8 +73,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             val deploymentHistory = responseAs[List[ProcessAction]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(performedAt = curTime)) shouldBe List(
-              ProcessAction(2, curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some("cancelComment"), Map()),
-              ProcessAction(2, curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some("deployComment"), TestFactory.buildInfo)
+              ProcessAction(2, curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
+              ProcessAction(2, curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
             )
           }
         }

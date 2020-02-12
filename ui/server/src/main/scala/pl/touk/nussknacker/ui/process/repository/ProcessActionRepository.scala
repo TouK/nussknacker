@@ -30,10 +30,12 @@ class ProcessActionRepository(val dbConfig: DbConfig, buildInfos: Map[Processing
   import profile.api._
 
   def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] =
-    action(processId, processVersion, comment, ProcessActionType.Deploy, buildInfos.get(processingType).map(BuildInfo.writeAsJson))
+    //TODO: remove Deployment: after adding custom icons
+    action(processId, processVersion, comment.map("Deployment: " + _), ProcessActionType.Deploy, buildInfos.get(processingType).map(BuildInfo.writeAsJson))
 
   def markProcessAsCancelled(processId: ProcessId, processVersion: Long, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] =
-    action(processId, processVersion, comment, ProcessActionType.Cancel, None)
+    //TODO: remove Stop: after adding custom icons
+    action(processId, processVersion, comment.map("Stop: " + _), ProcessActionType.Cancel, None)
 
   private def action(processId: ProcessId, processVersion: Long, comment: Option[String], action: ProcessActionType, buildInfo: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] = {
     val actionToRun = for {
