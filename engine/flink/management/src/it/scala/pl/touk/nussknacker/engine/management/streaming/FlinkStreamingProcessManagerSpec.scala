@@ -251,7 +251,10 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
     assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath, user = userToAct).isReadyWithin(100 seconds))
     eventually {
+
       val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
+      logger.debug(s"Waiting for deploy: ${process.id}, ${jobStatus}")
+
       jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
       jobStatus.map(_.status.isRunning) shouldBe Some(true)
     }
@@ -260,12 +263,13 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   private def cancel(processId: String): Unit = {
     assert(processManager.cancel(ProcessName(processId), user = userToAct).isReadyWithin(10 seconds))
     eventually {
-      val jobStatusCanceled = processManager
+      val runningJobs = processManager
         .findJobStatus(ProcessName(processId))
         .futureValue
-        .filterNot(_.status.canDeploy)
+        .filter(_.status.isRunning)
 
-      if (jobStatusCanceled.nonEmpty) {
+      logger.debug(s"waiting for jobs: ${processId}, ${runningJobs}")
+      if (runningJobs.nonEmpty) {
         throw new IllegalStateException("Job still exists")
       }
     }
