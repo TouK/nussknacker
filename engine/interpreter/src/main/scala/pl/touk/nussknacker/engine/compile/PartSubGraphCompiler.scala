@@ -291,7 +291,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
     subParam.typ.toRuntimeClass(classLoader) match {
       case Success(runtimeClass) =>
-        valid(Parameter(paramName, Typed(runtimeClass), runtimeClass))
+        valid(Parameter.optional(paramName, Typed(runtimeClass), runtimeClass))
       case Failure(_) =>
         invalid(
           SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)

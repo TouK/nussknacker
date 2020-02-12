@@ -6,15 +6,15 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
+import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.FilterFunction
-import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.{AscendingTimestampExtractor, BoundedOutOfOrdernessTimestampExtractor}
 import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -56,8 +56,6 @@ object SampleNodes {
     def create(@ParamName("param") param: Int) = new CollectionSource[Int](config = exConfig,
       list = List(param),
       timestampAssigner = None, returnType = Typed[Int])
-
-    override def timestampAssigner: Option[TimestampAssigner[Int]] = None
 
   }
 
@@ -242,7 +240,7 @@ object SampleNodes {
         .get("definition")
         .flatMap(_._2)
         .map(definition => TypedObjectTypingResult(definition.asInstanceOf[java.util.List[String]].asScala.map(_ -> Typed[String]).toMap))
-        .map(param => TypedClass(classOf[java.util.List[_]], List(param)))
+        .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
         .getOrElse(Unknown)
     }
   }
@@ -299,10 +297,19 @@ object SampleNodes {
           .map(_ => 1)
           .timeWindowAll(Time.seconds(seconds)).reduce(_ + _)
           .map(ValueWithContext[Any](_, Context(UUID.randomUUID().toString)))
-    })
+      })
   }
 
+  object TransformerWithNullableParam extends CustomStreamTransformer {
 
+    @MethodToInvoke(returnType = classOf[String])
+    def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+        start
+          .map(context.lazyParameterHelper.lazyMapFunction[Any](param))
+      })
+
+  }
 
   class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
     extends FlinkProcessSignalSender with KafkaSignalStreamConnector {
@@ -416,8 +423,6 @@ object SampleNodes {
 
       }
     }
-
-    override def timestampAssigner: Option[TimestampAssigner[TypedMap]] = None
 
     override def returnType: typing.TypingResult = Typed[TypedMap]
   }

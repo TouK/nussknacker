@@ -80,14 +80,26 @@ jobs:
       # We can't use env(CROSS_BUILD) here because of some bug in travis - there is raw, not evaluated script body in env(CROSS_BUILD)
       if: type = pull_request
     - name: "Frontend tests"
-      before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
+      before_script:
+        - nvm install $(cat .nvmrc)
+        - npm install -g npm
+        - node -v
+        - npm -v
       script: ./ciFrontendTest.sh
     - stage: releases
       name: "Release sonatype packages"
-      before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
+      before_script:
+        - nvm install $(cat .nvmrc)
+        - npm install -g npm
+        - node -v
+        - npm -v
       script: ./ciPublish.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER}
     - name: "Push Docker Image"
-      before_script: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
+      before_script:
+        - nvm install $(cat .nvmrc)
+        - npm install -g npm
+        - node -v
+        - npm -v
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
         - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal --add-dev-model=$ADD_DEV_MODEL

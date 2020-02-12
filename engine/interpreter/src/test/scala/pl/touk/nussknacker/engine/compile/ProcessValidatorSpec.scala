@@ -44,36 +44,36 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
-    Map("sampleEnricher" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
-      ClazzRef[String])), ClazzRef[SimpleRecord], List())),
-    Map("source" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()),
-        "sourceWithParam" -> ObjectDefinition(List(Parameter("param", ClazzRef[Any])), ClazzRef[SimpleRecord], List()),
-        "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedObjectDefinition])), ClazzRef[TypedMap], List())
+    Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
+      Typed[SimpleRecord], List())),
+    Map("source" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()),
+        "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord], List()),
+        "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
     ),
     Map("sink" -> (ObjectDefinition.noParam, SinkAdditionalData(true)),
       "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]))), SinkAdditionalData(true))),
 
-    Map("customTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
-      "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef[String])), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
+    Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData()),
+      "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "manyParams" -> (ObjectDefinition(List(
                 Parameter("par1", Typed[String], classOf[LazyParameter[_]]),
-                Parameter("par2", ClazzRef[String]),
+                Parameter[String]("par2"),
                 Parameter("par3", Typed[String], classOf[LazyParameter[_]]),
-                Parameter("par4", ClazzRef[String])), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
-      "clearingContextTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
+                Parameter[String]("par4")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
+      "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
         Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]), Parameter("lazyInt", Typed[Integer], classOf[LazyParameter[_]]),
-        Parameter("long", ClazzRef[Long]))
-      , ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef[String])), ClazzRef[Void], List()), emptyQueryNamesData())
+        Parameter[Long]("long"))
+      , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(ClazzRef(ProcessHelper.getClass)), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)),
+      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true
     ),
-    TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleEnricher], Typed[SimpleRecord], Typed(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
+    ClassExtractionSettings.Default
   )
 
   test("validated with success") {
@@ -99,20 +99,19 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.variablesInNodes shouldBe Map(
-      ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "id1" -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "filter1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "filter2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "filter3" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "sampleProcessor1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord]),
-      "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord],
+      ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "id1" -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "filter1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "filter2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "filter3" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "sampleProcessor1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
+      "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord]),
+      "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord],
         "vars" -> TypedObjectTypingResult(Map(
           "v1" -> Typed[Integer],
           "mapVariable" -> TypedObjectTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
-          "spelVariable" ->  Typed(ClazzRef[Boolean])
-
+          "spelVariable" ->  Typed[Boolean]
         ))
       )
     )
@@ -187,11 +186,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.variablesInNodes("sink") shouldBe Map(
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(processWithRefToMissingService.metaData),
-      "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)),
+      "processHelper" -> Typed(ProcessHelper.getClass),
       "event" -> Typed[SimpleRecord]
     )
 
-    val validDefinition = baseDefinition.withService(missingServiceId, Parameter(name = "foo", typ = ClazzRef[String]))
+    val validDefinition = baseDefinition.withService(missingServiceId, Parameter[String]("foo"))
     validate(processWithRefToMissingService, validDefinition).result should matchPattern {
       case Valid(_) =>
     }
@@ -226,7 +225,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .buildSimpleVariable("simple", "simpleVar", "'simple'")
         .processorEnd("id2", serviceId, "foo" -> "'bar'")
 
-    val definition = ProcessDefinitionBuilder.empty.withService(serviceId, Parameter(name = "foo", typ = ClazzRef[String]))
+    val definition = ProcessDefinitionBuilder.empty.withService(serviceId, Parameter[String]("foo"))
     val compilationResult = validate(processWithRefToMissingService, definition)
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(MissingSourceFactory("source", "id1"), Nil)) =>
@@ -255,7 +254,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find missing parameter for exception handler") {
     val process = EspProcessBuilder.id("process1").exceptionHandler().source("id1", "source").emptySink("id2", "sink")
-    val definition = baseDefinition.withExceptionHandlerFactory(Parameter(name = "foo", typ = ClazzRef[String]))
+    val definition = baseDefinition.withExceptionHandlerFactory(Parameter[String]("foo"))
     validate(process, definition).result should matchPattern {
       case Invalid(NonEmptyList(MissingParameters(_, _), _)) =>
     }
@@ -334,8 +333,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)))
-    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)))
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
   }
 
   test("validate custom node return type") {
@@ -378,7 +377,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "source")
       .emptySink("id2", "sink")
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
-      ObjectDefinition.withParams(List(Parameter("param1", ClazzRef[String]))))
+      ObjectDefinition.withParams(List(Parameter[String]("param1"))))
 
     inside (validate(process, definitionWithExceptionHandlerWithParams).result) {
       case Invalid(NonEmptyList(MissingParameters(missingParam, "$exceptionHandler"), _)) => missingParam shouldBe Set("param1")
@@ -395,7 +394,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List()), Some("'deadEnd'")))), None)
 
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
-      ObjectDefinition.withParams(List(Parameter("param1", ClazzRef[String]))))
+      ObjectDefinition.withParams(List(Parameter[String]("param1"))))
 
     validate(ProcessCanonizer.uncanonize(subprocess).toOption.get, definitionWithExceptionHandlerWithParams).result shouldBe 'valid
   }
@@ -461,7 +460,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "var1" -> Typed[String])
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "var1" -> Typed[String])
   }
 
   test("not allow to overwrite variable by switch node") {
@@ -549,15 +548,15 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.variablesInNodes("id2") shouldBe Map(
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(process.metaData),
-      "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)),
+      "processHelper" -> Typed(ProcessHelper.getClass),
       "var2" -> Typed[String],
       "var3" -> Typed[String])
     compilationResult.variablesInNodes("id3") shouldBe Map(
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(process.metaData),
-      "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)),
+      "processHelper" -> Typed(ProcessHelper.getClass),
       "var2" -> Typed[String],
-      "var3" -> Typed(ClazzRef[Int])
+      "var3" -> Typed[Int]
     )
   }
 
@@ -684,9 +683,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     result.result should matchPattern {
       case Valid(_) =>
     }
-    result.variablesInNodes("id2")("defined") shouldBe TypedClass(classOf[java.util.List[_]],
+    result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
       List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))
-
 
   }
 
@@ -873,7 +871,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer("custom",
-      classOf[AnotherSimpleRecord], emptyQueryNamesData(), Parameter("par1", ClazzRef[String]))
+      classOf[AnotherSimpleRecord], emptyQueryNamesData(), Parameter[String]("par1"))
 
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {
@@ -907,7 +905,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .get("definition")
         .flatMap(_._2)
         .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
-        .map(param => TypedClass(classOf[java.util.List[_]], List(param)))
+        .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
         .getOrElse(Unknown)
     }
   }

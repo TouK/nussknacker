@@ -33,12 +33,14 @@ grabMixin()
     white-space: nowrap
     overflow: hidden
     text-overflow: ellipsis
+    img
+      filter: brightness(0.6)
+      margin-right 5px
+      margin-bottom 2px
   .tool
     grabMixin()
     margin-left -17px
     margin-bottom -1px
-    img
-      margin-left 15px
     height 27px
     line-height @height
     border 1px solid listBorderColor
@@ -48,8 +50,5 @@ grabMixin()
     height 16px
     display inline-block
     vertical-align middle
-    svg
-      height 16px
-      margin-top -1px
 .group-label
   width 95%

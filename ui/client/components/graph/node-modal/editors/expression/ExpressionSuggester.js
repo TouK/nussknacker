@@ -1,4 +1,4 @@
-import _ from "lodash";
+import _ from "lodash"
 
 // before indexer['last indexer key
 const INDEXER_REGEX = /^(.*)\['([^\[]*)$/
@@ -16,7 +16,7 @@ export default class ExpressionSuggester {
     const normalized = this._normalizeMultilineInputToSingleLine(inputValue, caretPosition2d)
     const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(normalized.normalizedInput, normalized.normalizedCaretPosition)
     const properties = this._alreadyTypedProperties(lastExpressionPart)
-    const variablesIncludingSelectionOrProjection = this._getAllVariables(normalized);
+    const variablesIncludingSelectionOrProjection = this._getAllVariables(normalized)
     const focusedClazz = this._findRootClazz(properties, variablesIncludingSelectionOrProjection)
     return this._getSuggestions(lastExpressionPart, focusedClazz, variablesIncludingSelectionOrProjection)
   }
@@ -27,12 +27,12 @@ export default class ExpressionSuggester {
       const trimmedAtStartRow = _.dropWhile(row, (c) => c === " ").join("")
       return {trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length}
     })
-    const beforeCaretInputLength = _.sum(_.map(_.take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length));
+    const beforeCaretInputLength = _.sum(_.map(_.take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length))
     const normalizedCaretPosition = caretPosition2d.column - trimmedRows[caretPosition2d.row].trimmedCount + beforeCaretInputLength
     const normalizedInput = _.map(trimmedRows, (row) => row.trimmedAtStartRow).join("")
     return {
       normalizedInput: normalizedInput,
-      normalizedCaretPosition: normalizedCaretPosition
+      normalizedCaretPosition: normalizedCaretPosition,
     }
   }
 
@@ -86,7 +86,7 @@ export default class ExpressionSuggester {
   _findRootClazz = (properties, variables) => {
     const variableName = properties[0]
     if (_.has(variables, variableName)) {
-      const variableClazzName = _.get(variables, variableName);
+      const variableClazzName = _.get(variables, variableName)
       return _.reduce(_.tail(properties), (currentParentClazz, prop) => {
         const parentType = this._getTypeInfo(currentParentClazz)
         return this._extractMethod(parentType, prop)
@@ -114,7 +114,7 @@ export default class ExpressionSuggester {
     if (type.union != null) {
       const unionOfTypeInfos = _.map(type.union, (clazz) => this._getTypeInfoFromClass(clazz))
       return {
-        union: unionOfTypeInfos
+        union: unionOfTypeInfos,
       }
     } else {
       return this._getTypeInfoFromClass(type)
@@ -122,13 +122,13 @@ export default class ExpressionSuggester {
   }
 
   _getTypeInfoFromClass = (clazz) => {
-    const methodsFromInfo = this._getMethodsFromGlobalTypeInfo(clazz);
-    const methodsFromFields = _.mapValues((clazz.fields || []), (field) => ({refClazz: field}));
-    const allMethods = _.merge(methodsFromFields, methodsFromInfo);
+    const methodsFromInfo = this._getMethodsFromGlobalTypeInfo(clazz)
+    const methodsFromFields = _.mapValues((clazz.fields || []), (field) => ({refClazz: field}))
+    const allMethods = _.merge(methodsFromFields, methodsFromInfo)
 
     return {
       ...clazz,
-      methods: allMethods
+      methods: allMethods,
     }
   }
 
@@ -152,22 +152,22 @@ export default class ExpressionSuggester {
 
   _lastExpressionPartWithoutMethodParens = (value) => {
     //we have to handle cases like: #util.now(#other.quaxString.toUpperCase().__)
-    const withoutNestedParenthesis = value.substring(this._lastNonClosedParenthesisIndex(value) + 1, value.length);
-    const valueCleaned = withoutNestedParenthesis.replace(/\(.*\)/, "");
+    const withoutNestedParenthesis = value.substring(this._lastNonClosedParenthesisIndex(value) + 1, value.length)
+    const valueCleaned = withoutNestedParenthesis.replace(/\(.*\)/, "")
     //handling ?. operator
-    const withSafeNavigationIgnored = valueCleaned.replace(/\?\./g, ".");
+    const withSafeNavigationIgnored = valueCleaned.replace(/\?\./g, ".")
     return _.isEmpty(value) ? "" : `#${  _.last(_.split(withSafeNavigationIgnored, "#"))}`
   };
 
   _lastNonClosedParenthesisIndex = (value) => {
-    let nestingCounter = 0;
+    let nestingCounter = 0
     for (let i = value.length - 1; i >= 0; i--) {
-      if (value[i] === "(") nestingCounter -= 1;
-      else if (value[i] === ")") nestingCounter += 1;
+      if (value[i] === "(") nestingCounter -= 1
+      else if (value[i] === ")") nestingCounter += 1
 
-      if (nestingCounter < 0) return i;
+      if (nestingCounter < 0) return i
     }
-    return -1;
+    return -1
   };
 
   _justTypedProperty = (value) => {
@@ -197,7 +197,7 @@ export default class ExpressionSuggester {
 
   _getAllVariables = (normalized) => {
     const thisClazz = this._findProjectionOrSelectionRootClazz(normalized)
-    const data = thisClazz ? {"#this" : thisClazz} : {};
+    const data = thisClazz ? {"#this" : thisClazz} : {}
     return _.merge(data, this._variables)
   }
 
@@ -214,8 +214,8 @@ export default class ExpressionSuggester {
   }
 
   _findCurrentProjectionOrSelection = (normalized) => {
-    const input = normalized.normalizedInput;
-    const caretPosition = normalized.normalizedCaretPosition;
+    const input = normalized.normalizedInput
+    const caretPosition = normalized.normalizedCaretPosition
     const currentPart = this._currentlyFocusedExpressionPart(input, caretPosition)
     //TODO: detect if it's *really* selection/projection (can be in quoted string, or method index??)
     const lastOpening = Math.max(currentPart.lastIndexOf("!["), currentPart.lastIndexOf("?["))
@@ -225,7 +225,7 @@ export default class ExpressionSuggester {
       //TODO: this won't handle former projections - but we don't support them now anyway...
       return this._lastExpressionPartWithoutMethodParens(currentSelectionProjectionPart)
     } else {
-      return null;
+      return null
     }
 
   }
@@ -234,7 +234,7 @@ export default class ExpressionSuggester {
     return this._fetchDictLabelSuggestions(typ.id, typedProperty).then(result => _.map(result.data, entry => {
       return {
         methodName: entry.label,
-        refClazz: typ.valueType
+        refClazz: typ.valueType,
       }
     }))
   }

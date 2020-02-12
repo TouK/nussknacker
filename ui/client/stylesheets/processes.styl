@@ -95,7 +95,7 @@
       width: 40%
     &.reactable-th-modifydate, &.reactable-th-createdat, &.reactable-th-isdeployed
       width: 10%
-    &.reactable-th-status, &.reactable-th-edit, &.reactable-th-metrics, &.reactable-th-subprocess
+    &.reactable-th-status, &.reactable-th-edit, &.reactable-th-metrics, &.reactable-th-subprocess, &.reactable-th-cancel
       width: 5%
     &:focus
       outline 2px solid focusColor
@@ -126,7 +126,7 @@
     padding-bottom: 5px
   }
 
-  .centered-column, .reactable-th-modifydate, .reactable-th-createdat, .reactable-th-subprocess, .reactable-th-createdby
+  .centered-column, .reactable-th-modifydate, .reactable-th-createdat, .reactable-th-subprocess, .reactable-th-createdby, .reactable-th-cancel
     text-align: center
 
   .edit-column, .reactable-th-metrics, .reactable-th-view
@@ -184,27 +184,6 @@
         border-radius: 100%
         text-decoration: none
 
-.status-running
-  width: 15px
-  height: 15px
-  background: green
-  border-radius: 50%
-  margin auto
-
-.status-notrunning
-  width: 15px
-  height: 15px
-  background: #FBB03B
-  border-radius: 50%
-  margin auto
-
-.status-unknown
-  width: 15px
-  height: 15px
-  background: orange
-  border-radius: 50%
-  margin auto
-
 .transparent
   background-color: rgba(0, 0, 0, 0)
 
@@ -218,3 +197,6 @@
 
 .processes-table-row-icon
   padding 10px
+
+.state-pending
+  opacity: 50%

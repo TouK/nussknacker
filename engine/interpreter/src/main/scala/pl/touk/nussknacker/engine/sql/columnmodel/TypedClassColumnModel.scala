@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.sql.columnmodel
 
 import java.lang.reflect.Member
 
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPredicate, PropertyFromGetterExtractionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
 import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
@@ -16,20 +16,23 @@ private[columnmodel] object TypedClassColumnModel {
     getColumns(definition)
   }
 
-  private def classExtractionSettings(claz: Class[_]) = ClassExtractionSettings(Seq(new CreateColumnClassExtractionPredicate(claz)))
+  private def classExtractionSettings(claz: Class[_]) = ClassExtractionSettings(Seq.empty, Seq(new CreateColumnClassExtractionPredicate(claz)),
+    Seq.empty, PropertyFromGetterExtractionStrategy.AddPropertyNextToGetter)
 
   private def getColumns(clazzDefinition: ClazzDefinition): ColumnModel = {
     val columns = for {
       (name, method) <- clazzDefinition.methods
-      typ <- ClazzToSqlType.convert(name, method.refClazz, clazzDefinition.clazzName.refClazzName)
+      typ <- ClazzToSqlType.convert(name, method.refClazz, clazzDefinition.clazzName.display)
     } yield Column(name, typ)
     ColumnModel(columns.toList)
   }
 
-  class CreateColumnClassExtractionPredicate(claz: Class[_]) extends ClassMemberPredicate {
-    private val declaredFieldsNames = claz.getDeclaredFields.toList.map(_.getName)
+  class CreateColumnClassExtractionPredicate(clazzDeclaringFields: Class[_]) extends ClassMemberPredicate {
+    private val declaredFieldsNames = clazzDeclaringFields.getDeclaredFields.toList.map(_.getName)
 
-    override def matches(member: Member): Boolean = {
+    override def matchesClass(clazz: Class[_]): Boolean = true
+
+    override def matchesMember(member: Member): Boolean = {
       !declaredFieldsNames.contains(member.getName)
     }
   }

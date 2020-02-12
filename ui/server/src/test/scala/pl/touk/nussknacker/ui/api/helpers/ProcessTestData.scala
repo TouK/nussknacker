@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.time.LocalDateTime
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -43,6 +45,8 @@ object ProcessTestData {
   val otherExistingSinkFactory = "barSink"
   val existingServiceId = "barService"
   val otherExistingServiceId = "fooService"
+  val otherExistingServiceId2 = "fooService2"
+
   val processorId = "fooProcessor"
 
   val existingStreamTransformer = "transformer"
@@ -57,6 +61,7 @@ object ProcessTestData {
     .withService(existingServiceId)
     .withService(otherExistingServiceId)
     .withService(processorId, classOf[Void])
+    .withService(otherExistingServiceId2, Parameter("expression"))
     .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
       clearsContext = false, manyInputs = false))
     .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
@@ -75,6 +80,8 @@ object ProcessTestData {
 
   val validProcess : EspProcess = validProcessWithId("fooProcess")
 
+  val validProcessWithEmptyExpr : EspProcess = validProcessWithParam("fooProcess", "expression" -> Expression("spel", ""))
+
   def validProcessWithId(id: String) : EspProcess = EspProcessBuilder
         .id(id)
         .exceptionHandler()
@@ -82,6 +89,15 @@ object ProcessTestData {
         .processor("processor", existingServiceId)
         .customNode("custom", "out1", existingStreamTransformer)
         .emptySink("sink", existingSinkFactory)
+
+  def validProcessWithParam(id: String, param: (String, Expression)) : EspProcess = EspProcessBuilder
+    .id(id)
+    .exceptionHandler()
+    .source("source", existingSourceFactory)
+    .processor("processor", existingServiceId)
+    .customNode("custom", "out1", otherExistingServiceId2, param)
+    .emptySink("sink", existingSinkFactory)
+
 
   val validDisplayableProcess : ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
   val validProcessDetails: ValidatedProcessDetails = toDetails(validDisplayableProcess)
@@ -95,6 +111,7 @@ object ProcessTestData {
     BaseProcessDetails[DisplayableProcess](
       id = displayable.id,
       name = displayable.id,
+      processId = ProcessId(1L),
       processVersionId = 1,
       isLatestVersion = true,
       description = None,
@@ -107,7 +124,8 @@ object ProcessTestData {
       createdAt = LocalDateTime.now(),
       createdBy = "user1",
       tags = List(),
-      deployment = None,
+      lastAction = None,
+      lastDeployedAction = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None
@@ -117,6 +135,7 @@ object ProcessTestData {
     BaseProcessDetails[ValidatedDisplayableProcess](
       id = displayable.id,
       name = displayable.id,
+      processId = ProcessId(1L),
       processVersionId = 1,
       isLatestVersion = true,
       description = None,
@@ -129,7 +148,8 @@ object ProcessTestData {
       createdAt = LocalDateTime.now(),
       createdBy = "user1",
       tags = List(),
-      deployment = None,
+      lastAction = None,
+      lastDeployedAction = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None

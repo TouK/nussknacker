@@ -1,9 +1,9 @@
-import NodeDetailsContent from "./NodeDetailsContent"
 import React from "react"
+import NodeDetailsContent from "./NodeDetailsContent"
 
 export default function NodeGroupDetailsContent(props) {
 
-  const {testResults, node, onChange} = props
+  const {testResults, node, onChange, readOnly} = props
 
   return (
     <div>
@@ -12,7 +12,7 @@ export default function NodeGroupDetailsContent(props) {
           <div className="node-row">
             <div className="node-label">Group id</div>
             <div className="node-value">
-              <input type="text" className="node-input" value={node.id} onChange={onChange}/>
+              <input type="text" readOnly={readOnly} className="node-input" value={node.id} onChange={onChange}/>
             </div>
           </div>
           {node.nodes.map((node, idx) =>
@@ -24,7 +24,7 @@ export default function NodeGroupDetailsContent(props) {
                                   nodeErrors={props.nodeErrors}
                                   testResults={testResults(node.id)}/>
               <hr/>
-            </div>
+            </div>,
           )}
         </div>
       </div>

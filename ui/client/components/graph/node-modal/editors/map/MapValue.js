@@ -1,15 +1,15 @@
-import React from "react"
 import PropTypes from "prop-types"
+import React from "react"
 import EditableExpression from "../expression/EditableExpression"
 
 export default function MapValue(props) {
-  const {rowKey, value, isMarked, paths, validators, showValidation, readOnly, onChange, showSwitch} = props
+  const {rowKey, value, isMarked, paths, showValidation, readOnly, onChange, showSwitch, errors} = props
 
   return (
     <div className={"node-value field"}>
       <EditableExpression
         fieldName={`value-${rowKey.uuid}`}
-        validators={validators}
+        errors={errors}
         isMarked={isMarked}
         readOnly={readOnly}
         showValidation={showValidation}
@@ -31,6 +31,6 @@ MapValue.propTypes = {
   isMarked: PropTypes.bool,
   onChange: PropTypes.func,
   paths: PropTypes.string,
-  showSwitch: PropTypes.bool
+  showSwitch: PropTypes.bool,
 }
 

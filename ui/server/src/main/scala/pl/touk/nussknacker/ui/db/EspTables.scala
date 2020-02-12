@@ -8,7 +8,7 @@ trait EspTables
     with CommentEntityFactory
     with ProcessVersionEntityFactory
     with EnvironmentsEntityFactory
-    with ProcessDeploymentInfoEntityFactory
+    with ProcessActionEntityFactory
     with TagsEntityFactory
     with AttachmentEntityFactory {
   protected val profile: JdbcProfile

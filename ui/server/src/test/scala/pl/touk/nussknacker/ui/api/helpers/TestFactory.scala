@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
+import java.util.concurrent.atomic.{AtomicReference}
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
-import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
@@ -22,7 +21,8 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Try
 
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions{
@@ -35,8 +35,6 @@ object TestFactory extends TestPermissions{
     testCategoryName -> Permission.ALL_PERMISSIONS,
     secondTestCategoryName -> Permission.ALL_PERMISSIONS
   )
-
-  val testEnvironment = "test"
 
   val sampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
@@ -62,7 +60,7 @@ object TestFactory extends TestPermissions{
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
   }
 
-  def newDeploymentProcessRepository(db: DbConfig) = new DeployedProcessRepository(db,
+  def newDeploymentProcessRepository(db: DbConfig) = new ProcessActionRepository(db,
     Map(TestProcessingTypes.Streaming -> buildInfo))
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
@@ -81,61 +79,108 @@ object TestFactory extends TestPermissions{
 
   def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
-  //FIXME: update
-  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(id, username, permissions)
 
-  def adminUser(id: String = "1", username: String = "admin") = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
+  //FIXME: update
+  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty): LoggedUser = LoggedUser(id, username, permissions)
+
+  def adminUser(id: String = "1", username: String = "admin"): LoggedUser = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
+
+  object MockProcessManager {
+    val savepointPath = "savepoints/123-savepoint"
+    val stopSavepointPath = "savepoints/246-stop-savepoint"
+  }
 
   class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
-    override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
-      Some(ProcessState(DeploymentId("1"), runningState = managerProcessState.get(), "RUNNING", 0, None)))
+    import MockProcessManager._
 
-    import ExecutionContext.Implicits.global
+    private def prepareProcessState(status: StateStatus): Option[ProcessState ]=
+      prepareProcessState(status, Some(ProcessVersion.empty))
 
-    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] = Future {
-      Thread.sleep(sleepBeforeAnswer.get())
-      if (failDeployment.get()) {
-        throw new RuntimeException("Failing deployment...")
-      } else {
-        ()
-      }
-    }
+    private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
+      Some(SimpleProcessState(DeploymentId("1"), status, version))
 
-    private val sleepBeforeAnswer = new AtomicLong(0)
-    private val failDeployment = new AtomicBoolean(false)
-    private val managerProcessState = new AtomicReference[RunningState.Value](RunningState.Running)
+    override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
+      Future.successful(managerProcessState.get())
 
-    def withLongerSleepBeforeAnswer[T](action: => T): T = {
+    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: User): Future[Unit] =
+      deployResult
+
+    private var deployResult: Future[Unit] = Future.successful()
+
+    private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(SimpleStateStatus.Running))
+
+    def withWaitForDeployFinish[T](action: => T): T = {
+      val promise = Promise[Unit]
       try {
-        sleepBeforeAnswer.set(500)
+        deployResult = promise.future
         action
       } finally {
-        sleepBeforeAnswer.set(0)
+        promise.complete(Try(Unit))
+        deployResult = Future.successful()
       }
     }
 
     def withFailingDeployment[T](action: => T): T = {
+      deployResult = Future.failed(new RuntimeException("Failing deployment..."))
       try {
-        failDeployment.set(true)
         action
       } finally {
-        failDeployment.set(false)
+        deployResult = Future.successful()
       }
     }
 
     def withProcessFinished[T](action: => T): T = {
       try {
-        managerProcessState.set(RunningState.Finished)
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Finished))
         action
       } finally {
-        managerProcessState.set(RunningState.Running)
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
       }
     }
 
+    def withProcessStateStatus[T](status: StateStatus)(action: => T): T = {
+      try {
+        managerProcessState.set(prepareProcessState(status))
+        action
+      } finally {
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
+      }
+    }
+
+    def withProcessStateVersion[T](status: StateStatus, version: Option[ProcessVersion])(action: => T): T = {
+      try {
+        managerProcessState.set(prepareProcessState(status, version))
+        action
+      } finally {
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
+      }
+    }
+
+    def withNotFoundProcessState[T](action: => T): T = {
+      try {
+        managerProcessState.set(Option.empty)
+        action
+      } finally {
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
+      }
+    }
+
+    def withNotDeployedProcessState[T](action: => T): T = {
+      try {
+        managerProcessState.set(Option.empty)
+        action
+      } finally {
+        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
+      }
+    }
+
+
     override protected def cancel(job: ProcessState): Future[Unit] = Future.successful(Unit)
 
-    override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = Future.successful("dummy")
+    override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
+
+    override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
   }

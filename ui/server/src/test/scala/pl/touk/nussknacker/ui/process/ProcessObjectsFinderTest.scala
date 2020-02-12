@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
-import pl.touk.nussknacker.restmodel.processdetails.{DeploymentAction, ProcessDeployment}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction}
 
 class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -36,7 +37,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .customNode("custom2", "out2", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process1deployed = process1.copy(deployment = Option(ProcessDeployment(1, "test", LocalDateTime.now(), "user", DeploymentAction.Deploy, Map.empty)))
+  private val process1deployed = process1.copy(lastAction = Option(ProcessAction(1, LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
   private val process2 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess2").exceptionHandler()
@@ -97,9 +98,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   test("should find unused components") {
     val table = Table(
       ("processes", "unusedComponents"),
-      (List(invalidProcessWithAllObjects), List("fooProcessor", "fooSource")),
-      (List(process1, process4), List("barService", "fooProcessor", "fooService", "fooSource")),
-      (List(process1), List("barService", "fooProcessor", "fooService", "fooSource", "subProcess1"))
+      (List(invalidProcessWithAllObjects), List("fooProcessor", "fooService2", "fooSource")),
+      (List(process1, process4), List("barService", "fooProcessor", "fooService", "fooService2", "fooSource")),
+      (List(process1), List("barService", "fooProcessor", "fooService", "fooService2", "fooSource", "subProcess1"))
     )
     forAll(table) { (processes, unusedComponents) =>
       val result = ProcessObjectsFinder.findUnusedComponents(processes ++ List(subprocessDetails), List(processDefinition))

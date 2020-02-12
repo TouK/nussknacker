@@ -1,19 +1,20 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import java.io.File
+import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
 import java.util.UUID
 
 import com.typesafe.config.ConfigValueFactory
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, RunningState}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
+import pl.touk.nussknacker.engine.management.{FlinkStateStatus, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
@@ -56,7 +57,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   //this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
   test("cancel of not existing job should not fail") {
-    processManager.cancel(ProcessName("not existing job")).futureValue shouldBe (())
+    processManager.cancel(ProcessName("not existing job"), user = userToAct).futureValue shouldBe (())
   }
 
   test("be able verify&redeploy kafka process") {
@@ -78,18 +79,15 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "1"))
 
-    val consumer = kafkaClient.createConsumer()
-    val messages1 = consumer.consume(outTopic)
-    new String(messages1.take(1).head.message(), StandardCharsets.UTF_8) shouldBe "1"
+    messagesFromTopic(outTopic, 1).head shouldBe "1"
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2"))
 
-    val messages2 = kafkaClient.createConsumer().consume(outTopic)
-    new String(messages2.take(2).last.message(), StandardCharsets.UTF_8) shouldBe "2"
+    messagesFromTopic(outTopic, 2).last shouldBe "2"
 
-    assert(processManager.cancel(ProcessName(kafkaProcess.id)).isReadyWithin(10 seconds))
+    assert(processManager.cancel(ProcessName(kafkaProcess.id), user = userToAct).isReadyWithin(10 seconds))
   }
 
   // TODO: unignore - currently quite often fail during second deployProcessAndWaitIfRunning
@@ -116,7 +114,6 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   }
 
   test("snapshot state and be able to deploy using it") {
-
     val processId = "snapshot"
     val outTopic = s"output-$processId"
 
@@ -128,20 +125,42 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
     messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
-    val dir = new File("/tmp").toURI.toString
-    val savepointPath = processManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), dir)
-    assert(savepointPath.isReadyWithin(10 seconds))
+    val savepointDir = Files.createTempDirectory("customSavepoint")
+    val savepointPathFuture = processManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), savepointDir = Some(savepointDir.toUri.toString))
+        .map(_.path)
+    assert(savepointPathFuture.isReadyWithin(10 seconds))
+    val savepointPath = new URI(savepointPathFuture.futureValue)
+    Paths.get(savepointPath).startsWith(savepointDir) shouldBe true
 
     cancel(processId)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.toString))
 
     val messages = messagesFromTopic(outTopic, 2)
 
     messages shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
+  }
 
+  test("should stop process and deploy it using savepoint") {
+    val processId = "stop"
+    val outTopic = s"output-$processId"
+    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
+
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+    messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
+    val savepointPath = processManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
+
+    eventually {
+      processManager.findJobStatus(ProcessName(processId)).futureValue.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
+    }
+
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
+
+    messagesFromTopic(outTopic, 2) shouldBe List("List(One element)", "List(One element, One element)")
+
+    cancel(processId)
   }
 
   test("fail to redeploy if old is incompatible") {
@@ -158,7 +177,28 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     logger.info("Starting to redeploy")
 
     val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
-    val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None).failed.futureValue
+    val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None, user = userToAct).failed.futureValue
+
+    exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
+
+    cancel(processId)
+  }
+
+  ignore("fail to redeploy if old state with mapAggregator is incompatible") {
+    val processId = "redeployFail"
+    val outTopic = s"output-$processId"
+
+    val process = StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.set")
+
+    kafkaClient.createTopic(outTopic, 1)
+
+    deployProcessAndWaitIfRunning(process, empty(process.id))
+    messagesFromTopic(outTopic,1) shouldBe List("test")
+
+    logger.info("Starting to redeploy")
+
+    val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality"))).spaces2
+    val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None, user = userToAct).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
 
@@ -170,19 +210,17 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   test("deploy custom process") {
     val processId = "customProcess"
 
-    assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
+    assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None, user = userToAct).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(ProcessName(processId)).futureValue
-    jobStatus.map(_.status) shouldBe Some("RUNNING")
+    jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+    jobStatus.map(_.status.isRunning) shouldBe Some(true)
 
     cancel(processId)
   }
 
-
   test("extract process definition") {
-
     val definition = FlinkStreamingProcessManagerProvider.defaultTypeConfig(config).toModelData.processDefinition
-
     definition.services should contain key "accountService"
   }
 
@@ -200,9 +238,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
     signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
     signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
-
   }
-
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] = {
     kafkaClient.createConsumer()
@@ -213,18 +249,29 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
-    Thread.sleep(1000)
-    val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
-    jobStatus.map(_.status) shouldBe Some("RUNNING")
+    assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath, user = userToAct).isReadyWithin(100 seconds))
+    eventually {
+
+      val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
+      logger.debug(s"Waiting for deploy: ${process.id}, ${jobStatus}")
+
+      jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+      jobStatus.map(_.status.isRunning) shouldBe Some(true)
+    }
   }
 
   private def cancel(processId: String): Unit = {
-    assert(processManager.cancel(ProcessName(processId)).isReadyWithin(10 seconds))
+    assert(processManager.cancel(ProcessName(processId), user = userToAct).isReadyWithin(10 seconds))
     eventually {
-      val jobStatusCanceled = processManager.findJobStatus(ProcessName(processId)).futureValue.filterNot(_.runningState == RunningState.Finished)
-      if (jobStatusCanceled.nonEmpty)
+      val runningJobs = processManager
+        .findJobStatus(ProcessName(processId))
+        .futureValue
+        .filter(_.status.isRunning)
+
+      logger.debug(s"waiting for jobs: ${processId}, ${runningJobs}")
+      if (runningJobs.nonEmpty) {
         throw new IllegalStateException("Job still exists")
+      }
     }
   }
 

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.spel.typer
 import cats.data.NonEmptyList
 import org.springframework.expression.spel.ast.MethodReference
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -40,23 +39,27 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
       case Nil =>
         Right(Unknown)
       case _ =>
+        val isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
+        val display = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
         clazzDefinitions.flatMap(_.methods.get(methodReference.getName)) match {
-          case Nil => Right(Unknown)
+          //Static method can be invoked - we cannot find them ATM
+          case Nil if isClass => Right(Unknown)
+          case Nil  => Left(s"Unknown method '${methodReference.getName}' in $display")
           case methodInfoes => typeFromMethodInfoes(methodInfoes)
         }
     }
 
+  //TODO: we check only arity, but don't check if any of overloaded methods has matching signature
+  //this will lead to erros if we have different return types for different signatures!
   private def typeFromMethodInfoes(methodInfoes: List[MethodInfo]): Either[String, TypingResult] =
     methodInfoes.filter(_.parameters.size <= paramsCount) match {
       case Nil =>
         Left(s"Invalid arity for '${methodReference.getName}'")
-      case h::t =>
-        val clazzRefs = NonEmptyList(h, t).map(_.refClazz)
-        val typingResult = typeFromClazzRefs(clazzRefs)
+      case nonEmpty =>
+        val returnTypes = nonEmpty.map(_.refClazz)
+        val typingResult = Typed(returnTypes.toSet)
         Right(typingResult)
     }
 
-  private def typeFromClazzRefs(clazzRefs: NonEmptyList[ClazzRef]): TypingResult =
-    Typed(clazzRefs.map(Typed(_)).toList.toSet)
 
 }

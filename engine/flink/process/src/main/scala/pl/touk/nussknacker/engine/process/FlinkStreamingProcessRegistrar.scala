@@ -149,24 +149,13 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
-      val timestampAssigner = source.timestampAssigner
-
-      env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
-
-      val newStart = env
-        .addSource[Any](source.toFlinkSource)(source.typeInformation)
-        .name(s"${metaData.id}-source")
-      val withAssigned = timestampAssigner.map {
-        case periodic: AssignerWithPeriodicWatermarks[Any@unchecked] =>
-          newStart.assignTimestampsAndWatermarks(periodic)
-        case punctuated: AssignerWithPunctuatedWatermarks[Any@unchecked] =>
-          newStart.assignTimestampsAndWatermarks(punctuated)
-      }.map(_.transform("even-time-meter", new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration)))
-        .getOrElse(newStart)
-        .map(new RateMeterFunction[Any]("source"))
+      val start = source
+          .sourceStream(env, metaData)
+          .process(new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration))
+          .map(new RateMeterFunction[Any]("source"))
           .map(InitContextFunction(metaData.id, part.node.id))
 
-      val asyncAssigned = wrapAsync(withAssigned, part.node, part.validationContext, "interpretation")
+      val asyncAssigned = wrapAsync(start, part.node, part.validationContext, "interpretation")
 
       val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  be.definition ->
         asyncAssigned.getSideOutput(OutputTag[InterpretationResult](be.nodeId))).toMap
@@ -353,44 +342,33 @@ object FlinkStreamingProcessRegistrar {
     }
   }
 
-  class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration)
-    extends AbstractStreamOperator[T] with OneInputStreamOperator[T, T] {
-
-    setChainingStrategy(ChainingStrategy.ALWAYS)
+  class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration) extends ProcessFunction[T, T] {
 
     lazy val histogramMeter = new DropwizardHistogramWrapper(
-      new Histogram(
-        new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)))
+      new Histogram(new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)))
 
-    lazy val minimalDelayGauge = new Gauge[Long] {
-      override def getValue = {
+    lazy val minimalDelayGauge: Gauge[Long] = new Gauge[Long] {
+      override def getValue: Long = {
         val now = System.currentTimeMillis()
-        now - lastElement.getOrElse(now)
+        now - lastElementTime.getOrElse(now)
       }
     }
 
-    var lastElement : Option[Long] = None
+    var lastElementTime : Option[Long] = None
 
-    override def open(): Unit = {
-      super.open()
-
+    override def open(parameters: Configuration): Unit = {
       val group = getRuntimeContext.getMetricGroup.addGroup(groupId)
       group.histogram("histogram", histogramMeter)
       group.gauge[Long, Gauge[Long]]("minimalDelay", minimalDelayGauge)
     }
 
-    override def processElement(element: StreamRecord[T]): Unit = {
-      if (element.hasTimestamp) {
-        val timestamp = element.getTimestamp
+    override def processElement(value: T, ctx: ProcessFunction[T, T]#Context, out: Collector[T]): Unit = {
+      Option(ctx.timestamp()).foreach { timestamp =>
         val delay = System.currentTimeMillis() - timestamp
         histogramMeter.update(delay)
-        lastElement = Some(lastElement.fold(timestamp)(math.max(_, timestamp)))
+        lastElementTime = Some(lastElementTime.fold(timestamp)(math.max(_, timestamp)))
       }
-      output.collect(element)
-    }
-
-    override def processWatermark(mark: Watermark): Unit = {
-      output.emitWatermark(mark)
+      out.collect(value)
     }
 
   }

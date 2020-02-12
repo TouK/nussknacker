@@ -1,11 +1,11 @@
-import PropTypes from "prop-types"
-import LabeledTextarea from "./editors/field/LabeledTextarea"
-import {v4 as uuid4} from "uuid"
-import React from "react"
 import _ from "lodash"
-import Map from "./editors/map/Map"
-import {errorValidator, notEmptyValidator} from "../../../common/Validators"
+import PropTypes from "prop-types"
+import React from "react"
+import {v4 as uuid4} from "uuid"
+import {errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
+import LabeledTextarea from "./editors/field/LabeledTextarea"
+import Map from "./editors/map/Map"
 
 const MapVariable = (props) => {
 
@@ -25,7 +25,7 @@ const MapVariable = (props) => {
                     isMarked={isMarked("id")}
                     readOnly={readOnly}
                     showValidation={showValidation}
-                    validators={[notEmptyValidator, errorValidator(errors, "id")]}/>
+                    validators={[mandatoryValueValidator, errorValidator(errors, "id")]}/>
 
       <LabeledInput renderFieldLabel={() => renderFieldLabel("Variable Name")}
                     value={node.varName}
@@ -33,7 +33,7 @@ const MapVariable = (props) => {
                     isMarked={isMarked("varName")}
                     readOnly={readOnly}
                     showValidation={showValidation}
-                    validators={[notEmptyValidator, errorValidator(errors, "varName")]}/>
+                    validators={[mandatoryValueValidator, errorValidator(errors, "varName")]}/>
 
       <Map label="Fields"
            onChange={onChange}
@@ -44,7 +44,8 @@ const MapVariable = (props) => {
            isMarked={isMarked}
            readOnly={readOnly}
            showValidation={showValidation}
-           showSwitch={false}/>
+           showSwitch={false}
+           errors={errors}/>
 
       <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
                        value={_.get(props.node, "additionalFields.description", "")}
@@ -64,11 +65,11 @@ MapVariable.propTypes = {
   onChange: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
-  showSwitch: PropTypes.bool
+  showSwitch: PropTypes.bool,
 }
 
 MapVariable.defaultProps = {
-  readOnly: false
+  readOnly: false,
 }
 
 MapVariable.availableFields = (node) => {

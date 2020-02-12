@@ -81,6 +81,10 @@ espCheckbox(checkboxWidth)
       content '\2714'
       color #fff
 
+  input[type='checkbox']:disabled
+    opacity 0.3
+    cursor auto
+
 .espModal
   max-height fit-content
   max-height -moz-max-content
@@ -289,7 +293,11 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       textarea
         overflow hidden
         height auto
+      textarea:-moz-read-only
+        background-color #444
       textarea:read-only
+        background-color #444
+      input:-moz-read-only
         background-color #444
       input:read-only
         background-color #444
@@ -312,9 +320,15 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         .node-value-select__control--is-focused
           outline 2px solid focusColor!important;
           outline-offset -1px!important;
+        .node-value-select__control--is-disabled
+          background-color #444
+          .node-value-select__value-container--has-value
+            background-color #444
         .node-value-select__single-value
           common-node-input(10px)
           outline none
+        .node-value-select__single-value--is-disabled
+          background-color #444
         .switchable
           width: 100% - 40px
         .node-value-select__input
@@ -354,6 +368,7 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       &.node-value-type-select
         width: 100%
         max-height: 35
+        outline 1px solid rgba(255,255,255,0.075)
         &.switchable
           width: 70%
       &.switchable
@@ -379,6 +394,10 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
     .node-input
       height: 35px
       common-node-input(10px)
+    .node-input:-moz-disabled
+      background-color #444
+    .node-input:disabled
+      background-color #444
     .read-only
       background-color #444
       .labelFooter
@@ -403,10 +422,9 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       padding-bottom: 7px
     input[type=checkbox].node-input
       height: 20px
-    &.node-editable
-      .node-input-with-error
-        outline 1px solid errorColor !important
-        border-radius 2px
+    .node-input-with-error
+      outline 1px solid errorColor !important
+      border-radius 2px
     .testResultDownload
       padding-left: 15px
       font-size: 14
@@ -594,6 +612,9 @@ espPanelButton()
   &.active
     .cls-switch-1
       fill #8fad60
+  &.read-only
+    .cls-switch-1
+      opacity 0.3
 
 .testResultsSummary
   color #ccc

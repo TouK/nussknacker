@@ -254,4 +254,19 @@ class CustomNodeProcessSpec extends FunSuite with Matchers {
     thrown.getMessage shouldBe s"Compilation errors: ExpressionParseError(There is no property 'value999' in type: ${classOf[SimpleRecord].getName},delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
   }
 
+  test("should evaluate blank expression used in lazy parameter as a null") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .customNode("id1", "output", "transformWithNullable", "param" -> "")
+      .processor("proc2", "logService", "all" -> "#output")
+      .emptySink("out", "monitor")
+
+    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    MockService.data shouldBe List(null)
+  }
+
 }

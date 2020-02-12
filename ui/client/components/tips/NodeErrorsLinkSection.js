@@ -1,6 +1,6 @@
 import React from "react"
-import {v4 as uuid4} from "uuid"
 import {Link} from "react-router-dom"
+import {v4 as uuid4} from "uuid"
 import NodeUtils from "../../components/graph/NodeUtils"
 
 export default function NodeErrorsLinkSection(props) {
@@ -20,12 +20,11 @@ export default function NodeErrorsLinkSection(props) {
             }
             nodeId={nodeId}
             addSeparator={index < (nodeIds.length - 1)}
-          />
+          />,
         )
       }
     </div>
 }
-
 
 const ErrorHeader = (props) => {
   const {message, className} = props

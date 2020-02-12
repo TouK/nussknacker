@@ -2,9 +2,10 @@ package pl.touk.nussknacker.ui.process.repository
 
 import java.sql.Timestamp
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDeployment, ProcessHistoryEntry, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessVersion, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
@@ -25,27 +26,37 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
     }
   }
 
-  protected def fetchProcessLatestVersions(processId: ProcessId)(implicit fetchShape: ProcessShapeFetchStrategy[_]): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
+  protected def fetchProcessLatestVersionsQuery(processId: ProcessId)(implicit fetchShape: ProcessShapeFetchStrategy[_]): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processVersionsTableQuery
       .filter(_.processId === processId.value)
       .sortBy(_.createDate.desc)
 
-  protected def fetchLastDeploymentActionPerProcess: Query[(Rep[Long], ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity), (Long, DeployedProcessInfoEntityData), Seq] =
-    deployedProcessesTable
+  protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[Long], (ProcessActionEntityFactory#ProcessActionEntity, api.Rep[Option[CommentEntityFactory#CommentEntity]])), (Long, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
+    fetchLastActionPerProcessQuery
+      .filter(_._2._1.action === ProcessActionType.Deploy)
+
+  protected def fetchLastActionPerProcessQuery: Query[(Rep[Long], (ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]])), (Long, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
+    processActionsTable
       .groupBy(_.processId)
-      .map { case (processId, group) => (processId, group.map(_.deployedAt).max) }
-      .join(deployedProcessesTable)
-      .on { case ((processId, latestDeployedAt), deployAction) => deployAction.processId === processId && deployAction.deployedAt === latestDeployedAt } //We fetch exactly this one  with max deployment
-      .map { case ((processId, _), deployAction) => processId -> deployAction }
+      .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
+      .join(processActionsTable)
+      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.performedAt === maxPerformedAt } //We fetch exactly this one  with max deployment
+      .map { case ((processId, _), action) => processId -> action }
+      .joinLeft(commentsTable)
+      .on { case ((_, action), comment) => action.commentId === comment.id }
+      .map{ case ((processId, action), comment) => processId -> (action, comment) }
 
-  protected def fetchProcessLatestDeployActions(processId: Long): Query[ProcessDeploymentInfoEntityFactory#ProcessDeploymentInfoEntity, DeployedProcessInfoEntityData, Seq] =
-    deployedProcessesTable
-      .filter(_.processId === processId)
-      .sortBy(_.deployedAt.desc)
+  protected def fetchProcessLatestActionsQuery(processId: ProcessId): Query[(ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]]), (ProcessActionEntityData, Option[CommentEntityData]), Seq] =
+    processActionsTable
+      .filter(_.processId === processId.value)
+      .joinLeft(commentsTable)
+      .on { case (action, comment) => action.commentId === comment.id }
+      .map{ case (action, comment) => (action, comment) }
+      .sortBy(_._1.performedAt.desc)
 
-  protected def fetchLatestProcesses(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-                                     deploymentsPerEnv: Seq[(Long, DeployedProcessInfoEntityData)],
-                                     isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[Long], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((Long, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
+  protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+                                          lastDeployedActionPerProcess: Seq[(Long, (ProcessActionEntityData, Option[CommentEntityData]))],
+                                          isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[Long], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((Long, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
     processVersionsTableNoJson
       .groupBy(_.processId)
       .map { case (n, group) => (n, group.map(_.createDate).max) }
@@ -56,7 +67,7 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
       .filter{ case ((_, _), process) =>
         isDeployed match {
           case None => true: Rep[Boolean]
-          case Some(dep) => process.id.inSet(deploymentsPerEnv.filter(_._2.isDeployed).map(_._1)) === dep
+          case Some(dep) => process.id.inSet(lastDeployedActionPerProcess.map(_._1)) === dep
         }
       }
 
@@ -71,7 +82,7 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
         processVersionsTableNoJson.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
     }
 
-  protected def latestProcessVersionsNoJson(processName: ProcessName): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
+  protected def latestProcessVersionsNoJsonQuery(processName: ProcessName): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processesTable
       .filter(_.name === processName.value)
       .join(processVersionsTableNoJson)
@@ -82,24 +93,22 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
 object ProcessRepository {
 
-  def toProcessHistoryEntry(process: ProcessEntityData, processVersion: ProcessVersionEntityData, allDeployments: List[DeployedProcessInfoEntityData]): ProcessHistoryEntry = ProcessHistoryEntry(
-    processId = process.id.toString,
-    processVersionId = processVersion.id,
-    processName = process.name,
-    createDate = DateUtils.toLocalDateTime(processVersion.createDate),
-    user = processVersion.user,
-    deployments = allDeployments.collect {
-      case deployedVersion if deployedVersion.processVersionId.equals(processVersion.id) => toDeploymentEntry(deployedVersion)
-    }
+  def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[(ProcessActionEntityData, Option[CommentEntityData])]): ProcessVersion = ProcessVersion(
+    processVersionId = versionData.id,
+    createDate = DateUtils.toLocalDateTime(versionData.createDate),
+    modelVersion = versionData.modelVersion,
+    user = versionData.user,
+    actions = actions.map(toProcessAction)
   )
 
-  def toDeploymentEntry(deployedProcessInfoEntityData: DeployedProcessInfoEntityData): ProcessDeployment = ProcessDeployment(
-    processVersionId = deployedProcessInfoEntityData.processVersionId,
-    environment = deployedProcessInfoEntityData.environment,
-    deployedAt = deployedProcessInfoEntityData.deployedAtTime,
-    user = deployedProcessInfoEntityData.user,
-    action = deployedProcessInfoEntityData.deploymentAction,
-    buildInfo = deployedProcessInfoEntityData.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
+  def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
+    processVersionId = actionData._1.processVersionId,
+    performedAt = actionData._1.performedAtTime,
+    user = actionData._1.user,
+    action = actionData._1.action,
+    commentId = actionData._2.map(_.id),
+    comment = actionData._2.map((_.content)),
+    buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
   )
 
   case class ProcessNotFoundError(id: String) extends Exception(s"No process $id found") with NotFoundError

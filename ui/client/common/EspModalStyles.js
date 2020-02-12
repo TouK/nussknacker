@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 
 //fixme remove
 class EspModalStyles {
@@ -5,7 +6,7 @@ class EspModalStyles {
   modalStyles = (userStyles = {}) => {
     var defaultStyles = {
       overlay: {
-        backgroundColor: "rgba(63, 62, 61, 0.3)"
+        backgroundColor: "rgba(63, 62, 61, 0.3)",
       },
       content: {
         borderRadius: "0",
@@ -15,26 +16,26 @@ class EspModalStyles {
         top: "100px",
         bottom: "100px",
         border: "none",
-        overflow: "none"
-      }
-    };
+        overflow: "none",
+      },
+    }
     return {
       overlay: {
         ...defaultStyles.overlay,
-        ...userStyles.overlay
+        ...userStyles.overlay,
       },
       content: {
         ...defaultStyles.content,
-        ...userStyles.content
-      }
+        ...userStyles.content,
+      },
 
-    };
+    }
   }
 
   headerStyles = (fill, color) => {
     return {
       backgroundColor: fill,
-      color: color
+      color: color,
     }
   }
 

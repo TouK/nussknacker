@@ -29,8 +29,8 @@ object ExpressionCompiler {
 
   private def default(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata], optimizeCompilation: Boolean): ExpressionCompiler = {
     val defaultParsers = Seq(
-      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Standard),
-      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Template),
+      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Standard, expressionConfig.strictMethodsChecking),
+      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Template, expressionConfig.strictMethodsChecking),
       SqlExpressionParser)
     val parsersSeq = defaultParsers  ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
@@ -47,7 +47,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   def compileValidatedObjectParameters(parameters: List[evaluatedparam.Parameter],
                                        ctx: ValidationContext)(implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
-    compileEagerObjectParameters(parameters.map(p => Parameter(p.name, Unknown, classOf[Any])), parameters, ctx)
+    compileEagerObjectParameters(parameters.map(p => Parameter.optional(p.name, Unknown, classOf[Any])), parameters, ctx)
 
   def compileEagerObjectParameters(parameterDefinitions: List[Parameter],
                                    parameters: List[evaluatedparam.Parameter],

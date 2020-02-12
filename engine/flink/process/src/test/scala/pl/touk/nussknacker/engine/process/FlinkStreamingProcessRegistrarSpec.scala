@@ -37,10 +37,7 @@ class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Pat
     )
 
     processInvoker.invokeWithSampleData(process, data)
-
-    eventually {
-      MockService.data.toSet shouldBe Set("a", "c", "d")
-    }
+    MockService.data.toSet shouldBe Set("a", "c", "d")
   }
 
   //TODO: some better check than "it does not crash"?
@@ -58,10 +55,7 @@ class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Pat
     )
 
     processInvoker.invokeWithSampleData(process, data)
-
-    eventually {
-      MockService.data.toSet shouldBe Set("a", "b", "c")
-    }
+    MockService.data.toSet shouldBe Set("a", "b", "c")
   }
 
 }

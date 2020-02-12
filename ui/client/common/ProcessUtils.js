@@ -1,5 +1,6 @@
+/* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
-import NodeUtils from "../components/graph/NodeUtils";
+import NodeUtils from "../components/graph/NodeUtils"
 
 class ProcessUtils {
 
@@ -10,7 +11,7 @@ class ProcessUtils {
   }
 
   canExport = (state) => {
-    const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
+    const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
     return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
   }
 
@@ -27,8 +28,8 @@ class ProcessUtils {
 
   hasNoErrors = (process) => {
     const result = (process.validationResult || {}).errors
-    return !result || (Object.keys(result.invalidNodes || {}).length == 0
-      && (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0)
+    return !result || Object.keys(result.invalidNodes || {}).length == 0 &&
+      (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0
   }
 
   hasNoWarnings = (process) => {
@@ -70,10 +71,10 @@ class ProcessUtils {
     const globalVariables = _.mapValues(filteredGlobalVariables, (v) => {
       return v.returnType
     })
-    const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
+    const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition)
     return {
       ...globalVariables,
-      ...variablesDefinedBeforeNode
+      ...variablesDefinedBeforeNode,
     }
   }
 
@@ -82,7 +83,7 @@ class ProcessUtils {
     const variablesDefinedBeforeNodeList = _.flatMap(previousNodes, (nodeId) => {
       return this._findVariablesDefinedInProcess(nodeId, process, processDefinition)
     })
-    return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
+    return this._listOfObjectsToObject(variablesDefinedBeforeNodeList)
   }
 
   _listOfObjectsToObject = (list) => {
@@ -176,16 +177,20 @@ class ProcessUtils {
         return node.nodeType
       }
       default: {
-        return null;
+        return null
       }
     }
   }
 
-  findNodeDefinitionIdOrType = (node) =>
-    this.findNodeDefinitionId(node) || node.type || null
+  findNodeDefinitionIdOrType = (node) => this.findNodeDefinitionId(node) || node.type || null
+
+  getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
 
   findNodeConfigName = (node) => {
-    return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
+    // First we try to find id of node (config for specific custom node by id).
+    // If it is falsy then we try to extract config name from node type (config for build-in components e.g. variable, join).
+    // If all above are falsy then it means that node is special process properties node without id and type.
+    return this.findNodeDefinitionId(node) || this.getNodeBaseTypeCamelCase(node) || "$properties"
   }
 
   humanReadableType = (refClazzOrName) => {
@@ -212,7 +217,7 @@ class ProcessUtils {
   prepareFilterCategories = (categories, loggedUser) => _.map((categories || []).filter(c => loggedUser.canRead(c)), (e) => {
     return {
       value: e,
-      label: e
+      label: e,
     }
   })
 }

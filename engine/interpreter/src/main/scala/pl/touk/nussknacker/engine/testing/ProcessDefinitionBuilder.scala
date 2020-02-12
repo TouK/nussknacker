@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
@@ -16,14 +16,13 @@ object ProcessDefinitionBuilder {
   def empty: ProcessDefinition[ObjectDefinition] =
     ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
       ExpressionDefinition(Map.empty, List.empty, languages = LanguageConfiguration(List.empty),
-        optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false), Set.empty)
+        optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true), ClassExtractionSettings.Default)
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
-    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: TypingResult = Typed[Any]) = new ObjectWithMethodDef(null,
+    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: Class[_] = classOf[Any]) = new ObjectWithMethodDef(null,
       MethodDefinition("", (_, _) => null, new OrderedDependencies(objectDefinition.parameters),
-        Typed[Any],
-        realType, List()), objectDefinition)
+        Unknown, realType, List()), objectDefinition)
 
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(makeDummyDefinition(_)),
@@ -32,24 +31,25 @@ object ProcessDefinitionBuilder {
       definition.expressionConfig.optimizeCompilation,
       definition.expressionConfig.strictTypeChecking,
       definition.expressionConfig.dictionaries,
-      definition.expressionConfig.hideMetaVariable
+      definition.expressionConfig.hideMetaVariable,
+      definition.expressionConfig.strictMethodsChecking
     )
 
     ProcessDefinition(
-      definition.services.mapValuesNow(makeDummyDefinition(_, Typed[Future[_]])),
+      definition.services.mapValuesNow(makeDummyDefinition(_, classOf[Future[_]])),
       definition.sourceFactories.mapValuesNow(makeDummyDefinition(_)),
       definition.sinkFactories.mapValuesNow { case (sink, additional) => (makeDummyDefinition(sink), additional) },
       definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (makeDummyDefinition(transformer), queryNames) },
       definition.signalsWithTransformers.mapValuesNow(sign => (makeDummyDefinition(sign._1), sign._2)),
       makeDummyDefinition(definition.exceptionHandlerFactory),
       expressionDefinition,
-      definition.typesInformation
+      definition.settings
     )
   }
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
     def withService(id: String, returnType: Class[_], params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(services = definition.services + (id -> ObjectDefinition(params.toList, ClazzRef(returnType), List.empty)))
+      definition.copy(services = definition.services + (id -> ObjectDefinition(params.toList, Typed(returnType), List.empty)))
 
     def withService(id: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(services = definition.services + (id -> ObjectDefinition.withParams(params.toList)))
@@ -65,10 +65,10 @@ object ProcessDefinitionBuilder {
 
     def withCustomStreamTransformer(id: String, returnType: Class[_], additionalData: CustomTransformerAdditionalData, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, ClazzRef(returnType), List()), additionalData)))
+        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, Typed(returnType), List()), additionalData)))
 
     def withSignalsWithTransformers(id: String, returnType: Class[_], transformers: Set[String], params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, ClazzRef(returnType), List()), transformers)))
+      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, Typed(returnType), List()), transformers)))
 
   }
 

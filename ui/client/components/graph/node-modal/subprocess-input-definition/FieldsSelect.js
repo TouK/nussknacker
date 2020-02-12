@@ -1,9 +1,9 @@
-import React from "react"
-import PropTypes from "prop-types"
 import update from "immutability-helper"
 import _ from "lodash"
+import PropTypes from "prop-types"
+import React from "react"
+import {mandatoryValueValidator} from "../editors/Validators"
 import MovableRow from "./MovableRow"
-import {notEmptyValidator} from "../../../../common/Validators"
 
 const FieldsSelect = (props) => {
 
@@ -17,7 +17,7 @@ const FieldsSelect = (props) => {
     onChange(`${namespace}`, newFields)
   }
 
-  const validators = [notEmptyValidator]
+  const validators = [mandatoryValueValidator]
 
   return (
     <div className="node-row">

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 object AvroSchemaTypeDefinitionExtractor {
 
@@ -22,14 +22,14 @@ object AvroSchemaTypeDefinitionExtractor {
           schema.getFields.asScala.map { field =>
             field.name() -> typeDefinition(field.schema())
           }.toMap,
-          TypedClass[GenericRecord]
+          Typed.typedClass[GenericRecord]
         )
       case Schema.Type.ENUM =>
         Typed[EnumSymbol]
       case Schema.Type.ARRAY =>
-        TypedClass(classOf[java.util.List[_]], List(typeDefinition(schema.getElementType)))
+        Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType)))
       case Schema.Type.MAP =>
-        TypedClass(classOf[java.util.Map[_, _]], List(Typed[CharSequence], typeDefinition(schema.getValueType)))
+        Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[CharSequence], typeDefinition(schema.getValueType)))
       case Schema.Type.UNION =>
         val childTypeDefinitons = schema.getTypes.asScala.map(typeDefinition).toSet
         Typed(childTypeDefinitons)

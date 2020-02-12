@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -18,9 +19,9 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
+  val processActivityRouteWithAllPermission: Route = withAllPermissions(processActivityRoute)
 
-  val attachmentsRouteWithPermissions = withAllPermissions(attachmentsRoute)
+  val attachmentsRouteWithPermissions: Route = withAllPermissions(attachmentsRoute)
 
   it should "add and remove comment in process activity" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess

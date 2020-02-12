@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import java.net.URI
+
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -7,12 +9,12 @@ import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Json, Printer}
+import io.circe.{Json, Printer, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
@@ -22,7 +24,7 @@ import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
-import pl.touk.nussknacker.ui.db.entity.DeployedProcessInfoEntityData
+import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -54,7 +56,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val processManager = new MockProcessManager
   val processChangeListener = new TestProcessChangeListener()
   def createManagementActorRef = {
-    system.actorOf(ManagementActor.props(env,
+    system.actorOf(ManagementActor.props(
       Map(TestProcessingTypes.Streaming -> processManager),
       processRepository,
       deploymentProcessRepository,
@@ -69,6 +71,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     Map("streaming" -> Map.empty)
   )
 
+  val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
+  val typeToConfig = ProcessingTypeDeps(testConfig, featureTogglesConfig.standaloneMode)
+
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
   val processesRoute = new ProcessesResources(
@@ -81,14 +86,13 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     typesForCategories = typesForCategories,
     newProcessPreparer = newProcessPreparer,
     processAuthorizer = processAuthorizer,
-    processChangeListener = processChangeListener
+    processChangeListener = processChangeListener,
+    typeToConfig = typeToConfig
   )
 
   val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)
   val analyticsConfig = AnalyticsConfig(testConfig)
 
-  val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
-  val typeToConfig = ProcessingTypeDeps(testConfig, featureTogglesConfig.standaloneMode)
   val usersRoute = new UserResources(typesForCategories)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig, analyticsConfig)
 
@@ -186,6 +190,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     ) ~> withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
   }
 
+  def snapshot(processName: String): RouteTestResult = {
+    Post(s"/adminProcessManagement/snapshot/$processName") ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+  }
+
+  def stop(processName: String): RouteTestResult = {
+    Post(s"/adminProcessManagement/stop/$processName") ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+  }
+
   def getSampleProcess: RouteTestResult = {
     Get(s"/processes/${SampleProcess.process.id}") ~> withPermissions(processesRoute, testPermissionRead)
   }
@@ -233,15 +245,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id
   }
 
-  def prepareDeploy(id: process.ProcessId): Future[DeployedProcessInfoEntityData] =
-    deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", env, Some("Deploy comment"))
+  def prepareDeploy(id: process.ProcessId): Future[ProcessActionEntityData] =
+    deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", Some("Deploy comment"))
 
-  def prepareCancel(id: process.ProcessId): Future[DeployedProcessInfoEntityData] =
-    deploymentProcessRepository.markProcessAsCancelled(id, 1, env, Some("Cancel comment"))
+  def prepareCancel(id: process.ProcessId): Future[ProcessActionEntityData] =
+    deploymentProcessRepository.markProcessAsCancelled(id, 1, Some("Cancel comment"))
 
-  def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId = {
+  def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue
-  }
 
   def createDeployedProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : process.ProcessId = {
     (for {
@@ -270,4 +281,47 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   def cancelProcess(id: process.ProcessId): Assertion =
     prepareCancel(id).map(_ => ()).futureValue shouldBe ()
+
+  def parseResponseToListJsonProcess(response: String): List[ProcessJson] =
+    parser.decode[List[Json]](response).right.get.map(j => ProcessJson(j))
+
+  //TODO: In future we should identify process by id..
+  def findJsonProcess(response: String, processId: String = SampleProcess.process.id): Option[ProcessJson] =
+    parseResponseToListJsonProcess(response)
+      .find(item => item.name === processId)
+
+  def decodeJsonProcess(response: String): ProcessJson =
+    ProcessJson(parser.decode[Json](response).right.get)
+}
+
+object ProcessJson{
+  def apply(process: Json): ProcessJson = {
+    val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].right.get
+
+    new ProcessJson(
+      process.hcursor.downField("id").as[String].right.get,
+      process.hcursor.downField("name").as[String].right.get,
+      process.hcursor.downField("processId").as[Long].right.get,
+      lastAction.map(_.hcursor.downField("processVersionId").as[Long].right.get),
+      lastAction.map(_.hcursor.downField("action").as[String].right.get),
+      process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].right.get,
+      process.hcursor.downField("state").downField("icon").as[Option[String]].right.get.map(URI.create),
+      process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
+      process.hcursor.downField("state").downField("description").as[Option[String]].right.get
+    )
+  }
+}
+
+case class ProcessJson(id: String,
+                       name: String,
+                       processId: Long,
+                       lastActionVersionId: Option[Long],
+                       lastActionType: Option[String],
+                       stateStatus: Option[String],
+                       stateIcon: Option[URI],
+                       stateTooltip: Option[String],
+                       stateDescription: Option[String]) {
+
+  def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
+  def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)
 }

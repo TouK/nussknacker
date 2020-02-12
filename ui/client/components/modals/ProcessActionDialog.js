@@ -1,15 +1,15 @@
-import React from "react";
-import PropTypes from "prop-types";
-import {connect} from "react-redux";
-import _ from "lodash";
-import ActionsUtils from "../../actions/ActionsUtils";
-import "../../stylesheets/visualization.styl";
-import GenericModalDialog from "./GenericModalDialog";
+import _ from "lodash"
+import PropTypes from "prop-types"
+import React from "react"
+import {connect} from "react-redux"
+import ActionsUtils from "../../actions/ActionsUtils"
+import ProcessUtils from "../../common/ProcessUtils"
+import "../../stylesheets/visualization.styl"
+import CommentInput from "../CommentInput"
+import ValidateDeployComment from "../ValidateDeployComment"
 import Dialogs from "./Dialogs"
-import CommentInput from "../CommentInput";
-import ProcessUtils from "../../common/ProcessUtils";
-import ProcessDialogWarnings from "./ProcessDialogWarnings";
-import ValidateDeployComment from "../ValidateDeployComment";
+import GenericModalDialog from "./GenericModalDialog"
+import ProcessDialogWarnings from "./ProcessDialogWarnings"
 
 class ProcessActionDialog extends React.Component {
 
@@ -19,13 +19,13 @@ class ProcessActionDialog extends React.Component {
     processHasWarnings: PropTypes.bool,
     message: PropTypes.string,
     displayWarnings: PropTypes.bool,
-    action: PropTypes.func
+    action: PropTypes.func,
   }
 
   constructor(props) {
-    super(props);
+    super(props)
     this.initState = {
-      comment: ""
+      comment: "",
     }
     this.state = this.initState
   }
@@ -66,10 +66,10 @@ class ProcessActionDialog extends React.Component {
         okBtnConfig={this.okBtnConfig()}
       >
         <p>{this.props.message} {this.props.processId}</p>
-        <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings} />
-        <CommentInput onChange={this.onInputChange} value={this.state.comment} />
+        <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings}/>
+        <CommentInput onChange={this.onInputChange} value={this.state.comment}/>
       </GenericModalDialog>
-    );
+    )
   }
 }
 
@@ -85,10 +85,9 @@ function mapState(state) {
     processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
     processHasWarnings: !processHasNoWarnings,
     action: config.action,
-    message: config.message
+    message: config.message,
   }
 }
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessActionDialog)
-
 

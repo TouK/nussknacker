@@ -1,6 +1,6 @@
 import React from "react"
-import NodeTip from "../NodeTip"
 import InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
+import NodeTip from "../NodeTip"
 
 export default function TestErrors(props) {
 

@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
+import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
@@ -27,7 +28,7 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 import scala.reflect.runtime._
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
-                          dictTyper: SpelDictTyper) extends LazyLogging {
+                          dictTyper: SpelDictTyper, strictMethodsChecking: Boolean) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -41,23 +42,24 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         validatedParts.map(partResults => CollectedTypingResult(Monoid.combineAll(partResults.map(_.intermediateResults)), Typed[String]))
       case e:LiteralExpression =>
         Valid(CollectedTypingResult.withEmptyIntermediateResults(Typed[String]))
+      case e:NullExpression =>
+        Valid(CollectedTypingResult.withEmptyIntermediateResults(Typed[String]))
     }
   }
 
   private def typeExpression(spelExpression: standard.SpelExpression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-    Validated.fromOption(Option(spelExpression.getAST), NonEmptyList.of(ExpressionParseError("Empty expression"))).andThen { ast =>
-      val result = typeNode(ctx, ast, TypingContext(List.empty, Map.empty))
-      logger.whenTraceEnabled {
-        result match {
-          case Valid(collectedResult) =>
-            val printer = new SpelNodePrettyPrinter(n => collectedResult.intermediateResults.get(SpelNodeId(n)).map(_.display).getOrElse("NOT_TYPED"))
-            logger.trace("typed valid expression: " + printer.print(ast))
-          case Invalid(errors) =>
-            logger.trace(s"typed invalid expression: ${spelExpression.getExpressionString}, errors: ${errors.toList.mkString(", ")}")
-        }
+    val ast = spelExpression.getAST
+    val result = typeNode(ctx, ast, TypingContext(List.empty, Map.empty))
+    logger.whenTraceEnabled {
+      result match {
+        case Valid(collectedResult) =>
+          val printer = new SpelNodePrettyPrinter(n => collectedResult.intermediateResults.get(SpelNodeId(n)).map(_.display).getOrElse("NOT_TYPED"))
+          logger.trace("typed valid expression: " + printer.print(ast))
+        case Invalid(errors) =>
+          logger.trace(s"typed invalid expression: ${spelExpression.getExpressionString}, errors: ${errors.toList.mkString(", ")}")
       }
-      result
     }
+    result
   }
 
   private def typeNode(validationContext: ValidationContext, node: SpelNode, current: TypingContext)
@@ -125,7 +127,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: InlineList => withTypedChildren { children =>
         val childrenTypes = children.toSet
         val genericType = if (childrenTypes.contains(Unknown) || childrenTypes.size != 1) Unknown else childrenTypes.head
-        Valid(TypedClass(classOf[java.util.List[_]], List(genericType)))
+        Valid(Typed.genericTypeClass[java.util.List[_]](List(genericType)))
       }
 
       case e: InlineMap =>
@@ -152,7 +154,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: MethodReference =>
         TypeMethodReference(e, current.stack) match {
           case Right(typingResult) => fixedWithNewCurrent(current.popStack)(typingResult)
-          case Left(errorMsg) => invalid(errorMsg)
+          case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else fixedWithNewCurrent(current.popStack)(Unknown)
         }
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
@@ -196,7 +198,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case Some(iterateType) =>
           val listType = extractListType(iterateType)
           typeChildren(validationContext, node, current.pushOnStack(listType)) {
-            case result :: Nil => Valid(TypedClass(classOf[java.util.List[_]], List(result)))
+            case result :: Nil => Valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
             case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
           }
       }
@@ -284,7 +286,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                                    (t: SingleTypingResult) = {
     def extractClass(typedClass: TypedClass) = {
       val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
-      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Typed(_)).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
+      clazzDefinition.getPropertyOrFieldType(e.getName).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
     }
     t match {
       case typed: SingleTypingResult if typed.canHasAnyPropertyOrField =>
@@ -335,7 +337,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = true)
 
 }
 

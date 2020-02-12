@@ -6,12 +6,12 @@ import cats.data.Validated._
 import cats.data._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, ExpressionParser, ExpressionTypingInfo, TypedExpression, ValueWithLazyContext}
+import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
-import pl.touk.nussknacker.engine.sql.preparevalues.{PrepareTables, ReadObjectField}
+import pl.touk.nussknacker.engine.sql.preparevalues.PrepareTables
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
@@ -46,7 +46,7 @@ object SqlExpressionParser extends ExpressionParser {
                                typingResult: TypingResult): TypedExpression = {
 
     val expression = new SqlExpression(original = original, columnModels = colModel)
-    val listResult = TypedClass(classOf[List[_]], List(typingResult))
+    val listResult = Typed.genericTypeClass[List[_]](List(typingResult))
     TypedExpression(expression, listResult, SqlExpressionTypingInfo)
   }
 

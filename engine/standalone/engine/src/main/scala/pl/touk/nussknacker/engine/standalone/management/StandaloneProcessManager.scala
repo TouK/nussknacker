@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessName, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
@@ -45,7 +46,7 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData,
-                      savepointPath: Option[String]): Future[Unit] = {
+                      savepointPath: Option[String], user: User): Future[Unit] = {
     savepointPath match {
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
       case None =>
@@ -56,11 +57,14 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
             Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
         }
     }
-
   }
 
-  override def savepoint(processName: ProcessName, savepointDir: String): Future[String] = {
+  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
+  }
+
+  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
+    Future.failed(new UnsupportedOperationException("Cannot stop standalone process"))
   }
 
   override def test[T](processName: ProcessName, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
@@ -76,10 +80,11 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
     client.findStatus(processName)
   }
 
-  override def cancel(name: ProcessName): Future[Unit] = {
+  override def cancel(name: ProcessName, user: User): Future[Unit] = {
     client.cancel(name)
   }
 
+  override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 }
 
 object StandaloneTestMain {
@@ -205,13 +210,12 @@ object TestUtils {
       }
     }
   }
-
 }
 
 class StandaloneProcessManagerProvider extends ProcessManagerProvider {
 
-  override def createProcessManager(modelData: ModelData, config: Config): ProcessManager
-    = StandaloneProcessManager(modelData, config)
+  override def createProcessManager(modelData: ModelData, config: Config): ProcessManager =
+    StandaloneProcessManager(modelData, config)
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 

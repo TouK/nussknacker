@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.definition
 
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, Service}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,7 +21,7 @@ trait WithExplicitMethodToInvoke {
 
   def returnType: TypingResult
 
-  def realReturnType: TypingResult
+  def runtimeClass: Class[_]
 
   def additionalDependencies: List[Class[_]]
 
@@ -34,7 +34,7 @@ trait ServiceWithExplicitMethod extends Service with WithExplicitMethodToInvoke 
 
   override final def additionalDependencies: List[Class[_]] = List(classOf[ExecutionContext], classOf[ServiceInvocationCollector], classOf[MetaData])
 
-  override final def realReturnType = TypedClass(classOf[Future[_]], List(returnType))
+  override final def runtimeClass: Class[_] = classOf[Future[_]]
 
   override def invoke(params: List[AnyRef]): AnyRef = {
     val normalParams = params.dropRight(3)

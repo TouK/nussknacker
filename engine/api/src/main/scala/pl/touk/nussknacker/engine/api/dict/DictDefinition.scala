@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.dict
 
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed}
 
 /**
  * It defines dictionary which will contain values of type `valueType`. Value will be created
@@ -38,6 +38,6 @@ trait ReturningKeyWithoutTransformation { self: DictDefinition =>
   override def value(key: String): Any = key
 
   // TODO: Should not take dictId - see notice in ExpressionConfig
-  override def valueType(dictId: String): SingleTypingResult = Typed.taggedDictValue(TypedClass[String], dictId)
+  override def valueType(dictId: String): SingleTypingResult = Typed.taggedDictValue(Typed.typedClass[String], dictId)
 
 }

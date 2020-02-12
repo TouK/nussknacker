@@ -1,6 +1,6 @@
 import React from 'react';
 import Enzyme, {mount} from 'enzyme';
-import {ProcessAttachments_} from '../components/ProcessAttachments'; //import redux-independent component
+import {ProcessAttachments} from '../components/ProcessAttachments'; //import redux-independent component
 import Adapter from 'enzyme-adapter-react-16';
 
 describe("ProcessAttachments suite", () => {
@@ -14,7 +14,7 @@ describe("ProcessAttachments suite", () => {
 
     //when
     const mountedProcessAttachments = mount(
-      <ProcessAttachments_ attachments={attachments} processId={processId} processVersionId={processVersionId}/>
+      <ProcessAttachments attachments={attachments} processId={processId} processVersionId={processVersionId} t={key => key}/>
     )
     //then
     expect(mountedProcessAttachments.find('.download-attachment').length).toBe(3)

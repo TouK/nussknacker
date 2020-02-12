@@ -1,17 +1,17 @@
-import {reportEvent} from "./actions";
+import {reportEvent} from "./nk/reportEvent"
 
 export function undo(eventInfo) {
   return (dispatch) => {
     dispatch(reportEvent({
       category: eventInfo.category,
       action: eventInfo.action,
-      name: "undo"
+      name: "undo",
     }))
 
     return dispatch({
-      type: "UNDO"
+      type: "UNDO",
     })
-  };
+  }
 }
 
 export function redo(eventInfo) {
@@ -19,15 +19,15 @@ export function redo(eventInfo) {
     dispatch(reportEvent({
       category: eventInfo.category,
       action: eventInfo.action,
-      name: "redo"
+      name: "redo",
     }))
 
     return dispatch({
-      type: "REDO"
+      type: "REDO",
     })
-  };
+  }
 }
 
 export function clear() {
-  return {type: "CLEAR"};
+  return {type: "CLEAR"}
 }

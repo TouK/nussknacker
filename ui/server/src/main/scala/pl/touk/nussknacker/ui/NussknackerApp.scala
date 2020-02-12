@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, PullProcessRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, ProcessActionRepository, ProcessActivityRepository, PullProcessRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
@@ -48,9 +48,13 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   private val config = system.settings.config.withFallback(ConfigFactory.load("defaultConfig.conf"))
 
-  private val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer")
-    .map(DatabaseServer(_))
-  hsqlServer.foreach(_.start())
+  private val hsqlEnabled = config.getAs[Boolean]("jdbcServer.enabled")
+  private val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer").map(DatabaseServer(_))
+
+  // Default true because of back compatibility
+  if (hsqlEnabled.getOrElse(true)) {
+    hsqlServer.foreach(_.start())
+  }
 
   private val route = initializeRoute(config)
 
@@ -115,7 +119,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)
 
-    val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
+    val deploymentProcessRepository = ProcessActionRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
 
     val authenticator = AuthenticatorProvider(config, getClass.getClassLoader, typesForCategories.getAllCategories)
@@ -129,12 +133,11 @@ object NussknackerApp extends App with Directives with LazyLogging {
       NussknackerServices(new PullProcessRepository(processRepository))
     )
 
-    val managementActor = system.actorOf(
-      ManagementActor.props(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver, processChangeListener), "management")
+    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, deploymentProcessRepository, subprocessResolver, processChangeListener), "management")
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, modelData, processRepository, processValidation, jobStatusService)
+    val appResources = new AppResources(config, typeToConfig, modelData, processRepository, processValidation, jobStatusService)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
@@ -148,7 +151,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
           processAuthorizer = processAuthorizer,
-          processChangeListener = processChangeListener
+          processChangeListener = processChangeListener,
+          typeToConfig = typeToConfig
         ),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository),

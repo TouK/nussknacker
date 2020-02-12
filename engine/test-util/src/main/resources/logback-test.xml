@@ -13,6 +13,8 @@
 
     <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
     <logger name="pl.touk.nussknacker" level="INFO"/>
+    <!-- types info extraction can have significant impact on deployment duration - uncomment this log if you want to measure it -->
+<!--    <logger name="pl.touk.nussknacker.engine.types.TypesInformationExtractor" level="TRACE"/>-->
 
     <!-- we are declaring here loggers for libs that not in dependency of this module, but we are doing it for simplicity of logging configurations -->
     <!-- levels below can be sometimes duplicated in root level but let's keep them just in case if we want to change value for root logger -->

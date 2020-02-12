@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
@@ -32,7 +32,7 @@ private[definition] case class ExpressionLazyParameter[T](nodeId: NodeId,
 
 private[definition] case class ProductLazyParameter[T, Y](arg1: LazyParameter[T], arg2: LazyParameter[Y]) extends CompilerLazyParameter[(T, Y)] {
 
-  override def returnType: TypingResult = TypedClass(classOf[(T, Y)], List(arg1.returnType, arg2.returnType))
+  override def returnType: TypingResult = Typed.genericTypeClass[(T, Y)](List(arg1.returnType, arg2.returnType))
 
   override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[(T, Y)] = {
     val arg1Interpreter = lpi.createInterpreter(arg1)

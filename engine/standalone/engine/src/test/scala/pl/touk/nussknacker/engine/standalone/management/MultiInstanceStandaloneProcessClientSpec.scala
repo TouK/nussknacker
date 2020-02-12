@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.standalone.management
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -11,7 +13,7 @@ import scala.concurrent.Future
 
 class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers with PatientScalaFutures {
 
-  val failClient = new StandaloneProcessClient {
+  val failClient: StandaloneProcessClient = new StandaloneProcessClient {
 
     override def cancel(name: ProcessName): Future[Unit] = {
       name shouldBe id
@@ -30,33 +32,28 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   }
   private val failure = new Exception("Fail")
 
+  def processVersion(versionId: Option[Long]): Option[ProcessVersion] = versionId.map(id => ProcessVersion(id, ProcessName(""), "", None))
+
+  def processState(deploymentId: DeploymentId, status: StateStatus, client: StandaloneProcessClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errors: List[String] = List.empty): ProcessState =
+    SimpleProcessState(deploymentId, status, processVersion(versionId), startTime = startTime, errors = errors)
+
   test("Deployment should complete when all parts are successful") {
-
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
-
     multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id))).futureValue shouldBe (())
-
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), failClient))
-
     multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id))).failed.futureValue shouldBe failure
-
   }
 
   test("Status should be none if no client returns status") {
-    val multiClient = new MultiInstanceStandaloneProcessClient(List(
-      okClient(),
-      okClient()))
-
+    val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
     multiClient.findStatus(id).futureValue shouldBe None
-
   }
 
   test("Status should be RUNNING if all clients running") {
-
-    val consistentState = ProcessState(jobId, RunningState.Running, "RUNNING", 10000L, None)
+    val consistentState = processState(jobId, SimpleStateStatus.Running, okClient(), Some(1), Some(10000L))
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(Some(consistentState)),
       okClient(Some(consistentState))
@@ -68,22 +65,21 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   test("Status should be INCONSISTENT if one status unknown") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(),
-      okClient(Some(ProcessState(jobId, RunningState.Running, "RUNNING", 0L, None))
-      )))
+      okClient(Some(processState(jobId, SimpleStateStatus.Running, okClient(), Some(1))))
+    ))
 
-    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(jobId, RunningState.Error, "INCONSISTENT", 0L, None,
-      Some("Inconsistent states between servers: empty; state: RUNNING, startTime: 0")))
+    val excepted = processState(jobId, SimpleStateStatus.Failed, multiClient, errors = List("Inconsistent states between servers: empty; state: RUNNING, startTime: None."))
+    multiClient.findStatus(id).futureValue shouldBe Some(excepted)
   }
-
 
   test("Status should be INCONSISTENT if status differ") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
-      okClient(Some(ProcessState(jobId, RunningState.Running, "RUNNING", 5000L, None))),
-      okClient(Some(ProcessState(jobId, RunningState.Running, "RUNNING", 0L, None)))
+      okClient(Some(processState(jobId, SimpleStateStatus.Running, okClient(), Some(1), Some(5000L)))),
+      okClient(Some(processState(jobId, SimpleStateStatus.Running, okClient(), Some(1))))
     ))
 
-    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(jobId, RunningState.Error, "INCONSISTENT", 0L, None, 
-      Some("Inconsistent states between servers: state: RUNNING, startTime: 5000; state: RUNNING, startTime: 0")))
+    val excepted = processState(jobId, SimpleStateStatus.Failed, multiClient, errors = List("Inconsistent states between servers: state: RUNNING, startTime: 5000; state: RUNNING, startTime: None."))
+    multiClient.findStatus(id).futureValue shouldBe Some(excepted)
   }
 
   test("Status should be FAIL if one status fails") {
@@ -95,7 +91,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   private val id = ProcessName("id")
   private val jobId = DeploymentId("id")
 
-  def okClient(status: Option[ProcessState] = None, expectedTime: Long = 1000) = new StandaloneProcessClient {
+  def okClient(status: Option[ProcessState] = None, expectedTime: Long = 1000): StandaloneProcessClient = new StandaloneProcessClient {
 
     override def cancel(name: ProcessName): Future[Unit] = {
       name shouldBe id

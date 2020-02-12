@@ -1,6 +1,6 @@
-import React from "react";
-import {Prompt} from "react-router";
-import PreventExitDialog from "./modals/PreventExitDialog";
+import React from "react"
+import {Prompt} from "react-router"
+import PreventExitDialog from "./modals/PreventExitDialog"
 
 export class RouteLeavingGuard extends React.Component {
 
@@ -16,7 +16,7 @@ export class RouteLeavingGuard extends React.Component {
   })
 
   closeModal = (callback) => this.setState({
-    modalVisible: false
+    modalVisible: false,
   }, callback)
 
   handleBlockedNavigation = (nextLocation, action) => {
@@ -34,7 +34,7 @@ export class RouteLeavingGuard extends React.Component {
     const {lastLocation} = this.state
     if (lastLocation) {
       this.setState({
-        confirmedNavigation: true
+        confirmedNavigation: true,
       }, () => {
         // Navigate to the previous blocked location with your navigate function
         navigate(lastLocation.pathname)

@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.api.dict.embedded
 
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, ReturningKeyWithoutTransformation}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass}
 
 import scala.reflect.ClassTag
 
@@ -19,12 +18,12 @@ trait EmbeddedDictDefinition extends DictDefinition {
 
 private[embedded] case class SimpleDictDefinition(labelByKey: Map[String, String]) extends EmbeddedDictDefinition with ReturningKeyWithoutTransformation
 
-private[embedded] case class EnumDictDefinition(valueClass: ClazzRef, private val enumValueByName: Map[String, Any]) extends EmbeddedDictDefinition {
+private[embedded] case class EnumDictDefinition(valueClass: TypedClass, private val enumValueByName: Map[String, Any]) extends EmbeddedDictDefinition {
 
   override def labelByKey: Map[String, String] = enumValueByName.keys.map(name => name -> name).toMap
 
   // we don't need to tag it because value class is enough to recognize type
-  override def valueType(dictId: String): SingleTypingResult = TypedClass(valueClass)
+  override def valueType(dictId: String): SingleTypingResult = valueClass
 
   override def value(key: String): Any = enumValueByName(key)
 
@@ -45,7 +44,7 @@ object EmbeddedDictDefinition {
 
   def forJavaEnum[T <: Enum[_]](javaEnumClass: Class[T]): EmbeddedDictDefinition = {
     val enumValueByName = javaEnumClass.getEnumConstants.map(e => e.name() -> e).toMap
-    EnumDictDefinition(ClazzRef(javaEnumClass), enumValueByName)
+    EnumDictDefinition(Typed.typedClass(javaEnumClass), enumValueByName)
   }
 
   def forScalaEnum[T <: Enumeration](scalaEnum: Enumeration): ScalaEnumTypedDictBuilder[T] = new ScalaEnumTypedDictBuilder[T](scalaEnum)
@@ -53,7 +52,7 @@ object EmbeddedDictDefinition {
   class ScalaEnumTypedDictBuilder[T <: Enumeration](scalaEnum: Enumeration) {
     def withValueClass[V <: T#Value : ClassTag]: EmbeddedDictDefinition = {
       val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
-      EnumDictDefinition(ClazzRef(implicitly[ClassTag[V]].runtimeClass), enumValueByName)
+      EnumDictDefinition(Typed.typedClass[V], enumValueByName)
     }
   }
 
@@ -78,7 +77,7 @@ object EmbeddedDictDefinition {
    */
   def forScalaEnum(scalaEnum: Enumeration, valueClass: Class[_]): EmbeddedDictDefinition = {
     val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
-    EnumDictDefinition(ClazzRef(valueClass), enumValueByName)
+    EnumDictDefinition(Typed.typedClass(valueClass), enumValueByName)
   }
 
   def enumDictId(valueClass: Class[_]) = s"enum:${valueClass.getName}"

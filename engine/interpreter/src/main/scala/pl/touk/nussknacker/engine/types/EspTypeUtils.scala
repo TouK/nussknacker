@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.types
 
-import java.lang.reflect
 import java.lang.reflect._
 
-import cats.Eval
 import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
+import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
@@ -17,17 +16,9 @@ import scala.concurrent.Future
 
 object EspTypeUtils {
 
-  private val blacklistedMethods: Set[String] = {
-    (methodNames(classOf[ScalaCaseClassStub.DumpCaseClass]) ++
-      methodNames(ScalaCaseClassStub.DumpCaseClass.getClass)).toSet.filterNot(
-      //sometimes toString can be pretty useful...
-      List("toString").contains
-    )
-  }
-
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
+    ClazzDefinition(Typed(clazz), getPublicMethodAndFields(clazz))
 
   def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*): Class[_] =
     if (classesToExtractGenericFrom.contains(p.getType)) {
@@ -44,7 +35,7 @@ object EspTypeUtils {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
-  def getGenericType(genericReturnType: Type): Option[ClazzRef] = {
+  def getGenericType(genericReturnType: Type): Option[TypingResult] = {
     val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
     if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
     else None
@@ -58,35 +49,39 @@ object EspTypeUtils {
       ClassUtils.isAssignable(unbox(passedValueClass), unbox(signatureType), true)
   }
 
-  private def methodNames(clazz: Class[_]): List[String] = {
-    clazz.getMethods.map(_.getName).toList
-  }
-
   private def getPublicMethodAndFields(clazz: Class[_])
                                       (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val methods = publicMethods(clazz)
-    val fields = publicFields(clazz)
+    val membersPredicate = settings.visibleMembersPredicate(clazz)
+    val methods = publicMethods(clazz, membersPredicate)
+    val fields = publicFields(clazz, membersPredicate)
     methods ++ fields
   }
 
-  private def publicMethods(clazz: Class[_])
+  private def publicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val shouldHideToString = classOf[HideToString].isAssignableFrom(clazz)
+    /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
+           does not contain any implicitly declared methods from {@code Object}.
+           The same for primitives - we assume that languages like SpEL will be able to do boxing
+           It could be significant only for toString, as we filter out other Object methods, but to be consistent...
+         */
+    val additionalMethods = if (clazz.isInterface) {
+      classOf[Object].getMethods.toList
+    } else if (clazz.isPrimitive) {
+      ClassUtils.primitiveToWrapper(clazz).getMethods.toList
+    } else {
+      List.empty
+    }
+    val publicMethods = clazz.getMethods.toList ++ additionalMethods
 
-    val filteredMethods = clazz.getMethods
-      .filterNot(m => Modifier.isStatic(m.getModifiers))
-      .filter(_.getAnnotation(classOf[Hidden]) == null)
-      .filterNot(m => shouldHideToString && m.getName == "toString" && m.getParameterCount == 0)
-      .filterNot(settings.isBlacklisted)
-      .filter(m =>
-        !blacklistedMethods.contains(m.getName) && !m.getName.contains("$")
-      )
+    val filteredMethods = publicMethods.filter(membersPredicate.shouldBeVisible)
 
     val methodNameAndInfoList = filteredMethods.flatMap { method =>
       methodAccessMethods(method).map(_ -> toMethodInfo(method))
     }
 
-    val sortedByArityDesc = methodNameAndInfoList.sortBy(- _._2.parameters.size)
+    val genericReturnTypeDeduplicated = deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
+
+    val sortedByArityDesc = genericReturnTypeDeduplicated.sortBy(- _._2.parameters.size)
 
     // Currently SpEL methods are naively and optimistically type checked. This is, for overloaded methods with
     // different arity, validation is successful when SpEL MethodReference provides the number of parameters greater
@@ -94,31 +89,58 @@ object EspTypeUtils {
     sortedByArityDesc.toMap
   }
 
+  /*
+    This is tricky case. If we have generic class and concrete subclasses, e.g.
+    - ChronoLocalDateTime<D extends ChronoLocalDate>
+    - LocalDateTime extends ChronoLocalDateTime<LocalDate>
+    and method with generic return type from superclass: D toLocalDate()
+    getMethods return two toLocalDate methods:
+      ChronoLocalDate toLocalDate()
+      LocalDate toLocalDate()
+    In our case the second one is correct
+   */
+  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
+    methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.parameters)).toList.map {
+      case (_, methodsForParams) =>
+        /*
+          we want to find "most specific" class, however suprisingly it's not always possible, because we treat e.g. isLeft and left methods
+          as equal (for javabean-like access) and e.g. in scala Either this is perfectly possible. In case we cannot find most specific
+          class we pick arbitrary one (we sort to avoid randomness)
+         */
+        methodsForParams.find { case (_, MethodInfo(_, ret, _)) =>
+          methodsForParams.forall(mi => ret.canBeSubclassOf(mi._2.refClazz))
+        }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
+    }
+  }
+
   private def toMethodInfo(method: Method)
     = MethodInfo(getParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
 
-  private def methodAccessMethods(method: Method) = {
-    val isGetter = (method.getName.startsWith("get") || method.getName.startsWith("is")) && method.getParameterCount == 0
-    if (isGetter)
-      List(method.getName, StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))) else List(method.getName)
+  private def methodAccessMethods(method: Method)
+                                 (implicit settings: ClassExtractionSettings): List[String] = {
+    val isGetter = method.getName.matches("^(get|is).+") && method.getParameterCount == 0
+    if (isGetter) {
+      val propertyMethod = StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))
+      settings.propertyExtractionStrategy match {
+        case AddPropertyNextToGetter    => List(method.getName, propertyMethod)
+        case ReplaceGetterWithProperty  => List(propertyMethod)
+        case DoNothing                  => List(method.getName)
+      }
+    } else {
+      List(method.getName)
+    }
   }
 
-  private def publicFields(clazz: Class[_])
+  private def publicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
                           (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val interestingFields = clazz.getFields
-      .filterNot(f => Modifier.isStatic(f.getModifiers))
-      .filter(_.getAnnotation(classOf[Hidden]) == null)
-      .filterNot(settings.isBlacklisted)
-      .filter(m =>
-        !m.getName.contains("$")
-      )
+    val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     interestingFields.map { field =>
       field.getName -> MethodInfo(List.empty, getReturnClassForField(field), getNussknackerDocs(field))
     }.toMap
   }
 
-  private def getReturnClassForMethod(method: Method): ClazzRef = {
-    getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(ClazzRef(method.getReturnType))
+  private def getReturnClassForMethod(method: Method): TypingResult = {
+    getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(Typed(method.getReturnType))
   }
 
   private def getParameters(method: Method): List[Parameter] = {
@@ -126,21 +148,21 @@ object EspTypeUtils {
       param <- method.getParameters.toList
       annotationOption = Option(param.getAnnotation(classOf[ParamName]))
       name = annotationOption.map(_.value).getOrElse(param.getName)
-      clazzRef = ClazzRef(param.getType)
-    } yield Parameter(name, clazzRef)
+      paramType = Typed(param.getType)
+    } yield Parameter(name, paramType)
   }
 
   private def getNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
     Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
   }
 
-  private def getReturnClassForField(field: Field): ClazzRef = {
-    getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(ClazzRef(field.getType))
+  private def getReturnClassForField(field: Field): TypingResult = {
+    getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(Typed(field.getType))
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
   //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
-  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[ClazzRef] = {
+  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[TypingResult] = {
     val rawType = genericMethodType.getRawType
 
     if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
@@ -158,29 +180,21 @@ object EspTypeUtils {
     else None
   }
 
-  private def extractClass(futureGenericType: Type): Option[ClazzRef] = {
+  private def extractClass(futureGenericType: Type): Option[TypingResult] = {
     futureGenericType match {
-      case t: Class[_] => Some(ClazzRef(t))
+      case t: Class[_] => Some(Typed(t))
       case t: ParameterizedTypeImpl => Some(extractGenericParams(t))
       case t => None
     }
   }
 
-  private def extractGenericParams(paramsType: ParameterizedTypeImpl): ClazzRef = {
+  private def extractGenericParams(paramsType: ParameterizedTypeImpl): TypingResult = {
     val rawType = paramsType.getRawType
     if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
-      ClazzRef(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
-      ClazzRef(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    } else ClazzRef(rawType)
-  }
-
-  private object ScalaCaseClassStub {
-
-    case class DumpCaseClass()
-
-    object DumpCaseClass
-
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+    } else Typed(rawType)
   }
 
 }

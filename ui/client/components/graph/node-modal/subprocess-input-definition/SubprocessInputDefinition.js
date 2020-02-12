@@ -1,14 +1,14 @@
-import React from "react"
 import _ from "lodash"
 import PropTypes from "prop-types"
+import React from "react"
 import {connect} from "react-redux"
 import {v4 as uuid4} from "uuid"
+import ActionsUtils from "../../../../actions/ActionsUtils"
+import ProcessUtils from "../../../../common/ProcessUtils"
+import {errorValidator, mandatoryValueValidator} from "../editors/Validators"
 import LabeledInput from "../editors/field/LabeledInput"
 import LabeledTextarea from "../editors/field/LabeledTextarea"
 import FieldsSelect from "./FieldsSelect"
-import ProcessUtils from "../../../../common/ProcessUtils"
-import ActionsUtils from "../../../../actions/ActionsUtils"
-import {errorValidator, notEmptyValidator} from "../../../../common/Validators"
 
 class SubprocessInputDefinition extends React.Component {
 
@@ -54,7 +54,7 @@ class SubprocessInputDefinition extends React.Component {
                       isMarked={isMarked("id")}
                       readOnly={readOnly}
                       showValidation={showValidation}
-                      validators={[notEmptyValidator, errorValidator(errors, "Id")]}/>
+                      validators={[mandatoryValueValidator, errorValidator(errors, "Id")]}/>
 
         <FieldsSelect label="Parameters"
                       onChange={onChange}
@@ -89,10 +89,9 @@ function mapState(state, props) {
 
   return {
     typesInformation: typesInformation,
-    processingType: state.graphReducer.processToDisplay.processingType
+    processingType: state.graphReducer.processToDisplay.processingType,
   }
 }
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(SubprocessInputDefinition)
-
 

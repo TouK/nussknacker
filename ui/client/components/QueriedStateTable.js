@@ -1,20 +1,20 @@
-import React from "react"
-import {connect} from "react-redux";
-import ActionsUtils from "../actions/ActionsUtils";
-import HttpService from "../http/HttpService";
-import _ from "lodash";
+import _ from "lodash"
 import Moment from "moment"
-import {Table} from "reactable";
+import React from "react"
 import JSONTree from "react-json-tree"
-import {dateFormat} from "../config";
+import {connect} from "react-redux"
+import {Table} from "reactable"
+import ActionsUtils from "../actions/ActionsUtils"
+import {dateFormat} from "../config"
+import HttpService from "../http/HttpService"
 
 class QueriedStateTable extends React.Component {
 
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       initialState: {},
-      key: ""
+      key: "",
     }
   }
 
@@ -115,8 +115,8 @@ class QueriedStateTable extends React.Component {
           fontWeight: "normal",
         },
         tree: {
-          backgroundColor: "none"
-        }
+          backgroundColor: "none",
+        },
       }}/>
     )
   }
@@ -129,8 +129,8 @@ function mapState(state) {
   const firstProcessId = _.isEmpty(firstQueryName) ? "" : availableQueryableStates[firstQueryName][0]
   return {
     availableQueryableStates: state.settings.availableQueryableStates,
-    initialState: {processId: firstProcessId, queryName: firstQueryName}
-  };
+    initialState: {processId: firstProcessId, queryName: firstQueryName},
+  }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(QueriedStateTable);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(QueriedStateTable)

@@ -1,5 +1,5 @@
-import DateUtils from "../../common/DateUtils"
 import React from "react"
+import DateUtils from "../../common/DateUtils"
 
 export default class Date extends React.Component {
   render() {

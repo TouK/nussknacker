@@ -1,20 +1,21 @@
-import React from "react";
-import PropTypes from "prop-types";
+import _ from "lodash"
+import PropTypes from "prop-types"
+import React from "react"
+import Draggable from "react-draggable"
+import Modal from "react-modal"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import EspModalStyles from "../common/EspModalStyles"
+import {mandatoryValueValidator} from "./graph/node-modal/editors/Validators"
+import * as VisualizationUrl from "../common/VisualizationUrl"
 
 import history from "../history"
-import Modal from "react-modal";
-import {connect} from "react-redux";
-import _ from "lodash";
-import ActionsUtils from "../actions/ActionsUtils";
-import EspModalStyles from "../common/EspModalStyles";
-import "../stylesheets/visualization.styl";
-import HttpService from "../http/HttpService";
-import * as VisualizationUrl from "../common/VisualizationUrl";
-import Draggable from "react-draggable";
-import {duplicateValue, notEmptyValidator} from "../common/Validators";
-import ValidationLabels from "./modals/ValidationLabels";
+import HttpService from "../http/HttpService"
+import "../stylesheets/visualization.styl"
+import ValidationLabels from "./modals/ValidationLabels"
+import * as DialogMessages from "../common/DialogMessages"
 
-//TODO: Consider integrating with GenericModalDialog 
+//TODO: Consider integrating with GenericModalDialog
 class AddProcessDialog extends React.Component {
 
   static propTypes = {
@@ -24,7 +25,7 @@ class AddProcessDialog extends React.Component {
     isSubprocess: PropTypes.bool,
     visualizationPath: PropTypes.string.isRequired,
     message: PropTypes.string.isRequired,
-    clashedNames: PropTypes.array
+    clashedNames: PropTypes.array,
   }
 
   initialState(props) {
@@ -73,7 +74,7 @@ class AddProcessDialog extends React.Component {
                         <input autoFocus={true} type="text" id="newProcessId" className="node-input"
                                value={this.state.processId}
                                onChange={(e) => this.setState({processId: e.target.value})}/>
-                         <ValidationLabels validators={validators} values={[this.props.clashedNames, this.state.processId]}/>
+                         <ValidationLabels validators={validators()} values={[this.props.clashedNames, this.state.processId]}/>
                       </div>
                     </div>
                     <div className="node-row">
@@ -102,14 +103,14 @@ class AddProcessDialog extends React.Component {
           </Draggable>
         </div>
       </Modal>
-    );
+    )
   }
 }
 
 function mapState(state) {
-  const user = state.settings.loggedUser;
+  const user = state.settings.loggedUser
   return {
-    categories: (user.categories || []).filter(c => user.canWrite(c))
+    categories: (user.categories || []).filter(c => user.canWrite(c)),
   }
 }
 
@@ -117,16 +118,16 @@ const nameAlreadyExists = (clashedNames, name) => {
   return clashedNames.some(processName => processName === name)
 }
 
-const validators = [
+const validators = () =>  [
   {
-    isValid: (clashedNames, name) => notEmptyValidator.isValid(name),
-    message: notEmptyValidator.message
+    isValid: (clashedNames, name) => mandatoryValueValidator.isValid(name),
+    message: mandatoryValueValidator.message,
   },
   {
     isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),
-    message: duplicateValue
-  }
-];
+    message: DialogMessages.valueAlreadyTaken(),
+  },
+]
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(AddProcessDialog);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(AddProcessDialog)
 

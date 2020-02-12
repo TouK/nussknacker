@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import java.math.BigDecimal
 import java.text.ParseException
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.Collections
 
@@ -17,10 +17,12 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
+import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
@@ -79,26 +81,32 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private def parseWithDicts[T:TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parseWithDicts[T: TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, dictionaries, Standard)
+    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true)
   }
 
-  private def parse[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    val validationCtx = ValidationContext(context.variables.mapValuesNow(Typed.fromInstance))
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false)
+  }
+
+  private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour)
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true)
   }
 
-  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, Map.empty, Standard)
+  private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true)
   }
 
-  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition], flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
+                                flavour: Flavour, strictMethodsChecking: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true, imports, flavour)
-      .parse(expr, validationCtx, Typed.fromDetailedType[T])
+    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true,
+      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   test("invoke simple expression") {
@@ -162,6 +170,15 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("validate MethodReference") {
     val parsed = parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal)
+    parsed.isValid shouldBe true
+
+    val invalid = parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in pl.touk.nussknacker.engine.spel.SampleGlobalObject$")))
+
+  }
+
+  test("skip MethodReference validation without strictMethodsChecking") {
+    val parsed = parseWithoutStrictMethodsChecking[Any]("#processHelper.notExistent(1, 1)", ctxWithGlobal)
     parsed.isValid shouldBe true
   }
 
@@ -230,10 +247,8 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   }
 
-  test("return sane error with empty expression ") {
-    parse[Any]("", ctx) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("No node"), Nil)) =>
-    }
+  test("allow empty expression ") {
+    parse[Any]("", ctx) shouldBe 'valid
   }
 
   test("register static variables") {
@@ -381,6 +396,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[Any]("abcd", ctx) shouldNot be ('valid)
   }
 
+  test("can handle return generic return types") {
+    parse[Any]("#processHelper.now.toLocalDate", ctxWithGlobal).map(_.returnType) should be (Valid(Typed[LocalDate]))
+  }
+
   test("evaluate static field/method using property syntax") {
     parseOrFail[Any]("#processHelper.one", ctxWithGlobal).evaluateSyncToValue[Int](ctxWithGlobal) should equal(1)
     parseOrFail[Any]("#processHelper.one()", ctxWithGlobal).evaluateSyncToValue[Int](ctxWithGlobal) should equal(1)
@@ -397,7 +416,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: int, found: java.lang.String" )
     shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: java.lang.String, found: java.lang.Integer" )
     shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: java.lang.String, found: java.util.List[java.lang.Integer]" )
-    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: java.util.Map[unknown,unknown], found: java.lang.String" )
+    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: java.util.Map[java.lang.Object,java.lang.Object], found: java.lang.String" )
     shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: int, found: java.lang.String" )
 
   }
@@ -420,6 +439,16 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[String]("#input.ala", ctxWithMap) shouldNot be ('valid)
   }
 
+  test("be able to convert between primitive types") {
+    val ctxWithMap = ValidationContext
+      .empty
+      .withVariable("input", TypedObjectTypingResult(Map("int" -> Typed[Int]))).toOption.get
+
+    val ctx = Context("").withVariable("input", TypedMap(Map("int" -> 1)))
+
+    parseOrFail[Long]("#input.int.longValue", ctxWithMap).evaluateSyncToValue[Long](ctx) shouldBe 1L
+  }
+
   test("evaluate parsed map") {
     val valCtxWithMap = ValidationContext
       .empty
@@ -435,7 +464,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("be able to type toString()") {
     parse[Any]("12.toString()", ctx).toOption.get.returnType shouldBe Typed[String]
   }
-  
+
   test("be able to type string concatenation") {
     parse[Any]("12 + ''", ctx).toOption.get.returnType shouldBe Typed[String]
     parse[Any]("'' + 12", ctx).toOption.get.returnType shouldBe Typed[String]
@@ -578,6 +607,7 @@ object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
   def one() = 1
+  def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
 }
 

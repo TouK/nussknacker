@@ -152,6 +152,7 @@ val scalaCompatV = "0.8.0"
 val ficusV = "1.4.1"
 val configV = "1.3.0"
 val commonsLangV = "3.3.2"
+val commonsTextV = "1.8"
 val dropWizardV = "3.1.5"
 
 val akkaHttpV = "10.1.8"
@@ -603,7 +604,6 @@ lazy val standaloneApi = (project in engine("standalone/api")).
   ).dependsOn(api)
 
 
-
 lazy val api = (project in engine("api")).
   settings(commonSettings).
   settings(
@@ -614,7 +614,9 @@ lazy val api = (project in engine("api")).
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,
+        "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
+        "org.apache.commons" % "commons-text" % commonsTextV,
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "1.1.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,

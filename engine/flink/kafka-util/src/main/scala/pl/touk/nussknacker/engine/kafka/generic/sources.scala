@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import java.nio.charset.StandardCharsets
+import java.util
+import java.util.Collections
 
 import io.circe.{Decoder, Json, JsonObject}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -36,30 +38,31 @@ object sources {
   }
 
   //FIXME: handle numeric conversion and validation here??
-  private def deserializeToMap(message: Array[Byte]): Map[String, _] = jsonToMap(toJson(new String(message, StandardCharsets.UTF_8)))
+  //how should we treat json that is non-object?
+  private def deserializeToMap(message: Array[Byte]): java.util.Map[String, _] =
+    toJson(new String(message, StandardCharsets.UTF_8)).asObject.map(jsonObjectToMap).getOrElse(Collections.emptyMap[String, Any])
 
   private def toJson(jsonString: String): Json = CirceUtil.decodeJsonUnsafe[Json](jsonString, s"invalid message ($jsonString)")
 
-  private def jsonToMap(jo: Json): Map[String, _] = {
-    jo.asObject.getOrElse(JsonObject()).toMap.mapValuesNow { jsonField =>
-      jsonField.fold(
-        jsonNull = null,
-        jsonBoolean = identity,
-        //TODO: how to handle fractions here? using BigDecimal is not always good way to go...
-        jsonNumber = number => {
-          val d = number.toDouble
-          if (d.isWhole()) d.toLong else d
-        },
-        jsonString = identity,
-        jsonArray = _.map(f => jsonToMap(f).asJava),
-        jsonObject = jo => jsonToMap(Json.fromJsonObject(jo))
-      )
-    }
-  }
+  private def jsonToMap(jo: Json): Any = jo.fold(
+    jsonNull = null,
+    jsonBoolean = identity,
+    //TODO: how to handle fractions here? using BigDecimal is not always good way to go...
+    jsonNumber = number => {
+      val d = number.toDouble
+      if (d.isWhole()) d.toLong else d
+    },
+    jsonString = identity,
+    jsonArray = _.map(jsonToMap).asJava,
+    jsonObject = jsonObjectToMap
+  )
 
-  object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](m => deserializeToMap(m).asJava)
+  private def jsonObjectToMap(jo: JsonObject): util.Map[String, Any] = jo.toMap.mapValuesNow(jsonToMap).asJava
 
-  object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](m => TypedMap(deserializeToMap(m)))
+  object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)
+
+  //It is important that object returned by this schema is consistent with types from TypingUtils.typeMapDefinition, i.e. collections type must match etc.
+  object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](m => TypedMap(deserializeToMap(m).asScala.toMap))
 
   //TOOD: better error handling?
   class JsonDecoderDeserialization[T:Decoder:TypeInformation] extends EspDeserializationSchema[T](ba => CirceUtil.decodeJsonUnsafe(ba))

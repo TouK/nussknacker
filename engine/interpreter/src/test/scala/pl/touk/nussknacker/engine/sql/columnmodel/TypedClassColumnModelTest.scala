@@ -22,7 +22,7 @@ class TypedClassColumnModelTest extends FunSuite with Matchers{
   }
   test("use typed list") {
     val result = typeMe[Data1]
-    result shouldEqual ColumnModel(List(Column("name", Varchar), Column("value", Numeric)))
+    result shouldEqual ColumnModel(List(Column("value", Numeric), Column("name", Varchar)))
   }
 
   trait Countable {
@@ -46,12 +46,12 @@ class CreateColumnClassExtractionPredicateTest extends FunSuite with Matchers {
 
   def shouldMatchPredicate(member: Member): Unit =
     test(s"member ${member.getName} should match predicate") {
-      predicate.matches(member) shouldBe true
+      predicate.matchesMember(member) shouldBe true
     }
 
   def shouldNotMatchPredicate(member: Member): Unit =
     test(s"member ${member.getName} should not match predicate") {
-      predicate.matches(member) shouldBe false
+      predicate.matchesMember(member) shouldBe false
     }
 
   shouldNotMatchPredicate(ownField)

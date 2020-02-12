@@ -2,22 +2,24 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import java.time.LocalDateTime
 
-import akka.actor.{Actor, ActorRefFactory, Props, Status}
+import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionSuccess, OnDeployActionFailed}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction}
 import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.db.entity.{DeployedProcessInfoEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{ProcessActionRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.{CatsSyntax, FailurePropagatingActor}
@@ -26,22 +28,19 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object ManagementActor {
-  def props(environment: String,
-            managers: Map[ProcessingType, ProcessManager],
+  def props(managers: Map[ProcessingType, ProcessManager],
             processRepository: FetchingProcessRepository[Future],
-            deployedProcessRepository: DeployedProcessRepository,
+            deployedProcessRepository: ProcessActionRepository,
             subprocessResolver: SubprocessResolver,
             processChangeListener: ProcessChangeListener)
            (implicit context: ActorRefFactory): Props = {
-    Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver, processChangeListener)
+    Props(classOf[ManagementActor], managers, processRepository, deployedProcessRepository, subprocessResolver, processChangeListener)
   }
-
 }
 
-class ManagementActor(environment: String,
-                      managers: Map[ProcessingType, ProcessManager],
+class ManagementActor(managers: Map[ProcessingType, ProcessManager],
                       processRepository: FetchingProcessRepository[Future],
-                      deployedProcessRepository: DeployedProcessRepository,
+                      deployedProcessRepository: ProcessActionRepository,
                       subprocessResolver: SubprocessResolver,
                       processChangeListener: ProcessChangeListener) extends FailurePropagatingActor with LazyLogging {
 
@@ -57,6 +56,8 @@ class ManagementActor(environment: String,
       }
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
+    case Stop(id, user, savepointDir) =>
+      reply(processManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir, toManagerUser(user))))
     case Cancel(id, user, comment) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
@@ -64,22 +65,34 @@ class ManagementActor(environment: String,
         reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, comment, cancelRes))
       }
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
+      implicit val loggedUser: LoggedUser = user
       val info = beingDeployed(id.name)
-      sender() ! Some(ProcessStatus(None, s"${info.action} IN PROGRESS", info.time, false, true))
+
+      val processStatus = for {
+        manager <- processManager(id.id)
+      } yield Some(ProcessStatus(
+        SimpleStateStatus.DuringDeploy,
+        manager.processStateDefinitionManager,
+        deploymentId = Option.empty,
+        startTime = Some(info.time),
+        attributes = Option.empty,
+        errors = List.empty
+      ))
+      reply(processStatus)
+
     case CheckStatus(id, user) =>
       implicit val loggedUser: LoggedUser = user
 
       val processStatus = for {
-        deployedVersions <- processRepository.fetchDeploymentHistory(id.id)
-        deployedVersion = deployedVersions.headOption.filter(_.deploymentAction == DeploymentAction.Deploy)
+        actions <- processRepository.fetchProcessActions(id.id)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state)
-      } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
+      } yield Option(handleObsoleteStatus(state, actions.headOption))
       reply(processStatus)
 
     case DeploymentActionFinished(process, user, result) =>
-      implicit val loggedUser = user
+      implicit val loggedUser: LoggedUser = user
       result match {
         case Left(failure) =>
           logger.error(s"Action: ${beingDeployed.get(process.name)} of $process finished with failure", failure)
@@ -103,15 +116,59 @@ class ManagementActor(environment: String,
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
   }
 
+  //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessStatus =
+    (processState, lastAction) match {
+      case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
+      case (Some(state), _) if state.status.isFollowingDeployAction => handleFollowingDeployState(state, lastAction)
+      case (None, Some(action)) if action.isCanceled => ProcessStatus.simple(SimpleStateStatus.Canceled)
+      case (Some(state), _) => ProcessStatus(state)
+      case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+    }
+
+  //This method handles some corner cases for following deploy state mismatch last action version
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
+    lastAction match {
+      case Some(action) if action.isCanceled =>
+        ProcessStatus.simpleErrorShouldNotBeRunning(Option(state))
+      case Some(_) =>
+        ProcessStatus(state)
+      case None =>
+        ProcessStatus.simpleErrorShouldNotBeRunning(Option(state))
+    }
+
+  //This method handles some corner cases for deployed action mismatch state version
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleMismatchDeployedLastAction(processState: Option[ProcessState], action: ProcessAction): ProcessStatus =
+    processState match {
+      case Some(state) =>
+        state.version match {
+          case Some(_) if !state.status.isFollowingDeployAction =>
+            ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, processState)
+          case Some(ver) if ver.versionId != action.processVersionId =>
+            ProcessStatus.simpleErrorMismatchDeployedVersion(ver.versionId, action.processVersionId, action.user, processState)
+          case Some(ver) if ver.versionId == action.processVersionId =>
+            ProcessStatus(state)
+          case None => //TODO: we should remove Option from ProcessVersion?
+            ProcessStatus.simpleErrorMissingDeployedVersion(action.processVersionId, action.user, processState)
+          case _ =>
+            ProcessStatus.simple(SimpleStateStatus.Error) //Generic error in other cases
+        }
+      case None =>
+        ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, Option.empty)
+    }
+
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
   private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
-      case Some(state) if state.runningState == RunningState.Finished =>
+      case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
-            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, environment, Some("Process finished")).map(_ => ())
+            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some("Process finished")).map(_ => ())
           case _ => Future.successful(())
         }
       case _ => Future.successful(())
@@ -119,10 +176,10 @@ class ManagementActor(environment: String,
   }
 
   private def withDeploymentInfo(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, comment: Option[String],
-                                 actionFuture: => Future[DeployedProcessInfoEntityData]): Future[DeployedProcessInfoEntityData] = {
+                                 actionFuture: => Future[ProcessActionEntityData]): Future[ProcessActionEntityData] = {
     beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete {
-      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, comment,details.deployedAtTime, details.deploymentAction)))
+      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, comment,details.performedAtTime, details.action)))
       case Failure(ex) => self ! DeploymentActionFinished(id, user, Left(ex))
     }
     actionFuture
@@ -138,27 +195,26 @@ class ManagementActor(environment: String,
 
   private def isBeingDeployed(id: ProcessName) = beingDeployed.contains(id)
 
-  private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
+  private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       manager <- processManager(processId.id)
-      _ <- manager.cancel(processId.name)
+      _ <- manager.cancel(processId.name, toManagerUser(user))
       maybeVersion <- findDeployedVersion(processId)
       version <- maybeVersion match {
         case Some(processVersionId) => Future.successful(processVersionId)
         case None => Future.failed(ProcessNotFoundError(processId.name.value.toString))
       }
-      result <- deployedProcessRepository.markProcessAsCancelled(processId.id, version, environment, comment)
+      result <- deployedProcessRepository.markProcessAsCancelled(processId.id, version, comment)
     } yield result
   }
 
-  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser) : Future[Option[Long]] = for {
+  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[Long]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-    currentDeploymentInfo = process.flatMap(_.deployment).filter(_.action == DeploymentAction.Deploy)
-  } yield (currentDeploymentInfo.map(_.processVersionId))
-
+    lastAction = process.flatMap(_.lastDeployedAction)
+  } yield lastAction.map(_.processVersionId)
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])
-                           (implicit user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
+                           (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       processingType <- processRepository.fetchProcessingType(processId)
       latestProcessEntity <- processRepository.fetchLatestProcessVersion[DisplayableProcess](processId)
@@ -169,8 +225,10 @@ class ManagementActor(environment: String,
     } yield result
   }
 
-  private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData,
-                                   savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[DeployedProcessInfoEntityData] = {
+  private def deployAndSaveProcess(processingType: ProcessingType,
+                                   latestVersion: ProcessVersionEntityData,
+                                   savepointPath: Option[String],
+                                   comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
     val processManagerValue = managers(processingType)
 
@@ -178,9 +236,10 @@ class ManagementActor(environment: String,
       deploymentResolved <- resolvedDeploymentData
       maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
       processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown process Id ${latestVersion.processId}"))
-      _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentResolved, savepointPath)
-      deployedActionData <- deployedProcessRepository.markProcessAsDeployed(ProcessId(latestVersion.processId), latestVersion.id,
-        processingType, environment, comment)
+      _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentResolved, savepointPath, toManagerUser(user))
+      deployedActionData <- deployedProcessRepository.markProcessAsDeployed(
+        ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
+      )
     } yield deployedActionData
   }
 
@@ -200,7 +259,7 @@ class ManagementActor(environment: String,
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 
-  private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser) = {
+  private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessManager] = {
     processRepository.fetchProcessingType(processId).map(managers)
   }
 
@@ -213,8 +272,9 @@ class ManagementActor(environment: String,
       action
     }
   }
-}
 
+  private def toManagerUser(loggedUser: LoggedUser) = User(loggedUser.id, loggedUser.username)
+}
 
 trait DeploymentAction {
   def id: ProcessIdWithName
@@ -224,14 +284,15 @@ case class Deploy(id: ProcessIdWithName, user: LoggedUser, savepointPath: Option
 
 case class Cancel(id: ProcessIdWithName, user: LoggedUser, comment: Option[String]) extends DeploymentAction
 
-case class Snapshot(id: ProcessIdWithName, user: LoggedUser, savepointPath: String)
+case class Snapshot(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[String])
+
+case class Stop(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[String])
 
 case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
 case class Test[T](id: ProcessIdWithName, processJson: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
-import pl.touk.nussknacker.restmodel.processdetails.{ DeploymentAction => Action }
-case class DeploymentDetails(version: Long, comment: Option[String], deployedAt: LocalDateTime, action: Action.Value)
+case class DeploymentDetails(version: Long, comment: Option[String], deployedAt: LocalDateTime, action: ProcessActionType)
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 
 case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
@@ -246,7 +307,6 @@ object DeploymentActionType {
 case object DeploymentStatus
 
 case class DeploymentStatusResponse(deploymentInfo: Map[ProcessName, DeployInfo])
-
 
 class ProcessIsBeingDeployed(deployments: Map[ProcessName, DeployInfo]) extends
   Exception(s"Cannot deploy/test as following deployments are in progress: ${

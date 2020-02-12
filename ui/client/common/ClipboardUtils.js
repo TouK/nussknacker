@@ -9,15 +9,15 @@ const readText = event => (event.clipboardData || window.clipboardData).getData(
 // copy event and the real one triggered by user.
 // Based on https://techoverflow.net/2018/03/30/copying-strings-to-the-clipboard-using-pure-javascript/
 const writeText = (text, elementId) => {
-  const el = document.createElement("textarea");
-  el.value = text;
+  const el = document.createElement("textarea")
+  el.value = text
   el.setAttribute("id", elementId)
-  el.setAttribute("readonly", "");
-  el.style = {position: "absolute", left: "-9999px"};
-  document.body.appendChild(el);
-  el.select();
-  document.execCommand("copy");
-  document.body.removeChild(el);
+  el.setAttribute("readonly", "")
+  el.style = {position: "absolute", left: "-9999px"}
+  document.body.appendChild(el)
+  el.select()
+  document.execCommand("copy")
+  document.body.removeChild(el)
 }
 
 export default {

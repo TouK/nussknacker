@@ -21,7 +21,7 @@ object DatabaseServer {
     config.port.foreach(server.setPort)
     server
   }
-  case class Config(dbFilePath:String, dbName:String, user:String, password:String, port:Option[Int])
+  case class Config(dbFilePath:String, dbName:String, user:String, password:String, port:Option[Int], enabled: Boolean)
 }
 
 class DatabaseInitializer(dbConfig: DbConfig) {

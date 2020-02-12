@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.variables
 
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedObjectDefinition}
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithType
 
 final case class MetaVariables(processName: String, properties: TypedMap)
@@ -26,6 +26,6 @@ object MetaVariables {
 
   private def propertiesType(metaData: MetaData) = {
     val definedProperties = metaData.additionalFields.map(_.properties).getOrElse(Map.empty)
-    TypedObjectTypingResult(TypedObjectDefinition(definedProperties.mapValues(_ => ClazzRef[String])))
+    TypedObjectTypingResult(TypedObjectDefinition(definedProperties.mapValues(_ => Typed[String])))
   }
 }
