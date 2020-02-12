@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.definition.validator
 
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterValidator}
 
-trait ParameterValidatorsExtractorStrategy {
+trait ParameterValidatorsDeterminer {
 
-  def extract(param: Parameter): Option[List[ParameterValidator]]
+  def determineParameterValidators(param: Parameter): Option[List[ParameterValidator]]
 
 }

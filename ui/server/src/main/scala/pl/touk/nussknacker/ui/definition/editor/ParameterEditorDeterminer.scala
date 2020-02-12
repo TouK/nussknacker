@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.definition.editor
 
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor}
 
-trait ParameterEditorExtractorStrategy {
+trait ParameterEditorDeterminer {
 
-  def evaluateParameterEditor(param: Parameter): Option[ParameterEditor]
+  def determineParameterEditor(param: Parameter): Option[ParameterEditor]
 
 }
