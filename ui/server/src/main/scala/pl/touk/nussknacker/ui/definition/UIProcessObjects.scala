@@ -20,8 +20,8 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.Subproces
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
-import pl.touk.nussknacker.ui.definition.editor.ParameterEditorExtractorChain
-import pl.touk.nussknacker.ui.definition.validator.ParameterValidatorsExtractorChain
+import pl.touk.nussknacker.ui.definition.editor.ParameterEditorDeterminerChain
+import pl.touk.nussknacker.ui.definition.validator.ParameterValidatorsDeterminerChain
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -143,8 +143,8 @@ object UIParameter {
     UIParameter(
       name = parameter.name,
       typ = parameter.typ,
-      editor = ParameterEditorExtractorChain(paramConfig).evaluateEditor(parameter),
-      validators = ParameterValidatorsExtractorChain(paramConfig).evaluate(parameter),
+      editor = ParameterEditorDeterminerChain(paramConfig).determineEditor(parameter),
+      validators = ParameterValidatorsDeterminerChain(paramConfig).determineValidators(parameter),
       additionalVariables = parameter.additionalVariables,
       branchParam = parameter.branchParam
     )

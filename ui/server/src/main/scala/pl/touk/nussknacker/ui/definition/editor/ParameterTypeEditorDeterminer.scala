@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.definition.editor
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
-protected object ParameterTypeEditorExtractor extends ParameterEditorExtractorStrategy {
+protected object ParameterTypeEditorDeterminer extends ParameterEditorDeterminer {
 
-  override def evaluateParameterEditor(param: Parameter): Option[ParameterEditor] = {
+  override def determineParameterEditor(param: Parameter): Option[ParameterEditor] = {
     param.runtimeClass match {
       case klazz if klazz.isEnum => Some(
         FixedValuesParameterEditor(

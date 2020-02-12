@@ -8,96 +8,95 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
-class ParameterEditorExtractorChainTest extends FlatSpec with Matchers {
-  behavior of "ParameterEditorExtractorChain"
+class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
 
   private val fixedValuesEditor = FixedValuesParameterEditor(possibleValues = List(FixedExpressionValue("a", "a")))
   private val stringEditor = StringParameterEditor
 
-  it should "evaluate editor by config" in {
+  test("determine editor by config") {
     val param = new Parameter("param", Typed[String], classOf[String], Some(stringEditor))
     val config = ParameterConfig(None, Some(fixedValuesEditor), None)
 
-    val extractor = ParameterEditorExtractorChain(config)
+    val determiner = ParameterEditorDeterminerChain(config)
 
-    extractor.evaluateEditor(param) shouldBe fixedValuesEditor
+    determiner.determineEditor(param) shouldBe fixedValuesEditor
   }
 
-  it should "evaluate editor by param" in {
+  test("determine editor by param") {
     val param = new Parameter("param", Typed[String], classOf[String], Some(stringEditor))
     val config = ParameterConfig.empty
 
-    val extractor = ParameterEditorExtractorChain(config)
+    val determiner = ParameterEditorDeterminerChain(config)
 
-    extractor.evaluateEditor(param) shouldBe stringEditor
+    determiner.determineEditor(param) shouldBe stringEditor
   }
 
-  it should "evaluate editor by type enum" in {
+  test("determine editor by type enum") {
     val param = Parameter[JavaSampleEnum]("param")
     val config = ParameterConfig.empty
 
-    val extractor = ParameterEditorExtractorChain(config)
+    val determiner = ParameterEditorDeterminerChain(config)
 
-    extractor.evaluateEditor(param) shouldBe FixedValuesParameterEditor(List(
+    determiner.determineEditor(param) shouldBe FixedValuesParameterEditor(List(
       FixedExpressionValue(s"T(${classOf[JavaSampleEnum].getName}).${JavaSampleEnum.FIRST_VALUE.name()}", "first_value"),
       FixedExpressionValue(s"T(${classOf[JavaSampleEnum].getName}).${JavaSampleEnum.SECOND_VALUE.name()}", "second_value")
     ))
   }
 
-  it should "evaluate editor by type LocalDateTime" in {
+  test("determine editor by type LocalDateTime") {
     val param = Parameter[LocalDateTime]("param")
     val config = ParameterConfig.empty
 
-    val extractor = ParameterEditorExtractorChain(config)
+    val determiner = ParameterEditorDeterminerChain(config)
 
-    extractor.evaluateEditor(param) shouldBe DualParameterEditor(
+    determiner.determineEditor(param) shouldBe DualParameterEditor(
       simpleEditor = DateTimeParameterEditor,
       defaultMode = DualEditorMode.SIMPLE
     )
   }
 
-  it should "evaluate editor by type LocalDate" in {
+  test("determine editor by type LocalDate") {
     val param = Parameter[LocalDate]("param")
     val config = ParameterConfig.empty
 
-    val extractor = ParameterEditorExtractorChain(config)
+    val determiner = ParameterEditorDeterminerChain(config)
 
-    extractor.evaluateEditor(param) shouldBe DualParameterEditor(
+    determiner.determineEditor(param) shouldBe DualParameterEditor(
       simpleEditor = DateParameterEditor,
       defaultMode = DualEditorMode.SIMPLE
     )
   }
 
-  it should "evaluate editor by type LocalTime" in {
+  test("determine editor by type LocalTime") {
     val param = Parameter[LocalTime]("param")
     val config = ParameterConfig.empty
 
-    val extractor = ParameterEditorExtractorChain(config)
+    val determiner = ParameterEditorDeterminerChain(config)
 
-    extractor.evaluateEditor(param) shouldBe DualParameterEditor(
+    determiner.determineEditor(param) shouldBe DualParameterEditor(
       simpleEditor = TimeParameterEditor,
       defaultMode = DualEditorMode.SIMPLE
     )
   }
 
-  it should "evaluate editor by type String" in {
+  test("determine editor by type String") {
     val param = Parameter[String]("param")
     val config = ParameterConfig.empty
 
-    val extractor = ParameterEditorExtractorChain(config)
+    val determiner = ParameterEditorDeterminerChain(config)
 
-    extractor.evaluateEditor(param) shouldBe DualParameterEditor(
+    determiner.determineEditor(param) shouldBe DualParameterEditor(
       simpleEditor = StringParameterEditor,
       defaultMode = DualEditorMode.RAW
     )
   }
 
-  it should "evaluate default editor" in {
+  test("determine default editor") {
     val param = Parameter[BigDecimal]("param")
     val config = ParameterConfig.empty
 
-    val extractor = ParameterEditorExtractorChain(config)
+    val determiner = ParameterEditorDeterminerChain(config)
 
-    extractor.evaluateEditor(param) shouldBe RawParameterEditor
+    determiner.determineEditor(param) shouldBe RawParameterEditor
   }
 }

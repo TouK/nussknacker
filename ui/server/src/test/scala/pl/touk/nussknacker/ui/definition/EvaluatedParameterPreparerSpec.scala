@@ -45,7 +45,7 @@ class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
     evaluatedparam.Parameter(paramName, Expression("spel", value.toString))
   }
 
-  behavior of "ParameterEvaluator"
+  behavior of "EvaluatedParameterPreparer"
   testTypeRelatedDefaultValue[Int](value = 0)
   testTypeRelatedDefaultValue[Double](value = 0f)
   testTypeRelatedDefaultValue[Double](value = DEFAULT_PARAMETER_VALUE, nodeName = DEFINED_NODE_NAME)
