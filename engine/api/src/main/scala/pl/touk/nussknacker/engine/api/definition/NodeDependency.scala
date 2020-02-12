@@ -19,17 +19,11 @@ case object OutputVariableNameDependency extends NodeDependency
 
 object Parameter {
 
-  def apply[T:ClassTag](name: String): Parameter =
-    Parameter.mandatory[T](name) // we want to have mandatory parameters by default because it can protect us from NPE in some cases
+  def apply[T:ClassTag](name: String): Parameter = Parameter(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
 
   def apply(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
-    mandatory(name, typ, runtimeClass) // we want to have mandatory parameters by default because it can protect us from NPE in some cases
-
-  def mandatory[T:ClassTag](name: String): Parameter =
-    Parameter.mandatory(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
-
-  def mandatory(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
-    Parameter(name, typ, runtimeClass, editor = None, validators = List(MandatoryValueValidator), additionalVariables = Map.empty, branchParam = false)
+    Parameter(name, typ, runtimeClass, editor = None, validators = List(MandatoryValueValidator), // we want to have mandatory parameters by default because it can protect us from NPE in some cases
+      additionalVariables = Map.empty, branchParam = false)
 
   def optional[T:ClassTag](name: String): Parameter =
     Parameter.optional(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
@@ -49,9 +43,7 @@ case class Parameter(name: String,
 
   def isLazyParameter: Boolean = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
 
-  def isMandatory: Boolean = validators.contains(MandatoryValueValidator)
-
-  def isOptional: Boolean = !isMandatory
+  def isOptional: Boolean = !validators.contains(MandatoryValueValidator)
 
 }
 
@@ -91,8 +83,8 @@ object DualParameterEditor {
 
 /**
  * Extend this trait to configure new parameter validator which should be handled on FE.
- * Please remember that you have to also add your own [[pl.touk.nussknacker.engine.definition.validator.ValidatorExtractor]]
- * to [[pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor]] which should decide whether new validator
+ * Please remember that you have to also add your own `pl.touk.nussknacker.engine.definition.validator.ValidatorExtractor`
+ * to `pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor` which should decide whether new validator
  * should appear in configuration for certain parameter
  */
 @ConfiguredJsonCodec sealed trait ParameterValidator
