@@ -171,8 +171,6 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
     return _.get(this.state.statuses, process.name, null)
   }
-
-  isRunning = (process) => ProcessStateUtils.isDeployed(process) && ProcessStateUtils.isRunning(this.getProcessState(process))
 }
 
 const defaultProcessesSearchParams = {isSubprocess: false, isArchived: false}
