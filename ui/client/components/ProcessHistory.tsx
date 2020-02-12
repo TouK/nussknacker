@@ -61,7 +61,7 @@ export class ProcessHistoryComponent extends React.Component<Props, State> {
     return (
       <Scrollbars renderTrackHorizontal={() => <div className="hide"/>} autoHeight autoHeightMax={300} hideTracksWhenNotNeeded={true}>
         <ul id="process-history">
-          {history.map ((version: ProcessVersionType, index: number) => {
+          {history.map((version: ProcessVersionType, index: number) => {
             return (
               <li key={index} className={this.processVersionOnTimeline(version, index)} onClick={this.onChangeProcessVersion(version)}>
                 {`v${version.processVersionId}`} | {version.user}
