@@ -34,13 +34,12 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     import cats.implicits._
 
     val stoppingResult = for {
-      oldJob <- OptionT(findStatusIgnoringTerminal(processName))
-      _ <- OptionT[Future, Unit](if (!oldJob.status.isRunning)
-        Future.failed(new IllegalStateException(s"Job ${processName.value} is not running, status: ${oldJob.status.name}")) else Future.successful(Some(())))
-      maybeSavePoint <- {
-        { logger.debug(s"Deploying $processName. Status: $oldJob") }
-        OptionT.liftF(stopSavingSavepoint(processVersion, oldJob, processDeploymentData))
-      }
+      oldJob <- OptionT(findJobStatus(processName))
+      _ <- OptionT[Future, Unit](if (!oldJob.status.canDeploy)
+        Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.status.name}")) else Future.successful(Some(())))
+      //when it's failed we don't need savepoint...
+      if oldJob.isDeployed
+      maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, oldJob, processDeploymentData))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
       maybeSavePoint
@@ -71,7 +70,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
-    findStatusIgnoringTerminal(processName).flatMap {
+    findJobStatus(processName).flatMap {
       case Some(state) if state.status.isRunning =>
         cancel(state)
       case state =>
@@ -82,7 +81,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ProcessState => Future[T]): Future[T] = {
     val name = processName.value
-    findStatusIgnoringTerminal(processName).flatMap {
+    findJobStatus(processName).flatMap {
       case Some(state) if state.status.isRunning =>
         action(state)
       case Some(state) =>
@@ -92,9 +91,6 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  private def findStatusIgnoringTerminal(processName: ProcessName): Future[Option[ProcessState]] =
-    findJobStatus(processName).map(_.filterNot(_.status.canDeploy))
-
   private def checkIfJobIsCompatible(savepointPath: String, processDeploymentData: ProcessDeploymentData, processVersion: ProcessVersion): Future[Unit] =
     processDeploymentData match {
       case GraphProcess(processAsJson) if shouldVerifyBeforeDeploy =>
@@ -103,6 +99,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
 
   private def stopSavingSavepoint(processVersion: ProcessVersion, job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
+    logger.debug(s"Making savepoint of  ${processVersion.processName}. Status: $job")
     for {
       savepointResult <- makeSavepoint(job, savepointDir = None)
       savepointPath = savepointResult.path

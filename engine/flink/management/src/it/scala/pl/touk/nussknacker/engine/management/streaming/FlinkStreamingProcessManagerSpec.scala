@@ -263,7 +263,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
       val jobStatusCanceled = processManager
         .findJobStatus(ProcessName(processId))
         .futureValue
-        .filterNot(_.status.canDeploy)
+        .filterNot(_.status.isRunning)
 
       if (jobStatusCanceled.nonEmpty) {
         throw new IllegalStateException("Job still exists")
