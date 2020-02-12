@@ -18,18 +18,40 @@ case class TypedNodeDependency(clazz: Class[_]) extends NodeDependency
 case object OutputVariableNameDependency extends NodeDependency
 
 object Parameter {
-  def apply[T:ClassTag](name: String): Parameter = Parameter(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
+
+  def apply[T:ClassTag](name: String): Parameter =
+    Parameter.mandatory[T](name) // we want to have mandatory parameters by default because it can protect us from NPE in some cases
+
+  def apply(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
+    mandatory(name, typ, runtimeClass) // we want to have mandatory parameters by default because it can protect us from NPE in some cases
+
+  def mandatory[T:ClassTag](name: String): Parameter =
+    Parameter.mandatory(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
+
+  def mandatory(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
+    Parameter(name, typ, runtimeClass, editor = None, validators = List(MandatoryValueValidator), additionalVariables = Map.empty, branchParam = false)
+
+  def optional[T:ClassTag](name: String): Parameter =
+    Parameter.optional(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
+
+  def optional(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
+    Parameter(name, typ, runtimeClass, editor = None, validators = List.empty, additionalVariables = Map.empty, branchParam = false)
+
 }
 
 case class Parameter(name: String,
                      typ: TypingResult,
                      runtimeClass: Class[_],
-                     editor: Option[ParameterEditor] = None,
-                     validators: List[ParameterValidator] = List.empty,
-                     additionalVariables: Map[String, TypingResult] = Map.empty,
-                     branchParam: Boolean = false) extends NodeDependency {
+                     editor: Option[ParameterEditor],
+                     validators: List[ParameterValidator],
+                     additionalVariables: Map[String, TypingResult],
+                     branchParam: Boolean) extends NodeDependency {
 
   def isLazyParameter: Boolean = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
+
+  def isMandatory: Boolean = validators.contains(MandatoryValueValidator)
+
+  def isOptional: Boolean = !isMandatory
 
 }
 
