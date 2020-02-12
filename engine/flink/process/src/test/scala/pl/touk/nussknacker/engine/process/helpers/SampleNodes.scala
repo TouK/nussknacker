@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
+import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
@@ -296,10 +297,19 @@ object SampleNodes {
           .map(_ => 1)
           .timeWindowAll(Time.seconds(seconds)).reduce(_ + _)
           .map(ValueWithContext[Any](_, Context(UUID.randomUUID().toString)))
-    })
+      })
   }
 
+  object TransformerWithNullableParam extends CustomStreamTransformer {
 
+    @MethodToInvoke(returnType = classOf[String])
+    def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+        start
+          .map(context.lazyParameterHelper.lazyMapFunction[Any](param))
+      })
+
+  }
 
   class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
     extends FlinkProcessSignalSender with KafkaSignalStreamConnector {
