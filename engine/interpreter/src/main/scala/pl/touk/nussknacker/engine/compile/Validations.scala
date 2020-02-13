@@ -19,6 +19,7 @@ object Validations {
 
     val validatedRedundant = validateRedundancy(definedParamNamesSet, usedParamNamesSet)
     val validatedMissing = validateMissingness(definedParamNamesSet, usedParamNamesSet)
+    //TODO as a target, these validations should check evaluated value of expression
     val validatedCustom = validateWithCustomValidators(parameterDefinitions, parameters)
 
     (validatedRedundant,
