@@ -57,7 +57,8 @@ class InterpreterSpec extends FunSuite with Matchers {
     "withExplicitMethod" -> WithExplicitDefinitionService,
     "optionTypesService" -> OptionTypesService,
     "optionalTypesService" -> OptionalTypesService,
-    "nullableTypesService" -> NullableTypesService
+    "nullableTypesService" -> NullableTypesService,
+    "mandatoryTypesService" -> MandatoryTypesService
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -626,8 +627,19 @@ class InterpreterSpec extends FunSuite with Matchers {
       .enricher("customNode", "rawExpression", "nullableTypesService", "expression" -> "")
       .sink("end", "#rawExpression", "dummySink")
 
-    val value1: Any = interpretSource(process, Transaction())
     interpretSource(process, Transaction()).asInstanceOf[String] shouldBe null
+  }
+
+  test("not accept empty expression for mandatory parameter") {
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "mandatoryTypesService", "expression" -> "")
+      .sink("end", "#rawExpression", "dummySink")
+
+    intercept[IllegalArgumentException] {
+      interpretSource(process, Transaction())
+    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(expression,customNode), " +
+      "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
   }
 }
 
@@ -718,6 +730,11 @@ object InterpreterSpec {
   object NullableTypesService extends Service {
     @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName("expression") @Nullable expr: String) = Future.successful(expr)
+  }
+
+  object MandatoryTypesService extends Service {
+    @MethodToInvoke(returnType = classOf[String])
+    def invoke(@ParamName("expression") expr: String) = Future.successful(expr)
   }
 
   object TransactionSource extends SourceFactory[Transaction] {

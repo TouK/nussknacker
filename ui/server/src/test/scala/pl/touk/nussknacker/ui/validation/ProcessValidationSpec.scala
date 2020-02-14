@@ -1,31 +1,32 @@
 package pl.touk.nussknacker.ui.validation
 
-import pl.touk.nussknacker.engine.{ProcessingTypeData, spel}
-import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
+import pl.touk.nussknacker.engine.{ProcessingTypeData, spel}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{SampleSubprocessRepository, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 
 class ProcessValidationSpec extends FunSuite with Matchers {
@@ -283,23 +284,47 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
   test("validates and returns type info of subprocess output fields") {
     val subprocess = CanonicalProcess(
-        MetaData("sub1", StreamMetaData(), isSubprocess = true),
-        ExceptionHandlerRef(List()),
-        nodes = List(
-          FlatNode(SubprocessInputDefinition(
-            "in", List(SubprocessParameter("param1", SubprocessClazzRef[String]))
-          )),
-          FlatNode(SubprocessOutputDefinition(
-            "out1", "output", List(Field("foo", "42L"))
-          ))
-        ),
-        additionalBranches = None)
+      MetaData("sub1", StreamMetaData(), isSubprocess = true),
+      ExceptionHandlerRef(List()),
+      nodes = List(
+        FlatNode(SubprocessInputDefinition(
+          "in", List(SubprocessParameter("param1", SubprocessClazzRef[String]))
+        )),
+        FlatNode(SubprocessOutputDefinition(
+          "out1", "output", List(Field("foo", "42L"))
+        ))
+      ),
+      additionalBranches = None)
     val (processValidation, process) = mockProcessValidationAndProcess(subprocess)
     val validationResult = processValidation.validate(process)
     validationResult.errors.invalidNodes shouldBe 'empty
     validationResult.variableTypes("out")("output") shouldBe TypedObjectTypingResult(Map(
       "foo" -> Typed(classOf[java.lang.Long])
     ))
+  }
+
+  test("check for empty expression in mandatory parameter") {
+    val process = createProcess(
+      List(
+        Source("inID", SourceRef("barSource", List())),
+        Enricher("custom", ServiceRef("fooService3", List(evaluatedparam.Parameter("expression", Expression("spel", "")))), "out"),
+        Sink("out", SinkRef("barSink", List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None))
+    )
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes shouldBe Map(
+      "custom" -> List(NodeValidationError(
+        "EmptyMandatoryParameter",
+        "Empty expression for mandatory parameter",
+        "Please fill expression for this parameter",
+        Some("expression"),
+        NodeValidationErrorType.SaveAllowed
+      )))
+    result.warnings shouldBe ValidationWarnings.success
   }
 
   private def createProcess(nodes: List[NodeData],

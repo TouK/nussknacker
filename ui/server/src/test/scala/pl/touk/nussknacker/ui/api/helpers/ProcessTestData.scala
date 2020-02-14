@@ -3,8 +3,9 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.time.LocalDateTime
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, Parameter}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
@@ -46,6 +47,7 @@ object ProcessTestData {
   val existingServiceId = "barService"
   val otherExistingServiceId = "fooService"
   val otherExistingServiceId2 = "fooService2"
+  val otherExistingServiceId3 = "fooService3"
 
   val processorId = "fooProcessor"
 
@@ -62,6 +64,7 @@ object ProcessTestData {
     .withService(otherExistingServiceId)
     .withService(processorId, classOf[Void])
     .withService(otherExistingServiceId2, Parameter("expression"))
+    .withService(otherExistingServiceId3, Parameter("expression", Typed.typedClass(classOf[String]), classOf[String]))
     .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
       clearsContext = false, manyInputs = false))
     .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
@@ -204,6 +207,14 @@ object ProcessTestData {
       .exceptionHandler()
       .source("source", missingSourceFactory)
       .emptySink("sink", missingSinkFactory)
+  }
+
+  val invalidProcessWithEmptyMandatoryParameter = {
+    EspProcessBuilder.id("fooProcess")
+      .exceptionHandler()
+      .source("source", existingSourceFactory)
+      .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
+      .emptySink("sink", existingSinkFactory)
   }
 
   val sampleDisplayableProcess = {
