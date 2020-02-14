@@ -16,12 +16,14 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
     SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
     SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.NotFound -> List(ProcessActionType.Deploy),
     SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Cancel),
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Failed -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy),
-    SimpleStateStatus.Error -> List(ProcessActionType.Deploy)
+    SimpleStateStatus.Error -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
