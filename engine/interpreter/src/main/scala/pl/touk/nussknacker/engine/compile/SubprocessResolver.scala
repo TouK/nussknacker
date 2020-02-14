@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, F
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 
 object SubprocessResolver {
   def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver =
@@ -59,7 +58,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
   }
 
   private def checkProcessParameters(ref: SubprocessRef, parameters: List[String], nodeId: String): CompilationValid[Unit] = {
-    Validations.validateParameters[ProcessCompilationError](parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
+    Validations.validateSubProcessParameters[ProcessCompilationError](parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
   }
 
   private def replaceCanonicalList(replacement: Map[String, List[CanonicalNode]]): List[CanonicalNode] => CompilationValid[List[CanonicalNode]] = {

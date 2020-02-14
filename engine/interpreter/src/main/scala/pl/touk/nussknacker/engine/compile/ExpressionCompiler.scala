@@ -69,12 +69,8 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     val syntax = ValidatedSyntax[PartSubGraphCompilationError]
     import syntax._
 
-    val definedParamNames = parameterDefinitions.map(_.name).toSet
-    // TODO JOIN: verify parameter for each branch
-    val usedParamNames =  parameters.map(_.name).toSet ++ branchParameters.flatMap(_.parameters).map(_.name)
-
-
-    Validations.validateParameters(definedParamNames, usedParamNames).andThen { _ =>
+    val allParameters = parameters ++ branchParameters.flatMap(_.parameters)
+    Validations.validateParameters(parameterDefinitions, allParameters).andThen { _ =>
       val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
 
       def ctxToUse(pName:String): ValidationContext = if (paramDefMap(pName).isLazyParameter || eager) ctx else ctx.clearVariables

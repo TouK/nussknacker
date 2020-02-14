@@ -1,9 +1,14 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import cats.data.Validated
+import cats.data.Validated.{invalid, valid}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder, Json}
+import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, NodeId}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -19,7 +24,7 @@ case object OutputVariableNameDependency extends NodeDependency
 
 object Parameter {
 
-  def apply[T:ClassTag](name: String): Parameter = Parameter(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
+  def apply[T: ClassTag](name: String): Parameter = Parameter(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
 
   def apply(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
     Parameter(name, typ, runtimeClass, editor = None, validators = List(MandatoryValueValidator), // we want to have mandatory parameters by default because it can protect us from NPE in some cases
@@ -30,7 +35,6 @@ object Parameter {
 
   def optional(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
     Parameter(name, typ, runtimeClass, editor = None, validators = List.empty, additionalVariables = Map.empty, branchParam = false)
-
 }
 
 case class Parameter(name: String,
@@ -87,6 +91,14 @@ object DualParameterEditor {
  * to `pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor` which should decide whether new validator
  * should appear in configuration for certain parameter
  */
-@ConfiguredJsonCodec sealed trait ParameterValidator
+@ConfiguredJsonCodec sealed trait ParameterValidator {
 
-case object MandatoryValueValidator extends ParameterValidator
+  def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit]
+
+}
+
+case object MandatoryValueValidator extends ParameterValidator {
+
+  override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    if (StringUtils.isNotBlank(expression)) valid(Unit) else invalid(EmptyMandatoryParameter(paramName))
+}

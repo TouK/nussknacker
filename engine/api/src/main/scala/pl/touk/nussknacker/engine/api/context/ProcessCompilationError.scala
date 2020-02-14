@@ -133,6 +133,13 @@ object ProcessCompilationError {
       WrongParameters(requiredParameters, passedParameters, nodeId.id)
   }
 
+  case class EmptyMandatoryParameter(paramName: String, nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object EmptyMandatoryParameter {
+    def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      EmptyMandatoryParameter(paramName, nodeId.id)
+  }
 
   case class OverwrittenVariable(variableName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
