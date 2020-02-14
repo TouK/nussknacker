@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.definition.defaults
 
-import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.defaults._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ScalaServiceLoader}
 
-object DefaultValueDeterminerChain extends LazyLogging {
+object DefaultValueDeterminerChain {
   def apply(defaultParametersValues: ParamDefaultValueConfig, modelClassLoader: ModelClassLoader): DefaultValueDeterminerChain = {
     val userStrategies = ScalaServiceLoader
       .load[ParameterDefaultValueDeterminer](modelClassLoader.classLoader)
@@ -17,7 +16,6 @@ object DefaultValueDeterminerChain extends LazyLogging {
     )
 
     val allStrategies = userStrategies ++ nkStrategies
-    logger.debug("Building DefaultValueExtractorChain with strategies: {}", allStrategies)
     new DefaultValueDeterminerChain(allStrategies)
   }
 }
