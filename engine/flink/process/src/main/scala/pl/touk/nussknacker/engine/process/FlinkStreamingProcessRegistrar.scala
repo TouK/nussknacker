@@ -55,8 +55,10 @@ import scala.util.{Failure, Success}
 
 class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
                                      eventTimeMetricDuration: FiniteDuration,
-                                     checkpointInterval: FiniteDuration,
-                                     enableObjectReuse: Boolean, diskStateBackend: Option[StateBackend])
+                                     @Deprecated checkpointInterval: Option[FiniteDuration],
+                                     enableObjectReuse: Boolean,
+                                     diskStateBackend: Option[StateBackend],
+                                     checkpointConfig: Option[CheckpointConfig] = None)
   extends FlinkProcessRegistrar[StreamExecutionEnvironment] {
 
   import FlinkProcessRegistrar._
@@ -240,12 +242,19 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
   }
 
   private def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
-    val checkpointIntervalToSetInMillis = streamMetaData.checkpointIntervalDuration.getOrElse(checkpointInterval).toMillis
+    val processSpecificCheckpointIntervalDuration = streamMetaData.checkpointIntervalDuration
+    // TODO checkpointInterval is deprecated - remove it in future
+    if(checkpointInterval.isDefined){
+      logger.warn("checkpointInterval config property is deprecated, use checkpointConfig.checkpointInterval instead")
+    }
+    val configurationCheckpointIntervalDuration = checkpointInterval.orElse(checkpointConfig.map(_.checkpointInterval))
+
+    val checkpointIntervalToSetInMillis = processSpecificCheckpointIntervalDuration.orElse(configurationCheckpointIntervalDuration).getOrElse(10.minutes).toMillis
     env.enableCheckpointing(checkpointIntervalToSetInMillis)
 
-    //TODO: should this be configurable?
-    env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointIntervalToSetInMillis / 2)
-    env.getCheckpointConfig.setMaxConcurrentCheckpoints(1)
+    env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointConfig.flatMap(_.minPauseBetweenCheckpoints).map(_.toMillis).getOrElse(checkpointIntervalToSetInMillis / 2))
+    env.getCheckpointConfig.setMaxConcurrentCheckpoints(checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1))
+    checkpointConfig.flatMap(_.tolerableCheckpointFailureNumber).foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
   }
 }
 
@@ -261,7 +270,9 @@ object FlinkStreamingProcessRegistrar {
 
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
-    val checkpointInterval = config.as[FiniteDuration]("checkpointInterval")
+    // TODO checkpointInterval is deprecated - remove it in future
+    val checkpointInterval = if (config.hasPath("checkpointInterval")) Some(config.as[FiniteDuration](path = "checkpointInterval")) else None
+    val checkpointConfig = if (config.hasPath("checkpointConfig")) Some(config.as[CheckpointConfig](path = "checkpointConfig")) else None
 
     new FlinkStreamingProcessRegistrar(
       compileProcess = compiler.compileProcess,
@@ -272,7 +283,8 @@ object FlinkStreamingProcessRegistrar {
         if (compiler.diskStateBackendSupport) {
           config.getAs[RocksDBStateBackendConfig]("rocksDB").map(StateConfiguration.prepareRocksDBStateBackend)
         } else None
-      }
+      },
+      checkpointConfig = checkpointConfig
     )
   }
 
