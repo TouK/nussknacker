@@ -24,7 +24,7 @@ object ProcessState {
   def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], definitionManager: ProcessStateDefinitionManager): ProcessState =
     ProcessState(DeploymentId(deploymentId), status, version, definitionManager, Option.empty, Option.empty, List.empty)
 
-  def apply(deploymentId: DeploymentId,
+  def apply(deploymentId: DeploymentId, //DeploymentId should by Optional - error cases
             status: StateStatus,
             version: Option[ProcessVersion],
             definitionManager: ProcessStateDefinitionManager,
