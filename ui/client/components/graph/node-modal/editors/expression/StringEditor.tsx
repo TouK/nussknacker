@@ -1,7 +1,7 @@
 import React from "react"
 import Input from "../field/Input"
 import _ from "lodash"
-import {EditorType} from "./EditorType"
+import {Editors} from "./Editors"
 
 type Props = {
   expressionObj: $TodoType,
@@ -9,7 +9,7 @@ type Props = {
   className: string,
 }
 
-const StringEditor: EditorType<Props> = (props: Props) => {
+const StringEditor: Editors<Props> = (props: Props) => {
 
   const {expressionObj, onValueChange, className} = props
 

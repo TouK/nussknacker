@@ -3,7 +3,7 @@ import {isEmpty} from "lodash"
 import React from "react"
 import FixedValuesEditor from "./FixedValuesEditor"
 import {ExpressionObj} from "./types"
-import {EditorType} from "./EditorType"
+import {Editors} from "./Editors"
 
 type Props = {
   expressionObj: ExpressionObj,
@@ -23,7 +23,7 @@ const parseable = (expressionObj) => {
   return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE
 }
 
-const BoolEditor: EditorType<Props> = (props: Props) => {
+const BoolEditor: Editors<Props> = (props: Props) => {
   const {expressionObj, readOnly, onValueChange, className} = props
 
   const trueValue = {expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true")}

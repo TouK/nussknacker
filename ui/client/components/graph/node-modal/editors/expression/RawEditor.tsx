@@ -1,7 +1,7 @@
 import cn from "classnames"
 import React from "react"
 import ExpressionSuggest from "./ExpressionSuggest"
-import {EditorType} from "./EditorType"
+import {Editors} from "./Editors"
 
 type Props = {
   fieldName: string,
@@ -44,4 +44,4 @@ const RawEditor = (props: Props) => {
   )
 }
 
-export default RawEditor as EditorType<Props>
+export default RawEditor as Editors<Props>
