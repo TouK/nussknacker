@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.definition.editor
 
-import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 
-object ParameterEditorDeterminerChain extends LazyLogging {
+object ParameterEditorDeterminerChain {
 
   def apply(parameterConfig: ParameterConfig): ParameterEditorDeterminerChain = {
     val strategies = Seq(
@@ -12,7 +11,6 @@ object ParameterEditorDeterminerChain extends LazyLogging {
       ParameterBasedEditorDeterminer,
       ParameterTypeEditorDeterminer
     )
-    logger.debug("Building ParameterEditorDeterminerChain with strategies: {}", strategies)
     new ParameterEditorDeterminerChain(strategies)
   }
 }
