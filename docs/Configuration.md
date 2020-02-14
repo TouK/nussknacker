@@ -138,11 +138,13 @@ required parameter is `restUrl` - which defines location of Flink JobManager
 Configuration of processes has few common keys:
 *  `timeout` (e.g. 10s)- for synchronous services
 *  `checkpointInterval` - deprecated (use `checkpointConfig.checkpointInterval` instead), e.g. 10m
-*  `checkpointConfig` (more about checkpoint configuration you can find in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-release-1.9/api/java/org/apache/flink/streaming/api/environment/CheckpointConfig.html))
+*  `checkpointConfig` (more about checkpoint configuration you can find in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-release-{{book.flinkMajorVersion}}/api/java/org/apache/flink/streaming/api/environment/CheckpointConfig.html) - only some options are available)
     * `checkpointInterval` - e.g. 10m
     * `minPauseBetweenCheckpoints` - optional, default to half of `checkpointInterval`, e.g. 5m
     * `maxConcurrentCheckpoints` - optional, default to 1, e.g. 4
-    * `tolerableCheckpointFailureNumber` - optional, default not set, e.g. 6
+    * `tolerableCheckpointFailureNumber` - optional, default 0, e.g. 6
+
+If configuration does not contain `checkpointConfig`, `checkpointInterval` and process does not contain `checkpointInterval` in its properties then checkpoints are not enabled for process.
 
 The rest of model configuration depends on your needs - all the properties defined here will be passed to ```ProcessConfigCreator``` as explained in [API](API.md) documentation.
 

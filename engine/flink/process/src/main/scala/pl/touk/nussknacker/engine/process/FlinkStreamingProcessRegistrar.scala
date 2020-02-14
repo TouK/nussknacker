@@ -5,26 +5,25 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
-import org.apache.flink.runtime.state.{AbstractStateBackend, StateBackend}
+import org.apache.flink.runtime.state.StateBackend
+import org.apache.flink.streaming.api.datastream
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
+import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
-import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, ProcessFunction}
-import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator, StreamOperatorFactory}
+import org.apache.flink.streaming.api.operators.StreamOperatorFactory
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
-import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.{TimeCharacteristic, datastream}
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
+import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -55,10 +54,9 @@ import scala.util.{Failure, Success}
 
 class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
                                      eventTimeMetricDuration: FiniteDuration,
-                                     @Deprecated checkpointInterval: Option[FiniteDuration],
+                                     checkpointConfig: Option[CheckpointConfig],
                                      enableObjectReuse: Boolean,
-                                     diskStateBackend: Option[StateBackend],
-                                     checkpointConfig: Option[CheckpointConfig] = None)
+                                     diskStateBackend: Option[StateBackend])
   extends FlinkProcessRegistrar[StreamExecutionEnvironment] {
 
   import FlinkProcessRegistrar._
@@ -243,23 +241,21 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
 
   private def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
     val processSpecificCheckpointIntervalDuration = streamMetaData.checkpointIntervalDuration
-    // TODO checkpointInterval is deprecated - remove it in future
-    if(checkpointInterval.isDefined){
-      logger.warn("checkpointInterval config property is deprecated, use checkpointConfig.checkpointInterval instead")
+    val checkpointIntervalToSet = processSpecificCheckpointIntervalDuration.orElse(checkpointConfig.map(_.checkpointInterval)).map(_.toMillis)
+    checkpointIntervalToSet.foreach { checkpointIntervalToSetInMillis =>
+      env.enableCheckpointing(checkpointIntervalToSetInMillis)
+      env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointConfig.flatMap(_.minPauseBetweenCheckpoints).map(_.toMillis).getOrElse(checkpointIntervalToSetInMillis / 2))
+      env.getCheckpointConfig.setMaxConcurrentCheckpoints(checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1))
+      checkpointConfig.flatMap(_.tolerableCheckpointFailureNumber).foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
     }
-    val configurationCheckpointIntervalDuration = checkpointInterval.orElse(checkpointConfig.map(_.checkpointInterval))
-
-    val checkpointIntervalToSetInMillis = processSpecificCheckpointIntervalDuration.orElse(configurationCheckpointIntervalDuration).getOrElse(10.minutes).toMillis
-    env.enableCheckpointing(checkpointIntervalToSetInMillis)
-
-    env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointConfig.flatMap(_.minPauseBetweenCheckpoints).map(_.toMillis).getOrElse(checkpointIntervalToSetInMillis / 2))
-    env.getCheckpointConfig.setMaxConcurrentCheckpoints(checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1))
-    checkpointConfig.flatMap(_.tolerableCheckpointFailureNumber).foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
   }
 }
 
 
 object FlinkStreamingProcessRegistrar {
+
+  // We cannot use LazyLogging trait here because class already has LazyLogging and scala ends with cycle during resolution...
+  private lazy val logger: Logger = Logger(LoggerFactory.getLogger(classOf[FlinkStreamingProcessRegistrar].getName))
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -270,14 +266,19 @@ object FlinkStreamingProcessRegistrar {
 
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
+
     // TODO checkpointInterval is deprecated - remove it in future
-    val checkpointInterval = if (config.hasPath("checkpointInterval")) Some(config.as[FiniteDuration](path = "checkpointInterval")) else None
-    val checkpointConfig = if (config.hasPath("checkpointConfig")) Some(config.as[CheckpointConfig](path = "checkpointConfig")) else None
+    val checkpointInterval = config.getAs[FiniteDuration](path = "checkpointInterval")
+    if (checkpointInterval.isDefined) {
+      logger.warn("checkpointInterval config property is deprecated, use checkpointConfig.checkpointInterval instead")
+    }
+
+    val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
+      .orElse(checkpointInterval.map(CheckpointConfig(_)))
 
     new FlinkStreamingProcessRegistrar(
       compileProcess = compiler.compileProcess,
       eventTimeMetricDuration = eventTimeMetricDuration,
-      checkpointInterval = checkpointInterval,
       enableObjectReuse = enableObjectReuse,
       diskStateBackend =  {
         if (compiler.diskStateBackendSupport) {
