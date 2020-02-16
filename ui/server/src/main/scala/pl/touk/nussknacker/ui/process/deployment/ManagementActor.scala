@@ -122,9 +122,27 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
     (processState, lastAction) match {
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
       case (Some(state), _) if state.status.isFollowingDeployAction => handleFollowingDeployState(state, lastAction)
-      case (None, Some(action)) if action.isCanceled => ProcessStatus.simple(SimpleStateStatus.Canceled)
-      case (Some(state), _) => ProcessStatus(state)
+      case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
+      case (Some(state), _) => handleState(state, lastAction)
       case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+    }
+
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
+    state.status match {
+      case SimpleStateStatus.NotFound if lastAction.isEmpty => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+      case _ => ProcessStatus(state)
+    }
+
+  //Thise method handles some corner cases for canceled process -> with last action = Canceled
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleCanceledState(processState: Option[ProcessState]): ProcessStatus =
+    processState match {
+      case Some(state) => state.status match {
+        case SimpleStateStatus.NotFound => ProcessStatus.simple(SimpleStateStatus.Canceled)
+        case _ => ProcessStatus(state)
+      }
+      case None => ProcessStatus.simple(SimpleStateStatus.Canceled)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
@@ -154,7 +172,8 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
           case None => //TODO: we should remove Option from ProcessVersion?
             ProcessStatus.simpleErrorMissingDeployedVersion(action.processVersionId, action.user, processState)
           case _ =>
-            ProcessStatus.simple(SimpleStateStatus.Error) //Generic error in other cases
+            ProcessStatus.simple(SimpleStateStatus.Error) //Generi
+          // c error in other cases
         }
       case None =>
         ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, Option.empty)
