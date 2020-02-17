@@ -521,7 +521,7 @@ class UserRightPanel extends Component {
 function mapState(state) {
   const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
   return {
-    isStateLoaded: state.graphReducer.stateLoaded,
+    isStateLoaded: state.graphReducer.processStateLoaded,
     processState: state.graphReducer.processState,
     isOpened: state.ui.rightPanelIsOpened,
     fetchedProcessDetails: fetchedProcessDetails,
