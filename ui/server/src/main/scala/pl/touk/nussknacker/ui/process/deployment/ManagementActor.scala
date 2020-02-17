@@ -10,16 +10,17 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{ProcessActionRepository, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.{CatsSyntax, FailurePropagatingActor}
@@ -122,9 +123,30 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
     (processState, lastAction) match {
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
       case (Some(state), _) if state.status.isFollowingDeployAction => handleFollowingDeployState(state, lastAction)
-      case (None, Some(action)) if action.isCanceled => ProcessStatus.simple(SimpleStateStatus.Canceled)
-      case (Some(state), _) => ProcessStatus(state)
+      case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
+      case (Some(state), _) => handleState(state, lastAction)
       case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+    }
+
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
+    state.status match {
+      case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
+        ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+      case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished | FlinkStateStatus.Restarting if lastAction.isEmpty =>
+        ProcessStatus.simpleErrorProcessWithoutAction(Some(state))
+      case _ => ProcessStatus(state)
+    }
+
+  //Thise method handles some corner cases for canceled process -> with last action = Canceled
+  //TODO: In future we should move this functionality to ProcessManager.
+  private def handleCanceledState(processState: Option[ProcessState]): ProcessStatus =
+    processState match {
+      case Some(state) => state.status match {
+        case SimpleStateStatus.NotFound => ProcessStatus.simple(SimpleStateStatus.Canceled)
+        case _ => ProcessStatus(state)
+      }
+      case None => ProcessStatus.simple(SimpleStateStatus.Canceled)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
@@ -154,7 +176,8 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
           case None => //TODO: we should remove Option from ProcessVersion?
             ProcessStatus.simpleErrorMissingDeployedVersion(action.processVersionId, action.user, processState)
           case _ =>
-            ProcessStatus.simple(SimpleStateStatus.Error) //Generic error in other cases
+            ProcessStatus.simple(SimpleStateStatus.Error) //Generi
+          // c error in other cases
         }
       case None =>
         ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, Option.empty)

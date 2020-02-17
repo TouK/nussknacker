@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -81,12 +82,20 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
   }
 
-  test("Should return canceled status for canceled process with not founded state - cleaned state") {
+  test("Should return properly state when state is canceled and process is canceled") {
+    val id =  prepareCanceledProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
+    }
+  }
+
+  test("Should return canceled status for canceled process with empty state - cleaned state") {
     val id = prepareCanceledProcess(processName).futureValue
 
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
-    processManager.withNotFoundProcessState {
+    processManager.withEmptyProcessState {
       jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
     }
 
@@ -94,8 +103,21 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.lastAction should not be None
     processDetails.isCanceled shouldBe true
     processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
-    //one for deploy, one for cancel
-    activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
+  }
+
+  test("Should return canceled status for canceled process with not founded state - cleaned state") {
+    val id = prepareCanceledProcess(processName).futureValue
+
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
+
+    processManager.withProcessStateStatus(SimpleStateStatus.NotFound) {
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
+    }
+
+    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    processDetails.lastAction should not be None
+    processDetails.isCanceled shouldBe true
+    processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
   test("Should return state with error when state is running and process is canceled") {
@@ -120,6 +142,39 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     }
   }
 
+  test("Should return state with error when state is during canceled and process hasn't action") {
+    val id = prepareProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
+    }
+  }
+
+  test("Should return state with error when state is finished and process hasn't action") {
+    val id = prepareProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Finished) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
+    }
+  }
+
+  test("Should return state with error when state is restarting and process hasn't action") {
+    val id = prepareProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(FlinkStateStatus.Restarting) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
+    }
+  }
+
   test("Should return state with error when state is not running and process is deployed") {
     val id = prepareDeployedProcess(processName).futureValue
 
@@ -134,19 +189,11 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   test("Should return state with error when state is null and process is deployed") {
     val id = prepareDeployedProcess(processName).futureValue
 
-    processManager.withNotFoundProcessState {
+    processManager.withEmptyProcessState {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
       state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription)
-    }
-  }
-
-  test("Should return properly state when state is canceled and process is canceled") {
-    val id =  prepareCanceledProcess(processName).futureValue
-
-    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
     }
   }
 
@@ -173,11 +220,24 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     }
   }
 
-  test("Should return not deployed status for process with not founded state - not deployed state") {
+  test("Should return not deployed status for process with empty state - not deployed state") {
     val id = prepareProcess(processName).futureValue
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
 
-    processManager.withNotDeployedProcessState {
+    processManager.withEmptyProcessState {
+      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.NotDeployed)
+    }
+
+    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    processDetails.lastAction shouldBe None
+    processDetails.isNotDeployed shouldBe true
+  }
+
+  test("Should return not deployed status for process with not found state - not deployed state") {
+    val id = prepareProcess(processName).futureValue
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
+
+    processManager.withProcessStateStatus(SimpleStateStatus.NotFound) {
       jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.NotDeployed)
     }
 

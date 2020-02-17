@@ -157,16 +157,7 @@ object TestFactory extends TestPermissions{
       }
     }
 
-    def withNotFoundProcessState[T](action: => T): T = {
-      try {
-        managerProcessState.set(Option.empty)
-        action
-      } finally {
-        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
-      }
-    }
-
-    def withNotDeployedProcessState[T](action: => T): T = {
+    def withEmptyProcessState[T](action: => T): T = {
       try {
         managerProcessState.set(Option.empty)
         action
