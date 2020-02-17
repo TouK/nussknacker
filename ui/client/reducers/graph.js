@@ -3,6 +3,8 @@ import _ from "lodash"
 import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
 
+//TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
+
 const emptyGraphState = {
   graphLoading: false,
   processToDisplay: {},
