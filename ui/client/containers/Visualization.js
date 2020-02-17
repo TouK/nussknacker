@@ -21,11 +21,9 @@ class Visualization extends React.Component {
   state = {
     timeoutId: null,
     intervalId: null,
-    processStateIntervalTime: 15000,
+    processStateIntervalTime: 10000,
     processStateIntervalId: null,
-    processState: null,
     dataResolved: false,
-    isStateLoaded: false
   }
 
   constructor(props) {
@@ -85,9 +83,9 @@ class Visualization extends React.Component {
 
       //We don't need load state for subproces and archived process..
       if (this.props.fetchedProcessDetails.isSubprocess === false && this.props.fetchedProcessDetails.isArchived === false) {
-        this.fetchProcessStatus()
+        this.fetchProcessState()
         this.state.processStateIntervalId = setInterval(
-          () => this.fetchProcessStatus(),
+          () => this.fetchProcessState(),
           this.state.processStateIntervalTime
         )
       }
@@ -161,16 +159,10 @@ class Visualization extends React.Component {
     _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
   }
 
-  fetchProcessDetails(businessView) {
-    const details = this.props.actions.fetchProcessToDisplay(this.props.match.params.processId, undefined, businessView)
-    return details
-  }
+  fetchProcessDetails = (businessView) =>
+    this.props.actions.fetchProcessToDisplay(this.props.match.params.processId, undefined, businessView)
 
-  fetchProcessStatus() {
-    HttpService.fetchSingleProcessStatus(this.props.match.params.processId).then((response) => {
-      this.setState({processState: response.data, isStateLoaded: true})
-    })
-  }
+  fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails.id)
 
   undo() {
     //this `if` should be closer to reducer?
@@ -311,8 +303,6 @@ class Visualization extends React.Component {
         />
 
         <UserRightPanel
-          isStateLoaded={this.state.isStateLoaded}
-          processState={this.state.processState}
           graphLayoutFunction={graphLayoutFun}
           exportGraph={exportGraphFun}
           zoomIn={zoomInFun}

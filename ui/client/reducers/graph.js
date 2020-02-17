@@ -3,6 +3,8 @@ import _ from "lodash"
 import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
 
+//TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
+
 const emptyGraphState = {
   graphLoading: false,
   processToDisplay: {},
@@ -16,6 +18,8 @@ const emptyGraphState = {
   processCounts: {},
   testResults: null,
   businessView: false,
+  processState: null,
+  processStateLoaded: false,
 }
 
 const STATE_PROPERTY_NAME = "groupingState"
@@ -25,6 +29,13 @@ export function reducer(state, action) {
       return {
         ...state,
         graphLoading: true,
+      }
+    }
+    case "PROCESS_STATE_LOADED": {
+      return {
+        ...state,
+        processState: action.processState,
+        processStateLoaded: true,
       }
     }
     case "UPDATE_IMPORTED_PROCESS": {

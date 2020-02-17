@@ -40,13 +40,13 @@ class CustomProcesses extends BaseProcesses {
 
   deploy = (process) => () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.name), () => {
-      return HttpService.deploy(process.name).then(() => this.reload())
+      return HttpService.deploy(process.name).finally(() => this.reload())
     })
   }
 
   cancel = (process) => () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.name), () => {
-      return HttpService.cancel(process.name).then(() => this.reload())
+      return HttpService.cancel(process.name).finally(() => this.reload())
     })
   }
 
