@@ -28,8 +28,6 @@ import ProcessInfo from "../Process/ProcessInfo"
 class UserRightPanel extends Component {
 
   static propTypes = {
-    isStateLoaded: PropTypes.bool.isRequired,
-    processState: PropTypes.object,
     isOpened: PropTypes.bool.isRequired,
     graphLayoutFunction: PropTypes.func.isRequired,
     layout: PropTypes.array.isRequired,
@@ -400,7 +398,7 @@ class UserRightPanel extends Component {
 
   isRunning = () => ProcessStateUtils.isRunning(this.getProcessState())
 
-  getProcessState = () =>  this.props.isStateLoaded ? this.props.processState : _.get(this.props, "fetchedProcessDetails.state")
+  getProcessState = () => this.props.isStateLoaded ? this.props.processState : _.get(this.props, "fetchedProcessDetails.state")
 
   showProperties = () => {
     this.props.actions.displayModalNodeDetails(
@@ -427,21 +425,17 @@ class UserRightPanel extends Component {
     )
   }
 
-  deploy = () => {
-    this.props.actions.toggleProcessActionDialog("Deploy process", (p, c) => HttpService.deploy(p, c), true)
-  }
+  deploy = () => this.props.actions.toggleProcessActionDialog(
+    "Deploy process",
+    (p, c) => HttpService.deploy(p, c).finally(() => this.props.actions.loadProcessState(this.processId())),
+    true
+  )
 
-  cancel = () => {
-    this.props.actions.toggleProcessActionDialog("Cancel process", (p, c) => HttpService.cancel(p, c), false)
-  }
-
-  clearHistory = () => {
-    return this.props.undoRedoActions.clear()
-  }
-
-  fetchProcessDetails = () => {
-    this.props.actions.displayCurrentProcessVersion(this.processId())
-  }
+  cancel = () => this.props.actions.toggleProcessActionDialog(
+    "Cancel process",
+    (p, c) => HttpService.cancel(p, c,).finally(() => this.props.actions.loadProcessState(this.processId())),
+    false
+  )
 
   processId = () => {
     return this.props.fetchedProcessDetails.name
@@ -527,14 +521,14 @@ class UserRightPanel extends Component {
 function mapState(state) {
   const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
   return {
+    isStateLoaded: state.graphReducer.stateLoaded,
+    processState: state.graphReducer.processState,
     isOpened: state.ui.rightPanelIsOpened,
     fetchedProcessDetails: fetchedProcessDetails,
     processToDisplay: state.graphReducer.processToDisplay || {},
     //TODO: now only needed for duplicate, maybe we can do it somehow differently?
     layout: state.graphReducer.layout || [],
-
     testCapabilities: state.graphReducer.testCapabilities || {},
-
     loggedUser: state.settings.loggedUser,
     nothingToSave: ProcessUtils.nothingToSave(state),
     canExport: ProcessUtils.canExport(state),

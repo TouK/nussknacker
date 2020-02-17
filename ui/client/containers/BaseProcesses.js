@@ -105,7 +105,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   reloadStatuses() {
-    HttpService.fetchProcessesStatus().then(response => {
+    HttpService.fetchProcessesStates().then(response => {
       if (!this.state.showAddProcess) {
         this.setState({statuses: response.data, showLoader: false, statusesLoaded: true})
       }

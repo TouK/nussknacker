@@ -122,12 +122,12 @@ export default {
     return api.get(url, {params: {businessView}})
   },
 
-  fetchProcessesStatus() {
+  fetchProcessesStates() {
     return api.get("/processes/status")
       .catch(error => this.addError("Cannot fetch statuses", error))
   },
 
-  fetchSingleProcessStatus(processId) {
+  fetchProcessState(processId) {
     return api.get(`/processes/${processId}/status`)
       .catch(error => this.addError("Cannot fetch status", error))
   },
