@@ -17,6 +17,7 @@ const emptyGraphState = {
   testResults: null,
   businessView: false,
   processState: null,
+  stateLoaded: false,
 }
 
 const STATE_PROPERTY_NAME = "groupingState"
@@ -32,6 +33,7 @@ export function reducer(state, action) {
       return {
         ...state,
         processState: action.processState,
+        stateLoaded: true,
       }
     }
     case "UPDATE_IMPORTED_PROCESS": {

@@ -24,7 +24,6 @@ class Visualization extends React.Component {
     processStateIntervalTime: 10000,
     processStateIntervalId: null,
     dataResolved: false,
-    processStateResolved: false,
   }
 
   constructor(props) {
@@ -85,14 +84,10 @@ class Visualization extends React.Component {
       //We don't need load state for subproces and archived process..
       if (this.props.fetchedProcessDetails.isSubprocess === false && this.props.fetchedProcessDetails.isArchived === false) {
         this.fetchProcessState()
-          .then(() => this.setState({processStateResolved: true}))
-
         this.state.processStateIntervalId = setInterval(
           () => this.fetchProcessState(),
           this.state.processStateIntervalTime
         )
-      } else {
-        this.setState({processStateResolved: true})
       }
     }).catch((error) => {
       this.props.actions.handleHTTPError(error)
@@ -313,7 +308,7 @@ class Visualization extends React.Component {
           zoomIn={zoomInFun}
           zoomOut={zoomOutFun}
           capabilities={this.props.capabilities}
-          isReady={this.state.dataResolved && this.state.processStateResolved}
+          isReady={this.state.dataResolved}
           selectionActions={{
             copy: () => this.copySelection(null, true),
             canCopy: this.canCopySelection(),
