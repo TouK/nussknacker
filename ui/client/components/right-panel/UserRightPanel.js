@@ -398,7 +398,7 @@ class UserRightPanel extends Component {
 
   isRunning = () => ProcessStateUtils.isRunning(this.getProcessState())
 
-  getProcessState = () => this.props.isStateLoaded ? this.props.processState : _.get(this.props, "fetchedProcessDetails.state")
+  getProcessState = () => this.props.processState || _.get(this.props, "fetchedProcessDetails.state")
 
   showProperties = () => {
     this.props.actions.displayModalNodeDetails(
@@ -521,7 +521,6 @@ class UserRightPanel extends Component {
 function mapState(state) {
   const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
   return {
-    isStateLoaded: state.graphReducer.stateLoaded,
     processState: state.graphReducer.processState,
     isOpened: state.ui.rightPanelIsOpened,
     fetchedProcessDetails: fetchedProcessDetails,
