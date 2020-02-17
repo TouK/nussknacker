@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -138,6 +139,39 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
       state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription)
+    }
+  }
+
+  test("Should return state with error when state is during canceled and process hasn't action") {
+    val id = prepareProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
+    }
+  }
+
+  test("Should return state with error when state is finished and process hasn't action") {
+    val id = prepareProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Finished) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
+    }
+  }
+
+  test("Should return state with error when state is restarting and process hasn't action") {
+    val id = prepareProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(FlinkStateStatus.Restarting) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
     }
   }
 

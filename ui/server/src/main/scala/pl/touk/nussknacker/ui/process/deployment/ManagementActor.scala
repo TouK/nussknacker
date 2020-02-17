@@ -10,16 +10,17 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{ProcessActionRepository, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.{CatsSyntax, FailurePropagatingActor}
@@ -130,7 +131,10 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
     state.status match {
-      case SimpleStateStatus.NotFound if lastAction.isEmpty => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+      case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
+        ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+      case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished | FlinkStateStatus.Restarting if lastAction.isEmpty =>
+        ProcessStatus.simpleErrorProcessWithoutAction(Some(state))
       case _ => ProcessStatus(state)
     }
 

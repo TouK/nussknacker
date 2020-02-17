@@ -107,6 +107,12 @@ object ProcessStatus {
     previousState = previousState
   )
 
+  def simpleErrorProcessWithoutAction(previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    tooltip = Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction),
+    description = Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction),
+    previousState = previousState
+  )
+
   val unknown: ProcessStatus = simple(SimpleStateStatus.Unknown)
 
   val failedToGet: ProcessStatus = simple(SimpleStateStatus.FailedToGet)

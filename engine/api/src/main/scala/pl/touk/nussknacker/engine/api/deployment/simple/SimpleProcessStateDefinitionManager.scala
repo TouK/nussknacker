@@ -104,4 +104,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   def errorMismatchDeployedVersionDescription: String = "Deployed process mismatch version!"
 
   def errorMissingDeployedVersionDescription: String = "Missing version of deployed process!"
+
+  def errorProcessWithoutAction: String = "Process state error - no actions found!"
 }
