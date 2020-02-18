@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from "react";
-import TimeRangeSection from "./TimeRangeSection";
-import {DurationComponentType} from "./DurationEditor";
-import {Validator} from "../../Validators";
+import React, {useEffect, useState} from "react"
+import TimeRangeSection from "./TimeRangeSection"
+import {DurationComponentType} from "./DurationEditor"
+import {Validator} from "../../Validators"
 
 type Props = {
   encode: Function,

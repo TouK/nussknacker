@@ -1,9 +1,9 @@
-import React from "react";
-import {ExpressionObj} from "../types";
-import moment from "moment";
-import {Validator} from "../../Validators";
+import React from "react"
+import {ExpressionObj} from "../types"
+import moment from "moment"
+import {Validator} from "../../Validators"
 import './timeRange.styl'
-import TimeRangeEditor from "./TimeRangeEditor";
+import TimeRangeEditor from "./TimeRangeEditor"
 
 export type Duration = {
   days: number,

@@ -1,9 +1,9 @@
-import TimeRangeComponent from "./TimeRangeComponent";
-import ValidationLabels from "../../../../../modals/ValidationLabels";
-import React from "react";
-import {Duration, DurationComponentType} from "./DurationEditor";
-import {allValid, Validator} from "../../Validators";
-import {Period} from "./PeriodEditor";
+import TimeRangeComponent from "./TimeRangeComponent"
+import ValidationLabels from "../../../../../modals/ValidationLabels"
+import React from "react"
+import {Duration, DurationComponentType} from "./DurationEditor"
+import {allValid, Validator} from "../../Validators"
+import {Period} from "./PeriodEditor"
 import './timeRange.styl'
 
 type Props = {

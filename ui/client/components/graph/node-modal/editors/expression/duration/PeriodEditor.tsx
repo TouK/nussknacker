@@ -1,15 +1,15 @@
-import {DurationComponentType} from "./DurationEditor";
-import {ExpressionObj} from "../types";
-import {Validator} from "../../Validators";
-import React from "react";
-import moment from "moment";
-import TimeRangeEditor from "./TimeRangeEditor";
+import {DurationComponentType} from "./DurationEditor"
+import {ExpressionObj} from "../types"
+import {Validator} from "../../Validators"
+import React from "react"
+import moment from "moment"
+import TimeRangeEditor from "./TimeRangeEditor"
 
 export type Period = {
   years: number,
   months: number,
   weeks: number,
-  days: number
+  days: number,
 }
 
 type Props = {
