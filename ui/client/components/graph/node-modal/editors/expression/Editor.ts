@@ -9,25 +9,27 @@ import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Error, Validator, validators, validatorType} from "../Validators";
+import {Error, Validator, validators, validatorType} from "../Validators"
+import DurationEditor from "./duration/DurationEditor"
+import PeriodEditor from "./duration/PeriodEditor"
 
 type ParamType = $TodoType
 type ValuesType = $TodoType
 type EditorProps = $TodoType
 
-export type EditorType<P extends EditorProps = EditorProps> = React.ComponentType<P> & {
+export type Editor<P extends EditorProps = EditorProps> = React.ComponentType<P> & {
   switchableTo: (expressionObj: ExpressionObj, values?: ValuesType) => boolean,
   switchableToHint: string,
   notSwitchableToHint: string,
 }
 
 type EditorConfig = {
-  editor: (param?: ParamType, displayRawEditor?) => EditorType,
-  hint: (switchable?: boolean, currentEditor?: EditorType, param?: ParamType) => string,
+  editor: (param?: ParamType, displayRawEditor?) => Editor,
+  hint: (switchable?: boolean, currentEditor?: Editor, param?: ParamType) => string,
   showSwitch?: boolean,
   switchableTo?: (expressionObj: ExpressionObj, param?: ParamType, values?: ValuesType) => boolean,
   values?: (param: ParamType, values: ValuesType) => $TodoType,
-  switchable?: (editor: EditorType, param: ParamType, expressionObj: ExpressionObj) => boolean,
+  switchable?: (editor: Editor, param: ParamType, expressionObj: ExpressionObj) => boolean,
   validators: (param: ParamType, errors: Array<Error>, fieldLabel: string, displayRawEditor?: boolean) => Array<Validator>,
 }
 
@@ -46,6 +48,8 @@ export enum editorTypes {
   TIME = "TimeParameterEditor",
   DATE_TIME = "DateTimeParameterEditor",
   DUAL_PARAMETER_EDITOR = "DualParameterEditor",
+  DURATION_EDITOR = "DurationParameterEditor",
+  PERIOD_EDITOR = "PeriodParameterEditor",
 }
 
 const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> =>
@@ -118,6 +122,18 @@ export const editors: Record<editorTypes, EditorConfig> = {
     editor: () => DateTimeEditor,
     hint: switchable => switchable ? DateTimeEditor.switchableToHint : DateTimeEditor.notSwitchableToHint,
     switchableTo: DateTimeEditor.switchableTo,
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
+  },
+  [editorTypes.DURATION_EDITOR]: {
+    editor: () => DurationEditor,
+    hint: switchable => switchable ? DurationEditor.switchableToHint : DurationEditor.notSwitchableToHint,
+    switchableTo: DurationEditor.switchableTo,
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
+  },
+  [editorTypes.PERIOD_EDITOR]: {
+    editor: () => PeriodEditor,
+    hint: switchable => switchable ? PeriodEditor.switchableToHint : PeriodEditor.notSwitchableToHint,
+    switchableTo: PeriodEditor.switchableTo,
     validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
 }

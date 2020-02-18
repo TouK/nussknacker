@@ -6,7 +6,6 @@ import {errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import EditableExpression from "./editors/expression/EditableExpression"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
-import {editorTypes} from "./editors/expression/EditorType"
 
 const Variable = (props) => {
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition.editor
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
-protected object ParameterTypeEditorDeterminer extends ParameterEditorDeterminer {
+protected object  ParameterTypeEditorDeterminer extends ParameterEditorDeterminer {
 
   override def determineParameterEditor(param: Parameter): Option[ParameterEditor] = {
     param.runtimeClass match {
@@ -33,6 +33,18 @@ protected object ParameterTypeEditorDeterminer extends ParameterEditorDeterminer
       case klazz if klazz == classOf[java.time.LocalDate] => Some(
         DualParameterEditor(
           simpleEditor = DateParameterEditor,
+          defaultMode = DualEditorMode.SIMPLE
+        )
+      )
+      case klazz if klazz == classOf[java.time.Duration] => Some(
+        DualParameterEditor(
+          simpleEditor = DurationParameterEditor,
+          defaultMode = DualEditorMode.SIMPLE
+        )
+      )
+      case klazz if klazz == classOf[java.time.Period] => Some(
+        DualParameterEditor(
+          simpleEditor = PeriodParameterEditor,
           defaultMode = DualEditorMode.SIMPLE
         )
       )
