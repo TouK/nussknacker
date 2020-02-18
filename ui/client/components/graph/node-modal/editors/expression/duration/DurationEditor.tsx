@@ -2,7 +2,7 @@ import React from "react"
 import {ExpressionObj} from "../types"
 import moment from "moment"
 import {Validator} from "../../Validators"
-import './timeRange.styl'
+import "./timeRange.styl"
 import TimeRangeEditor from "./TimeRangeEditor"
 
 export type Duration = {
@@ -42,25 +42,24 @@ export default function DurationEditor(props: Props) {
   function decode(expression: string): Duration {
     const isoFormattedDuration = SPEL_DURATION_DECODE_REGEX.exec(expression)[1]
     const duration = moment.duration(isoFormattedDuration)
-    // @ts-ignore
     return {
-      days: duration._data.days,
-      hours: duration._data.hours,
-      minutes: duration._data.minutes,
+      days: duration.days() || 0,
+      hours: duration.hours() || 0,
+      minutes: duration.minutes() || 0,
     }
   }
 
   const components: Array<DurationComponentType> = [
     {
-      label: "d",
+      label: "days",
       fieldName: "days"
     },
     {
-      label: "h",
+      label: "hours",
       fieldName: "hours",
     },
     {
-      label: "m",
+      label: "minutes",
       fieldName: "minutes"
     },
   ]

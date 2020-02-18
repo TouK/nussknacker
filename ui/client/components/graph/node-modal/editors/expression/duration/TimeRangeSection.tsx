@@ -4,7 +4,7 @@ import React from "react"
 import {Duration, DurationComponentType} from "./DurationEditor"
 import {allValid, Validator} from "../../Validators"
 import {Period} from "./PeriodEditor"
-import './timeRange.styl'
+import "./timeRange.styl"
 
 type Props = {
   components: Array<DurationComponentType>,

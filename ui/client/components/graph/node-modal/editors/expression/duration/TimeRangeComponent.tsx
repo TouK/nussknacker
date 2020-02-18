@@ -1,5 +1,5 @@
 import React from "react"
-import './timeRange.styl'
+import "./timeRange.styl"
 import classNames from "classnames"
 
 type Props = {

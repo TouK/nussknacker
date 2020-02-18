@@ -8,7 +8,6 @@ import TimeRangeEditor from "./TimeRangeEditor"
 export type Period = {
   years: number,
   months: number,
-  weeks: number,
   days: number,
 }
 
@@ -37,30 +36,24 @@ export default function PeriodEditor(props: Props) {
   function decode(expression: string): Period {
     const isoFormattedPeriod = SPEL_PERIOD_DECODE_REGEX.exec(expression)[1]
     const period = moment.duration(isoFormattedPeriod)
-    // @ts-ignore
     return {
-      years: period._data.years || 0,
-      months: period._data.months || 0,
-      weeks: period._data.weeks || 0,
-      days: period._data.days || 0,
+      years: period.years() || 0,
+      months: period.months() || 0,
+      days: period.days() || 0,
     }
   }
 
   const components: Array<DurationComponentType> = [
     {
-      label: "y",
+      label: "years",
       fieldName: "years"
     },
     {
-      label: "m",
+      label: "months",
       fieldName: "months",
     },
     {
-      label: "w",
-      fieldName: "weeks"
-    },
-    {
-      label: "d",
+      label: "days",
       fieldName: "days"
     },
   ]

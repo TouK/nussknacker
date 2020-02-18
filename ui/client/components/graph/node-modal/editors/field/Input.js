@@ -2,6 +2,7 @@ import PropTypes from "prop-types"
 import React from "react"
 import {allValid} from "../Validators"
 import ValidationLabels from "../../../../modals/ValidationLabels"
+import classNames from "classnames"
 
 export const Input = (props) => {
   const {
@@ -18,8 +19,10 @@ export const Input = (props) => {
             type={type}
             readOnly={readOnly}
             placeholder={placeholder}
-            className={`${!showValidation || allValid(validators, [formattedValue ? formattedValue : value]) ? "node-input" : "node-input node-input-with-error"}` +
-            ` ${inputClassName}`}
+            className={classNames([
+              !showValidation || allValid(validators, [formattedValue ? formattedValue : value]) ? "node-input" : "node-input node-input-with-error",
+              inputClassName
+            ])}
             value={value || ""}
             onChange={onChange}
           />

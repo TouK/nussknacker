@@ -2,7 +2,7 @@ import _ from "lodash"
 import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableExpression from "./EditableExpression"
-import {editorTypes} from "./Editors"
+import {editorTypes} from "./Editor"
 
 type Props = {
   fieldName: string,

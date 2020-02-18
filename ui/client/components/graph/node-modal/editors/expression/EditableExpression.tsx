@@ -1,6 +1,6 @@
 import React from "react"
 import ProcessUtils from "../../../../../common/ProcessUtils"
-import {dualEditorMode, editors, editorTypes} from "./Editors"
+import {dualEditorMode, editors, editorTypes} from "./Editor"
 import SwitchIcon from "./SwitchIcon"
 import FixedValuesEditor from "./FixedValuesEditor"
 import _ from "lodash"

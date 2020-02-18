@@ -9,27 +9,27 @@ import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Error, Validator, validators, validatorType} from "../Validators";
-import DurationEditor from "./duration/DurationEditor";
-import PeriodEditor from "./duration/PeriodEditor";
+import {Error, Validator, validators, validatorType} from "../Validators"
+import DurationEditor from "./duration/DurationEditor"
+import PeriodEditor from "./duration/PeriodEditor"
 
 type ParamType = $TodoType
 type ValuesType = $TodoType
 type EditorProps = $TodoType
 
-export type Editors<P extends EditorProps = EditorProps> = React.ComponentType<P> & {
+export type Editor<P extends EditorProps = EditorProps> = React.ComponentType<P> & {
   switchableTo: (expressionObj: ExpressionObj, values?: ValuesType) => boolean,
   switchableToHint: string,
   notSwitchableToHint: string,
 }
 
 type EditorConfig = {
-  editor: (param?: ParamType, displayRawEditor?) => Editors,
-  hint: (switchable?: boolean, currentEditor?: Editors, param?: ParamType) => string,
+  editor: (param?: ParamType, displayRawEditor?) => Editor,
+  hint: (switchable?: boolean, currentEditor?: Editor, param?: ParamType) => string,
   showSwitch?: boolean,
   switchableTo?: (expressionObj: ExpressionObj, param?: ParamType, values?: ValuesType) => boolean,
   values?: (param: ParamType, values: ValuesType) => $TodoType,
-  switchable?: (editor: Editors, param: ParamType, expressionObj: ExpressionObj) => boolean,
+  switchable?: (editor: Editor, param: ParamType, expressionObj: ExpressionObj) => boolean,
   validators: (param: ParamType, errors: Array<Error>, fieldLabel: string, displayRawEditor?: boolean) => Array<Validator>,
 }
 
