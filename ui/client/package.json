@@ -35,6 +35,7 @@
     "lodash": "~4.17.15",
     "matomo-tracker": "^2.2.1",
     "moment": "~2.24.0",
+    "moment-duration-format": "^2.3.2",
     "npm-font-open-sans": "~1.1.0",
     "prop-types": "~15.7.2",
     "query-string": "~6.8.1",

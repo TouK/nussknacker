@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.definition.editor
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time._
 
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.definition._
@@ -88,6 +88,30 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
     determiner.determineEditor(param) shouldBe DualParameterEditor(
       simpleEditor = StringParameterEditor,
       defaultMode = DualEditorMode.RAW
+    )
+  }
+
+  test("determine editor by type Duration") {
+    val param = Parameter[Duration]("param")
+    val config = ParameterConfig.empty
+
+    val determiner = ParameterEditorDeterminerChain(config)
+
+    determiner.determineEditor(param) shouldBe DualParameterEditor(
+      simpleEditor = DurationParameterEditor,
+      defaultMode = DualEditorMode.SIMPLE
+    )
+  }
+
+  test("determine editor by type Period") {
+    val param = Parameter[Period]("param")
+    val config = ParameterConfig.empty
+
+    val determiner = ParameterEditorDeterminerChain(config)
+
+    determiner.determineEditor(param) shouldBe DualParameterEditor(
+      simpleEditor = PeriodParameterEditor,
+      defaultMode = DualEditorMode.SIMPLE
     )
   }
 

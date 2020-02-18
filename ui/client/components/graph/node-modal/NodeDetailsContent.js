@@ -23,8 +23,8 @@ import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessI
 import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
-import {editorTypes} from "./editors/expression/EditorType"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
+import {editorTypes} from "./editors/expression/Editor"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
