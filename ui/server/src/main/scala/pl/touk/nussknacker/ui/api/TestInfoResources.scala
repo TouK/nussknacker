@@ -66,6 +66,8 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
                   HttpEntity(resp)
                 }
               }
+            } ~ path("capabilities") {
+              complete(TestingCapabilities(false, false))
             }
           }
         }
