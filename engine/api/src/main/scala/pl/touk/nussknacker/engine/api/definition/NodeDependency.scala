@@ -69,6 +69,8 @@ case object DurationParameterEditor extends SimpleParameterEditor
 
 case object PeriodParameterEditor extends SimpleParameterEditor
 
+case object CronParameterEditor extends SimpleParameterEditor
+
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue]) extends SimpleParameterEditor
 
 @JsonCodec case class FixedExpressionValue(expression: String, label: String)

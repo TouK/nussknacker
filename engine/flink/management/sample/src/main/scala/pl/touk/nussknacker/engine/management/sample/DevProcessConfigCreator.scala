@@ -6,6 +6,7 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
+import com.cronutils.model.Cron
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
@@ -558,7 +559,7 @@ class DatesTypesService extends Service with Serializable {
              @ParamName("zonedDataTimeParam") zonedDataTimeParam: ZonedDateTime,
              @ParamName("durationParam") duration: Duration,
              @ParamName("periodParam") period: Period,
-             @ParamName("cronScheduleParam") cronScheduleParam: String // TODO: add @Editor("cronSchedule")
+             @ParamName("cronScheduleParam") cronScheduleParam: Cron
             ): Future[Unit] = {
     ???
   }

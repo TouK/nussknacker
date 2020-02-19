@@ -12,6 +12,7 @@ import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
 import {Error, Validator, validators, validatorType} from "../Validators"
 import DurationEditor from "./duration/DurationEditor"
 import PeriodEditor from "./duration/PeriodEditor"
+import CronEditor from "./Cron/CronEditor";
 
 type ParamType = $TodoType
 type ValuesType = $TodoType
@@ -50,6 +51,7 @@ export enum editorTypes {
   DUAL_PARAMETER_EDITOR = "DualParameterEditor",
   DURATION_EDITOR = "DurationParameterEditor",
   PERIOD_EDITOR = "PeriodParameterEditor",
+  CRON_EDITOR = "CronParameterEditor",
 }
 
 const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> =>
@@ -136,4 +138,10 @@ export const editors: Record<editorTypes, EditorConfig> = {
     switchableTo: PeriodEditor.switchableTo,
     validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
   },
+  [editorTypes.CRON_EDITOR]: {
+    editor: () => CronEditor,
+    hint: switchable => switchable ? CronEditor.switchableToHint : CronEditor.notSwitchableToHint,
+    switchableTo: CronEditor.switchableTo,
+    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
+  }
 }
