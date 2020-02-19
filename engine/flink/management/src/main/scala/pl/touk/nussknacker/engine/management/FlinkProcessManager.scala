@@ -114,7 +114,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
       case GraphProcess(processAsJson) =>
         List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson)
       case CustomProcess(_) =>
-        List(processVersion.processName.value, configPart, buildInfoJson)
+        List(processVersion.processName.value, toJsonString(processVersion), configPart, buildInfoJson)
     }
   }
   private def toJsonString(processVersion: ProcessVersion): String = {
