@@ -129,13 +129,14 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
     val groups = DefinitionPreparer.prepareNodesToAdd(
       user = TestFactory.adminUser("aa"),
-      processDefinition = processDefinition,
+      processDefinition = uiProcessDefinition,
       isSubprocess = false,
-      subprocessInputs = subprocessInputs,
       defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = nodesConfig,
       nodeCategoryMapping = nodeCategoryMapping,
-      typesForCategories = processTypesForCategories
+      typesForCategories = processTypesForCategories,
+      sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
+      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
     )
     groups
   }
@@ -143,15 +144,17 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
   private def prepareGroupsOfNodes(services: List[String]): List[NodeGroup] = {
 
+    val processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
     val groups = DefinitionPreparer.prepareNodesToAdd(
       user = TestFactory.adminUser("aa"),
-      processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s)),
+      processDefinition = UIProcessDefinition(processDefinition, Map(), Set.empty),
       isSubprocess = false,
-      subprocessInputs = Map(),
       defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = Map(),
       nodeCategoryMapping =  Map(),
-      typesForCategories = processTypesForCategories
+      typesForCategories = processTypesForCategories,
+      sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
+      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
     )
     groups
   }

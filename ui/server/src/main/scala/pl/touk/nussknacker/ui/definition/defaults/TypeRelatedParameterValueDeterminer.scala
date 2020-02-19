@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.definition.defaults
 
-import pl.touk.nussknacker.engine.api.defaults.{NodeDefinition, ParameterDefaultValueDeterminer}
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
+import pl.touk.nussknacker.ui.definition.UIParameter
 
-object TypeRelatedParameterValueDeterminer extends ParameterDefaultValueDeterminer {
+protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultValueDeterminer {
 
-  override def determineParameterDefaultValue(nodeDefinition: NodeDefinition,
-                                              parameter: Parameter): Option[String] = {
+  override def determineParameterDefaultValue(nodeDefinition: UINodeDefinition,
+                                              parameter: UIParameter): Option[String] = {
     val klass = parameter.typ match {
       case s: SingleTypingResult =>
         Some(s.objType.klass)

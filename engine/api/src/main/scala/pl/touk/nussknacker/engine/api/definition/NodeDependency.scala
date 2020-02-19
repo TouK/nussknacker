@@ -47,8 +47,6 @@ case class Parameter(name: String,
 
   def isLazyParameter: Boolean = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
 
-  def isOptional: Boolean = !validators.contains(MandatoryValueValidator)
-
 }
 
 @ConfiguredJsonCodec sealed trait ParameterEditor

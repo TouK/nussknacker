@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.defaults.NodeDefinition
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
+import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig, UINodeDefinition}
 
 import scala.reflect.ClassTag
 
@@ -39,7 +38,7 @@ class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
   }
 
   private def dummyParam[T: ClassTag](nodeName: String, paramName: String) =
-    NodeDefinition(nodeName, List(Parameter[T](paramName)))
+    UINodeDefinition(nodeName, List(UIParameter(Parameter[T](paramName), ParameterConfig.empty)))
 
   private def dummyExpectedParam(paramName: String, value: Any) = {
     evaluatedparam.Parameter(paramName, Expression("spel", value.toString))
