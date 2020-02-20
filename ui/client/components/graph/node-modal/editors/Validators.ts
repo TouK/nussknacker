@@ -36,7 +36,16 @@ export function allValid(validators: Array<Validator>, values: Array<any>): bool
   return validators.every(validator => validator.isValid(...values))
 }
 
+
+//QUICK_FIX for not displaying MandatoryValueParamterValidator messages next to FE mandatoryValueValidator
+const alwaysOkValidator = {
+  isValid: _ => true,
+  message: null,
+  description: null
+};
+
 export const validators: Record<validatorType, (errors?: Array<Error>, fieldName?: string) => Validator> = {
   [validatorType.MANDATORY_VALUE_VALIDATOR]: () => mandatoryValueValidator,
-  [validatorType.ERROR_VALIDATOR]: (errors, fieldName) => errorValidator(errors, fieldName),
+  [validatorType.ERROR_VALIDATOR]: (errors, fieldName) =>
+    errorValidator(errors, fieldName).message === "Empty expression for mandatory parameter" ? alwaysOkValidator : errorValidator(errors, fieldName),
 }
