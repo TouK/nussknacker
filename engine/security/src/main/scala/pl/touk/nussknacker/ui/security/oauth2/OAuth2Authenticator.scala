@@ -31,9 +31,9 @@ object OAuth2Authenticator extends LazyLogging {
 }
 
 object OAuth2ErrorHandler {
-  case class OAuth2AuthenticationRejection(body: String) extends Exception
-  case class OAuth2AccessTokenRejection(body: String) extends Exception
-  case class OAuth2ServerError(body: String) extends Exception
+  case class OAuth2AuthenticationRejection(body: String) extends Exception(body)
+  case class OAuth2AccessTokenRejection(body: String) extends Exception(body)
+  case class OAuth2ServerError(body: String) extends Exception(body)
 
   def apply(t: Throwable): Boolean = t match {
     case _: OAuth2AuthenticationRejection | _: OAuth2AccessTokenRejection => true
