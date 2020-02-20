@@ -19,7 +19,7 @@ class DefaultValueDeterminerChainTest extends FunSuite with Matchers {
 
   private val node = UINodeDefinition("node1", List(uiParamInt, uiFixedValuesParam, uiParamWithConfig, uiOptionalParam))
 
-  private val determiner = DefaultValueDeterminerChain(ParamDefaultValueConfig(confMap), ModelClassLoader.empty)
+  private val determiner = DefaultValueDeterminerChain(ParamDefaultValueConfig(confMap))
 
   test("determine default value by type") {
     determiner.determineParameterDefaultValue(node, uiParamInt) shouldBe Some("0")

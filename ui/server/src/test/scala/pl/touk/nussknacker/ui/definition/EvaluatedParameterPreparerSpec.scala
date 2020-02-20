@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig, UINodeDefinition}
 
 import scala.reflect.ClassTag
@@ -20,8 +19,7 @@ class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
     DefaultValueDeterminerChain(
       ParamDefaultValueConfig(
         Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> ParameterConfig(defaultValue = Some(DEFAULT_PARAMETER_VALUE), editor = None, None)))
-      ),
-      ModelClassLoader.empty
+      )
     )
   )
 
