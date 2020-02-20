@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.ui.definition.defaults
 
-import pl.touk.nussknacker.engine.api.defaults.{NodeDefinition, ParameterDefaultValueDeterminer}
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.ui.definition.UIParameter
 
-class ConfigParameterDefaultValueDeterminer(config: ParamDefaultValueConfig) extends ParameterDefaultValueDeterminer {
-  override def determineParameterDefaultValue(nodeDefinition: NodeDefinition,
-                                              parameter: Parameter): Option[String] = {
+protected class ConfigParameterDefaultValueDeterminer(config: ParamDefaultValueConfig) extends ParameterDefaultValueDeterminer {
+  override def determineParameterDefaultValue(nodeDefinition: UINodeDefinition,
+                                              parameter: UIParameter): Option[String] = {
     config.getNodeValue(nodeDefinition.id, parameter.name)
   }
 
