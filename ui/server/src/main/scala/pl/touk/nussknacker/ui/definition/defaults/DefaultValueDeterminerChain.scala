@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.definition.defaults
 
-import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.ui.definition.UIParameter
 
 object DefaultValueDeterminerChain {
-  def apply(defaultParametersValues: ParamDefaultValueConfig, modelClassLoader: ModelClassLoader): DefaultValueDeterminerChain = {
+  def apply(defaultParametersValues: ParamDefaultValueConfig): DefaultValueDeterminerChain = {
     val strategies = Seq(
       new ConfigParameterDefaultValueDeterminer(defaultParametersValues),
       OptionalityBasedDefaultValueDeterminer,

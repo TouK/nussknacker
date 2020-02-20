@@ -50,7 +50,7 @@ object UIProcessObjects {
     val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
     val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.params.getOrElse(Map.empty)) })
-    val defaultParametersFactory = DefaultValueDeterminerChain(defaultParametersValues, modelDataForType.modelClassLoader)
+    val defaultParametersFactory = DefaultValueDeterminerChain(defaultParametersValues)
 
     val nodeCategoryMapping = processConfig.getOrElse[Map[String, Option[String]]]("nodeCategoryMapping", Map.empty)
     val additionalPropertiesConfig = processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty)
