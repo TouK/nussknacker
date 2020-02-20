@@ -318,4 +318,25 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       validator shouldBe Json.arr()
     }
   }
+
+  it("return default value based on editor possible values") {
+    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val defaultExpression: Json = responseAs[Json].hcursor
+        .downField("nodesToAdd")
+        .downAt(_.hcursor.get[String]("name").right.value == "enrichers")
+        .downField("possibleNodes")
+        .downAt(_.hcursor.get[String]("label").right.value == "echoEnumService")
+        .downField("node")
+        .downField("service")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "id")
+        .downField("expression")
+        .downField("expression")
+        .focus.get
+
+      defaultExpression shouldBe Json.fromString("T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE")
+    }
+  }
 }

@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.definition.defaults
 
-import pl.touk.nussknacker.engine.api.defaults.{NodeDefinition, ParameterDefaultValueDeterminer}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.ui.definition.UIParameter
 
-object OptionalityBasedDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
+protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
 
-  override def determineParameterDefaultValue(nodeDefinition: NodeDefinition, parameter: Parameter): Option[String] =
+  override def determineParameterDefaultValue(nodeDefinition: UINodeDefinition, parameter: UIParameter): Option[String] =
     if (parameter.isOptional) Some("") else None
 
 }

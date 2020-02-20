@@ -5,14 +5,14 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, Parameter, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.graph.evaluatedparam
@@ -35,19 +35,22 @@ object UIProcessObjects {
                               typesForCategories: ProcessTypesForCategories): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
-    val chosenProcessDefinition = modelDataForType.processDefinition
+    val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
     val fixedNodesConfig = ProcessDefinitionExtractor.extractNodesConfig(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
-    val uiProcessDefinition: UIProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions)
+    val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions)
+
+    val sinkAdditionalData = chosenProcessDefinition.sinkFactories.map(e => (e._1, e._2._2))
+    val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.map(e => (e._1, e._2._2))
 
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
 
     val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
     val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.params.getOrElse(Map.empty)) })
-    val defaultParametersFactory = DefaultValueDeterminerChain(defaultParametersValues, modelDataForType.modelClassLoader)
+    val defaultParametersFactory = DefaultValueDeterminerChain(defaultParametersValues)
 
     val nodeCategoryMapping = processConfig.getOrElse[Map[String, Option[String]]]("nodeCategoryMapping", Map.empty)
     val additionalPropertiesConfig = processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty)
@@ -55,13 +58,14 @@ object UIProcessObjects {
     UIProcessObjects(
       nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
         user = user,
-        processDefinition = chosenProcessDefinition,
+        processDefinition = uiProcessDefinition,
         isSubprocess = isSubprocess,
-        subprocessInputs = subprocessInputs,
         defaultsStrategy = defaultParametersFactory,
         nodesConfig = nodesConfig,
         nodeCategoryMapping = nodeCategoryMapping,
-        typesForCategories = typesForCategories
+        typesForCategories = typesForCategories,
+        sinkAdditionalData = sinkAdditionalData,
+        customTransformerAdditionalData = customTransformerAdditionalData
       ),
       processDefinition = uiProcessDefinition,
       nodesConfig = nodesConfig,
@@ -117,8 +121,11 @@ object UIProcessObjects {
 @JsonCodec(encodeOnly = true) case class UIObjectDefinition(parameters: List[UIParameter],
                               returnType: Option[TypingResult],
                               categories: List[String],
-                              nodeConfig: SingleNodeConfig)
+                              nodeConfig: SingleNodeConfig) {
 
+  def hasNoReturn : Boolean = returnType.isEmpty
+
+}
 
 object UIObjectDefinition {
   def apply(objectDefinition: ObjectDefinition): UIObjectDefinition = {
@@ -136,7 +143,11 @@ object UIObjectDefinition {
                                                      editor: ParameterEditor,
                                                      validators: List[ParameterValidator],
                                                      additionalVariables: Map[String, TypingResult],
-                                                     branchParam: Boolean)
+                                                     branchParam: Boolean) {
+
+  def isOptional: Boolean = !validators.contains(MandatoryValueValidator)
+
+}
 
 object UIParameter {
   def apply(parameter: Parameter, paramConfig: ParameterConfig): UIParameter = {

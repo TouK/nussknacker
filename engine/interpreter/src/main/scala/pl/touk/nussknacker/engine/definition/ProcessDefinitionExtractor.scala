@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
