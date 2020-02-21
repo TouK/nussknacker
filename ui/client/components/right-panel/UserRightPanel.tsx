@@ -13,8 +13,11 @@ import {ZoomButtons} from "./ZoomButtons"
 import ViewPanel from "./panels/ViewPanel"
 import {toggleRightPanel} from "../../actions/nk/ui/layout"
 import Panels1 from "./Panels1"
+import ProcessPanels from "./panels/ProcessPanel"
 import DeploymentPanel from "./panels/DeploymentPanel"
 import {RootState} from "../../reducers/index"
+import {hot} from "react-hot-loader"
+import {getFetchedProcessDetails} from "./selectors"
 
 export type OwnProps = {
   isStateLoaded: boolean,
@@ -71,6 +74,13 @@ class UserRightPanel extends Component<Props> {
             <ViewPanel/>
             <DeploymentPanel capabilities={capabilities} fetchedProcessState={fetchedProcessState}/>
 
+            <ProcessPanels
+              capabilities={capabilities}
+              exportGraph={exportGraph}
+              isStateLoaded={isStateLoaded}
+              processState={processState}
+            />
+
             <Panels1
               capabilities={capabilities}
               exportGraph={exportGraph}
@@ -91,14 +101,10 @@ class UserRightPanel extends Component<Props> {
 
 function mapState(state: RootState, props: OwnProps) {
   const {processState, isStateLoaded} = props
-  const {graphReducer, ui} = state
-  const {fetchedProcessDetails} = graphReducer
-  const fetchedProcessState = isStateLoaded ? processState : fetchedProcessDetails?.state
-
   return {
-    isOpened: ui.rightPanelIsOpened,
-    fetchedProcessDetails,
-    fetchedProcessState,
+    isOpened: state.ui.rightPanelIsOpened,
+    fetchedProcessDetails: getFetchedProcessDetails(state),
+    fetchedProcessState: isStateLoaded ? processState : getFetchedProcessDetails(state)?.state,
   }
 }
 
@@ -108,4 +114,4 @@ const mapDispatch = {
 
 export type StateProps = ReturnType<typeof mapState> & typeof mapDispatch
 
-export default connect(mapState, mapDispatch)(UserRightPanel)
+export default hot(module)(connect(mapState, mapDispatch)(UserRightPanel))

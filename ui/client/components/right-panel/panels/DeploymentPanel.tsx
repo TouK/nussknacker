@@ -3,7 +3,6 @@ import React from "react"
 import {ExtractedPanel} from "../ExtractedPanel"
 import {Props as PanelProps} from "../UserRightPanel"
 import {RootState} from "../../../reducers/index"
-import ProcessUtils from "../../../common/ProcessUtils"
 import ProcessStateUtils from "../../Process/ProcessStateUtils"
 import {connect} from "react-redux"
 import HttpService from "../../../http/HttpService"
@@ -11,6 +10,7 @@ import InlinedSvgs from "../../../assets/icons/InlinedSvgs"
 import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../actions/nk/tooltips"
 import {showMetrics} from "../../../actions/nk/showMetrics"
 import {toggleProcessActionDialog} from "../../../actions/nk/toggleProcessActionDialog"
+import {hasError, isLatestProcessVersion, isSubprocess, getProcessId, isPristine} from "../selectors"
 
 type PropsPick = Pick<PanelProps,
   | "capabilities"
@@ -58,22 +58,15 @@ function DeploymentPanel(props: Props) {
 }
 
 function mapState(state: RootState, props: OwnProps) {
-  const {graphReducer} = state
   const {fetchedProcessState} = props
-
-  const nothingToSave = ProcessUtils.nothingToSave(state)
-  const processIsLatestVersion = graphReducer.fetchedProcessDetails?.isLatestVersion
-  const processToDisplay = graphReducer.processToDisplay || {}
-  const hasErrors = !ProcessUtils.hasNoErrors(processToDisplay)
-
-  const deployPossible = processIsLatestVersion && !hasErrors && nothingToSave && ProcessStateUtils.canDeploy(fetchedProcessState)
+  const saveDisabled = isLatestProcessVersion(state) && isPristine(state)
+  const hasErrors = hasError(state)
   return {
-    processId: graphReducer.fetchedProcessDetails?.name,
-    isSubprocess: graphReducer.processToDisplay?.properties?.isSubprocess as boolean,
-    saveDisabled: nothingToSave && processIsLatestVersion,
-
+    processId: getProcessId(state),
+    isSubprocess: isSubprocess(state),
+    deployPossible: saveDisabled && !hasErrors && ProcessStateUtils.canDeploy(fetchedProcessState),
+    saveDisabled,
     hasErrors,
-    deployPossible,
   }
 }
 

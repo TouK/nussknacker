@@ -1,7 +1,6 @@
 import {PanelConfig} from "./PanelConfig"
 import React from "react"
 import {ExtractedPanel} from "./ExtractedPanel"
-import {getProcessPanel} from "./panelConfigs/GetProcessPanel"
 import {getEditPanel} from "./panelConfigs/GetEditPanel"
 import {getTestPanel} from "./panelConfigs/GetTestPanel"
 import {getGroupPanel} from "./panelConfigs/GetGroupPanel"
@@ -11,6 +10,7 @@ import ProcessUtils from "../../common/ProcessUtils"
 import ProcessStateUtils from "../Process/ProcessStateUtils"
 import {connect} from "react-redux"
 import {EspActionsProps, mapDispatchWithEspActions} from "../../actions/ActionsUtils"
+import {hot} from "react-hot-loader"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "capabilities"
@@ -22,25 +22,9 @@ type OwnPropsPick = Pick<PanelOwnProps,
 
 export function getConfig(own: OwnPropsPick, props: StateProps): PanelConfig[] {
   const {capabilities} = own
-  const {actions, processId, deployPossible, saveDisabled, isSubprocess, hasErrors, fetchedProcessState} = props
+  const {actions, processId, isSubprocess, hasErrors} = props
 
-  const {exportGraph} = own
-  const {featuresSettings, processToDisplay, fetchedProcessDetails, businessView, versionId, canExport} = props
-  const processPanel = getProcessPanel({
-    actions,
-    businessView,
-    canExport,
-    capabilities,
-    deployPossible,
-    exportGraph,
-    featuresSettings,
-    fetchedProcessDetails,
-    fetchedProcessState,
-    processId,
-    processToDisplay,
-    saveDisabled,
-    versionId,
-  })
+  const {featuresSettings, processToDisplay} = props
 
   const {graphLayoutFunction, selectionActions} = own
   const {nodeToDisplay, history, undoRedoActions, keyActionsAvailable, selectionState} = props
@@ -80,7 +64,7 @@ export function getConfig(own: OwnPropsPick, props: StateProps): PanelConfig[] {
     nodeToDisplay,
   })
 
-  return [processPanel, editPanel, testPanel, groupPanel]
+  return [editPanel, testPanel, groupPanel]
 }
 
 type OwnProps = OwnPropsPick

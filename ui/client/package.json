@@ -74,6 +74,7 @@
     "redux": "^4.0.5",
     "redux-devtools-extension": "~2.13.8",
     "redux-thunk": "~2.3.0",
+    "reselect": "^4.0.0",
     "svg-pan-zoom": "~3.6.0",
     "url-join": "^4.0.1",
     "url-loader": "^3.0.0",

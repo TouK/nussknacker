@@ -1,13 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {connect} from "react-redux"
-import ProcessUtils from "../../../common/ProcessUtils"
 import {RootState} from "../../../reducers/index"
 import {fetchProcessToDisplay} from "../../../actions/nk/process"
 import {businessViewChanged} from "../../../actions/nk/ui/layout"
 import {RightPanel} from "../RightPanel"
 import Switch from "react-switch"
 import {bindActionCreators} from "redux"
+import {isPristine, getProcessId, getProcessVersionId, isBusinessView} from "../selectors"
 
 type OwnProps = {}
 
@@ -43,15 +43,12 @@ function ViewPanel(props: Props) {
   )
 }
 
-function mapState(state: RootState) {
-  const {graphReducer} = state
-  return {
-    nothingToSave: ProcessUtils.nothingToSave(state),
-    processId: graphReducer.fetchedProcessDetails?.name,
-    versionId: graphReducer.fetchedProcessDetails?.processVersionId,
-    businessView: graphReducer.businessView,
-  }
-}
+const mapState = (state: RootState) => ({
+  nothingToSave: isPristine(state),
+  processId: getProcessId(state),
+  versionId: getProcessVersionId(state),
+  businessView: isBusinessView(state),
+})
 
 const mapDispatch = (dispatch) => bindActionCreators({
   businessViewChanged,
