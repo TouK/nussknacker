@@ -1,7 +1,7 @@
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 
-type SettingsState = {
+export type SettingsState = {
   loggedUser: Partial<User>,
   featuresSettings: $TodoType,
   authenticationSettings: $TodoType,

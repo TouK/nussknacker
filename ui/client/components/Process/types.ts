@@ -18,6 +18,8 @@ export type ProcessActionType = {
   buildInfo?: {},
 }
 
+type ProcessHistoryEntry = $TodoType
+
 export type ProcessVersionType = {
   createDate: Date,
   user: string,
@@ -42,6 +44,7 @@ export interface ProcessType {
   lastAction?: ProcessActionType,
   lastDeployedAction?: ProcessActionType,
   state: ProcessStateType,
+  history?: ProcessHistoryEntry[],
 }
 
 export type ProcessStateType = {

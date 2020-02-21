@@ -12,7 +12,6 @@ import Panels from "./Panels"
 import {ZoomButtons} from "./ZoomButtons"
 import ViewPanel from "./panels/ViewPanel"
 import {toggleRightPanel} from "../../actions/nk/ui/layout"
-import Panels1 from "./Panels1"
 import ProcessPanels from "./panels/ProcessPanel"
 import DeploymentPanel from "./panels/DeploymentPanel"
 import {RootState} from "../../reducers/index"
@@ -20,6 +19,10 @@ import {hot} from "react-hot-loader"
 import {getFetchedProcessDetails, getFetchedProcessState} from "./selectors"
 import EditPanel from "./panels/EditPanel"
 import {isRightPanelOpened} from "./selectors-ui"
+import TestPanel from "./panels/TestPanel"
+import GroupPanel from "./panels/GroupPanel"
+
+export type CapabilitiesType = $TodoType
 
 export type OwnProps = {
   isStateLoaded: boolean,
@@ -28,7 +31,7 @@ export type OwnProps = {
   exportGraph: () => $TodoType,
   zoomIn: () => void,
   zoomOut: () => void,
-  capabilities: $TodoType,
+  capabilities: CapabilitiesType,
   isReady: boolean,
   selectionActions: {
     copy: (event: SyntheticEvent) => void,
@@ -84,22 +87,12 @@ class UserRightPanel extends Component<Props> {
               exportGraph={exportGraph}
             />
             <EditPanel
-
               capabilities={capabilities}
-              isStateLoaded={isStateLoaded}
-              processState={processState}
               graphLayoutFunction={graphLayoutFunction}
               selectionActions={selectionActions}
             />
-
-            <Panels1
-              capabilities={capabilities}
-              isStateLoaded={isStateLoaded}
-              processState={processState}
-              graphLayoutFunction={graphLayoutFunction}
-              exportGraph={exportGraph}
-              selectionActions={selectionActions}
-            />
+            <TestPanel capabilities={capabilities}/>
+            <GroupPanel capabilities={capabilities}/>
             <Panels showDetails={capabilities.write}/>
           </Scrollbars>
         </SpinnerWrapper>

@@ -1,8 +1,6 @@
 import {ProcessType} from "../Process/types"
 import {NodeId} from "../../actions/nk/models"
 
-type FeatureSettingsState = $TodoType
-
 export type ProcessPropertiesState = {
   id: NodeId,
   isSubprocess: boolean,
@@ -30,9 +28,10 @@ export type GraphState = {
   businessView: boolean,
   nodeToDisplay: NodeToDisplay,
   selectionState?: SelectionState,
+  groupingState?: $TodoType,
   history: History,
-}
-
-export type SettingsState = {
-  featuresSettings: FeatureSettingsState,
+  layout?: $TodoType,
+  testCapabilities?: $TodoType,
+  testResults: $TodoType,
+  processCounts: $TodoType,
 }

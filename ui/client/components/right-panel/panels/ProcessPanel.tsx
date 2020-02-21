@@ -4,7 +4,6 @@ import {ExtractedPanel} from "../ExtractedPanel"
 import {OwnProps as PanelOwnProps} from "../UserRightPanel"
 import {RootState} from "../../../reducers/index"
 import ProcessUtils from "../../../common/ProcessUtils"
-import ProcessStateUtils from "../../Process/ProcessStateUtils"
 import {connect} from "react-redux"
 import * as DialogMessages from "../../../common/DialogMessages"
 import HttpService from "../../../http/HttpService"
@@ -13,7 +12,7 @@ import {Archive} from "../../../containers/Archive"
 import {events} from "../../../analytics/TrackingEvents"
 import Dialogs from "../../modals/Dialogs"
 import InlinedSvgs from "../../../assets/icons/InlinedSvgs"
-import {get, isEmpty} from "lodash"
+import {isEmpty} from "lodash"
 import {exportProcessToJSON, exportProcessToPdf, importFiles} from "../../../actions/nk/importExport"
 import {reportEvent} from "../../../actions/nk/reportEvent"
 import {toggleConfirmDialog} from "../../../actions/nk/ui/toggleConfirmDialog"
@@ -22,14 +21,14 @@ import {bindActionCreators} from "redux"
 import {
   hasError,
   getProcessToDisplay,
-  getFetchedProcessDetails,
   getProcessId,
   getProcessVersionId,
   isBusinessView,
   getFeatureSettings,
-  getFetchedProcessState,
   isDeployPossible,
   isSaveDisabled,
+  hasOneVersion,
+  isRunning,
 } from "../selectors"
 
 type OwnPropsPick = Pick<PanelOwnProps,
@@ -39,18 +38,18 @@ type OwnPropsPick = Pick<PanelOwnProps,
   | "exportGraph">
 
 type OwnProps = OwnPropsPick
-export type Props = OwnProps & StateProps
+type Props = OwnProps & StateProps
 
-export function ProcessPanel(props: Props) {
+function ProcessPanel(props: Props) {
   const {
-    capabilities, exportGraph, processId, deployPossible, saveDisabled, fetchedProcessState, featuresSettings,
-    processToDisplay, fetchedProcessDetails, businessView, versionId, canExport,
+    capabilities, exportGraph, processId, deployPossible, saveDisabled, featuresSettings,
+    processToDisplay, businessView, versionId, canExport,
+    isRunning,
+    hasOneVersion,
     exportProcessToJSON, exportProcessToPdf, importFiles, reportEvent, toggleConfirmDialog, toggleModalDialog,
   } = props
 
-  const isRunning = () => ProcessStateUtils.isRunning(fetchedProcessState)
-
-  const archiveProcess = () => !isRunning() && toggleConfirmDialog(
+  const archiveProcess = () => !isRunning && toggleConfirmDialog(
     true,
     DialogMessages.archiveProcess(processId),
     () => HttpService.archiveProcess(processId).then(() => history.push(Archive.path)),
@@ -73,87 +72,83 @@ export function ProcessPanel(props: Props) {
   //TODO: Checking permission to archiwization should be done by check action from state - we should add new action type
   const compareVersions = () => toggleModalDialog(Dialogs.types.compareVersions)
   const save = () => toggleModalDialog(Dialogs.types.saveProcess)
-  const hasOneVersion = () => get(fetchedProcessDetails, "history", []).length <= 1
   const exportToJSON = () => exportProcessToJSON(processToDisplay, versionId)
   const exportToPdf = () => exportProcessToPdf(processId, versionId, exportGraph(), businessView)
 
-  const panelConfigs = {
-    panelName: "Process",
-    buttons: [
-      {
-        name: `save${!saveDisabled ? "*" : ""}`,
-        isHidden: !capabilities.write,
-        disabled: saveDisabled,
-        onClick: save,
-        icon: InlinedSvgs.buttonSave,
-      },
-      {
-        name: "migrate",
-        isHidden: !capabilities.deploy || isEmpty(featuresSettings?.remoteEnvironment),
-        disabled: !deployPossible,
-        onClick: migrate,
-        icon: InlinedSvgs.buttonMigrate,
-      },
-      {
-        name: "compare",
-        onClick: compareVersions,
-        icon: "compare.svg",
-        disabled: hasOneVersion(),
-      },
-      {
+  const buttons = [
+    {
+      name: `save${!saveDisabled ? "*" : ""}`,
+      onClick: save,
+      icon: InlinedSvgs.buttonSave,
+      disabled: saveDisabled,
+      isHidden: !capabilities.write,
+    },
+    {
+      name: "migrate",
+      onClick: migrate,
+      icon: InlinedSvgs.buttonMigrate,
+      disabled: !deployPossible,
+      isHidden: !capabilities.deploy || isEmpty(featuresSettings?.remoteEnvironment),
+    },
+    {
+      name: "compare",
+      onClick: compareVersions,
+      icon: "compare.svg",
+      disabled: hasOneVersion,
+    },
+    {
+      name: "import",
+      onClick: () => reportEvent({
+        category: events.categories.rightPanel,
+        action: events.actions.buttonClick,
         name: "import",
-        isHidden: !capabilities.write,
-        disabled: false,
-        onClick: () => reportEvent({
-          category: events.categories.rightPanel,
-          action: events.actions.buttonClick,
-          name: "import",
-        }),
-        onDrop: importFromFiles,
-        icon: InlinedSvgs.buttonImport,
-      },
-      {
-        name: "JSON",
-        disabled: !canExport,
-        onClick: exportToJSON,
-        icon: InlinedSvgs.buttonExport,
-      },
-      {
-        name: "PDF",
-        disabled: !canExport,
-        onClick: exportToPdf,
-        icon: InlinedSvgs.pdf,
-      },
-      {
-        name: "archive",
-        onClick: archiveProcess,
-        disabled: isRunning(),
-        icon: "archive.svg",
-        isHidden: !capabilities.write,
-      },
-    ],
-  }
+      }),
+      icon: InlinedSvgs.buttonImport,
+      disabled: false,
+      isHidden: !capabilities.write,
+      onDrop: importFromFiles,
+    },
+    {
+      name: "JSON",
+      onClick: exportToJSON,
+      icon: InlinedSvgs.buttonExport,
+      disabled: !canExport,
+    },
+    {
+      name: "PDF",
+      onClick: exportToPdf,
+      icon: InlinedSvgs.pdf,
+      disabled: !canExport,
+    },
+    {
+      name: "archive",
+      onClick: archiveProcess,
+      icon: "archive.svg",
+      disabled: isRunning,
+      isHidden: !capabilities.write,
+    },
+  ]
 
   return (
-    <>
-      {[panelConfigs].map((panel) => <ExtractedPanel {...panel} key={panel.panelName}/>)}
-    </>
+    <ExtractedPanel panelName={"Process"} buttons={buttons}/>
   )
 }
 
-const mapState = (state: RootState, props: OwnProps) => ({
-  fetchedProcessDetails: getFetchedProcessDetails(state),
-  processId: getProcessId(state),
-  versionId: getProcessVersionId(state),
-  processToDisplay: getProcessToDisplay(state),
-  canExport: ProcessUtils.canExport(state),
-  featuresSettings: getFeatureSettings(state),
-  businessView: isBusinessView(state),
-  saveDisabled: isSaveDisabled(state),
-  hasErrors: hasError(state),
-  fetchedProcessState: getFetchedProcessState(state, props),
-  deployPossible: isDeployPossible(state, props),
-})
+const mapState = (state: RootState, props: OwnProps) => {
+  return {
+    processId: getProcessId(state),
+    versionId: getProcessVersionId(state),
+    processToDisplay: getProcessToDisplay(state),
+    canExport: ProcessUtils.canExport(state),
+    featuresSettings: getFeatureSettings(state),
+    businessView: isBusinessView(state),
+    saveDisabled: isSaveDisabled(state),
+    hasErrors: hasError(state),
+    deployPossible: isDeployPossible(state, props),
+    isRunning: isRunning(state, props),
+    hasOneVersion: hasOneVersion(state),
+  }
+}
 
 const mapDispatch = (dispatch) => bindActionCreators({
   exportProcessToJSON,
@@ -164,6 +159,6 @@ const mapDispatch = (dispatch) => bindActionCreators({
   toggleModalDialog,
 }, dispatch)
 
-export type StateProps = ReturnType<typeof mapDispatch> & ReturnType<typeof mapState>
+type StateProps = ReturnType<typeof mapDispatch> & ReturnType<typeof mapState>
 
 export default connect(mapState, mapDispatch)(ProcessPanel)
