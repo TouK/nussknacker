@@ -7,7 +7,7 @@ type Props = {
 }
 
 function SpinnerWrapper({isReady, children}: PropsWithChildren<Props>) {
-  return isReady ? children : <LoaderSpinner show={true}/>
+  return isReady ? <>{children}</> : <LoaderSpinner show={true}/>
 }
 
 export default SpinnerWrapper

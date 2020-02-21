@@ -2,7 +2,7 @@ import {Reducer as ReduxReducer, Store as ReduxStore} from "redux"
 import {ActionTypes} from "./actionTypes"
 import {DisplayProcessActivityAction} from "./nk/displayProcessActivity"
 import {ReportEventAction} from "./nk/reportEvent"
-import {UiActions} from "./nk/ui/uiActions.flow"
+import {UiActions} from "./nk/ui/uiActions"
 import {SettingsActions} from "./settingsActions"
 
 export type Action =

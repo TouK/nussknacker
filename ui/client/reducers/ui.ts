@@ -1,4 +1,4 @@
-import {GroupId} from "../actions/nk/models"
+import {GroupId, ProcessId} from "../actions/nk/models"
 import {Action} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"
 
@@ -7,8 +7,20 @@ type UiState = {
   rightPanelIsOpened: boolean,
   showNodeDetailsModal: boolean,
   showEdgeDetailsModal: boolean,
-  confirmDialog: Partial<{ isOpen: boolean, text: string, confirmText: string, denyText: string, onConfirmCallback: $TodoType }>,
-  modalDialog: Partial<{ openDialog: DialogType, message: string, action: string, displayWarnings: boolean, text: string }>,
+  confirmDialog: Partial<{
+    isOpen: boolean,
+    text: string,
+    confirmText: string,
+    denyText: string,
+    onConfirmCallback: () => void,
+  }>,
+  modalDialog: Partial<{
+    openDialog: DialogType,
+    message: string,
+    action: (processId: ProcessId, comment: string) => void,
+    displayWarnings: boolean,
+    text: string,
+  }>,
   expandedGroups: GroupId[],
   allModalsClosed: boolean,
   isToolTipsHighlighted: boolean,
@@ -28,7 +40,7 @@ const emptyUiState: UiState = {
 
 function withAllModalsClosed(newState: UiState): UiState {
   const allModalsClosed = !(newState.modalDialog.openDialog || newState.showNodeDetailsModal || newState.showEdgeDetailsModal || newState.confirmDialog.isOpen)
-  return {...newState, allModalsClosed: allModalsClosed}
+  return {...newState, allModalsClosed}
 }
 
 export function reducer(state: UiState = emptyUiState, action: Action): UiState {

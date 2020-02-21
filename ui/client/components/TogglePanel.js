@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import cn from "classnames"
 import PropTypes from "prop-types"
 import React from "react"
