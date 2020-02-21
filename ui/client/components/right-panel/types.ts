@@ -1,23 +1,39 @@
 import {ProcessType} from "../Process/types"
+import {NodeId} from "../../actions/nk/models"
 
 type FeatureSettingsState = $TodoType
 
-interface ProcessPropertiesState {
+export type ProcessPropertiesState = {
+  id: NodeId,
   isSubprocess: boolean,
 }
 
-interface ProcessToDisplayState {
+export type ProcessToDisplayState = {
   properties?: ProcessPropertiesState,
 }
 
 type FetchedProcessDetailsState = ProcessType
 
-export interface GraphState {
+type NodeToDisplay = $TodoType
+
+type SelectionState = string[]
+
+type HistoryAction = $TodoType
+
+type History = {
+  past: HistoryAction[],
+  future: HistoryAction[],
+}
+
+export type GraphState = {
   fetchedProcessDetails?: FetchedProcessDetailsState,
   processToDisplay?: ProcessToDisplayState,
   businessView: boolean,
+  nodeToDisplay: NodeToDisplay,
+  selectionState?: SelectionState,
+  history: History,
 }
 
-export interface SettingsState {
+export type SettingsState = {
   featuresSettings: FeatureSettingsState,
 }

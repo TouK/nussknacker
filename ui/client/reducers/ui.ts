@@ -2,7 +2,7 @@ import {GroupId, ProcessId} from "../actions/nk/models"
 import {Action} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"
 
-type UiState = {
+export type UiState = {
   leftPanelIsOpened: boolean,
   rightPanelIsOpened: boolean,
   showNodeDetailsModal: boolean,

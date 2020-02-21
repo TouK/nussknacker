@@ -18,6 +18,7 @@ import DeploymentPanel from "./panels/DeploymentPanel"
 import {RootState} from "../../reducers/index"
 import {hot} from "react-hot-loader"
 import {getFetchedProcessDetails} from "./selectors"
+import EditPanel from "./panels/EditPanel"
 
 export type OwnProps = {
   isStateLoaded: boolean,
@@ -81,6 +82,13 @@ class UserRightPanel extends Component<Props> {
               processState={processState}
             />
 
+            <EditPanel
+              capabilities={capabilities}
+              graphLayoutFunction={graphLayoutFunction}
+              isStateLoaded={isStateLoaded}
+              processState={processState}
+              selectionActions={selectionActions}
+            />
             <Panels1
               capabilities={capabilities}
               exportGraph={exportGraph}

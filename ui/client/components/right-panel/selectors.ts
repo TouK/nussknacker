@@ -19,3 +19,7 @@ export const isBusinessView = createSelector(getGraph, g => g.businessView)
 
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state)
 export const hasError = (state: RootState): boolean => !ProcessUtils.hasNoErrors(getProcessToDisplay(state))
+
+export const getNodeToDisplay = createSelector(getGraph, g => g.nodeToDisplay)
+export const getSelectionState = createSelector(getGraph, g => g.selectionState)
+export const getHistory = createSelector(getGraph, g => g.history)

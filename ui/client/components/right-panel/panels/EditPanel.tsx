@@ -1,54 +1,43 @@
 /* eslint-disable i18next/no-literal-string */
 import {PanelConfig} from "../PanelConfig"
+import React from "react"
+import {ExtractedPanel} from "../ExtractedPanel"
+import {OwnProps as PanelOwnProps} from "../UserRightPanel"
+import {RootState} from "../../../reducers/index"
+import ProcessUtils from "../../../common/ProcessUtils"
+import {connect} from "react-redux"
+import {EspActionsProps, mapDispatchWithEspActions} from "../../../actions/ActionsUtils"
 import {events} from "../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../assets/icons/InlinedSvgs"
 import NodeUtils from "../../graph/NodeUtils"
-import {OwnProps as PanelOwnProps} from "../UserRightPanel"
-import {Props} from "../Panels1"
-import ProcessUtils from "../../../common/ProcessUtils"
 import {isEmpty} from "lodash"
+import {getProcessToDisplay, isPristine, isSubprocess, isBusinessView, getHistory, getSelectionState, getNodeToDisplay} from "../selectors"
+import {areAllModalsClosed} from "../selectors-ui"
 
-type OwnProps = Pick<PanelOwnProps & Props,
-  | "selectionState"
+type OwnPropsPick = Pick<PanelOwnProps,
   | "capabilities"
-  | "nodeToDisplay"
-  | "history"
   | "graphLayoutFunction"
+  | "isStateLoaded"
   | "selectionActions"
-  | "actions"
-  | "isSubprocess"
-  | "processToDisplay"
-  | "undoRedoActions"
-  | "keyActionsAvailable"
-  | "hasErrors">
+  | "processState">
 
-export function getEditPanel(props: OwnProps): PanelConfig {
-  const {
-    selectionState,
-    capabilities,
-    nodeToDisplay,
-    history,
-    graphLayoutFunction,
-    selectionActions,
-    actions,
-    isSubprocess,
-    processToDisplay,
-    undoRedoActions,
-    keyActionsAvailable,
-    hasErrors,
-  } = props
+export function getConfig(own: OwnPropsPick, props: StateProps): PanelConfig[] {
+  const {capabilities, graphLayoutFunction, selectionActions} = own
+  const {isSubprocess, hasErrors, processToDisplay, nodeToDisplay, history, keyActionsAvailable, selectionState} = props
+  const {copySelection, cutSelection, deleteSelection, displayModalNodeDetails, layout, pasteSelection} = props.actions
+  const {redo: redo1, undo: undo1} = props.undoRedoActions
 
-  const undo = () => keyActionsAvailable && undoRedoActions.undo(
+  const undo = () => keyActionsAvailable && undo1(
     {category: events.categories.rightPanel, action: events.actions.buttonClick},
   )
 
-  const redo = () => keyActionsAvailable && undoRedoActions.redo(
+  const redo = () => keyActionsAvailable && redo1(
     {category: events.categories.rightPanel, action: events.actions.buttonClick},
   )
 
   const showProperties = () => {
-    actions.displayModalNodeDetails(
-      processToDisplay.properties,
+    displayModalNodeDetails(
+      processToDisplay?.properties,
       undefined,
       {
         category: events.categories.rightPanel,
@@ -59,7 +48,7 @@ export function getEditPanel(props: OwnProps): PanelConfig {
 
   const propertiesBtnClass = hasErrors && !ProcessUtils.hasNoPropertiesErrors(processToDisplay) ? "esp-button-error right-panel" : null
 
-  return {
+  const editPanel = {
     panelName: "Edit",
     buttons: [
       {
@@ -78,7 +67,7 @@ export function getEditPanel(props: OwnProps): PanelConfig {
       },
       {
         name: "layout",
-        onClick: () => actions.layout(graphLayoutFunction),
+        onClick: () => layout(graphLayoutFunction),
         icon: InlinedSvgs.buttonLayout,
         isHidden: !capabilities.write,
       },
@@ -91,7 +80,7 @@ export function getEditPanel(props: OwnProps): PanelConfig {
       },
       {
         name: "copy",
-        onClick: (event) => actions.copySelection(
+        onClick: (event) => copySelection(
           () => selectionActions.copy(event),
           {category: events.categories.rightPanel, action: events.actions.buttonClick},
         ),
@@ -101,7 +90,7 @@ export function getEditPanel(props: OwnProps): PanelConfig {
       },
       {
         name: "cut",
-        onClick: (event) => actions.cutSelection(
+        onClick: (event) => cutSelection(
           () => selectionActions.cut(event),
           {category: events.categories.rightPanel, action: events.actions.buttonClick},
         ),
@@ -111,7 +100,7 @@ export function getEditPanel(props: OwnProps): PanelConfig {
       },
       {
         name: "delete",
-        onClick: () => actions.deleteSelection(
+        onClick: () => deleteSelection(
           selectionState,
           {category: events.categories.rightPanel, action: events.actions.buttonClick},
         ),
@@ -121,7 +110,7 @@ export function getEditPanel(props: OwnProps): PanelConfig {
       },
       {
         name: "paste",
-        onClick: (event) => actions.pasteSelection(
+        onClick: (event) => pasteSelection(
           () => selectionActions.paste(event),
           {category: events.categories.rightPanel, action: events.actions.buttonClick},
         ),
@@ -131,4 +120,34 @@ export function getEditPanel(props: OwnProps): PanelConfig {
       },
     ],
   }
+
+  return [editPanel]
 }
+
+type OwnProps = OwnPropsPick
+
+export function EditPanel(props: Props) {
+  const panelConfigs = getConfig(props, props)
+
+  return (
+    <>
+      {panelConfigs.map((panel) => <ExtractedPanel {...panel} key={panel.panelName}/>)}
+    </>
+  )
+}
+
+const mapState = (state: RootState) => ({
+  keyActionsAvailable: areAllModalsClosed(state),
+  processToDisplay: getProcessToDisplay(state),
+  nodeToDisplay: getNodeToDisplay(state),
+  selectionState: getSelectionState(state),
+  isSubprocess: isSubprocess(state),
+  businessView: isBusinessView(state),
+  history: getHistory(state),
+  hasErrors: isPristine(state),
+})
+
+export type StateProps = EspActionsProps & ReturnType<typeof mapState>
+export type Props = OwnProps & StateProps
+
+export default connect(mapState, mapDispatchWithEspActions)(EditPanel)
