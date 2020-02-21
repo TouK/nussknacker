@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
-import {ExtractedPanel} from "../ExtractedPanel"
 import {OwnProps as PanelOwnProps} from "../UserRightPanel"
 import {RootState} from "../../../reducers/index"
 import ProcessUtils from "../../../common/ProcessUtils"
@@ -15,6 +14,9 @@ import {copySelection, cutSelection, deleteSelection, pasteSelection} from "../.
 import {displayModalNodeDetails} from "../../../actions/nk/modal"
 import {layout} from "../../../actions/nk/ui/layout"
 import {undo, redo} from "../../../actions/undoRedoActions"
+import {ButtonWithIcon} from "../ButtonWithIcon"
+import cn from "classnames"
+import {RightPanel} from "../RightPanel"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "capabilities"
@@ -114,8 +116,19 @@ function EditPanel(props: Props) {
     },
   ]
 
+  const panelName = "Edit"
   return (
-    <ExtractedPanel panelName={"Edit"} buttons={buttons}/>
+    <RightPanel title={panelName}>
+      {buttons.map(({name, className, isHidden, ...props}) => isHidden ? null : (
+        <ButtonWithIcon
+          {...props}
+          key={name}
+          name={name}
+          title={name}
+          className={cn(className, "espButton", "right-panel")}
+        />
+      ))}
+    </RightPanel>
   )
 }
 

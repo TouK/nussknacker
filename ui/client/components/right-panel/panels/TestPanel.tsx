@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
-import {ExtractedPanel} from "../ExtractedPanel"
 import {CapabilitiesType} from "../UserRightPanel"
 import {RootState} from "../../../reducers/index"
 import {connect} from "react-redux"
@@ -19,6 +18,9 @@ import Dialogs from "../../modals/Dialogs"
 import {hideRunProcessDetails, testProcessFromFile} from "../../../actions/nk/process"
 import {reportEvent} from "../../../actions/nk/reportEvent"
 import {toggleModalDialog} from "../../../actions/nk/modal"
+import {ButtonWithIcon} from "../ButtonWithIcon"
+import cn from "classnames"
+import {RightPanel} from "../RightPanel"
 
 type OwnProps = {
   capabilities: CapabilitiesType,
@@ -65,8 +67,20 @@ export function TestPanel(props: Props) {
       isHidden: !featuresSettings?.counts || isSubprocess,
     },
   ]
+  const panelName = "Test"
   return (
-    <ExtractedPanel panelName={"Test"} buttons={buttons} isHidden={isSubprocess}/>
+    <RightPanel title={panelName} isHidden={isSubprocess}>
+      {buttons.map(({name, isHidden, ...props}) => isHidden ? null : (
+        <ButtonWithIcon
+          {...props}
+          key={name}
+          name={name}
+          title={name}
+          className={cn("espButton", "right-panel")}
+        />
+      ))}
+    </RightPanel>
+
   )
 }
 

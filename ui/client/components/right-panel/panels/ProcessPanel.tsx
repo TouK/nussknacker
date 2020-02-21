@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
-import {ExtractedPanel} from "../ExtractedPanel"
 import {OwnProps as PanelOwnProps} from "../UserRightPanel"
 import {RootState} from "../../../reducers/index"
 import ProcessUtils from "../../../common/ProcessUtils"
@@ -30,6 +29,9 @@ import {
   hasOneVersion,
   isRunning,
 } from "../selectors"
+import {ButtonWithIcon} from "../ButtonWithIcon"
+import cn from "classnames"
+import {RightPanel} from "../RightPanel"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "capabilities"
@@ -129,8 +131,19 @@ function ProcessPanel(props: Props) {
     },
   ]
 
+  const panelName = "Process"
   return (
-    <ExtractedPanel panelName={"Process"} buttons={buttons}/>
+    <RightPanel title={panelName}>
+      {buttons.map(({name, isHidden, ...props}) => isHidden ? null : (
+        <ButtonWithIcon
+          {...props}
+          key={name}
+          name={name}
+          title={name}
+          className={cn("espButton", "right-panel")}
+        />
+      ))}
+    </RightPanel>
   )
 }
 

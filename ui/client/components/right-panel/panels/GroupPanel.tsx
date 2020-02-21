@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
-import {ExtractedPanel} from "../ExtractedPanel"
 import {CapabilitiesType} from "../UserRightPanel"
 import {RootState} from "../../../reducers/index"
 import {connect} from "react-redux"
@@ -8,6 +7,9 @@ import {getNodeToDisplay, getGroupingState} from "../selectors"
 import InlinedSvgs from "../../../assets/icons/InlinedSvgs"
 import NodeUtils from "../../graph/NodeUtils"
 import {cancelGrouping, ungroup, finishGrouping, startGrouping} from "../../../actions/nk/groups"
+import {ButtonWithIcon} from "../ButtonWithIcon"
+import cn from "classnames"
+import {RightPanel} from "../RightPanel"
 
 type OwnProps = {
   capabilities: CapabilitiesType,
@@ -52,7 +54,17 @@ function GroupPanel(props: Props) {
   ]
 
   return (
-    <ExtractedPanel panelName={panelName} buttons={buttons}/>
+    <RightPanel title={panelName}>
+      {buttons.map(({name, isHidden, ...props}) => isHidden ? null : (
+        <ButtonWithIcon
+          {...props}
+          key={name}
+          name={name}
+          title={name}
+          className={cn("espButton", "right-panel")}
+        />
+      ))}
+    </RightPanel>
   )
 }
 

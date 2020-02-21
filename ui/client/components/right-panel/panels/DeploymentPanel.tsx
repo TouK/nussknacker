@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
-import {ExtractedPanel} from "../ExtractedPanel"
 import {Props as PanelProps} from "../UserRightPanel"
 import {RootState} from "../../../reducers/index"
 import {connect} from "react-redux"
@@ -10,6 +9,9 @@ import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../action
 import {showMetrics} from "../../../actions/nk/showMetrics"
 import {toggleProcessActionDialog} from "../../../actions/nk/toggleProcessActionDialog"
 import {hasError, isSubprocess, getProcessId, isSaveDisabled, isDeployPossible, isCancelPossible} from "../selectors"
+import {RightPanel} from "../RightPanel"
+import {ButtonWithIcon} from "../ButtonWithIcon"
+import cn from "classnames"
 
 type PropsPick = Pick<PanelProps,
   | "capabilities"
@@ -51,8 +53,19 @@ function DeploymentPanel(props: Props) {
     },
   ]
 
+  const panelName = "Deployment"
   return (
-    <ExtractedPanel panelName={"Deployment"} buttons={buttons} isHidden={isSubprocess}/>
+    <RightPanel title={panelName} isHidden={isSubprocess}>
+      {buttons.map(({name, title, isHidden, ...props}) => isHidden ? null : (
+        <ButtonWithIcon
+          {...props}
+          key={name}
+          name={name}
+          title={title || name}
+          className={cn("espButton", "right-panel")}
+        />
+      ))}
+    </RightPanel>
   )
 }
 
