@@ -17,8 +17,9 @@ import ProcessPanels from "./panels/ProcessPanel"
 import DeploymentPanel from "./panels/DeploymentPanel"
 import {RootState} from "../../reducers/index"
 import {hot} from "react-hot-loader"
-import {getFetchedProcessDetails} from "./selectors"
+import {getFetchedProcessDetails, getFetchedProcessState} from "./selectors"
 import EditPanel from "./panels/EditPanel"
+import {isRightPanelOpened} from "./selectors-ui"
 
 export type OwnProps = {
   isStateLoaded: boolean,
@@ -61,7 +62,6 @@ class UserRightPanel extends Component<Props> {
 
       isOpened,
       fetchedProcessDetails,
-      fetchedProcessState,
     } = this.props
 
     return (
@@ -71,30 +71,33 @@ class UserRightPanel extends Component<Props> {
         <SpinnerWrapper isReady={isReady}>
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
             <ProcessInfo process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
-
             <ViewPanel/>
-            <DeploymentPanel capabilities={capabilities} fetchedProcessState={fetchedProcessState}/>
-
+            <DeploymentPanel
+              capabilities={capabilities}
+              isStateLoaded={isStateLoaded}
+              processState={processState}
+            />
             <ProcessPanels
               capabilities={capabilities}
+              isStateLoaded={isStateLoaded}
+              processState={processState}
               exportGraph={exportGraph}
-              isStateLoaded={isStateLoaded}
-              processState={processState}
             />
-
             <EditPanel
+
               capabilities={capabilities}
-              graphLayoutFunction={graphLayoutFunction}
               isStateLoaded={isStateLoaded}
               processState={processState}
+              graphLayoutFunction={graphLayoutFunction}
               selectionActions={selectionActions}
             />
+
             <Panels1
               capabilities={capabilities}
-              exportGraph={exportGraph}
-              graphLayoutFunction={graphLayoutFunction}
               isStateLoaded={isStateLoaded}
               processState={processState}
+              graphLayoutFunction={graphLayoutFunction}
+              exportGraph={exportGraph}
               selectionActions={selectionActions}
             />
             <Panels showDetails={capabilities.write}/>
@@ -107,14 +110,11 @@ class UserRightPanel extends Component<Props> {
   }
 }
 
-function mapState(state: RootState, props: OwnProps) {
-  const {processState, isStateLoaded} = props
-  return {
-    isOpened: state.ui.rightPanelIsOpened,
-    fetchedProcessDetails: getFetchedProcessDetails(state),
-    fetchedProcessState: isStateLoaded ? processState : getFetchedProcessDetails(state)?.state,
-  }
-}
+const mapState = (state: RootState, props: OwnProps) => ({
+  isOpened: isRightPanelOpened(state),
+  fetchedProcessDetails: getFetchedProcessDetails(state),
+  fetchedProcessState: getFetchedProcessState(state, props),
+})
 
 const mapDispatch = {
   toggleRightPanel,

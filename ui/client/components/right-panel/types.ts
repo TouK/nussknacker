@@ -6,13 +6,12 @@ type FeatureSettingsState = $TodoType
 export type ProcessPropertiesState = {
   id: NodeId,
   isSubprocess: boolean,
+
 }
 
 export type ProcessToDisplayState = {
   properties?: ProcessPropertiesState,
 }
-
-type FetchedProcessDetailsState = ProcessType
 
 type NodeToDisplay = $TodoType
 
@@ -26,7 +25,7 @@ type History = {
 }
 
 export type GraphState = {
-  fetchedProcessDetails?: FetchedProcessDetailsState,
+  fetchedProcessDetails?: ProcessType,
   processToDisplay?: ProcessToDisplayState,
   businessView: boolean,
   nodeToDisplay: NodeToDisplay,

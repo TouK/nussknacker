@@ -3,26 +3,25 @@ import React from "react"
 import {ExtractedPanel} from "../ExtractedPanel"
 import {Props as PanelProps} from "../UserRightPanel"
 import {RootState} from "../../../reducers/index"
-import ProcessStateUtils from "../../Process/ProcessStateUtils"
 import {connect} from "react-redux"
 import HttpService from "../../../http/HttpService"
 import InlinedSvgs from "../../../assets/icons/InlinedSvgs"
 import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../actions/nk/tooltips"
 import {showMetrics} from "../../../actions/nk/showMetrics"
 import {toggleProcessActionDialog} from "../../../actions/nk/toggleProcessActionDialog"
-import {hasError, isLatestProcessVersion, isSubprocess, getProcessId, isPristine} from "../selectors"
+import {hasError, isSubprocess, getProcessId, isSaveDisabled, isDeployPossible, isCancelPossible} from "../selectors"
 
 type PropsPick = Pick<PanelProps,
   | "capabilities"
-  | "fetchedProcessState">
+  | "isStateLoaded"
+  | "processState">
 
 type OwnProps = PropsPick
 type Props = OwnProps & StateProps
 
 function DeploymentPanel(props: Props) {
-  const {capabilities, isSubprocess, fetchedProcessState, processId, deployPossible, hasErrors, saveDisabled} = props
+  const {capabilities, isSubprocess, processId, deployPossible, hasErrors, saveDisabled, cancelPossible} = props
   const {disableToolTipsHighlight, enableToolTipsHighlight, showMetrics, toggleProcessActionDialog} = props
-  const cancelPossible = () => ProcessStateUtils.canCancel(fetchedProcessState)
   const deployToolTip = hasErrors ? "Cannot deploy due to errors. Please look at the left panel for more details." : !saveDisabled ? "You have unsaved changes." : null
   const deployMouseOver = hasErrors ? enableToolTipsHighlight : null
   const deployMouseOut = hasErrors ? disableToolTipsHighlight : null
@@ -41,7 +40,7 @@ function DeploymentPanel(props: Props) {
     {
       name: "cancel",
       isHidden: !capabilities.deploy,
-      disabled: !cancelPossible(),
+      disabled: !cancelPossible,
       onClick: () => toggleProcessActionDialog("Cancel process", HttpService.cancel, false),
       icon: InlinedSvgs.buttonCancel,
     },
@@ -57,18 +56,14 @@ function DeploymentPanel(props: Props) {
   )
 }
 
-function mapState(state: RootState, props: OwnProps) {
-  const {fetchedProcessState} = props
-  const saveDisabled = isLatestProcessVersion(state) && isPristine(state)
-  const hasErrors = hasError(state)
-  return {
-    processId: getProcessId(state),
-    isSubprocess: isSubprocess(state),
-    deployPossible: saveDisabled && !hasErrors && ProcessStateUtils.canDeploy(fetchedProcessState),
-    saveDisabled,
-    hasErrors,
-  }
-}
+const mapState = (state: RootState, props: OwnProps) => ({
+  processId: getProcessId(state),
+  isSubprocess: isSubprocess(state),
+  deployPossible: isDeployPossible(state, props),
+  saveDisabled: isSaveDisabled(state),
+  hasErrors: hasError(state),
+  cancelPossible: isCancelPossible(state, props),
+})
 
 const mapDispatch = {
   disableToolTipsHighlight,

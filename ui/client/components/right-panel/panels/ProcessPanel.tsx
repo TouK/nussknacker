@@ -20,14 +20,16 @@ import {toggleConfirmDialog} from "../../../actions/nk/ui/toggleConfirmDialog"
 import {toggleModalDialog} from "../../../actions/nk/modal"
 import {bindActionCreators} from "redux"
 import {
-  isPristine,
-  isLatestProcessVersion,
   hasError,
   getProcessToDisplay,
   getFetchedProcessDetails,
   getProcessId,
   getProcessVersionId,
-  isBusinessView, getFeatureSettings,
+  isBusinessView,
+  getFeatureSettings,
+  getFetchedProcessState,
+  isDeployPossible,
+  isSaveDisabled,
 } from "../selectors"
 
 type OwnPropsPick = Pick<PanelOwnProps,
@@ -139,32 +141,19 @@ export function ProcessPanel(props: Props) {
   )
 }
 
-function mapState(state: RootState, props: OwnProps) {
-  const {processState, isStateLoaded} = props
-
-  const nothingToSave = isPristine(state)
-  const processIsLatestVersion = isLatestProcessVersion(state)
-
-  const hasErrors = hasError(state)
-
-  const fetchedProcessState = isStateLoaded ? processState : getFetchedProcessDetails(state)?.state
-  const saveDisabled = nothingToSave && processIsLatestVersion
-  const deployPossible = saveDisabled && !hasErrors && ProcessStateUtils.canDeploy(fetchedProcessState)
-  return {
-    fetchedProcessDetails: getFetchedProcessDetails(state),
-    processId: getProcessId(state),
-    versionId: getProcessVersionId(state),
-    processToDisplay: getProcessToDisplay(state),
-    canExport: ProcessUtils.canExport(state),
-    featuresSettings: getFeatureSettings(state),
-    businessView: isBusinessView(state),
-
-    saveDisabled,
-    hasErrors,
-    fetchedProcessState,
-    deployPossible,
-  }
-}
+const mapState = (state: RootState, props: OwnProps) => ({
+  fetchedProcessDetails: getFetchedProcessDetails(state),
+  processId: getProcessId(state),
+  versionId: getProcessVersionId(state),
+  processToDisplay: getProcessToDisplay(state),
+  canExport: ProcessUtils.canExport(state),
+  featuresSettings: getFeatureSettings(state),
+  businessView: isBusinessView(state),
+  saveDisabled: isSaveDisabled(state),
+  hasErrors: hasError(state),
+  fetchedProcessState: getFetchedProcessState(state, props),
+  deployPossible: isDeployPossible(state, props),
+})
 
 const mapDispatch = (dispatch) => bindActionCreators({
   exportProcessToJSON,
