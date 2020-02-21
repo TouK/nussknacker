@@ -7,7 +7,7 @@ import classNames from "classnames"
 export const Input = (props) => {
   const {
     isMarked, showValidation, className, placeholder, autoFocus, onChange, value, validators, readOnly,
-    formattedValue, type, inputClassName
+    formattedValue, type, inputClassName, onFocus
   } = props
 
   return (
@@ -25,6 +25,7 @@ export const Input = (props) => {
             ])}
             value={value || ""}
             onChange={onChange}
+            onFocus={onFocus}
           />
         }
       </div>
@@ -49,6 +50,7 @@ Input.propTypes = {
   className: PropTypes.string,
   type: PropTypes.string,
   inputClassName: PropTypes.string,
+  onFocus: PropTypes.func,
 }
 
 Input.defaultProps = {

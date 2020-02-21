@@ -12,7 +12,7 @@ import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
 import {Error, Validator, validators, validatorType} from "../Validators"
 import DurationEditor from "./duration/DurationEditor"
 import PeriodEditor from "./duration/PeriodEditor"
-import CronEditor from "./Cron/CronEditor";
+import CronEditor from "./Cron/CronEditor"
 
 type ParamType = $TodoType
 type ValuesType = $TodoType
