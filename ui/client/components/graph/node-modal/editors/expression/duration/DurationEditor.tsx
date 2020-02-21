@@ -4,6 +4,7 @@ import moment from "moment"
 import {Validator} from "../../Validators"
 import "./timeRange.styl"
 import TimeRangeEditor from "./TimeRangeEditor"
+import _ from "lodash";
 
 export type Duration = {
   days: number,
@@ -20,7 +21,6 @@ type Props = {
   expressionObj: ExpressionObj,
   onValueChange: Function,
   validators: Array<Validator>,
-  components: Array<DurationComponentType>,
   showValidation?: boolean,
   readOnly: boolean,
   isMarked: boolean,
@@ -28,24 +28,32 @@ type Props = {
 
 const SPEL_DURATION_DECODE_REGEX = /^T\(java\.time\.Duration\)\.parse\('(.*?)'\)$/
 const SPEL_DURATION_SWITCHABLE_TO_REGEX = /^T\(java\.time\.Duration\)\.parse\('P([0-9]{1,}D)?(T([0-9]{1,}H)?([0-9]{1,}M)?)?'\)$/
-const SPEL_FORMATTED_DURATION = (isoDuration) => `T(java.time.Duration).parse('${isoDuration}')`;
+const SPEL_FORMATTED_DURATION = (isoDuration) => `T(java.time.Duration).parse('${isoDuration}')`
+const UNDEFINED_DURATION = {
+  days: () => undefined,
+  hours: () => undefined,
+  minutes: () => undefined
+}
 
 export default function DurationEditor(props: Props) {
 
   const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked} = props
 
+  function isDurationDefined(value: Duration) {
+    return value.days !== undefined || value.hours !== undefined || value.minutes !== undefined
+  }
+
   function encode(value: Duration): string {
-    const isoFormattedDuration = moment.duration(value).toISOString()
-    return SPEL_FORMATTED_DURATION(isoFormattedDuration)
+    return isDurationDefined(value) ? SPEL_FORMATTED_DURATION(moment.duration(value).toISOString()) : ""
   }
 
   function decode(expression: string): Duration {
-    const isoFormattedDuration = SPEL_DURATION_DECODE_REGEX.exec(expression)[1]
-    const duration = moment.duration(isoFormattedDuration)
+    const regexExec = SPEL_DURATION_DECODE_REGEX.exec(expression)
+    const duration = regexExec === null ? UNDEFINED_DURATION : moment.duration(regexExec[1])
     return {
-      days: duration.days() || 0,
-      hours: duration.hours() || 0,
-      minutes: duration.minutes() || 0,
+      days: duration.days(),
+      hours: duration.hours(),
+      minutes: duration.minutes(),
     }
   }
 
@@ -79,6 +87,9 @@ export default function DurationEditor(props: Props) {
   )
 }
 
-DurationEditor.switchableTo = (expressionObj: ExpressionObj) => SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression)
+DurationEditor.switchableTo = (expressionObj: ExpressionObj) =>
+  SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression)
+
 DurationEditor.switchableToHint = "Switch to basic mode"
+
 DurationEditor.notSwitchableToHint = "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode"
