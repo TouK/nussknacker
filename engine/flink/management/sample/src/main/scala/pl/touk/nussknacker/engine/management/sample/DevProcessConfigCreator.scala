@@ -48,7 +48,6 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.sample.JavaSampleEnum
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
 object DevProcessConfigCreator {
