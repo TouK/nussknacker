@@ -163,8 +163,8 @@
     }
   },
   "lint-staged": {
-    "*.js": [
-      "npm run lint -- --fix --quiet",
+    "**/*.(js|ts)?(x)": [
+      "npm run lint -- --fix",
       "git add"
     ]
   }
