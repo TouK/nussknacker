@@ -34,12 +34,12 @@ export default function PeriodEditor(props: Props) {
 
   const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked} = props
 
-  function isPeriodUndefined(period: Period): boolean {
-    return period.years === undefined && period.months === undefined && period.days === undefined
+  function isPeriodDefined(period: Period): boolean {
+    return period.years !== undefined || period.months !== undefined || period.days !== undefined
   }
 
   function encode(period: Period): string {
-    return isPeriodUndefined(period) ? "" : SPEL_FORMATTED_PERIOD(moment.duration(period).toISOString())
+    return isPeriodDefined(period) ? SPEL_FORMATTED_PERIOD(moment.duration(period).toISOString()) : ""
   }
 
   function decode(expression: string): Period {

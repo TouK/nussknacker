@@ -39,12 +39,12 @@ export default function DurationEditor(props: Props) {
 
   const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked} = props
 
-  function isDurationUndefined(value: Duration) {
-    return value.days === undefined && value.hours === undefined && value.minutes === undefined
+  function isDurationDefined(value: Duration) {
+    return value.days !== undefined || value.hours !== undefined || value.minutes !== undefined
   }
 
   function encode(value: Duration): string {
-    return isDurationUndefined(value) ? "" : SPEL_FORMATTED_DURATION(moment.duration(value).toISOString())
+    return isDurationDefined(value) ? SPEL_FORMATTED_DURATION(moment.duration(value).toISOString()) : ""
   }
 
   function decode(expression: string): Duration {
