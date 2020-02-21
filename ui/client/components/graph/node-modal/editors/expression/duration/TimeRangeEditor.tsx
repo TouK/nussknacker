@@ -19,13 +19,13 @@ export default function TimeRangeEditor(props: Props) {
 
   const {encode, decode, onValueChange, components, readOnly, showValidation, validators, expression, isMarked} = props
 
-  const [value, setPeriod] = useState(decode(expression))
+  const [value, setValue] = useState(decode(expression))
 
   const onComponentChange = (fieldName: string, fieldValue: number) => {
-    setPeriod(
+    setValue(
       {
         ...value,
-        [fieldName]: fieldValue
+        [fieldName]: isNaN(fieldValue) ? undefined : fieldValue
       }
     )
   }
