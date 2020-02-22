@@ -6,8 +6,8 @@ import {connect} from "react-redux"
 import HttpService from "../../../../../http/HttpService"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
-import {isCancelPossible} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {isCancelPossible} from "../../../selectors/graph"
 
 type PropsPick = Pick<PanelProps,
   | "isStateLoaded"

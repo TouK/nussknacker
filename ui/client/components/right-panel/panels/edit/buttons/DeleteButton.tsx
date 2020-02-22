@@ -6,9 +6,9 @@ import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import NodeUtils from "../../../../graph/NodeUtils"
 import {isEmpty} from "lodash"
-import {getSelectionState, getNodeToDisplay} from "../../../selectors"
 import {deleteSelection} from "../../../../../actions/nk/selection"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getSelectionState, getNodeToDisplay} from "../../../selectors/graph"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "selectionActions">

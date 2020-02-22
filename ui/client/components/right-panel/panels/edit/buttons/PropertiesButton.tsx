@@ -5,9 +5,9 @@ import ProcessUtils from "../../../../../common/ProcessUtils"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
-import {getProcessToDisplay, isPristine} from "../../../selectors"
 import {displayModalNodeDetails} from "../../../../../actions/nk/modal"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {isPristine, getProcessToDisplay} from "../../../selectors/graph"
 
 type Props = StateProps
 

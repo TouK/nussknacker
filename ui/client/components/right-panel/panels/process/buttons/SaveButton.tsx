@@ -5,8 +5,8 @@ import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
-import {isSaveDisabled} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {isSaveDisabled} from "../../../selectors/graph"
 
 type Props = StateProps
 

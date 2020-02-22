@@ -3,11 +3,11 @@ import React from "react"
 import {Props as PanelProps} from "../../UserRightPanel"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
-import {isSubprocess} from "../../selectors"
 import {RightPanel} from "../../RightPanel"
 import Deploy from "./buttons/DeployButton"
 import Cancel from "./buttons/CancelDeployButton"
 import Metrics from "./buttons/MetricsButton"
+import {isSubprocess} from "../../selectors/graph"
 
 type PropsPick = Pick<PanelProps,
   | "capabilities"

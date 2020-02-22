@@ -2,10 +2,10 @@
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
-import {getGroupingState} from "../../../selectors"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {startGrouping} from "../../../../../actions/nk/groups"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getGroupingState} from "../../../selectors/graph"
 
 type Props = StateProps
 

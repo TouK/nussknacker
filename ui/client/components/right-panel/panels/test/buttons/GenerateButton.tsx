@@ -2,10 +2,10 @@
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
-import {isLatestProcessVersion, getTestCapabilities} from "../../../selectors"
 import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getTestCapabilities, isLatestProcessVersion} from "../../../selectors/graph"
 
 type Props = StateProps
 

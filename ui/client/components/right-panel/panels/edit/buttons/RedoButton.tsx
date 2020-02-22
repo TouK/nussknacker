@@ -4,10 +4,10 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
-import {getHistory} from "../../../selectors"
-import {areAllModalsClosed} from "../../../selectors-ui"
+import {areAllModalsClosed} from "../../../selectors/ui"
 import {redo} from "../../../../../actions/undoRedoActions"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getHistory} from "../../../selectors/graph"
 
 type Props = StateProps
 

@@ -4,8 +4,8 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {showMetrics} from "../../../../../actions/nk/showMetrics"
-import {getProcessId} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getProcessId} from "../../../selectors/graph"
 
 type Props = StateProps
 

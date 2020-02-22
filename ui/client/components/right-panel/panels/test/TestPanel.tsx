@@ -3,12 +3,13 @@ import React from "react"
 import {CapabilitiesType} from "../../UserRightPanel"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
-import {getFeatureSettings, isSubprocess} from "../../selectors"
 import {RightPanel} from "../../RightPanel"
 import CountsButton from "./buttons/CountsButton"
 import GenerateButton from "./buttons/GenerateButton"
 import HideButton from "./buttons/HideButton"
 import FromFileButton from "./buttons/FromFileButton"
+import {getFeatureSettings} from "../../selectors/settings"
+import {isSubprocess} from "../../selectors/graph"
 
 type OwnProps = {
   capabilities: CapabilitiesType,

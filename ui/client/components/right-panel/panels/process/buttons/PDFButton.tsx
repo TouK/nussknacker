@@ -6,8 +6,8 @@ import ProcessUtils from "../../../../../common/ProcessUtils"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {exportProcessToPdf} from "../../../../../actions/nk/importExport"
-import {getProcessId, getProcessVersionId, isBusinessView} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {isBusinessView, getProcessVersionId, getProcessId} from "../../../selectors/graph"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "exportGraph">

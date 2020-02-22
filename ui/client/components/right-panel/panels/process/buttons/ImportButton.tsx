@@ -7,8 +7,8 @@ import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {importFiles} from "../../../../../actions/nk/importExport"
 import {reportEvent} from "../../../../../actions/nk/reportEvent"
 import {bindActionCreators} from "redux"
-import {getProcessId} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getProcessId} from "../../../selectors/graph"
 
 type Props = StateProps
 

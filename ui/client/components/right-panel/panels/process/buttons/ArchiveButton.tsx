@@ -10,8 +10,8 @@ import {Archive} from "../../../../../containers/Archive"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDialog"
 import {bindActionCreators} from "redux"
-import {getProcessId, isRunning} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {isRunning, getProcessId} from "../../../selectors/graph"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "isStateLoaded"

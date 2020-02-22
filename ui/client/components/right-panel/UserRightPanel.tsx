@@ -16,11 +16,11 @@ import ProcessPanels from "./panels/process/ProcessPanel"
 import DeploymentPanel from "./panels/deploy/DeploymentPanel"
 import {RootState} from "../../reducers/index"
 import {hot} from "react-hot-loader"
-import {getFetchedProcessDetails, getFetchedProcessState} from "./selectors"
 import EditPanel from "./panels/edit/EditPanel"
-import {isRightPanelOpened} from "./selectors-ui"
+import {isRightPanelOpened} from "./selectors/ui"
 import TestPanel from "./panels/test/TestPanel"
 import GroupPanel from "./panels/group/GroupPanel"
+import {getFetchedProcessState, getFetchedProcessDetails} from "./selectors/graph"
 
 export type CapabilitiesType = $TodoType
 

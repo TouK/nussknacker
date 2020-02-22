@@ -5,8 +5,8 @@ import ProcessUtils from "../../../../../common/ProcessUtils"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {exportProcessToJSON} from "../../../../../actions/nk/importExport"
-import {getProcessToDisplay, getProcessVersionId} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getProcessVersionId, getProcessToDisplay} from "../../../selectors/graph"
 
 type Props = StateProps
 

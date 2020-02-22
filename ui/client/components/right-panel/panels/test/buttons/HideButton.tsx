@@ -2,10 +2,10 @@
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
-import {getShowRunProcessDetails} from "../../../selectors"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {hideRunProcessDetails} from "../../../../../actions/nk/process"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getShowRunProcessDetails} from "../../../selectors/graph"
 
 type Props = StateProps
 

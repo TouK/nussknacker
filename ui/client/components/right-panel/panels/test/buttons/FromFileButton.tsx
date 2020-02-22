@@ -2,12 +2,12 @@
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
-import {getProcessToDisplay, getProcessId, getTestCapabilities} from "../../../selectors"
 import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {testProcessFromFile} from "../../../../../actions/nk/process"
 import {reportEvent} from "../../../../../actions/nk/reportEvent"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getTestCapabilities, getProcessId, getProcessToDisplay} from "../../../selectors/graph"
 
 type Props = StateProps
 

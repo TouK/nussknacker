@@ -8,8 +8,9 @@ import HttpService from "../../../../../http/HttpService"
 import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDialog"
-import {getProcessId, getProcessVersionId, getFeatureSettings, isDeployPossible} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getFeatureSettings} from "../../../selectors/settings"
+import {isDeployPossible, getProcessVersionId, getProcessId} from "../../../selectors/graph"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "isStateLoaded"

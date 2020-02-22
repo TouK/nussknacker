@@ -4,8 +4,8 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
-import {hasOneVersion} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {hasOneVersion} from "../../../selectors/graph"
 
 type Props = StateProps
 

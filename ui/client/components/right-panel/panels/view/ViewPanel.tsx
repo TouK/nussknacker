@@ -7,7 +7,7 @@ import {businessViewChanged} from "../../../../actions/nk/ui/layout"
 import {RightPanel} from "../../RightPanel"
 import Switch from "react-switch"
 import {bindActionCreators} from "redux"
-import {isPristine, getProcessId, getProcessVersionId, isBusinessView} from "../../selectors"
+import {isPristine, isBusinessView, getProcessVersionId, getProcessId} from "../../selectors/graph"
 
 type OwnProps = {}
 

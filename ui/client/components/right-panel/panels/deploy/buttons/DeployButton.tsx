@@ -7,8 +7,8 @@ import HttpService from "../../../../../http/HttpService"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../../../actions/nk/tooltips"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
-import {hasError, isSaveDisabled, isDeployPossible} from "../../../selectors"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {isDeployPossible, isSaveDisabled, hasError} from "../../../selectors/graph"
 
 type PropsPick = Pick<PanelProps,
   | "isStateLoaded"

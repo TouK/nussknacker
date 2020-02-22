@@ -2,11 +2,11 @@
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
-import {getNodeToDisplay} from "../../../selectors"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import NodeUtils from "../../../../graph/NodeUtils"
 import {ungroup} from "../../../../../actions/nk/groups"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {getNodeToDisplay} from "../../../selectors/graph"
 
 type Props = StateProps
 
