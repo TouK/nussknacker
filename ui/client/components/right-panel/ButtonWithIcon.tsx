@@ -16,9 +16,10 @@ interface Props {
 }
 
 export function ButtonWithIcon({onDrop, title, className, disabled, name, icon, ...props}: Props) {
+  const classNames = cn("espButton", "right-panel", className)
   const buttonProps = {
     ...props,
-    title,
+    title: title || name,
     children: (
       <>
         <PanelButtonIcon icon={icon} title={title}/>
@@ -37,7 +38,7 @@ export function ButtonWithIcon({onDrop, title, className, disabled, name, icon, 
                 ...buttonProps,
                 className: cn([
                   "dropZone",
-                  className,
+                  classNames,
                   disabled && "disabled",
                 ]),
               })}
@@ -53,7 +54,7 @@ export function ButtonWithIcon({onDrop, title, className, disabled, name, icon, 
     <button
       type="button"
       {...buttonProps}
-      className={className}
+      className={classNames}
       disabled={disabled}
     />
   )

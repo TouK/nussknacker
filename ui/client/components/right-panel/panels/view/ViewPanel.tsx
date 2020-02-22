@@ -1,13 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {connect} from "react-redux"
-import {RootState} from "../../../reducers/index"
-import {fetchProcessToDisplay} from "../../../actions/nk/process"
-import {businessViewChanged} from "../../../actions/nk/ui/layout"
-import {RightPanel} from "../RightPanel"
+import {RootState} from "../../../../reducers/index"
+import {fetchProcessToDisplay} from "../../../../actions/nk/process"
+import {businessViewChanged} from "../../../../actions/nk/ui/layout"
+import {RightPanel} from "../../RightPanel"
 import Switch from "react-switch"
 import {bindActionCreators} from "redux"
-import {isPristine, getProcessId, getProcessVersionId, isBusinessView} from "../selectors"
+import {isPristine, getProcessId, getProcessVersionId, isBusinessView} from "../../selectors"
 
 type OwnProps = {}
 
