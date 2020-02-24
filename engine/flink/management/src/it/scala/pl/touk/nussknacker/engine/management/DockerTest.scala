@@ -23,6 +23,9 @@ import scala.concurrent.duration._
 trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with LazyLogging {
   self: Suite =>
 
+  override val StartContainersTimeout: FiniteDuration = 5.minutes
+  override val StopContainersTimeout: FiniteDuration = 2.minutes
+
   private val flinkEsp = s"flinkesp:1.9.1-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
