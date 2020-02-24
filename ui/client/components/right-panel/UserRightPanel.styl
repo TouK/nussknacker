@@ -1,0 +1,20 @@
+@import "../../stylesheets/_variables.styl"
+
+:local(.rightSidenav)
+	background-color panelBkgColor
+	width sidebarWidth
+	transition left 0.5s ease, right 0.5s ease;
+	position absolute
+	z-index 1
+	top 0
+	bottom 0
+	right -(sidebarWidth)
+	overflow hidden
+
+	hr
+		border-top 1px solid hrColor
+		margin-top 10px
+		margin-bottom 10px
+
+	&.is-opened
+		right 0

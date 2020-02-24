@@ -1,7 +1,6 @@
 @import "./_variables.styl"
 
-#espLeftNav,
-#espRightNav
+#espLeftNav
   width: sidebarWidth
   overflow: hidden
 
@@ -22,8 +21,7 @@ sidenavMixin()
   & a
     white-space: pre
 
-.sidenav,
-.rightSidenav
+.sidenav
   transition: left 0.5s ease, right 0.5s ease;
 
 .sidenav
@@ -32,32 +30,6 @@ sidenavMixin()
 
   &.is-opened
     left: 0
-
-.rightSidenav
-  sidenavMixin()
-  right: -(sidebarWidth)
-
-  &.is-opened
-    right: 0
-
-  #right-panel-tabs .tab-content
-    padding 0px 15px 0px 15px
-    button
-      display block
-      margin-bottom 5px
-  .global
-    display inline-flex
-    .global-process-info
-      display inline-block
-      margin-left buttonPadding
-      margin-top buttonPadding
-      width (buttonPadding * 2 + buttonSize * 2)px
-      p
-        font-size 14px
-        font-weight lighter
-
-    .global-buttons
-      display inline-block
 
 // Accordion styles
 // overwriting default styles of the component

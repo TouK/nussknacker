@@ -13,6 +13,7 @@ import {isRightPanelOpened} from "./selectors/ui"
 import {getFetchedProcessDetails} from "./selectors/graph"
 import RightToolPanels from "./RightToolPanels"
 import {ProcessStateType} from "../Process/types"
+import styles from "./UserRightPanel.styl"
 
 export type CapabilitiesType = $TodoType
 
@@ -55,7 +56,7 @@ function UserRightPanel(props: Props) {
   } = props
 
   return (
-    <div id="espRightNav" className={cn("rightSidenav", {"is-opened": isOpened})}>
+    <div className={cn(styles.rightSidenav, {"is-opened": isOpened})}>
       <ZoomButtons className={cn("right", isOpened && "is-opened")} onZoomIn={zoomIn} onZoomOut={zoomOut}/>
 
       <SpinnerWrapper isReady={isReady}>
