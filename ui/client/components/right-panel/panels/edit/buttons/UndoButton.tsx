@@ -8,14 +8,17 @@ import {areAllModalsClosed} from "../../../selectors/ui"
 import {undo} from "../../../../../actions/undoRedoActions"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {getHistory} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type Props = StateProps
 
 function UndoButton(props: Props) {
   const {keyActionsAvailable, undo, history} = props
+  const {t} = useTranslation()
+
   return (
     <ButtonWithIcon
-      name={"undo"}
+      name={t("panels.edit.actions.undo.button", "undo")}
       disabled={history.past.length === 0}
       icon={InlinedSvgs.buttonUndo}
       onClick={() => keyActionsAvailable && undo({

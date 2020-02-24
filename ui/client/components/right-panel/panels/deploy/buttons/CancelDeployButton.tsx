@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {Props as PanelProps} from "../../../UserRightPanel"
 import {RootState} from "../../../../../reducers/index"
@@ -8,6 +7,7 @@ import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {isCancelPossible} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type PropsPick = Pick<PanelProps,
   | "isStateLoaded"
@@ -17,14 +17,15 @@ type OwnProps = PropsPick
 type Props = OwnProps & StateProps
 
 function CancelDeployButton(props: Props) {
+  const {t} = useTranslation()
   const {cancelPossible, toggleProcessActionDialog} = props
 
   return (
     <ButtonWithIcon
-      name={"cancel"}
+      name={t("panels.deploy.actions.canel.button", "cancel")}
       disabled={!cancelPossible}
       icon={InlinedSvgs.buttonCancel}
-      onClick={() => toggleProcessActionDialog("Cancel process", HttpService.cancel, false)}
+      onClick={() => toggleProcessActionDialog(t("panels.deploy.actions.canel.dialog","Cancel process"), HttpService.cancel, false)}
     />
   )
 }

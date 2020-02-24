@@ -5,6 +5,7 @@ import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {cutSelection} from "../../../../../actions/nk/selection"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {useTranslation} from "react-i18next"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "selectionActions">
@@ -15,10 +16,11 @@ type Props = OwnProps & StateProps
 function CutButton(props: Props) {
   const {selectionActions, cutSelection} = props
   const {cut, canCut} = selectionActions
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"cut"}
+      name={t("panels.edit.actions.cut.button", "cut")}
       icon={"cut.svg"}
       disabled={!canCut}
       onClick={event => cutSelection(

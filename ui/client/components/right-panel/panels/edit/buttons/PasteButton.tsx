@@ -5,6 +5,7 @@ import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {pasteSelection} from "../../../../../actions/nk/selection"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {useTranslation} from "react-i18next"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "selectionActions">
@@ -14,11 +15,12 @@ type Props = OwnProps & StateProps
 
 function PasteButton(props: Props) {
   const {selectionActions, pasteSelection} = props
+  const {t} = useTranslation()
 
   const {canPaste, paste} = selectionActions
   return (
     <ButtonWithIcon
-      name={"paste"}
+      name={t("panels.edit.actions.paste.button", "paste")}
       icon={"paste.svg"}
       disabled={!canPaste}
       onClick={event => pasteSelection(

@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {OwnProps as PanelOwnProps} from "../../../UserRightPanel"
 import {RootState} from "../../../../../reducers/index"
@@ -9,6 +8,7 @@ import {isEmpty} from "lodash"
 import {deleteSelection} from "../../../../../actions/nk/selection"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {getSelectionState, getNodeToDisplay} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "selectionActions">
@@ -18,10 +18,11 @@ type Props = OwnProps & StateProps
 
 function DeleteButton(props: Props) {
   const {nodeToDisplay, selectionState, deleteSelection} = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"delete"}
+      name={t("panels.edit.actions.delete.button", "delete")}
       icon={"delete.svg"}
       disabled={!NodeUtils.isPlainNode(nodeToDisplay) || isEmpty(selectionState)}
       onClick={() => deleteSelection(

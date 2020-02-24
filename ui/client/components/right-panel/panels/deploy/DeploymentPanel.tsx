@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {Props as PanelProps} from "../../UserRightPanel"
 import {RootState} from "../../../../reducers/index"
@@ -8,6 +7,7 @@ import Deploy from "./buttons/DeployButton"
 import Cancel from "./buttons/CancelDeployButton"
 import Metrics from "./buttons/MetricsButton"
 import {isSubprocess} from "../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type PropsPick = Pick<PanelProps,
   | "capabilities"
@@ -19,9 +19,10 @@ type Props = OwnProps & StateProps
 
 function DeploymentPanel(props: Props) {
   const {capabilities: {deploy: deployEnabled}, isSubprocess, ...passProps} = props
+  const {t} = useTranslation()
 
   return (
-    <RightPanel title={"Deployment"} isHidden={isSubprocess}>
+    <RightPanel title={t("panels.deploy.title", "Deployment")} isHidden={isSubprocess}>
       {deployEnabled ? <Deploy  {...passProps}/> : null}
       {deployEnabled ? <Cancel  {...passProps}/> : null}
       <Metrics/>

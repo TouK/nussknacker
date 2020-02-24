@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {OwnProps as PanelOwnProps} from "../../UserRightPanel"
 import {RootState} from "../../../../reducers/index"
@@ -13,6 +12,7 @@ import Cut from "./buttons/CutButton"
 import Delete from "./buttons/DeleteButton"
 import Paste from "./buttons/PasteButton"
 import {isSubprocess} from "../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "capabilities"
@@ -24,11 +24,12 @@ type Props = OwnProps & StateProps
 
 function EditPanel(props: Props) {
   const {capabilities, graphLayoutFunction, selectionActions, isSubprocess} = props
+  const {t} = useTranslation()
 
   const writeAllowed = capabilities.write
 
   return (
-    <RightPanel title={"Edit"}>
+    <RightPanel title={t("panels.edit.title", "Edit")}>
       {writeAllowed ? <Undo/> : null}
       {writeAllowed ? <Redo/> : null}
       {writeAllowed ? <Layout graphLayoutFunction={graphLayoutFunction}/> : null}

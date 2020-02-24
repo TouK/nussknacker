@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import ProcessUtils from "../../../../../common/ProcessUtils"
@@ -8,17 +7,20 @@ import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {displayModalNodeDetails} from "../../../../../actions/nk/modal"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {isPristine, getProcessToDisplay} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
+import cn from "classnames"
 
 type Props = StateProps
 
 function PropertiesButton(props: Props) {
   const {hasErrors, processToDisplay, displayModalNodeDetails} = props
+  const {t} = useTranslation()
 
-  const propertiesBtnClass = hasErrors && !ProcessUtils.hasNoPropertiesErrors(processToDisplay) ? "esp-button-error right-panel" : null
+  const propertiesBtnClass = cn({"esp-button-error": hasErrors && !ProcessUtils.hasNoPropertiesErrors(processToDisplay)})
 
   return (
     <ButtonWithIcon
-      name={"properties"}
+      name={t("panels.edit.actions.properties.button", "properties")}
       icon={InlinedSvgs.buttonSettings}
       className={propertiesBtnClass}
       onClick={() => displayModalNodeDetails(
@@ -26,7 +28,7 @@ function PropertiesButton(props: Props) {
         undefined,
         {
           category: events.categories.rightPanel,
-          name: "properties",
+          name: t("panels.edit.actions.properties.dialog", "properties"),
         },
       )}
     />
