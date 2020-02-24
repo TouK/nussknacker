@@ -11,12 +11,14 @@ trait KafkaSpec extends { self: Suite with BeforeAndAfterAll =>
   lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
 
   override protected def beforeAll(): Unit = {
-    val List(kafkaPort, zkPort) = AvailablePortFinder.findAvailablePorts(2)
-    kafkaZookeeperServer = KafkaZookeeperServer.run(
-      kafkaPort = kafkaPort,
-      zkPort = zkPort,
-      kafkaBrokerConfig = kafkaBrokerConfig
-    )
+    AvailablePortFinder.withAvailablePortsBlocked(2) {
+      case List(kafkaPort, zkPort) =>
+        kafkaZookeeperServer = KafkaZookeeperServer.run(
+          kafkaPort = kafkaPort,
+          zkPort = zkPort,
+          kafkaBrokerConfig = kafkaBrokerConfig
+        )
+    }
     kafkaClient = new KafkaClient(kafkaAddress = kafkaZookeeperServer.kafkaAddress, zkAddress = kafkaZookeeperServer.zkAddress, self.suiteName)
   }
 

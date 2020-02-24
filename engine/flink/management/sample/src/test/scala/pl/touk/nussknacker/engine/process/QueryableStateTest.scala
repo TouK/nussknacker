@@ -25,7 +25,7 @@ import scala.concurrent.Future
 
 class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with KafkaSpec with LazyLogging with VeryPatientScalaFutures {
 
-  private val QueryStateProxyPortLow = AvailablePortFinder.findAvailablePorts(1).head
+  private var queryStateProxyPortLow: Int = _
 
   private implicit val booleanTypeInfo: TypeInformation[lang.Boolean] = TypeInformation.of(classOf[java.lang.Boolean])
 
@@ -33,14 +33,21 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
   private val taskManagersCount = 2
   private val config: Configuration = FlinkTestConfiguration.configuration(taskManagersCount = taskManagersCount)
-  private val stoppableEnv: StoppableExecutionEnvironment = StoppableExecutionEnvironment.withQueryableStateEnabled(config, QueryStateProxyPortLow, taskManagersCount)
-  private val env = new StreamExecutionEnvironment(stoppableEnv)
+  private var stoppableEnv: StoppableExecutionEnvironment = _
+  private var env: StreamExecutionEnvironment = _
   private var registrar: FlinkStreamingProcessRegistrar = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val config = TestConfig(kafkaZookeeperServer)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+    AvailablePortFinder.withAvailablePortsBlocked(1) {
+      case head :: Nil =>
+        queryStateProxyPortLow = head
+        stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled(config, queryStateProxyPortLow, taskManagersCount)
+        stoppableEnv.start()
+    }
+    env = new StreamExecutionEnvironment(stoppableEnv)
+    val testConfig = TestConfig(kafkaZookeeperServer)
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(testConfig, creator)), testConfig)
   }
 
   override protected def afterAll(): Unit = {
@@ -65,7 +72,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
     //this port should not exist...
     val strangePort = 12345
-    val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$QueryStateProxyPortLow, localhost:${QueryStateProxyPortLow+1}")
+    val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$queryStateProxyPortLow, localhost:${queryStateProxyPortLow+1}")
 
     def queryState(jobId: String): Future[Boolean] = client.fetchState[java.lang.Boolean](
       jobId = jobId,

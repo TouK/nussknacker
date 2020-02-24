@@ -51,6 +51,10 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
     resource
   }
 
+  def start(): Unit = {
+    flinkMiniCluster
+  }
+
   def queryableClient(proxyPort: Int) : QueryableStateClient= {
     new QueryableStateClient("localhost", proxyPort)
   }
