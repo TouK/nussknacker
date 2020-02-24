@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.definition.TestingCapabilities
+import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -32,7 +32,7 @@ class SignalsResources(modelData: Map[String, ModelData],
             complete {
               processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).map[ToResponseMarshallable] {
                 case Some(process) =>
-                  modelData(process.processingType).dispatchSignal(signalType, processId.name.value, params.mapValues(_.asInstanceOf[AnyRef]))
+                  SignalDispatcher.dispatchSignal(modelData(process.processingType))(signalType, processId.name.value, params.mapValues(_.asInstanceOf[AnyRef]))
                 case None =>
                   HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
               }
