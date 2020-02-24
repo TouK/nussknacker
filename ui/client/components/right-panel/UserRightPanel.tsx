@@ -56,7 +56,12 @@ function UserRightPanel(props: Props) {
   } = props
 
   return (
-    <div className={cn(styles.rightSidenav, {"is-opened": isOpened})}>
+    <div
+      className={cn(
+        styles.rightSidenav,
+        isOpened && styles.isOpened,
+      )}
+    >
       <ZoomButtons className={cn("right", isOpened && "is-opened")} onZoomIn={zoomIn} onZoomOut={zoomOut}/>
 
       <SpinnerWrapper isReady={isReady}>
