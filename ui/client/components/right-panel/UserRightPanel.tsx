@@ -8,7 +8,7 @@ import SpinnerWrapper from "../SpinnerWrapper"
 import TogglePanel from "../TogglePanel"
 import ProcessInfo from "../Process/ProcessInfo"
 import {ProcessStateType} from "../Process/types"
-import Panels from "./Panels"
+import DetailsPanel from "./panels/details/DetailsPanel"
 import {ZoomButtons} from "./ZoomButtons"
 import ViewPanel from "./panels/view/ViewPanel"
 import {toggleRightPanel} from "../../actions/nk/ui/layout"
@@ -93,7 +93,8 @@ class UserRightPanel extends Component<Props> {
             />
             <TestPanel capabilities={capabilities}/>
             <GroupPanel capabilities={capabilities}/>
-            <Panels showDetails={capabilities.write}/>
+            {/*TODO remove SideNodeDetails? turn out to be not useful*/}
+            <DetailsPanel showDetails={capabilities.write}/>
           </Scrollbars>
         </SpinnerWrapper>
 

@@ -1,7 +1,8 @@
+/* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
 import React, {Component} from "react"
 import {connect} from "react-redux"
-import ActionsUtils from "../../actions/ActionsUtils"
+import ActionsUtils from "../../../../actions/ActionsUtils"
 
 class SideNodeDetails extends Component {
 
