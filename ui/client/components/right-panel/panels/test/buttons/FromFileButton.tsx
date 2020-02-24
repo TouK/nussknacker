@@ -1,5 +1,5 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
+import {useTranslation} from "react-i18next"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
@@ -14,10 +14,11 @@ type Props = StateProps
 function FromFileButton(props: Props) {
   const {processId, processToDisplay, testCapabilities} = props
   const {reportEvent, testProcessFromFile} = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"from file"}
+      name={t("panels.test.actions.fromFile.button", "from file")}
       icon={InlinedSvgs.buttonFromFile}
       disabled={!testCapabilities.canBeTested}
       onDrop={(files) => files.forEach((file) => testProcessFromFile(processId, file, processToDisplay))}

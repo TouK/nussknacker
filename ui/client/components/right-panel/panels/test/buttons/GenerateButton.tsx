@@ -1,5 +1,5 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
+import {useTranslation} from "react-i18next"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
@@ -11,10 +11,11 @@ type Props = StateProps
 
 function GenerateButton(props: Props) {
   const {processIsLatestVersion, testCapabilities, toggleModalDialog} = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"generate"}
+      name={t("panels.test.actions.generate.button", "generate")}
       icon={"generate.svg"}
       disabled={!processIsLatestVersion || !testCapabilities.canGenerateTestData}
       onClick={() => toggleModalDialog(Dialogs.types.generateTestData)}

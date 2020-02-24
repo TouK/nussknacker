@@ -1,23 +1,23 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
-import {RootState} from "../../../../../reducers/index"
+import {useTranslation} from "react-i18next"
 import {connect} from "react-redux"
-import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
+import {RootState} from "../../../../../reducers/index"
+import Dialogs from "../../../../modals/Dialogs"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 
 type Props = StateProps
 
 function CountsButton(props: Props) {
   const {toggleModalDialog} = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"counts"}
+      name={t("panels.test.actions.counts.button", "counts")}
       icon={"counts.svg"}
       onClick={() => toggleModalDialog(Dialogs.types.calculateCounts)}
     />
-
   )
 }
 

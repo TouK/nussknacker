@@ -1,15 +1,15 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
-import {CapabilitiesType} from "../../UserRightPanel"
-import {RootState} from "../../../../reducers/index"
+import {useTranslation} from "react-i18next"
 import {connect} from "react-redux"
+import {RootState} from "../../../../reducers/index"
+import {isSubprocess} from "../../selectors/graph"
+import {getFeatureSettings} from "../../selectors/settings"
+import {CapabilitiesType} from "../../UserRightPanel"
 import {RightPanel} from "../RightPanel"
 import CountsButton from "./buttons/CountsButton"
+import FromFileButton from "./buttons/FromFileButton"
 import GenerateButton from "./buttons/GenerateButton"
 import HideButton from "./buttons/HideButton"
-import FromFileButton from "./buttons/FromFileButton"
-import {getFeatureSettings} from "../../selectors/settings"
-import {isSubprocess} from "../../selectors/graph"
 
 type OwnProps = {
   capabilities: CapabilitiesType,
@@ -19,9 +19,10 @@ type Props = OwnProps & StateProps
 function TestPanel(props: Props) {
   const {capabilities, isSubprocess, featuresSettings} = props
   const writeAllowed = capabilities.write
+  const {t} = useTranslation()
 
   return (
-    <RightPanel title={"Test"} isHidden={isSubprocess}>
+    <RightPanel title={t("panels.test.title", "Test")} isHidden={isSubprocess}>
       {writeAllowed ? <FromFileButton/> : null}
       {writeAllowed ? <HideButton/> : null}
       {writeAllowed ? <GenerateButton/> : null}

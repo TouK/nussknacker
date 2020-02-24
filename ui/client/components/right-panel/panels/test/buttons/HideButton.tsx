@@ -1,5 +1,5 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
+import {useTranslation} from "react-i18next"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
@@ -11,10 +11,11 @@ type Props = StateProps
 
 function HideButton(props: Props) {
   const {showRunProcessDetails, hideRunProcessDetails} = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"hide"}
+      name={t("panels.test.actions.hide.button", "hide")}
       icon={InlinedSvgs.buttonHide}
       disabled={!showRunProcessDetails}
       onClick={() => hideRunProcessDetails()}
