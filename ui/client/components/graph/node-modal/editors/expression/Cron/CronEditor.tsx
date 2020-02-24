@@ -44,6 +44,13 @@ export default function CronEditor(props: Props) {
   const [value, setValue] = useState(decode(expressionObj.expression))
   const [open, setOpen] = useState(false)
 
+  const handleClickOutside = e => {
+    if (node.current.contains(e.target)) {
+      return;
+    }
+    setOpen(false);
+  }
+
   useEffect(() => {
       if (open) {
         document.addEventListener("mousedown", handleClickOutside);
@@ -63,13 +70,6 @@ export default function CronEditor(props: Props) {
     },
     [value],
   )
-
-  const handleClickOutside = e => {
-    if (node.current.contains(e.target)) {
-      return;
-    }
-    setOpen(false);
-  }
 
   return (
     <div ref={node} className={"cron-editor-container"}>
