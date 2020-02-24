@@ -48,6 +48,12 @@ protected object  ParameterTypeEditorDeterminer extends ParameterEditorDetermine
           defaultMode = DualEditorMode.SIMPLE
         )
       )
+      case klazz if klazz == classOf[com.cronutils.model.Cron] => Some(
+        DualParameterEditor(
+          simpleEditor = CronParameterEditor,
+          defaultMode = DualEditorMode.SIMPLE
+        )
+      )
       case _ => Some(RawParameterEditor)
     }
   }

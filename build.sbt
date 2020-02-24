@@ -163,6 +163,7 @@ val postgresV = "42.2.5"
 val flywayV = "5.2.4"
 val confluentV = "4.1.2"
 val jbcryptV = "0.4"
+val cronParserV = "3.1.1"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -336,6 +337,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
     test in assembly := {},
     libraryDependencies ++= {
       Seq(
+        "com.cronutils" % "cron-utils" % cronParserV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-queryable-state-runtime" % flinkV % "test",
         "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests"
@@ -620,7 +622,7 @@ lazy val api = (project in engine("api")).
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "1.1.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.typesafe" % "config" % configV,
+        "com.typesafe" % "config" % configV
       )
     }
   ).dependsOn(testUtil % "test")
@@ -793,6 +795,7 @@ lazy val ui = (project in file("ui/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.3",
+        "com.cronutils" % "cron-utils" % cronParserV,
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
