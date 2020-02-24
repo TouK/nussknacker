@@ -5,6 +5,7 @@ import Cron from "react-cron-generator"
 import "react-cron-generator/dist/cron-builder.css"
 import Input from "../../field/Input"
 import "./cronEditorStyle.styl"
+import i18next from "i18next";
 
 type CronExpression = string
 
@@ -98,6 +99,7 @@ export default function CronEditor(props: Props) {
 CronEditor.switchableTo = (expressionObj: ExpressionObj) =>
   CRON_DECODE_REGEX.test(expressionObj.expression) || expressionObj.expression === ""
 
-CronEditor.switchableToHint = "Switch to basic mode"
+CronEditor.switchableToHint = () => i18next.t("editors.cron..switchableToHint","Switch to basic mode")
 
-CronEditor.notSwitchableToHint = "Expression must match pattern T(com.cronutils.parser.CronParser).parse('* * * * * * *') to switch to basic mode"
+CronEditor.notSwitchableToHint = () => i18next.t("editors.cron.notSwitchableToHint",
+  "Expression must match pattern T(com.cronutils.parser.CronParser).parse('* * * * * * *') to switch to basic mode" )

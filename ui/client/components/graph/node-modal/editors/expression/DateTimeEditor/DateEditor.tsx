@@ -11,8 +11,8 @@ export function DateEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "ex
   return <DatepickerEditor {...props} dateFormat={dateFormat} timeFormat={null} expressionType={JavaTimeTypes.LOCAL_DATE}/>
 }
 
-DateEditor.switchableToHint = i18next.t("editors.LocalDate.switchableToHint", "Switch to basic mode")
-DateEditor.notSwitchableToHint = i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to basic mode")
+DateEditor.switchableToHint = () =>  i18next.t("editors.LocalDate.switchableToHint", "Switch to basic mode")
+DateEditor.notSwitchableToHint = () => i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to basic mode")
 DateEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj, JavaTimeTypes.LOCAL_DATE) || isEmpty(
     expressionObj.expression,
 )
