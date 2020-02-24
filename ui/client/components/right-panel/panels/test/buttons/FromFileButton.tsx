@@ -18,7 +18,7 @@ function FromFileButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.test.actions.fromFile.button", "from file")}
+      name={t("panels.actions.test-fromFile.button", "from file")}
       icon={InlinedSvgs.buttonFromFile}
       disabled={!testCapabilities.canBeTested}
       onDrop={(files) => files.forEach((file) => testProcessFromFile(processId, file, processToDisplay))}

@@ -22,20 +22,20 @@ function DeployButton(props: Props) {
   const {deployPossible, hasErrors, saveDisabled} = props
   const {disableToolTipsHighlight, enableToolTipsHighlight, toggleProcessActionDialog} = props
   const deployToolTip = hasErrors ?
-    t("panels.deploy.actions.deploy.tooltips.error", "Cannot deploy due to errors. Please look at the left panel for more details.") :
+    t("panels.actions.deploy.tooltips.error", "Cannot deploy due to errors. Please look at the left panel for more details.") :
     !saveDisabled ?
-      t("panels.deploy.actions.deploy.tooltips.unsaved", "You have unsaved changes.") :
+      t("panels.actions.deploy.tooltips.unsaved", "You have unsaved changes.") :
       null
   const deployMouseOver = hasErrors ? enableToolTipsHighlight : null
   const deployMouseOut = hasErrors ? disableToolTipsHighlight : null
 
   return (
     <ButtonWithIcon
-      name={t("panels.deploy.actions.deploy.button", "deploy")}
+      name={t("panels.actions.deploy.button", "deploy")}
       disabled={!deployPossible}
       icon={InlinedSvgs.buttonDeploy}
       title={deployToolTip}
-      onClick={() => toggleProcessActionDialog(t("panels.deploy.actions.deploy.dialog", "Deploy process"), HttpService.deploy, true)}
+      onClick={() => toggleProcessActionDialog(t("panels.actions.deploy.dialog", "Deploy process"), HttpService.deploy, true)}
       onMouseOver={deployMouseOver}
       onMouseOut={deployMouseOut}
     />

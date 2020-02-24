@@ -15,7 +15,7 @@ function GroupFinishButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.group.actions.finish.button", "finish")}
+      name={t("panels.actions.group-finish.button", "finish")}
       icon={InlinedSvgs.buttonGroup}
       disabled={(groupingState || []).length <= 1}
       onClick={finishGrouping}

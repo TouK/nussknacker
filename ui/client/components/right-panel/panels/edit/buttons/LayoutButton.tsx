@@ -17,7 +17,7 @@ function LayoutButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.edit.actions.layout.button", "layout")}
+      name={t("panels.actions.edit-layout.button", "layout")}
       icon={InlinedSvgs.buttonLayout}
       onClick={() => layout(graphLayoutFunction)}
     />

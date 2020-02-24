@@ -22,7 +22,7 @@ function DeleteButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.edit.actions.delete.button", "delete")}
+      name={t("panels.actions.edit-delete.button", "delete")}
       icon={"delete.svg"}
       disabled={!NodeUtils.isPlainNode(nodeToDisplay) || isEmpty(selectionState)}
       onClick={() => deleteSelection(

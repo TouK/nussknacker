@@ -20,7 +20,7 @@ function PropertiesButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.edit.actions.properties.button", "properties")}
+      name={t("panels.actions.edit-properties.button", "properties")}
       icon={InlinedSvgs.buttonSettings}
       className={propertiesBtnClass}
       onClick={() => displayModalNodeDetails(
@@ -28,7 +28,7 @@ function PropertiesButton(props: Props) {
         undefined,
         {
           category: events.categories.rightPanel,
-          name: t("panels.edit.actions.properties.dialog", "properties"),
+          name: t("panels.actions.edit-properties.dialog", "properties"),
         },
       )}
     />

@@ -15,7 +15,7 @@ function MetricsButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.deploy.actions.metrics.button", "metrics")}
+      name={t("panels.actions.deploy-metrics.button", "metrics")}
       onClick={() => showMetrics(processId)}
       icon={InlinedSvgs.buttonMetrics}
     />

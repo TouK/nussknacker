@@ -29,15 +29,15 @@ function ArchiveButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.process.actions.archive.button", "archive")}
+      name={t("panels.actions.process-archive.button", "archive")}
       icon={"archive.svg"}
       disabled={isRunning}
       onClick={() => !isRunning && toggleConfirmDialog(
         true,
         DialogMessages.archiveProcess(processId),
         () => HttpService.archiveProcess(processId).then(() => history.push(Archive.path)),
-        t("panels.process.actions.archive.yes", "Yes"),
-        t("panels.process.actions.archive.no", "No"),
+        t("panels.actions.process-archive.yes", "Yes"),
+        t("panels.actions.process-archive.no", "No"),
         // eslint-disable-next-line i18next/no-literal-string
         {category: events.categories.rightPanel, action: events.actions.buttonClick, name: "archive"},
       )}

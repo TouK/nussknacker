@@ -20,7 +20,7 @@ function SaveButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.process.actions.save.button", "save")}
+      name={t("panels.actions.process-save.button", "save")}
       icon={InlinedSvgs.buttonSave}
       className={cn(!saveDisabled && classes.saveEnabled)}
       disabled={saveDisabled}

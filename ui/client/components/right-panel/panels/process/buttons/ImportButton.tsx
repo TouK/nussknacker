@@ -18,7 +18,7 @@ function ImportButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.process.actions.import.button", "import")}
+      name={t("panels.actions.process-import.button", "import")}
       icon={InlinedSvgs.buttonImport}
       disabled={false}
       onClick={() => reportEvent({

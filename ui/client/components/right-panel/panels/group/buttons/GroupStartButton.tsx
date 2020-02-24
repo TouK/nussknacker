@@ -15,7 +15,7 @@ function GroupStartButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.group.actions.start.button", "start")}
+      name={t("panels.actions.group-start.button", "start")}
       icon={InlinedSvgs.buttonGroup}
       disabled={groupingState != null}
       onClick={startGrouping}

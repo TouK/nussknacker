@@ -22,10 +22,10 @@ function CancelDeployButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.deploy.actions.canel.button", "cancel")}
+      name={t("panels.actions.deploy-canel.button", "cancel")}
       disabled={!cancelPossible}
       icon={InlinedSvgs.buttonCancel}
-      onClick={() => toggleProcessActionDialog(t("panels.deploy.actions.canel.dialog","Cancel process"), HttpService.cancel, false)}
+      onClick={() => toggleProcessActionDialog(t("panels.actions.deploy-canel.dialog","Cancel process"), HttpService.cancel, false)}
     />
   )
 }

@@ -18,7 +18,7 @@ function CompareButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.process.actions.compare.button", "compare")}
+      name={t("panels.actions.process-compare.button", "compare")}
       icon={"compare.svg"}
       disabled={hasOneVersion}
       onClick={() => toggleModalDialog(Dialogs.types.compareVersions)}

@@ -28,15 +28,15 @@ function MigrateButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.process.actions.migrate.button", "migrate")}
+      name={t("panels.actions.process-migrate.button", "migrate")}
       icon={InlinedSvgs.buttonMigrate}
       disabled={!deployPossible}
       onClick={() => toggleConfirmDialog(
         true,
         DialogMessages.migrate(processId, featuresSettings.remoteEnvironment.targetEnvironmentId),
         () => HttpService.migrateProcess(processId, versionId),
-        t("panels.process.actions.migrate.yes", "Yes"),
-        t("panels.process.actions.migrate.no", "No"),
+        t("panels.actions.process-migrate.yes", "Yes"),
+        t("panels.actions.process-migrate.no", "No"),
         {
           category: events.categories.rightPanel,
           action: events.actions.buttonClick,

@@ -19,7 +19,7 @@ function JSONButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.process.actions.JSON.button", "JSON")}
+      name={t("panels.actions.process-JSON.button", "JSON")}
       icon={InlinedSvgs.buttonExport}
       disabled={!canExport}
       onClick={() => exportProcessToJSON(processToDisplay, versionId)}

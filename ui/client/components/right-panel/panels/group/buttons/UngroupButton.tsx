@@ -16,7 +16,7 @@ function UngroupButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.group.actions.ungroup.button", "ungroup")}
+      name={t("panels.actions.group-ungroup.button", "ungroup")}
       icon={InlinedSvgs.buttonUngroup}
       disabled={!NodeUtils.nodeIsGroup(nodeToDisplay)}
       onClick={() => ungroup(nodeToDisplay)}

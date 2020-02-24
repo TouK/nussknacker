@@ -17,7 +17,7 @@ function RedoButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.edit.actions.redo.button", "redo")}
+      name={t("panels.actions.edit-redo.button", "redo")}
       disabled={history.future.length === 0}
       icon={InlinedSvgs.buttonRedo}
       onClick={() => keyActionsAvailable && redo({

@@ -18,7 +18,7 @@ function UndoButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.edit.actions.undo.button", "undo")}
+      name={t("panels.actions.edit-undo.button", "undo")}
       disabled={history.past.length === 0}
       icon={InlinedSvgs.buttonUndo}
       onClick={() => keyActionsAvailable && undo({

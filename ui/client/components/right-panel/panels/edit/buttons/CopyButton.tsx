@@ -19,7 +19,7 @@ function CopyButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.edit.actions.copy.button", "copy")}
+      name={t("panels.actions.edit-copy.button", "copy")}
       icon={"copy.svg"}
       disabled={!canCopy}
       onClick={event => copySelection(

@@ -15,7 +15,7 @@ function HideButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.test.actions.hide.button", "hide")}
+      name={t("panels.actions.test-hide.button", "hide")}
       icon={InlinedSvgs.buttonHide}
       disabled={!showRunProcessDetails}
       onClick={() => hideRunProcessDetails()}

@@ -24,7 +24,7 @@ function PDFButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.process.actions.PDF.button", "PDF")}
+      name={t("panels.actions.process-PDF.button", "PDF")}
       icon={InlinedSvgs.pdf}
       disabled={!canExport}
       onClick={() => exportProcessToPdf(processId, versionId, exportGraph(), businessView)}

@@ -20,7 +20,7 @@ function CutButton(props: Props) {
 
   return (
     <ButtonWithIcon
-      name={t("panels.edit.actions.cut.button", "cut")}
+      name={t("panels.actions.edit-cut.button", "cut")}
       icon={"cut.svg"}
       disabled={!canCut}
       onClick={event => cutSelection(

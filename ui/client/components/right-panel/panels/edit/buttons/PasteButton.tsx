@@ -20,7 +20,7 @@ function PasteButton(props: Props) {
   const {canPaste, paste} = selectionActions
   return (
     <ButtonWithIcon
-      name={t("panels.edit.actions.paste.button", "paste")}
+      name={t("panels.actions.edit-paste.button", "paste")}
       icon={"paste.svg"}
       disabled={!canPaste}
       onClick={event => pasteSelection(
