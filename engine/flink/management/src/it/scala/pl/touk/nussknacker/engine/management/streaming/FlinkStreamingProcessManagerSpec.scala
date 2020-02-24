@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.{FlinkStateStatus, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -244,7 +245,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     val flinkModelData = FlinkStreamingProcessManagerProvider.defaultTypeConfig(configWithSignals).toModelData
 
     val consumer = kafkaClient.createConsumer()
-    flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
+    SignalDispatcher.dispatchSignal(flinkModelData)("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
     val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
     val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
@@ -266,7 +267,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     eventually {
 
       val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
-      logger.debug(s"Waiting for deploy: ${process.id}, ${jobStatus}")
+      logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
 
       jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
       jobStatus.map(_.status.isRunning) shouldBe Some(true)
@@ -281,7 +282,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
         .futureValue
         .filter(_.status.isRunning)
 
-      logger.debug(s"waiting for jobs: ${processId}, ${runningJobs}")
+      logger.debug(s"waiting for jobs: $processId, $runningJobs")
       if (runningJobs.nonEmpty) {
         throw new IllegalStateException("Job still exists")
       }

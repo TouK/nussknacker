@@ -1,26 +1,15 @@
 package pl.touk.nussknacker.engine.definition
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategories}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.ModelData
 
-trait SignalDispatcher {
-  def dispatchSignal(signalType: String, processId: String, parameters: Map[String, AnyRef]): Option[Unit]
-}
+object SignalDispatcher {
 
-trait ConfigCreatorSignalDispatcher extends SignalDispatcher {
-  def configCreator: ProcessConfigCreator
-
-  def processConfig: Config
-
-  def dispatchSignal(signalType: String, processId: String, parameters: Map[String, AnyRef]): Option[Unit] = {
-    ThreadUtils.withThisAsContextClassLoader(configCreator.getClass.getClassLoader) {
-      configCreator.signals(processConfig).get(signalType).map { signalFactory =>
-        val objectWithMethodDef = ObjectWithMethodDef.withEmptyConfig(signalFactory.value, ProcessObjectDefinitionExtractor.signals)
-        objectWithMethodDef.invokeMethod(parameters.get, None, List(processId))
-        ()
+  def dispatchSignal(modelData: ModelData)(signalType: String, processId: String, parameters: Map[String, AnyRef]): Option[Unit] = {
+    modelData.processWithObjectsDefinition.signalsWithTransformers.get(signalType).map { case (signalFactory, _) =>
+      modelData.withThisAsContextClassLoader {
+        signalFactory.invokeMethod(parameters.get, None, List(processId))
       }
+      ()
     }
   }
 }
