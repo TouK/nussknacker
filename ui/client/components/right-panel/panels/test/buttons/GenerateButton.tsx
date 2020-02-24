@@ -4,7 +4,7 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getTestCapabilities, isLatestProcessVersion} from "../../../selectors/graph"
 
 type Props = StateProps
@@ -14,7 +14,7 @@ function GenerateButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.test-generate.button", "generate")}
       icon={"generate.svg"}
       disabled={!processIsLatestVersion || !testCapabilities.canGenerateTestData}

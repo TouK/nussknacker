@@ -6,7 +6,7 @@ import HttpService from "../../../../../http/HttpService"
 import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDialog"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getFeatureSettings} from "../../../selectors/settings"
 import {isDeployPossible, getProcessVersionId, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
@@ -27,7 +27,7 @@ function MigrateButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.process-migrate.button", "migrate")}
       icon={InlinedSvgs.buttonMigrate}
       disabled={!deployPossible}

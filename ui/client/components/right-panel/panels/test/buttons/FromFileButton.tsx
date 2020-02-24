@@ -6,7 +6,7 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {testProcessFromFile} from "../../../../../actions/nk/process"
 import {reportEvent} from "../../../../../actions/nk/reportEvent"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getTestCapabilities, getProcessId, getProcessToDisplay} from "../../../selectors/graph"
 
 type Props = StateProps
@@ -17,7 +17,7 @@ function FromFileButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.test-fromFile.button", "from file")}
       icon={InlinedSvgs.buttonFromFile}
       disabled={!testCapabilities.canBeTested}

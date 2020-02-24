@@ -2,7 +2,7 @@ import React from "react"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {layout} from "../../../../../actions/nk/ui/layout"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../../UserRightPanel"
 
@@ -16,7 +16,7 @@ function LayoutButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.edit-layout.button", "layout")}
       icon={InlinedSvgs.buttonLayout}
       onClick={() => layout(graphLayoutFunction)}

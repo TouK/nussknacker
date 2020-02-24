@@ -1,0 +1,42 @@
+@import "../../stylesheets/_variables.styl"
+
+:local
+  .button
+    position relative
+    box-sizing border-box
+    width buttonSize
+    height buttonSize
+    padding (buttonSize / 12)
+    border 1px solid buttonBorderColor
+    border-radius 0
+
+    font-weight 600
+    font-size rightPanelButtonFontSize
+
+    display inline-flex
+    flex-direction column
+    align-items center
+    justify-content center
+
+    background-color buttonBkgColor
+    color buttonTextColor
+    transition background-color 0.2s
+
+    cursor pointer
+
+    &:disabled,&.disabled
+      opacity 0.3
+      cursor not-allowed !important
+
+    &:not(:disabled):hover,&:not(.disabled):hover
+      background-color buttonBkgHover
+
+    svg
+      width (buttonSize * 3/5)
+      display block
+      margin auto
+
+    &:focus
+      outline 3px solid focusColor !important
+      outline-offset -1px !important
+      z-index 10000

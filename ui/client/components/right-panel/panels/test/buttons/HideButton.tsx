@@ -4,7 +4,7 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {hideRunProcessDetails} from "../../../../../actions/nk/process"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getShowRunProcessDetails} from "../../../selectors/graph"
 
 type Props = StateProps
@@ -14,7 +14,7 @@ function HideButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.test-hide.button", "hide")}
       icon={InlinedSvgs.buttonHide}
       disabled={!showRunProcessDetails}

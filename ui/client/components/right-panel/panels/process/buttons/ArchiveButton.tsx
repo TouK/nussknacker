@@ -8,7 +8,7 @@ import {Archive} from "../../../../../containers/Archive"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDialog"
 import {bindActionCreators} from "redux"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {isRunning, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../../UserRightPanel"
@@ -28,7 +28,7 @@ function ArchiveButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.process-archive.button", "archive")}
       icon={"archive.svg"}
       disabled={isRunning}

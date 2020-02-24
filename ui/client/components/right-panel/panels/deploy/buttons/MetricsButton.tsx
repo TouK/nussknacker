@@ -3,7 +3,7 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {showMetrics} from "../../../../../actions/nk/showMetrics"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 
@@ -14,7 +14,7 @@ function MetricsButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.deploy-metrics.button", "metrics")}
       onClick={() => showMetrics(processId)}
       icon={InlinedSvgs.buttonMetrics}

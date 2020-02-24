@@ -3,7 +3,7 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {hasOneVersion} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 
@@ -17,7 +17,7 @@ function CompareButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.process-compare.button", "compare")}
       icon={"compare.svg"}
       disabled={hasOneVersion}

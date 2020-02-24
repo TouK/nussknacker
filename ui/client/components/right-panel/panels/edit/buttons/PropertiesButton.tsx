@@ -5,7 +5,7 @@ import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {displayModalNodeDetails} from "../../../../../actions/nk/modal"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {isPristine, getProcessToDisplay} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 import cn from "classnames"
@@ -19,7 +19,7 @@ function PropertiesButton(props: Props) {
   const propertiesBtnClass = cn({"esp-button-error": hasErrors && !ProcessUtils.hasNoPropertiesErrors(processToDisplay)})
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.edit-properties.button", "properties")}
       icon={InlinedSvgs.buttonSettings}
       className={propertiesBtnClass}

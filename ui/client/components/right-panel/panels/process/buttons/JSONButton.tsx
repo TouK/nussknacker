@@ -4,7 +4,7 @@ import ProcessUtils from "../../../../../common/ProcessUtils"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {exportProcessToJSON} from "../../../../../actions/nk/importExport"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getProcessVersionId, getProcessToDisplay} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 
@@ -18,7 +18,7 @@ function JSONButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.process-JSON.button", "JSON")}
       icon={InlinedSvgs.buttonExport}
       disabled={!canExport}

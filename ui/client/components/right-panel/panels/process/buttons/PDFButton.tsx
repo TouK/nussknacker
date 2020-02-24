@@ -4,7 +4,7 @@ import ProcessUtils from "../../../../../common/ProcessUtils"
 import {connect} from "react-redux"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {exportProcessToPdf} from "../../../../../actions/nk/importExport"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {isBusinessView, getProcessVersionId, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../../UserRightPanel"
@@ -23,7 +23,7 @@ function PDFButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.process-PDF.button", "PDF")}
       icon={InlinedSvgs.pdf}
       disabled={!canExport}

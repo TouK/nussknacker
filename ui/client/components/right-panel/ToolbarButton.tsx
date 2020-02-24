@@ -2,11 +2,14 @@ import Dropzone, {DropEvent} from "react-dropzone"
 import React, {ReactEventHandler} from "react"
 import cn from "classnames"
 import {PanelButtonIcon} from "./PanelButtonIcon"
+import styles from "./ToolbarButton.styl"
 
 interface Props {
   name: string,
   icon: string,
   className?: string,
+  iconClassName?: string,
+  labelClassName?: string,
   disabled?: boolean,
   title?: string,
   onDrop?: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void,
@@ -15,15 +18,15 @@ interface Props {
   onClick: ReactEventHandler,
 }
 
-export function ButtonWithIcon({onDrop, title, className, disabled, name, icon, ...props}: Props) {
-  const classNames = cn("espButton", "right-panel", className)
+export function ToolbarButton({onDrop, title, className, iconClassName, labelClassName, disabled, name, icon, ...props}: Props) {
+  const classNames = cn(styles.button, className)
   const buttonProps = {
     ...props,
     title: title || name,
     children: (
       <>
-        <PanelButtonIcon icon={icon} title={title}/>
-        <div className="button-label">{name}</div>
+        <PanelButtonIcon className={cn(iconClassName)} icon={icon} title={title}/>
+        <div className={cn(labelClassName)}>{name}</div>
       </>
     ),
   }
@@ -37,9 +40,8 @@ export function ButtonWithIcon({onDrop, title, className, disabled, name, icon, 
               {...getRootProps({
                 ...buttonProps,
                 className: cn([
-                  "dropZone",
                   classNames,
-                  disabled && "disabled",
+                  disabled && styles.disabled,
                 ]),
               })}
             />

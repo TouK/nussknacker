@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {isSaveDisabled} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 import cn from "classnames"
@@ -19,10 +19,10 @@ function SaveButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.process-save.button", "save")}
       icon={InlinedSvgs.buttonSave}
-      className={cn(!saveDisabled && classes.saveEnabled)}
+      labelClassName={cn("button-label", !saveDisabled && classes.unsaved)}
       disabled={saveDisabled}
       onClick={() =>
         //TODO: Checking permission to archiwization should be done by check action from state - we should add new action type

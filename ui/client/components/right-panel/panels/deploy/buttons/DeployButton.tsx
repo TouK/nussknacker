@@ -5,7 +5,7 @@ import HttpService from "../../../../../http/HttpService"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../../../actions/nk/tooltips"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {isDeployPossible, isSaveDisabled, hasError} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../../UserRightPanel"
@@ -30,7 +30,7 @@ function DeployButton(props: Props) {
   const deployMouseOut = hasErrors ? disableToolTipsHighlight : null
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.deploy.button", "deploy")}
       disabled={!deployPossible}
       icon={InlinedSvgs.buttonDeploy}

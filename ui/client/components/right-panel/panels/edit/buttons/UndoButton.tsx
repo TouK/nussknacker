@@ -6,7 +6,7 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {areAllModalsClosed} from "../../../selectors/ui"
 import {undo} from "../../../../../actions/undoRedoActions"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getHistory} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 
@@ -17,7 +17,7 @@ function UndoButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.edit-undo.button", "undo")}
       disabled={history.past.length === 0}
       icon={InlinedSvgs.buttonUndo}

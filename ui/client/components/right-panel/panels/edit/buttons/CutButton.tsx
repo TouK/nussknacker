@@ -3,7 +3,7 @@ import React from "react"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {cutSelection} from "../../../../../actions/nk/selection"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../../UserRightPanel"
 
@@ -19,7 +19,7 @@ function CutButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.edit-cut.button", "cut")}
       icon={"cut.svg"}
       disabled={!canCut}

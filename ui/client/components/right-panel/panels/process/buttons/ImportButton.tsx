@@ -6,7 +6,7 @@ import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {importFiles} from "../../../../../actions/nk/importExport"
 import {reportEvent} from "../../../../../actions/nk/reportEvent"
 import {bindActionCreators} from "redux"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 
@@ -17,7 +17,7 @@ function ImportButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.process-import.button", "import")}
       icon={InlinedSvgs.buttonImport}
       disabled={false}

@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import HttpService from "../../../../../http/HttpService"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {isCancelPossible} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../../UserRightPanel"
@@ -21,7 +21,7 @@ function CancelDeployButton(props: Props) {
   const {cancelPossible, toggleProcessActionDialog} = props
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.deploy-canel.button", "cancel")}
       disabled={!cancelPossible}
       icon={InlinedSvgs.buttonCancel}

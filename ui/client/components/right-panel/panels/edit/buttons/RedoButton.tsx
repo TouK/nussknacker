@@ -5,7 +5,7 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {areAllModalsClosed} from "../../../selectors/ui"
 import {redo} from "../../../../../actions/undoRedoActions"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getHistory} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 
@@ -16,7 +16,7 @@ function RedoButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.edit-redo.button", "redo")}
       disabled={history.future.length === 0}
       icon={InlinedSvgs.buttonRedo}

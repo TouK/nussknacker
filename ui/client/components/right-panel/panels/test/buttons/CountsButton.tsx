@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
 import {RootState} from "../../../../../reducers/index"
 import Dialogs from "../../../../modals/Dialogs"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 
 type Props = StateProps
 
@@ -13,7 +13,7 @@ function CountsButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.test-counts.button", "counts")}
       icon={"counts.svg"}
       onClick={() => toggleModalDialog(Dialogs.types.calculateCounts)}

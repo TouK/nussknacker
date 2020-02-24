@@ -5,7 +5,7 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import NodeUtils from "../../../../graph/NodeUtils"
 import {isEmpty} from "lodash"
 import {deleteSelection} from "../../../../../actions/nk/selection"
-import {ButtonWithIcon} from "../../../ButtonWithIcon"
+import {ToolbarButton} from "../../../ToolbarButton"
 import {getSelectionState, getNodeToDisplay} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../../UserRightPanel"
@@ -21,7 +21,7 @@ function DeleteButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ButtonWithIcon
+    <ToolbarButton
       name={t("panels.actions.edit-delete.button", "delete")}
       icon={"delete.svg"}
       disabled={!NodeUtils.isPlainNode(nodeToDisplay) || isEmpty(selectionState)}
