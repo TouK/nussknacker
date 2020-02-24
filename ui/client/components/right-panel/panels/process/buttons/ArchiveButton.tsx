@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {OwnProps as PanelOwnProps} from "../../../UserRightPanel"
 import {RootState} from "../../../../../reducers/index"
@@ -12,6 +11,7 @@ import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDia
 import {bindActionCreators} from "redux"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {isRunning, getProcessId} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "isStateLoaded"
@@ -25,18 +25,20 @@ function ArchiveButton(props: Props) {
     processId, isRunning,
     toggleConfirmDialog,
   } = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"archive"}
+      name={t("panels.process.actions.archive.button", "archive")}
       icon={"archive.svg"}
       disabled={isRunning}
       onClick={() => !isRunning && toggleConfirmDialog(
         true,
         DialogMessages.archiveProcess(processId),
         () => HttpService.archiveProcess(processId).then(() => history.push(Archive.path)),
-        "Yes",
-        "No",
+        t("panels.process.actions.archive.yes", "Yes"),
+        t("panels.process.actions.archive.no", "No"),
+        // eslint-disable-next-line i18next/no-literal-string
         {category: events.categories.rightPanel, action: events.actions.buttonClick, name: "archive"},
       )}
     />

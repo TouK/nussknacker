@@ -23,7 +23,7 @@ export function ButtonWithIcon({onDrop, title, className, disabled, name, icon, 
     children: (
       <>
         <PanelButtonIcon icon={icon} title={title}/>
-        <div>{name}</div>
+        <div className="button-label">{name}</div>
       </>
     ),
   }

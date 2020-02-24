@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {OwnProps as PanelOwnProps} from "../../../UserRightPanel"
 import {RootState} from "../../../../../reducers/index"
@@ -8,6 +7,7 @@ import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {exportProcessToPdf} from "../../../../../actions/nk/importExport"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {isBusinessView, getProcessVersionId, getProcessId} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "exportGraph">
@@ -20,10 +20,11 @@ function PDFButton(props: Props) {
     exportGraph, processId, businessView, versionId, canExport,
     exportProcessToPdf,
   } = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"PDF"}
+      name={t("panels.process.actions.PDF.button", "PDF")}
       icon={InlinedSvgs.pdf}
       disabled={!canExport}
       onClick={() => exportProcessToPdf(processId, versionId, exportGraph(), businessView)}

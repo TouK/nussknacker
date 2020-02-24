@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import ProcessUtils from "../../../../../common/ProcessUtils"
@@ -7,6 +6,7 @@ import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {exportProcessToJSON} from "../../../../../actions/nk/importExport"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {getProcessVersionId, getProcessToDisplay} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type Props = StateProps
 
@@ -15,10 +15,11 @@ function JSONButton(props: Props) {
     processToDisplay, versionId, canExport,
     exportProcessToJSON,
   } = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"JSON"}
+      name={t("panels.process.actions.JSON.button", "JSON")}
       icon={InlinedSvgs.buttonExport}
       disabled={!canExport}
       onClick={() => exportProcessToJSON(processToDisplay, versionId)}

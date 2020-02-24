@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
@@ -9,18 +8,17 @@ import {reportEvent} from "../../../../../actions/nk/reportEvent"
 import {bindActionCreators} from "redux"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {getProcessId} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type Props = StateProps
 
 function ImportButton(props: Props) {
-  const {
-    processId, importFiles, reportEvent,
-
-  } = props
+  const {processId, importFiles, reportEvent} = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"import"}
+      name={t("panels.process.actions.import.button", "import")}
       icon={InlinedSvgs.buttonImport}
       disabled={false}
       onClick={() => reportEvent({

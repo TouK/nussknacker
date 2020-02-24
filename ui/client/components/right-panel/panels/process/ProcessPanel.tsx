@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {OwnProps as PanelOwnProps} from "../../UserRightPanel"
 import {RootState} from "../../../../reducers/index"
@@ -13,6 +12,7 @@ import CompareButton from "./buttons/CompareButton"
 import MigrateButton from "./buttons/MigrateButton"
 import SaveButton from "./buttons/SaveButton"
 import {getFeatureSettings} from "../../selectors/settings"
+import {useTranslation} from "react-i18next"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "capabilities"
@@ -28,12 +28,12 @@ function ProcessPanel(props: Props) {
     capabilities, exportGraph, featuresSettings,
     isStateLoaded, processState,
   } = props
+  const {t} = useTranslation()
 
   const deployAllowed = capabilities.deploy
   const writeAllowed = capabilities.write
-  const panelName = "Process"
   return (
-    <RightPanel title={panelName}>
+    <RightPanel title={t("panels.process.title", "Process")}>
       {writeAllowed ? <SaveButton/> : null}
       {deployAllowed && !isEmpty(featuresSettings?.remoteEnvironment) ? (
         <MigrateButton processState={processState} isStateLoaded={isStateLoaded}/>

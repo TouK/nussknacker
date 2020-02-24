@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
@@ -7,15 +6,17 @@ import NodeUtils from "../../../../graph/NodeUtils"
 import {ungroup} from "../../../../../actions/nk/groups"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {getNodeToDisplay} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type Props = StateProps
 
 function UngroupButton(props: Props) {
   const {nodeToDisplay, ungroup} = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"ungroup"}
+      name={t("panels.group.actions.ungroup.button", "ungroup")}
       icon={InlinedSvgs.buttonUngroup}
       disabled={!NodeUtils.nodeIsGroup(nodeToDisplay)}
       onClick={() => ungroup(nodeToDisplay)}

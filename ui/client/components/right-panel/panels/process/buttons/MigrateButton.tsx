@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {OwnProps as PanelOwnProps} from "../../../UserRightPanel"
 import {RootState} from "../../../../../reducers/index"
@@ -11,6 +10,7 @@ import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDia
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {getFeatureSettings} from "../../../selectors/settings"
 import {isDeployPossible, getProcessVersionId, getProcessId} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type OwnPropsPick = Pick<PanelOwnProps,
   | "isStateLoaded"
@@ -24,19 +24,24 @@ function MigrateButton(props: Props) {
     processId, deployPossible, featuresSettings,
     versionId, toggleConfirmDialog,
   } = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"migrate"}
+      name={t("panels.process.actions.migrate.button", "migrate")}
       icon={InlinedSvgs.buttonMigrate}
       disabled={!deployPossible}
       onClick={() => toggleConfirmDialog(
         true,
         DialogMessages.migrate(processId, featuresSettings.remoteEnvironment.targetEnvironmentId),
         () => HttpService.migrateProcess(processId, versionId),
-        "Yes",
-        "No",
-        {category: events.categories.rightPanel, action: events.actions.buttonClick, name: "migrate"},
+        t("panels.process.actions.migrate.yes", "Yes"),
+        t("panels.process.actions.migrate.no", "No"),
+        {
+          category: events.categories.rightPanel,
+          action: events.actions.buttonClick,
+          name: "migrate", // eslint-disable-line i18next/no-literal-string
+        },
       )}
     />
   )

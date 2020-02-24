@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
@@ -7,6 +6,9 @@ import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {isSaveDisabled} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
+import cn from "classnames"
+import classes from "./SaveButton.styl"
 
 type Props = StateProps
 
@@ -14,11 +16,13 @@ function SaveButton(props: Props) {
   const {
     saveDisabled, toggleModalDialog,
   } = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={`save${!saveDisabled ? "*" : ""}`}
+      name={t("panels.process.actions.save.button", "save")}
       icon={InlinedSvgs.buttonSave}
+      className={cn(!saveDisabled && classes.saveEnabled)}
       disabled={saveDisabled}
       onClick={() =>
         //TODO: Checking permission to archiwization should be done by check action from state - we should add new action type

@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
@@ -6,6 +5,7 @@ import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {hasOneVersion} from "../../../selectors/graph"
+import {useTranslation} from "react-i18next"
 
 type Props = StateProps
 
@@ -14,10 +14,11 @@ function CompareButton(props: Props) {
     hasOneVersion,
     toggleModalDialog,
   } = props
+  const {t} = useTranslation()
 
   return (
     <ButtonWithIcon
-      name={"compare"}
+      name={t("panels.process.actions.compare.button", "compare")}
       icon={"compare.svg"}
       disabled={hasOneVersion}
       onClick={() => toggleModalDialog(Dialogs.types.compareVersions)}
