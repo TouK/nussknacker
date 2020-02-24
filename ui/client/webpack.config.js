@@ -25,6 +25,16 @@ if (!isProd) {
   ]
 }
 
+const cssLoader = {
+  loader: "css-loader",
+  options: {
+    modules: {
+      mode: "global",
+      localIdentName: "[name]--[local]--[hash:base64:5]",
+    },
+    localsConvention: "camelCase",
+  },
+}
 module.exports = {
   mode: NODE_ENV,
   optimization: {
@@ -135,17 +145,17 @@ module.exports = {
       },
       {
         test: /\.css?$/,
-        loaders: ["style-loader", "css-loader"],
+        use: ["style-loader", cssLoader],
         include: __dirname,
       },
       {
         test: /\.styl$/,
-        loaders: ["style-loader", "css-loader", "stylus-loader"],
+        use: ["style-loader", cssLoader, "stylus-loader"],
         include: __dirname,
       },
       {
         test: /\.less$/,
-        loaders: ["style-loader", "css-loader", "less-loader"],
+        use: ["style-loader", cssLoader, "less-loader"],
         include: __dirname,
       },
       {
