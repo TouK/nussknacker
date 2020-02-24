@@ -13,7 +13,6 @@
     ],
     "allowJs": true,
     "noEmit": true,
-    "incremental": true,
     "preserveSymlinks": true,
     "skipLibCheck": true,
     "downlevelIteration": true,
