@@ -5,6 +5,7 @@ import {Validator} from "../../Validators"
 import "./timeRange.styl"
 import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash";
+import i18next from "i18next";
 
 export type Duration = {
   days: number,
@@ -90,6 +91,7 @@ export default function DurationEditor(props: Props) {
 DurationEditor.switchableTo = (expressionObj: ExpressionObj) =>
   SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression)
 
-DurationEditor.switchableToHint = "Switch to basic mode"
+DurationEditor.switchableToHint = () => i18next.t("editors.duration.switchableToHint","Switch to basic mode")
 
-DurationEditor.notSwitchableToHint = "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode"
+DurationEditor.notSwitchableToHint = () => i18next.t("editors.duration.noSwitchableToHint",
+  "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode")

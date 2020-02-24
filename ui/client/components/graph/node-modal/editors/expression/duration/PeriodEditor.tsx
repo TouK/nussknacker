@@ -5,6 +5,7 @@ import React from "react"
 import moment from "moment"
 import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash";
+import i18next from "i18next";
 
 export type Period = {
   years: number,
@@ -85,6 +86,7 @@ export default function PeriodEditor(props: Props) {
 PeriodEditor.switchableTo = (expressionObj: ExpressionObj) =>
   SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression)
 
-PeriodEditor.switchableToHint = "Switch to basic mode"
+PeriodEditor.switchableToHint = () => i18next.t("editors.period.switchableToHint","Switch to basic mode")
 
-PeriodEditor.notSwitchableToHint = "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to basic mode"
+PeriodEditor.notSwitchableToHint = () => i18next.t("editors.period.notSwitchableToHint",
+  "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to basic mode")

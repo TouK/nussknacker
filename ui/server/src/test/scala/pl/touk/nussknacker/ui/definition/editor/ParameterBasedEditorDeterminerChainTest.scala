@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.definition.editor
 
 import java.time._
 
+import com.cronutils.model.Cron
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -111,6 +112,18 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
 
     determiner.determineEditor(param) shouldBe DualParameterEditor(
       simpleEditor = PeriodParameterEditor,
+      defaultMode = DualEditorMode.SIMPLE
+    )
+  }
+
+  test("determine editor by type Cron") {
+    val param = Parameter[Cron]("param")
+    val config = ParameterConfig.empty
+
+    val determiner = ParameterEditorDeterminerChain(config)
+
+    determiner.determineEditor(param) shouldBe DualParameterEditor(
+      simpleEditor = CronParameterEditor,
       defaultMode = DualEditorMode.SIMPLE
     )
   }

@@ -42,7 +42,7 @@ const parseable = (expressionObj) => {
 }
 
 StringEditor.switchableTo = (expressionObj) => parseable(expressionObj)
-StringEditor.switchableToHint = "Switch to basic mode"
-StringEditor.notSwitchableToHint = "Expression must be a simple string literal i.e. text surrounded by single or double quotation marks to switch to basic mode"
+StringEditor.switchableToHint = () => "Switch to basic mode"
+StringEditor.notSwitchableToHint = () => "Expression must be a simple string literal i.e. text surrounded by single or double quotation marks to switch to basic mode"
 
 export default StringEditor

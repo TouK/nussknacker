@@ -44,6 +44,7 @@
     "react-addons-pure-render-mixin": "^15.6.2",
     "react-bootstrap": "~0.33.1",
     "react-custom-scrollbars": "~4.2.1",
+    "react-cron-generator": "^1.1.5",
     "react-datepicker": "~2.8.0",
     "react-datetime": "^2.16.3",
     "react-dnd": "~7.6.0",
