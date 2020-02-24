@@ -53,7 +53,7 @@ class FlinkQueryableClient(createClients: => List[QueryableStateClient]) extends
           valueState.value()
         }.recoverWith {
           case NonFatal(e) =>
-            logger.debug(s"Failed to fetch state from $next with ${e.getMessage}", e)
+            logger.trace(s"Failed to fetch state from $next with ${e.getMessage}", e)
             tryToFetchState(rest, Some(e))
         }
       case Nil =>
