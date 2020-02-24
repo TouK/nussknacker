@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import com.typesafe.config.Config
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
@@ -41,7 +41,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
   }
 
   test("should read editor from annotations") {
-    val model: ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator() {
+    val model: ModelData = LocalModelData(ConfigWithScalaVersion.streamingProcessTypeConfig, new EmptyProcessConfigCreator() {
       override def services(config: Config): Map[String, WithCategories[Service]] =
         Map("enricher" -> WithCategories(TestService))
     })
@@ -66,7 +66,8 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
 
   test("should hide node in hidden category") {
 
-    val model : ModelData = LocalModelData(ConfigWithScalaVersion.config.getConfig("processConfig"), new EmptyProcessConfigCreator() {
+    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
+    val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator() {
       override def services(config: Config): Map[String, WithCategories[Service]] =
         Map(
           "enricher" -> WithCategories(TestService),

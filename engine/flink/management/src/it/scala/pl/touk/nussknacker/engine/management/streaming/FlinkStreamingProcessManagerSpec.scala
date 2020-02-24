@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigValueFactory
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
@@ -220,15 +221,15 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   }
 
   test("extract process definition") {
-    val definition = FlinkStreamingProcessManagerProvider.defaultTypeConfig(config).toModelData.processDefinition
+    val definition = processingTypeConfig.toModelData.processDefinition
     definition.services should contain key "accountService"
   }
 
   test("dispatch process signal to kafka") {
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = config
-      .withValue("processConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
-    val flinkModelData = FlinkStreamingProcessManagerProvider.defaultTypeConfig(configWithSignals).toModelData
+      .withValue("modelConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
+    val flinkModelData = ProcessingTypeConfig.read(configWithSignals).toModelData
 
     val consumer = kafkaClient.createConsumer()
     flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))

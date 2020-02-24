@@ -4,7 +4,6 @@ import java.io.File
 import java.net.URI
 
 import com.typesafe.config.{Config, ConfigFactory}
-import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRule, ConfigUser}
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission

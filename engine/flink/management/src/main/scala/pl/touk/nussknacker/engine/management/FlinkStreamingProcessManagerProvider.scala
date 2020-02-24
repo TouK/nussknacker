@@ -41,21 +41,8 @@ class FlinkStreamingProcessManagerProvider extends ProcessManagerProvider {
 
 object FlinkStreamingProcessManagerProvider {
 
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
-
-  def defaultTypeConfig(config: Config): ProcessingTypeConfig = {
-    ProcessingTypeConfig("flinkStreaming",
-      config.as[ClasspathConfig]("flinkConfig").urls,
-      config.getConfig("flinkConfig"),
-      config.getConfig("processConfig"))
-  }
-
-  def defaultModelData(config: Config): ModelData = defaultTypeConfig(config).toModelData
-
   def defaultProcessManager(config: Config): ProcessManager = {
-    val typeConfig = defaultTypeConfig(config)
+    val typeConfig = ProcessingTypeConfig.read(config)
     new FlinkStreamingProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
   }
 }

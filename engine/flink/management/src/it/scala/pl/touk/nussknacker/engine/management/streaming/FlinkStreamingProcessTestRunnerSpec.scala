@@ -20,8 +20,8 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
   private val classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
   private val config = ConfigFactory.load()
-    .withValue("processConfig.kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:1234"))
-    .withValue("flinkConfig.classpath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
+    .withValue("modelConfig.kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:1234"))
+    .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
 
   it should "run process in test mode" in {
     val processManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
