@@ -1,8 +1,7 @@
 import React from "react"
-import {OwnProps as PanelOwnProps} from "../../UserRightPanel"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
-import {RightPanel} from "../RightPanel"
+import {RightToolPanel} from "../RightToolPanel"
 import Undo from "./buttons/UndoButton"
 import Redo from "./buttons/RedoButton"
 import Layout from "./buttons/LayoutButton"
@@ -13,8 +12,9 @@ import Delete from "./buttons/DeleteButton"
 import Paste from "./buttons/PasteButton"
 import {isSubprocess} from "../../selectors/graph"
 import {useTranslation} from "react-i18next"
+import {PassedProps} from "../../UserRightPanel"
 
-type OwnPropsPick = Pick<PanelOwnProps,
+type OwnPropsPick = Pick<PassedProps,
   | "capabilities"
   | "graphLayoutFunction"
   | "selectionActions">
@@ -29,7 +29,7 @@ function EditPanel(props: Props) {
   const writeAllowed = capabilities.write
 
   return (
-    <RightPanel title={t("panels.edit.title", "Edit")}>
+    <RightToolPanel title={t("panels.edit.title", "Edit")}>
       {writeAllowed ? <Undo/> : null}
       {writeAllowed ? <Redo/> : null}
       {writeAllowed ? <Layout graphLayoutFunction={graphLayoutFunction}/> : null}
@@ -38,7 +38,7 @@ function EditPanel(props: Props) {
       {writeAllowed ? <Cut selectionActions={selectionActions}/> : null}
       {writeAllowed ? <Delete selectionActions={selectionActions}/> : null}
       {writeAllowed ? <Paste selectionActions={selectionActions}/> : null}
-    </RightPanel>
+    </RightToolPanel>
   )
 }
 

@@ -1,9 +1,8 @@
 import React from "react"
-import {OwnProps as PanelOwnProps} from "../../UserRightPanel"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {isEmpty} from "lodash"
-import {RightPanel} from "../RightPanel"
+import {RightToolPanel} from "../RightToolPanel"
 import ArchiveButton from "./buttons/ArchiveButton"
 import PDFButton from "./buttons/PDFButton"
 import JSONButton from "./buttons/JSONButton"
@@ -13,8 +12,9 @@ import MigrateButton from "./buttons/MigrateButton"
 import SaveButton from "./buttons/SaveButton"
 import {getFeatureSettings} from "../../selectors/settings"
 import {useTranslation} from "react-i18next"
+import {PassedProps} from "../../UserRightPanel"
 
-type OwnPropsPick = Pick<PanelOwnProps,
+type OwnPropsPick = Pick<PassedProps,
   | "capabilities"
   | "isStateLoaded"
   | "processState"
@@ -33,7 +33,7 @@ function ProcessPanel(props: Props) {
   const deployAllowed = capabilities.deploy
   const writeAllowed = capabilities.write
   return (
-    <RightPanel title={t("panels.process.title", "Process")}>
+    <RightToolPanel title={t("panels.process.title", "Process")}>
       {writeAllowed ? <SaveButton/> : null}
       {deployAllowed && !isEmpty(featuresSettings?.remoteEnvironment) ? (
         <MigrateButton processState={processState} isStateLoaded={isStateLoaded}/>
@@ -43,7 +43,7 @@ function ProcessPanel(props: Props) {
       <JSONButton/>
       <PDFButton exportGraph={exportGraph}/>
       {writeAllowed ? <ArchiveButton isStateLoaded={isStateLoaded} processState={processState}/> : null}
-    </RightPanel>
+    </RightToolPanel>
   )
 }
 

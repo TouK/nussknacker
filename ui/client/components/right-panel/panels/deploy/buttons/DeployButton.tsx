@@ -1,5 +1,4 @@
 import React from "react"
-import {Props as PanelProps} from "../../../UserRightPanel"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import HttpService from "../../../../../http/HttpService"
@@ -9,8 +8,9 @@ import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcess
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {isDeployPossible, isSaveDisabled, hasError} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
+import {PassedProps} from "../../../UserRightPanel"
 
-type PropsPick = Pick<PanelProps,
+type PropsPick = Pick<PassedProps,
   | "isStateLoaded"
   | "processState">
 

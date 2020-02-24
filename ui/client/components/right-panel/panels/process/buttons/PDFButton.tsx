@@ -1,5 +1,4 @@
 import React from "react"
-import {OwnProps as PanelOwnProps} from "../../../UserRightPanel"
 import {RootState} from "../../../../../reducers/index"
 import ProcessUtils from "../../../../../common/ProcessUtils"
 import {connect} from "react-redux"
@@ -8,8 +7,9 @@ import {exportProcessToPdf} from "../../../../../actions/nk/importExport"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {isBusinessView, getProcessVersionId, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
+import {PassedProps} from "../../../UserRightPanel"
 
-type OwnPropsPick = Pick<PanelOwnProps,
+type OwnPropsPick = Pick<PassedProps,
   | "exportGraph">
 
 type OwnProps = OwnPropsPick

@@ -1,6 +1,6 @@
 import React from "react"
 import {CapabilitiesType} from "../../UserRightPanel"
-import {RightPanel} from "../RightPanel"
+import {RightToolPanel} from "../RightToolPanel"
 import GroupStart from "./buttons/GroupStartButton"
 import GroupFinish from "./buttons/GroupFinishButton"
 import Ungroup from "./buttons/UngroupButton"
@@ -18,12 +18,12 @@ function GroupPanel(props: Props) {
   const writeAllowed = capabilities.write
 
   return (
-    <RightPanel title={t("panels.group.title", "Group")}>
+    <RightToolPanel title={t("panels.group.title", "Group")}>
       {writeAllowed ? <GroupStart/> : null}
       {writeAllowed ? <GroupFinish/> : null}
       {writeAllowed ? <GroupCancel/> : null}
       {writeAllowed ? <Ungroup/> : null}
-    </RightPanel>
+    </RightToolPanel>
   )
 }
 

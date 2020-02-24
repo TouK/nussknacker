@@ -1,7 +1,7 @@
 import React, {PropsWithChildren, Children} from "react"
 import {Panel} from "react-bootstrap"
 
-export function RightPanel({title, children, isHidden}: PropsWithChildren<{ title: string, isHidden?: boolean }>) {
+export function RightToolPanel({title, children, isHidden}: PropsWithChildren<{ title: string, isHidden?: boolean }>) {
   if (isHidden || !Children.count(children)) {
     return null
   }

@@ -1,12 +1,12 @@
 import React from "react"
-import {OwnProps as PanelOwnProps} from "../../../UserRightPanel"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {copySelection} from "../../../../../actions/nk/selection"
 import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {useTranslation} from "react-i18next"
+import {PassedProps} from "../../../UserRightPanel"
 
-type OwnPropsPick = Pick<PanelOwnProps,
+type OwnPropsPick = Pick<PassedProps,
   | "selectionActions">
 
 type OwnProps = OwnPropsPick

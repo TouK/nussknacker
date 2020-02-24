@@ -1,5 +1,4 @@
 import React from "react"
-import {OwnProps as PanelOwnProps} from "../../../UserRightPanel"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import * as DialogMessages from "../../../../../common/DialogMessages"
@@ -11,8 +10,9 @@ import {ButtonWithIcon} from "../../../ButtonWithIcon"
 import {getFeatureSettings} from "../../../selectors/settings"
 import {isDeployPossible, getProcessVersionId, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
+import {PassedProps} from "../../../UserRightPanel"
 
-type OwnPropsPick = Pick<PanelOwnProps,
+type OwnPropsPick = Pick<PassedProps,
   | "isStateLoaded"
   | "processState">
 
