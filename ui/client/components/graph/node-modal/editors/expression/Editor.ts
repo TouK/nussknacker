@@ -9,7 +9,7 @@ import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Error, Validator, validators, validatorType} from "../Validators"
+import {Error, Validator, validators, validatorName} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
@@ -58,9 +58,9 @@ export enum editorTypes {
 
 const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
   param === undefined ?
-    validators[validatorType.MANDATORY_VALUE_VALIDATOR]() :
+    validators[validatorName.MANDATORY_VALUE_VALIDATOR]() :
     param.validators.map(validator => validators[validator.type]()),
-  validators[validatorType.ERROR_VALIDATOR](errors, fieldLabel)
+  validators[validatorName.ERROR_VALIDATOR](errors, fieldLabel)
 )
 
 /* eslint-enable i18next/no-literal-string */
