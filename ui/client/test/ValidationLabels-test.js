@@ -11,7 +11,8 @@ describe("displaying validation labels", () => {
     //given
     const fieldName = "fieldName"
     const emptyValue = ""
-    const backendError = {message: "Test", description: "test", typ: "EmptyMandatoryParameter", fieldName: "fieldName"}
+    const backendErrorDescription = "test"
+    const backendError = {message: "Test", description: backendErrorDescription, typ: "EmptyMandatoryParameter", fieldName: "fieldName"}
     const validators = [
       mandatoryValueValidator,
       errorValidator([backendError], "fieldName")
@@ -19,14 +20,16 @@ describe("displaying validation labels", () => {
 
     render(<ValidationLabels validators={validators} values={[emptyValue]}/>)
 
-    expect(screen.findAllByRole("span").length).toBe(1)
+    expect(screen.findAllByText(mandatoryValueValidator.description).length).toBe(1)
+    expect(screen.findAllByText(backendErrorDescription).length).toBe(0)
   })
 
   it("display validations for different error type", () => {
     //given
     const fieldName = "fieldName"
     const emptyValue = ""
-    const backendError = {message: "Test", description: "test", typ: "AnotherErrorType", fieldName: "fieldName"}
+    const backendErrorDescription = "test"
+    const backendError = {message: "Test", description: backendErrorDescription, typ: "AnotherErrorType", fieldName: "fieldName"}
     const validators = [
       mandatoryValueValidator,
       errorValidator([backendError], "fieldName")
@@ -36,6 +39,7 @@ describe("displaying validation labels", () => {
     render(<ValidationLabels validators={validators} values={[emptyValue]}/>)
 
     //then
-    expect(screen.findAllByRole("span").length).toBe(2)
+    expect(screen.findAllByText(mandatoryValueValidator.description).length).toBe(1)
+    expect(screen.findAllByText(backendErrorDescription).length).toBe(1)
   })
 })
