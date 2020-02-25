@@ -9,7 +9,7 @@ import moment from "moment"
 import ValidationLabels from "../../../../../modals/ValidationLabels"
 import i18next from "i18next"
 import * as ExpressionFormatter from "./dateExpresionFormats"
-import {allValid, handledErrorType, Validator, validatorType} from "../../Validators"
+import {allValid, HandledErrorType, Validator, ValidatorType} from "../../Validators"
 
 /* eslint-disable i18next/no-literal-string */
 export enum JavaTimeTypes {
@@ -67,8 +67,8 @@ const getDateValidator = (value: string | moment.Moment, expressionType: JavaTim
   description: i18next.t("validation.wrongDateFormat", "Wrong date format"),
   message: i18next.t("validation.wrongDateFormat", "Wrong date format"),
   isValid: () => !value || !!format(value, expressionType),
-  validatorType: validatorType.FRONT_END,
-  handledErrorType: handledErrorType.WRONG_DATE_FORMAT,
+  validatorType: ValidatorType.Frontend,
+  handledErrorType: HandledErrorType.WrongDateFormat,
 })
 
 export function DatepickerEditor(props: DatepickerEditorProps) {

@@ -1,6 +1,6 @@
 import React from "react"
 import {v4 as uuid4} from "uuid"
-import {Validator, withoutDuplications} from "../graph/node-modal/editors/Validators";
+import {Validator, withoutDuplications} from "../graph/node-modal/editors/Validators"
 
 type Props = {
   validators: Array<Validator>,

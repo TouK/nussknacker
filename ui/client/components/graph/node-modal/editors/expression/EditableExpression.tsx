@@ -1,6 +1,6 @@
 import React from "react"
 import ProcessUtils from "../../../../../common/ProcessUtils"
-import {dualEditorMode, editors, editorTypes} from "./Editor"
+import {DualEditorMode, editors, EditorType} from "./Editor"
 import SwitchIcon from "./SwitchIcon"
 import FixedValuesEditor from "./FixedValuesEditor"
 import _ from "lodash"
@@ -41,7 +41,7 @@ class EditableExpression extends React.Component<Props, State> {
 
     const {param, expressionObj, values} = this.props
     this.state = {
-      displayRawEditor: !(param?.editor.defaultMode === dualEditorMode.SIMPLE &&
+      displayRawEditor: !(param?.editor.defaultMode === DualEditorMode.SIMPLE &&
           editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
     }
   }
@@ -54,9 +54,9 @@ class EditableExpression extends React.Component<Props, State> {
 
     const paramType = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression")
 
-    const editorType = paramType === editorTypes.FIXED_VALUES_PARAMETER_EDITOR ?
-      editorTypes.FIXED_VALUES_PARAMETER_EDITOR :
-      !_.isEmpty(param) ? param.editor.type : editorTypes.RAW_PARAMETER_EDITOR
+    const editorType = paramType === EditorType.FIXED_VALUES_PARAMETER_EDITOR ?
+      EditorType.FIXED_VALUES_PARAMETER_EDITOR :
+      !_.isEmpty(param) ? param.editor.type : EditorType.RAW_PARAMETER_EDITOR
     const editor = editors[editorType]
 
     const Editor = editor.editor(param, this.state.displayRawEditor)
@@ -73,7 +73,7 @@ class EditableExpression extends React.Component<Props, State> {
           components={editor.components(param)}
         />
         {
-            param?.editor?.type === editorTypes.DUAL_PARAMETER_EDITOR && (
+            param?.editor?.type === EditorType.DUAL_PARAMETER_EDITOR && (
             <SwitchIcon
               switchable={editor.switchable(Editor, param, expressionObj)}
               hint={editor.hint(editor.switchable(Editor, param, expressionObj), Editor, param)}
