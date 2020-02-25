@@ -13,11 +13,6 @@ export type Duration = {
   minutes: number,
 }
 
-export type DurationComponentType = {
-  label: string,
-  fieldName: string,
-}
-
 type Props = {
   expressionObj: ExpressionObj,
   onValueChange: Function,
@@ -25,23 +20,24 @@ type Props = {
   showValidation?: boolean,
   readOnly: boolean,
   isMarked: boolean,
+  components: Array<string>,
 }
 
 const SPEL_DURATION_DECODE_REGEX = /^T\(java\.time\.Duration\)\.parse\('(.*?)'\)$/
 const SPEL_DURATION_SWITCHABLE_TO_REGEX = /^T\(java\.time\.Duration\)\.parse\('P([0-9]{1,}D)?(T([0-9]{1,}H)?([0-9]{1,}M)?)?'\)$/
 const SPEL_FORMATTED_DURATION = (isoDuration) => `T(java.time.Duration).parse('${isoDuration}')`
-const UNDEFINED_DURATION = {
-  days: () => undefined,
-  hours: () => undefined,
-  minutes: () => undefined
+const NULL_DURATION = {
+  days: () => null,
+  hours: () => null,
+  minutes: () => null
 }
 
 export default function DurationEditor(props: Props) {
 
-  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked} = props
+  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components} = props
 
   function isDurationDefined(value: Duration) {
-    return value.days !== undefined || value.hours !== undefined || value.minutes !== undefined
+    return value.days !== null || value.hours !== null || value.minutes !== null
   }
 
   function encode(value: Duration): string {
@@ -50,28 +46,13 @@ export default function DurationEditor(props: Props) {
 
   function decode(expression: string): Duration {
     const regexExec = SPEL_DURATION_DECODE_REGEX.exec(expression)
-    const duration = regexExec === null ? UNDEFINED_DURATION : moment.duration(regexExec[1])
+    const duration = regexExec === null ? NULL_DURATION : moment.duration(regexExec[1])
     return {
       days: duration.days(),
       hours: duration.hours(),
       minutes: duration.minutes(),
     }
   }
-
-  const components: Array<DurationComponentType> = [
-    {
-      label: "days",
-      fieldName: "days"
-    },
-    {
-      label: "hours",
-      fieldName: "hours",
-    },
-    {
-      label: "minutes",
-      fieldName: "minutes"
-    },
-  ]
 
   return (
     <TimeRangeEditor

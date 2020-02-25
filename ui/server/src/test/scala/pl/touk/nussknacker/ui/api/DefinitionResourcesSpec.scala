@@ -255,6 +255,71 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
+  it("should return info about editor based on annotation for Duration param") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val params = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("datesTypesService")
+        .downField("parameters")
+      val editor: Json = params
+        .downAt(_.hcursor.get[String]("name").right.value == "durationParam")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj(
+        "simpleEditor" -> Json.obj(
+          "type" -> Json.fromString("DurationParameterEditor"),
+          "timeRangeComponents" -> Json.arr(Json.fromString("days"), Json.fromString("hours"))
+        ),
+        "type" -> Json.fromString("DualParameterEditor"),
+        "defaultMode" -> Json.fromString("SIMPLE")
+      )
+    }
+  }
+
+  it("should return info about editor based on annotation for Period param") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val params = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("datesTypesService")
+        .downField("parameters")
+      val editor: Json = params
+        .downAt(_.hcursor.get[String]("name").right.value == "periodParam")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj(
+        "simpleEditor" -> Json.obj(
+          "type" -> Json.fromString("PeriodParameterEditor"),
+          "timeRangeComponents" -> Json.arr(Json.fromString("years"), Json.fromString("months"))
+        ),
+        "type" -> Json.fromString("DualParameterEditor"),
+        "defaultMode" -> Json.fromString("SIMPLE")
+      )
+    }
+  }
+
+  it("should return info about editor based on annotation for Cron param") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val params = responseAs[Json].hcursor
+        .downField("streaming")
+        .downField("datesTypesService")
+        .downField("parameters")
+      val editor: Json = params
+        .downAt(_.hcursor.get[String]("name").right.value == "cronScheduleParam")
+        .downField("editor")
+        .focus.get
+
+      editor shouldBe Json.obj("type" -> Json.fromString("CronParameterEditor"))
+    }
+  }
+
   it("return mandatory value validator by default") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK

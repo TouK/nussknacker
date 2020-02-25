@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
 import java.time._
+import java.time.temporal.ChronoUnit
 import java.util
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
@@ -23,7 +24,7 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, MandatoryValueValidator, Parameter, RawParameterEditor, ServiceWithExplicitMethod, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.editor._
@@ -557,9 +558,30 @@ class DatesTypesService extends Service with Serializable {
              @ParamName("dateParam") dateParam: LocalDate,
              @ParamName("timeParam") timeParam: LocalTime,
              @ParamName("zonedDataTimeParam") zonedDataTimeParam: ZonedDateTime,
-             @ParamName("durationParam") duration: Duration,
-             @ParamName("periodParam") period: Period,
-             @ParamName("cronScheduleParam") cronScheduleParam: Cron
+
+             @ParamName("durationParam")
+             @DualEditor(
+               simpleEditor = new SimpleEditor(
+                 `type` = SimpleEditorType.DURATION_EDITOR,
+                 timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
+               ),
+               defaultMode = DualEditorMode.SIMPLE
+             )
+             duration: Duration,
+
+             @ParamName("periodParam")
+             @DualEditor(
+               simpleEditor = new SimpleEditor(
+                 `type` = SimpleEditorType.PERIOD_EDITOR,
+                 timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
+               ),
+               defaultMode = DualEditorMode.SIMPLE
+             )
+             period: Period,
+
+             @ParamName("cronScheduleParam")
+             @SimpleEditor(`type` = SimpleEditorType.CRON_EDITOR)
+             cronScheduleParam: Cron
             ): Future[Unit] = {
     ???
   }
