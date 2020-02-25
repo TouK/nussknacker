@@ -1,7 +1,11 @@
-import '@testing-library/jest-dom/extend-expect'
 import React from 'react'
-import {errorValidator, mandatoryValueValidator} from "../components/graph/node-modal/editors/Validators"
+import {
+  errorValidator,
+  HandledErrorType,
+  mandatoryValueValidator
+} from "../components/graph/node-modal/editors/Validators"
 import ValidationLabels from "../components/modals/ValidationLabels"
+import {render, screen} from '@testing-library/react'
 
 describe("test validation labels", () => {
   const backendErrorDescription = "test"
@@ -15,7 +19,7 @@ describe("test validation labels", () => {
   const testCases = [
     {
       description: "display only fe validation label when both be and fe validators available for the same error type",
-      errorType: mandatoryValueValidator.handledErrorType,
+      errorType: HandledErrorType.EmptyMandatoryParameter.toString(),
       expectedBackendValidationLabels: 0,
     },
     {
@@ -37,8 +41,8 @@ describe("test validation labels", () => {
       render(<ValidationLabels validators={validators} values={[""]}/>)
 
       //then
-      expect(screen.findAllByText(mandatoryValueValidator.description).length).toBe(1)
-      expect(screen.findAllByText(backendErrorDescription).length).toBe(expectedBackendValidationLabels)
+      expect(screen.findByDisplayValue(mandatoryValueValidator.description).length).toBe(1)
+      expect(screen.findAllByDisplayValue(backendErrorDescription).length).toBe(expectedBackendValidationLabels)
     })
   })
 })
