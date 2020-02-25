@@ -1,13 +1,13 @@
+import '@testing-library/jest-dom/extend-expect'
 import React from 'react'
-import Enzyme, {mount} from 'enzyme'
+import {render, screen} from '@testing-library/react'
 import {errorValidator, mandatoryValueValidator} from "../components/graph/node-modal/editors/Validators"
 import ValidationLabels from "../components/modals/ValidationLabels"
-import Adapter from 'enzyme-adapter-react-16'
+
 
 describe("displaying validation labels", () => {
-  Enzyme.configure({ adapter: new Adapter() })
 
-  it("display only fe validation when both be and fe validations available for the same error type", () => {
+  test('display only fe validation when both be and fe validations available for the same error type', () => {
     //given
     const fieldName = "fieldName"
     const emptyValue = ""
@@ -17,11 +17,9 @@ describe("displaying validation labels", () => {
       errorValidator([backendError], "fieldName")
     ]
 
-    //when
-    const validationLabels = mount(<ValidationLabels validators={validators} values={[emptyValue]}/>)
+    render(<ValidationLabels validators={validators} values={[emptyValue]}/>)
 
-    //then
-    expect(validationLabels.find('.validation-label').length).toBe(1)
+    expect(screen.findAllByRole("span").length).toBe(1)
   })
 
   it("display validations for different error type", () => {
@@ -35,10 +33,9 @@ describe("displaying validation labels", () => {
     ]
 
     //when
-    const validationLabels = mount(<ValidationLabels validators={validators} values={[emptyValue]}/>)
+    render(<ValidationLabels validators={validators} values={[emptyValue]}/>)
 
     //then
-    expect(validationLabels.find('.validation-label').length).toBe(2)
+    expect(screen.findAllByRole("span").length).toBe(2)
   })
-
 })
