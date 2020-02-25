@@ -1,45 +1,52 @@
 import '@testing-library/jest-dom/extend-expect'
 import React from 'react'
-import {render, screen} from '@testing-library/react'
 import {errorValidator, mandatoryValueValidator} from "../components/graph/node-modal/editors/Validators"
 import ValidationLabels from "../components/modals/ValidationLabels"
 
+describe("test validation labels", () => {
+  const backendErrorDescription = "test"
+  const fieldName = "fieldName"
+  const emptyValue = ""
+  const validators = (backendError) => [mandatoryValueValidator, errorValidator([backendError], fieldName)]
 
-describe("displaying validation labels", () => {
+  const testCases = [
+    {
+      description: "display only fe validation label when both be and fe validators available for the same error type",
+      error: backendError(mandatoryValueValidator.handledErrorType),
+      expectedFeValidationLabels: 1,
+      expectedBackendValidationLabels: 0,
+    },
+    {
+      description: "display both validation labels for different error type",
+      error: backendError("AnotherErrorType"),
+      expectedFeValidationLabels: 1,
+      expectedBackendValidationLabels: 1,
+    },
+  ]
 
-  test('display only fe validation when both be and fe validations available for the same error type', () => {
-    //given
-    const fieldName = "fieldName"
-    const emptyValue = ""
-    const backendErrorDescription = "test"
-    const backendError = {message: "Test", description: backendErrorDescription, typ: "EmptyMandatoryParameter", fieldName: "fieldName"}
-    const validators = [
-      mandatoryValueValidator,
-      errorValidator([backendError], "fieldName")
-    ]
+  testCases.forEach((testCase) => {
+    it(testCase.description, () => {
+      //given
+      const validators = [
+        mandatoryValueValidator,
+        errorValidator([testCase.error], "fieldName"),
+      ]
 
-    render(<ValidationLabels validators={validators} values={[emptyValue]}/>)
+      //when
+      render(<ValidationLabels validators={validators} values={[emptyValue]}/>)
 
-    expect(screen.findAllByText(mandatoryValueValidator.description).length).toBe(1)
-    expect(screen.findAllByText(backendErrorDescription).length).toBe(0)
+      //then
+      expect(screen.findAllByText(mandatoryValueValidator.description).length).toBe(testCase.expectedFeValidationLabels)
+      expect(screen.findAllByText(backendErrorDescription).length).toBe(testCase.expectedBackendValidationLabels)
+    })
   })
 
-  it("display validations for different error type", () => {
-    //given
-    const fieldName = "fieldName"
-    const emptyValue = ""
-    const backendErrorDescription = "test"
-    const backendError = {message: "Test", description: backendErrorDescription, typ: "AnotherErrorType", fieldName: "fieldName"}
-    const validators = [
-      mandatoryValueValidator,
-      errorValidator([backendError], "fieldName")
-    ]
-
-    //when
-    render(<ValidationLabels validators={validators} values={[emptyValue]}/>)
-
-    //then
-    expect(screen.findAllByText(mandatoryValueValidator.description).length).toBe(1)
-    expect(screen.findAllByText(backendErrorDescription).length).toBe(1)
-  })
+  function backendError(errorType) {
+    return {
+      message: "Test",
+      description: backendErrorDescription,
+      typ: errorType,
+      fieldName: "fieldName"
+    }
+  }
 })
