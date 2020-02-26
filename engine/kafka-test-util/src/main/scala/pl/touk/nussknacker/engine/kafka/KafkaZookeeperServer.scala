@@ -28,7 +28,7 @@ object KafkaZookeeperServer {
   private def runZookeeper(zkPort: Int): NIOServerCnxnFactory = {
     val factory = new NIOServerCnxnFactory()
     factory.configure(new InetSocketAddress(localhost, zkPort), 1024)
-    val zkServer = new ZooKeeperServer(tempDir(), tempDir(), 100)
+    val zkServer = new ZooKeeperServer(tempDir(), tempDir(), ZooKeeperServer.DEFAULT_TICK_TIME)
     factory.startup(zkServer)
     factory
   }
