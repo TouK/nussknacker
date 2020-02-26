@@ -3,6 +3,7 @@ import React, {Suspense} from "react"
 import ReactDOM from "react-dom"
 import {AppContainer} from "react-hot-loader"
 import Modal from "react-modal"
+import {PersistGate} from "redux-persist/integration/react"
 import {Provider} from "react-redux"
 import {Router} from "react-router-dom"
 //https://webpack.js.org/guides/public-path/#on-the-fly
@@ -18,7 +19,7 @@ import configureStore from "./store/configureStore"
 
 import "./stylesheets/notifications.styl"
 
-const store = configureStore()
+const {store, persistor} = configureStore()
 const rootContainer = document.getElementById("root")
 
 Modal.setAppElement(rootContainer)
@@ -26,12 +27,14 @@ ReactDOM.render(
   <AppContainer>
     <Suspense fallback={<div>Loading...</div>}>
       <Provider store={store}>
-        <Router history={history}>
-          <NussknackerInitializer>
-            <Notifications/>
-            <EspApp/>
-          </NussknackerInitializer>
-        </Router>
+        <PersistGate loading={null} persistor={persistor}>
+          <Router history={history}>
+            <NussknackerInitializer>
+              <Notifications/>
+              <EspApp/>
+            </NussknackerInitializer>
+          </Router>
+        </PersistGate>
       </Provider>
     </Suspense>
   </AppContainer>,

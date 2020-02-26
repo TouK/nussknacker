@@ -1,4 +1,4 @@
-import React from "react"
+import React, {memo} from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {isEmpty} from "lodash"
@@ -53,4 +53,4 @@ const mapState = (state: RootState) => ({
 
 type StateProps = ReturnType<typeof mapState>
 
-export default connect(mapState)(ProcessPanel)
+export default connect(mapState)(memo(ProcessPanel))

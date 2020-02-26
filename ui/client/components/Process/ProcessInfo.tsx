@@ -1,4 +1,4 @@
-import React from "react"
+import React, {memo} from "react"
 import {ProcessStateType, ProcessType} from "./types"
 import {
   descriptionProcessArchived,
@@ -9,19 +9,21 @@ import {
 import {CSSTransition, SwitchTransition} from "react-transition-group"
 import ProcessStateIcon, {unknownIcon} from "./ProcessStateIcon"
 import {absoluteBePath} from "../../common/UrlUtils"
+import {RootState} from "../../reducers"
+import {getFetchedProcessDetails} from "../right-panel/selectors/graph"
+import {connect} from "react-redux"
 
 type State = {}
 
 type OwnProps = {
   processState?: ProcessStateType,
   isStateLoaded: boolean,
-  process: ProcessType,
   iconHeight: number,
   iconWidth: number,
 }
 
 //TODO: In future information about archived process should be return from BE as state.
-class ProcessInfo extends React.Component<OwnProps, State> {
+class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
   static defaultProps = {
     isStateLoaded: false,
     processState: null,
@@ -72,7 +74,7 @@ class ProcessInfo extends React.Component<OwnProps, State> {
 
   private getTransitionKey = (process: ProcessType, processState: ProcessStateType): string =>
     process.isArchived || process.isSubprocess ? `${process.id}` :
-      `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
+    `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
   render() {
     const {process, processState, isStateLoaded, iconHeight, iconWidth} = this.props
@@ -98,4 +100,10 @@ class ProcessInfo extends React.Component<OwnProps, State> {
   }
 }
 
-export default ProcessInfo
+const mapState = (state: RootState) => ({
+  process: getFetchedProcessDetails(state),
+})
+
+type StateProps = ReturnType<typeof mapState>
+
+export default connect(mapState)(memo(ProcessInfo))

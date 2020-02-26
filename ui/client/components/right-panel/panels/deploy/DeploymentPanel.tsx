@@ -1,4 +1,4 @@
-import React from "react"
+import React, {memo} from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {RightToolPanel} from "../RightToolPanel"
@@ -36,4 +36,4 @@ const mapState = (state: RootState) => ({
 
 type StateProps = ReturnType<typeof mapState>
 
-export default connect(mapState)(DeploymentPanel)
+export default connect(mapState)(memo(DeploymentPanel))

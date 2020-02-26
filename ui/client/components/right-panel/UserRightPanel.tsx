@@ -1,5 +1,5 @@
 import cn from "classnames"
-import React, {SyntheticEvent} from "react"
+import React, {SyntheticEvent, memo} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
 import {connect} from "react-redux"
 import "../../stylesheets/userPanel.styl"
@@ -88,4 +88,4 @@ const mapDispatch = {
 
 export type StateProps = ReturnType<typeof mapState> & typeof mapDispatch
 
-export default hot(module)(connect(mapState, mapDispatch)(UserRightPanel))
+export default hot(module)(connect(mapState, mapDispatch)(memo(UserRightPanel)))

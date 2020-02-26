@@ -1,4 +1,4 @@
-import React from "react"
+import React, {memo} from "react"
 import {CapabilitiesType} from "../../UserRightPanel"
 import {RightToolPanel} from "../RightToolPanel"
 import GroupStart from "./buttons/GroupStartButton"
@@ -27,4 +27,4 @@ function GroupPanel(props: Props) {
   )
 }
 
-export default GroupPanel
+export default memo(GroupPanel)

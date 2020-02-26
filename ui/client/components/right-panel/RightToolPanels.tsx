@@ -1,19 +1,28 @@
-import React from "react"
-import {connect} from "react-redux"
+/* eslint-disable i18next/no-literal-string */
+import React, {ReactChild, memo} from "react"
 import "../../stylesheets/userPanel.styl"
 import ProcessInfo from "../Process/ProcessInfo"
 import DetailsPanel from "./panels/details/DetailsPanel"
 import ViewPanel from "./panels/view/ViewPanel"
 import ProcessPanels from "./panels/process/ProcessPanel"
 import DeploymentPanel from "./panels/deploy/DeploymentPanel"
-import {RootState} from "../../reducers/index"
 import EditPanel from "./panels/edit/EditPanel"
 import TestPanel from "./panels/test/TestPanel"
 import GroupPanel from "./panels/group/GroupPanel"
-import {getFetchedProcessDetails} from "./selectors/graph"
 import {PassedProps} from "./UserRightPanel"
+import ToolbarsSortable from "./toolbars/ToolbarsLayer"
+import {ToolbarsSide} from "../../reducers/toolbars"
 
-type Props = PassedProps & StateProps
+type OwnProps = PassedProps
+
+export interface Toolbar {
+  id: string,
+  component: ReactChild,
+  noDrag?: boolean,
+  defaultSide?: ToolbarsSide,
+}
+
+type Props = OwnProps
 
 function RightToolPanels(props: Props) {
   const {
@@ -23,41 +32,54 @@ function RightToolPanels(props: Props) {
     exportGraph,
     capabilities,
     selectionActions,
-    fetchedProcessDetails,
   } = props
 
+  const toolbars: Toolbar[] = [
+    {
+      id: "PROCESS-INFO",
+      component: <ProcessInfo processState={processState} isStateLoaded={isStateLoaded}/>,
+    },
+    {
+      id: "VIEW-PANEL",
+      component: <ViewPanel/>,
+    },
+    {
+      id: "DEPLOYMENT-PANEL",
+      component: <DeploymentPanel capabilities={capabilities} isStateLoaded={isStateLoaded} processState={processState}/>,
+    },
+    {
+      id: "PROCESS-PANELS",
+      component: (
+        <ProcessPanels
+          capabilities={capabilities}
+          isStateLoaded={isStateLoaded}
+          processState={processState}
+          exportGraph={exportGraph}
+        />
+      ),
+    },
+    {
+      id: "EDIT-PANEL",
+      component: <EditPanel capabilities={capabilities} graphLayoutFunction={graphLayoutFunction} selectionActions={selectionActions}/>,
+    },
+    {
+      id: "TEST-PANEL",
+      component: <TestPanel capabilities={capabilities}/>,
+    },
+    {
+      id: "GROUP-PANEL",
+      component: <GroupPanel capabilities={capabilities}/>,
+    },
+    {
+      id: "DETAILS-PANEL",
+      // TODO remove SideNodeDetails? turn out to be not useful
+      component: <DetailsPanel showDetails={capabilities.write}/>,
+    },
+  ]
+
   return (
-    <>
-      <ProcessInfo process={fetchedProcessDetails} processState={processState} isStateLoaded={isStateLoaded}/>
-      <ViewPanel/>
-      <DeploymentPanel
-        capabilities={capabilities}
-        isStateLoaded={isStateLoaded}
-        processState={processState}
-      />
-      <ProcessPanels
-        capabilities={capabilities}
-        isStateLoaded={isStateLoaded}
-        processState={processState}
-        exportGraph={exportGraph}
-      />
-      <EditPanel
-        capabilities={capabilities}
-        graphLayoutFunction={graphLayoutFunction}
-        selectionActions={selectionActions}
-      />
-      <TestPanel capabilities={capabilities}/>
-      <GroupPanel capabilities={capabilities}/>
-      {/*TODO remove SideNodeDetails? turn out to be not useful*/}
-      <DetailsPanel showDetails={capabilities.write}/>
-    </>
+    <ToolbarsSortable toolbars={toolbars}/>
   )
 }
 
-const mapState = (state: RootState) => ({
-  fetchedProcessDetails: getFetchedProcessDetails(state),
-})
-
-type StateProps = ReturnType<typeof mapState>
-
-export default connect(mapState)(RightToolPanels)
+export default memo(RightToolPanels)

@@ -277,15 +277,15 @@ class Visualization extends React.Component {
         NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
 
+  getGraphInstance = () => this.graphRef.current.getDecoratedComponentInstance()
+  graphLayoutFun = () => this.getGraphInstance().directedLayout()
+  exportGraphFun = () => this.getGraphInstance().exportGraph()
+  zoomOutFun = () => this.props.actions.zoomOut(this.getGraphInstance())
+  zoomInFun = () => this.props.actions.zoomIn(this.getGraphInstance())
   render() {
     const {leftPanelIsOpened, actions, loggedUser} = this.props
 
     //it has to be that way, because graph is redux component
-    const getGraph = () => this.graphRef.current.getDecoratedComponentInstance()
-    const graphLayoutFun = () => getGraph().directedLayout()
-    const exportGraphFun = () => getGraph().exportGraph()
-    const zoomOutFun = () => this.props.actions.zoomOut(getGraph())
-    const zoomInFun = () => this.props.actions.zoomIn(getGraph())
 
     const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading
 
