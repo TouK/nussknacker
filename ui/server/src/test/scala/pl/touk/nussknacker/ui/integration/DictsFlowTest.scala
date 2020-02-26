@@ -12,13 +12,13 @@ import io.circe.{ACursor, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 
 class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValues with OptionValues {
+  with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValues with OptionValues {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
