@@ -13,6 +13,7 @@ import {Error, Validator, validators, validatorType} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
+import {components, TimeRangeComponentType} from "./Duration/TimeRangeComponent"
 
 type ParamType = $TodoType
 type ValuesType = Array<string>
@@ -32,7 +33,7 @@ type EditorConfig = {
   values?: (param: ParamType, values: ValuesType) => $TodoType,
   switchable?: (editor: Editor, param: ParamType, expressionObj: ExpressionObj) => boolean,
   validators: (param: ParamType, errors: Array<Error>, fieldLabel: string, displayRawEditor?: boolean) => Array<Validator>,
-  components: (param: ParamType) => Array<string>,
+  components: (param: ParamType) => Array<TimeRangeComponentType>,
 }
 
 export enum dualEditorMode {
@@ -55,38 +56,40 @@ export enum editorTypes {
   CRON_EDITOR = "CronParameterEditor",
 }
 
-const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> =>
-  _.concat(
-    param === undefined ?
-      validators[validatorType.MANDATORY_VALUE_VALIDATOR]() :
-      param.validators.map(validator => validators[validator.type]()),
-    validators[validatorType.ERROR_VALIDATOR](errors, fieldLabel)
-  )
+const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
+  param === undefined ?
+    validators[validatorType.MANDATORY_VALUE_VALIDATOR]() :
+    param.validators.map(validator => validators[validator.type]()),
+  validators[validatorType.ERROR_VALIDATOR](errors, fieldLabel)
+)
 
 /* eslint-enable i18next/no-literal-string */
 
+const defaults = {
+  validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
+  components: () => null,
+}
+
 export const editors: Record<editorTypes, EditorConfig> = {
   [editorTypes.RAW_PARAMETER_EDITOR]: {
+    ...defaults,
     editor: () => RawEditor,
     hint: () => i18next.t("editors.raw.switchableToHint", "Switch to expression mode"),
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: () => null,
   },
   [editorTypes.BOOL_PARAMETER_EDITOR]: {
+    ...defaults,
     editor: () => BoolEditor,
     hint: (switchable) => switchable ? BoolEditor.switchableToHint() : BoolEditor.notSwitchableToHint(),
     switchableTo: (expressionObj) => BoolEditor.switchableTo(expressionObj),
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: () => null,
   },
   [editorTypes.STRING_PARAMETER_EDITOR]: {
+    ...defaults,
     editor: () => StringEditor,
     hint: (switchable) => switchable ? StringEditor.switchableToHint() : StringEditor.notSwitchableToHint(),
     switchableTo: (expressionObj) => StringEditor.switchableTo(expressionObj),
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: () => null,
   },
   [editorTypes.FIXED_VALUES_PARAMETER_EDITOR]: {
+    ...defaults,
     editor: () => FixedValuesEditor,
     hint: (switchable) => switchable ? FixedValuesEditor.switchableToHint() : FixedValuesEditor.notSwitchableToHint(),
     switchableTo: (expressionObj, param, values) => FixedValuesEditor.switchableTo(
@@ -94,8 +97,6 @@ export const editors: Record<editorTypes, EditorConfig> = {
       !_.isEmpty(values) ? values : param.editor.possibleValues,
     ),
     values: (param, values) => !_.isEmpty(values) ? values : param.editor.possibleValues,
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: () => null,
   },
   [editorTypes.DUAL_PARAMETER_EDITOR]: {
     editor: (param, displayRawEditor) => displayRawEditor ?
@@ -112,48 +113,50 @@ export const editors: Record<editorTypes, EditorConfig> = {
     validators: (param, errors, fieldLabel, displayRawEditor) => displayRawEditor ?
       editors[editorTypes.RAW_PARAMETER_EDITOR].validators(param, errors, fieldLabel) :
       editors[param.editor.simpleEditor.type].validators(param, errors, fieldLabel),
-    components: (param) => param.editor.simpleEditor.timeRangeComponents,
+    components: (param) => param.editor.simpleEditor.timeRangeComponents ?
+      param.editor.simpleEditor.timeRangeComponents.map(component => components[component]) :
+      null,
   },
   [editorTypes.DATE]: {
+    ...defaults,
     editor: () => DateEditor,
     hint: switchable => switchable ? DateEditor.switchableToHint() : DateEditor.notSwitchableToHint(),
     switchableTo: DateEditor.switchableTo,
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: () => null,
   },
   [editorTypes.TIME]: {
+    ...defaults,
     editor: () => TimeEditor,
     hint: switchable => switchable ? TimeEditor.switchableToHint() : TimeEditor.notSwitchableToHint(),
     switchableTo: TimeEditor.switchableTo,
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: () => null,
   },
   [editorTypes.DATE_TIME]: {
+    ...defaults,
     editor: () => DateTimeEditor,
     hint: switchable => switchable ? DateTimeEditor.switchableToHint() : DateTimeEditor.notSwitchableToHint(),
     switchableTo: DateTimeEditor.switchableTo,
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: () => null,
   },
   [editorTypes.DURATION_EDITOR]: {
+    ...defaults,
     editor: () => DurationEditor,
     hint: switchable => switchable ? DurationEditor.switchableToHint() : DurationEditor.notSwitchableToHint(),
     switchableTo: DurationEditor.switchableTo,
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: (param) => param.editor.timeRangeComponents,
+    components: (param) => param.editor.timeRangeComponents ?
+      param.editor.timeRangeComponents.map(component => components[component]) :
+      null,
   },
   [editorTypes.PERIOD_EDITOR]: {
+    ...defaults,
     editor: () => PeriodEditor,
     hint: switchable => switchable ? PeriodEditor.switchableToHint() : PeriodEditor.notSwitchableToHint(),
     switchableTo: PeriodEditor.switchableTo,
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: (param) => param.editor.timeRangeComponents,
+    components: (param) => param.editor.timeRangeComponents ?
+      param.editor.timeRangeComponents.map(component => components[component]) :
+      null,
   },
   [editorTypes.CRON_EDITOR]: {
+    ...defaults,
     editor: () => CronEditor,
     hint: switchable => switchable ? CronEditor.switchableToHint() : CronEditor.notSwitchableToHint(),
     switchableTo: CronEditor.switchableTo,
-    validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
-    components: () => null,
   },
 }

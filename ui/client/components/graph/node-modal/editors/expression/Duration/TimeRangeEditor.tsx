@@ -1,12 +1,13 @@
 import React, {useEffect, useState} from "react"
 import TimeRangeSection from "./TimeRangeSection"
 import {Validator} from "../../Validators"
+import {TimeRangeComponentType} from "./TimeRangeComponent"
 
 type Props = {
   encode: Function,
   decode: Function,
   onValueChange: Function,
-  components: Array<string>,
+  components: Array<TimeRangeComponentType>,
   readOnly: boolean,
   showValidation: boolean,
   validators: Array<Validator>,

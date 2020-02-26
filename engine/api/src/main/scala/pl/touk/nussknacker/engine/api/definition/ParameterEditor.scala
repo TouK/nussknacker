@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.engine.api.definition
 
+
 import java.time.temporal.ChronoUnit
 
-import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.{Decoder, Encoder, Json}
-import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
+import io.circe.Json
+import org.apache.commons.lang3.StringUtils
 
 import scala.util.Try
 
@@ -32,7 +34,7 @@ case object DateTimeParameterEditor extends SimpleParameterEditor
 object DurationParameterEditor {
   implicit val chronoUnitEncoder: Encoder[ChronoUnit] = {
     new Encoder[ChronoUnit] {
-      override def apply(chronoUnit: ChronoUnit): Json = Encoder.encodeString(StringUtils.lowerCase(chronoUnit.name()))
+      override def apply(chronoUnit: ChronoUnit): Json = Encoder.encodeString(chronoUnit.name())
     }
   }
 
@@ -46,7 +48,7 @@ object DurationParameterEditor {
 object PeriodParameterEditor {
   implicit val chronoUnitEncoder: Encoder[ChronoUnit] = {
     new Encoder[ChronoUnit] {
-      override def apply(chronoUnit: ChronoUnit): Json = Encoder.encodeString(StringUtils.lowerCase(chronoUnit.name()))
+      override def apply(chronoUnit: ChronoUnit): Json = Encoder.encodeString(chronoUnit.name())
     }
   }
 

@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.reflect.Parameter
 
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, CronParameterEditor, DateParameterEditor, DateTimeParameterEditor, DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, ParameterEditor, PeriodParameterEditor, RawParameterEditor, StringParameterEditor, TimeParameterEditor}
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, RawEditor, SimpleEditor, SimpleEditorType}
+
 
 object EditorExtractor {
 
