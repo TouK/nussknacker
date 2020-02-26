@@ -37,8 +37,8 @@ object EditorExtractor {
       case SimpleEditorType.DATE_EDITOR => DateParameterEditor
       case SimpleEditorType.TIME_EDITOR => TimeParameterEditor
       case SimpleEditorType.DATE_TIME_EDITOR => DateTimeParameterEditor
-      case SimpleEditorType.DURATION_EDITOR => DurationParameterEditor(simpleEditor.timeRangeComponents())
-      case SimpleEditorType.PERIOD_EDITOR => PeriodParameterEditor(simpleEditor.timeRangeComponents())
+      case SimpleEditorType.DURATION_EDITOR => DurationParameterEditor(simpleEditor.timeRangeComponents().toList)
+      case SimpleEditorType.PERIOD_EDITOR => PeriodParameterEditor(simpleEditor.timeRangeComponents().toList)
       case SimpleEditorType.CRON_EDITOR => CronParameterEditor
     }
   }

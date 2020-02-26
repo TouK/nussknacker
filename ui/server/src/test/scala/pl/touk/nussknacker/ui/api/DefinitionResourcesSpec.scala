@@ -47,7 +47,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor = getParameterEditor("simpleTypesService", "intParam")
+      val editor = getParamEditor("simpleTypesService", "intParam")
 
       editor shouldBe Json.obj("type" -> Json.fromString("RawParameterEditor"))
     }
@@ -57,7 +57,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("simpleTypesService", "booleanParam")
+      val editor: Json = getParamEditor("simpleTypesService", "booleanParam")
 
       editor shouldBe Json.obj("type" -> Json.fromString("BoolParameterEditor"))
     }
@@ -67,7 +67,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor = getParameterEditor("simpleTypesService", "stringParam")
+      val editor = getParamEditor("simpleTypesService", "stringParam")
 
       editor shouldBe Json.obj(
         "simpleEditor" -> Json.obj("type" -> Json.fromString("StringParameterEditor")),
@@ -81,7 +81,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("enricher", "param")
+      val editor: Json = getParamEditor("enricher", "param")
 
       editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
     }
@@ -116,7 +116,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("multipleParamsService", "foo")
+      val editor: Json = getParamEditor("multipleParamsService", "foo")
 
       editor shouldBe Json.obj(
         "type" -> Json.fromString("FixedValuesParameterEditor"),
@@ -134,7 +134,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("multipleParamsService", "bar")
+      val editor: Json = getParamEditor("multipleParamsService", "bar")
 
       editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
     }
@@ -144,7 +144,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("multipleParamsService", "baz")
+      val editor: Json = getParamEditor("multipleParamsService", "baz")
 
       editor shouldBe Json.obj(
         "type" -> Json.fromString("FixedValuesParameterEditor"),
@@ -166,7 +166,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("echoEnumService", "id")
+      val editor: Json = getParamEditor("echoEnumService", "id")
 
       editor shouldBe Json.obj(
         "type" -> Json.fromString("FixedValuesParameterEditor"),
@@ -188,7 +188,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("multipleParamsService", "quax")
+      val editor: Json = getParamEditor("multipleParamsService", "quax")
 
       editor shouldBe Json.obj(
         "simpleEditor" -> Json.obj("type" -> Json.fromString("StringParameterEditor")),
@@ -202,7 +202,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("datesTypesService", "durationParam")
+      val editor: Json = getParamEditor("datesTypesService", "durationParam")
 
       editor shouldBe Json.obj(
         "simpleEditor" -> Json.obj(
@@ -219,7 +219,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("datesTypesService","periodParam" )
+      val editor: Json = getParamEditor("datesTypesService","periodParam" )
 
       editor shouldBe Json.obj(
         "simpleEditor" -> Json.obj(
@@ -236,7 +236,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = getParameterEditor("datesTypesService","cronScheduleParam" )
+      val editor: Json = getParamEditor("datesTypesService","cronScheduleParam" )
 
       editor shouldBe Json.obj("type" -> Json.fromString("CronParameterEditor"))
     }
@@ -304,7 +304,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
-  private def getParameterEditor(serviceName: String, paramName: String) = {
+  private def getParamEditor(serviceName: String, paramName: String) = {
     responseAs[Json].hcursor
       .downField("streaming")
       .downField(serviceName)

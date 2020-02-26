@@ -40,13 +40,13 @@ protected object  ParameterTypeEditorDeterminer extends ParameterEditorDetermine
       )
       case klazz if klazz == classOf[java.time.Duration] => Some(
         DualParameterEditor(
-          simpleEditor = DurationParameterEditor(Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
+          simpleEditor = DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
           defaultMode = DualEditorMode.SIMPLE
         )
       )
       case klazz if klazz == classOf[java.time.Period] => Some(
         DualParameterEditor(
-          simpleEditor = PeriodParameterEditor(Array(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
+          simpleEditor = PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
           defaultMode = DualEditorMode.SIMPLE
         )
       )

@@ -29,7 +29,7 @@ case object TimeParameterEditor extends SimpleParameterEditor
 
 case object DateTimeParameterEditor extends SimpleParameterEditor
 
-@JsonCodec case class DurationParameterEditor(timeRangeComponents: Array[ChronoUnit]) extends SimpleParameterEditor
+@JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
 
 object DurationParameterEditor {
   implicit val chronoUnitEncoder: Encoder[ChronoUnit] = {
@@ -43,7 +43,7 @@ object DurationParameterEditor {
   }
 }
 
-@JsonCodec case class PeriodParameterEditor(timeRangeComponents: Array[ChronoUnit]) extends SimpleParameterEditor
+@JsonCodec case class PeriodParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
 
 object PeriodParameterEditor {
   implicit val chronoUnitEncoder: Encoder[ChronoUnit] = {

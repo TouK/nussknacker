@@ -100,14 +100,14 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
     val determiner = ParameterEditorDeterminerChain(config)
 
     determiner.determineEditor(param) shouldBe DualParameterEditor(
-      simpleEditor = DurationParameterEditor(Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
+      simpleEditor = DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
       defaultMode = DualEditorMode.SIMPLE
     )
   }
 
   test("determine editor by config for Duration") {
     val param = Parameter[Duration]("param")
-    val editor = DurationParameterEditor(timeRangeComponents = Array(ChronoUnit.MINUTES))
+    val editor = DurationParameterEditor(timeRangeComponents = List(ChronoUnit.MINUTES))
     val config = new ParameterConfig(None, Some(editor), None)
 
     val determiner = ParameterEditorDeterminerChain(config)
@@ -121,15 +121,15 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
 
     val determiner = ParameterEditorDeterminerChain(config)
 
-    determiner.determineEditor(param) shouldEqual DualParameterEditor(
-      simpleEditor = PeriodParameterEditor(Array(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
+    determiner.determineEditor(param) shouldBe DualParameterEditor(
+      simpleEditor = PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
       defaultMode = DualEditorMode.SIMPLE
     )
   }
 
   test("determine editor by config for Period") {
     val param = Parameter[Period]("param")
-    val editor = DurationParameterEditor(timeRangeComponents = Array(ChronoUnit.MINUTES))
+    val editor = DurationParameterEditor(timeRangeComponents = List(ChronoUnit.MINUTES))
     val config = new ParameterConfig(None, Some(editor), None)
 
     val determiner = ParameterEditorDeterminerChain(config)
