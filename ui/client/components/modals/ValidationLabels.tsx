@@ -11,8 +11,6 @@ export default function ValidationLabels(props: Props) {
 
   const {validators, values} = props
 
-  console.log(withoutDuplications(validators))
-
   return (
     <div className={"validation-labels"}>
       {withoutDuplications(validators).map(validator => validator.isValid(...values) ?

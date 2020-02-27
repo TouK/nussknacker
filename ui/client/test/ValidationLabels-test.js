@@ -5,15 +5,17 @@ import {
   mandatoryValueValidator
 } from "../components/graph/node-modal/editors/Validators"
 import ValidationLabels from "../components/modals/ValidationLabels"
-import {render, screen} from '@testing-library/react'
+import {render} from '@testing-library/react'
+import {getAllByText, queryAllByText} from "@testing-library/dom"
 
 describe("test validation labels", () => {
-  const backendErrorDescription = "test"
+  const fieldName = "fieldName"
+  const backendErrorMessage = "backend error message"
   const backendError = (errorType) => ({
-    message: "Test",
-    description: backendErrorDescription,
+    message: backendErrorMessage,
+    description: "backend error description",
     typ: errorType,
-    fieldName: "fieldName"
+    fieldName: fieldName
   })
 
   const testCases = [
@@ -24,7 +26,7 @@ describe("test validation labels", () => {
     },
     {
       description: "display both validation labels for different error type",
-      errorType: "AnotherErrorType",
+      errorType: HandledErrorType.WrongDateFormat.toString(),
       expectedBackendValidationLabels: 1,
     },
   ]
@@ -34,15 +36,17 @@ describe("test validation labels", () => {
       //given
       const validators = [
         mandatoryValueValidator,
-        errorValidator([backendError(errorType)], "fieldName"),
+        errorValidator([backendError(errorType)], fieldName),
       ]
 
       //when
       render(<ValidationLabels validators={validators} values={[""]}/>)
 
       //then
-      expect(screen.findByDisplayValue(mandatoryValueValidator.description).length).toBe(1)
-      expect(screen.findAllByDisplayValue(backendErrorDescription).length).toBe(expectedBackendValidationLabels)
+      const container = document.body
+      expect(getAllByText(container, mandatoryValueValidator.message).length).toBe(1)
+      const backendValidationLabels = queryAllByText(container, backendErrorMessage)
+      expect((backendValidationLabels === null ? [] : backendValidationLabels).length).toBe(expectedBackendValidationLabels)
     })
   })
 })
