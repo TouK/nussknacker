@@ -70,6 +70,7 @@ class EditableExpression extends React.Component<Props, State> {
           {...this.props}
           values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
           validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
+          components={editor.components(param)}
         />
         {
             param?.editor?.type === editorTypes.DUAL_PARAMETER_EDITOR && (

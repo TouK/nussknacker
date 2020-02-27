@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
 import java.time._
+import java.time.temporal.ChronoUnit
 import java.util
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
@@ -22,11 +23,10 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, MandatoryValueValidator, Parameter, RawParameterEditor, ServiceWithExplicitMethod, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryValueValidator, Parameter, ServiceWithExplicitMethod, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, LabeledExpression, RawEditor, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
@@ -34,6 +34,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableActi
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, Context, CustomStreamTransformer, DisplayJson, DisplayJsonWithEncoder, Documentation, HideToString, LazyParameter, MetaData, MethodToInvoke, ParamName, QueryableStateNames, Service, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -557,9 +558,30 @@ class DatesTypesService extends Service with Serializable {
              @ParamName("dateParam") dateParam: LocalDate,
              @ParamName("timeParam") timeParam: LocalTime,
              @ParamName("zonedDataTimeParam") zonedDataTimeParam: ZonedDateTime,
-             @ParamName("durationParam") duration: Duration,
-             @ParamName("periodParam") period: Period,
-             @ParamName("cronScheduleParam") cronScheduleParam: Cron
+
+             @ParamName("durationParam")
+             @DualEditor(
+               simpleEditor = new SimpleEditor(
+                 `type` = SimpleEditorType.DURATION_EDITOR,
+                 timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
+               ),
+               defaultMode = DualEditorMode.SIMPLE
+             )
+             duration: Duration,
+
+             @ParamName("periodParam")
+             @DualEditor(
+               simpleEditor = new SimpleEditor(
+                 `type` = SimpleEditorType.PERIOD_EDITOR,
+                 timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
+               ),
+               defaultMode = DualEditorMode.SIMPLE
+             )
+             period: Period,
+
+             @ParamName("cronScheduleParam")
+             @SimpleEditor(`type` = SimpleEditorType.CRON_EDITOR)
+             cronScheduleParam: Cron
             ): Future[Unit] = {
     ???
   }

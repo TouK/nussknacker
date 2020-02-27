@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.definition.editor
 
 import java.time._
+import java.time.temporal.ChronoUnit
 
 import com.cronutils.model.Cron
 import org.scalatest._
@@ -99,9 +100,19 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
     val determiner = ParameterEditorDeterminerChain(config)
 
     determiner.determineEditor(param) shouldBe DualParameterEditor(
-      simpleEditor = DurationParameterEditor,
+      simpleEditor = DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
       defaultMode = DualEditorMode.SIMPLE
     )
+  }
+
+  test("determine editor by config for Duration") {
+    val param = Parameter[Duration]("param")
+    val editor = DurationParameterEditor(timeRangeComponents = List(ChronoUnit.MINUTES))
+    val config = new ParameterConfig(None, Some(editor), None)
+
+    val determiner = ParameterEditorDeterminerChain(config)
+
+    determiner.determineEditor(param) shouldBe editor
   }
 
   test("determine editor by type Period") {
@@ -111,9 +122,19 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
     val determiner = ParameterEditorDeterminerChain(config)
 
     determiner.determineEditor(param) shouldBe DualParameterEditor(
-      simpleEditor = PeriodParameterEditor,
+      simpleEditor = PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
       defaultMode = DualEditorMode.SIMPLE
     )
+  }
+
+  test("determine editor by config for Period") {
+    val param = Parameter[Period]("param")
+    val editor = DurationParameterEditor(timeRangeComponents = List(ChronoUnit.MINUTES))
+    val config = new ParameterConfig(None, Some(editor), None)
+
+    val determiner = ParameterEditorDeterminerChain(config)
+
+    determiner.determineEditor(param) shouldBe editor
   }
 
   test("determine editor by type Cron") {
@@ -126,6 +147,15 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
       simpleEditor = CronParameterEditor,
       defaultMode = DualEditorMode.SIMPLE
     )
+  }
+
+  test("determine editor by config for Cron") {
+    val param = Parameter[Cron]("param")
+    val config = ParameterConfig(None, Some(CronParameterEditor), None)
+
+    val determiner = ParameterEditorDeterminerChain(config)
+
+    determiner.determineEditor(param) shouldBe CronParameterEditor
   }
 
   test("determine default editor") {

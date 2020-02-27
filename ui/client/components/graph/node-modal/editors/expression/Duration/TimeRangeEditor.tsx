@@ -1,13 +1,13 @@
 import React, {useEffect, useState} from "react"
 import TimeRangeSection from "./TimeRangeSection"
-import {DurationComponentType} from "./DurationEditor"
 import {Validator} from "../../Validators"
+import {TimeRangeComponentType} from "./TimeRangeComponent"
 
 type Props = {
   encode: Function,
   decode: Function,
   onValueChange: Function,
-  components: Array<DurationComponentType>,
+  components: Array<TimeRangeComponentType>,
   readOnly: boolean,
   showValidation: boolean,
   validators: Array<Validator>,
@@ -25,7 +25,7 @@ export default function TimeRangeEditor(props: Props) {
     setValue(
       {
         ...value,
-        [fieldName]: isNaN(fieldValue) ? undefined : fieldValue
+        [fieldName]: isNaN(fieldValue) ? null : fieldValue,
       }
     )
   }

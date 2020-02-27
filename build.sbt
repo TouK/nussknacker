@@ -616,6 +616,7 @@ lazy val api = (project in engine("api")).
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,
+        "io.circe" %% "circe-java8" % circeV,
         "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.apache.commons" % "commons-text" % commonsTextV,
