@@ -26,7 +26,10 @@ object FlinkQueryableClient {
   /**
    * Creates FlinkQueryableClient using custom deserialization strategy (ExecutionConfig)
    * @param queryableStateProxyUrl comma separated list of proxy urls
-   * @param executionConfig config that is used by underlying QueryableStateClient - you can use it to set deserialization strategy
+   * @param executionConfig config that is used by underlying QueryableStateClient - you can use it to set deserialization strategy.
+   *                        keep in mind that deserializers should match serializers used in state. in case if you query
+   *                        state serialized by NK process, probable you should prepare this config using
+   *                        `pl.touk.nussknacker.engine.process.util.Serializers.registerSerializers()` method.
    */
   def apply(queryableStateProxyUrl: String, executionConfig: ExecutionConfig): FlinkQueryableClient = {
 
