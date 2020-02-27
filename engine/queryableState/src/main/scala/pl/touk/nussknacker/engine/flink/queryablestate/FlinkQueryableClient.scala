@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.queryablestate
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.JobID
+import org.apache.flink.api.common.{ExecutionConfig, JobID}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.queryablestate.client.QueryableStateClient
@@ -14,7 +14,21 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 object FlinkQueryableClient {
+
+  /**
+   * Creates FlinkQueryableClient using Flink's default deserialization strategy (ExecutionConfig)
+   * @param queryableStateProxyUrl comma separated list of proxy urls
+   */
   def apply(queryableStateProxyUrl: String): FlinkQueryableClient = {
+    FlinkQueryableClient(queryableStateProxyUrl, new ExecutionConfig)
+  }
+
+  /**
+   * Creates FlinkQueryableClient using custom deserialization strategy (ExecutionConfig)
+   * @param queryableStateProxyUrl comma separated list of proxy urls
+   * @param executionConfig config that is used by underlying QueryableStateClient - you can use it to set deserialization strategy
+   */
+  def apply(queryableStateProxyUrl: String, executionConfig: ExecutionConfig): FlinkQueryableClient = {
 
     //TODO: this is workaround for https://issues.apache.org/jira/browse/FLINK-10225, we want to be able to configure all task managers
     val queryableStateProxyUrlsParts = queryableStateProxyUrl.split(",").toList.map { url =>
@@ -22,7 +36,9 @@ object FlinkQueryableClient {
     }
     def createClients = queryableStateProxyUrlsParts.map {
       case (queryableStateProxyHost, queryableStateProxyPort) =>
-        new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort)
+        val client = new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort)
+        client.setExecutionConfig(executionConfig)
+        client
     }
     new FlinkQueryableClient(createClients)
   }
