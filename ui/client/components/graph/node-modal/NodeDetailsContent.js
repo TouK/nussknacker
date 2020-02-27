@@ -24,7 +24,7 @@ import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
-import {editorTypes} from "./editors/expression/Editor"
+import {EditorType} from "./editors/expression/Editor"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -460,7 +460,7 @@ export class NodeDetailsContent extends React.Component {
 
       return (
           <EditableExpression
-              fieldType={editorTypes.FIXED_VALUES_PARAMETER_EDITOR}
+              fieldType={EditorType.FIXED_VALUES_PARAMETER_EDITOR}
               fieldLabel={fieldConfig.label}
               onValueChange={(newValue) => this.setNodeDataAt(`additionalFields.properties.${fieldName}`, newValue)}
               expressionObj={obj}

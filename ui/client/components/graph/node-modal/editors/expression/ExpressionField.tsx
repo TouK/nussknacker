@@ -2,7 +2,7 @@ import _ from "lodash"
 import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableExpression from "./EditableExpression"
-import {editorTypes} from "./Editor"
+import {EditorType} from "./Editor"
 
 type Props = {
   fieldName: string,
@@ -37,10 +37,10 @@ class ExpressionField extends React.Component<Props> {
     const marked = isMarked(exprTextPath)
     const editor = this.findParamByName(fieldName)?.editor || {}
 
-    if (editor.type === editorTypes.FIXED_VALUES_PARAMETER_EDITOR)
+    if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR)
       return (
         <EditableExpression
-          fieldType={editorTypes.FIXED_VALUES_PARAMETER_EDITOR}
+          fieldType={EditorType.FIXED_VALUES_PARAMETER_EDITOR}
           fieldLabel={fieldLabel}
           fieldName={fieldName}
           param={this.findParamByName(fieldLabel)}
@@ -65,7 +65,7 @@ class ExpressionField extends React.Component<Props> {
         <EditableExpression
           fieldType={fieldType}
           param={this.findParamByName(fieldLabel)}
-          editorName={editorTypes.RAW_PARAMETER_EDITOR}
+          editorName={EditorType.RAW_PARAMETER_EDITOR}
           renderFieldLabel={renderFieldLabel}
           fieldLabel={fieldLabel}
           fieldName={fieldName}
