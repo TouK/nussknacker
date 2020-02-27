@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.definition.editor
 
+import java.time.temporal.ChronoUnit
+
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
@@ -38,13 +40,13 @@ protected object  ParameterTypeEditorDeterminer extends ParameterEditorDetermine
       )
       case klazz if klazz == classOf[java.time.Duration] => Some(
         DualParameterEditor(
-          simpleEditor = DurationParameterEditor,
+          simpleEditor = DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
           defaultMode = DualEditorMode.SIMPLE
         )
       )
       case klazz if klazz == classOf[java.time.Period] => Some(
         DualParameterEditor(
-          simpleEditor = PeriodParameterEditor,
+          simpleEditor = PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
           defaultMode = DualEditorMode.SIMPLE
         )
       )
