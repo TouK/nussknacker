@@ -11,9 +11,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JobConfig, JobOverview, JobsResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.{NothingT, Response, SttpBackend}
 import sttp.client.testing.SttpBackendStub
-import sttp.model.Method
+import sttp.client.{NothingT, Response, SttpBackend}
+import sttp.model.{Method, StatusCode}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -34,7 +34,8 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   private def createManager(statuses: List[JobOverview] = List(),
                             acceptSavepoint: Boolean = false,
                             acceptDeploy: Boolean = false,
-                            acceptStop: Boolean = false)
+                            acceptStop: Boolean = false,
+                            statusCode: StatusCode = StatusCode.Ok)
     = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
     val toReturn = (req.uri.path, req.method) match {
       case (List("jobs", "overview"), Method.GET) =>
@@ -55,7 +56,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       case (List("jars", "upload"), Method.POST) if acceptDeploy =>
         UploadJarResponse(uploadedJarPath)
     }
-    Response.ok(Right(toReturn))
+    Response(Right(toReturn), statusCode)
   })
 
   def processState(manager: FlinkProcessManager,
@@ -73,6 +74,18 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       attributes = Option.empty,
       errors = errors
     )
+
+  test("continue on timeout exception") {
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED))
+
+    createManager(statuses, acceptDeploy = true, statusCode = StatusCode.RequestTimeout)
+      .deploy(
+        ProcessVersion(1, ProcessName("p1"), "user", None),
+        CustomProcess("nothing"),
+        None,
+        user = User("user1", "User 1")
+      ).futureValue shouldBe (())
+  }
 
   test("refuse to deploy if process is failing") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING))
