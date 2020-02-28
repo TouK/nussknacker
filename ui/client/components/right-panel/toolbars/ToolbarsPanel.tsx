@@ -1,42 +1,103 @@
 import {ToolbarsSide} from "../../../reducers/toolbars"
 import {Toolbar} from "../RightToolPanels"
-import {Droppable} from "react-beautiful-dnd"
-import {DraggablePanel} from "../DraggablePanel"
-import React from "react"
+import {
+  Droppable,
+  Draggable,
+  DraggableChildrenFn,
+  DraggableStateSnapshot,
+  DroppableProvided,
+  DroppableStateSnapshot,
+  DraggableProvided,
+  DraggableRubric,
+  DraggableLocation,
+} from "react-beautiful-dnd"
+import React, {useCallback, CSSProperties} from "react"
 import {useSelector} from "react-redux"
 import {RootState} from "../../../reducers/index"
 import {ToolbarDraggableType} from "./ToolbarsLayer"
+import styles from "./ToolbarsLayer.styl"
+import cn from "classnames"
+
+interface Rubric extends DraggableRubric {
+  source: DraggableLocation,
+}
+
+const fixAnimation = (style: CSSProperties) => ({...style, transitionDuration: `${0.0001}s`})
+const getStyle = (style: CSSProperties, s: DraggableStateSnapshot) => s.isDropAnimating && s.draggingOver ? fixAnimation(style) : style
 
 function sortByIdsFrom(orderElement: string[]) {
   return ({id: a}, {id: b}) => orderElement.findIndex(v => v === a) - orderElement.findIndex(v => v === b)
 }
 
-type OwnProps = {
+type Props = {
   side: ToolbarsSide,
   availableToolbars: Toolbar[],
   className?: string,
 }
 
-export function ToolbarsPanel(props: OwnProps) {
+export function ToolbarsPanel(props: Props) {
   const {side, availableToolbars, className} = props
-  const order = useSelector<RootState, string[]>(s => s.toolbars[side] || [])
+  const order = useSelector<RootState, string[]>(s => s.toolbars.positions[side] || [])
+
+  const ordered = availableToolbars
+    .filter(({id}) => order.includes(id))
+    .sort(sortByIdsFrom(order))
+
+  const renderDraggable: DraggableChildrenFn = useCallback(
+    (p: DraggableProvided, s: DraggableStateSnapshot, r: Rubric) => (
+      <div
+        ref={p.innerRef}
+        {...p.draggableProps}
+        {...p.dragHandleProps}
+        style={getStyle(p.draggableProps.style, s)}
+        className={cn([
+          styles.draggable,
+          s.isDragging && styles.isDragging,
+          s.draggingOver && styles.isDraggingOver,
+          s.isDropAnimating && styles.isAnimating,
+        ])}
+      >
+        <div className={styles.background}>
+          <div className={styles.content}>
+            {ordered[r.source.index].component}
+          </div>
+        </div>
+      </div>
+    ),
+    [ordered],
+  )
+
+  const renderDroppable = useCallback(
+    (p: DroppableProvided, s: DroppableStateSnapshot) => (
+      <div
+        ref={p.innerRef}
+        className={cn([
+          styles.droppable,
+          s.isDraggingOver && styles.isDraggingOver,
+          s.draggingFromThisWith && styles.isDraggingFrom,
+          className,
+        ])}
+      >
+        <div {...p.droppableProps} className={cn(styles.draggableList)}>
+          <div className={styles.background}>
+            {ordered.map(({id, component, isDragDisabled}, index) => (
+              <Draggable key={id} draggableId={id} index={index} isDragDisabled={isDragDisabled}>
+                {renderDraggable}
+              </Draggable>
+            ))}
+            {s.isUsingPlaceholder && (
+              <div className={cn(styles.placeholder)}>
+                {p.placeholder}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ),
+    [className, ordered, renderDraggable],
+  )
 
   return (
-    <Droppable droppableId={side} type={ToolbarDraggableType}>
-      {provided => (
-        <div ref={provided.innerRef} {...provided.droppableProps} className={className}>
-          {availableToolbars
-            .filter(({id}) => order.includes(id))
-            .sort(sortByIdsFrom(order))
-            .map(({id, component, noDrag}, index) => (
-              <DraggablePanel key={id} id={id} index={index} disabled={noDrag}>{component}</DraggablePanel>
-            ))}
-          {provided.placeholder}
-        </div>
-      )}
-    </Droppable>
+    <Droppable droppableId={side} type={ToolbarDraggableType} renderClone={renderDraggable}>{renderDroppable}</Droppable>
   )
 }
-
-
-

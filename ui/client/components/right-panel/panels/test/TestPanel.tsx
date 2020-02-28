@@ -5,7 +5,7 @@ import {RootState} from "../../../../reducers/index"
 import {isSubprocess} from "../../selectors/graph"
 import {getFeatureSettings} from "../../selectors/settings"
 import {CapabilitiesType} from "../../UserRightPanel"
-import {RightToolPanel} from "../RightToolPanel"
+import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 import CountsButton from "./buttons/CountsButton"
 import FromFileButton from "./buttons/FromFileButton"
 import GenerateButton from "./buttons/GenerateButton"
@@ -22,13 +22,13 @@ function TestPanel(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <RightToolPanel title={t("panels.test.title", "Test")} isHidden={isSubprocess}>
+    <CollapsibleToolbar id="TEST-PANEL" title={t("panels.test.title", "Test")} isHidden={isSubprocess}>
       {writeAllowed ? <FromFileButton/> : null}
       {writeAllowed ? <HideButton/> : null}
       {writeAllowed ? <GenerateButton/> : null}
       {/*//TODO: counts and metrics should not be visible in archived process*/}
       {featuresSettings?.counts && !isSubprocess ? <CountsButton/> : null}
-    </RightToolPanel>
+    </CollapsibleToolbar>
 
   )
 }

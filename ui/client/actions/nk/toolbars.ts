@@ -5,6 +5,7 @@ export type ToolbarPosition = [ToolbarsSide | string, number]
 
 type RegisterToolbarsAction = { type: "REGISTER_TOOLBARS", toolbars: Array<[string, ToolbarsSide]> }
 type MoveToolbarAction = { type: "MOVE_TOOLBAR", from: ToolbarPosition, to: ToolbarPosition }
+type ToggleToolbarAction = { type: "TOGGLE_TOOLBAR", id: string, isCollapsed: boolean }
 
 export function registerToolbars(toolbars: Toolbar[]): RegisterToolbarsAction {
   return {
@@ -20,6 +21,14 @@ export function moveToolbar(from: ToolbarPosition, to: ToolbarPosition): MoveToo
   }
 }
 
+export function toggleToolbar(id: string, isCollapsed = false): ToggleToolbarAction {
+  return {
+    type: "TOGGLE_TOOLBAR",
+    id, isCollapsed,
+  }
+}
+
 export type ToolbarActions =
   | RegisterToolbarsAction
   | MoveToolbarAction
+  | ToggleToolbarAction

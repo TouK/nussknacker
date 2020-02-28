@@ -56,24 +56,27 @@ function UserRightPanel(props: Props) {
   } = props
 
   return (
-    <div
-      className={cn(
-        styles.rightSidenav,
-        isOpened && styles.isOpened,
-      )}
-    >
+    <>
       <ZoomButtons className={cn("right", isOpened && "is-opened")} onZoomIn={zoomIn} onZoomOut={zoomOut}/>
-
-      <SpinnerWrapper isReady={isReady}>
-        <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-          {fetchedProcessDetails ? (
-            <RightToolPanels {...passProps}/>
-          ) : null}
-        </Scrollbars>
-      </SpinnerWrapper>
-
       <TogglePanel type="right" isOpened={isOpened} onToggle={toggleRightPanel}/>
-    </div>
+      <div
+        className={cn(
+          styles.rightSidenav,
+          isOpened && styles.isOpened,
+          styles.noEvents,
+        )}
+      >
+
+        <SpinnerWrapper isReady={isReady}>
+          <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
+            {fetchedProcessDetails ? (
+              <RightToolPanels {...passProps}/>
+            ) : null}
+          </Scrollbars>
+        </SpinnerWrapper>
+
+      </div>
+    </>
   )
 }
 

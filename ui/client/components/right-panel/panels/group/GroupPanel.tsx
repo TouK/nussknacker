@@ -1,6 +1,6 @@
 import React, {memo} from "react"
 import {CapabilitiesType} from "../../UserRightPanel"
-import {RightToolPanel} from "../RightToolPanel"
+import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 import GroupStart from "./buttons/GroupStartButton"
 import GroupFinish from "./buttons/GroupFinishButton"
 import Ungroup from "./buttons/UngroupButton"
@@ -18,12 +18,12 @@ function GroupPanel(props: Props) {
   const writeAllowed = capabilities.write
 
   return (
-    <RightToolPanel title={t("panels.group.title", "Group")}>
+    <CollapsibleToolbar id="GROUP-PANEL" title={t("panels.group.title", "Group")}>
       {writeAllowed ? <GroupStart/> : null}
       {writeAllowed ? <GroupFinish/> : null}
       {writeAllowed ? <GroupCancel/> : null}
       {writeAllowed ? <Ungroup/> : null}
-    </RightToolPanel>
+    </CollapsibleToolbar>
   )
 }
 

@@ -18,7 +18,7 @@ type OwnProps = PassedProps
 export interface Toolbar {
   id: string,
   component: ReactChild,
-  noDrag?: boolean,
+  isDragDisabled?: boolean,
   defaultSide?: ToolbarsSide,
 }
 

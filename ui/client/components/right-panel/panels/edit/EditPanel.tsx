@@ -1,7 +1,7 @@
 import React, {memo} from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
-import {RightToolPanel} from "../RightToolPanel"
+import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 import Undo from "./buttons/UndoButton"
 import Redo from "./buttons/RedoButton"
 import Layout from "./buttons/LayoutButton"
@@ -29,7 +29,7 @@ function EditPanel(props: Props) {
   const writeAllowed = capabilities.write
 
   return (
-    <RightToolPanel title={t("panels.edit.title", "Edit")}>
+    <CollapsibleToolbar id="EDIT-PANEL" title={t("panels.edit.title", "Edit")}>
       {writeAllowed ? <Undo/> : null}
       {writeAllowed ? <Redo/> : null}
       {writeAllowed ? <Layout graphLayoutFunction={graphLayoutFunction}/> : null}
@@ -38,7 +38,7 @@ function EditPanel(props: Props) {
       {writeAllowed ? <Cut selectionActions={selectionActions}/> : null}
       {writeAllowed ? <Delete selectionActions={selectionActions}/> : null}
       {writeAllowed ? <Paste selectionActions={selectionActions}/> : null}
-    </RightToolPanel>
+    </CollapsibleToolbar>
   )
 }
 

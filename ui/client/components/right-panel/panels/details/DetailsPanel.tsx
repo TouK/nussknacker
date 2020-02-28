@@ -1,7 +1,7 @@
 import React, {memo} from "react"
 import {useTranslation} from "react-i18next"
 import SideNodeDetails from "./SideNodeDetails"
-import {RightToolPanel} from "../RightToolPanel"
+import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 
 export type Props = {
   showDetails: boolean,
@@ -12,9 +12,9 @@ function DetailsPanel(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <RightToolPanel title={t("panels.details.title", "Details")} isHidden={!showDetails}>
+    <CollapsibleToolbar id="DETAILS-PANEL" title={t("panels.details.title", "Details")} isHidden={!showDetails}>
       <SideNodeDetails/>
-    </RightToolPanel>
+    </CollapsibleToolbar>
   )
 }
 

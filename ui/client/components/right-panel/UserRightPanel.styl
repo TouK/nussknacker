@@ -1,14 +1,18 @@
 @import "../../stylesheets/_variables.styl"
 
 :local
-	.rightSidenav
-		background-color panelBkgColor
+	.no-events
+		pointer-events none
+
+	.right-sidenav
+		user-select none
 		width sidebarWidth
 		transition left 0.5s ease, right 0.5s ease
 		position absolute
 		z-index 1
 		top 0
 		bottom 0
+		right 0
 		right -(sidebarWidth)
 		overflow hidden
 

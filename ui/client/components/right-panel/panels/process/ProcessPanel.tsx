@@ -2,7 +2,7 @@ import React, {memo} from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {isEmpty} from "lodash"
-import {RightToolPanel} from "../RightToolPanel"
+import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 import ArchiveButton from "./buttons/ArchiveButton"
 import PDFButton from "./buttons/PDFButton"
 import JSONButton from "./buttons/JSONButton"
@@ -33,7 +33,7 @@ function ProcessPanel(props: Props) {
   const deployAllowed = capabilities.deploy
   const writeAllowed = capabilities.write
   return (
-    <RightToolPanel title={t("panels.process.title", "Process")}>
+    <CollapsibleToolbar id="PROCESS-PANEL" title={t("panels.process.title", "Process")}>
       {writeAllowed ? <SaveButton/> : null}
       {deployAllowed && !isEmpty(featuresSettings?.remoteEnvironment) ? (
         <MigrateButton processState={processState} isStateLoaded={isStateLoaded}/>
@@ -43,7 +43,7 @@ function ProcessPanel(props: Props) {
       <JSONButton/>
       <PDFButton exportGraph={exportGraph}/>
       {writeAllowed ? <ArchiveButton isStateLoaded={isStateLoaded} processState={processState}/> : null}
-    </RightToolPanel>
+    </CollapsibleToolbar>
   )
 }
 

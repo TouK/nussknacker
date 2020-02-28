@@ -1,7 +1,7 @@
 import React, {memo} from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
-import {RightToolPanel} from "../RightToolPanel"
+import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 import Deploy from "./buttons/DeployButton"
 import Cancel from "./buttons/CancelDeployButton"
 import Metrics from "./buttons/MetricsButton"
@@ -22,11 +22,11 @@ function DeploymentPanel(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <RightToolPanel title={t("panels.deploy.title", "Deployment")} isHidden={isSubprocess}>
+    <CollapsibleToolbar id="DEPLOYMENT-PANEL" title={t("panels.deploy.title", "Deployment")} isHidden={isSubprocess}>
       {deployEnabled ? <Deploy  {...passProps}/> : null}
       {deployEnabled ? <Cancel  {...passProps}/> : null}
       <Metrics/>
-    </RightToolPanel>
+    </CollapsibleToolbar>
   )
 }
 

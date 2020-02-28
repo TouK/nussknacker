@@ -1,14 +1,14 @@
-import React, {memo} from "react"
+import React, {memo, FC} from "react"
 import {useTranslation} from "react-i18next"
-import {RightToolPanel} from "../RightToolPanel"
+import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 import BussinesViewSwitch from "./BussinesViewSwitch"
 
-const ViewPanel = () => {
+function ViewPanel() {
   const {t} = useTranslation()
   return (
-    <RightToolPanel title={t("panels.view.title", "view")}>
+    <CollapsibleToolbar id="VIEW-PANEL" title={t("panels.view.title", "view")}>
       <BussinesViewSwitch/>
-    </RightToolPanel>
+    </CollapsibleToolbar>
   )
 }
 
