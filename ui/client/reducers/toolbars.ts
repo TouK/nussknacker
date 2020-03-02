@@ -3,6 +3,8 @@ import {Action} from "../actions/reduxTypes"
 export enum ToolbarsSide {
   TopRight = "TOP-RIGHT",
   BottomRight = "BOTTOM-RIGHT",
+  TopLeft = "TOP-LEFT",
+  BottomLeft = "BOTTOM-LEFT",
   Hidden = "HIDDEN",
 }
 

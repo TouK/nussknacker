@@ -12,7 +12,6 @@ import NodeUtils from "../components/graph/NodeUtils"
 import UserRightPanel from "../components/right-panel/UserRightPanel"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
-import UserLeftPanel from "../components/UserLeftPanel"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 
@@ -89,7 +88,7 @@ class Visualization extends React.Component {
         this.fetchProcessState()
         this.state.processStateIntervalId = setInterval(
           () => this.fetchProcessState(),
-          this.state.processStateIntervalTime
+          this.state.processStateIntervalTime,
         )
       }
     }).catch((error) => {
@@ -217,8 +216,8 @@ class Visualization extends React.Component {
 
   canCopySelection() {
     return this.props.allModalsClosed &&
-        !_.isEmpty(this.props.selectionState) &&
-        NodeUtils.containsOnlyPlainNodesWithoutGroups(this.props.selectionState, this.props.processToDisplay)
+      !_.isEmpty(this.props.selectionState) &&
+      NodeUtils.containsOnlyPlainNodesWithoutGroups(this.props.selectionState, this.props.processToDisplay)
   }
 
   cutSelection = (event) => {
@@ -272,16 +271,15 @@ class Visualization extends React.Component {
 
   canAddNode(node) {
     return this.props.capabilities.write &&
-        NodeUtils.isNode(node) &&
-        !NodeUtils.nodeIsGroup(node) &&
-        NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
+      NodeUtils.isNode(node) &&
+      !NodeUtils.nodeIsGroup(node) &&
+      NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
 
-  getGraphInstance = () => this.graphRef.current.getDecoratedComponentInstance()
+  getGraphInstance = () => this.graphRef.current && this.graphRef.current.getDecoratedComponentInstance()
   graphLayoutFun = () => this.getGraphInstance().directedLayout()
   exportGraphFun = () => this.getGraphInstance().exportGraph()
-  zoomOutFun = () => this.props.actions.zoomOut(this.getGraphInstance())
-  zoomInFun = () => this.props.actions.zoomIn(this.getGraphInstance())
+
   render() {
     const {leftPanelIsOpened, actions, loggedUser} = this.props
 
@@ -296,20 +294,10 @@ class Visualization extends React.Component {
           navigate={path => this.props.history.push(path)}
         />
 
-        <UserLeftPanel
-          isOpened={leftPanelIsOpened}
-          onToggle={actions.toggleLeftPanel}
-          loggedUser={loggedUser}
-          capabilities={this.props.capabilities}
-          isReady={this.state.dataResolved}
-          processName={this.props.processToDisplay ? this.props.processToDisplay.id : ""}
-        />
-
         <UserRightPanel
-          graphLayoutFunction={graphLayoutFun}
-          exportGraph={exportGraphFun}
-          zoomIn={zoomInFun}
-          zoomOut={zoomOutFun}
+          graphLayoutFunction={this.graphLayoutFun}
+          exportGraph={this.exportGraphFun}
+          graph={this.getGraphInstance()}
           capabilities={this.props.capabilities}
           isReady={this.state.dataResolved}
           selectionActions={{
@@ -338,10 +326,10 @@ Visualization.header = "Visualization"
 
 function mapState(state) {
   const processCategory = _.get(state, "graphReducer.fetchedProcessDetails.processCategory")
-  const canDelete = state.ui.allModalsClosed &&
-      !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
-      state.settings.loggedUser.canWrite(processCategory)
   const loggedUser = state.settings.loggedUser
+  const canDelete = state.ui.allModalsClosed &&
+    !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
+    loggedUser.canWrite(processCategory)
   const isArchived = _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
   return {
     processCategory: processCategory,
@@ -357,7 +345,6 @@ function mapState(state) {
     undoRedoAvailable: state.ui.allModalsClosed,
     allModalsClosed: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    loggedUser: loggedUser,
     capabilities: {
       write: loggedUser.canWrite(processCategory) && !isArchived,
       deploy: loggedUser.canDeploy(processCategory) && !isArchived,

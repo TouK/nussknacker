@@ -85,11 +85,7 @@ export function ToolbarsPanel(props: Props) {
                 {renderDraggable}
               </Draggable>
             ))}
-            {s.isUsingPlaceholder && (
-              <div className={cn(styles.placeholder)}>
-                {p.placeholder}
-              </div>
-            )}
+            {p.placeholder}
           </div>
         </div>
       </div>

@@ -1,0 +1,23 @@
+@import "../../stylesheets/_variables.styl"
+
+:local
+    .collapsible
+        pointer-events none
+        user-select none
+        width sidebarWidth
+        transition left 0.5s ease, right 0.5s ease
+        position absolute
+        z-index 1
+        top 0
+        bottom 0
+        overflow hidden
+
+    .left
+        left: -(sidebarWidth)
+        &.is-opened
+            left: 0
+
+    .right
+        right -(sidebarWidth)
+        &.is-opened
+            right 0

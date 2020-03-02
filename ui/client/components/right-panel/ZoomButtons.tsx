@@ -1,14 +1,20 @@
 import cn from "classnames"
 import SvgDiv from "../SvgDiv"
 import React from "react"
+import {useDispatch} from "react-redux"
+import {zoomIn, zoomOut} from "../../actions/nk/zoom"
+import {Graph} from "./UserRightPanel"
 
 interface Props {
-  onZoomIn: () => void,
-  onZoomOut: () => void,
+  graph: Graph,
   className?: string,
 }
 
-export function ZoomButtons({className, onZoomIn, onZoomOut}: Props) {
+export function ZoomButtons({className, graph}: Props) {
+  const dispatch = useDispatch()
+  const onZoomIn = () => dispatch(zoomIn(graph))
+  const onZoomOut = () => dispatch(zoomOut(graph))
+
   return (
     <div className={cn("zoom-in-out", className)}>
       <SvgDiv className="zoom" title={"zoom-in"} svgFile="buttons/zoomin.svg" onClick={onZoomIn}/>

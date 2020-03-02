@@ -1,7 +1,7 @@
 @import "../../../stylesheets/_variables.styl"
 
 :local
-    .right-panels
+    .side-panel
         box-sizing border-box
         min-height 100%
         display flex
@@ -28,14 +28,13 @@
 
     .draggable-list > .background
         position relative
-        background rgba(black, 0.2)
         transition all .3s
         min-height 0
 
     .is-dragging-started .draggable-list > .background
     .is-dragging-from > .draggable-list > .background
     .is-dragging-over > .draggable-list > .background
-        min-height 50px
+        min-height 20px
 
         &::after
             transition all .3s
@@ -60,14 +59,30 @@
             background rgba(deepskyblue, 0.2)
             outline-color deepskyblue
 
+
+    .draggable
+        //padding 2px 0
+
+        &.is-dragging:focus
+            outline none
+
+        &:focus
+            outline 4px solid deepskyblue
+            outline-offset -4px
+
+        .background
+            position relative
+            box-sizing border-box
+
+
     .draggable.is-dragging
         backdrop-filter blur(8px)
-        .content
-            transition all .3s
-            opacity .5
-        &::after
+        box-shadow 0 1px 3px rgba(black, .25)
+
+        .background::after
             transition all .3s
             content ''
+            line-height 0
             position absolute
             top 0
             left 0
@@ -77,7 +92,11 @@
             outline 2px dashed orangered
             background rgba(orangered, .2)
             outline-offset -3px
-        box-shadow 0 1px 3px rgba(black, .25)
+
+        .content
+            transition all .3s
+            opacity .5
+
 
     .draggable.is-animating
         .content
@@ -86,7 +105,8 @@
     .draggable.is-dragging-over
         .content
             opacity 1
-        &::after
+
+        .background::after
             backdrop-filter none
             background rgba(lime, .05)
             outline 2px solid lime

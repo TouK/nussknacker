@@ -5,7 +5,10 @@ import {connect} from "react-redux"
 
 import TreeView from "react-treeview"
 import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils"
+
+import "react-treeview/react-treeview.css"
 import "../stylesheets/toolBox.styl"
+
 import Tool from "./Tool"
 
 class ToolBox extends React.Component {

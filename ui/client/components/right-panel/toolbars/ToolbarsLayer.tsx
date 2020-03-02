@@ -5,8 +5,12 @@ import {ToolbarsSide} from "../../../reducers/toolbars"
 import {useDispatch} from "react-redux"
 import {moveToolbar, registerToolbars} from "../../../actions/nk/toolbars"
 import {ToolbarsPanel} from "./ToolbarsPanel"
-import styles from "./ToolbarsLayer.styl"
 import cn from "classnames"
+import {ScrollbarsExtended} from "../ScrollbarsExtended"
+import {useRightPanelToggle, useLeftPanelToggle} from "../UserRightPanel"
+
+import styles from "./ToolbarsLayer.styl"
+import styles2 from "../collipsableSidePanels.styl"
 
 function useMemoizedIds<T extends { id: string }>(array: T[]): string {
   return useMemo(() => array.map(v => v.id).join(), [array])
@@ -38,21 +42,49 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
     }
   }
 
+  const {isOpenedRight} = useRightPanelToggle()
+  const {isOpenedLeft} = useLeftPanelToggle()
+
   return (
-    <DragDropContext onDragEnd={onDragEnd} onDragStart={() => {setIsDragging(true)}}>
-      <div className={cn(styles.rightPanels, isDragging && styles.isDraggingStarted)}>
-        <ToolbarsPanel
-          availableToolbars={toolbars}
-          side={ToolbarsSide.TopRight}
-          className={styles.top}
-        />
-        <ToolbarsPanel
-          availableToolbars={toolbars}
-          side={ToolbarsSide.BottomRight}
-          className={styles.bottom}
-        />
-      </div>
-    </DragDropContext>
+    <>
+      <DragDropContext onDragEnd={onDragEnd} onDragStart={() => {setIsDragging(true)}}>
+
+        <div className={cn(styles2.collapsible, styles2.left, isOpenedLeft && styles2.isOpened)}>
+          <ScrollbarsExtended>
+            <div className={cn(styles.sidePanel, isDragging && styles.isDraggingStarted)}>
+              <ToolbarsPanel
+                availableToolbars={toolbars}
+                side={ToolbarsSide.TopLeft}
+                className={styles.top}
+              />
+              <ToolbarsPanel
+                availableToolbars={toolbars}
+                side={ToolbarsSide.BottomLeft}
+                className={styles.bottom}
+              />
+            </div>
+          </ScrollbarsExtended>
+        </div>
+
+        <div className={cn(styles2.collapsible, styles2.right, isOpenedRight && styles2.isOpened)}>
+          <ScrollbarsExtended>
+            <div className={cn(styles.sidePanel, isDragging && styles.isDraggingStarted)}>
+              <ToolbarsPanel
+                availableToolbars={toolbars}
+                side={ToolbarsSide.TopRight}
+                className={styles.top}
+              />
+              <ToolbarsPanel
+                availableToolbars={toolbars}
+                side={ToolbarsSide.BottomRight}
+                className={styles.bottom}
+              />
+            </div>
+          </ScrollbarsExtended>
+        </div>
+
+      </DragDropContext>
+    </>
   )
 }
 

@@ -10,10 +10,13 @@ import EditPanel from "./panels/edit/EditPanel"
 import TestPanel from "./panels/test/TestPanel"
 import GroupPanel from "./panels/group/GroupPanel"
 import {PassedProps} from "./UserRightPanel"
-import ToolbarsSortable from "./toolbars/ToolbarsLayer"
+import ToolbarsLayer from "./toolbars/ToolbarsLayer"
 import {ToolbarsSide} from "../../reducers/toolbars"
-
-type OwnProps = PassedProps
+import TipsPanel from "../tips/Tips"
+import {CreatorPanel} from "../CreatorPanel"
+import {VersionsPanel} from "../VersionsPanel"
+import {CommentsPanel} from "../CommentsPanel"
+import {AttachmentsPanel} from "../AttachmentsPanel"
 
 export interface Toolbar {
   id: string,
@@ -22,9 +25,7 @@ export interface Toolbar {
   defaultSide?: ToolbarsSide,
 }
 
-type Props = OwnProps
-
-function RightToolPanels(props: Props) {
+function RightToolPanels(props: PassedProps) {
   const {
     isStateLoaded,
     processState,
@@ -75,10 +76,35 @@ function RightToolPanels(props: Props) {
       // TODO remove SideNodeDetails? turn out to be not useful
       component: <DetailsPanel showDetails={capabilities.write}/>,
     },
+    {
+      id: "TIPS-PANEL",
+      component: <TipsPanel/>,
+      defaultSide: ToolbarsSide.TopLeft,
+    },
+    {
+      id: "CREATOR-PANEL",
+      component: <CreatorPanel writeAllowed={capabilities.write}/>,
+      defaultSide: ToolbarsSide.TopLeft,
+    },
+    {
+      id: "VERSIONS-PANEL",
+      component: <VersionsPanel/>,
+      defaultSide: ToolbarsSide.TopLeft,
+    },
+    {
+      id: "COMMENTS-PANEL",
+      component: <CommentsPanel/>,
+      defaultSide: ToolbarsSide.TopLeft,
+    },
+    {
+      id: "ATTACHMENTS-PANEL",
+      component: <AttachmentsPanel/>,
+      defaultSide: ToolbarsSide.TopLeft,
+    },
   ]
 
   return (
-    <ToolbarsSortable toolbars={toolbars}/>
+    <ToolbarsLayer toolbars={toolbars}/>
   )
 }
 

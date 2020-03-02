@@ -1,36 +1,5 @@
 @import "./_variables.styl"
 
-#espLeftNav
-  width: sidebarWidth
-  overflow: hidden
-
-  .tab-content
-    margin-top 10px
-  hr
-    border-top 1px solid hrColor
-    margin-top 10px
-    margin-bottom 10px
-
-sidenavMixin()
-  z-index: 1
-  position: absolute
-  top: 0
-  bottom: 0
-  background-color: panelBkgColor
-  overflow-x: hidden
-  & a
-    white-space: pre
-
-.sidenav
-  transition: left 0.5s ease, right 0.5s ease;
-
-.sidenav
-  sidenavMixin()
-  left: -(sidebarWidth)
-
-  &.is-opened
-    left: 0
-
 // Accordion styles
 // overwriting default styles of the component
 .panel-default, .panel-heading
@@ -52,6 +21,7 @@ sidenavMixin()
     height: 100%
 
 .panel-process-info
+  background-color: #4D4D4D
   display flex
   padding: 10px 7px 10px 22px
   .process-info-icon
@@ -59,6 +29,7 @@ sidenavMixin()
     align-self center
     width 32px
     height 32px
+    filter drop-shadow(0 0 2px #000) brightness(1.5)
   .process-info-text
     display inline-block
     margin-left 7px
@@ -90,9 +61,13 @@ sidenavMixin()
   background-color: panelBkgColor
   border: none !important
 
+  hr
+    border-top 1px solid hrColor
+    margin-top 10px
+    margin-bottom 10px
 
 .panel
-  margin-bottom: 1px !important
+  margin-bottom: 0 !important
   box-shadow: none !important
 .panel + .panel
   margin-top: 0 !important
