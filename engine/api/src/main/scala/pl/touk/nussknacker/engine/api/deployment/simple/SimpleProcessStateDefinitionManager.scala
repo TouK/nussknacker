@@ -23,7 +23,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Failed -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Error -> List(ProcessActionType.Deploy),
-    SimpleStateStatus.RunningError -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
+    SimpleStateStatus.RunningWithError -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
+    SimpleStateStatus.DeployedWithError -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy)
   )
 
@@ -39,7 +40,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Failed -> "/assets/states/failed.svg",
     SimpleStateStatus.Finished -> "/assets/states/success.svg",
     SimpleStateStatus.Error -> "/assets/states/error.svg",
-    SimpleStateStatus.RunningError -> "/assets/states/error.svg"
+    SimpleStateStatus.RunningWithError -> "/assets/states/deploy-failed.svg",
+    SimpleStateStatus.DeployedWithError -> "/assets/states/deploy-failed.svg"
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
@@ -53,7 +55,9 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with checking state of process..",
     SimpleStateStatus.Finished -> "The process completed successfully.",
-    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process!",
+    SimpleStateStatus.Error -> "There are some errors. Please check if everything is okay with process!",
+    SimpleStateStatus.RunningWithError -> "There are some errors with running process state. Please check if everything is okay!",
+    SimpleStateStatus.DeployedWithError -> "There are some errors with deployed process. Please check if everything is okay!"
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
@@ -67,7 +71,9 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "The process is being canceled.",
     SimpleStateStatus.Failed -> "There are problems with the process.",
     SimpleStateStatus.Finished -> "The process has finished.",
-    SimpleStateStatus.Error -> "There are errors establishing a process state."
+    SimpleStateStatus.Error -> "There are errors establishing a process state.",
+    SimpleStateStatus.RunningWithError -> "The running process contains some errors.",
+    SimpleStateStatus.DeployedWithError -> "The deployed process contains some errors."
   )
 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =

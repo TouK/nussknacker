@@ -78,42 +78,42 @@ object ProcessStatus {
   }
 
   def simpleErrorShouldRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningError,
+    errorStatus = SimpleStateStatus.DeployedWithError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldRunningTooltip(deployedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription),
     previousState = previousState
   )
 
   def simpleErrorShouldNotBeRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningError,
+    errorStatus = SimpleStateStatus.RunningWithError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningTooltip(deployedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
     previousState = previousState
   )
 
   def simpleErrorShouldNotBeRunning(previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningError,
+    errorStatus = SimpleStateStatus.RunningWithError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
     description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
     previousState = previousState
   )
 
   def simpleErrorMismatchDeployedVersion(deployedVersionId: Long, exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningError,
+    errorStatus = SimpleStateStatus.RunningWithError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionTooltip(deployedVersionId, exceptedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionDescription),
     previousState = previousState
   )
 
   def simpleErrorMissingDeployedVersion(exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningError,
+    errorStatus = SimpleStateStatus.RunningWithError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionTooltip(exceptedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionDescription),
     previousState = previousState
   )
 
   def simpleErrorProcessWithoutAction(previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningError,
+    errorStatus = SimpleStateStatus.RunningWithError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction),
     description = Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction),
     previousState = previousState

@@ -86,9 +86,9 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   test("ProcessState with RunningError status should allow to Cancel and Deploy action") {
     val id: process.ProcessId = prepareDeployedProcess(processName).futureValue
 
-    processManager.withProcessStateStatus(SimpleStateStatus.RunningError) {
+    processManager.withProcessStateStatus(SimpleStateStatus.RunningWithError) {
       val processState = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName))
-      processState.futureValue.map(_.status) shouldBe Some(SimpleStateStatus.RunningError)
+      processState.futureValue.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
       processState.futureValue.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
     }
   }

@@ -176,7 +176,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
           case None => //TODO: we should remove Option from ProcessVersion?
             ProcessStatus.simpleErrorMissingDeployedVersion(action.processVersionId, action.user, processState)
           case _ =>
-            ProcessStatus.simple(SimpleStateStatus.Error) //Generi
+            ProcessStatus.simple(SimpleStateStatus.DeployedWithError) //Generic
           // c error in other cases
         }
       case None =>
