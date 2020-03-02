@@ -40,6 +40,19 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     cancel(processId)
   }
 
+  //manual test because it is hard to make it automatic
+  //to run this test you have to add Thread.sleep(over 1 minute) to FlinkProcessMain.main method
+  ignore("continue on timeout exception during process deploy") {
+    val processId = "runningFlink"
+    val process = SampleProcess.prepareProcess(processId)
+    val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
+    val version = ProcessVersion(15, ProcessName(processId), "user1", Some(13))
+
+    val deployedResponse = processManager.deploy(version, GraphProcess(marshaled), None, user = userToAct)
+
+    assert(deployedResponse.isReadyWithin(70 seconds))
+  }
+
   // TODO: unignore - currently quite often fail
   ignore("cancel before deployment") {
     val processId = "cancelBeforeDeployment"
