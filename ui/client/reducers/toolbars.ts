@@ -11,11 +11,17 @@ export enum ToolbarsSide {
 export type ToolbarsState = {
   positions: { [side in ToolbarsSide]?: string[] },
   collapsed: string[],
+  nodeToolbox: {
+    opened: Record<string, boolean>,
+  },
 }
 
 const defaultState: ToolbarsState = {
   positions: {},
   collapsed: [],
+  nodeToolbox: {
+    opened: {},
+  },
 }
 
 export function reducer(state: ToolbarsState = defaultState, action: Action): ToolbarsState {
@@ -54,6 +60,18 @@ export function reducer(state: ToolbarsState = defaultState, action: Action): To
         collapsed: action.isCollapsed ?
           [...state.collapsed, action.id] :
           state.collapsed.filter(i => i !== action.id),
+      }
+
+    case "TOGGLE_NODE_TOOLBOX_GROUP":
+      const opened = state.nodeToolbox.opened
+      return {
+        ...state,
+        nodeToolbox: {
+          opened: {
+            ...opened,
+            [action.nodeGroup]: !opened[action.nodeGroup],
+          },
+        },
       }
 
     default:
