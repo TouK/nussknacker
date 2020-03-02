@@ -40,6 +40,8 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     cancel(processId)
   }
 
+  //manual test because it is hard to make it automatic
+  //to run this test you have to add Thread.sleep(over 1 minute) to FlinkProcessMain.main method
   ignore("continue on timeout exception during process deploy") {
     val processId = "runningFlink"
     val process = SampleProcess.prepareProcess(processId)
