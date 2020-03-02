@@ -1,43 +1,36 @@
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
-import {connect} from "react-redux"
+import {useSelector, useDispatch} from "react-redux"
 import HttpService from "../../../../../http/HttpService"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {isCancelPossible} from "../../../selectors/graph"
+import {isCancelPossible, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../../UserRightPanel"
+import {loadProcessState} from "../../../../../actions/nk/process"
 
-type PropsPick = Pick<PassedProps,
+type Props = Pick<PassedProps,
   | "isStateLoaded"
   | "processState">
 
-type OwnProps = PropsPick
-type Props = OwnProps & StateProps
-
-function CancelDeployButton(props: Props) {
+export default function CancelDeployButton(props: Props) {
   const {t} = useTranslation()
-  const {cancelPossible, toggleProcessActionDialog} = props
+  const dispatch = useDispatch()
+  const cancelPossible = useSelector<RootState>(state => isCancelPossible(state, props))
+  const processId = useSelector(getProcessId)
 
   return (
     <ToolbarButton
       name={t("panels.actions.deploy-canel.button", "cancel")}
       disabled={!cancelPossible}
       icon={InlinedSvgs.buttonCancel}
-      onClick={() => toggleProcessActionDialog(t("panels.actions.deploy-canel.dialog","Cancel process"), HttpService.cancel, false)}
+      onClick={() => dispatch(toggleProcessActionDialog(
+        t("panels.actions.deploy-canel.dialog", "Cancel process"),
+        (p, c) => HttpService.cancel(p, c).finally(() => dispatch(loadProcessState(processId))),
+        false,
+      ))}
     />
   )
 }
 
-const mapState = (state: RootState, props: OwnProps) => ({
-  cancelPossible: isCancelPossible(state, props),
-})
-
-const mapDispatch = {
-  toggleProcessActionDialog,
-}
-
-type StateProps = typeof mapDispatch & ReturnType<typeof mapState>
-
-export default connect(mapState, mapDispatch)(CancelDeployButton)

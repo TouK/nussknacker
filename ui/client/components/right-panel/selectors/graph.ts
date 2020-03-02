@@ -11,6 +11,8 @@ export const getFetchedProcessDetails = createSelector(getGraph, g => g.fetchedP
 export const getProcessToDisplay = createSelector(getGraph, g => g.processToDisplay || {})
 export const getProcessId = createSelector(getFetchedProcessDetails, d => d?.name)
 export const getProcessVersionId = createSelector(getFetchedProcessDetails, d => d?.processVersionId)
+export const getProcessCategory = createSelector(getFetchedProcessDetails, d => d?.processCategory)
+export const getIsArchived = createSelector(getFetchedProcessDetails, d => d?.isArchived)
 export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, d => d?.isLatestVersion)
 export const isSubprocess = createSelector(getProcessToDisplay, p => p.properties?.isSubprocess)
 export const isBusinessView = createSelector(getGraph, g => g.businessView)

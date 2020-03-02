@@ -12,8 +12,10 @@ import NodeUtils from "../components/graph/NodeUtils"
 import UserRightPanel from "../components/right-panel/UserRightPanel"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
-import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
+import {getLoggedUser} from "../components/right-panel/selectors/settings"
+import {getProcessCategory} from "../components/right-panel/selectors/graph"
+import {getCapabilities} from "../components/right-panel/selectors/other"
 
 class Visualization extends React.Component {
 
@@ -325,12 +327,11 @@ Visualization.path = VisualizationUrl.visualizationPath
 Visualization.header = "Visualization"
 
 function mapState(state) {
-  const processCategory = _.get(state, "graphReducer.fetchedProcessDetails.processCategory")
-  const loggedUser = state.settings.loggedUser
+  const processCategory = getProcessCategory(state)
+  const loggedUser = getLoggedUser(state)
   const canDelete = state.ui.allModalsClosed &&
     !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
     loggedUser.canWrite(processCategory)
-  const isArchived = _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
   return {
     processCategory: processCategory,
     selectionState: state.graphReducer.selectionState,
@@ -345,10 +346,7 @@ function mapState(state) {
     undoRedoAvailable: state.ui.allModalsClosed,
     allModalsClosed: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    capabilities: {
-      write: loggedUser.canWrite(processCategory) && !isArchived,
-      deploy: loggedUser.canDeploy(processCategory) && !isArchived,
-    },
+    capabilities: getCapabilities(state),
   }
 }
 
