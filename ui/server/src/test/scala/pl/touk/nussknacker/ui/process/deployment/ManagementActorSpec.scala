@@ -126,7 +126,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(SimpleStateStatus.Running) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription)
     }
   }
@@ -137,7 +138,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(SimpleStateStatus.Running) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription)
     }
   }
@@ -148,7 +150,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
     }
   }
@@ -159,7 +162,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(SimpleStateStatus.Finished) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
     }
   }
@@ -170,7 +174,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(FlinkStateStatus.Restarting) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
     }
   }
@@ -181,7 +186,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.DeployedWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription)
     }
   }
@@ -192,7 +198,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withEmptyProcessState {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.DeployedWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription)
     }
   }
@@ -204,7 +211,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateVersion(SimpleStateStatus.Running, version) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionDescription)
     }
   }
@@ -215,7 +223,8 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateVersion(SimpleStateStatus.Running, Option.empty) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionDescription)
     }
   }
