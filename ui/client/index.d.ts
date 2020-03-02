@@ -5,7 +5,8 @@ declare const __GIT__: {
   DATE: string,
 }
 
-declare type $TodoType = unknown
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare type $TodoType = any
 
 declare module "*.css" {
   const classes: { [key: string]: string }

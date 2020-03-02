@@ -17,6 +17,7 @@ import NodeUtils from "../NodeUtils"
 import NodeDetailsContent from "./NodeDetailsContent"
 import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
+import ErrorBoundary from "react-error-boundary"
 
 class NodeDetailsModal extends React.Component {
 
@@ -151,33 +152,35 @@ class NodeDetailsModal extends React.Component {
             <Draggable bounds="parent" handle=".modal-draggable-handle">
               <div className="espModal">
                 <NodeDetailsModalHeader node={nodeToDisplay} docsUrl={nodeSetting.docsUrl}/>
-                <div className="modalContentDark" id="modal-content">
-                  <Scrollbars hideTracksWhenNotNeeded={true} autoHeight
-                              autoHeightMax={cssVariables.modalContentMaxHeight}
-                              renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
-                    {
-                      this.isGroup() ?
-                        <NodeGroupDetailsContent
-                          testResults={nodeTestResults}
-                          node={this.state.editedNode}
-                          onChange={this.onNodeGroupChange}
-                          readOnly={readOnly}
-                        /> :
-                        <NodeDetailsContent isEditMode={!readOnly}
-                                            showValidation={true}
-                                            showSwitch={true}
-                                            node={this.state.editedNode}
-                                            nodeErrors={nodeErrors}
-                                            onChange={this.updateNodeState}
-                                            toogleCloseOnEsc={this.toogleCloseModalOnEsc}
-                                            testResults={nodeTestResults(this.state.currentNodeId)}/>
-                    }
-                    {
-                      //FIXME: adjust height of modal with subprocess in some reasonable way :|
-                      this.state.subprocessContent ? this.renderSubprocess() : null
-                    }
-                  </Scrollbars>
-                </div>
+                <ErrorBoundary>
+                  <div className="modalContentDark" id="modal-content">
+                    <Scrollbars hideTracksWhenNotNeeded={true} autoHeight
+                                autoHeightMax={cssVariables.modalContentMaxHeight}
+                                renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+                      {
+                        this.isGroup() ?
+                          <NodeGroupDetailsContent
+                            testResults={nodeTestResults}
+                            node={this.state.editedNode}
+                            onChange={this.onNodeGroupChange}
+                            readOnly={readOnly}
+                          /> :
+                          <NodeDetailsContent isEditMode={!readOnly}
+                                              showValidation={true}
+                                              showSwitch={true}
+                                              node={this.state.editedNode}
+                                              nodeErrors={nodeErrors}
+                                              onChange={this.updateNodeState}
+                                              toogleCloseOnEsc={this.toogleCloseModalOnEsc}
+                                              testResults={nodeTestResults(this.state.currentNodeId)}/>
+                      }
+                      {
+                        //FIXME: adjust height of modal with subprocess in some reasonable way :|
+                        this.state.subprocessContent ? this.renderSubprocess() : null
+                      }
+                    </Scrollbars>
+                  </div>
+                </ErrorBoundary>
                 <div className="modalFooter">
                   <div className="footerButtons">
                     {this.renderModalButtons()}

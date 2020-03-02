@@ -18,6 +18,7 @@ import "./i18n"
 import configureStore from "./store/configureStore"
 
 import "./stylesheets/notifications.styl"
+import ErrorBoundary from "react-error-boundary"
 
 const {store, persistor} = configureStore()
 const rootContainer = document.getElementById("root")
@@ -26,17 +27,20 @@ Modal.setAppElement(rootContainer)
 ReactDOM.render(
   <AppContainer>
     <Suspense fallback={<div>Loading...</div>}>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <Router history={history}>
-            <NussknackerInitializer>
-              <Notifications/>
-              <EspApp/>
-            </NussknackerInitializer>
-          </Router>
-        </PersistGate>
-      </Provider>
+      <ErrorBoundary>
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
+            <Router history={history}>
+              <NussknackerInitializer>
+                <Notifications/>
+                <EspApp/>
+              </NussknackerInitializer>
+            </Router>
+          </PersistGate>
+        </Provider>
+      </ErrorBoundary>
     </Suspense>
   </AppContainer>,
   rootContainer,
 )
+
