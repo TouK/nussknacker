@@ -29,14 +29,14 @@ object ProcessStatus {
   def simple(status: StateStatus): ProcessStatus =
     ProcessStatus(status, SimpleProcessStateDefinitionManager)
 
-  def simpleError(tooltip: Option[String], description: Option[String], previousState: Option[ProcessState]): ProcessStatus =
+  def simpleError(errorStatus: StateStatus, tooltip: Option[String], description: Option[String], previousState: Option[ProcessState]): ProcessStatus =
     ProcessStatus(
-      status = SimpleStateStatus.Error,
+      status = errorStatus,
       previousState.map(_.deploymentId.value),
-      allowedActions = SimpleProcessStateDefinitionManager.statusActions(SimpleStateStatus.Error),
-      icon = SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Error),
-      tooltip = if (tooltip.isDefined) tooltip else SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Error),
-      description = if (description.isDefined) description else SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Error),
+      allowedActions = SimpleProcessStateDefinitionManager.statusActions(errorStatus),
+      icon = SimpleProcessStateDefinitionManager.statusIcon(errorStatus),
+      tooltip = if (tooltip.isDefined) tooltip else SimpleProcessStateDefinitionManager.statusTooltip(errorStatus),
+      description = if (description.isDefined) description else SimpleProcessStateDefinitionManager.statusDescription(errorStatus),
       previousState.flatMap(_.startTime),
       previousState.flatMap(_.attributes),
       previousState.map(_.errors).getOrElse(List.empty)
@@ -78,36 +78,42 @@ object ProcessStatus {
   }
 
   def simpleErrorShouldRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    errorStatus = SimpleStateStatus.RunningError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldRunningTooltip(deployedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription),
     previousState = previousState
   )
 
   def simpleErrorShouldNotBeRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    errorStatus = SimpleStateStatus.RunningError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningTooltip(deployedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
     previousState = previousState
   )
 
   def simpleErrorShouldNotBeRunning(previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    errorStatus = SimpleStateStatus.RunningError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
     description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
     previousState = previousState
   )
 
   def simpleErrorMismatchDeployedVersion(deployedVersionId: Long, exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    errorStatus = SimpleStateStatus.RunningError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionTooltip(deployedVersionId, exceptedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionDescription),
     previousState = previousState
   )
 
   def simpleErrorMissingDeployedVersion(exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    errorStatus = SimpleStateStatus.RunningError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionTooltip(exceptedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionDescription),
     previousState = previousState
   )
 
   def simpleErrorProcessWithoutAction(previousState: Option[ProcessState]): ProcessStatus = simpleError(
+    errorStatus = SimpleStateStatus.RunningError,
     tooltip = Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction),
     description = Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction),
     previousState = previousState

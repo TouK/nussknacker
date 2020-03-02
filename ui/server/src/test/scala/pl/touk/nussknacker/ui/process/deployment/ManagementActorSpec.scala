@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -80,6 +81,16 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.lastDeployedAction should be (None)
     //one for deploy, one for cancel
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
+  }
+
+  test("ProcessState with RunningError status should allow to Cancel and Deploy action") {
+    val id: process.ProcessId = prepareDeployedProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.RunningError) {
+      val processState = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName))
+      processState.futureValue.map(_.status) shouldBe Some(SimpleStateStatus.RunningError)
+      processState.futureValue.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
+    }
   }
 
   test("Should return properly state when state is canceled and process is canceled") {

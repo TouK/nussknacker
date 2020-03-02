@@ -23,6 +23,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Failed -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Error -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.RunningError -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy)
   )
 
@@ -37,7 +38,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "/assets/states/stopping-running-animated.svg",
     SimpleStateStatus.Failed -> "/assets/states/failed.svg",
     SimpleStateStatus.Finished -> "/assets/states/success.svg",
-    SimpleStateStatus.Error -> "/assets/states/error.svg"
+    SimpleStateStatus.Error -> "/assets/states/error.svg",
+    SimpleStateStatus.RunningError -> "/assets/states/error.svg"
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
@@ -51,7 +53,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with checking state of process..",
     SimpleStateStatus.Finished -> "The process completed successfully.",
-    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process!"
+    SimpleStateStatus.Error -> "There are some errors with process state. Please check if everything is okay with process!",
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(

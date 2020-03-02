@@ -14,4 +14,5 @@ object SimpleStateStatus {
   val Canceled: StoppedStateStatus = StoppedStateStatus("CANCELED")
   val Failed: ErrorStateStatus = ErrorStateStatus("FAILED")
   val Error: ErrorStateStatus = ErrorStateStatus("ERROR")
+  val RunningError: ErrorStateStatus = ErrorStateStatus("RUNNING_ERROR")
 }
