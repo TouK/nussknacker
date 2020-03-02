@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
+import java.util.concurrent.TimeoutException
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
@@ -226,6 +227,15 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         .body(program)
         .send()
         .flatMap(handleUnitResponse)
+        .recover({
+          //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
+          //workaround for now, not the best solution though
+          //TODO: we should change logic of ManagementActor to always save action deploy
+          case _: TimeoutException => {
+            logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...")
+            Future.successful(Unit)
+          }
+        })
     }
   }
 
