@@ -410,7 +410,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
           List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("dummySink", List()), Some("'deadEnd'"))))
-        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))), None)
+        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), None)
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
 
@@ -435,7 +435,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
           List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("dummySink", List()), Some("'deadEnd'"))))
-        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))), None)
+        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), None)
 
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
@@ -463,13 +463,13 @@ class InterpreterSpec extends FunSuite with Matchers {
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
           List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("dummySink", List()), Some("'deadEnd'"))))
-        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))), None)
+        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), None)
 
     val nested = CanonicalProcess(MetaData("subProcess2", StreamMetaData()), null,
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.Subprocess(SubprocessInput("sub2",
-          SubprocessRef("subProcess1", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output")))))), None
+          SubprocessRef("subProcess1", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output", List.empty)))))), None
     )
 
     val resolved = SubprocessResolver(Set(subprocess, nested)).resolve(process).andThen(ProcessCanonizer.uncanonize)
@@ -494,8 +494,8 @@ class InterpreterSpec extends FunSuite with Matchers {
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.SwitchNode(Switch("f1", "#param", "switchParam"),
-          List(canonicalnode.Case("#switchParam == 'a'", List(FlatNode(SubprocessOutputDefinition("out1", "output1")))),
-            canonicalnode.Case("#switchParam == 'b'", List(FlatNode(SubprocessOutputDefinition("out2", "output2"))))
+          List(canonicalnode.Case("#switchParam == 'a'", List(FlatNode(SubprocessOutputDefinition("out1", "output1", List.empty)))),
+            canonicalnode.Case("#switchParam == 'b'", List(FlatNode(SubprocessOutputDefinition("out2", "output2", List.empty))))
           ), List())), None)
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)

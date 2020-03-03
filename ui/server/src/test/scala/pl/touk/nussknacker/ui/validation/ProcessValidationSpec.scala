@@ -322,7 +322,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
             SubprocessInputDefinition(
               "in", List(SubprocessParameter("param1", SubprocessClazzRef[Long])))),
           FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
-          canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))
+          canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
         ),
         additionalBranches = None)
 
