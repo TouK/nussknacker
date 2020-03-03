@@ -67,8 +67,14 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
         expressionEvaluator.evaluateParameters(params, ctx).flatMap { case (newCtx, vars) =>
           interpretNext(next, newCtx.pushNewContext(vars))
         }
-      case SubprocessEnd(id, next) =>
-        interpretNext(next, ctx.popContext)
+      case SubprocessEnd(_, varName, fields, next) =>
+        createOrUpdateVariable(ctx, varName, fields).flatMap { updatedCtx =>
+          val parentContext = ctx.popContext
+          val newParentContext = updatedCtx.variables.get(varName).map { value =>
+            parentContext.withVariable(varName, value)
+          }.getOrElse(parentContext)
+          interpretNext(next, newParentContext)
+        }
       case Processor(_, ref, next, false) =>
         invoke(ref, None, ctx).flatMap {
           case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)

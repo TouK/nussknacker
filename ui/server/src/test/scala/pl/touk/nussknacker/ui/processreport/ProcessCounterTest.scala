@@ -69,7 +69,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
             FlatNode(SubprocessInputDefinition("subInput1", List())),
             FlatNode(Filter("subFilter1", "")),
             FlatNode(Filter("subFilter2", "")),
-            FlatNode(SubprocessOutputDefinition("outId1", "out1"))), None
+            FlatNode(SubprocessOutputDefinition("outId1", "out1", List.empty))), None
         )
     )))
 
