@@ -141,6 +141,38 @@ object ProcessCompilationError {
       EmptyMandatoryParameter(paramName, nodeId.id)
   }
 
+  case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object MissingRequiredProperty {
+    def apply(paramName: String, label: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      MissingRequiredProperty(paramName, label, nodeId.id)
+  }
+
+  case class UnknownProperty(paramName: String, nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object UnknownProperty {
+    def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      UnknownProperty(paramName, nodeId.id)
+  }
+
+  case class InvalidPropertyFixedValue(paramName: String, label: Option[String], value: String, values: List[String], nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object InvalidPropertyFixedValue {
+    def apply(paramName: String, label: Option[String], value: String, values: List[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)
+  }
+
+  case class InvalidLiteralIntValue(paramName: String, label: Option[String], value: String, nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object InvalidLiteralIntValue {
+    def apply(paramName: String, label: Option[String], value: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      InvalidLiteralIntValue(paramName, label, value, nodeId.id)
+  }
+
   case class OverwrittenVariable(variableName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 

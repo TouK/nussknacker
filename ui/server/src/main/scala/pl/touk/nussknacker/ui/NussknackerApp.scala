@@ -9,6 +9,7 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig}
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
-import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.process._
@@ -40,6 +40,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   private implicit val system: ActorSystem = ActorSystem("nussknacker-ui")
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -108,9 +109,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
-    val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
+    val additionalProperties = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty))
     val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
-    val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver, customProcessNodesValidators)
+    val processValidation = ProcessValidation(modelData, additionalProperties, subprocessResolver, customProcessNodesValidators)
 
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
@@ -150,7 +151,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           processValidation = processValidation,
           processResolving = processResolving,
           typesForCategories = typesForCategories,
-          newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
+          newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties),
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
           typeToConfig = typeToConfig

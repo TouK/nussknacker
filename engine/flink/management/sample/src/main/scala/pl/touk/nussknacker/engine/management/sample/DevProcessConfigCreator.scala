@@ -184,9 +184,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "multipleParamsService" -> all(MultipleParamsService)
         .withNodeConfig(SingleNodeConfig.zero.copy(
           params = Some(Map(
-            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None),
-            "baz" -> ParameterConfig(None, Some(StringParameterEditor), None)
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None, None),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
+            "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
           )))
         ),
       "complexReturnObjectService" -> all(ComplexReturnObjectService),
@@ -200,8 +200,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         .withNodeConfig(SingleNodeConfig.zero.copy(
           category = Some("types"),
           params = Some(Map(
-            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator))),
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator)))
+            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator)), None),
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator)), None)
           ))
         )),
       "collectionTypesService"  -> all(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(

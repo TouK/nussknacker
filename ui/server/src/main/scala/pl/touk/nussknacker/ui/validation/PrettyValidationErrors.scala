@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
+import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -7,7 +8,6 @@ import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
-import pl.touk.nussknacker.ui.definition.{AdditionalProcessProperty, PropertyType}
 
 object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
@@ -54,6 +54,10 @@ object PrettyValidationErrors {
       case UnknownSubprocessOutput(id, _) => node(s"Unknown subprocess output $id", "Please check subprocess definition")
       case DisablingManyOutputsSubprocess(id, _) => node(s"Cannot disable subprocess $id. Has many outputs", "Please check subprocess definition")
       case DisablingNoOutputsSubprocess(id) => node(s"Cannot disable subprocess $id. Hasn't outputs", "Please check subprocess definition")
+      case MissingRequiredProperty(fieldName, label, _) => missingRequiredProperty(typ, fieldName, label)
+      case UnknownProperty(propertyName, _) => unknownProperty(typ, propertyName)
+      case InvalidLiteralIntValue(fieldName, label, value, _) => invalidLiteralIntValue(typ, fieldName, label, value)
+      case InvalidPropertyFixedValue(fieldName, label, value, values, _) => invalidPropertyFixedValue(typ, fieldName, label, value, values)
     }
   }
 
@@ -66,6 +70,7 @@ object PrettyValidationErrors {
     NodeValidationError(typ, "Node id contains invalid characters",
       "\", . and ' are not allowed in node id", fieldName = None, errorType = NodeValidationErrorType.RenderNotAllowed)
   }
+
   def duplicatedNodeIds(typ: String, duplicates: List[String]): NodeValidationError = {
     NodeValidationError(typ, "Two nodes cannot have same id", s"Duplicate node ids: ${duplicates.mkString(", ")}", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
@@ -85,25 +90,50 @@ object PrettyValidationErrors {
     NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
   }
 
-  def unknownProperty(typ: String, fieldName: String): NodeValidationError =
-      NodeValidationError(typ, s"Unknown field $fieldName", s"Field $fieldName is not known", fieldName = Some(fieldName), errorType = NodeValidationErrorType.SaveAllowed)
+  def unknownProperty(typ: String, propertyName: String): NodeValidationError =
+    NodeValidationError(
+      typ,
+      s"Unknown property $propertyName",
+      s"Property $propertyName is not known",
+      Some(propertyName),
+      NodeValidationErrorType.SaveAllowed
+    )
 
-  def emptyRequiredField(typ: String, fieldName: String, label: String): NodeValidationError =
-    NodeValidationError(typ, s"Field $fieldName ($label) cannot be empty", s"$label cannot be empty", fieldName = Some(fieldName), errorType = NodeValidationErrorType.SaveAllowed)
+  private def missingRequiredProperty(typ: String, fieldName: String, label: Option[String]) = {
+    val labelText = getLabel(label)
+    NodeValidationError(
+      typ,
+      s"Configured property $fieldName$labelText is missing",
+      s"Please fill missing property $fieldName$labelText",
+      Some(fieldName),
+      NodeValidationErrorType.SaveAllowed
+    )
+  }
 
-  def invalidFieldValueType(typ: String, fieldName: String, property: AdditionalProcessProperty, `type`: PropertyType.Value, value: String): NodeValidationError =
-    if (`type` == PropertyType.select)
-      NodeValidationError(
-        typ,
-        s"Field $fieldName (${property.label}) has invalid value",
-        s"Expected one of ${property.values.getOrElse(Nil).mkString(", ")}, got: '$value'.",
-        fieldName = Some(fieldName),
-        errorType = NodeValidationErrorType.SaveNotAllowed)
-    else
-      NodeValidationError(
-        typ,
-        s"Field $fieldName (${property.label}) has value of invalid type",
-        s"Expected ${`type`}, got: '$value'.",
-        fieldName = Some(fieldName),
-        errorType = NodeValidationErrorType.SaveNotAllowed)
+  private def invalidLiteralIntValue(typ: String, propertyName: String, label: Option[String], value: String) = {
+    val labelText = getLabel(label)
+    NodeValidationError(
+      typ,
+      s"Property $propertyName$labelText has value of invalid type",
+      s"Expected integer, got: '$value'.",
+      fieldName = Some(propertyName),
+      errorType = NodeValidationErrorType.SaveNotAllowed
+    )
+  }
+
+  private def invalidPropertyFixedValue(typ: String, propertyName: String, label: Option[String], value: String, values: List[String]) = {
+    val labelText = getLabel(label)
+    NodeValidationError(
+      typ,
+      s"Property $propertyName$labelText has invalid value",
+      s"Expected one of ${values.mkString(", ")}, got: '$value'.",
+      Some(propertyName),
+      NodeValidationErrorType.SaveNotAllowed
+    )
+  }
+
+  private def getLabel(label: Option[String]) = label match {
+    case Some(text) => s" ($text)"
+    case None => StringUtils.EMPTY
+  }
 }

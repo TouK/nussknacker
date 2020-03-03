@@ -4,9 +4,10 @@ import io.circe.generic.JsonCodec
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
+import pl.touk.nussknacker.engine.util.config.FicusReaders._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, Parameter, ParameterEditor, ParameterValidator}
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
+import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -19,6 +20,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.ui.definition.additionalproperty.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.definition.editor.ParameterEditorDeterminerChain
 import pl.touk.nussknacker.ui.definition.validator.ParameterValidatorsDeterminerChain
@@ -53,7 +55,9 @@ object UIProcessObjects {
     val defaultParametersFactory = DefaultValueDeterminerChain(defaultParametersValues)
 
     val nodeCategoryMapping = processConfig.getOrElse[Map[String, Option[String]]]("nodeCategoryMapping", Map.empty)
-    val additionalPropertiesConfig = processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty)
+    val additionalPropertiesConfig = processConfig
+      .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
+      .mapValues(UiAdditionalPropertyConfig(_))
 
     UIProcessObjects(
       nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
@@ -100,7 +104,7 @@ object UIProcessObjects {
 @JsonCodec(encodeOnly = true) case class UIProcessObjects(nodesToAdd: List[NodeGroup],
                             processDefinition: UIProcessDefinition,
                             nodesConfig: Map[String, SingleNodeConfig],
-                            additionalPropertiesConfig: Map[String, AdditionalProcessProperty],
+                            additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
                             edgesForNodes: List[NodeEdges])
 
 @JsonCodec(encodeOnly = true) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],

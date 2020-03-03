@@ -8,6 +8,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig}
 
 import scala.util.Try
 
@@ -27,5 +28,10 @@ object FicusReaders {
   implicit val paramValidatorReader: ValueReader[ParameterValidator] = ValueReader.relative(config => {
     val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
     CirceUtil.decodeJsonUnsafe[ParameterValidator](json, "invalid parameter validator config")
+  })
+
+  implicit val paramConfigReader: ValueReader[AdditionalPropertyConfig] = ValueReader.relative(config => {
+    val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
+    CirceUtil.decodeJsonUnsafe[AdditionalPropertyConfig](json, "invalid parameter validator config")
   })
 }
