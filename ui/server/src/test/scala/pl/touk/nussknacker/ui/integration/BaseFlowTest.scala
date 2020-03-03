@@ -11,7 +11,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -25,12 +25,15 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.definition.additionalproperty.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 
 import scala.concurrent.duration._
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
+
+  import io.circe.syntax._
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
@@ -61,7 +64,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
-  test("ensure config is properly parsed") {
+  test("ensure nodes config is properly parsed") {
     Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("nodesConfig").focus.get
       val settings = Decoder[Map[String, SingleNodeConfig]].decodeJson(settingsJson).right.get
@@ -71,7 +74,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "filter" -> SingleNodeConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None),
         "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
         "enricher" -> SingleNodeConfig(
-          Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None))),
+          Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
           Some("Filter.svg"),
           //docs url comes from reference.conf in managementSample
           Some("https://touk.github.io/nussknacker/enricher"),
@@ -79,9 +82,9 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         ),
         "multipleParamsService" -> SingleNodeConfig(
           Some(Map(
-            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None),
-            "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None)
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None, None),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
+            "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None, None)
           )),
           None,
           None,
@@ -90,7 +93,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None),
         "sub1" -> SingleNodeConfig(
           Some(Map(
-            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None)
+            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
           )),
           None,
           None,
@@ -98,8 +101,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         ),
         "optionalTypesService" -> SingleNodeConfig(
           Some(Map(
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty)),
-            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)))
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
+            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
           )),
           None,
           None,
@@ -110,6 +113,53 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
       relevant shouldBe underTest
       other.values.forall(_.docsUrl.isEmpty) shouldBe true
+    }
+  }
+
+  test("ensure additional properties config is properly applied") {
+    Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      val settingsJson = responseAs[Json].hcursor.downField("additionalPropertiesConfig").focus.get
+      val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
+
+      val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).right.get
+
+      val underTest = Map(
+        "stringRequiredProperty" -> new UiAdditionalPropertyConfig(
+          Some("default"),
+          StringParameterEditor,
+          Some(List(MandatoryValueValidator)),
+          Some("label")
+        ),
+        "intOptionalProperty" -> new UiAdditionalPropertyConfig(
+          None,
+          StringParameterEditor,
+          Some(List(LiteralIntValidator)),
+          None
+        ),
+        "fixedValueOptionalProperty" -> new UiAdditionalPropertyConfig(
+          None,
+          FixedValuesParameterEditor(fixedPossibleValues),
+          Some(List(FixedValuesValidator(fixedPossibleValues))),
+          None
+        )
+      )
+
+      settings shouldBe underTest
+    }
+  }
+
+  test("validate process additional properties") {
+    Post(
+      "/api/processValidation",
+      HttpEntity(ContentTypes.`application/json`, TestFactory.processWithInvalidAdditionalProperties.asJson.spaces2)
+    ) ~> addCredentials(credentials) ~> mainRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val entity = responseAs[String]
+
+      entity should include("Configured property stringRequiredProperty (label) is missing")
+      entity should include("Property intOptionalProperty has value of invalid type")
+      entity should include("Unknown property unknown")
+      entity should include("Property fixedValueOptionalProperty has invalid value")
     }
   }
 

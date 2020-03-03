@@ -14,6 +14,7 @@ import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
 import {components, TimeRangeComponentType} from "./Duration/TimeRangeComponent"
+import SpelStringEditor from "./SpelStringEditor";
 
 type ParamType = $TodoType
 type ValuesType = Array<string>
@@ -26,7 +27,7 @@ export type Editor<P extends EditorProps = EditorProps> = React.ComponentType<P>
 }
 
 type EditorConfig = {
-  editor: (param?: ParamType, displayRawEditor?) => Editor,
+  editor: (param?: ParamType, displayRawEditor?: boolean, expressionObj?: ExpressionObj) => Editor,
   hint: (switchable?: boolean, currentEditor?: Editor, param?: ParamType) => string,
   showSwitch?: boolean,
   switchableTo?: (expressionObj: ExpressionObj, param?: ParamType, values?: ValuesType) => boolean,
@@ -56,10 +57,10 @@ export enum EditorType {
   CRON_EDITOR = "CronParameterEditor",
 }
 
-const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
-  param === undefined ?
+const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
+  paramConfig === undefined ?
     validators[ValidatorName.MandatoryParameterValidator]() :
-    param.validators.map(validator => validators[validator.type]()),
+    paramConfig.validators.map(validator => validators[validator.type](_, _, paramConfig.editor.possibleValues)),
   validators[ValidatorName.ErrorValidator](errors, fieldLabel)
 )
 
@@ -84,7 +85,7 @@ export const editors: Record<EditorType, EditorConfig> = {
   },
   [EditorType.STRING_PARAMETER_EDITOR]: {
     ...defaults,
-    editor: () => StringEditor,
+    editor: (param, displayRawEditor, expressionObj) => expressionObj?.language === "spel" ?  SpelStringEditor : StringEditor,
     hint: (switchable) => switchable ? StringEditor.switchableToHint() : StringEditor.notSwitchableToHint(),
     switchableTo: (expressionObj) => StringEditor.switchableTo(expressionObj),
   },
@@ -99,9 +100,9 @@ export const editors: Record<EditorType, EditorConfig> = {
     values: (param, values) => !_.isEmpty(values) ? values : param.editor.possibleValues,
   },
   [EditorType.DUAL_PARAMETER_EDITOR]: {
-    editor: (param, displayRawEditor) => displayRawEditor ?
+    editor: (param, displayRawEditor, expressionObj) => displayRawEditor ?
       editors[EditorType.RAW_PARAMETER_EDITOR].editor() :
-      editors[param.editor.simpleEditor.type].editor(),
+      editors[param.editor.simpleEditor.type].editor(param, displayRawEditor, expressionObj),
     hint: (switchable, currentEditor, param) => currentEditor === RawEditor ?
       editors[param.editor.simpleEditor.type].hint(switchable) :
       editors[EditorType.RAW_PARAMETER_EDITOR].hint(),

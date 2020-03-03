@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.process
 
 import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
 
 // todo: rename it? its no longer just a value with categories
 case class WithCategories[+T](value: T, categories: List[String], nodeConfig: SingleNodeConfig) {
@@ -30,10 +30,22 @@ object WithCategories {
 }
 
 object ParameterConfig {
-  val empty: ParameterConfig = ParameterConfig(None, None, None)
+  val empty: ParameterConfig = ParameterConfig(None, None, None, None)
 }
 
-@JsonCodec case class ParameterConfig(defaultValue: Option[String], editor: Option[ParameterEditor], validators: Option[List[ParameterValidator]])
+@JsonCodec case class ParameterConfig(defaultValue: Option[String],
+                                      editor: Option[ParameterEditor],
+                                      validators: Option[List[ParameterValidator]],
+                                      label: Option[String])
+
+@JsonCodec case class AdditionalPropertyConfig(defaultValue: Option[String],
+                                               editor: Option[SimpleParameterEditor],
+                                               validators: Option[List[ParameterValidator]],
+                                               label: Option[String])
+
+object AdditionalPropertyConfig {
+  val empty: AdditionalPropertyConfig = AdditionalPropertyConfig(None, None, None, None)
+}
 
 object SingleNodeConfig {
   import cats.syntax.semigroup._

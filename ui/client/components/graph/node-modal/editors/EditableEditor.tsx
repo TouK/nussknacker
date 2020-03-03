@@ -1,8 +1,8 @@
 import React from "react"
-import ProcessUtils from "../../../../../common/ProcessUtils"
-import {DualEditorMode, editors, EditorType} from "./Editor"
-import SwitchIcon from "./SwitchIcon"
-import FixedValuesEditor from "./FixedValuesEditor"
+import ProcessUtils from "../../../../common/ProcessUtils"
+import {DualEditorMode, editors, EditorType} from "./expression/Editor"
+import SwitchIcon from "./expression/SwitchIcon"
+import FixedValuesEditor from "./expression/FixedValuesEditor"
 import _ from "lodash"
 
 type Props = {
@@ -28,7 +28,7 @@ type State = {
   displayRawEditor: boolean,
 }
 
-class EditableExpression extends React.Component<Props, State> {
+class EditableEditor extends React.Component<Props, State> {
 
   toggleEditor = (_) => {
     this.setState({
@@ -59,7 +59,7 @@ class EditableExpression extends React.Component<Props, State> {
       !_.isEmpty(param) ? param.editor.type : EditorType.RAW_PARAMETER_EDITOR
     const editor = editors[editorType]
 
-    const Editor = editor.editor(param, this.state.displayRawEditor)
+    const Editor = editor.editor(param, this.state.displayRawEditor, expressionObj)
 
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
@@ -88,4 +88,4 @@ class EditableExpression extends React.Component<Props, State> {
   }
 }
 
-export default EditableExpression
+export default EditableEditor

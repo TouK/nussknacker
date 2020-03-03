@@ -17,7 +17,7 @@ class ParameterBasedValidatorsDeterminerChainTest extends FunSuite with Matchers
 
   test("determine validators based on config") {
     val param = Parameter.optional[String]("param")
-    val config = ParameterConfig(None, None, Some(List(MandatoryParameterValidator, NotBlankParameterValidator)))
+    val config = ParameterConfig(None, None, Some(List(MandatoryParameterValidator, NotBlankParameterValidator)), None)
 
     val validators = ParameterValidatorsDeterminerChain(config).determineValidators(param)
 
@@ -26,7 +26,7 @@ class ParameterBasedValidatorsDeterminerChainTest extends FunSuite with Matchers
 
   test("override validators based on annotation with those from config") {
     val param = Parameter[String]("param")
-    val config = ParameterConfig(None, None, Some(List.empty))
+    val config = ParameterConfig(None, None, Some(List.empty), None)
 
     val validators = ParameterValidatorsDeterminerChain(config).determineValidators(param)
 

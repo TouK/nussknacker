@@ -6,21 +6,23 @@ import akka.http.scaladsl.server.Route
 import cats.instances.future._
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.management.FlinkProcessManager
-import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
+import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.process.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,6 +44,7 @@ object TestFactory extends TestPermissions{
   val sampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
 
+  val possibleValues = List(FixedExpressionValue("a", "a"))
   val processValidation = new ProcessValidation(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
@@ -51,6 +54,23 @@ object TestFactory extends TestPermissions{
   val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
   val posting = new ProcessPosting
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
+
+  val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
+    id = "fooProcess",
+    properties = ProcessProperties(StreamMetaData(
+      Some(2)),
+      ExceptionHandlerRef(List.empty),
+      isSubprocess = false,
+      Some(ProcessAdditionalFields(Some("process description"), Set.empty, Map(
+        "intOptionalProperty" -> "text",
+        "unknown" -> "x",
+        "fixedValueOptionalProperty" -> "wrong fixed value"
+      ))),
+      subprocessVersions = Map.empty),
+    nodes = List.empty,
+    edges = List.empty,
+    processingType = TestProcessingTypes.Streaming
+  )
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBFetchingProcessRepository[Future](dbs) with BasicRepository

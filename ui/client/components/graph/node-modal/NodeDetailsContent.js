@@ -13,7 +13,6 @@ import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
 import Variable from "./../node-modal/Variable"
 import BranchParameters, {branchErrorFieldName} from "./BranchParameters"
-import EditableExpression from "./editors/expression/EditableExpression"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
 import JoinDef from "./JoinDef"
@@ -23,7 +22,7 @@ import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessI
 import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
-import {EditorType} from "./editors/expression/Editor"
+import AdditionalProperty from "./AdditionalProperty"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -411,7 +410,18 @@ export class NodeDetailsContent extends React.Component {
             "query-path",
         )]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
-            ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig, fieldName, fieldErrors),
+          ([propName, propConfig]) => <AdditionalProperty
+            key={propName}
+            showSwitch={showSwitch}
+            showValidation={showValidation}
+            propertyName={propName}
+            propertyConfig={propConfig}
+            propertyErrors={fieldErrors}
+            onChange={this.setNodeDataAt}
+            renderFieldLabel={this.renderFieldLabel}
+            isEditMode={!this.props.isEditMode}
+            editedNode={this.state.editedNode}
+          />
         )
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
@@ -447,49 +457,6 @@ export class NodeDetailsContent extends React.Component {
               <NodeDetails node={this.props.node} />
             </div>
         )
-    }
-  }
-
-  createAdditionalField(fieldName, fieldConfig, key, fieldErrors) {
-    const readOnly = !this.props.isEditMode
-    const {showSwitch, showValidation} = this.props
-    if (fieldConfig.type === "select") {
-      const values = _.map(fieldConfig.values, v => ({expression: v, label: v}))
-      const current = _.get(this.state.editedNode, `additionalFields.properties.${fieldName}`)
-      const obj = {expression: current, value: current}
-
-      return (
-          <EditableExpression
-              fieldType={EditorType.FIXED_VALUES_PARAMETER_EDITOR}
-              fieldLabel={fieldConfig.label}
-              onValueChange={(newValue) => this.setNodeDataAt(`additionalFields.properties.${fieldName}`, newValue)}
-              expressionObj={obj}
-              renderFieldLabel={this.renderFieldLabel}
-              values={values}
-              readOnly={readOnly}
-              key={key}
-              showSwitch={showSwitch}
-              showValidation={showValidation}
-              errors={fieldErrors}
-          />
-      )
-    } else {
-      const fieldType = () => {
-        if (fieldConfig.type == "text") return "plain-textarea"
-        else return "input"
-      }
-
-      return this.createField(
-          fieldType(),
-          fieldConfig.label,
-          `additionalFields.properties.${fieldName}`,
-          false,
-          [errorValidator(fieldErrors, fieldName)],
-          fieldName,
-          null,
-          null,
-          key,
-      )
     }
   }
 

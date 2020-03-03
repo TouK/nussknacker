@@ -7,11 +7,14 @@ export enum ValidatorType {
 export enum HandledErrorType {
   MandatoryParameterValidator = "MandatoryParameterValidator",
   WrongDateFormat = "WrongDateFormat",
+  InvalidLiteralIntValue = "InvalidLiteralIntValue",
 }
 
 export enum ValidatorName {
   MandatoryParameterValidator = "MandatoryParameterValidator",
   ErrorValidator = "ErrorValidator",
+  LiteralIntValidator = "LiteralIntValidator",
+  FixedValueValidator = "FixedValuesValidator",
 }
 
 export type Validator = {
@@ -20,6 +23,11 @@ export type Validator = {
   description: string,
   handledErrorType: HandledErrorType,
   validatorType: ValidatorType,
+}
+
+export type PossibleValue = {
+  expression: string,
+  label: string,
 }
 
 export type Error = {
@@ -48,6 +56,22 @@ export const mandatoryValueValidator: Validator = {
   validatorType: ValidatorType.Frontend,
 }
 
+export const literalIntValidator: Validator = {
+  isValid: value => !isNaN(value),
+  message: "This value has to be an integer number",
+  description: "Please fill this field with an integer number",
+  handledErrorType: HandledErrorType.InvalidLiteralIntValue,
+  validatorType: ValidatorType.Frontend,
+}
+
+export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
+  isValid: value => possibleValues.map(value => value.expression).includes(value),
+  message: `This value has to be one of values: ${possibleValues.toString()}`,
+  description: "Please choose one of available values",
+  handledErrorType: HandledErrorType.InvalidLiteralIntValue,
+  validatorType: ValidatorType.Frontend,
+})
+
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
   return chain(validators)
     .groupBy(validator => validator.handledErrorType)
@@ -59,7 +83,9 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
   return withoutDuplications(validators).every(validator => validator.isValid(...values))
 }
 
-export const validators: Record<ValidatorName, (errors?: Array<Error>, fieldName?: string) => Validator> = {
+export const validators: Record<ValidatorName, (errors?: Array<Error>, fieldName?: string, possibleValues?: Array<PossibleValue>) => Validator> = {
   [ValidatorName.MandatoryParameterValidator]: () => mandatoryValueValidator,
   [ValidatorName.ErrorValidator]: (errors, fieldName) => errorValidator(errors, fieldName),
+  [ValidatorName.LiteralIntValidator]: () => literalIntValidator,
+  [ValidatorName.FixedValueValidator]: (errors, fieldName, possibleValues) => fixedValueValidator(possibleValues),
 }
