@@ -510,6 +510,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("evaluates expression with template context") {
     parseOrFail[String]("alamakota #{444}", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe "alamakota 444"
     parseOrFail[String]("alamakota #{444 + #obj.value} #{#mapValue.foo}", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe "alamakota 446 bar"
+    parseOrFail[String]("", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe ""
 
   }
 
