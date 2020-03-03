@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import cats.instances.list._
-import pl.touk.nussknacker.engine.api.ParamName
+import pl.touk.nussknacker.engine.api.{HideToString, ParamName}
 
 import scala.collection.JavaConverters._
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -202,7 +202,7 @@ object aggregates {
 
   }
 
-  trait AggregateHelper {
+  trait AggregateHelper extends HideToString {
 
     val max: Aggregator = MaxAggregator
 
