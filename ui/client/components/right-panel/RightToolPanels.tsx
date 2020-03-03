@@ -5,7 +5,6 @@ import ProcessInfo from "../Process/ProcessInfo"
 import DetailsPanel from "./panels/details/DetailsPanel"
 import ViewPanel from "./panels/view/ViewPanel"
 import ProcessPanels from "./panels/process/ProcessPanel"
-import DeploymentPanel from "./panels/deploy/DeploymentPanel"
 import EditPanel from "./panels/edit/EditPanel"
 import TestPanel from "./panels/test/TestPanel"
 import GroupPanel from "./panels/group/GroupPanel"
@@ -27,54 +26,44 @@ export interface Toolbar {
 
 function RightToolPanels(props: PassedProps) {
   const {
-    isStateLoaded,
-    processState,
     graphLayoutFunction,
     exportGraph,
-    capabilities,
     selectionActions,
   } = props
 
   const toolbars: Toolbar[] = [
     {
       id: "PROCESS-INFO",
-      component: <ProcessInfo processState={processState} isStateLoaded={isStateLoaded}/>,
+      component: <ProcessInfo/>,
     },
     {
       id: "VIEW-PANEL",
       component: <ViewPanel/>,
     },
     {
-      id: "DEPLOYMENT-PANEL",
-      component: <DeploymentPanel capabilities={capabilities} isStateLoaded={isStateLoaded} processState={processState}/>,
+      id: "EDIT-PANEL",
+      component: <EditPanel graphLayoutFunction={graphLayoutFunction} selectionActions={selectionActions}/>,
     },
+    // {
+    //   id: "DEPLOYMENT-PANEL",
+    //   component: <DeploymentPanel/>,
+    // },
     {
       id: "PROCESS-PANELS",
-      component: (
-        <ProcessPanels
-          capabilities={capabilities}
-          isStateLoaded={isStateLoaded}
-          processState={processState}
-          exportGraph={exportGraph}
-        />
-      ),
-    },
-    {
-      id: "EDIT-PANEL",
-      component: <EditPanel capabilities={capabilities} graphLayoutFunction={graphLayoutFunction} selectionActions={selectionActions}/>,
+      component: <ProcessPanels exportGraph={exportGraph}/>,
     },
     {
       id: "TEST-PANEL",
-      component: <TestPanel capabilities={capabilities}/>,
+      component: <TestPanel/>,
     },
     {
       id: "GROUP-PANEL",
-      component: <GroupPanel capabilities={capabilities}/>,
+      component: <GroupPanel/>,
     },
     {
       id: "DETAILS-PANEL",
       // TODO remove SideNodeDetails? turn out to be not useful
-      component: <DetailsPanel showDetails={capabilities.write}/>,
+      component: <DetailsPanel/>,
     },
     {
       id: "TIPS-PANEL",
@@ -83,7 +72,7 @@ function RightToolPanels(props: PassedProps) {
     },
     {
       id: "CREATOR-PANEL",
-      component: <CreatorPanel writeAllowed={capabilities.write}/>,
+      component: <CreatorPanel/>,
       defaultSide: ToolbarsSide.TopLeft,
     },
     {

@@ -1,5 +1,4 @@
 import React from "react"
-import {RootState} from "../../../../../reducers/index"
 import {useSelector, useDispatch} from "react-redux"
 import HttpService from "../../../../../http/HttpService"
 import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
@@ -7,17 +6,12 @@ import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcess
 import {ToolbarButton} from "../../../ToolbarButton"
 import {isCancelPossible, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../UserRightPanel"
 import {loadProcessState} from "../../../../../actions/nk/process"
 
-type Props = Pick<PassedProps,
-  | "isStateLoaded"
-  | "processState">
-
-export default function CancelDeployButton(props: Props) {
+export default function CancelDeployButton() {
   const {t} = useTranslation()
   const dispatch = useDispatch()
-  const cancelPossible = useSelector<RootState>(state => isCancelPossible(state, props))
+  const cancelPossible = useSelector(isCancelPossible)
   const processId = useSelector(getProcessId)
 
   return (

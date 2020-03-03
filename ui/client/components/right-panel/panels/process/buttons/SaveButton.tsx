@@ -13,9 +13,7 @@ import classes from "./SaveButton.styl"
 type Props = StateProps
 
 function SaveButton(props: Props) {
-  const {
-    saveDisabled, toggleModalDialog,
-  } = props
+  const {saveDisabled, toggleModalDialog} = props
   const {t} = useTranslation()
 
   return (
@@ -25,7 +23,7 @@ function SaveButton(props: Props) {
       labelClassName={cn("button-label", !saveDisabled && classes.unsaved)}
       disabled={saveDisabled}
       onClick={() =>
-        //TODO: Checking permission to archiwization should be done by check action from state - we should add new action type
+        //TODO: Checking permission to archive should be done by check action from state - we should add new action type
         toggleModalDialog(Dialogs.types.saveProcess)}
     />
   )

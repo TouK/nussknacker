@@ -1,24 +1,22 @@
 import React, {memo} from "react"
 import {ProcessStateType, ProcessType} from "./types"
-import {
-  descriptionProcessArchived,
-  descriptionSubprocess,
-  descriptionSubprocessArchived,
-  unknownDescription,
-} from "./messages"
+ import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "./messages"
 import {CSSTransition, SwitchTransition} from "react-transition-group"
 import ProcessStateIcon, {unknownIcon} from "./ProcessStateIcon"
 import {absoluteBePath} from "../../common/UrlUtils"
 import {RootState} from "../../reducers"
-import {getFetchedProcessDetails} from "../right-panel/selectors/graph"
+import {getFetchedProcessDetails, isStateLoaded, getProcessState} from "../right-panel/selectors/graph"
 import {connect} from "react-redux"
 import {DragHandle} from "../right-panel/toolbars/DragHandle"
+import Deploy from "../right-panel/panels/deploy/buttons/DeployButton"
+import Cancel from "../right-panel/panels/deploy/buttons/CancelDeployButton"
+import Metrics from "../right-panel/panels/deploy/buttons/MetricsButton"
+import {getCapabilities} from "../right-panel/selectors/other"
+import SaveButton from "../right-panel/panels/process/buttons/SaveButton"
 
 type State = {}
 
 type OwnProps = {
-  processState?: ProcessStateType,
-  isStateLoaded: boolean,
   iconHeight: number,
   iconWidth: number,
 }
@@ -27,7 +25,6 @@ type OwnProps = {
 class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
   static defaultProps = {
     isStateLoaded: false,
-    processState: null,
     iconHeight: 32,
     iconWidth: 32,
   }
@@ -43,12 +40,23 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
 
   private animationListener = (node, done) => node.addEventListener("transitionend", done, false)
 
-  private getDescription = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string => process.isArchived ? process.isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived() :
+  private getDescription = (
+    process: ProcessType,
+    processState: ProcessStateType,
+    isStateLoaded: boolean,
+  ): string => process.isArchived ? process.isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived() :
     process.isSubprocess ? descriptionSubprocess() :
       isStateLoaded ? processState?.description :
-          process?.state?.description || unknownDescription()
+        process?.state?.description || unknownDescription()
 
-  private getIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean, iconHeight: number, iconWidth:  number, description: string) => {
+  private getIcon = (
+    process: ProcessType,
+    processState: ProcessStateType,
+    isStateLoaded: boolean,
+    iconHeight: number,
+    iconWidth: number,
+    description: string,
+  ) => {
     if (process.isArchived || process.isSubprocess) {
       const icon = absoluteBePath(process.isArchived ? ProcessInfo.archivedIcon : ProcessInfo.subprocessIcon)
       return (
@@ -69,11 +77,14 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     )
   }
 
-  private getTransitionKey = (process: ProcessType, processState: ProcessStateType): string => process.isArchived || process.isSubprocess ? `${process.id}` :
+  private getTransitionKey = (
+    process: ProcessType,
+    processState: ProcessStateType,
+  ): string => process.isArchived || process.isSubprocess ? `${process.id}` :
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
   render() {
-    const {process, processState, isStateLoaded, iconHeight, iconWidth} = this.props
+    const {process, processState, isStateLoaded, iconHeight, iconWidth, capabilities} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
     const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
@@ -93,13 +104,22 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
             </div>
           </CSSTransition>
         </SwitchTransition>
+        <div>
+          {capabilities.write ? <SaveButton/> : null}
+          <Metrics/>
+          {capabilities.deploy ? <Deploy/> : null}
+          {capabilities.deploy ? <Cancel/> : null}
+        </div>
       </DragHandle>
     )
   }
 }
 
 const mapState = (state: RootState) => ({
+  isStateLoaded: isStateLoaded(state),
   process: getFetchedProcessDetails(state),
+  capabilities: getCapabilities(state),
+  processState: getProcessState(state),
 })
 
 type StateProps = ReturnType<typeof mapState>

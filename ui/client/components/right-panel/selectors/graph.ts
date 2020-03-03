@@ -2,7 +2,6 @@ import {RootState} from "../../../reducers/index"
 import {GraphState} from "../types"
 import {createSelector} from "reselect"
 import ProcessStateUtils from "../../Process/ProcessStateUtils"
-import {ProcessStateType} from "../../Process/types"
 import ProcessUtils from "../../../common/ProcessUtils"
 
 const getGraph = (state: RootState): GraphState => state.graphReducer
@@ -13,6 +12,8 @@ export const getProcessId = createSelector(getFetchedProcessDetails, d => d?.nam
 export const getProcessVersionId = createSelector(getFetchedProcessDetails, d => d?.processVersionId)
 export const getProcessCategory = createSelector(getFetchedProcessDetails, d => d?.processCategory || "")
 export const getIsArchived = createSelector(getFetchedProcessDetails, d => d?.isArchived)
+export const isStateLoaded = createSelector(getGraph, d => d?.processStateLoaded)
+export const getProcessState = createSelector(getGraph, d => d?.processState)
 export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, d => d?.isLatestVersion)
 export const isSubprocess = createSelector(getProcessToDisplay, p => p.properties?.isSubprocess)
 export const isBusinessView = createSelector(getGraph, g => g.businessView)
@@ -23,12 +24,12 @@ export const getSelectionState = createSelector(getGraph, g => g.selectionState)
 export const getGroupingState = createSelector(getGraph, g => g.groupingState)
 export const getHistory = createSelector(getGraph, g => g.history)
 
-export function getFetchedProcessState(
-  state: RootState,
-  {processState, isStateLoaded}: { isStateLoaded: boolean, processState: ProcessStateType },
-) {
-  return isStateLoaded ? processState : getFetchedProcessDetails(state)?.state
-}
+export const getFetchedProcessState = createSelector(
+  getFetchedProcessDetails,
+  isStateLoaded,
+  getProcessState,
+  (fetchedProcessDetails, isStateLoaded, processState) => isStateLoaded ? processState : fetchedProcessDetails?.state,
+)
 
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest)
 export const isDeployPossible = createSelector(

@@ -11,16 +11,8 @@ import {bindActionCreators} from "redux"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {isRunning, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../UserRightPanel"
 
-type OwnPropsPick = Pick<PassedProps,
-  | "isStateLoaded"
-  | "processState">
-
-type OwnProps = OwnPropsPick
-type Props = OwnProps & StateProps
-
-function ArchiveButton(props: Props) {
+function ArchiveButton(props: StateProps) {
   const {
     processId, isRunning,
     toggleConfirmDialog,
@@ -45,10 +37,10 @@ function ArchiveButton(props: Props) {
   )
 }
 
-const mapState = (state: RootState, props: OwnProps) => {
+const mapState = (state: RootState) => {
   return {
     processId: getProcessId(state),
-    isRunning: isRunning(state, props),
+    isRunning: isRunning(state),
   }
 }
 

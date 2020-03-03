@@ -12,7 +12,6 @@ import {hot} from "react-hot-loader"
 import {isRightPanelOpened, isLeftPanelOpened} from "./selectors/ui"
 import {getFetchedProcessDetails} from "./selectors/graph"
 import RightToolPanels from "./RightToolPanels"
-import {ProcessStateType} from "../Process/types"
 
 export function useRightPanelToggle() {
   const dispatch = useDispatch()
@@ -28,7 +27,6 @@ export function useLeftPanelToggle() {
   return {isOpenedLeft, onToggleLeft}
 }
 
-export type CapabilitiesType = $TodoType
 export type Graph = $TodoType
 
 type SelectionActions = {
@@ -41,11 +39,8 @@ type SelectionActions = {
 }
 
 export type PassedProps = {
-  isStateLoaded: boolean,
-  processState: ProcessStateType,
   graphLayoutFunction: () => $TodoType,
   exportGraph: () => $TodoType,
-  capabilities: CapabilitiesType,
   selectionActions: SelectionActions,
 }
 

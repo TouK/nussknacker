@@ -9,46 +9,40 @@ import JSONButton from "./buttons/JSONButton"
 import ImportButton from "./buttons/ImportButton"
 import CompareButton from "./buttons/CompareButton"
 import MigrateButton from "./buttons/MigrateButton"
-import SaveButton from "./buttons/SaveButton"
 import {getFeatureSettings} from "../../selectors/settings"
 import {useTranslation} from "react-i18next"
 import {PassedProps} from "../../UserRightPanel"
+import {getCapabilities} from "../../selectors/other"
+import Properties from "../edit/buttons/PropertiesButton"
+import {isSubprocess} from "../../selectors/graph"
 
 type OwnPropsPick = Pick<PassedProps,
-  | "capabilities"
-  | "isStateLoaded"
-  | "processState"
   | "exportGraph">
 
 type OwnProps = OwnPropsPick
 type Props = OwnProps & StateProps
 
 function ProcessPanel(props: Props) {
-  const {
-    capabilities, exportGraph, featuresSettings,
-    isStateLoaded, processState,
-  } = props
+  const {capabilities, exportGraph, featuresSettings, isSubprocess} = props
   const {t} = useTranslation()
 
-  const deployAllowed = capabilities.deploy
-  const writeAllowed = capabilities.write
   return (
     <CollapsibleToolbar id="PROCESS-PANEL" title={t("panels.process.title", "Process")}>
-      {writeAllowed ? <SaveButton/> : null}
-      {deployAllowed && !isEmpty(featuresSettings?.remoteEnvironment) ? (
-        <MigrateButton processState={processState} isStateLoaded={isStateLoaded}/>
-      ) : null}
+      {!isSubprocess ? <Properties/> : null}
       <CompareButton/>
-      {writeAllowed ? <ImportButton/> : null}
+      {capabilities.deploy && !isEmpty(featuresSettings?.remoteEnvironment) ? <MigrateButton/> : null}
+      {capabilities.write ? <ImportButton/> : null}
       <JSONButton/>
       <PDFButton exportGraph={exportGraph}/>
-      {writeAllowed ? <ArchiveButton isStateLoaded={isStateLoaded} processState={processState}/> : null}
+      {capabilities.write ? <ArchiveButton/> : null}
     </CollapsibleToolbar>
   )
 }
 
 const mapState = (state: RootState) => ({
   featuresSettings: getFeatureSettings(state),
+  capabilities: getCapabilities(state),
+  isSubprocess: isSubprocess(state),
 })
 
 type StateProps = ReturnType<typeof mapState>

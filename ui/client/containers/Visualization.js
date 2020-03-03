@@ -283,7 +283,6 @@ class Visualization extends React.Component {
   exportGraphFun = () => this.getGraphInstance().exportGraph()
 
   render() {
-    const {leftPanelIsOpened, actions, loggedUser} = this.props
 
     //it has to be that way, because graph is redux component
 
@@ -300,7 +299,6 @@ class Visualization extends React.Component {
           graphLayoutFunction={this.graphLayoutFun}
           exportGraph={this.exportGraphFun}
           graph={this.getGraphInstance()}
-          capabilities={this.props.capabilities}
           isReady={this.state.dataResolved}
           selectionActions={{
             copy: () => this.copySelection(null, true),
@@ -310,9 +308,6 @@ class Visualization extends React.Component {
             paste: () => this.pasteSelectionFromClipboard(null),
             canPaste: true,
           }}
-          copySelection={() => this.copySelection(null, true)}
-          cutSelection={() => this.cutSelection(null)}
-          pasteSelection={() => this.pasteSelection(null)}
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>

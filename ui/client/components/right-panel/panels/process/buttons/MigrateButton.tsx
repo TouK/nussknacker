@@ -10,16 +10,8 @@ import {ToolbarButton} from "../../../ToolbarButton"
 import {getFeatureSettings} from "../../../selectors/settings"
 import {isDeployPossible, getProcessVersionId, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../UserRightPanel"
 
-type OwnPropsPick = Pick<PassedProps,
-  | "isStateLoaded"
-  | "processState">
-
-type OwnProps = OwnPropsPick
-type Props = OwnProps & StateProps
-
-function MigrateButton(props: Props) {
+function MigrateButton(props: StateProps) {
   const {
     processId, deployPossible, featuresSettings,
     versionId, toggleConfirmDialog,
@@ -47,11 +39,11 @@ function MigrateButton(props: Props) {
   )
 }
 
-const mapState = (state: RootState, props: OwnProps) => ({
+const mapState = (state: RootState) => ({
   processId: getProcessId(state),
   versionId: getProcessVersionId(state),
   featuresSettings: getFeatureSettings(state),
-  deployPossible: isDeployPossible(state, props),
+  deployPossible: isDeployPossible(state),
 })
 
 const mapDispatch = {

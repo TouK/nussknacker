@@ -1,4 +1,4 @@
-import {ProcessType} from "../Process/types"
+ import {ProcessType, ProcessStateType} from "../Process/types"
 import {NodeId} from "../../actions/nk/models"
 
 export type ProcessPropertiesState = {
@@ -23,6 +23,8 @@ type History = {
 }
 
 export type GraphState = {
+  processState: ProcessStateType,
+  processStateLoaded: boolean,
   fetchedProcessDetails?: ProcessType,
   processToDisplay?: ProcessToDisplayState,
   businessView: boolean,
