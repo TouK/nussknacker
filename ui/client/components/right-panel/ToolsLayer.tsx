@@ -11,7 +11,7 @@ import {toggleRightPanel, toggleLeftPanel} from "../../actions/nk/ui/layout"
 import {hot} from "react-hot-loader"
 import {isRightPanelOpened, isLeftPanelOpened} from "./selectors/ui"
 import {getFetchedProcessDetails} from "./selectors/graph"
-import RightToolPanels from "./RightToolPanels"
+import Toolbars from "./Toolbars"
 
 export function useRightPanelToggle() {
   const dispatch = useDispatch()
@@ -51,7 +51,7 @@ type OwnProps = {
 
 type Props = OwnProps
 
-function UserRightPanel(props: Props) {
+function ToolsLayer(props: Props) {
   const {graph, isReady, ...passProps} = props
   const {isOpenedRight, onToggleRight} = useRightPanelToggle()
   const {isOpenedLeft, onToggleLeft} = useLeftPanelToggle()
@@ -64,10 +64,10 @@ function UserRightPanel(props: Props) {
       {graph ? <ZoomButtons className={cn("right", isOpenedRight && "is-opened")} graph={graph}/> : null}
 
       <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
-        <RightToolPanels {...passProps}/>
+        <Toolbars {...passProps}/>
       </SpinnerWrapper>
     </>
   )
 }
 
-export default hot(module)(memo(UserRightPanel))
+export default hot(module)(memo(ToolsLayer))

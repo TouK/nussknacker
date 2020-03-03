@@ -5,10 +5,9 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import {cutSelection} from "../../../../../actions/nk/selection"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../UserRightPanel"
+import {PassedProps} from "../../../ToolsLayer"
 
-type OwnPropsPick = Pick<PassedProps,
-  | "selectionActions">
+type OwnPropsPick = Pick<PassedProps, "selectionActions">
 
 type OwnProps = OwnPropsPick
 type Props = OwnProps & StateProps

@@ -11,13 +11,12 @@ import CompareButton from "./buttons/CompareButton"
 import MigrateButton from "./buttons/MigrateButton"
 import {getFeatureSettings} from "../../selectors/settings"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../UserRightPanel"
 import {getCapabilities} from "../../selectors/other"
 import Properties from "../edit/buttons/PropertiesButton"
 import {isSubprocess} from "../../selectors/graph"
+import {PassedProps} from "../../ToolsLayer"
 
-type OwnPropsPick = Pick<PassedProps,
-  | "exportGraph">
+type OwnPropsPick = Pick<PassedProps, "exportGraph">
 
 type OwnProps = OwnPropsPick
 type Props = OwnProps & StateProps

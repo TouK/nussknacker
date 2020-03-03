@@ -1,5 +1,5 @@
-import {Toolbar} from "../../components/right-panel/RightToolPanels"
 import {ToolbarsSide} from "../../reducers/toolbars"
+import {Toolbar} from "../../components/right-panel/Toolbars"
 
 export type ToolbarPosition = [ToolbarsSide | string, number]
 

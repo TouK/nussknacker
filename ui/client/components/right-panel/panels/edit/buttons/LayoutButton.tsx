@@ -4,7 +4,7 @@ import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {layout} from "../../../../../actions/nk/ui/layout"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../UserRightPanel"
+import {PassedProps} from "../../../ToolsLayer"
 
 type OwnPropsPick = Pick<PassedProps, "graphLayoutFunction">
 

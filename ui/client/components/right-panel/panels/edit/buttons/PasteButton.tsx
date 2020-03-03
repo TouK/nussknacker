@@ -5,7 +5,7 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import {pasteSelection} from "../../../../../actions/nk/selection"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../UserRightPanel"
+import {PassedProps} from "../../../ToolsLayer"
 
 type OwnPropsPick = Pick<PassedProps,
   | "selectionActions">

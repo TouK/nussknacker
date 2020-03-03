@@ -1,16 +1,16 @@
 import React, {useMemo, useEffect, EffectCallback, memo, useState} from "react"
 import {DragDropContext, DropResult} from "react-beautiful-dnd"
-import {Toolbar} from "../RightToolPanels"
 import {ToolbarsSide} from "../../../reducers/toolbars"
 import {useDispatch} from "react-redux"
 import {moveToolbar, registerToolbars} from "../../../actions/nk/toolbars"
 import {ToolbarsPanel} from "./ToolbarsPanel"
 import cn from "classnames"
 import {ScrollbarsExtended} from "../ScrollbarsExtended"
-import {useRightPanelToggle, useLeftPanelToggle} from "../UserRightPanel"
 
 import styles from "./ToolbarsLayer.styl"
 import styles2 from "../collipsableSidePanels.styl"
+import {Toolbar} from "../Toolbars"
+import {useRightPanelToggle, useLeftPanelToggle} from "../ToolsLayer"
 
 function useMemoizedIds<T extends { id: string }>(array: T[]): string {
   return useMemo(() => array.map(v => v.id).join(), [array])

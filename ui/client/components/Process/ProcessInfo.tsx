@@ -1,6 +1,6 @@
 import React, {memo} from "react"
 import {ProcessStateType, ProcessType} from "./types"
- import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "./messages"
+import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "./messages"
 import {CSSTransition, SwitchTransition} from "react-transition-group"
 import ProcessStateIcon, {unknownIcon} from "./ProcessStateIcon"
 import {absoluteBePath} from "../../common/UrlUtils"
@@ -13,6 +13,7 @@ import Cancel from "../right-panel/panels/deploy/buttons/CancelDeployButton"
 import Metrics from "../right-panel/panels/deploy/buttons/MetricsButton"
 import {getCapabilities} from "../right-panel/selectors/other"
 import SaveButton from "../right-panel/panels/process/buttons/SaveButton"
+import {ToolbarButtons} from "./ToolbarButtons"
 
 type State = {}
 
@@ -104,12 +105,12 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
             </div>
           </CSSTransition>
         </SwitchTransition>
-        <div>
+        <ToolbarButtons>
           {capabilities.write ? <SaveButton/> : null}
           <Metrics/>
           {capabilities.deploy ? <Deploy/> : null}
           {capabilities.deploy ? <Cancel/> : null}
-        </div>
+        </ToolbarButtons>
       </DragHandle>
     )
   }
@@ -125,3 +126,4 @@ const mapState = (state: RootState) => ({
 type StateProps = ReturnType<typeof mapState>
 
 export default connect(mapState)(memo(ProcessInfo))
+

@@ -8,7 +8,6 @@ import ProcessPanels from "./panels/process/ProcessPanel"
 import EditPanel from "./panels/edit/EditPanel"
 import TestPanel from "./panels/test/TestPanel"
 import GroupPanel from "./panels/group/GroupPanel"
-import {PassedProps} from "./UserRightPanel"
 import ToolbarsLayer from "./toolbars/ToolbarsLayer"
 import {ToolbarsSide} from "../../reducers/toolbars"
 import TipsPanel from "../tips/Tips"
@@ -16,6 +15,7 @@ import {CreatorPanel} from "../CreatorPanel"
 import {VersionsPanel} from "../VersionsPanel"
 import {CommentsPanel} from "../CommentsPanel"
 import {AttachmentsPanel} from "../AttachmentsPanel"
+import {PassedProps} from "./ToolsLayer"
 
 export interface Toolbar {
   id: string,
@@ -24,7 +24,7 @@ export interface Toolbar {
   defaultSide?: ToolbarsSide,
 }
 
-function RightToolPanels(props: PassedProps) {
+function Toolbars(props: PassedProps) {
   const {
     graphLayoutFunction,
     exportGraph,
@@ -97,4 +97,4 @@ function RightToolPanels(props: PassedProps) {
   )
 }
 
-export default memo(RightToolPanels)
+export default memo(Toolbars)

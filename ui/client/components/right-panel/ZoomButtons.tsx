@@ -3,7 +3,7 @@ import SvgDiv from "../SvgDiv"
 import React from "react"
 import {useDispatch} from "react-redux"
 import {zoomIn, zoomOut} from "../../actions/nk/zoom"
-import {Graph} from "./UserRightPanel"
+import {Graph} from "./ToolsLayer"
 
 interface Props {
   graph: Graph,

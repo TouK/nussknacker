@@ -1,5 +1,4 @@
 import {ToolbarsSide} from "../../../reducers/toolbars"
-import {Toolbar} from "../RightToolPanels"
 import {
   Droppable,
   Draggable,
@@ -18,6 +17,7 @@ import {ToolbarDraggableType} from "./ToolbarsLayer"
 import styles from "./ToolbarsLayer.styl"
 import cn from "classnames"
 import {DragHandlerContext} from "./DragHandle"
+import {Toolbar} from "../Toolbars"
 
 interface Rubric extends DraggableRubric {
   source: DraggableLocation,

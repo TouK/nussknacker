@@ -7,7 +7,7 @@ import {exportProcessToPdf} from "../../../../../actions/nk/importExport"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {isBusinessView, getProcessVersionId, getProcessId} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../UserRightPanel"
+import {PassedProps} from "../../../ToolsLayer"
 
 type OwnPropsPick = Pick<PassedProps,
   | "exportGraph">

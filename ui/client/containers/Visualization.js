@@ -9,13 +9,13 @@ import ProcessUtils from "../common/ProcessUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 import Graph from "../components/graph/Graph"
 import NodeUtils from "../components/graph/NodeUtils"
-import UserRightPanel from "../components/right-panel/UserRightPanel"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import "../stylesheets/visualization.styl"
 import {getLoggedUser} from "../components/right-panel/selectors/settings"
 import {getProcessCategory} from "../components/right-panel/selectors/graph"
 import {getCapabilities} from "../components/right-panel/selectors/other"
+import ToolsLayer from "../components/right-panel/ToolsLayer"
 
 class Visualization extends React.Component {
 
@@ -295,7 +295,7 @@ class Visualization extends React.Component {
           navigate={path => this.props.history.push(path)}
         />
 
-        <UserRightPanel
+        <ToolsLayer
           graphLayoutFunction={this.graphLayoutFun}
           exportGraph={this.exportGraphFun}
           graph={this.getGraphInstance()}

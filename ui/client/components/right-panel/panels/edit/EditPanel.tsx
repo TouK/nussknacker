@@ -7,9 +7,10 @@ import Copy from "./buttons/CopyButton"
 import Delete from "./buttons/DeleteButton"
 import Paste from "./buttons/PasteButton"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../UserRightPanel"
+import {PassedProps} from "../../ToolsLayer"
 import {useSelector} from "react-redux"
 import {getCapabilities} from "../../selectors/other"
+import {ToolbarButtons} from "../../../Process/ToolbarButtons"
 
 type Props = Pick<PassedProps,
   | "graphLayoutFunction"
@@ -22,16 +23,17 @@ function EditPanel(props: Props) {
 
   return (
     <CollapsibleToolbar id="EDIT-PANEL" title={t("panels.edit.title", "Edit")}>
-      {capabilities.write ? <Undo/> : null}
-      {capabilities.write ? <Redo/> : null}
-      {capabilities.write ? <Layout graphLayoutFunction={graphLayoutFunction}/> : null}
-      {capabilities.write ? <Copy selectionActions={selectionActions}/> : null}
-      {capabilities.write ? <Paste selectionActions={selectionActions}/> : null}
-      {capabilities.write ? <Delete selectionActions={selectionActions}/> : null}
-      {/*{writeAllowed ? <Cut selectionActions={selectionActions}/> : null}*/}
+      <ToolbarButtons small>
+        {capabilities.write ? <Undo/> : null}
+        {capabilities.write ? <Redo/> : null}
+        {capabilities.write ? <Layout graphLayoutFunction={graphLayoutFunction}/> : null}
+        {capabilities.write ? <Copy selectionActions={selectionActions}/> : null}
+        {capabilities.write ? <Paste selectionActions={selectionActions}/> : null}
+        {capabilities.write ? <Delete selectionActions={selectionActions}/> : null}
+        {/*{writeAllowed ? <Cut selectionActions={selectionActions}/> : null}*/}
+      </ToolbarButtons>
     </CollapsibleToolbar>
   )
 }
-
 
 export default memo(EditPanel)
