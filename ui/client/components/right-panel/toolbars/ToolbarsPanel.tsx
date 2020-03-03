@@ -17,6 +17,7 @@ import {RootState} from "../../../reducers/index"
 import {ToolbarDraggableType} from "./ToolbarsLayer"
 import styles from "./ToolbarsLayer.styl"
 import cn from "classnames"
+import {DragHandlerContext} from "./DragHandle"
 
 interface Rubric extends DraggableRubric {
   source: DraggableLocation,
@@ -48,20 +49,24 @@ export function ToolbarsPanel(props: Props) {
       <div
         ref={p.innerRef}
         {...p.draggableProps}
-        {...p.dragHandleProps}
         style={getStyle(p.draggableProps.style, s)}
         className={cn([
           styles.draggable,
           s.isDragging && styles.isDragging,
           s.draggingOver && styles.isDraggingOver,
           s.isDropAnimating && styles.isAnimating,
+          r.source.index === 0 && styles.first,
+          r.source.index === ordered.length - 1 && styles.last,
         ])}
       >
-        <div className={styles.background}>
-          <div className={styles.content}>
-            {ordered[r.source.index].component}
+        <DragHandlerContext.Provider value={p.dragHandleProps}>
+          <div className={styles.background}>
+            <div className={styles.content}>
+              {ordered[r.source.index].component}
+            </div>
+            <div className={styles.handler} {...p.dragHandleProps}/>
           </div>
-        </div>
+        </DragHandlerContext.Provider>
       </div>
     ),
     [ordered],

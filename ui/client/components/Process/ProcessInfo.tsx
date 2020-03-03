@@ -12,6 +12,7 @@ import {absoluteBePath} from "../../common/UrlUtils"
 import {RootState} from "../../reducers"
 import {getFetchedProcessDetails} from "../right-panel/selectors/graph"
 import {connect} from "react-redux"
+import {DragHandle} from "../right-panel/toolbars/DragHandle"
 
 type State = {}
 
@@ -42,14 +43,10 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
 
   private animationListener = (node, done) => node.addEventListener("transitionend", done, false)
 
-  private getDescription = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string =>
-    process.isArchived ? (process.isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived()) : (
-      process.isSubprocess ? descriptionSubprocess() : (
-        isStateLoaded ? processState?.description : (
+  private getDescription = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string => process.isArchived ? process.isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived() :
+    process.isSubprocess ? descriptionSubprocess() :
+      isStateLoaded ? processState?.description :
           process?.state?.description || unknownDescription()
-        )
-      )
-    )
 
   private getIcon = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean, iconHeight: number, iconWidth:  number, description: string) => {
     if (process.isArchived || process.isSubprocess) {
@@ -72,8 +69,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     )
   }
 
-  private getTransitionKey = (process: ProcessType, processState: ProcessStateType): string =>
-    process.isArchived || process.isSubprocess ? `${process.id}` :
+  private getTransitionKey = (process: ProcessType, processState: ProcessStateType): string => process.isArchived || process.isSubprocess ? `${process.id}` :
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
   render() {
@@ -83,19 +79,21 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     const transitionKey = this.getTransitionKey(process, processState)
 
     return (
-      <SwitchTransition>
-        <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
-          <div className={"panel-process-info"}>
-            <div className={"process-info-icon"}>
-              {icon}
+      <DragHandle>
+        <SwitchTransition>
+          <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
+            <div className={"panel-process-info"}>
+              <div className={"process-info-icon"}>
+                {icon}
+              </div>
+              <div className={"process-info-text"}>
+                <div className={"process-name"}>{process.name}</div>
+                <div className={"process-info-description"}>{description}</div>
+              </div>
             </div>
-            <div className={"process-info-text"}>
-              <div className={"process-name"}>{process.name}</div>
-              <div className={"process-info-description"}>{description}</div>
-            </div>
-          </div>
-        </CSSTransition>
-      </SwitchTransition>
+          </CSSTransition>
+        </SwitchTransition>
+      </DragHandle>
     )
   }
 }

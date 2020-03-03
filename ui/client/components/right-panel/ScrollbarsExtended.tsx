@@ -1,4 +1,4 @@
-import React, {PropsWithChildren, useRef, useState} from "react"
+import React, {PropsWithChildren, useRef, useState, useEffect} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
 import {useDebouncedCallback} from "use-debounce"
 
@@ -9,7 +9,12 @@ export function ScrollbarsExtended({children}: PropsWithChildren<{}>) {
   const [onUpdate] = useDebouncedCallback(() => {
     const {scrollHeight = 0, clientHeight = 0} = scrollbars.current?.getValues() || {}
     setScrollPossible(scrollHeight - clientHeight > 0)
-  }, 250)
+  }, 100)
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onUpdate)
+    return () => window.removeEventListener("mousemove", onUpdate)
+  }, [onUpdate])
 
   return (
     <Scrollbars

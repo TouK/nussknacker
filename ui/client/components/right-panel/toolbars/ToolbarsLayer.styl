@@ -61,7 +61,6 @@
 
 
     .draggable
-        //padding 2px 0
 
         &.is-dragging:focus
             outline none
@@ -74,10 +73,10 @@
             position relative
             box-sizing border-box
 
-
     .draggable.is-dragging
-        backdrop-filter blur(8px)
-        box-shadow 0 1px 3px rgba(black, .25)
+        .background
+            backdrop-filter blur(8px)
+            box-shadow 0 1px 3px rgba(black, .25)
 
         .background::after
             transition all .3s
@@ -111,3 +110,22 @@
             background rgba(lime, .05)
             outline 2px solid lime
             outline-offset -2.5px
+
+
+    gap = 4px
+
+    .draggable
+        padding (gap/ 2) 0
+
+        &.first
+            padding-top 0
+
+        &.last
+            padding-bottom 0
+
+    .droppable
+        &.top
+            margin-bottom (gap/ 2)
+
+        &.bottom
+            margin-top (gap/ 2)
