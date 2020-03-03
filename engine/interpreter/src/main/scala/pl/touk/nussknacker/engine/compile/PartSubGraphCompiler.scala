@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
+import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.typed.ServiceReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
@@ -111,6 +111,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
       case graph.node.Processor(id, ref, disabled, _) =>
         val (typingResult, validatedServiceRef) = compile(ref, ctx)
         toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingResult.expressionsTypingInfo)
+
       case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
         val (expressionTypingInfoEntry, validatedOptionalExpression) = optionalExpression.map { oe =>
           val (expressionTyping, validatedExpression) = compile(oe, Some(DefaultExpressionId), ctx, Unknown)
@@ -118,14 +119,23 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         }.getOrElse {
           (None, Valid(None))
         }
-
         toCompilationResult(validatedOptionalExpression.map(compiledgraph.node.Sink(id, ref.typ, _, disabled.contains(true))), expressionTypingInfoEntry.toMap)
+
       //probably this shouldn't occur - otherwise we'd have empty subprocess?
       case SubprocessInput(id, _, _, _, _) => toCompilationResult(Invalid(NonEmptyList.of(UnresolvedSubprocess(id))), Map.empty)
-      case SubprocessOutputDefinition(id, name, _) =>
+
+      case SubprocessOutputDefinition(id, outputName, List(), _) =>
         //TODO: should we validate it's process?
         //TODO: does it make sense to validate SubprocessOutput?
-        toCompilationResult(Valid(compiledgraph.node.Sink(id, name, None, isDisabled = false)), Map.empty)
+        toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, None, isDisabled = false)), Map.empty)
+      case SubprocessOutputDefinition(id, outputName, fields, _) =>
+        val (fieldsTyping, compiledFields) = fields.map(f => compile(f, ctx)).unzip
+        val typingResult = TypedObjectTypingResult(fieldsTyping.map(f => f.fieldName -> f.typingResult).toMap)
+        val (_, combinedCompiledFields) = withVariableCombined(ctx, outputName, typingResult, compiledFields.sequence)
+        val expressionsTypingInfo = fieldsTyping.flatMap(_.toExpressionTypingInfoEntry).toMap
+        toCompilationResult(combinedCompiledFields, expressionsTypingInfo).map { _ =>
+          compiledgraph.node.Sink(id, outputName, None, isDisabled = false)
+        }
 
       //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
       //accepts this join, maybe we should also validate the graph is connected?
@@ -177,14 +187,19 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
       case subprocessInput@SubprocessInput(id, ref, _, _, _) =>
         import cats.implicits.toTraverseOps
 
-        val childCtx = ctx.pushNewContext()
-        val (newCtx, combinedValidation) = ref.parameters.foldLeft[(ValidationContext, ValidatedNel[ProcessCompilationError, _])]((childCtx, Valid(Unit))) {
-          case ((accCtx, validation), param) =>
-            withVariableCombined(accCtx, param.name, Unknown, validation)
-        }
-
         val validParamDefs =
           ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
+
+        val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
+          ps.map(p => (p.name, p.typ))
+        }.getOrElse(ref.parameters.map(p => (p.name, Unknown)))
+
+        val childCtx = ctx.pushNewContext()
+
+        val (newCtx, combinedValidation) = paramNamesWithType.foldLeft[(ValidationContext, ValidatedNel[ProcessCompilationError, _])]((childCtx, Valid(Unit))) {
+          case ((accCtx, validation), (paramName, typ)) =>
+            withVariableCombined(accCtx, paramName, typ, validation)
+        }
 
         val validParams = validParamDefs.andThen { paramDefs =>
           expressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
@@ -197,11 +212,21 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         CompilationResult.map2(toCompilationResult(combinedValidParams, expressionTypingInfo), compile(next, newCtx))((params, next) =>
           compiledgraph.node.SubprocessStart(id, params, next))
 
-      case SubprocessOutput(id, _, _) =>
+      case SubprocessOutput(id, outPutName, List(), _) =>
         //this popContext *really* has to work to be able to extract variable types :|
         ctx.popContext
-          .map(popContext => compile(next, popContext).andThen(next => toCompilationResult(Valid(SubprocessEnd(id, next)), Map.empty)))
+          .map(popContext => compile(next, popContext).andThen(next => toCompilationResult(Valid(SubprocessEnd(id, outPutName, List(), next)), Map.empty)))
           .valueOr(error => CompilationResult(Invalid(error)))
+      case SubprocessOutput(id, outputName, fields, _) =>
+        ctx.popContext.map { parentCtx =>
+          val (fieldsTyping, compiledFields) = fields.map(f => compile(f, ctx)).unzip
+          val typingResult = TypedObjectTypingResult(fieldsTyping.map(f => f.fieldName -> f.typingResult).toMap)
+          val (parentCtxWithSubOut, combinedCompiledFields) = withVariableCombined(parentCtx, outputName, typingResult, compiledFields.sequence)
+          val expressionsTypingInfo = fieldsTyping.flatMap(_.toExpressionTypingInfoEntry).toMap
+          CompilationResult.map2(toCompilationResult(combinedCompiledFields, expressionsTypingInfo), compile(next, parentCtxWithSubOut)) { (compiledFields, compiledNext) =>
+            compiledgraph.node.SubprocessEnd(id, outputName, compiledFields, compiledNext)
+          }
+        }.valueOr(error => CompilationResult(Invalid(error)))
     }
   }
 
