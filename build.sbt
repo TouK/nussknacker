@@ -1,7 +1,7 @@
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import sbt.Keys._
-import sbt._
+import sbt.{Def, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
@@ -195,6 +195,22 @@ lazy val dockerSettings = {
   )
 }
 
+val publishAssemblySettings = List(
+  artifact in (Compile, assembly) := {
+    val art = (artifact in (Compile, assembly)).value
+    art.withClassifier(Some("assembly"))
+  }, addArtifact(artifact in (Compile, assembly), assembly)
+)
+
+def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.SettingsDefinition] = List(
+  assemblyJarName in assembly := assemblyName,
+  assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeScala, level = Level.Info),
+  test in assembly := {}
+)
+
+def assemblySampleSettings(assemblyName: String): List[Def.SettingsDefinition]
+  = assemblySettings(assemblyName, includeScala = false)
+
 lazy val dist = {
   val module = sbt.Project("dist", file("nussknacker-dist"))
     .settings(commonSettings)
@@ -269,13 +285,10 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
 
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-standalone-app",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Info),
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
-      art.withClassifier(Some("assembly"))
-    },
     libraryDependencies ++= {
       Seq(
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
@@ -289,7 +302,6 @@ lazy val standaloneApp = (project in engine("standalone/app")).
       )
     }
   ).
-  settings(addArtifact(artifact in (Compile, assembly), assembly)).
   dependsOn(engineStandalone, testUtil % "test")
 
 
@@ -322,19 +334,17 @@ lazy val management = (project in engine("flink/management")).
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
+  settings(assemblySampleSettings("standaloneSample.jar"): _*).
   settings(
-    name := "nussknacker-standalone-sample",
-    assemblyJarName in assembly := "standaloneSample.jar"
+    name := "nussknacker-standalone-sample"
   ).dependsOn(util, standaloneApi, standaloneUtil)
 
 
 lazy val managementSample = (project in engine("flink/management/sample")).
   settings(commonSettings).
+  settings(assemblySampleSettings("managementSample.jar"): _*).
   settings(
     name := "nussknacker-management-sample"  ,
-    assemblyJarName in assembly := "managementSample.jar",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Info),
-    test in assembly := {},
     libraryDependencies ++= {
       Seq(
         "com.cronutils" % "cron-utils" % cronParserV,
@@ -348,11 +358,9 @@ lazy val managementSample = (project in engine("flink/management/sample")).
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
+  settings(assemblySampleSettings("managementJavaSample.jar"): _*).
   settings(
     name := "nussknacker-management-java-sample"  ,
-    assemblyJarName in assembly := "managementJavaSample.jar",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Info),
-    test in assembly := {},
     libraryDependencies ++= {
       Seq(
         "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
@@ -363,22 +371,21 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
 
 lazy val managementBatchSample = (project in engine("flink/management/batch_sample")).
   settings(commonSettings).
+  settings(assemblySampleSettings("managementBatchSample.jar"): _*).
   settings(
     name := "nussknacker-management-batch-sample"  ,
-    assemblyJarName in assembly := "managementBatchSample.jar",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
-    test in assembly := {},
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-scala" % flinkV % "provided",
       )
     }
-
   ).dependsOn(flinkUtil, process % "runtime,test")
 
 lazy val demo = (project in engine("demo")).
   settings(commonSettings).
   settings(forkSettings). // without this there are some classloading issues
+  settings(assemblySampleSettings("demoModel.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-demo",
     libraryDependencies ++= {
@@ -390,20 +397,15 @@ lazy val demo = (project in engine("demo")).
         "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
       )
-    },
-    test in assembly := {},
-    assemblyJarName in assembly := "demoModel.jar",
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
-      art.withClassifier(Some("assembly"))
     }
   )
-  .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(process, kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
 
 lazy val generic = (project in engine("flink/generic")).
   settings(commonSettings).
+  settings(assemblySampleSettings("genericModel.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-generic-model",
     libraryDependencies ++= {
@@ -411,14 +413,7 @@ lazy val generic = (project in engine("flink/generic")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
-    },
-    test in assembly := {},
-    assemblyJarName in assembly := "genericModel.jar",
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
-      art.withClassifier(Some("assembly"))
     })
-  .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(process, kafkaFlinkUtil, avroFlinkUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val process = (project in engine("flink/process")).
@@ -746,18 +741,14 @@ lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
   .settings(slowTestsSettings)
   .settings(commonSettings)
+  .settings(assemblySettings("nussknacker-ui-assembly.jar", includeScala = includeFlinkAndScala): _*)
+  .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-ui",
     buildUi :=  {
       runNpm("run build", "Client build failed", (crossTarget in compile).value)
     },
     parallelExecution in ThisBuild := false,
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Info),
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
-      art.withClassifier(Some("assembly"))
-    },
-    test in assembly := {},
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
@@ -766,7 +757,6 @@ lazy val ui = (project in file("ui/server"))
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
     ).value,
-    assemblyJarName in assembly := "nussknacker-ui-assembly.jar",
     /*
       We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
@@ -807,7 +797,6 @@ lazy val ui = (project in file("ui/server"))
       )
     }
   )
-  .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
