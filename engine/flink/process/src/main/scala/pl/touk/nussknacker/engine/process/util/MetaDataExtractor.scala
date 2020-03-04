@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.process.util
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.WrongProcessType
+import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData}
 
 import scala.reflect.ClassTag
 
@@ -16,4 +16,14 @@ object MetaDataExtractor {
   def extractTypeSpecificDataOrFail[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): T
     = extractTypeSpecificData(metaData).fold(_ => throw new IllegalArgumentException("Wrong process type"), identity)
 
+  def extractProperty(metaData: MetaData, property: String): Option[String] =
+    metaData
+      .additionalFields
+      .flatMap(
+        _.properties
+          .get(property)
+      )
+
+  def extractProperty(metaData: MetaData, property: String, default: String): String =
+    extractProperty(metaData, property).getOrElse(default)
 }
