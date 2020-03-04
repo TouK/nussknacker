@@ -16,4 +16,15 @@ object MetaDataExtractor {
   def extractTypeSpecificDataOrFail[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): T
     = extractTypeSpecificData(metaData).fold(_ => throw new IllegalArgumentException("Wrong process type"), identity)
 
+  def extractProperty[T](metaData: MetaData, property: String): Option[T] =
+    metaData
+      .additionalFields
+      .flatMap(
+        _.properties
+          .get(property)
+          .map(_.asInstanceOf[T])
+      )
+
+  def extractProperty[T](metaData: MetaData, property: String, default: T): T =
+    extractProperty(metaData, property).getOrElse(default)
 }
