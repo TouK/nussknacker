@@ -14,6 +14,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder.Result
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, HCursor}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.util.service.query.ExpressionServiceQuery.ParametersCompilationException
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions
@@ -23,7 +24,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 
   private implicit val user = LoggedUser("1", "admin", category1Deploy)
-  private val modelData = FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config)
+  private val modelData = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData
   private val serviceRoutes = new ServiceRoutes(Map(TestProcessingTypes.Streaming -> modelData))
 
   implicit val queryResultDecoder: Decoder[QueryResult] = Decoder.decodeJson

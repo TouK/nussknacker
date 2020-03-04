@@ -17,8 +17,7 @@ trait StreamingDockerTest extends DockerTest { self: Suite =>
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort", self.suiteName)
+    kafkaClient = new KafkaClient(kafkaAddress, s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort", self.suiteName)
   }
 
   override def afterAll(): Unit = {
@@ -46,7 +45,9 @@ trait StreamingDockerTest extends DockerTest { self: Suite =>
   }
 
   override protected def additionalConfig: Config = ConfigFactory.empty()
-    .withValue("processConfig.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
+    .withValue("modelConfig.kafka.kafkaAddress", fromAnyRef(kafkaAddress))
+
+  private def kafkaAddress = s"${ipOfContainer(kafkaContainer)}:$KafkaPort"
 
   protected lazy val processManager: ProcessManager = FlinkStreamingProcessManagerProvider.defaultProcessManager(config)
 

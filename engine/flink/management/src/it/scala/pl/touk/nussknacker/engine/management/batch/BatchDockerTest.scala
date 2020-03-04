@@ -21,10 +21,7 @@ trait BatchDockerTest extends DockerTest { self: Suite =>
       taskManagerContainer
     ) ++ super.dockerContainers
 
-  lazy val processManager: ProcessManager = {
-    val typeConfig = FlinkBatchProcessManagerProvider.defaultTypeConfig(config)
-    new FlinkBatchProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
-  }
+  lazy val processManager: ProcessManager = FlinkBatchProcessManagerProvider.defaultProcessManager(config)
 
   override protected def classPath: String
     = s"./engine/flink/management/batch_sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementBatchSample.jar"

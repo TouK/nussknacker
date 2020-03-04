@@ -12,6 +12,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Json, Printer, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
+import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType}
@@ -98,7 +99,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository, processResolving)
   val definitionResources = new DefinitionResources(
-    Map(existingProcessingType ->  FlinkStreamingProcessManagerProvider.defaultModelData(testConfig)), subprocessRepository, typesForCategories)
+    Map(existingProcessingType ->  ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData), subprocessRepository, typesForCategories)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 
