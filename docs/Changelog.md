@@ -7,6 +7,11 @@ under active development, so some parts of the API may change in the future.
 Nussknacker versions
 ====================
 
+0.0.13 (TODO)
+-------------
+* Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed. `processTypes` 
+configuration should be used from now on.
+
 0.0.12 (26 Oct 2019)
 --------------------
 * Cross builds with Scala 2.11 and 2.12

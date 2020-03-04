@@ -28,13 +28,32 @@ categoriesConfig: {
 usersFile: "./conf/users.conf"
 environment: "demo"
 attachmentsPath: "/tmp/touk/esp-frontend/attachments"
-
-flinkConfig {
-  restUrl: "http://localhost:8081"
-  classpath: ["code-assembly.jar"]
-  parallelism: 4
-  jobManagerTimeout: 1m
+       
+processTypes {
+  streaming {
+    engineConfig {    
+      type: "flinkStreaming"
+      restUrl: "http://localhost:8081"
+      parallelism: 4
+      jobManagerTimeout: 1m
+    } 
+    modelConfig {
+      classPath: ["code-assembly.jar"]
+      timeout: 10s
+      checkpointConfig {
+          checkpointInterval: 10m
+          minPauseBetweenCheckpoints: 5m
+          maxConcurrentCheckpoints: 1
+          tolerableCheckpointFailureNumber: 6
+      }
+      restartInterval: "10s"
+      kafka = {
+        kafkaAddress = "kafka:9092"
+      }
+    }
+  }
 }
+
 
 metricsSettings {
   url: "http://localhost:3000/dashboard/db/$dashboard?theme=dark&var-processName=$process&var-env=demo"
@@ -49,25 +68,6 @@ countsSettings {
   influxUrl: "http://localhost:3000/api/datasources/proxy/1/query"
   user: "admin"
   password: "admin"
-}
-
-processConfig {
-  timeout: 10s
-  checkpointConfig {
-      checkpointInterval: 10m
-      minPauseBetweenCheckpoints: 5m
-      maxConcurrentCheckpoints: 1
-      tolerableCheckpointFailureNumber: 6
-  }
-  restartInterval: "10s"
-  kafka = {
-    kafkaAddress = "kafka:9092"
-  }
-  defaultValues {
-    values {
-    }
-  }
-
 }
 
 ```
@@ -86,6 +86,8 @@ categoriesConfig: {
   "fraud": "streaming",
 }
 ```
+For each category you have to define its processing type (`streaming` in examples above). You can read about processing
+types and their configurations below.
 
 ###Monitoring config
 ```
@@ -117,13 +119,23 @@ akka {
 * `environment` - key of environment (used e.g. for alerts) - e.g. test or production
 * `attachmentsPath` - location on disk where attachments will be stored
 
-##Flink configuration
-Configuration of communication with Flink cluster and definition of model
+##Processing types 
+One installation of Nussknacker can handle many different processing engines - currently the main supported engine is
+Flink in streaming mode. Processing engines are defined in `processTypes` section. You can e.g. have two processing
+types pointing to separate Flink clusters. Each processing engine has its name (e.g. `flinkStreaming`). 
+Processing type configuration consists of two main parts:
+* engine configuration
+* model configuration
+
+We describe them below
+
+###Enging configuration
+Configuration of communication with processing engine. Below we present Flink engine configuration as an example:
 
 ```
-flinkConfig {
+engingConfig {     
+  type: "flinkStreaming"
   restUrl: "http://localhost:8081"
-  classpath: ["code-assembly.jar"]
   parallelism: 4
   jobManagerTimeout: 1m
 }
@@ -131,11 +143,11 @@ flinkConfig {
 In this section you can put all configuration values for Flink client. We are using Flink REST API so the only
 required parameter is `restUrl` - which defines location of Flink JobManager
 * `jobManagerTimeout` (e.g. 1m) - timeout used in communication with Flink cluster
-* `classpath` - list of files/URLs with jars with model for processes
 
-##Process  {#model}
+###Process  {#model}
 
 Configuration of processes has few common keys:
+*  `classPath` - list of files/URLs with jars with model for processes
 *  `timeout` (e.g. 10s)- for synchronous services
 *  `checkpointInterval` - deprecated (use `checkpointConfig.checkpointInterval` instead), e.g. 10m
 *  `checkpointConfig` (more about checkpoint configuration you can find in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-release-{{book.flinkMajorVersion}}/api/java/org/apache/flink/streaming/api/environment/CheckpointConfig.html) - only some options are available)

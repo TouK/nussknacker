@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine
 import java.net.URL
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.queryablestate.QueryableClient
@@ -26,6 +27,22 @@ case class ProcessingTypeData(processManager: ProcessManager,
                               emptyProcessCreate: Boolean => TypeSpecificData,
                               queryableClient: Option[QueryableClient],
                               supportsSignals: Boolean)
+
+object ProcessingTypeConfig {
+
+  import net.ceedubs.ficus.Ficus._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
+
+  implicit val reader: ValueReader[ProcessingTypeConfig] = ValueReader.relative(read)
+
+  def read(config: Config): ProcessingTypeConfig =
+    ProcessingTypeConfig(
+      config.getString("engineConfig.type"),
+      config.as[List[URL]]("modelConfig.classPath"),
+      config.getConfig("engineConfig"),
+      config.getConfig("modelConfig")
+    )
+}
 
 case class ProcessingTypeConfig(engineType: String,
                                 classPath: List[URL],

@@ -13,42 +13,21 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvide
 import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManagerProvider
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-
-case class ProcessingTypeDeps(managers: Map[ProcessingType, ProcessManager],
-                              modelData: Map[ProcessingType, ModelData])
+import scala.collection.JavaConverters._
 
 object ProcessingTypeDeps extends LazyLogging {
 
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
-  import scala.collection.JavaConverters._
-
-  implicit val reader: ValueReader[Map[String, ProcessingTypeConfig]] = ValueReader.relative { config =>
-    config.root().entrySet().asScala.map(_.getKey).toList.map { key =>
-      val value = config.getConfig(key)
-      key -> ProcessingTypeConfig(
-        value.getString("engineConfig.type"),
-        value.as[List[URL]]("modelConfig.classPath"),
-        value.getConfig("engineConfig"),
-        value.getConfig("modelConfig")
-      )
-    }.toMap
-  }
-
   def apply(config: Config, standaloneModeEnabled: Boolean): Map[String, ProcessingTypeData] = {
 
-    val types = if (config.hasPath("processTypes")) {
-      config.as[Map[String, ProcessingTypeConfig]]("processTypes")
-    } else {
-      //TODO: this is legacy mode, should be removed in the future...
-      val str = Map("streaming" -> FlinkStreamingProcessManagerProvider.defaultTypeConfig(config))
-      if (standaloneModeEnabled) {
-        str + ("request-response" -> StandaloneProcessManagerProvider.defaultTypeConfig(config))
-      } else str
+    implicit val reader: ValueReader[Map[String, ProcessingTypeConfig]] = ValueReader.relative { config =>
+      config.root().entrySet().asScala.map(_.getKey).map { key =>
+        key -> config.as[ProcessingTypeConfig](key)(ProcessingTypeConfig.reader)
+      }.toMap
     }
+    val types = config.as[Map[String, ProcessingTypeConfig]]("processTypes")
     createProcessManagers(types)
   }
 
-  import scala.collection.JavaConverters._
 
 
   def createProcessManagers(configuredTypes: Map[String, ProcessingTypeConfig]): Map[String, ProcessingTypeData] = {

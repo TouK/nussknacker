@@ -40,21 +40,10 @@ class FlinkBatchProcessManagerProvider extends ProcessManagerProvider {
 
 object FlinkBatchProcessManagerProvider {
 
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
-
   val EngineType = "flinkBatch"
 
-  def defaultTypeConfig(config: Config): ProcessingTypeConfig = {
-    ProcessingTypeConfig(EngineType,
-      config.as[ClasspathConfig]("flinkConfig").urls,
-      config.getConfig("flinkConfig"),
-      config.getConfig("processConfig"))
-  }
-
   def defaultProcessManager(config: Config): ProcessManager = {
-    val typeConfig = defaultTypeConfig(config)
-    new FlinkStreamingProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
+    val typeConfig = ProcessingTypeConfig.read(config)
+    new FlinkBatchProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
   }
 }
