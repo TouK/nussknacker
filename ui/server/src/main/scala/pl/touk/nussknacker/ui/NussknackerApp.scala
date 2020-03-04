@@ -96,7 +96,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val db = initDb(config)
 
-    val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+    val typeToConfig = ProcessingTypeDataReader.readProcessingTypeData(config)
 
     val analyticsConfig = AnalyticsConfig(config)
 
@@ -147,7 +147,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
           processRepository = processRepository,
           writeRepository = writeProcessRepository,
           jobStatusService = jobStatusService,
-          processActivityRepository = processActivityRepository,
           processValidation = processValidation,
           processResolving = processResolving,
           typesForCategories = typesForCategories,

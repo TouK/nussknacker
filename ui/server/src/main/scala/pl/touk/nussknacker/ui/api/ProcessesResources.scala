@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
@@ -47,7 +47,6 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          writeRepository: WriteProcessRepository,
                          jobStatusService: JobStatusService,
-                         processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation,
                          processResolving: UIProcessResolving,
                          typesForCategories: ProcessTypesForCategories,

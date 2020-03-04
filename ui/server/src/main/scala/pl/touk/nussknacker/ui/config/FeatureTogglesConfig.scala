@@ -7,7 +7,6 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
 case class FeatureTogglesConfig(development: Boolean,
-                                standaloneMode: Boolean,
                                 search: Option[KibanaSettings],
                                 metrics: Option[MetricsSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
@@ -26,7 +25,6 @@ object FeatureTogglesConfig extends LazyLogging{
   def create(config: Config): FeatureTogglesConfig = {
     val environmentAlert = parseOptionalConfig[EnvironmentAlert](config, "environmentAlert")
     val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
-    val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
     val metrics = parseOptionalConfig[MetricsSettings](config, "metricsSettings")
       .orElse(parseOptionalConfig[MetricsSettings](config, "grafanaSettings"))
     val counts = parseOptionalConfig[Config](config, "countsSettings")
@@ -40,7 +38,6 @@ object FeatureTogglesConfig extends LazyLogging{
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
-      standaloneMode = standaloneModeEnabled,
       search = search,
       metrics = metrics,
       remoteEnvironment = remoteEnvironment,

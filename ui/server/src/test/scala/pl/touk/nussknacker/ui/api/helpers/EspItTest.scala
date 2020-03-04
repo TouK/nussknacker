@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process
@@ -73,7 +72,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   )
 
   val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
-  val typeToConfig = ProcessingTypeDeps(testConfig, featureTogglesConfig.standaloneMode)
+  val typeToConfig = ProcessingTypeDataReader.readProcessingTypeData(testConfig)
 
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
@@ -81,7 +80,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processRepository = processRepository,
     writeRepository = writeProcessRepository,
     jobStatusService = jobStatusService,
-    processActivityRepository = processActivityRepository,
     processValidation = processValidation,
     processResolving = processResolving,
     typesForCategories = typesForCategories,
