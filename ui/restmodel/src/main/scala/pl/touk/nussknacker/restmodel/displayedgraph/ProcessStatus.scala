@@ -96,8 +96,8 @@ object ProcessStatus {
   def simpleWarningShouldNotBeRunning(previousState: Option[ProcessState], deployed: Boolean): ProcessStatus = simple(
     status = SimpleStateStatus.Warning,
     icon = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningIcon(deployed)),
-    tooltip = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription),
-    description = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription),
+    tooltip = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(deployed)),
+    description = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(deployed)),
     previousState = previousState
   )
 

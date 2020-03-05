@@ -129,7 +129,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
       state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
       state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(true))
     }
   }
 
@@ -142,7 +142,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
       state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
       state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(false))
     }
   }
 

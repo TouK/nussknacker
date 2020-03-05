@@ -92,9 +92,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   def shouldBeRunningTooltip(deployedVersionId: Long, user: String): String =
     s"Process deployed in version ${deployedVersionId} (by ${user}), should be running!"
 
-  def shouldNotBeRunningTooltip(deployedVersionId: Long, user: String): String =
-    s"Process deployed in version ${deployedVersionId} (by ${user}), should not be running!"
-
   def mismatchDeployedVersionTooltip(deployedVersionId: Long, exceptedVersionId: Long, user: String): String =
     s"Process deployed in version ${deployedVersionId} (by ${user}), expected version ${exceptedVersionId}!"
 
@@ -102,8 +99,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     s"Process deployed without version (by ${user}), expected version ${exceptedVersionId}!"
 
   val shouldBeRunningDescription: String = "Process currently is not running!"
-
-  val shouldNotBeRunningDescription: String = "Process should not be running!"
 
   val mismatchDeployedVersionDescription: String = "Deployed process mismatch version!"
 
@@ -118,6 +113,10 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   val stoppingWarningIcon: URI = URI.create("/assets/states/stopping-warning.svg")
 
   val notDeployedWarningIcon: URI = URI.create("/assets/states/not-deployed-warning.svg")
+
+  def  shouldNotBeRunningMessage(deployed: Boolean): String =
+    if (deployed) "Process has been canceled but still is running!"
+    else "Process has been never deployed but now is running!"
 
   def shouldNotBeRunningIcon(deployed: Boolean): URI =
     if (deployed) stoppingWarningIcon else notDeployedWarningIcon
