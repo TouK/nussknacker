@@ -26,4 +26,17 @@ object MetaDataExtractor {
 
   def extractProperty(metaData: MetaData, property: String, default: String): String =
     extractProperty(metaData, property).getOrElse(default)
+
+  def extractBooleanProperty(metaData: MetaData, property: String): Option[Boolean] =
+    extractProperty(metaData, property).map(_.toBoolean)
+
+  def extractBooleanProperty(metaData: MetaData, property: String, default: Boolean): Boolean =
+    extractProperty(metaData, property).map(_.toBoolean).getOrElse(default)
+
+  def extractLongProperty(metaData: MetaData, property: String): Option[Long] =
+    extractProperty(metaData, property).map(_.toLong)
+
+  def extractLongProperty(metaData: MetaData, property: String, default: Long): Long =
+    extractProperty(metaData, property).map(_.toLong).getOrElse(default)
 }
+

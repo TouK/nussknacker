@@ -86,11 +86,11 @@ object StateStatus {
   def isFollowingDeployAction: Boolean = isDuringDeploy || isRunning
 }
 
-final case class NotEstablishedStateStatus(name: String) extends StateStatus
-
-final case class StoppedStateStatus(name: String) extends StateStatus {
+final case class AllowDeployStateStatus(name: String) extends StateStatus {
   override def canDeploy: Boolean = true
 }
+
+final case class NotEstablishedStateStatus(name: String) extends StateStatus
 
 final case class DuringDeployStateStatus(name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true
@@ -103,10 +103,6 @@ final case class FinishedStateStatus(name: String) extends StateStatus {
 
 final case class RunningStateStatus(name: String) extends StateStatus {
   override def isRunning: Boolean = true
-  override def canDeploy: Boolean = true
-}
-
-final case class ErrorStateStatus(name: String) extends StateStatus {
   override def canDeploy: Boolean = true
 }
 

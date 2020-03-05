@@ -134,7 +134,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
       case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
       case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished | FlinkStateStatus.Restarting if lastAction.isEmpty =>
-        ProcessStatus.simpleErrorProcessWithoutAction(Some(state))
+        ProcessStatus.simpleWarningProcessWithoutAction(Some(state))
       case _ => ProcessStatus(state)
     }
 
@@ -154,11 +154,11 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
     lastAction match {
       case Some(action) if action.isCanceled =>
-        ProcessStatus.simpleErrorShouldNotBeRunning(Option(state))
+        ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), true)
       case Some(_) =>
         ProcessStatus(state)
       case None =>
-        ProcessStatus.simpleErrorShouldNotBeRunning(Option(state))
+        ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), false)
     }
 
   //This method handles some corner cases for deployed action mismatch state version
@@ -168,19 +168,19 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
       case Some(state) =>
         state.version match {
           case Some(_) if !state.status.isFollowingDeployAction =>
-            ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, processState)
+            ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId != action.processVersionId =>
             ProcessStatus.simpleErrorMismatchDeployedVersion(ver.versionId, action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId == action.processVersionId =>
             ProcessStatus(state)
           case None => //TODO: we should remove Option from ProcessVersion?
-            ProcessStatus.simpleErrorMissingDeployedVersion(action.processVersionId, action.user, processState)
+            ProcessStatus.simpleWarningMissingDeployedVersion(action.processVersionId, action.user, processState)
           case _ =>
-            ProcessStatus.simple(SimpleStateStatus.DeployedWithError) //Generic
+            ProcessStatus.simple(SimpleStateStatus.Error) //Generic
           // c error in other cases
         }
       case None =>
-        ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, Option.empty)
+        ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, Option.empty)
     }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
