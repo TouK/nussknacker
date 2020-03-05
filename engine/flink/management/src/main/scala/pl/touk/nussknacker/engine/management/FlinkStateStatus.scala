@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.engine.management
 
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 object FlinkStateStatus  {
-  val FailedToGet: NotEstablishedStateStatus = SimpleStateStatus.FailedToGet
-  val NotFound: AllowDeployStateStatus = SimpleStateStatus.NotFound
-  val Unknown: NotEstablishedStateStatus = SimpleStateStatus.Unknown
-  val NotDeployed: AllowDeployStateStatus = SimpleStateStatus.NotDeployed
-  val DuringDeploy: DuringDeployStateStatus = SimpleStateStatus.DuringDeploy
-  val Running: RunningStateStatus = SimpleStateStatus.Running
-  val Finished: FinishedStateStatus = SimpleStateStatus.Finished
-  val Restarting: NotEstablishedStateStatus = NotEstablishedStateStatus("RESTARTING")
-  val DuringCancel: NotEstablishedStateStatus = SimpleStateStatus.DuringCancel
-  val Canceled: AllowDeployStateStatus = SimpleStateStatus.Canceled
-  val Failed: AllowDeployStateStatus = SimpleStateStatus.Failed
-  val Error: AllowDeployStateStatus = SimpleStateStatus.Error
-  val Warning: AllowDeployStateStatus = SimpleStateStatus.Warning
+  val FailedToGet: StateStatus = SimpleStateStatus.FailedToGet
+  val NotFound: StateStatus = SimpleStateStatus.NotFound
+  val Unknown: StateStatus = SimpleStateStatus.Unknown
+  val NotDeployed: StateStatus = SimpleStateStatus.NotDeployed
+  val DuringDeploy: StateStatus = SimpleStateStatus.DuringDeploy
+  val Running: StateStatus = SimpleStateStatus.Running
+  val Finished: StateStatus = SimpleStateStatus.Finished
+  val Restarting: StateStatus = NotEstablishedStateStatus("RESTARTING")
+  val DuringCancel: StateStatus = SimpleStateStatus.DuringCancel
+  val Canceled: StateStatus = SimpleStateStatus.Canceled
+  val Failed: StateStatus = SimpleStateStatus.Failed
+  val Error: StateStatus = SimpleStateStatus.Error
+  val Warning: StateStatus = SimpleStateStatus.Warning
 }

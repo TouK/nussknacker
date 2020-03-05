@@ -127,6 +127,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
       state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription)
     }
@@ -139,7 +140,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
       state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployWarningIcon)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription)
     }
@@ -152,7 +153,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
       state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployWarningIcon)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
       state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
     }

@@ -85,19 +85,19 @@ object ProcessStatus {
     previousState = previousState
   )
 
-  def simpleWarningShouldNotBeRunning(previousState: Option[ProcessState]): ProcessStatus = simple(
-    status = SimpleStateStatus.Warning,
-    icon = Some(SimpleProcessStateDefinitionManager.deployWarningIcon),
-    tooltip = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription),
-    description = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription),
-    previousState = previousState
-  )
-
   def simpleErrorMismatchDeployedVersion(deployedVersionId: Long, exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simple(
     status = SimpleStateStatus.Error,
     icon = Some(SimpleProcessStateDefinitionManager.deployFailedIcon),
     tooltip = Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionTooltip(deployedVersionId, exceptedVersionId, user)),
     description = Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionDescription),
+    previousState = previousState
+  )
+
+  def simpleWarningShouldNotBeRunning(previousState: Option[ProcessState], deployed: Boolean): ProcessStatus = simple(
+    status = SimpleStateStatus.Warning,
+    icon = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningIcon(deployed)),
+    tooltip = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription),
+    description = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription),
     previousState = previousState
   )
 
@@ -111,7 +111,7 @@ object ProcessStatus {
 
   def simpleWarningProcessWithoutAction(previousState: Option[ProcessState]): ProcessStatus = simple(
     status = SimpleStateStatus.Warning,
-    icon = Some(SimpleProcessStateDefinitionManager.deployWarningIcon),
+    icon = Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon),
     tooltip = Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage),
     description = Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage),
     previousState = previousState

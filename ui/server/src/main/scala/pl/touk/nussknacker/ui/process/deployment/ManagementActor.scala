@@ -154,11 +154,11 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
     lastAction match {
       case Some(action) if action.isCanceled =>
-        ProcessStatus.simpleWarningShouldNotBeRunning(Option(state))
+        ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), true)
       case Some(_) =>
         ProcessStatus(state)
       case None =>
-        ProcessStatus.simpleWarningShouldNotBeRunning(Option(state))
+        ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), false)
     }
 
   //This method handles some corner cases for deployed action mismatch state version
