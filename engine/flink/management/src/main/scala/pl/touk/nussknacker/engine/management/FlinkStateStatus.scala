@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
-import pl.touk.nussknacker.engine.api.deployment.{DuringDeployStateStatus, ErrorStateStatus, FinishedStateStatus, NotEstablishedStateStatus, RunningStateStatus, StateStatus, StoppedStateStatus}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 object FlinkStateStatus  {
@@ -16,5 +16,5 @@ object FlinkStateStatus  {
   val Canceled: StateStatus = SimpleStateStatus.Canceled
   val Failed: StateStatus = SimpleStateStatus.Failed
   val Error: StateStatus = SimpleStateStatus.Error
-  val RunningWithError: StateStatus = SimpleStateStatus.RunningWithError
+  val Warning: StateStatus = SimpleStateStatus.Warning
 }
