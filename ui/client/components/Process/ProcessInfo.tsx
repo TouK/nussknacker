@@ -14,6 +14,7 @@ import Metrics from "../right-panel/panels/deploy/buttons/MetricsButton"
 import {getCapabilities} from "../right-panel/selectors/other"
 import SaveButton from "../right-panel/panels/process/buttons/SaveButton"
 import {ToolbarButtons} from "./ToolbarButtons"
+import {CollapsibleToolbar} from "../right-panel/toolbars/CollapsibleToolbar"
 
 type State = {}
 
@@ -91,27 +92,29 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     const transitionKey = this.getTransitionKey(process, processState)
 
     return (
-      <DragHandle>
-        <SwitchTransition>
-          <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
-            <div className={"panel-process-info"}>
-              <div className={"process-info-icon"}>
-                {icon}
+      <CollapsibleToolbar>
+        <DragHandle>
+          <SwitchTransition>
+            <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
+              <div className={"panel-process-info"}>
+                <div className={"process-info-icon"}>
+                  {icon}
+                </div>
+                <div className={"process-info-text"}>
+                  <div className={"process-name"}>{process.name}</div>
+                  <div className={"process-info-description"}>{description}</div>
+                </div>
               </div>
-              <div className={"process-info-text"}>
-                <div className={"process-name"}>{process.name}</div>
-                <div className={"process-info-description"}>{description}</div>
-              </div>
-            </div>
-          </CSSTransition>
-        </SwitchTransition>
-        <ToolbarButtons>
-          {capabilities.write ? <SaveButton/> : null}
-          <Metrics/>
-          {capabilities.deploy ? <Deploy/> : null}
-          {capabilities.deploy ? <Cancel/> : null}
-        </ToolbarButtons>
-      </DragHandle>
+            </CSSTransition>
+          </SwitchTransition>
+          <ToolbarButtons>
+            {capabilities.write ? <SaveButton/> : null}
+            <Metrics/>
+            {capabilities.deploy ? <Deploy/> : null}
+            {capabilities.deploy ? <Cancel/> : null}
+          </ToolbarButtons>
+        </DragHandle>
+      </CollapsibleToolbar>
     )
   }
 }

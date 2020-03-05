@@ -18,6 +18,7 @@ import styles from "./ToolbarsLayer.styl"
 import cn from "classnames"
 import {DragHandlerContext} from "./DragHandle"
 import {Toolbar} from "../Toolbars"
+import {getToolbars} from "../selectors/toolbars"
 
 interface Rubric extends DraggableRubric {
   source: DraggableLocation,
@@ -38,7 +39,7 @@ type Props = {
 
 export function ToolbarsPanel(props: Props) {
   const {side, availableToolbars, className} = props
-  const order = useSelector<RootState, string[]>(s => s.toolbars.positions[side] || [])
+  const order = useSelector<RootState, string[]>(s => getToolbars(s).positions[side] || [])
 
   const ordered = availableToolbars
     .filter(({id}) => order.includes(id))

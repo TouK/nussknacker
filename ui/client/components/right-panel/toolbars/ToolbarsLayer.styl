@@ -4,11 +4,13 @@
     .side-panel
         box-sizing border-box
         min-height 100%
+        min-width 50%
         display flex
         flex-direction column
         pointer-events none
 
     .droppable
+        min-width 1px
         display flex
         flex-direction column
         flex-grow 1
@@ -24,17 +26,19 @@
     .draggable-list
         display flex
         flex-direction column
-        pointer-events auto
 
     .draggable-list > .background
         position relative
         transition all .3s
         min-height 0
+        display flex
+        flex-direction column
 
     .is-dragging-started .draggable-list > .background
     .is-dragging-from > .draggable-list > .background
     .is-dragging-over > .draggable-list > .background
-        min-height 20px
+        min-height 3em
+        min-width @min-height
 
         &::after
             transition all .3s
@@ -129,3 +133,11 @@
 
         &.bottom
             margin-top (gap/ 2)
+
+    .left.side-panel
+    .left .draggable-list > .background
+        align-items flex-start
+
+    .right.side-panel
+    .right .draggable-list > .background
+        align-items flex-end

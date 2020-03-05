@@ -11,6 +11,7 @@ import styles from "./ToolbarsLayer.styl"
 import styles2 from "../collipsableSidePanels.styl"
 import {Toolbar} from "../Toolbars"
 import {useRightPanelToggle, useLeftPanelToggle} from "../ToolsLayer"
+import {Reset} from "../Reset"
 
 function useMemoizedIds<T extends { id: string }>(array: T[]): string {
   return useMemo(() => array.map(v => v.id).join(), [array])
@@ -51,16 +52,16 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
 
         <div className={cn(styles2.collapsible, styles2.left, isOpenedLeft && styles2.isOpened)}>
           <ScrollbarsExtended>
-            <div className={cn(styles.sidePanel, isDragging && styles.isDraggingStarted)}>
+            <div className={cn(styles.sidePanel, styles.left, isDragging && styles.isDraggingStarted)}>
               <ToolbarsPanel
                 availableToolbars={toolbars}
                 side={ToolbarsSide.TopLeft}
-                className={styles.top}
+                className={cn(styles.top)}
               />
               <ToolbarsPanel
                 availableToolbars={toolbars}
                 side={ToolbarsSide.BottomLeft}
-                className={styles.bottom}
+                className={cn(styles.bottom)}
               />
             </div>
           </ScrollbarsExtended>
@@ -68,16 +69,16 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
 
         <div className={cn(styles2.collapsible, styles2.right, isOpenedRight && styles2.isOpened)}>
           <ScrollbarsExtended>
-            <div className={cn(styles.sidePanel, isDragging && styles.isDraggingStarted)}>
+            <div className={cn(styles.sidePanel, styles.right, isDragging && styles.isDraggingStarted)}>
               <ToolbarsPanel
                 availableToolbars={toolbars}
                 side={ToolbarsSide.TopRight}
-                className={styles.top}
+                className={cn(styles.top)}
               />
               <ToolbarsPanel
                 availableToolbars={toolbars}
                 side={ToolbarsSide.BottomRight}
-                className={styles.bottom}
+                className={cn(styles.bottom)}
               />
             </div>
           </ScrollbarsExtended>

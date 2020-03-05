@@ -1,6 +1,8 @@
 import React, {PropsWithChildren, useRef, useState, useEffect} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
 import {useDebouncedCallback} from "use-debounce"
+import cn from "classnames"
+import styles from "./ScrollbarsExtended.styl"
 
 export function ScrollbarsExtended({children}: PropsWithChildren<{}>) {
   const scrollbars = useRef<Scrollbars>()
@@ -22,9 +24,7 @@ export function ScrollbarsExtended({children}: PropsWithChildren<{}>) {
       hideTracksWhenNotNeeded={true}
       ref={scrollbars}
       onUpdate={onUpdate}
-      style={{
-        pointerEvents: isScrollPossible ? "auto" : "inherit",
-      }}
+      className={cn(isScrollPossible ? styles.enabled : styles.disabled)}
     >
       {children}
     </Scrollbars>

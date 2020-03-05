@@ -10,12 +10,12 @@ import "../stylesheets/toolBox.styl"
 import Tool from "./Tool"
 import {getProcessDefinitionData} from "./right-panel/selectors/settings"
 import {getProcessCategory} from "./right-panel/selectors/graph"
-import {RootState} from "../reducers/index"
 import {toggleToolboxGroup} from "../actions/nk/toolbars"
+import {getOpenedNodeGroups} from "./right-panel/selectors/toolbars"
 
 export default function ToolBox() {
   const dispatch = useDispatch()
-  const openedNodeGroups = useSelector<RootState>(s => s.toolbars.nodeToolbox.opened)
+  const openedNodeGroups = useSelector(getOpenedNodeGroups)
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const processCategory = useSelector(getProcessCategory)
 

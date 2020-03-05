@@ -1,31 +1,60 @@
-import React, {PropsWithChildren, Children} from "react"
-import Panel from "react-bootstrap/lib/Panel"
+import React, {PropsWithChildren, Children, useState} from "react"
 import styles from "./CollapsibleToolbar.styl"
 import {useSelector, useDispatch} from "react-redux"
-import {RootState} from "../../../reducers/index"
 import {toggleToolbar} from "../../../actions/nk/toolbars"
 import {useDragHandler} from "./DragHandle"
+import Panel from "react-bootstrap/lib/Panel"
+import classNames from "classnames"
+import {getIsCollapsed} from "../selectors/toolbars"
 
-export function CollapsibleToolbar({title, children, isHidden, id}: PropsWithChildren<{ id?: string, title: string, isHidden?: boolean }>) {
+export function CollapsibleToolbar({title, children, isHidden, id}: PropsWithChildren<{ id?: string, title?: string, isHidden?: boolean }>) {
   if (isHidden || !Children.count(children)) {
     return null
   }
 
   const dispatch = useDispatch()
-  const isCollapsed = useSelector<RootState, boolean>(s => id && s.toolbars.collapsed.includes(id))
-  const onToggle = isExpanded => id && dispatch(toggleToolbar(id, !isExpanded))
+  const isCollapsed = useSelector(getIsCollapsed(id))
+  const [isShort, setIsShort] = useState(isCollapsed)
+  const [isCollapsing, setIsCollapsing] = useState(false)
+  const [isExpanding, setIsExpanding] = useState(false)
+  const onToggle = () => id && dispatch(toggleToolbar(id, !isCollapsed))
 
-  const handlerProps = useDragHandler()
+  const {tabIndex, ...handlerProps} = useDragHandler()
 
   return (
     <div className={styles.wrapper}>
-      <Panel expanded={!isCollapsed} onToggle={onToggle} className={styles.panel}>
-        <Panel.Heading {...handlerProps}>
-          <Panel.Title toggle>
-            {title}
-          </Panel.Title>
-        </Panel.Heading>
-        <Panel.Collapse>
+      <Panel
+        expanded={!isCollapsed}
+        onToggle={onToggle}
+        bsClass={styles.panel}
+        className={classNames(
+          isShort && styles.collapsed,
+          isExpanding && styles.expanding,
+          isCollapsing && styles.collapsing,
+        )}
+      >
+        {title ? (
+          <Panel.Heading {...handlerProps}>
+            <Panel.Title toggle={!!id}>
+              {title}
+            </Panel.Title>
+          </Panel.Heading>
+        ) : null}
+        <Panel.Collapse
+          onEnter={() => {
+            setIsCollapsing(false)
+            setIsExpanding(true)
+            setIsShort(false)
+          }}
+          onEntered={() => setIsExpanding(false)}
+
+          onExit={() => {
+            setIsCollapsing(true)
+            setIsExpanding(false)
+            setIsShort(true)
+          }}
+          onExited={() => setIsCollapsing(false)}
+        >
           <Panel.Body>
             {children}
           </Panel.Body>
