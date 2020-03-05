@@ -86,28 +86,22 @@ object StateStatus {
   def isFollowingDeployAction: Boolean = isDuringDeploy || isRunning
 }
 
-final case class NotEstablishedStateStatus(name: String) extends StateStatus
-
-final case class StoppedStateStatus(name: String) extends StateStatus {
+case class AllowDeployStateStatus(val name: String) extends StateStatus {
   override def canDeploy: Boolean = true
 }
+
+final case class NotEstablishedStateStatus(name: String) extends StateStatus
 
 final case class DuringDeployStateStatus(name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true
 }
 
-final case class FinishedStateStatus(name: String) extends StateStatus {
+final class FinishedStateStatus(override val name: String) extends AllowDeployStateStatus(name) {
   override def isFinished: Boolean = true
-  override def canDeploy: Boolean = true
 }
 
-final case class RunningStateStatus(name: String) extends StateStatus {
+final class RunningStateStatus(override val name: String) extends AllowDeployStateStatus(name) {
   override def isRunning: Boolean = true
-  override def canDeploy: Boolean = true
-}
-
-final case class ErrorStateStatus(name: String) extends StateStatus {
-  override def canDeploy: Boolean = true
 }
 
 // This status class is a walk around for fact that StateStatus is encoded and decoded. It causes that there is no easy option

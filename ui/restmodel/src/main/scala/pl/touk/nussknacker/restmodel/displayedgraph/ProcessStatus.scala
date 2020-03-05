@@ -29,14 +29,14 @@ object ProcessStatus {
   def simple(status: StateStatus): ProcessStatus =
     ProcessStatus(status, SimpleProcessStateDefinitionManager)
 
-  def simpleError(errorStatus: StateStatus, tooltip: Option[String], description: Option[String], previousState: Option[ProcessState]): ProcessStatus =
+  def simple(status: StateStatus, icon: Option[URI], tooltip: Option[String], description: Option[String], previousState: Option[ProcessState]): ProcessStatus =
     ProcessStatus(
-      status = errorStatus,
+      status = status,
       previousState.map(_.deploymentId.value),
-      allowedActions = SimpleProcessStateDefinitionManager.statusActions(errorStatus),
-      icon = SimpleProcessStateDefinitionManager.statusIcon(errorStatus),
-      tooltip = if (tooltip.isDefined) tooltip else SimpleProcessStateDefinitionManager.statusTooltip(errorStatus),
-      description = if (description.isDefined) description else SimpleProcessStateDefinitionManager.statusDescription(errorStatus),
+      allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
+      icon = if (icon.isDefined) icon else SimpleProcessStateDefinitionManager.statusIcon(status),
+      tooltip = if (tooltip.isDefined) tooltip else SimpleProcessStateDefinitionManager.statusTooltip(status),
+      description = if (description.isDefined) description else SimpleProcessStateDefinitionManager.statusDescription(status),
       previousState.flatMap(_.startTime),
       previousState.flatMap(_.attributes),
       previousState.map(_.errors).getOrElse(List.empty)
@@ -77,45 +77,43 @@ object ProcessStatus {
     )
   }
 
-  def simpleErrorShouldRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.DeployedWithError,
-    tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldRunningTooltip(deployedVersionId, user)),
-    description = Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription),
+  def simpleErrorShouldBeRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simple(
+    status = SimpleStateStatus.Error,
+    icon = Some(SimpleProcessStateDefinitionManager.deployFailedIcon),
+    tooltip = Some(SimpleProcessStateDefinitionManager.shouldBeRunningTooltip(deployedVersionId, user)),
+    description = Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription),
     previousState = previousState
   )
 
-  def simpleErrorShouldNotBeRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningWithError,
-    tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningTooltip(deployedVersionId, user)),
-    description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
+  def simpleWarningShouldNotBeRunning(previousState: Option[ProcessState]): ProcessStatus = simple(
+    status = SimpleStateStatus.Warning,
+    icon = Some(SimpleProcessStateDefinitionManager.deployWarningIcon),
+    tooltip = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription),
+    description = Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningDescription),
     previousState = previousState
   )
 
-  def simpleErrorShouldNotBeRunning(previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningWithError,
-    tooltip = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
-    description = Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription),
+  def simpleErrorMismatchDeployedVersion(deployedVersionId: Long, exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simple(
+    status = SimpleStateStatus.Error,
+    icon = Some(SimpleProcessStateDefinitionManager.deployFailedIcon),
+    tooltip = Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionTooltip(deployedVersionId, exceptedVersionId, user)),
+    description = Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionDescription),
     previousState = previousState
   )
 
-  def simpleErrorMismatchDeployedVersion(deployedVersionId: Long, exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningWithError,
-    tooltip = Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionTooltip(deployedVersionId, exceptedVersionId, user)),
-    description = Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionDescription),
+  def simpleWarningMissingDeployedVersion(exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simple(
+    status = SimpleStateStatus.Warning,
+    icon = Some(SimpleProcessStateDefinitionManager.deployWarningIcon),
+    tooltip = Some(SimpleProcessStateDefinitionManager.missingDeployedVersionTooltip(exceptedVersionId, user)),
+    description = Some(SimpleProcessStateDefinitionManager.missingDeployedVersionDescription),
     previousState = previousState
   )
 
-  def simpleErrorMissingDeployedVersion(exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningWithError,
-    tooltip = Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionTooltip(exceptedVersionId, user)),
-    description = Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionDescription),
-    previousState = previousState
-  )
-
-  def simpleErrorProcessWithoutAction(previousState: Option[ProcessState]): ProcessStatus = simpleError(
-    errorStatus = SimpleStateStatus.RunningWithError,
-    tooltip = Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction),
-    description = Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction),
+  def simpleWarningProcessWithoutAction(previousState: Option[ProcessState]): ProcessStatus = simple(
+    status = SimpleStateStatus.Warning,
+    icon = Some(SimpleProcessStateDefinitionManager.deployWarningIcon),
+    tooltip = Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage),
+    description = Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage),
     previousState = previousState
   )
 
