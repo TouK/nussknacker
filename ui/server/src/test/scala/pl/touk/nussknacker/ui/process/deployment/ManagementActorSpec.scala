@@ -223,6 +223,18 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     }
   }
 
+  test("Should always return process manager failure, even if some other verifications return invalid") {
+    val id =  prepareDeployedProcess(processName).futureValue
+    val version = Some(ProcessVersion(versionId = 2, processName = ProcessName(""), user = "", modelVersion = None))
+
+    processManager.withProcessStateVersion(SimpleStateStatus.Failed, version) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Failed)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
+    }
+  }
+
   test("Should return warning state when state is running with empty version and process is deployed") {
     val id =  prepareDeployedProcess(processName).futureValue
 

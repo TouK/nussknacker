@@ -121,6 +121,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessStatus =
     (processState, lastAction) match {
+      case (Some(state), _) if state.status.isFailed => ProcessStatus(state)
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
       case (Some(state), _) if state.status.isFollowingDeployAction => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
