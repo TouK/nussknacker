@@ -72,12 +72,10 @@ ul.breadcrumbs-list
   display none
 
 processActivityList()
-  width 100%
   font-size 10px
-  float left
-  padding 10px 0 0 0
+  padding 0
+  margin  15px 0
   .header
-    display inline-block
     span
       color #808080
       &.date
@@ -93,24 +91,28 @@ processActivityList()
   p
     font-size 12px
 
+hr.list-separator
+    border none
+    border-bottom 1px solid panelTitleTextColor
+    margin 10px 0
+
 .process-comments
-  margin-bottom 10px
+  padding 5px 10px
   .process-comments-list
     processActivityList()
     .header
-      width 90%
+      width 100%
       .remove
         float right
         &:hover
           cursor pointer
           opacity 0.5
     .comment-under-line
-      width 90%
       margin-left 0
   .add-comment
     font-size 12px
     textarea
-      width 90%
+      width 100%
       height 45px
       font-size 12px
       font-weight lighter
@@ -125,15 +127,14 @@ processActivityList()
 
 
 .process-attachments
-  cursor: default
-  margin-bottom 10px
+  cursor default
+  padding 0 10px
   display grid
   .process-attachments-list
     processActivityList()
 
     .attachment-section
-      display inline-flex
-      width 90%
+      display flex
       .attachment-details
         margin-left 8px
         word-break break-word
@@ -149,8 +150,8 @@ processActivityList()
 
   .add-attachments
     font-size 12px
-    width 90%
     height: 90px
+    margin-bottom 15px
     border 1px solid buttonBorderColor
     &:hover .attachment-drop-zone
       background-color lighten(#333, 5%)

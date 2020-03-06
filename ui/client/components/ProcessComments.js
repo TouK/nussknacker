@@ -58,7 +58,7 @@ class ProcessComments extends React.Component {
                     : null}
                 </div>
                 <CommentContent content={comment.content} commentSettings={this.props.commentSettings}/>
-                {this.lastComment(idx) ? null : <hr className="comment-under-line"/>}
+                {this.lastComment(idx) ? null : <hr className="comment-under-line list-separator"/>}
               </div>
             )
           })}

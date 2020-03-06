@@ -38,7 +38,7 @@ class SideNodeDetails extends Component {
           if (obj.isSeparator) {
             return (
               <div key={index}>
-                <hr/>
+                <hr className="list-separator"/>
                 <p className="node-label">{obj.value}</p>
               </div>
             )
