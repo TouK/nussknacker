@@ -1,4 +1,4 @@
-# Breaking changes
+# Migration guide
 
 To see biggest differences please consult the [changelog](https://nussknacker.io/Changelog.html).
 
