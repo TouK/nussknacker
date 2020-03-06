@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+import scala.concurrent.duration._
 
 class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValues with OptionValues {
@@ -27,6 +28,8 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
   private val mainRoute = NussknackerApp.initializeRoute(system.settings.config)
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
+
+  implicit val timeout: RouteTestTimeout = RouteTestTimeout(2.minutes)
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
