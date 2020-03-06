@@ -31,7 +31,7 @@ export class Tips extends Component {
     const warnings = (currentProcess.validationResult || {}).warnings
 
     return (
-      <CollapsibleToolbar>
+      <CollapsibleToolbar title="tips" id="TIPS-INFO">
         <DragHandle>
           <div id="tipsPanel" className={this.props.isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
             <Scrollbars

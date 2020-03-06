@@ -92,7 +92,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     const transitionKey = this.getTransitionKey(process, processState)
 
     return (
-      <CollapsibleToolbar>
+      <CollapsibleToolbar title="status" id="PROCESS-INFO">
         <DragHandle>
           <SwitchTransition>
             <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
