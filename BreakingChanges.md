@@ -1,16 +1,25 @@
 # Breaking changes
 
-To see biggest differences check changes in demo.
+To see biggest differences please consult the [changelog](https://nussknacker.io/Changelog.html).
+
+## In version 0.0.13 (not released)
+
+* [#755](https://github.com/TouK/nussknacker/pull/755) Default async execution context does not depend on parallelism.
+ `asyncExecutionConfig.parallelismMultiplier` has been deprecated and should be replaced with `asyncExecutionConfig.workers`.
+ 8 should be sane default value.
+* [#722](https://github.com/TouK/nussknacker/pull/722) Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed.
+ `processTypes`  configuration should be used from now on.
 
 ## In version 0.0.12
+
 * Upgrade Flink 1.7
 * Refactor of custom transformations, dictionaries, unions, please look at samples in example or generic to see API changes
 * Considerable changes to authorization configuration, please look at sample config to see changes
 * Circe is now used by default instead of Argonaut, but still can use Argonaut in Displayable
 
 ## In version 0.0.11
-* Changes in CustomStreamTransformer implementation, LazyInterpreter became LazyParameter, please look at samples to see changes in API
 
+* Changes in CustomStreamTransformer implementation, LazyInterpreter became LazyParameter, please look at samples to see changes in API
 
 ## In version 0.0.8
 

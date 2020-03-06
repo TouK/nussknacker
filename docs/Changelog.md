@@ -33,40 +33,40 @@ configuration should be used from now on.
 
 0.0.8 (7 May 2018)
 ---------
-- [ITDEVESP-389] expressions code syntax highlighting
+- expressions code syntax highlighting
 - source/sink params as expressions
-- [ITDEVESP-389] multiline expression suggestions
-- [ITDEVESP-413] method signature and documentation in code suggestions
+- multiline expression suggestions
+- method signature and documentation in code suggestions
 - inject new node after dragging on edge
 - Query services tab in UI
 - subprocess disabling
-- [ITDEVESP-417] display http request-response for query service tab
+- display http request-response for query service tab
 - flink kafka 0.11 connector
-- [ITDEVESP-452] - dynamic source return type
-- [ITDEVESP-458] SQL can be used as expression language
+- dynamic source return type
+- SQL can be used as expression language
 - Processes page rendering optimized
-- [ITDEVESP-421] - suggestions for projections/selections in spel
+- suggestions for projections/selections in spel
 - upgrade to flink 1.4.2
 - upgrade to scala 2.11.12
-- [ITDEVESP-513] Make sinks disableable
+- Make sinks disableable
 
 0.0.7 (22 Dec 2017)
 ---------
 - global imports in expressions
-- [ITDEVESP-298] - deployment standalone on multiple nodes
+- deployment standalone on multiple nodes
 - typed SpEL expressions - first iteration
-- [ITDEVESP-298] - can post process standalone results
+- can post process standalone results
 - support for java services
-- [ITDEVESP-298] - handling get requests in standalone mode
-- [ITDEVESP-298] - metric fixes for standalone
+- handling get requests in standalone mode
+- metric fixes for standalone
 - compare with other env
-- [ITDEVESP-295] - split in request/response mode by expression
+- split in request/response mode by expression
 - ProcessConfigCreator Java API support added
-- [ITDEVESP-278] extendable authentication
+- extendable authentication
 - comparing environments - first part, can compare processes
-- [ITDEVESP-280] subprocess versions
+- subprocess versions
 - process migrations + some refactoring
-- [ITDEVESP-117] - async execution with toggle
+- async execution with toggle
 - better exception for errors in service invocations
 - nussknacker java api
 - spring version bump because of SPR-9194
