@@ -52,7 +52,7 @@ class SideNodeDetails extends Component {
             )
           }
         })}
-        <hr/>
+        <hr className="list-separator"/>
       </div>
     )
   }
