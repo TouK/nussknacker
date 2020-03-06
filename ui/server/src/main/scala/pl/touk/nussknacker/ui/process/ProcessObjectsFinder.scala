@@ -11,7 +11,6 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import shapeless.syntax.typeable._
 
 object ProcessObjectsFinder {
-  import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def findSignals(processes: List[ProcessDetails],

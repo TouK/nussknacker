@@ -27,7 +27,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
+  import pl.touk.nussknacker.engine.util.Implicits._
 
   def securedRoute(implicit user: LoggedUser): Route = {
 
