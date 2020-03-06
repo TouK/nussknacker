@@ -39,6 +39,8 @@ object node {
 
   case class CustomNode(id:String, next: Next) extends Node
 
+  case class EndingCustomNode(id:String) extends Node
+
   case class SubprocessStart(id: String, params: List[Parameter], next: Next) extends Node
 
   case class SubprocessEnd(id: String, varName: String, fields: List[Field], next: Next) extends Node

@@ -112,6 +112,9 @@ object ProcessCompilationError {
       MissingCustomNodeExecutor(name, nodeId.id)
   }
 
+  case class InvalidEndingCustomNode(name: String, nodeId: String)
+    extends ProcessCompilationError with InASingleNode
+  
   case class MissingParameters(params: Set[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 

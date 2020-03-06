@@ -141,6 +141,13 @@ object node {
     def joinReference: JoinReference = JoinReference(artificialNodeId, joinId)
   }
 
+  case class EndingCustomNode(id: String, nodeType: String, parameters: List[Parameter],
+                        additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+    extends EndingNodeData with CustomNodeData {
+    override val componentId = nodeType
+    override def outputVar: Option[String] = None
+  }
+  
   case class Sink(
                    id: String,
                    ref: SinkRef,

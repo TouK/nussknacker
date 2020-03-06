@@ -24,6 +24,11 @@ object ProcessSplitter {
     CustomNodePart(node, nextWithParts.nextParts, nextWithParts.ends)
   }
 
+  private def split(custom: EndingCustomNode) : EndingCustomNodePart = {
+    val node = splittednode.EndingNode(custom)
+    EndingCustomNodePart(node)
+  }
+
   private def split(sink: Sink): SinkPart = {
     val node = splittednode.EndingNode(sink)
     SinkPart(node)
@@ -80,6 +85,9 @@ object ProcessSplitter {
       case EndingNode(sink: Sink) =>
         val part = split(sink)
         NextWithParts(PartRef(sink.id), List(part), List.empty)
+      case EndingNode(endingCustomNode: EndingCustomNode) =>
+        val part = split(endingCustomNode)
+        NextWithParts(PartRef(part.id), List(part), List.empty)        
       case EndingNode(other) =>
         NextWithParts(NextNode(splittednode.EndingNode(other)), List.empty, List(NormalEnd(other.id)))
       case BranchEnd(branchEndData) =>

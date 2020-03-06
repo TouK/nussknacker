@@ -24,6 +24,12 @@ object part {
     override type T = CustomNode
   }
 
+  case class EndingCustomNodePart(node: EndingNode[EndingCustomNode]) extends SubsequentPart {
+    override type T = EndingCustomNode
+    override def nextParts: List[SubsequentPart] = List.empty
+    override def ends: List[End] = List.empty
+  }
+
   case class SinkPart(node: EndingNode[Sink]) extends SubsequentPart {
     override type T = Sink
 

@@ -29,6 +29,8 @@ abstract class CustomStreamTransformer {
   // TODO: remove after full switch to ContextTransformation API
   def canHaveManyInputs: Boolean = false
 
+  def canBeEnding: Boolean = false 
+  
 }
 
 /**
