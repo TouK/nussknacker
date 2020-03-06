@@ -6,7 +6,7 @@
 
 :local(.panel)
     background rgba(panelBackground, 1)
-    border 1px solid #333333
+    border 1px solid panelBorder
 
     &-heading
         background panelHeaderBackground
@@ -36,7 +36,8 @@
             text-overflow ellipsis
 
     &-body
-        min-width sidebarWidth
+        min-width (sidebarWidth - 2)
+        color panelText
 
     min-width sidebarWidth
     max-width sidebarWidth
@@ -50,4 +51,4 @@
     &:local(.collapsed)
         min-width 80px
         max-width @min-width
-        opacity 0.75
+        opacity .86

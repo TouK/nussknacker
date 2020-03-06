@@ -15,6 +15,7 @@ import {getCapabilities} from "../../selectors/other"
 import Properties from "../edit/buttons/PropertiesButton"
 import {isSubprocess} from "../../selectors/graph"
 import {PassedProps} from "../../ToolsLayer"
+import {ToolbarButtons} from "../../../Process/ToolbarButtons"
 
 type OwnPropsPick = Pick<PassedProps, "exportGraph">
 
@@ -27,13 +28,15 @@ function ProcessPanel(props: Props) {
 
   return (
     <CollapsibleToolbar id="PROCESS-PANEL" title={t("panels.process.title", "Process")}>
-      {!isSubprocess ? <Properties/> : null}
-      <CompareButton/>
-      {capabilities.deploy && !isEmpty(featuresSettings?.remoteEnvironment) ? <MigrateButton/> : null}
-      {capabilities.write ? <ImportButton/> : null}
-      <JSONButton/>
-      <PDFButton exportGraph={exportGraph}/>
-      {capabilities.write ? <ArchiveButton/> : null}
+      <ToolbarButtons>
+        {!isSubprocess ? <Properties/> : null}
+        <CompareButton/>
+        {capabilities.deploy && !isEmpty(featuresSettings?.remoteEnvironment) ? <MigrateButton/> : null}
+        {capabilities.write ? <ImportButton/> : null}
+        <JSONButton/>
+        <PDFButton exportGraph={exportGraph}/>
+        {capabilities.write ? <ArchiveButton/> : null}
+      </ToolbarButtons>
     </CollapsibleToolbar>
   )
 }

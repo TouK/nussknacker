@@ -10,6 +10,7 @@ import FromFileButton from "./buttons/FromFileButton"
 import GenerateButton from "./buttons/GenerateButton"
 import HideButton from "./buttons/HideButton"
 import {getCapabilities} from "../../selectors/other"
+import {ToolbarButtons} from "../../../Process/ToolbarButtons"
 
 function TestPanel(props: StateProps) {
   const {capabilities, isSubprocess, featuresSettings} = props
@@ -17,11 +18,13 @@ function TestPanel(props: StateProps) {
 
   return (
     <CollapsibleToolbar id="TEST-PANEL" title={t("panels.test.title", "Test")} isHidden={isSubprocess}>
-      {capabilities.write ? <FromFileButton/> : null}
-      {capabilities.write ? <GenerateButton/> : null}
-      {/*//TODO: counts and metrics should not be visible in archived process*/}
-      {featuresSettings?.counts && !isSubprocess ? <CountsButton/> : null}
-      {capabilities.write ? <HideButton/> : null}
+      <ToolbarButtons>
+        {capabilities.write ? <FromFileButton/> : null}
+        {capabilities.write ? <GenerateButton/> : null}
+        {/*//TODO: counts and metrics should not be visible in archived process*/}
+        {featuresSettings?.counts && !isSubprocess ? <CountsButton/> : null}
+        {capabilities.write ? <HideButton/> : null}
+      </ToolbarButtons>
     </CollapsibleToolbar>
 
   )

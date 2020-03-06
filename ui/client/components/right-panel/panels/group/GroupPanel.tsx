@@ -7,6 +7,7 @@ import GroupCancel from "./buttons/GroupCancelButton"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {getCapabilities} from "../../selectors/other"
+import {ToolbarButtons} from "../../../Process/ToolbarButtons"
 
 function GroupPanel() {
   const capabilities = useSelector(getCapabilities)
@@ -14,10 +15,12 @@ function GroupPanel() {
 
   return (
     <CollapsibleToolbar id="GROUP-PANEL" title={t("panels.group.title", "Group")}>
-      {capabilities.write ? <GroupStart/> : null}
-      {capabilities.write ? <GroupFinish/> : null}
-      {capabilities.write ? <GroupCancel/> : null}
-      {capabilities.write ? <Ungroup/> : null}
+      <ToolbarButtons>
+        {capabilities.write ? <GroupStart/> : null}
+        {capabilities.write ? <GroupFinish/> : null}
+        {capabilities.write ? <GroupCancel/> : null}
+        {capabilities.write ? <Ungroup/> : null}
+      </ToolbarButtons>
     </CollapsibleToolbar>
   )
 }

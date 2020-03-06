@@ -4,6 +4,7 @@ import React from "react"
 import {useDispatch} from "react-redux"
 import {zoomIn, zoomOut} from "../../actions/nk/zoom"
 import {Graph} from "./ToolsLayer"
+import {Reset} from "./Reset"
 
 interface Props {
   graph: Graph,
@@ -17,6 +18,7 @@ export function ZoomButtons({className, graph}: Props) {
 
   return (
     <div className={cn("zoom-in-out", className)}>
+      <Reset/>
       <SvgDiv className="zoom" title={"zoom-in"} svgFile="buttons/zoomin.svg" onClick={onZoomIn}/>
       <SvgDiv className="zoom" title={"zoom-out"} svgFile="buttons/zoomout.svg" onClick={onZoomOut}/>
     </div>

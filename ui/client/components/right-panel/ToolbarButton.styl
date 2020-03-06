@@ -1,42 +1,51 @@
 @import "../../stylesheets/_variables.styl"
 
+buttonBkgColor = #444444
+buttonTextColor = #b3b3b3
+
 :local
-  .button
-    position relative
-    box-sizing border-box
-    width buttonSize
-    height buttonSize
-    padding (buttonSize / 12)
-    border 1px solid buttonBorderColor
-    border-radius 0
+    .button
+        position relative
+        width buttonSize
+        min-width buttonSize
+        height @width
+        border 1px solid panelBorder
+        padding 0
 
-    font-weight 600
-    font-size rightPanelButtonFontSize
+        font-weight 600
+        font-size rightPanelButtonFontSize
 
-    display inline-flex
-    flex-direction column
-    align-items center
-    justify-content center
+        display flex
+        flex-direction column
+        align-items center
+        justify-content center
 
-    background-color buttonBkgColor
-    color buttonTextColor
-    transition background-color 0.2s
+        background-color buttonBkgColor
+        color buttonTextColor
+        transition background-color 0.2s
 
-    cursor pointer
+        cursor pointer
 
-    &:disabled,&.disabled
-      opacity 0.3
-      cursor not-allowed !important
+        &.disabled
+            opacity 0.3
+            cursor not-allowed
 
-    &:not(:disabled):hover,&:not(.disabled):hover
-      background-color buttonBkgHover
+        &:not(.disabled):hover
+            background-color buttonBkgHover
 
-    svg
-      width (buttonSize * 3/5)
-      display block
-      margin auto
+        .icon
+            width (buttonSize / 2)
 
-    &:focus
-      outline 3px solid focusColor !important
-      outline-offset -1px !important
-      z-index 10000
+        &:focus
+            outline 2px solid focusColor
+            outline-offset -1px
+            z-index 10000
+
+
+    .small
+        width buttonSmallSize
+        min-width buttonSmallSize
+        height @width
+
+        .label
+            display none

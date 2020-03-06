@@ -35,14 +35,17 @@ function Toolbars(props: PassedProps) {
     {
       id: "PROCESS-INFO",
       component: <ProcessInfo/>,
+      defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "VIEW-PANEL",
       component: <ViewPanel/>,
+            defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "EDIT-PANEL",
       component: <EditPanel graphLayoutFunction={graphLayoutFunction} selectionActions={selectionActions}/>,
+      defaultSide: ToolbarsSide.TopRight,
     },
     // {
     //   id: "DEPLOYMENT-PANEL",
@@ -51,19 +54,23 @@ function Toolbars(props: PassedProps) {
     {
       id: "PROCESS-PANELS",
       component: <ProcessPanels exportGraph={exportGraph}/>,
+      defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "TEST-PANEL",
       component: <TestPanel/>,
+      defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "GROUP-PANEL",
       component: <GroupPanel/>,
+      defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "DETAILS-PANEL",
       // TODO remove SideNodeDetails? turn out to be not useful
       component: <DetailsPanel/>,
+      defaultSide: ToolbarsSide.BottomRight,
     },
     {
       id: "TIPS-PANEL",
@@ -88,7 +95,7 @@ function Toolbars(props: PassedProps) {
     {
       id: "ATTACHMENTS-PANEL",
       component: <AttachmentsPanel/>,
-      defaultSide: ToolbarsSide.TopLeft,
+      defaultSide: ToolbarsSide.BottomLeft,
     },
   ]
 

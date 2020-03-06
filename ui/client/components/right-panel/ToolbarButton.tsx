@@ -1,8 +1,9 @@
 import Dropzone, {DropEvent} from "react-dropzone"
-import React, {ReactEventHandler} from "react"
+import React, {ReactEventHandler, useContext} from "react"
 import cn from "classnames"
 import {PanelButtonIcon} from "./PanelButtonIcon"
 import styles from "./ToolbarButton.styl"
+import {ToolbarButtonsContext} from "../Process/ToolbarButtons"
 
 interface Props {
   name: string,
@@ -19,14 +20,15 @@ interface Props {
 }
 
 export function ToolbarButton({onDrop, title, className, iconClassName, labelClassName, disabled, name, icon, ...props}: Props) {
-  const classNames = cn(styles.button, className)
+  const {small} = useContext(ToolbarButtonsContext)
+  const classNames = cn(styles.button, disabled && styles.disabled, small && styles.small, className)
   const buttonProps = {
     ...props,
     title: title || name,
     children: (
       <>
-        <PanelButtonIcon className={cn(iconClassName)} icon={icon} title={title}/>
-        <div className={cn(labelClassName)}>{name}</div>
+        <PanelButtonIcon className={cn(styles.icon, iconClassName)} icon={icon} title={title}/>
+        <div className={cn(styles.label, labelClassName)}>{name}</div>
       </>
     ),
   }
