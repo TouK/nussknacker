@@ -43,7 +43,7 @@ class Visualization extends React.Component {
   bindCopyShortcut() {
     return (event) => {
       // Skip event triggered by writing selection to the clipboard.
-      if (this.isNotThisCopyEvent(event, copyNodeElementId)) {
+      if (this.allowBindCopyShortcut() && this.isNotThisCopyEvent(event, copyNodeElementId)) {
         this.props.actions.copySelection(
           () => this.copySelection(event, true),
           {category: events.categories.keyboard, action: events.actions.keyboard.copy},
@@ -51,6 +51,9 @@ class Visualization extends React.Component {
       }
     }
   }
+
+  allowBindCopyShortcut = () =>
+    this.props.allModalsClosed && _.isEmpty(this.props.selectionState) === false
 
   bindPasteShortcut() {
     return (event) => this.props.actions.pasteSelection(
