@@ -80,6 +80,7 @@ object StateStatus {
   def isDuringDeploy: Boolean = false
   def isFinished: Boolean = false
   def isRunning: Boolean = false
+  def isFailed: Boolean = false
   def canDeploy: Boolean = false
   def name: String
 
@@ -103,6 +104,11 @@ final case class FinishedStateStatus(name: String) extends StateStatus {
 
 final case class RunningStateStatus(name: String) extends StateStatus {
   override def isRunning: Boolean = true
+  override def canDeploy: Boolean = true
+}
+
+final case class FailedStateStatus(name: String) extends StateStatus {
+  override def isFailed: Boolean = true
   override def canDeploy: Boolean = true
 }
 
