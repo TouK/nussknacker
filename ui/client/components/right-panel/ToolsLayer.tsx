@@ -1,31 +1,15 @@
 import cn from "classnames"
 import React, {SyntheticEvent, memo} from "react"
-import {useDispatch, useSelector} from "react-redux"
+import {useSelector} from "react-redux"
 
 import "../../stylesheets/userPanel.styl"
 
 import SpinnerWrapper from "../SpinnerWrapper"
-import TogglePanel from "../TogglePanel"
 import {ZoomButtons} from "./ZoomButtons"
-import {toggleRightPanel, toggleLeftPanel} from "../../actions/nk/ui/layout"
 import {hot} from "react-hot-loader"
-import {isRightPanelOpened, isLeftPanelOpened} from "./selectors/ui"
 import {getFetchedProcessDetails} from "./selectors/graph"
 import Toolbars from "./Toolbars"
-
-export function useRightPanelToggle() {
-  const dispatch = useDispatch()
-  const isOpenedRight = useSelector(isRightPanelOpened)
-  const onToggleRight = () => dispatch(toggleRightPanel())
-  return {isOpenedRight, onToggleRight}
-}
-
-export function useLeftPanelToggle() {
-  const dispatch = useDispatch()
-  const isOpenedLeft = useSelector(isLeftPanelOpened)
-  const onToggleLeft = () => dispatch(toggleLeftPanel())
-  return {isOpenedLeft, onToggleLeft}
-}
+import {useSidePanelToggle} from "./toolbars/ScrollToggleSidePanel"
 
 export type Graph = $TodoType
 
@@ -53,15 +37,12 @@ type Props = OwnProps
 
 function ToolsLayer(props: Props) {
   const {graph, isReady, ...passProps} = props
-  const {isOpenedRight, onToggleRight} = useRightPanelToggle()
-  const {isOpenedLeft, onToggleLeft} = useLeftPanelToggle()
+  const {isOpened} = useSidePanelToggle("RIGHT")
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
 
   return (
     <>
-      <TogglePanel type="left" isOpened={isOpenedLeft} onToggle={onToggleLeft}/>
-      <TogglePanel type="right" isOpened={isOpenedRight} onToggle={onToggleRight}/>
-      {graph ? <ZoomButtons className={cn("right", isOpenedRight && "is-opened")} graph={graph}/> : null}
+      {graph ? <ZoomButtons className={cn("right", isOpened && "is-opened")} graph={graph}/> : null}
 
       <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
         <Toolbars {...passProps}/>

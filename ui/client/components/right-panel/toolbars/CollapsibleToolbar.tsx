@@ -6,6 +6,7 @@ import {useDragHandler} from "./DragHandle"
 import Panel from "react-bootstrap/lib/Panel"
 import classNames from "classnames"
 import {getIsCollapsed} from "../selectors/toolbars"
+import ErrorBoundary from "react-error-boundary"
 
 export function CollapsibleToolbar({title, children, isHidden, id}: PropsWithChildren<{ id?: string, title?: string, isHidden?: boolean }>) {
   if (isHidden || !Children.count(children)) {
@@ -56,7 +57,9 @@ export function CollapsibleToolbar({title, children, isHidden, id}: PropsWithChi
           onExited={() => setIsCollapsing(false)}
         >
           <Panel.Body>
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </Panel.Body>
         </Panel.Collapse>
       </Panel>
