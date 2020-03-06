@@ -65,7 +65,7 @@ object FlinkProcessRegistrar {
         case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
       }) match {
         case Left(ir) =>
-          exceptionHandler.handling(None, input)(ir.foreach(collector.collect))
+          ir.foreach(collector.collect)
         case Right(info) =>
           exceptionHandler.handle(info)
       }
