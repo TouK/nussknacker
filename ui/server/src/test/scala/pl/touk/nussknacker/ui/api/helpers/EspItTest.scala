@@ -57,7 +57,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val processChangeListener = new TestProcessChangeListener()
   def createManagementActorRef = {
     system.actorOf(ManagementActor.props(
-      Map(TestProcessingTypes.Streaming -> processManager),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processManager),
       processRepository,
       deploymentProcessRepository,
       TestFactory.sampleResolver,
@@ -66,9 +66,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val managementActor: ActorRef = createManagementActorRef
   val jobStatusService = new JobStatusService(managementActor)
   val newProcessPreparer = new NewProcessPreparer(
-    Map("streaming" ->  ProcessTestData.processDefinition),
-    Map("streaming" -> (_ => StreamMetaData(None))),
-    Map("streaming" -> Map.empty)
+    mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
+    mapProcessingTypeDataProvider("streaming" -> (_ => StreamMetaData(None))),
+    mapProcessingTypeDataProvider("streaming" -> Map.empty)
   )
 
   val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
@@ -97,7 +97,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository, processResolving)
   val definitionResources = new DefinitionResources(
-    Map(existingProcessingType ->  ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData), subprocessRepository, typesForCategories)
+    mapProcessingTypeDataProvider(existingProcessingType ->
+      ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData), subprocessRepository, typesForCategories)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 

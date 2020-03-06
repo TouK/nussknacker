@@ -14,7 +14,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -22,8 +22,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppResources(config: Config,
-                   typeToConfig: Map[ProcessingType, ProcessingTypeData],
-                   modelData: Map[ProcessingType, ModelData],
+                   typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
+                   modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
@@ -35,7 +35,7 @@ class AppResources(config: Config,
       get {
         complete {
           val globalBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map()).mapValues(_.asJson)
-          val modelDataInfo = modelData.map {
+          val modelDataInfo = modelData.all.map {
             case (k,v) => (k.toString, v.configCreator.buildInfo())
           }.asJson
           (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
@@ -79,7 +79,7 @@ class AppResources(config: Config,
       } ~ path("unusedComponents")  {
         get {
           complete {
-            val definition = modelData.values.map(_.processDefinition).toList
+            val definition = modelData.all.values.map(_.processDefinition).toList
             processRepository.fetchAllProcessesDetails[DisplayableProcess]().map { processes =>
               ProcessObjectsFinder.findUnusedComponents(processes, definition)
             }

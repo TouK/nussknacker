@@ -207,7 +207,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         }
       }
     }
-    (route, typeToConfig.values ++ countsReporter.toList)
+    (route, typeToConfig.all.values ++ countsReporter.toList)
   }
 
   //by default, we use InfluxCountsReporterCreator

@@ -18,8 +18,9 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 
-class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
+class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
                    (implicit ec: ExecutionContext)
   extends Directives
     with RouteWithUser
@@ -57,7 +58,7 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
   private def invokeServicePath(implicit user: LoggedUser) =
     path("service" / Segment / Segment) { (processingType, serviceName) =>
       post {
-        val modelData = modelDataMap(processingType)
+        val modelData = modelDataMap.forTypeUnsafe(processingType)
         authorize(canUserInvokeService(user, serviceName, modelData)) {
           entity(as[List[Parameter]]) { params =>
             complete {

@@ -31,7 +31,7 @@ object ProcessObjectsFinder {
     }.toMap
   }
 
-  //TODO return Map[ProcessingType, List[String]]?
+  //TODO return ProcessingTypeDataProvider[List[String]]?
   def findUnusedComponents(processes: List[ProcessDetails],
                            processDefinitions: List[ProcessDefinition[ObjectDefinition]]): List[String] = {
     val extracted = extractProcesses(processes.flatMap(_.json))

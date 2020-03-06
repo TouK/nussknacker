@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{posting, withPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestFactory}
 
 class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
   with EspItTest with PatientScalaFutures with EitherValues {
@@ -28,7 +28,7 @@ class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matche
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 
-  private val route = new TestInfoResources(Map("streaming" -> testInfoProvider), processAuthorizer, processRepository)
+  private val route = new TestInfoResources(mapProcessingTypeDataProvider("streaming" -> testInfoProvider), processAuthorizer, processRepository)
 
   test("generates data"){
     val process = ProcessTestData.sampleDisplayableProcess

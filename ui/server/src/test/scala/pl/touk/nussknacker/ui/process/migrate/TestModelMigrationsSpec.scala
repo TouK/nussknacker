@@ -127,7 +127,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     = validationResult.errors.invalidNodes.mapValues(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations = {
-    new TestModelMigrations(Map(TestProcessingTypes.Streaming -> testMigrations), TestFactory.processValidation)
+    new TestModelMigrations(TestFactory.mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> testMigrations), TestFactory.processValidation)
 
   }
 }

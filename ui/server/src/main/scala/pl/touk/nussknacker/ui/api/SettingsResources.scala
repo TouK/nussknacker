@@ -6,12 +6,13 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig,
-                        typeToConfig: Map[ProcessingType, ProcessingTypeData],
+                        typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                         authenticationConfig: AuthenticationConfiguration,
                         analyticsConfig: Option[AnalyticsConfig])(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
@@ -45,7 +46,7 @@ class SettingsResources(config: FeatureTogglesConfig,
     }
 
   private val signalsSupported: Boolean = {
-    typeToConfig.exists { case (_, processingTypeData) =>
+    typeToConfig.all.exists { case (_, processingTypeData) =>
       processingTypeData.supportsSignals
     }
   }

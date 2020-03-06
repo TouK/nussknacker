@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.ui.validation
 
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationResult}
 import pl.touk.nussknacker.ui.definition.{AdditionalProcessProperty, PropertyType}
+import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 
 import scala.util.Try
 
-class AdditionalPropertiesValidator(additionalFieldsConfig: Map[ProcessingType, Map[String, AdditionalProcessProperty]],
+class AdditionalPropertiesValidator(additionalFieldsConfig: ProcessingTypeDataProvider[Map[String, AdditionalProcessProperty]],
                                     errorType: String) {
   import cats.data._
   import cats.implicits._
@@ -18,7 +18,7 @@ class AdditionalPropertiesValidator(additionalFieldsConfig: Map[ProcessingType, 
   private type PropertiesConfig = Map[String, AdditionalProcessProperty]
 
   def validate(process: DisplayableProcess): ValidationResult = {
-    additionalFieldsConfig.get(process.processingType) match {
+    additionalFieldsConfig.forType(process.processingType) match {
       case None =>
         ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(process.processingType)))
       case Some(propertiesConfig) =>

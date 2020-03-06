@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import cats.data._
@@ -11,20 +10,20 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
-import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityFactory, ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
+import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.dbio.DBIOAction
-import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,7 +31,7 @@ import scala.language.higherKinds
 
 object WriteProcessRepository {
 
-  def create(dbConfig: DbConfig, modelData: Map[ProcessingType, ModelData]): WriteProcessRepository =
+  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): WriteProcessRepository =
 
     new DbWriteProcessRepository[Future](dbConfig, modelData.mapValues(_.migrations.version)) with WriteProcessRepository with BasicRepository
 
@@ -58,7 +57,7 @@ trait WriteProcessRepository {
 }
 
 abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
-                                              val modelVersion: Map[ProcessingType, Int])
+                                              val modelVersion: ProcessingTypeDataProvider[Int])
   extends LazyLogging with ProcessRepository[F] with CommentActions {
 
   import profile.api._
@@ -109,7 +108,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
       case Some(version) if version.json == maybeJson && version.mainClass == maybeMainClass => None
       case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId.value,
         json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
-        user = loggedUser.username, modelVersion = modelVersion.get(processingType)))
+        user = loggedUser.username, modelVersion = modelVersion.forType(processingType)))
     }
 
     //TODO: why EitherT.right doesn't infere properly here?

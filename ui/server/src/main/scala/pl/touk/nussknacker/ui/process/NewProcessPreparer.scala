@@ -13,17 +13,17 @@ import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 
 object NewProcessPreparer {
 
-  def apply(processTypes: Map[ProcessingType, ProcessingTypeData], additionalFields: Map[ProcessingType, Map[String, AdditionalProcessProperty]]): NewProcessPreparer =
+  def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalProcessProperty]]): NewProcessPreparer =
     new NewProcessPreparer(processTypes.mapValues(_.modelData.processDefinition), processTypes.mapValues(_.emptyProcessCreate), additionalFields)
 
 }
 
-class NewProcessPreparer(definitions: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
-                         emptyProcessCreate: Map[ProcessingType, Boolean => TypeSpecificData],
-                         additionalFields: Map[ProcessingType, Map[String, AdditionalProcessProperty]]) {
+class NewProcessPreparer(definitions: ProcessingTypeDataProvider[ProcessDefinition[ObjectDefinition]],
+                         emptyProcessCreate: ProcessingTypeDataProvider[Boolean => TypeSpecificData],
+                         additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalProcessProperty]]) {
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
-    val exceptionHandlerFactory = definitions(processingType).exceptionHandlerFactory
-    val specificMetaData = emptyProcessCreate(processingType)(isSubprocess)
+    val exceptionHandlerFactory = definitions.forTypeUnsafe(processingType).exceptionHandlerFactory
+    val specificMetaData = emptyProcessCreate.forTypeUnsafe(processingType)(isSubprocess)
     val emptyCanonical = CanonicalProcess(
       metaData = MetaData(
         id = processId,
@@ -45,6 +45,6 @@ class NewProcessPreparer(definitions: Map[ProcessingType, ProcessDefinition[Obje
       .map(properties => ProcessAdditionalFields(None, Set.empty, properties = properties))
   }
 
-  private def defaultProperties(processingType: ProcessingType): Map[String, String] = additionalFields(processingType)
+  private def defaultProperties(processingType: ProcessingType): Map[String, String] = additionalFields.forTypeUnsafe(processingType)
     .collect { case (name, property) if property.default.isDefined => name -> property.default.get }
 }

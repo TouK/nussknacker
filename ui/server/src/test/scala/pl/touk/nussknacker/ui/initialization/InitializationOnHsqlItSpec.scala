@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 
@@ -17,7 +18,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
 
   private val processId = "proc1"
 
-  private val migrations = Map(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
+  private val migrations = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
 
   private lazy val repository = TestFactory.newProcessRepository(db, Some(1))
 
@@ -65,7 +66,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
     saveSampleProcess()
 
     val exception = intercept[RuntimeException](
-      Initialization.init(Map(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), db, "env1", customProcesses))
+      Initialization.init(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), db, "env1", customProcesses))
 
     exception.getMessage shouldBe "made to fail.."
 

@@ -53,7 +53,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                          newProcessPreparer: NewProcessPreparer,
                          val processAuthorizer:AuthorizeProcess,
                          processChangeListener: ProcessChangeListener,
-                         typeToConfig: Map[String, ProcessingTypeData])
+                         typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData])
                         (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -380,7 +380,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     )))
 
   private def processManager(processingType: ProcessingType): Option[ProcessManager] =
-    typeToConfig.get(processingType).map(_.processManager)
+    typeToConfig.forType(processingType).map(_.processManager)
 
   private def withJson(processId: ProcessId, version: Long, businessView: Boolean)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable

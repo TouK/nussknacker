@@ -10,13 +10,12 @@ import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
-import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
@@ -32,7 +31,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
   test("it should return healthcheck also if cannot retrieve statuses") {
     val statusCheck = TestProbe()
 
-    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
+    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
       new JobStatusService(statusCheck.ref))
 
     createDeployedProcess("id1")
@@ -44,7 +43,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val first = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(akka.actor.Status.Failure(new Exception("Failed to check status")))
 
-    val second = statusCheck.expectMsgClass(classOf[CheckStatus])
+    statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(Some(processStatus(None, SimpleStateStatus.Running)))
 
     val third = statusCheck.expectMsgClass(classOf[CheckStatus])
@@ -58,11 +57,11 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
   test("it shouldn't return healthcheck when process canceled") {
     val statusCheck = TestProbe()
-    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
+    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
       new JobStatusService(statusCheck.ref))
 
-    createDeployedCanceledProcess(ProcessName("id1"),  false)
-    createDeployedProcess(ProcessName("id2"),  false)
+    createDeployedCanceledProcess(ProcessName("id1"),  isSubprocess = false)
+    createDeployedProcess(ProcessName("id2"),  isSubprocess = false)
 
     val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
 
@@ -78,7 +77,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
   test("it should return healthcheck ok if statuses are ok") {
     val statusCheck = TestProbe()
 
-    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
+    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
       new JobStatusService(statusCheck.ref))
 
     createDeployedProcess("id1")
@@ -99,7 +98,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
   test("it should not report deployment in progress as fail") {
     val statusCheck = TestProbe()
 
-    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, Map(), processRepository, TestFactory.processValidation,
+    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
       new JobStatusService(statusCheck.ref))
 
     createDeployedProcess("id1")
@@ -124,7 +123,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
-      typeToConfig, Map("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
+      typeToConfig, mapProcessingTypeDataProvider("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
 
     val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
     result ~> check {
