@@ -20,7 +20,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Cancel),
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy),
-    SimpleStateStatus.Failed -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.Failed -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Error -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Warning -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
@@ -51,7 +51,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Running -> "The process has been successfully deployed and currently is running.",
     SimpleStateStatus.Canceled -> "The process has been successfully cancelled.",
     SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
-    SimpleStateStatus.Failed -> "There are some problems with checking state of process..",
+    SimpleStateStatus.Failed -> "There are some problems with process.",
     SimpleStateStatus.Finished -> "The process completed successfully.",
     SimpleStateStatus.Error -> "There are some errors. Please check if everything is okay with process!",
     SimpleStateStatus.Warning -> "There are some warnings. Please check if everything is okay with process!"
@@ -66,7 +66,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Running -> "The process is running.",
     SimpleStateStatus.Canceled -> "The process is canceled.",
     SimpleStateStatus.DuringCancel -> "The process is being canceled.",
-    SimpleStateStatus.Failed -> "There are problems with the process.",
+    SimpleStateStatus.Failed -> "There are some problems with process.",
     SimpleStateStatus.Finished -> "The process has finished.",
     SimpleStateStatus.Error -> "There are errors establishing a process state.",
     SimpleStateStatus.Warning -> "There are some warnings establishing a process state."
