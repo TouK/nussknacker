@@ -1,22 +1,16 @@
 package pl.touk.nussknacker.engine.flink.util.listener
 
-import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.metrics.{Counter, MetricGroup}
+import cats.data.NonEmptyList
+import org.apache.flink.metrics.Counter
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
+import pl.touk.nussknacker.engine.flink.util.metrics.WithMetrics
 
-class NodeCountMetricListener extends EmptyProcessListener with RuntimeContextLifecycle {
-
-  @transient private var group : MetricGroup = _
+class NodeCountMetricListener extends EmptyProcessListener with WithMetrics {
 
   private val counters = collection.concurrent.TrieMap[String, Counter]()
 
-  override def open(runtimeContext: RuntimeContext): Unit = {
-    group = runtimeContext.getMetricGroup.addGroup("nodeCount")
-  }
-
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
-    val counter = counters.getOrElseUpdate(nodeId, group.counter(nodeId))
+    val counter = counters.getOrElseUpdate(nodeId, metricUtils.counter(NonEmptyList.of("nodeCount"), Map("nodeId" -> nodeId)))
     counter.inc()
   }
 }
