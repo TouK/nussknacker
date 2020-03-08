@@ -153,7 +153,9 @@ val ficusV = "1.4.1"
 val configV = "1.3.0"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
-val dropWizardV = "3.1.5"
+//we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
+//In Flink metrics we use bundled dropwizard metrics v. 3.x
+val dropWizardV = "5.0.0-rc3"
 
 val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
@@ -585,7 +587,8 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
     name := "nussknacker-standalone-util",
     libraryDependencies ++= {
       Seq(
-        "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
+
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         //akka-http is only for StandaloneRequestResponseLogger
         "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force(),
         "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force()

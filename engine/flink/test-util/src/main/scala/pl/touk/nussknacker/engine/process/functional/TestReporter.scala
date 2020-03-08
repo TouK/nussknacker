@@ -39,6 +39,8 @@ class TestReporter extends AbstractReporter {
 
   def testCounters(containing: String) = counters.asScala.filter(_._2.contains(containing)).keys
 
+  def names = counters.values().asScala
+
   override def notifyOfRemovedMetric(metric: Metric, metricName: String, group: MetricGroup) = {}
 
   override def close() = {}

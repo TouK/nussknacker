@@ -107,7 +107,7 @@ object TestFactory extends TestPermissions{
     override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: User): Future[Unit] =
       deployResult
 
-    private var deployResult: Future[Unit] = Future.successful()
+    private var deployResult: Future[Unit] = Future.successful(())
 
     private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(SimpleStateStatus.Running))
 
@@ -118,7 +118,7 @@ object TestFactory extends TestPermissions{
         action
       } finally {
         promise.complete(Try(Unit))
-        deployResult = Future.successful()
+        deployResult = Future.successful(())
       }
     }
 
@@ -127,7 +127,7 @@ object TestFactory extends TestPermissions{
       try {
         action
       } finally {
-        deployResult = Future.successful()
+        deployResult = Future.successful(())
       }
     }
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
@@ -10,14 +10,13 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, Simp
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-
-class MetricsSpec extends FlatSpec with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach {
+class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach {
 
   override protected def beforeEach(): Unit = {
     TestReporter.reset()
   }
 
-  it should "measure time for service" in {
+  test("measure time for service") {
 
     import spel.Implicits._
 
@@ -38,7 +37,7 @@ class MetricsSpec extends FlatSpec with Matchers with VeryPatientScalaFutures wi
 
   }
 
-  it should "measure errors" in {
+  test("measure errors") {
 
     import spel.Implicits._
 
@@ -62,7 +61,7 @@ class MetricsSpec extends FlatSpec with Matchers with VeryPatientScalaFutures wi
 
   }
 
-  it should "measure node counts" in {
+  test("measure node counts") {
 
     import spel.Implicits._
 
@@ -98,7 +97,7 @@ class MetricsSpec extends FlatSpec with Matchers with VeryPatientScalaFutures wi
     }
   }
 
-  it should "open measuring service" in {
+  test("open measuring service"){
     import spel.Implicits._
 
     val process = EspProcessBuilder.id("proc1")
