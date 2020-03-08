@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.api.dict
 
+import java.io.Closeable
+
 import cats.data.Validated
 import pl.touk.nussknacker.engine.api.dict.DictRegistry._
 
 /**
  * Provide operations on key/label for dictionaries. For some dictionaries, resolving key/label can be not supported (None will be returned).
  */
-trait DictRegistry {
+trait DictRegistry extends Closeable {
 
   /**
    * Returns key if exists matching label in dictionary with id = dictId
@@ -22,6 +24,8 @@ trait DictRegistry {
   def toEngineRegistry: EngineDictRegistry = new EngineDictRegistry {
     override def labelByKey(dictId: String, label: String): Validated[DictLookupError, Option[String]] =
       DictRegistry.this.labelByKey(dictId, label)
+
+    override def close(): Unit = {}
   }
 
 }

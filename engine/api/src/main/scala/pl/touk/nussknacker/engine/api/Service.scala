@@ -9,5 +9,9 @@ package pl.touk.nussknacker.engine.api
   *
   * TODO We should consider separate interfaces for java implementation, but right now we convert ProcessConfigCreator
   * from java to scala one and is seems difficult to convert java CustomStreamTransformer, Service etc. into scala ones
+  *
+  * IMPORTANT lifecycle notice:
+  * Implementations of this class *must not* allocate resources (connections, file handles etc.) unless open() *or* appropriate @MethodToInvoke
+  *  is called
   */
 abstract class Service extends Lifecycle

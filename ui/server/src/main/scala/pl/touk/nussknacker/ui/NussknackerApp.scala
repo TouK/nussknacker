@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui
 
+import java.io.Closeable
 import java.lang.Thread.UncaughtExceptionHandler
 
 import _root_.cors.CorsSupport
@@ -56,7 +57,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     hsqlServer.foreach(_.start())
   }
 
-  private val route = initializeRoute(config)
+  private val (route, objectsToClose) = initializeRoute(config)
 
   // TODO: switch to general configuration via application.conf when https://github.com/akka/akka-http/issues/55 will be ready
   val port = config.getInt("http.port")
@@ -86,7 +87,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     )
   }
 
-  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer): Route = {
+  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[Closeable]) = {
     import system.dispatcher
 
     val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes", 500 * 1024 * 1000)
@@ -139,6 +140,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val processAuthorizer = new AuthorizeProcess(processRepository)
     val appResources = new AppResources(config, typeToConfig, modelData, processRepository, processValidation, jobStatusService)
 
+    val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
+
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
         new ProcessesResources(
@@ -167,12 +170,12 @@ object NussknackerApp extends App with Directives with LazyLogging {
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
       )
+
       val optionalRoutes = List(
         featureTogglesConfig.remoteEnvironment
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
-        featureTogglesConfig.counts
-          .map(prepareCountsReporter(environment, _))
+        countsReporter
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
         featureTogglesConfig.attachments
           .map(path => new ProcessAttachmentService(path, processActivityRepository))
@@ -195,7 +198,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"))
-    CorsSupport.cors(featureTogglesConfig.development) {
+    val route = CorsSupport.cors(featureTogglesConfig.development) {
       pathPrefixTest(!"api") {
         webResources.route
       } ~  pathPrefix("api") {
@@ -206,6 +209,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         }
       }
     }
+    (route, modelData.values ++ countsReporter.toList)
   }
 
   //by default, we use InfluxCountsReporterCreator
@@ -238,11 +242,12 @@ object NussknackerApp extends App with Directives with LazyLogging {
   }
 
   //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails
-  private def prepareUncaughtExceptionHandler() = {
+  private def prepareUncaughtExceptionHandler(): Unit = {
     //TODO: should we set it only on main thread?
     Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = {
         logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
+        objectsToClose.foreach(_.close())
         hsqlServer.foreach(_.shutdown())
         system.terminate()
       }

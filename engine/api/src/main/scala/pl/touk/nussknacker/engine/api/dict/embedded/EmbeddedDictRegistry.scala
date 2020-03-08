@@ -40,6 +40,8 @@ abstract class EmbeddedDictRegistry extends DictRegistry {
     }
   }
 
+  override def close(): Unit = {}
+
   protected def handleNotEmbeddedKeyBeLabel(dictId: String, definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String]
 
   protected def handleNotEmbeddedLabelByKey(dictId: String, definition: DictDefinition, key: String): Validated[DictEntryWithKeyNotExists, Option[String]]
@@ -66,5 +68,7 @@ abstract class EmbeddedDictQueryService extends DictQueryService {
 
   protected def handleNotEmbeddedQueryEntriesByLabel(dictId: String, definition: DictDefinition, labelPattern: String)
                                                     (implicit ec: ExecutionContext): Future[List[DictEntry]]
+
+  override def close(): Unit = {}
 
 }

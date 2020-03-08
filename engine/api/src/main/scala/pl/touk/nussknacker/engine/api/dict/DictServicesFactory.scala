@@ -18,4 +18,11 @@ trait DictServicesFactory {
 
 }
 
-case class UiDictServices(dictRegistry: DictRegistry, dictQueryService: DictQueryService)
+case class UiDictServices(dictRegistry: DictRegistry, dictQueryService: DictQueryService) {
+
+  def close(): Unit = {
+    dictRegistry.close();
+    dictQueryService.close();
+  }
+
+}

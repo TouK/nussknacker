@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.processCounts
 
+import java.io.Closeable
 import java.time.LocalDateTime
 
 import com.typesafe.config.Config
@@ -21,7 +22,7 @@ trait CountsReporterCreator {
 }
 
 
-trait CountsReporter {
+trait CountsReporter extends Closeable {
 
   def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]]
 

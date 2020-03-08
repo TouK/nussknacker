@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine
 
+import java.io.Closeable
 import java.net.URL
 
 import com.typesafe.config.Config
@@ -51,7 +52,7 @@ case class ClassLoaderModelData(processConfigFromConfiguration: ModelConfigToLoa
 
 }
 
-trait ModelData {
+trait ModelData extends Closeable {
 
   def migrations: ProcessMigrations
 
@@ -83,5 +84,9 @@ trait ModelData {
   def processConfigFromConfiguration: ModelConfigToLoad
 
   lazy val processConfig: Config = processConfigFromConfiguration.loadConfig(modelClassLoader.classLoader)
+
+  def close(): Unit = {
+    dictServices.close()
+  }
 
 }
