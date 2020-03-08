@@ -7,13 +7,14 @@ trait RateMeter {
   def mark(): Unit
 }
 
+
 //this is poor implementation, but should be ok for our needs
 trait GenericInstantRateMeter extends RateMeter {
 
   val counter = new LongAdder
   private val NANOS_IN_SECOND = TimeUnit.SECONDS.toNanos(1)
   private val TICK_INTERVAL = TimeUnit.SECONDS.toNanos(1)
-  var lastTick = System.nanoTime()
+  var lastTick: Long = System.nanoTime()
 
   var lastValue = 0d
 

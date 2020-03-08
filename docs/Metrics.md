@@ -11,3 +11,69 @@ For each process following metrics are collected:
 * http services' invocation times, errors and throughput
 * event processing delays
 
+
+Metrics technical details
+=========================
+
+We recommend using InfluxDB or Prometheus for storing metrics. In default (e.g. demo) setup we use InfluxDB.
+
+Metric types
+------------
+
+We use following standard metric types, which are reported according to configured metric reporter
+- gauge
+- histogram
+- counter
+- meter
+
+In descriptions below we also use composite metrics, which translate to more than one Flink/Dropwizard metrics:
+
+- instantRate - gauge measuring instant rate (that is, without smoothing) TODO: add also 'normal' meter for this metric
+
+- instantRateWithCount - as above plus counter. TODO: after adding meter to instantRate this will become obsolete
+  - instantRate
+  - count - counter
+  
+- espTimer - this type of metrics is used to track times of invocations with rate (e.g. how long service invocation took)
+  - histogram 
+  - instantRate - gauge  
+
+
+Common metrics
+----------------------------------
+
+| Measurement               | Additional tags | Metric type | Notes                                         |
+| -------------             | --------------- | --------    | -------------                                 |
+| nodeCount                 | nodeId          | counter     | used e.g. by count functionality              |
+| error.instantRate         | -               | instantRate |               |
+| error.instantRateByNode   | nodeId          | instantRate | nodeId is ```unknown``` if we fail to detect exact place              |
+| service.OK                | serviceName     | espTimer    | see below     |
+| service.FAIL              | serviceName     | espTimer    | see below     |
+
+```service``` metric is not added automatically. It can be used via ```GenericTimeMeasuringService```
+to measure arbitrary code returning ```Future``` - it will be classified as OK or FAIL if it's successful 
+or not.
+
+
+
+Metrics in streaming (Flink mode)
+--------------------------------------
+
+| Measurement                  | Additional tags | Metric type           | Description           |
+| -------------                | --------------- | -----------           | -------------         |
+| source                       | -               | instantRateWithCount  | TODO: handle joins    |
+| eventtimedelay.histogram     | -               | historgram            | only for              |
+| eventtimedelay.minimalDelay  | -               | gauge                 | time from last event (eventTime) to system time |
+| end                          | nodeId          | instantRateWithCount  | for sinks and end processors                      |
+| dead_end                     | nodeId          | instantRateWithCount  | for event filtered out on filters, switches etc.                      |
+
+Metrics in standalone mode
+-------------------------------
+
+In standalone mode we use Dropwizard metrics. However, due to low traffic in this project we consider
+using Micrometer in the future.
+
+| Measurement               | Additional tags | Metric type | Description   |
+| -------------             | --------------- | --------    | ------------- |
+| invocation.success        | -               | espTimer    |               |
+| invocation.failure        | nodeId          | espTimer    |               |
