@@ -57,7 +57,9 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     val result = validator.validate(process)
 
-    result.errors.processPropertiesErrors shouldBe List(missingRequiredProperty)
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed)) =>
+    }
   }
 
   test("validate non empty config with empty required property") {
@@ -69,20 +71,12 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     val result = validator.validate(process)
 
-    result.errors.processPropertiesErrors shouldBe List(
-      NodeValidationError(
-        "InvalidLiteralIntValue",
-        s"Property $reqFieldName ($label) has value of invalid type",
-        s"Expected integer, got: ''.",
-        fieldName = Some(reqFieldName),
-        errorType = NodeValidationErrorType.SaveNotAllowed),
-      NodeValidationError(
-        "EmptyMandatoryParameter",
-        s"Empty expression for mandatory parameter",
-        s"Please fill expression for this parameter",
-        Some(reqFieldName),
-        NodeValidationErrorType.SaveAllowed),
-    )
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(
+      NodeValidationError("InvalidLiteralIntValue", _, _, Some("propReq"), NodeValidationErrorType.SaveNotAllowed),
+      NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed),
+      ) =>
+    }
   }
 
   test("validate non empty config with required property with wrong type") {
@@ -94,14 +88,9 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     val result = validator.validate(process)
 
-    result.errors.processPropertiesErrors shouldBe List(
-      NodeValidationError(
-        "InvalidLiteralIntValue",
-        s"Property $reqFieldName ($label) has value of invalid type",
-        s"Expected integer, got: 'some text'.",
-        fieldName = Some(reqFieldName),
-        errorType = NodeValidationErrorType.SaveNotAllowed
-      ))
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("InvalidLiteralIntValue", _, _, Some("propReq"), NodeValidationErrorType.SaveNotAllowed)) =>
+    }
   }
 
   test("validate empty config") {
@@ -109,7 +98,9 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     val result = validator.validate(process)
 
-    result.errors.processPropertiesErrors shouldBe List(missingRequiredProperty)
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed)) =>
+    }
   }
 
   test("validate non empty config with fixed value property with wrong value") {
@@ -121,15 +112,12 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     val result = validator.validate(process)
 
-    result.errors.processPropertiesErrors shouldBe List(
-      NodeValidationError(
-        "InvalidPropertyFixedValue",
-        s"Property $optFixedFieldName ($label) has invalid value",
-        s"Expected one of a, b, got: 'some text'.",
-        Some(optFixedFieldName),
-        NodeValidationErrorType.SaveNotAllowed),
-      missingRequiredProperty
-    )
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(
+      NodeValidationError("InvalidPropertyFixedValue", _, _, Some(optFixedFieldName), NodeValidationErrorType.SaveNotAllowed),
+      NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed)
+      ) =>
+    }
   }
 
   test("validate non empty config with unknown property") {
@@ -143,24 +131,8 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     val result = validator.validate(process)
 
-    result.errors.processPropertiesErrors shouldBe List(
-      NodeValidationError(
-        "UnknownProperty",
-        s"Unknown property $unknownProperty",
-        s"Property $unknownProperty is not known",
-        Some(unknownProperty),
-        NodeValidationErrorType.SaveAllowed
-      )
-    )
-  }
-
-  private def missingRequiredProperty = {
-    NodeValidationError(
-      "MissingRequiredProperty",
-      s"Configured property $reqFieldName ($label) is missing",
-      s"Please fill missing property $reqFieldName ($label)",
-      Some(reqFieldName),
-      NodeValidationErrorType.SaveAllowed
-    )
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("UnknownProperty", _, _, Some(unknownProperty), NodeValidationErrorType.SaveAllowed)) =>
+    }
   }
 }
