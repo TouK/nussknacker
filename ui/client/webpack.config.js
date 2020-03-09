@@ -164,8 +164,33 @@ module.exports = {
         include: __dirname,
       },
       {
+        test: /\.svg$/,
+        use: [
+          "svg-transform-loader",
+          {
+            loader: "svgo-loader",
+            options: {
+              multipass: true,
+              pretty: true,
+              plugins: [
+                {removeOffCanvasPaths: true},
+                {removeUselessStrokeAndFill: {removeNone: true}},
+              ],
+            },
+          }],
+        enforce: "pre",
+      },
+      {
         test: /\.(svg|png|jpg)$/,
-        loader: "file-loader?name=assets/images/[name].[ext]",
+        oneOf: [
+          {
+            resourceQuery: /inline/,
+            loader: "raw-loader",
+          },
+          {
+            loader: "file-loader?name=assets/images/[name][hash].[ext]",
+          },
+        ],
         include: __dirname,
       },
     ],

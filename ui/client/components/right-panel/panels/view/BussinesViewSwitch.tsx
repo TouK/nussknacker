@@ -1,43 +1,29 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {connect} from "react-redux"
-import Switch from "react-switch"
 import {bindActionCreators} from "redux"
 import {fetchProcessToDisplay} from "../../../../actions/nk/process"
 import {businessViewChanged} from "../../../../actions/nk/ui/layout"
 import {RootState} from "../../../../reducers/index"
 import {getProcessId, getProcessVersionId, isBusinessView, isPristine} from "../../selectors/graph"
+import {ToolbarButton} from "../../ToolbarButton"
+import {businessViewActive, businessViewInactive} from "../../../../assets/icons/InlinedSvgs"
 
-type OwnProps = {}
-
-type Props = OwnProps & StateProps
+type Props = StateProps
 
 function BussinesViewSwitch(props: Props) {
-  const {nothingToSave, businessView, processId, versionId} = props
+  const {businessView, businessViewChanged, fetchProcessToDisplay, nothingToSave, processId, versionId} = props
   const {t} = useTranslation()
-
   return (
-    <div className="panel-properties">
-      <label>
-        <Switch
-          disabled={!nothingToSave}
-          uncheckedIcon={false}
-          checkedIcon={false}
-          height={14}
-          width={28}
-          offColor="#333"
-          onColor="#333"
-          offHandleColor="#999"
-          onHandleColor="#8FAD60"
-          checked={businessView}
-          onChange={(checked) => {
-            props.businessViewChanged(checked)
-            props.fetchProcessToDisplay(processId, versionId, checked)
-          }}
-        />
-        <span className="business-switch-text">{t("panels.actions.view-bussinesView.label", "Business View")}</span>
-      </label>
-    </div>
+    <ToolbarButton
+      name={t("panels.actions.view-bussinesView.label", "Business")}
+      icon={businessView ? businessViewActive : businessViewInactive}
+      disabled={!nothingToSave}
+      onClick={() => {
+        businessViewChanged(!businessView)
+        fetchProcessToDisplay(processId, versionId, !businessView)
+      }}
+    />
   )
 }
 

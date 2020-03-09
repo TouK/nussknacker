@@ -178,6 +178,12 @@
       "error",
       "never"
     ],
+    "import/no-unresolved": [
+      "error",
+      {
+        "ignore": ["\\?inline"]
+      }
+    ],
     "i18next/no-literal-string": [
       "error",
       {
