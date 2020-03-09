@@ -120,8 +120,8 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
           (None, Valid(None))
         }
         toCompilationResult(validatedOptionalExpression.map(compiledgraph.node.Sink(id, ref.typ, _, disabled.contains(true))), expressionTypingInfoEntry.toMap)
-        
-      case graph.node.EndingCustomNode(id, _, _, _) =>
+
+      case graph.node.CustomNode(id, _, _, _, _) =>
         toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id)), Map.empty)
 
       //probably this shouldn't occur - otherwise we'd have empty subprocess?

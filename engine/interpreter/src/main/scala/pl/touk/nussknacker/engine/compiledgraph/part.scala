@@ -34,8 +34,8 @@ object part {
 
   }
 
-  case class EndingCustomPart(obj: AnyRef, node: splittednode.EndingNode[EndingCustomNode], validationContext: ValidationContext) extends SubsequentPart {
-    override type T = EndingCustomNode
+  case class EndingCustomPart(obj: AnyRef, node: splittednode.EndingNode[CustomNode], validationContext: ValidationContext) extends SubsequentPart {
+    override type T = CustomNodeData
 
     val ends = List(NormalEnd(node.id))
   }

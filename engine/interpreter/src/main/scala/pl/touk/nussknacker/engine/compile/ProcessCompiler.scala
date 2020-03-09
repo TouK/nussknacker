@@ -91,9 +91,13 @@ trait ProcessValidator extends LazyLogging {
 protected trait ProcessCompilerBase {
 
   protected def definitions: ProcessDefinition[ObjectWithMethodDef]
+
   protected def sourceFactories: Map[String, ObjectWithMethodDef] = definitions.sourceFactories
+
   protected def sinkFactories: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.SinkAdditionalData)] = definitions.sinkFactories
+
   protected def exceptionHandlerFactory: ObjectWithMethodDef = definitions.exceptionHandlerFactory
+
   protected val customStreamTransformers: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.CustomTransformerAdditionalData)] = definitions.customStreamTransformers
   protected val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[ObjectWithMethodDef] = definitions.expressionConfig
 
@@ -287,10 +291,10 @@ protected trait ProcessCompilerBase {
 
   object CustomNodeCompiler {
 
-    def compileEndingCustomNodePart(part: EndingCustomNodePart, node: splittednode.EndingNode[EndingCustomNode], data: EndingCustomNode,
+    def compileEndingCustomNodePart(part: EndingCustomNodePart, node: splittednode.EndingNode[CustomNode], data: CustomNodeData,
                                     ctx: ValidationContext)
                                    (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.EndingCustomPart] = {
-      val (typingInfo, validatedNextCtx, compiledNode) = compileCustomNodeObject(data, Left(ctx))
+      val (typingInfo, validatedNextCtx, compiledNode) = compileCustomNodeObject(data, Left(ctx), ending = true)
       val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo))
 
       CompilationResult.map2(
@@ -304,7 +308,7 @@ protected trait ProcessCompilerBase {
     def compileCustomNodePart(part: ProcessPart, node: splittednode.OneOutputNode[CustomNodeData], data: CustomNodeData,
                               ctx: Either[ValidationContext, BranchEndContexts])
                              (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
-      val (typingInfo, validatedNextCtx, compiledNode) = compileCustomNodeObject(data, ctx)
+      val (typingInfo, validatedNextCtx, compiledNode) = compileCustomNodeObject(data, ctx, ending = false)
 
       val nextPartsValidation = sub.validate(node, validatedNextCtx.valueOr(_ => ctx.left.getOrElse(contextWithOnlyGlobalVariables)))
       val typesForParts = nextPartsValidation.typing.mapValues(_.inputValidationContext)
@@ -320,7 +324,7 @@ protected trait ProcessCompilerBase {
       }.distinctErrors
     }
 
-    private def compileCustomNodeObject(data: CustomNodeData, ctx: Either[ValidationContext, BranchEndContexts])
+    private def compileCustomNodeObject(data: CustomNodeData, ctx: Either[ValidationContext, BranchEndContexts], ending: Boolean)
                                        (implicit metaData: MetaData, nodeId: NodeId):
     (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, ValidationContext], ValidatedNel[ProcessCompilationError, AnyRef]) = {
       val customNodeDefinition = fromOption(
@@ -337,17 +341,19 @@ protected trait ProcessCompilerBase {
       val nextCtx = (customNodeDefinition, validObjectWithTypingInfo).mapN(Tuple2.apply).andThen {
         case ((nodeDefinition, additionalData), (_, cNode)) =>
           val contextTransformationDefOpt = cNode.cast[AbstractContextTransformation].map(_.definition)
-          contextAfterCustomNode(data, nodeDefinition, cNode, ctx, additionalData.clearsContext, contextTransformationDefOpt, additionalData)
+          contextAfterCustomNode(data, nodeDefinition, cNode, ctx, contextTransformationDefOpt, additionalData, ending)
       }
 
       (validObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), nextCtx, validObjectWithTypingInfo.map(_._2))
     }
 
     private def contextAfterCustomNode(node: CustomNodeData, nodeDefinition: ObjectWithMethodDef, cNode: AnyRef,
-                                       validationContexts: Either[ValidationContext, BranchEndContexts], clearsContext: Boolean,
-                                       contextTransformationDefOpt: Option[AbstractContextTransformationDef], additionalData: CustomTransformerAdditionalData)
+                                       validationContexts: Either[ValidationContext, BranchEndContexts], contextTransformationDefOpt: Option[AbstractContextTransformationDef],
+                                       additionalData: CustomTransformerAdditionalData, ending: Boolean)
                                       (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
       (contextTransformationDefOpt, validationContexts) match {
+        case (_, _) if ending && !additionalData.canBeEnding =>
+          Invalid(NonEmptyList.of(InvalidEndingCustomNode(node.nodeType, node.id)))
         case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
           // copying global variables because custom transformation may override them -> todo in ValidationContext
           transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
@@ -360,7 +366,7 @@ protected trait ProcessCompilerBase {
           transformation.transform(contexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
         case (None, branchCtx) =>
           val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
-          val maybeClearedContext = if (clearsContext) validationContext.clearVariables else validationContext
+          val maybeClearedContext = if (additionalData.clearsContext) validationContext.clearVariables else validationContext
 
           (node.outputVar, returnType(nodeDefinition, cNode)) match {
             case (Some(varName), Some(typ)) => maybeClearedContext.withVariable(varName, typ)
@@ -368,8 +374,7 @@ protected trait ProcessCompilerBase {
               .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
             case (None, None) => Valid(maybeClearedContext)
             case (Some(_), None) => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
-            case (None, Some(_)) if node.isInstanceOf[EndingCustomNode] && additionalData.canBeEnding => Valid(maybeClearedContext)
-            case (None, Some(_)) if node.isInstanceOf[EndingCustomNode] && !additionalData.canBeEnding => Invalid(NonEmptyList.of(InvalidEndingCustomNode(node.nodeType, node.id)))
+            case (None, Some(_)) if ending => Valid(maybeClearedContext)
             case (None, Some(_)) => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
           }
       }
