@@ -38,6 +38,11 @@ const nodeToolbox: Reducer<NodeToolbox> = (state = {opened: {}}, action) => {
         },
       }
 
+    case "RESET_TOOLBARS":
+      return {
+        opened: {},
+      }
+
     default:
       return state
   }
