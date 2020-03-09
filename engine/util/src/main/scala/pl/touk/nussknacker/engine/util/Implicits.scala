@@ -18,11 +18,27 @@ object Implicits {
 
   }
 
-  implicit class RichString(s: String) {
-    def safeToOption: Option[String] = {
-      if (s == null || s == "") None
-      else Some(s)
+  implicit class RichIterableMap[K,V](m: Map[K, Iterable[V]]) {
+    def sequenceMap: Map[V, Iterable[K]] = {
+      m.map { case (k, values) =>
+        values.map(v => v -> k)
+      }.toList.flatten.groupBy(_._1).mapValues(_.map(_._2))
     }
+  }
+
+  implicit class RichStringList(seq: List[String]) {
+
+    def sortCaseInsensitive: List[String] = {
+      seq.sortBy(_.toLowerCase)
+    }
+
+    def mkCommaSeparatedStringWithPotentialEllipsis(maxEntries: Int): String = {
+      if (seq.size <= maxEntries)
+        seq.mkString(", ")
+      else
+        seq.take(maxEntries).mkString("", ", ", ", ...")
+    }
+
   }
 
   implicit class RichFuture[A](future: Future[A]) {
@@ -34,4 +50,11 @@ object Implicits {
       future
     }
   }
+
+  implicit class SafeString(s: String) {
+    def safeValue: Option[String] = {
+      if (s == null || s == "") None else Some(s)
+    }
+  }
+
 }

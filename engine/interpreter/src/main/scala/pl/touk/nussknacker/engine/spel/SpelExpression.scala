@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper, LooseKeysDictTyper}
+import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -178,9 +178,6 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
 
   def typingDictLabels =
     new SpelExpressionParser(parser, validator.withTyper(_.withDictTyper(new LabelsDictTyper(dictRegistry))), dictRegistry, enableSpelForceCompile, flavour, prepareEvaluationContext)
-
-  def looselyTypingDictKeys =
-    new SpelExpressionParser(parser, validator.withTyper(_.withDictTyper(new LooseKeysDictTyper(dictRegistry))), dictRegistry, enableSpelForceCompile, flavour, prepareEvaluationContext)
 
 }
 
