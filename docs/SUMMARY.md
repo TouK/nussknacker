@@ -22,4 +22,5 @@
 * [Powered by Nussknacker](PoweredBy.md)
 * [Roadmap](Roadmap.md)
 * [Changelog](Changelog.md)
+* [Migration guide](MigrationGuide.md)
 * [Glossary](GLOSSARY.md)
