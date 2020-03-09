@@ -82,6 +82,7 @@ const positions: Reducer<Positions> = (state = {}, action) => {
 const collapsed: Reducer<Collapsed> = (state = {}, action) => {
   switch (action.type) {
     case "TOGGLE_ALL_TOOLBARS":
+      // eslint-disable-next-line i18next/no-literal-string
       throw "not implemented"
       return state
 

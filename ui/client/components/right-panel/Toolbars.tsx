@@ -86,12 +86,12 @@ function Toolbars(props: PassedProps) {
     {
       id: "VERSIONS-PANEL",
       component: <VersionsPanel/>,
-      defaultSide: ToolbarsSide.TopLeft,
+      defaultSide: ToolbarsSide.BottomLeft,
     },
     {
       id: "COMMENTS-PANEL",
       component: <CommentsPanel/>,
-      defaultSide: ToolbarsSide.TopLeft,
+      defaultSide: ToolbarsSide.BottomLeft,
     },
     {
       id: "ATTACHMENTS-PANEL",
