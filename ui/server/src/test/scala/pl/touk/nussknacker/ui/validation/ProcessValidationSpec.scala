@@ -166,13 +166,13 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     processValidation.validate(validProcessWithFields(Map("field1" -> "a"))) shouldBe 'ok
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "", "field2" -> "b")))
-      .errors.processPropertiesErrors shouldBe List(NodeValidationError("EmptyMandatoryParameter", "Empty expression for mandatory parameter",
-      "Please fill expression for this parameter", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
-
+      .errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
+    }
     processValidation.validate(validProcessWithFields(Map("field2" -> "b")))
-      .errors.processPropertiesErrors shouldBe List(NodeValidationError("MissingRequiredProperty", "Configured property field1 (label1) is missing",
-      "Please fill missing property field1 (label1)", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
-
+      .errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("MissingRequiredProperty", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
+    }
   }
 
   test("don't validate properties on subprocess") {
@@ -215,15 +215,9 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     val result = processValidation.validate(validProcessWithFields(Map("field1" -> "true")))
 
-    result.errors.processPropertiesErrors shouldBe List(
-      NodeValidationError(
-        "UnknownProperty",
-        s"Unknown property field1",
-        s"Property field1 is not known",
-        Some("field1"),
-        NodeValidationErrorType.SaveAllowed
-      )
-    )
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed)) =>
+    }
   }
 
   test("not allows save with incorrect characters in ids") {
@@ -270,14 +264,9 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes shouldBe Map(
-      "custom" -> List(NodeValidationError(
-        "EmptyMandatoryParameter",
-        "Empty expression for mandatory parameter",
-        "Please fill expression for this parameter",
-        Some("expression"),
-        NodeValidationErrorType.SaveAllowed
-      )))
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("expression"), NodeValidationErrorType.SaveAllowed))) =>
+    }
     result.warnings shouldBe ValidationWarnings.success
   }
 
