@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.engine.api.dict
 
-import java.io.Closeable
-
 import cats.data.Validated
 import pl.touk.nussknacker.engine.api.dict.DictRegistry._
 
 /**
  * Provide operations on key/label for dictionaries. For some dictionaries, resolving key/label can be not supported (None will be returned).
  */
-trait DictRegistry extends Closeable {
+trait DictRegistry extends AutoCloseable {
 
   /**
    * Returns key if exists matching label in dictionary with id = dictId

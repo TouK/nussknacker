@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui
 
-import java.io.Closeable
 import java.lang.Thread.UncaughtExceptionHandler
 
 import _root_.cors.CorsSupport
@@ -42,8 +41,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  private implicit val system = ActorSystem("nussknacker-ui")
-  private implicit val materializer = ActorMaterializer()
+  private implicit val system: ActorSystem = ActorSystem("nussknacker-ui")
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   prepareUncaughtExceptionHandler()
 
@@ -87,7 +86,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     )
   }
 
-  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[Closeable]) = {
+  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
 
     val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes", 500 * 1024 * 1000)
@@ -209,7 +208,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         }
       }
     }
-    (route, modelData.values ++ countsReporter.toList)
+    (route, typeToConfig.values ++ countsReporter.toList)
   }
 
   //by default, we use InfluxCountsReporterCreator

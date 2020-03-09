@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine
 
-import java.io.Closeable
 import java.net.URL
 
 import com.typesafe.config.Config
@@ -52,7 +51,7 @@ case class ClassLoaderModelData(processConfigFromConfiguration: ModelConfigToLoa
 
 }
 
-trait ModelData extends Closeable {
+trait ModelData extends AutoCloseable {
 
   def migrations: ProcessMigrations
 
