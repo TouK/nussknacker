@@ -3,11 +3,12 @@ Project status
 Nussknacker is production ready - it's been used in major Polish telcom since beginning of 2017. However, it's still
 under active development, so some parts of the API may change in the future.
 
+For detailed instructions how to migrate to the newest version please see [migration guide](MigrationGuide.md).
 
 Nussknacker versions
 ====================
 
-0.0.13 (TODO)
+0.0.13 (not released)
 -------------
 * Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed. `processTypes` 
 configuration should be used from now on.

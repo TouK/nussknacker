@@ -1,6 +1,6 @@
 # Migration guide
 
-To see biggest differences please consult the [changelog](https://nussknacker.io/Changelog.html).
+To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.0.13 (not released)
 
