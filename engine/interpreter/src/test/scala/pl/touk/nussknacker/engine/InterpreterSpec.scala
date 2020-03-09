@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.compiledgraph.part.{ProcessPart, SinkPart}
+import pl.touk.nussknacker.engine.compiledgraph.part.{EndingCustomPart, ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -73,7 +73,8 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   private def interpretSource(node: SourceNode, transaction: Transaction,
                               listeners: Seq[ProcessListener] = listenersDef(),
-                              services: Map[String, Service] = servicesDef): Any = {
+                              services: Map[String, Service] = servicesDef,
+                              transformers: Map[String, CustomStreamTransformer] = Map()): Any = {
     import SynchronousExecutionContext.ctx
     AccountService.clear()
     NameDictService.clear()
@@ -81,7 +82,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val metaData = MetaData("process1", StreamMetaData())
     val process = EspProcess(metaData, ExceptionHandlerRef(List.empty), NonEmptyList.of(node))
 
-    val compiledProcess = compile(services, process, listeners)
+    val compiledProcess = compile(services, transformers, process, listeners)
     val interpreter = compiledProcess.interpreter
     val parts = compiledProcess.parts
 
@@ -99,6 +100,7 @@ class InterpreterSpec extends FunSuite with Matchers {
       case NextPartReference(nextPartId) =>
         val sink = parts.sources.head.nextParts.collectFirst {
           case sink: SinkPart if sink.id == nextPartId => sink
+          case endingCustomPart: EndingCustomPart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
         Await.result(interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.head.finalContext), 10 seconds).left.get.head.output
       case _: EndReference =>
@@ -110,9 +112,11 @@ class InterpreterSpec extends FunSuite with Matchers {
     }
   }
 
-  def compile(servicesToUse: Map[String, Service], process: EspProcess, listeners: Seq[ProcessListener]): CompiledProcess = {
+  def compile(servicesToUse: Map[String, Service], customStreamTransformersToUse: Map[String, CustomStreamTransformer], process: EspProcess, listeners: Seq[ProcessListener]): CompiledProcess = {
 
     val configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator {
+
+      override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = customStreamTransformersToUse.mapValuesNow(WithCategories(_))
 
       override def services(config: Config): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
 
@@ -120,7 +124,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         Map("transaction-source" -> WithCategories(TransactionSource))
 
       override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]]
-        = Map("dummySink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {
+      = Map("dummySink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {
         override def testDataOutput: Option[(Any) => String] = None
       })))
 
@@ -161,18 +165,15 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
   test("be able to use SpelExpressionRepr") {
-
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "spelNodeService", "expression" -> "#input.accountId == '11' ? 22 : 33")
       .sink("end", "#rawExpression", "dummySink")
 
     interpretSource(process, Transaction(accountId = "123")) should equal("#input.accountId == '11' ? 22 : 33 - Ternary")
-
   }
 
   test("ignore disabled filters") {
-
     val process = GraphBuilder
       .source("start", "transaction-source")
       .filter("filter", "false", disabled = Some(true))
@@ -183,15 +184,14 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   test("ignore disabled sinks") {
     val process = SourceNode(
-          Source("start", SourceRef("transaction-source", List.empty)),
-          EndingNode(Sink("end", SinkRef("dummySink", List.empty), isDisabled = Some(true)))
-        )
+      Source("start", SourceRef("transaction-source", List.empty)),
+      EndingNode(Sink("end", SinkRef("dummySink", List.empty), isDisabled = Some(true)))
+    )
 
     assert(interpretSource(process, Transaction(accountId = "123")) == null)
   }
 
   test("ignore disabled processors") {
-
     var nodes = List[Any]()
 
     val services = Map("service" ->
@@ -215,7 +215,6 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
   test("invoke processors") {
-
     val accountId = "333"
     var result: Any = ""
 
@@ -236,11 +235,9 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretSource(process, Transaction(accountId = accountId), Seq.empty, services)
 
     result should equal(accountId)
-
   }
 
   test("build node graph ended-up with processor") {
-
     val accountId = "333"
     var result: Any = ""
 
@@ -261,7 +258,25 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretSource(process, Transaction(accountId = accountId), Seq.empty, services)
 
     result should equal(accountId)
+  }
 
+
+  test("build node graph ended-up with custom node") {
+    val accountId = "333"
+    val process =
+      GraphBuilder
+        .source("start", "transaction-source")
+        .endingCustomNode("process", None, "transactionCustomNode")
+
+    val transformers = Map("transactionCustomNode" ->
+      new CustomStreamTransformer {
+        @MethodToInvoke
+        def create(): Unit = {
+        }
+        override def canBeEnding: Boolean = true
+      }
+    )
+    interpretSource(process, Transaction(accountId = accountId), Seq.empty, transformers = transformers)
   }
 
   test("enrich context") {
@@ -768,7 +783,7 @@ object InterpreterSpec {
   object WithExplicitDefinitionService extends Service with ServiceWithExplicitMethod {
 
     override def parameterDefinition: List[api.definition.Parameter]
-      = List(api.definition.Parameter[Long]("param1"))
+    = List(api.definition.Parameter[Long]("param1"))
 
 
     override def returnType: typing.TypingResult = Typed[String]
@@ -795,7 +810,7 @@ object InterpreterSpec {
 
     override def parseWithoutContextValidation(original: String): Validated[NonEmptyList[ExpressionParseError],
       pl.touk.nussknacker.engine.api.expression.Expression]
-      = Valid(LiteralExpression(original))
+    = Valid(LiteralExpression(original))
   }
 
   case object LiteralExpressionTypingInfo extends ExpressionTypingInfo

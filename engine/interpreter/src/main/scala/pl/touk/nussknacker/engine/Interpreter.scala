@@ -136,12 +136,12 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
         }
       case BranchEnd(e) =>
         Future.successful(List(InterpretationResult(e.joinReference, null, ctx)))
-
-      case cust: CustomNode =>
-        interpretNext(cust.next, ctx)
+      case CustomNode(_, next) =>
+        interpretNext(next, ctx)
+      case EndingCustomNode(id) =>
+        Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
       case SplitNode(id, nexts) =>
         Future.sequence(nexts.map(interpretNext(_, ctx))).map(_.flatten)
-
     }
   }
 
