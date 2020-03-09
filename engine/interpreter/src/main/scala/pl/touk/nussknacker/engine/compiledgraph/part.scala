@@ -34,6 +34,12 @@ object part {
 
   }
 
+  case class EndingCustomPart(obj: AnyRef, node: splittednode.EndingNode[EndingCustomNode], validationContext: ValidationContext) extends SubsequentPart {
+    override type T = EndingCustomNode
+
+    val ends = List(NormalEnd(node.id))
+  }
+  
   case class SinkPart(obj: api.process.Sink, node: splittednode.EndingNode[Sink], validationContext: ValidationContext) extends SubsequentPart {
     override type T = Sink
 

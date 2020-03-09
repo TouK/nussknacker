@@ -17,6 +17,8 @@ object NodesCollector {
         collectNodes(source.node) ::: source.nextParts.flatMap(collectNodesInAllParts)
       case sink: SinkPart =>
         collectNodes(sink.node)
+      case endingCustom: EndingCustomNodePart =>
+        collectNodes(endingCustom.node)
       case custom:CustomNodePart =>
         collectNodes(custom.node) ::: custom.nextParts.flatMap(collectNodesInAllParts)
     }

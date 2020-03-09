@@ -81,11 +81,11 @@ object ProcessTestData {
       branchParam = false)
     )
     .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
-      clearsContext = false, manyInputs = false))
+      clearsContext = false, manyInputs = false, canBeEnding = false))
     .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
-      clearsContext = false, manyInputs = false))
+      clearsContext = false, manyInputs = false, canBeEnding = false))
     .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"),
-      clearsContext = false, manyInputs = false))
+      clearsContext = false, manyInputs = false, canBeEnding = false))
 
   val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
 

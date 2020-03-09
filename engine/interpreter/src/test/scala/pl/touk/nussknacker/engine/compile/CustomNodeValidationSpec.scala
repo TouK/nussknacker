@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidEndingCustomNode, MissingParameters, NoParentContext, NodeId}
@@ -131,13 +132,15 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
   }
 
-  object OptionalEndingStreamTransformer extends CustomStreamTransformer {
+  object OptionalEndingStreamTransformer extends CustomStreamTransformer with LazyLogging {
 
     @MethodToInvoke
     def execute(@ParamName("stringVal")
                 @AdditionalVariables(value = Array(new AdditionalVariable(name = "additionalVar1", clazz = classOf[String])))
-                stringVal: String) = {}
+                stringVal: String) = {
+    }
 
+    override def canBeEnding: Boolean = true
   }
 
   val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
