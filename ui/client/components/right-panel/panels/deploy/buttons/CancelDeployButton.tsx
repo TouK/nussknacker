@@ -1,7 +1,7 @@
 import React from "react"
 import {useSelector, useDispatch} from "react-redux"
 import HttpService from "../../../../../http/HttpService"
-import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
+import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {isCancelPossible, getProcessId} from "../../../selectors/graph"

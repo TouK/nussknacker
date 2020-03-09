@@ -1,6 +1,6 @@
 import React from "react"
 import {connect} from "react-redux"
-import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
+import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {layout} from "../../../../../actions/nk/ui/layout"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"

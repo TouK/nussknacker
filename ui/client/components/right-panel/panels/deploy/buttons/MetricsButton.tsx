@@ -1,7 +1,7 @@
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
-import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
+import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {showMetrics} from "../../../../../actions/nk/showMetrics"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {getProcessId} from "../../../selectors/graph"

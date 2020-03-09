@@ -1,7 +1,7 @@
 import React from "react"
 import {useDispatch, useSelector} from "react-redux"
 import HttpService from "../../../../../http/HttpService"
-import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
+import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../../../actions/nk/tooltips"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
 import {ToolbarButton} from "../../../ToolbarButton"

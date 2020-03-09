@@ -15,7 +15,7 @@ function CountsButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.test-counts.button", "counts")}
-      icon={"counts.svg"}
+      icon={"new/counts.svg"}
       onClick={() => toggleModalDialog(Dialogs.types.calculateCounts)}
     />
   )

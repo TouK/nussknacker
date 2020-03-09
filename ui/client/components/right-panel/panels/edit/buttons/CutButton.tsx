@@ -20,7 +20,7 @@ function CutButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.edit-cut.button", "cut")}
-      icon={"cut.svg"}
+      icon={"new/cut.svg"}
       disabled={!canCut}
       onClick={event => cutSelection(
         () => cut(event),

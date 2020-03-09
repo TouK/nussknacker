@@ -16,7 +16,7 @@ function BussinesViewSwitch(props: Props) {
   const {t} = useTranslation()
   return (
     <ToolbarButton
-      name={t("panels.actions.view-bussinesView.label", "Business")}
+      name={t("panels.actions.view-bussinesView.label", "business")}
       icon={businessView ? businessViewActive : businessViewInactive}
       disabled={!nothingToSave}
       onClick={() => {

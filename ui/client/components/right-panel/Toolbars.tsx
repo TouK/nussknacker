@@ -29,6 +29,7 @@ function Toolbars(props: PassedProps) {
     graphLayoutFunction,
     exportGraph,
     selectionActions,
+    graphGetter,
   } = props
 
   const toolbars: Toolbar[] = [
@@ -39,8 +40,8 @@ function Toolbars(props: PassedProps) {
     },
     {
       id: "VIEW-PANEL",
-      component: <ViewPanel/>,
-            defaultSide: ToolbarsSide.TopRight,
+      component: <ViewPanel graphGetter={graphGetter}/>,
+      defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "EDIT-PANEL",

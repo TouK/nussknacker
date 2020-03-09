@@ -22,7 +22,7 @@ function DeleteButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.edit-delete.button", "delete")}
-      icon={"delete.svg"}
+      icon={"new/delete.svg"}
       disabled={!NodeUtils.isPlainNode(nodeToDisplay) || isEmpty(selectionState)}
       onClick={() => deleteSelection(
         selectionState,

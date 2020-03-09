@@ -22,7 +22,7 @@ function ArchiveButton(props: StateProps) {
   return (
     <ToolbarButton
       name={t("panels.actions.process-archive.button", "archive")}
-      icon={"archive.svg"}
+      icon={"new/archive.svg"}
       disabled={isRunning}
       onClick={() => !isRunning && toggleConfirmDialog(
         true,

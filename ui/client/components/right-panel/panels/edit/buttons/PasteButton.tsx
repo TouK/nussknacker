@@ -21,7 +21,7 @@ function PasteButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.edit-paste.button", "paste")}
-      icon={"paste.svg"}
+      icon={"new/paste.svg"}
       disabled={!canPaste}
       onClick={event => pasteSelection(
         () => paste(event),

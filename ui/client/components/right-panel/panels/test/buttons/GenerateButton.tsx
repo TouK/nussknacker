@@ -16,7 +16,7 @@ function GenerateButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.test-generate.button", "generate")}
-      icon={"generate.svg"}
+      icon={"new/generate.svg"}
       disabled={!processIsLatestVersion || !testCapabilities.canGenerateTestData}
       onClick={() => toggleModalDialog(Dialogs.types.generateTestData)}
     />

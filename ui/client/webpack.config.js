@@ -173,7 +173,9 @@ module.exports = {
               multipass: true,
               pretty: true,
               plugins: [
+                {removeXMLNS: true},
                 {removeOffCanvasPaths: true},
+                {inlineStyles: {onlyMatchedOnce: false}},
                 {removeUselessStrokeAndFill: {removeNone: true}},
               ],
             },

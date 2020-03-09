@@ -1,7 +1,7 @@
 import React from "react"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
-import InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
+import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {finishGrouping} from "../../../../../actions/nk/groups"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {getGroupingState} from "../../../selectors/graph"
@@ -16,7 +16,7 @@ function GroupFinishButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.group-finish.button", "finish")}
-      icon={InlinedSvgs.buttonGroup}
+      icon={InlinedSvgs.buttonGroupFinish}
       disabled={(groupingState || []).length <= 1}
       onClick={finishGrouping}
     />
