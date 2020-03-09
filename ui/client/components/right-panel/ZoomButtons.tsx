@@ -7,14 +7,14 @@ import {Graph} from "./ToolsLayer"
 import {Reset} from "./Reset"
 
 interface Props {
-  graph: Graph,
+  graphGetter: () => Graph,
   className?: string,
 }
 
-export function ZoomButtons({className, graph}: Props) {
+export function ZoomButtons({className, graphGetter}: Props) {
   const dispatch = useDispatch()
-  const onZoomIn = () => dispatch(zoomIn(graph))
-  const onZoomOut = () => dispatch(zoomOut(graph))
+  const onZoomIn = () => dispatch(zoomIn(graphGetter()))
+  const onZoomOut = () => dispatch(zoomOut(graphGetter()))
 
   return (
     <div className={cn("zoom-in-out", className)}>

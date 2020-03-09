@@ -298,7 +298,7 @@ class Visualization extends React.Component {
         <ToolsLayer
           graphLayoutFunction={this.graphLayoutFun}
           exportGraph={this.exportGraphFun}
-          graph={this.getGraphInstance()}
+          graphGetter={this.getGraphInstance}
           isReady={this.state.dataResolved}
           selectionActions={{
             copy: () => this.copySelection(null, true),

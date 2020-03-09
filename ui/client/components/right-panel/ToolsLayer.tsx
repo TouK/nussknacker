@@ -29,20 +29,20 @@ export type PassedProps = {
 }
 
 type OwnProps = {
-  graph?: Graph,
+  graphGetter: () => Graph,
   isReady: boolean,
 } & PassedProps
 
 type Props = OwnProps
 
 function ToolsLayer(props: Props) {
-  const {graph, isReady, ...passProps} = props
+  const {graphGetter, isReady, ...passProps} = props
   const {isOpened} = useSidePanelToggle("RIGHT")
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
 
   return (
     <>
-      {graph ? <ZoomButtons className={cn("right", isOpened && "is-opened")} graph={graph}/> : null}
+      <ZoomButtons className={cn("right", isOpened && "is-opened")} graphGetter={graphGetter}/>
 
       <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
         <Toolbars {...passProps}/>
