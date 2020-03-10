@@ -7,7 +7,7 @@ import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import Map from "./editors/map/Map"
 
-const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel, varNameLabel}) => {
+const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel}) => {
 
   const addField = () => {
     addElement("fields", {name: "", uuid: uuid4(), expression: {expression: "", language: "spel"}})
@@ -25,7 +25,7 @@ const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readO
                     showValidation={showValidation}
                     validators={[mandatoryValueValidator, errorValidator(errors, "id")]}/>
 
-      <LabeledInput renderFieldLabel={() => renderFieldLabel(varNameLabel)}
+      <LabeledInput renderFieldLabel={() => renderFieldLabel("Variable Name")}
                     value={node.varName}
                     onChange={(event) => onInputChange("varName", event)}
                     isMarked={isMarked("varName")}
@@ -64,8 +64,7 @@ MapVariable.propTypes = {
   readOnly: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
   errors: PropTypes.array.isRequired,
-  renderFieldLabel: PropTypes.func.isRequired,
-  varNameLabel: PropTypes.string.isRequired
+  renderFieldLabel: PropTypes.func.isRequired
 }
 
 MapVariable.defaultProps = {

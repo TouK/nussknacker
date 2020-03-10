@@ -24,6 +24,7 @@ import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import {editorTypes} from "./editors/expression/EditorType"
+import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -178,8 +179,7 @@ export class NodeDetailsContent extends React.Component {
             />
         )
       case "SubprocessOutputDefinition":
-        return <MapVariable
-            varNameLabel={"Output name"}
+        return <SubprocessOutputDefinition
             renderFieldLabel={this.renderFieldLabel}
             removeElement={this.removeElement}
             onChange={this.setNodeDataAt}
