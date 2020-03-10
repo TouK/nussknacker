@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.process.util
 
+import java.time.format.DateTimeFormatter
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
+
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.WrongProcessType
 import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData}
@@ -37,6 +40,21 @@ object MetaDataExtractor {
     extractProperty(metaData, property).map(_.toLong)
 
   def extractLongProperty(metaData: MetaData, property: String, default: Long): Long =
-    extractProperty(metaData, property).map(_.toLong).getOrElse(default)
+    extractProperty(metaData, property).map(str => str.toLong).getOrElse(default)
+
+  def extractDateTimeProperty(metaData: MetaData, property: String, default: LocalDateTime): LocalDateTime =
+    extractProperty(metaData, property).map(java.time.LocalDateTime.parse(_, DateTimeFormatter.ISO_LOCAL_DATE_TIME)).getOrElse(default)
+
+  def extractTimeProperty(metaData: MetaData, property: String, default: LocalTime): LocalTime =
+    extractProperty(metaData, property).map(java.time.LocalTime.parse(_, DateTimeFormatter.ISO_LOCAL_TIME)).getOrElse(default)
+
+  def extractDateProperty(metaData: MetaData, property: String, default: LocalDate): LocalDate =
+    extractProperty(metaData, property).map(java.time.LocalDate.parse(_, DateTimeFormatter.ISO_DATE)).getOrElse(default)
+
+  def extractDurationProperty(metaData: MetaData, property: String, default: Duration): Duration =
+    extractProperty(metaData, property).map(Duration.parse(_)).getOrElse(default)
+
+  def extractPeriodProperty(metaData: MetaData, property: String, default: Period): Period =
+    extractProperty(metaData, property).map(Period.parse(_)).getOrElse(default)
 }
 
