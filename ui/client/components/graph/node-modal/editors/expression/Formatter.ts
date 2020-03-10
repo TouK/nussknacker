@@ -39,12 +39,22 @@ const spelDurationFormatter: Formatter = {
   },
 }
 
+const durationFormatter: Formatter = {
+  encode: (value: Duration) => `${moment.duration(value).toISOString()}`,
+  decode: value => value,
+}
+
 const spelPeriodFormatter: Formatter = {
   encode: (value: Period) => `T(java.time.Period).parse('${moment.duration(value).toISOString()}')`,
   decode: value => {
     const result = /^T\(java\.time\.Period\)\.parse\('(.*?)'\)$/.exec(value)
     return result == null ? null : result[1]
   },
+}
+
+const periodFormatter: Formatter = {
+  encode: (value: Period) => `${moment.duration(value).toISOString()}`,
+  decode: value => value,
 }
 
 const spelCronFormatter: Formatter = {
@@ -110,8 +120,8 @@ export const spelFormatters: Record<FormatterType, Formatter> = {
 }
 
 export const typeFormatters: Record<FormatterType, Formatter> = {
-  [FormatterType.Duration]: spelDurationFormatter,
-  [FormatterType.Period]: spelPeriodFormatter,
+  [FormatterType.Duration]: durationFormatter,
+  [FormatterType.Period]: periodFormatter,
   [FormatterType.Time]: localTimeFormatter,
   [FormatterType.Date]: dateFormatter,
   [FormatterType.DateTime]: dateTimeFormatter,

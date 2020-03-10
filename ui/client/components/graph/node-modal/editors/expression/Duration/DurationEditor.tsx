@@ -6,8 +6,8 @@ import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash"
 import i18next from "i18next"
 import {TimeRangeComponentType} from "./TimeRangeComponent"
-import {Formatter} from "../Formatter"
-import moment from "moment";
+import {Formatter, FormatterType, typeFormatters} from "../Formatter"
+import moment from "moment"
 
 export type Duration = {
   days: number,
@@ -37,16 +37,18 @@ export default function DurationEditor(props: Props) {
 
   const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components, formatter} = props
 
+  const durationFormatter = formatter == null ? typeFormatters[FormatterType.Duration] : formatter
+
   function isDurationDefined(value: Duration) {
     return value.days != null || value.hours != null || value.minutes != null
   }
 
   function encode(value: Duration): string {
-    return isDurationDefined(value) ? formatter.encode(value) : ""
+    return isDurationDefined(value) ? durationFormatter.encode(value) : ""
   }
 
   function decode(expression: string): Duration {
-    const decodeExecResult = formatter.decode(expression)
+    const decodeExecResult = durationFormatter.decode(expression)
     const duration = decodeExecResult == null ? NONE_DURATION : moment.duration(decodeExecResult)
     return {
       days: duration.days(),

@@ -6,7 +6,7 @@ import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash"
 import i18next from "i18next"
 import {TimeRangeComponentType} from "./TimeRangeComponent"
-import {Formatter} from "../Formatter";
+import {Formatter, FormatterType, typeFormatters} from "../Formatter"
 
 export type Period = {
   years: number,
@@ -36,16 +36,18 @@ export default function PeriodEditor(props: Props) {
 
   const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components, formatter} = props
 
+  const periodFormatter = formatter == null ? typeFormatters[FormatterType.Period] : formatter
+
   function isPeriodDefined(period: Period): boolean {
     return period.years != null || period.months != null || period.days != null
   }
 
   function encode(period: Period): string {
-    return isPeriodDefined(period) ? formatter.encode(period) : ""
+    return isPeriodDefined(period) ? periodFormatter.encode(period) : ""
   }
 
   function decode(expression: string): Period {
-    const result = formatter.decode(expression)
+    const result = periodFormatter.decode(expression)
     const period = result == null ? NONE_PERIOD : moment.duration(result)
     return {
       years: period.years(),
