@@ -1,4 +1,4 @@
-import React, {SyntheticEvent, memo} from "react"
+import React, {memo} from "react"
 import {useSelector} from "react-redux"
 
 import "../../stylesheets/userPanel.styl"
@@ -7,33 +7,20 @@ import SpinnerWrapper from "../SpinnerWrapper"
 import {hot} from "react-hot-loader"
 import {getFetchedProcessDetails} from "./selectors/graph"
 import Toolbars from "./Toolbars"
+import {SelectionActions} from "./panels/edit/EditPanel"
 
-type SelectionActions = {
-  copy: (event: SyntheticEvent) => void,
-  canCopy: boolean,
-  cut: (event: SyntheticEvent) => void,
-  canCut: boolean,
-  paste: (event: SyntheticEvent) => void,
-  canPaste: boolean,
-}
-
-export type PassedProps = {
+type Props = {
   selectionActions: SelectionActions,
-}
-
-type OwnProps = {
   isReady: boolean,
-} & PassedProps
-
-type Props = OwnProps
+}
 
 function ToolsLayer(props: Props) {
-  const {isReady, ...passProps} = props
+  const {isReady, selectionActions} = props
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
 
   return (
     <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
-      <Toolbars {...passProps}/>
+      <Toolbars selectionActions={selectionActions}/>
     </SpinnerWrapper>
   )
 }

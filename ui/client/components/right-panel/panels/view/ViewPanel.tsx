@@ -1,11 +1,11 @@
 import React, {memo} from "react"
 import {useTranslation} from "react-i18next"
 import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
-import BussinesViewSwitch from "./BussinesViewSwitch"
-import {ToolbarButtons} from "../../../Process/ToolbarButtons"
-import {ResetViewButton} from "./ResetViewButton"
-import {ZoomInButton} from "./ZoomInButton"
-import {ZoomOutButton} from "./ZoomOutButton"
+import BussinesViewSwitch from "./buttons/BussinesViewSwitch"
+import {ToolbarButtons} from "../../toolbars/ToolbarButtons"
+import {ResetViewButton} from "./buttons/ResetViewButton"
+import {ZoomInButton} from "./buttons/ZoomInButton"
+import {ZoomOutButton} from "./buttons/ZoomOutButton"
 
 function ViewPanel() {
   const {t} = useTranslation()

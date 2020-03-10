@@ -2,12 +2,12 @@ import React from "react"
 import {useTranslation} from "react-i18next"
 import {connect} from "react-redux"
 import {bindActionCreators} from "redux"
-import {fetchProcessToDisplay} from "../../../../actions/nk/process"
-import {businessViewChanged} from "../../../../actions/nk/ui/layout"
-import {RootState} from "../../../../reducers/index"
-import {getProcessId, getProcessVersionId, isBusinessView, isPristine} from "../../selectors/graph"
-import {ToolbarButton} from "../../ToolbarButton"
-import {businessViewInactive} from "../../../../assets/icons/InlinedSvgs"
+import {fetchProcessToDisplay} from "../../../../../actions/nk/process"
+import {businessViewChanged} from "../../../../../actions/nk/ui/layout"
+import {RootState} from "../../../../../reducers/index"
+import {getProcessId, getProcessVersionId, isBusinessView, isPristine} from "../../../selectors/graph"
+import {ToolbarButton} from "../../../ToolbarButton"
+import {businessViewInactive} from "../../../../../assets/icons/InlinedSvgs"
 
 type Props = StateProps
 

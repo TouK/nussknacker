@@ -1,4 +1,4 @@
-import React, {useMemo, useEffect, EffectCallback, memo, useState} from "react"
+import React, {useMemo, useEffect, EffectCallback, useState} from "react"
 import {DragDropContext, DropResult} from "react-beautiful-dnd"
 import {ToolbarsSide} from "../../../reducers/toolbars"
 import {useDispatch} from "react-redux"
@@ -8,7 +8,7 @@ import cn from "classnames"
 
 import styles from "./ToolbarsLayer.styl"
 import {Toolbar} from "../Toolbars"
-import {ScrollToggleSidePanel} from "./ScrollToggleSidePanel"
+import {SidePanel, PanelSide} from "../../sidePanels/SidePanel"
 
 function useMemoizedIds<T extends { id: string }>(array: T[]): string {
   return useMemo(() => array.map(v => v.id).join(), [array])
@@ -43,7 +43,7 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
   return (
     <DragDropContext onDragEnd={onDragEnd} onDragStart={() => {setIsDragging(true)}}>
 
-      <ScrollToggleSidePanel isDragging={isDragging} side="LEFT">
+      <SidePanel side={PanelSide.Left} className={cn(styles.left, isDragging && styles.isDraggingStarted)}>
         <ToolbarsPanel
           availableToolbars={toolbars}
           side={ToolbarsSide.TopLeft}
@@ -54,9 +54,9 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
           side={ToolbarsSide.BottomLeft}
           className={cn(styles.bottom)}
         />
-      </ScrollToggleSidePanel>
+      </SidePanel>
 
-      <ScrollToggleSidePanel isDragging={isDragging} side="RIGHT">
+      <SidePanel side={PanelSide.Right} className={cn(styles.right, isDragging && styles.isDraggingStarted)}>
         <ToolbarsPanel
           availableToolbars={toolbars}
           side={ToolbarsSide.TopRight}
@@ -67,11 +67,11 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
           side={ToolbarsSide.BottomRight}
           className={cn(styles.bottom)}
         />
-      </ScrollToggleSidePanel>
+      </SidePanel>
 
     </DragDropContext>
   )
 }
 
-export default (ToolbarsLayer)
+export default ToolbarsLayer
 

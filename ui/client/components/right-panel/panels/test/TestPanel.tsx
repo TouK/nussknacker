@@ -10,7 +10,7 @@ import FromFileButton from "./buttons/FromFileButton"
 import GenerateButton from "./buttons/GenerateButton"
 import HideButton from "./buttons/HideButton"
 import {getCapabilities} from "../../selectors/other"
-import {ToolbarButtons} from "../../../Process/ToolbarButtons"
+import {ToolbarButtons} from "../../toolbars/ToolbarButtons"
 
 function TestPanel(props: StateProps) {
   const {capabilities, isSubprocess, featuresSettings} = props

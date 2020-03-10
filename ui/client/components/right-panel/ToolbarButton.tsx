@@ -3,7 +3,7 @@ import React, {ReactEventHandler, useContext} from "react"
 import cn from "classnames"
 import {PanelButtonIcon} from "./PanelButtonIcon"
 import styles from "./ToolbarButton.styl"
-import {ToolbarButtonsContext} from "../Process/ToolbarButtons"
+import {ToolbarButtonsContext} from "./toolbars/ToolbarButtons"
 
 interface Props {
   name: string,
@@ -28,7 +28,9 @@ export function ToolbarButton({onDrop, title, className, iconClassName, labelCla
     hasError && styles.hasError,
     isActive && styles.isActive,
     disabled && styles.disabled,
-    small && styles.small, className)
+    small && styles.small,
+    className
+  )
   const buttonProps = {
     ...props,
     title: title || name,

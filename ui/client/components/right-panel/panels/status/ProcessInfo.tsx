@@ -1,20 +1,26 @@
 import React, {memo} from "react"
-import {ProcessStateType, ProcessType} from "./types"
-import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "./messages"
+import {ProcessStateType, ProcessType} from "../../../Process/types"
+import {
+  descriptionProcessArchived,
+  descriptionSubprocess,
+  descriptionSubprocessArchived,
+  unknownDescription,
+} from "../../../Process/messages"
 import {CSSTransition, SwitchTransition} from "react-transition-group"
-import ProcessStateIcon, {unknownIcon} from "./ProcessStateIcon"
-import {absoluteBePath} from "../../common/UrlUtils"
-import {RootState} from "../../reducers"
-import {getFetchedProcessDetails, isStateLoaded, getProcessState} from "../right-panel/selectors/graph"
+import ProcessStateIcon, {unknownIcon} from "../../../Process/ProcessStateIcon"
+import {absoluteBePath} from "../../../../common/UrlUtils"
+import {RootState} from "../../../../reducers/index"
+import {getFetchedProcessDetails, isStateLoaded, getProcessState} from "../../selectors/graph"
 import {connect} from "react-redux"
-import {DragHandle} from "../right-panel/toolbars/DragHandle"
-import Deploy from "../right-panel/panels/deploy/buttons/DeployButton"
-import Cancel from "../right-panel/panels/deploy/buttons/CancelDeployButton"
-import Metrics from "../right-panel/panels/deploy/buttons/MetricsButton"
-import {getCapabilities} from "../right-panel/selectors/other"
-import SaveButton from "../right-panel/panels/process/buttons/SaveButton"
-import {ToolbarButtons} from "./ToolbarButtons"
-import {CollapsibleToolbar} from "../right-panel/toolbars/CollapsibleToolbar"
+import {DragHandle} from "../../toolbars/DragHandle"
+import Deploy from "./buttons/DeployButton"
+import Cancel from "./buttons/CancelDeployButton"
+import Metrics from "./buttons/MetricsButton"
+import {getCapabilities} from "../../selectors/other"
+import SaveButton from "../process/buttons/SaveButton"
+import {ToolbarButtons} from "../../toolbars/ToolbarButtons"
+import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
+import i18next from "i18next"
 
 type State = {}
 
@@ -46,10 +52,17 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     process: ProcessType,
     processState: ProcessStateType,
     isStateLoaded: boolean,
-  ): string => process.isArchived ? process.isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived() :
-    process.isSubprocess ? descriptionSubprocess() :
-      isStateLoaded ? processState?.description :
-        process?.state?.description || unknownDescription()
+  ): string => {
+    return process.isArchived ?
+      process.isSubprocess ?
+        descriptionSubprocessArchived() :
+        descriptionProcessArchived() :
+      process.isSubprocess ?
+        descriptionSubprocess() :
+        isStateLoaded ?
+          processState?.description :
+          process?.state?.description || unknownDescription()
+  }
 
   private getIcon = (
     process: ProcessType,
@@ -82,7 +95,8 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
   private getTransitionKey = (
     process: ProcessType,
     processState: ProcessStateType,
-  ): string => process.isArchived || process.isSubprocess ? `${process.id}` :
+  ): string => process.isArchived || process.isSubprocess ?
+    `${process.id}` :
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
   render() {
@@ -92,7 +106,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     const transitionKey = this.getTransitionKey(process, processState)
 
     return (
-      <CollapsibleToolbar title="status" id="PROCESS-INFO">
+      <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id="PROCESS-INFO">
         <DragHandle>
           <SwitchTransition>
             <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>

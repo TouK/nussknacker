@@ -12,9 +12,9 @@ import MigrateButton from "./buttons/MigrateButton"
 import {getFeatureSettings} from "../../selectors/settings"
 import {useTranslation} from "react-i18next"
 import {getCapabilities} from "../../selectors/other"
-import Properties from "../edit/buttons/PropertiesButton"
+import Properties from "../status/buttons/PropertiesButton"
 import {isSubprocess} from "../../selectors/graph"
-import {ToolbarButtons} from "../../../Process/ToolbarButtons"
+import {ToolbarButtons} from "../../toolbars/ToolbarButtons"
 import {useGraph} from "../../../graph/GraphContext"
 
 type Props = StateProps

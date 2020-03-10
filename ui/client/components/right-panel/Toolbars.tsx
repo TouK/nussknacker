@@ -1,11 +1,11 @@
 /* eslint-disable i18next/no-literal-string */
 import React, {ReactChild, memo} from "react"
 import "../../stylesheets/userPanel.styl"
-import ProcessInfo from "../Process/ProcessInfo"
+import ProcessInfo from "./panels/status/ProcessInfo"
 import DetailsPanel from "./panels/details/DetailsPanel"
 import ViewPanel from "./panels/view/ViewPanel"
 import ProcessPanels from "./panels/process/ProcessPanel"
-import EditPanel from "./panels/edit/EditPanel"
+import EditPanel, {SelectionActions} from "./panels/edit/EditPanel"
 import TestPanel from "./panels/test/TestPanel"
 import GroupPanel from "./panels/group/GroupPanel"
 import ToolbarsLayer from "./toolbars/ToolbarsLayer"
@@ -15,7 +15,6 @@ import {CreatorPanel} from "../CreatorPanel"
 import {VersionsPanel} from "../VersionsPanel"
 import {CommentsPanel} from "../CommentsPanel"
 import {AttachmentsPanel} from "../AttachmentsPanel"
-import {PassedProps} from "./ToolsLayer"
 
 export interface Toolbar {
   id: string,
@@ -24,10 +23,12 @@ export interface Toolbar {
   defaultSide?: ToolbarsSide,
 }
 
-function Toolbars(props: PassedProps) {
-  const {
-    selectionActions,
-  } = props
+type Props = {
+  selectionActions: SelectionActions,
+}
+
+function Toolbars(props: Props) {
+  const {selectionActions} = props
 
   const toolbars: Toolbar[] = [
     {

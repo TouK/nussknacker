@@ -1,4 +1,4 @@
-import React, {memo} from "react"
+import React, {memo, SyntheticEvent} from "react"
 import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 import Undo from "./buttons/UndoButton"
 import Redo from "./buttons/RedoButton"
@@ -7,12 +7,22 @@ import Copy from "./buttons/CopyButton"
 import Delete from "./buttons/DeleteButton"
 import Paste from "./buttons/PasteButton"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../ToolsLayer"
 import {useSelector} from "react-redux"
 import {getCapabilities} from "../../selectors/other"
-import {ToolbarButtons} from "../../../Process/ToolbarButtons"
+import {ToolbarButtons} from "../../toolbars/ToolbarButtons"
 
-type Props = Pick<PassedProps, "selectionActions">
+type Props = {
+  selectionActions: SelectionActions,
+}
+
+export type SelectionActions = {
+  copy: (event: SyntheticEvent) => void,
+  canCopy: boolean,
+  cut: (event: SyntheticEvent) => void,
+  canCut: boolean,
+  paste: (event: SyntheticEvent) => void,
+  canPaste: boolean,
+}
 
 function EditPanel(props: Props) {
   const capabilities = useSelector(getCapabilities)

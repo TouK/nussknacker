@@ -1,14 +1,6 @@
 @import "../../../stylesheets/_variables.styl"
 
 :local
-    .side-panel
-        box-sizing border-box
-        min-height 100%
-        min-width 50%
-        display flex
-        flex-direction column
-        pointer-events none
-
     .droppable
         min-width 1px
         display flex
@@ -121,11 +113,11 @@
     .draggable
         padding (gap/ 2) 0
 
-        //&.first
-        //    padding-top 0
+    //&.first
+    //    padding-top 0
 
-        //&.last
-        //    padding-bottom 0
+    //&.last
+    //    padding-bottom 0
 
     .droppable
         margin (gap/ 2) 0
@@ -136,10 +128,8 @@
         &.bottom
             margin-top 0
 
-    .left.side-panel
     .left .draggable-list > .background
         align-items flex-start
 
-    .right.side-panel
     .right .draggable-list > .background
         align-items flex-end

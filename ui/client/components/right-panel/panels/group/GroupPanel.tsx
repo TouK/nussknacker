@@ -7,7 +7,7 @@ import GroupCancel from "./buttons/GroupCancelButton"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {getCapabilities} from "../../selectors/other"
-import {ToolbarButtons} from "../../../Process/ToolbarButtons"
+import {ToolbarButtons} from "../../toolbars/ToolbarButtons"
 
 function GroupPanel() {
   const capabilities = useSelector(getCapabilities)
