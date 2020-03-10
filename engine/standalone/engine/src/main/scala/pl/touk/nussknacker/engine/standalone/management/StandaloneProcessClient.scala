@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.management
 
+import java.util.concurrent.TimeUnit
+
 import sttp.client._
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
@@ -14,7 +16,8 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import sttp.model.Uri
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object StandaloneProcessClient {
 
@@ -22,13 +25,13 @@ object StandaloneProcessClient {
     implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
 
     val managementUrls = config.getString("managementUrl").split(",").map(_.trim).toList
-    val clients = managementUrls.map(new DispatchStandaloneProcessClient(_))
+    val clients = managementUrls.map(new HttpStandaloneProcessClient(_))
     new MultiInstanceStandaloneProcessClient(clients)
   }
 
 }
 
-trait StandaloneProcessClient {
+trait StandaloneProcessClient extends AutoCloseable {
 
   def deploy(deploymentData: DeploymentData): Future[Unit]
 
@@ -72,9 +75,13 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
       }
     }
   }
+
+  override def close(): Unit = {
+    clients.foreach(_.close())
+  }
 }
 
-class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
+class HttpStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
 
   private val managementUri = Uri.parse(managementUrl).get
 
@@ -102,5 +109,8 @@ class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: S
       .send()
       .flatMap(SttpJson.failureToFuture)
   }
+
+  override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
+
 }
 

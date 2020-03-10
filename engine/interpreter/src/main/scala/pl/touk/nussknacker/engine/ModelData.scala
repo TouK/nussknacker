@@ -51,7 +51,7 @@ case class ClassLoaderModelData(processConfigFromConfiguration: ModelConfigToLoa
 
 }
 
-trait ModelData {
+trait ModelData extends AutoCloseable {
 
   def migrations: ProcessMigrations
 
@@ -83,5 +83,9 @@ trait ModelData {
   def processConfigFromConfiguration: ModelConfigToLoad
 
   lazy val processConfig: Config = processConfigFromConfiguration.loadConfig(modelClassLoader.classLoader)
+
+  def close(): Unit = {
+    dictServices.close()
+  }
 
 }

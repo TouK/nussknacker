@@ -34,6 +34,9 @@ class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: 
   private def queryInflux(processId: String, fromDate: Option[LocalDateTime], toDate: LocalDateTime)(implicit ec: ExecutionContext): Future[String => Option[Long]] = {
     influxBaseReporter.fetchBaseProcessCounts(processId, fromDate, toDate).map(pbc => nodeId => pbc.getCountForNodeId(nodeId))
   }
+
+  override def close(): Unit = influxBaseReporter.influxGenerator.close()
+
 }
 
 class InfluxCountsReporterCreator extends CountsReporterCreator {

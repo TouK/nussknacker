@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine
 
+import java.io.Closeable
 import java.net.URL
 
 import com.typesafe.config.Config
@@ -26,7 +27,15 @@ case class ProcessingTypeData(processManager: ProcessManager,
                               modelData: ModelData,
                               emptyProcessCreate: Boolean => TypeSpecificData,
                               queryableClient: Option[QueryableClient],
-                              supportsSignals: Boolean)
+                              supportsSignals: Boolean) extends AutoCloseable {
+
+  def close(): Unit = {
+    modelData.close()
+    processManager.close()
+    queryableClient.foreach(_.close())
+  }
+
+}
 
 object ProcessingTypeConfig {
 

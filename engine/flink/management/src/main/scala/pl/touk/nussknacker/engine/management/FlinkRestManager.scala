@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
@@ -19,7 +19,8 @@ import sttp.client.circe._
 import sttp.model.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 
 class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName: String)
@@ -243,6 +244,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     case Right(_) => Future.successful(())
     case Left(error) => Future.failed(new RuntimeException(s"Request failed: $error, code: ${response.code}"))
   }
+
+  override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
+
 }
 
 object flinkRestModel {

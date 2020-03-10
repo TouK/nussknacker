@@ -9,10 +9,12 @@ To see biggest differences please consult the [changelog](Changelog.md).
  8 should be sane default value.
 * [#722](https://github.com/TouK/nussknacker/pull/722) Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed.
  `processTypes`  configuration should be used from now on.
+* [#763](https://github.com/TouK/nussknacker/pull/763) Some API traits (ProcessManager, DictRegistry DictQueryService, CountsReporter) 
+    now extend `java.lang.AutoCloseable`.
 
 ## In version 0.0.12
 
-* Upgrade Flink 1.7
+* Upgrade to Flink 1.7
 * Refactor of custom transformations, dictionaries, unions, please look at samples in example or generic to see API changes
 * Considerable changes to authorization configuration, please look at sample config to see changes
 * Circe is now used by default instead of Argonaut, but still can use Argonaut in Displayable
