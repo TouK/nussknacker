@@ -2,4 +2,4 @@
 # https://storage-download.googleapis.com/maven-central/index.html
 [repositories]
   local
-  maven-central: https://maven-central.storage-download.googleapis.com/repos/central/data/
+  maven-central: https://maven-central.storage-download.googleapis.com/maven2/
