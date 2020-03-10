@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import NodeUtils from "../../../../graph/NodeUtils"
 import {ungroup} from "../../../../../actions/nk/groups"
-import {ToolbarButton} from "../../../ToolbarButton"
+import ToolbarButton from "../../../ToolbarButton"
 import {getNodeToDisplay} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 

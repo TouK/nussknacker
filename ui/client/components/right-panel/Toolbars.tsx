@@ -1,15 +1,20 @@
-/* eslint-disable i18next/no-literal-string */
-import React, {ReactChild, memo} from "react"
+import React, {memo, ReactChild} from "react"
+import {useSelector} from "react-redux"
+
 import "../../stylesheets/userPanel.styl"
+
+import SpinnerWrapper from "../SpinnerWrapper"
+import {hot} from "react-hot-loader"
+import {getFetchedProcessDetails} from "../../reducers/selectors/graph"
+import EditPanel, {SelectionActions} from "./panels/edit/EditPanel"
+import ToolbarsLayer from "./toolbars/ToolbarsLayer"
 import ProcessInfo from "./panels/status/ProcessInfo"
-import DetailsPanel from "./panels/details/DetailsPanel"
+import {ToolbarsSide} from "../../reducers/toolbars"
 import ViewPanel from "./panels/view/ViewPanel"
 import ProcessPanels from "./panels/process/ProcessPanel"
-import EditPanel, {SelectionActions} from "./panels/edit/EditPanel"
 import TestPanel from "./panels/test/TestPanel"
 import GroupPanel from "./panels/group/GroupPanel"
-import ToolbarsLayer from "./toolbars/ToolbarsLayer"
-import {ToolbarsSide} from "../../reducers/toolbars"
+import DetailsPanel from "./panels/details/DetailsPanel"
 import TipsPanel from "../tips/Tips"
 import {CreatorPanel} from "../CreatorPanel"
 import {VersionsPanel} from "../VersionsPanel"
@@ -25,10 +30,12 @@ export interface Toolbar {
 
 type Props = {
   selectionActions: SelectionActions,
+  isReady: boolean,
 }
 
 function Toolbars(props: Props) {
-  const {selectionActions} = props
+  const {isReady, selectionActions} = props
+  const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
 
   const toolbars: Toolbar[] = [
     {
@@ -95,8 +102,10 @@ function Toolbars(props: Props) {
   ]
 
   return (
-    <ToolbarsLayer toolbars={toolbars}/>
+    <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
+      <ToolbarsLayer toolbars={toolbars}/>
+    </SpinnerWrapper>
   )
 }
 
-export default memo(Toolbars)
+export default hot(module)(memo(Toolbars))

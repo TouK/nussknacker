@@ -3,7 +3,7 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
-import {ToolbarButton} from "../../../ToolbarButton"
+import ToolbarButton from "../../../ToolbarButton"
 import {hasOneVersion} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 

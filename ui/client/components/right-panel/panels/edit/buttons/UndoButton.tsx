@@ -6,7 +6,7 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {areAllModalsClosed} from "../../../../../reducers/selectors/ui"
 import {undo} from "../../../../../actions/undoRedoActions"
-import {ToolbarButton} from "../../../ToolbarButton"
+import ToolbarButton from "../../../ToolbarButton"
 import {getHistory} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 

@@ -15,7 +15,7 @@ import "../stylesheets/visualization.styl"
 import {getLoggedUser} from "../reducers/selectors/settings"
 import {getProcessCategory} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
-import ToolsLayer from "../components/right-panel/ToolsLayer"
+import Toolbars from "../components/right-panel/Toolbars"
 import {GraphProvider} from "../components/graph/GraphContext"
 
 class Visualization extends React.Component {
@@ -295,7 +295,7 @@ class Visualization extends React.Component {
         />
 
         <GraphProvider graph={this.getGraphInstance}>
-          <ToolsLayer
+          <Toolbars
             isReady={this.state.dataResolved}
             selectionActions={{
               copy: () => this.copySelection(null, true),

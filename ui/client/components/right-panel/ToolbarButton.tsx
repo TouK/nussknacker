@@ -1,7 +1,7 @@
 import Dropzone, {DropEvent} from "react-dropzone"
 import React, {ReactEventHandler, useContext} from "react"
 import cn from "classnames"
-import {PanelButtonIcon} from "./PanelButtonIcon"
+import ToolbarButtonIcon from "./ToolbarButtonIcon"
 import styles from "./ToolbarButton.styl"
 import {ToolbarButtonsContext} from "./toolbars/ToolbarButtons"
 
@@ -21,7 +21,7 @@ interface Props {
   isActive?: boolean,
 }
 
-export function ToolbarButton({onDrop, title, className, iconClassName, labelClassName, disabled, name, icon, hasError, isActive, ...props}: Props) {
+function ToolbarButton({onDrop, title, className, iconClassName, labelClassName, disabled, name, icon, hasError, isActive, ...props}: Props) {
   const {small} = useContext(ToolbarButtonsContext)
   const classNames = cn(
     styles.button,
@@ -29,14 +29,14 @@ export function ToolbarButton({onDrop, title, className, iconClassName, labelCla
     isActive && styles.isActive,
     disabled && styles.disabled,
     small && styles.small,
-    className
+    className,
   )
   const buttonProps = {
     ...props,
     title: title || name,
     children: (
       <>
-        <PanelButtonIcon className={cn(styles.icon, iconClassName)} icon={icon} title={title}/>
+        <ToolbarButtonIcon className={cn(styles.icon, iconClassName)} icon={icon} title={title}/>
         <div className={cn(styles.label, labelClassName)}>{name}</div>
       </>
     ),
@@ -72,3 +72,5 @@ export function ToolbarButton({onDrop, title, className, iconClassName, labelCla
     />
   )
 }
+
+export default ToolbarButton

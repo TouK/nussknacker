@@ -3,7 +3,7 @@ import React from "react"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {cutSelection} from "../../../../../actions/nk/selection"
-import {ToolbarButton} from "../../../ToolbarButton"
+import ToolbarButton from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"
 import {SelectionActions} from "../EditPanel"
 

@@ -6,7 +6,7 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {testProcessFromFile} from "../../../../../actions/nk/process"
 import {reportEvent} from "../../../../../actions/nk/reportEvent"
-import {ToolbarButton} from "../../../ToolbarButton"
+import ToolbarButton from "../../../ToolbarButton"
 import {getTestCapabilities, getProcessId, getProcessToDisplay} from "../../../../../reducers/selectors/graph"
 
 type Props = StateProps

@@ -4,7 +4,7 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
-import {ToolbarButton} from "../../../ToolbarButton"
+import ToolbarButton from "../../../ToolbarButton"
 import {getTestCapabilities, isLatestProcessVersion} from "../../../../../reducers/selectors/graph"
 
 type Props = StateProps

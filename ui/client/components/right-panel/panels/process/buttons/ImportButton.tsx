@@ -6,7 +6,7 @@ import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {importFiles} from "../../../../../actions/nk/importExport"
 import {reportEvent} from "../../../../../actions/nk/reportEvent"
 import {bindActionCreators} from "redux"
-import {ToolbarButton} from "../../../ToolbarButton"
+import ToolbarButton from "../../../ToolbarButton"
 import {getProcessId} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 

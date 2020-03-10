@@ -27,7 +27,9 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
 
   const [isDragging, setIsDragging] = useState(false)
 
-  useIdsEffect(() => {dispatch(registerToolbars(toolbars))}, toolbars)
+  useIdsEffect(() => {
+    dispatch(registerToolbars(toolbars))
+  }, toolbars)
 
   const onDragEnd = (result: DropResult) => {
     setIsDragging(false)

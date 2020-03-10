@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
 import {RootState} from "../../../../../reducers/index"
 import Dialogs from "../../../../modals/Dialogs"
-import {ToolbarButton} from "../../../ToolbarButton"
+import ToolbarButton from "../../../ToolbarButton"
 
 type Props = StateProps
 
