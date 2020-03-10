@@ -7,7 +7,7 @@ import {ToolbarsPanel} from "./ToolbarsPanel"
 import cn from "classnames"
 
 import styles from "./ToolbarsLayer.styl"
-import {Toolbar} from "../Toolbars"
+import {Toolbar} from "./Toolbars"
 import {SidePanel, PanelSide} from "../../sidePanels/SidePanel"
 
 function useMemoizedIds<T extends { id: string }>(array: T[]): string {

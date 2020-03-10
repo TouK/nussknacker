@@ -1,6 +1,6 @@
 import {useTranslation} from "react-i18next"
 import {useDispatch} from "react-redux"
-import ToolbarButton from "../../../ToolbarButton"
+import ToolbarButton from "../../../toolbars/ToolbarButton"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {resetToolbars} from "../../../../../actions/nk/toolbars"
 import React from "react"

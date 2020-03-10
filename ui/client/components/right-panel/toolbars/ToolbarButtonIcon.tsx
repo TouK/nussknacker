@@ -1,4 +1,4 @@
-import SvgDiv from "../SvgDiv"
+import SvgDiv from "../../SvgDiv"
 import React, {memo} from "react"
 
 function ToolbarButtonIcon({icon, ...props}: { icon: string, title: string, className?: string }) {

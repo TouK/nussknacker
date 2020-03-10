@@ -2,7 +2,7 @@ import React from "react"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {copySelection} from "../../../../../actions/nk/selection"
-import ToolbarButton from "../../../ToolbarButton"
+import ToolbarButton from "../../../toolbars/ToolbarButton"
 import {useTranslation} from "react-i18next"
 import {SelectionActions} from "../EditPanel"
 

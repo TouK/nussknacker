@@ -3,7 +3,7 @@ import React, {ReactEventHandler, useContext} from "react"
 import cn from "classnames"
 import ToolbarButtonIcon from "./ToolbarButtonIcon"
 import styles from "./ToolbarButton.styl"
-import {ToolbarButtonsContext} from "./toolbars/ToolbarButtons"
+import {ToolbarButtonsContext} from "./ToolbarButtons"
 
 interface Props {
   name: string,

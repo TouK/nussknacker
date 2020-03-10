@@ -8,7 +8,7 @@ import {Archive} from "../../../../../containers/Archive"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDialog"
 import {bindActionCreators} from "redux"
-import ToolbarButton from "../../../ToolbarButton"
+import ToolbarButton from "../../../toolbars/ToolbarButton"
 import {isRunning, getProcessId} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 

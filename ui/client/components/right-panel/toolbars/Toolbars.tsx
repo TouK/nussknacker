@@ -1,25 +1,25 @@
 import React, {memo, ReactChild} from "react"
 import {useSelector} from "react-redux"
+import SpinnerWrapper from "../../SpinnerWrapper"
+import {getFetchedProcessDetails} from "../../../reducers/selectors/graph"
+import ToolbarsLayer from "./ToolbarsLayer"
+import {ToolbarsSide} from "../../../reducers/toolbars"
 
-import "../../stylesheets/userPanel.styl"
+import TipsPanel from "../../tips/Tips"
 
-import SpinnerWrapper from "../SpinnerWrapper"
-import {hot} from "react-hot-loader"
-import {getFetchedProcessDetails} from "../../reducers/selectors/graph"
-import EditPanel, {SelectionActions} from "./panels/edit/EditPanel"
-import ToolbarsLayer from "./toolbars/ToolbarsLayer"
-import ProcessInfo from "./panels/status/ProcessInfo"
-import {ToolbarsSide} from "../../reducers/toolbars"
-import ViewPanel from "./panels/view/ViewPanel"
-import ProcessPanels from "./panels/process/ProcessPanel"
-import TestPanel from "./panels/test/TestPanel"
-import GroupPanel from "./panels/group/GroupPanel"
-import DetailsPanel from "./panels/details/DetailsPanel"
-import TipsPanel from "../tips/Tips"
-import {CreatorPanel} from "../CreatorPanel"
-import {VersionsPanel} from "../VersionsPanel"
-import {CommentsPanel} from "../CommentsPanel"
-import {AttachmentsPanel} from "../AttachmentsPanel"
+import EditPanel, {SelectionActions} from "../panels/edit/EditPanel"
+import ProcessInfo from "../panels/status/ProcessInfo"
+import ViewPanel from "../panels/view/ViewPanel"
+import ProcessPanels from "../panels/process/ProcessPanel"
+import TestPanel from "../panels/test/TestPanel"
+import GroupPanel from "../panels/group/GroupPanel"
+import DetailsPanel from "../panels/details/DetailsPanel"
+import {CreatorPanel} from "../panels/CreatorPanel"
+import {VersionsPanel} from "../panels/VersionsPanel"
+import {CommentsPanel} from "../panels/CommentsPanel"
+import {AttachmentsPanel} from "../panels/AttachmentsPanel"
+
+import "../../../stylesheets/userPanel.styl"
 
 export interface Toolbar {
   id: string,
@@ -108,4 +108,4 @@ function Toolbars(props: Props) {
   )
 }
 
-export default hot(module)(memo(Toolbars))
+export default memo(Toolbars)

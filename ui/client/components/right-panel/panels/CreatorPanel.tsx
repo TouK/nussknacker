@@ -1,8 +1,8 @@
-import {CollapsibleToolbar} from "./right-panel/toolbars/CollapsibleToolbar"
-import ToolBox from "./ToolBox"
+import {CollapsibleToolbar} from "../toolbars/CollapsibleToolbar"
+import ToolBox from "../../ToolBox"
 import React from "react"
 import {useSelector} from "react-redux"
-import {getCapabilities} from "../reducers/selectors/other"
+import {getCapabilities} from "../../../reducers/selectors/other"
 import {useTranslation} from "react-i18next"
 
 export function CreatorPanel() {
