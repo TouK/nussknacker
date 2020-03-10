@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodI
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 object TypeMethodReference {
-  def apply(methodReference: MethodReference, currentResults: List[TypingResult]): Either[String, TypingResult] =
+  def apply(methodReference: MethodReference, currentResults: List[TypingResult])(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
     new TypeMethodReference(methodReference, currentResults).call
 }
 
@@ -17,7 +17,7 @@ object TypeMethodReference {
 // different arity, validation is successful when SpEL MethodReference provides the number of parameters greater
 // or equal to method with the smallest arity.
 class TypeMethodReference(methodReference: MethodReference, currentResults: List[TypingResult]) {
-  def call: Either[String, TypingResult] =
+  def call(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
     currentResults.headOption match {
       case Some(tc: SingleTypingResult) =>
         typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
@@ -29,9 +29,9 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
 
   private lazy val paramsCount = methodReference.getChildCount
 
-  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult]): List[ClazzDefinition] =
+  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult])(implicit settings: ClassExtractionSettings): List[ClazzDefinition] =
     typedClasses.map(typedClass =>
-      EspTypeUtils.clazzDefinition(typedClass.objType.klass)(ClassExtractionSettings.Default)
+      EspTypeUtils.clazzDefinition(typedClass.objType.klass)
     ).toList
 
   private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): Either[String, TypingResult] =
