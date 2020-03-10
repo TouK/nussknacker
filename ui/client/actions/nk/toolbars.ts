@@ -1,7 +1,7 @@
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers/index"
-import {Toolbar} from "../../components/right-panel/toolbars/Toolbars"
+import {Toolbar} from "../../components/right-panel/toolbarsComponents/Toolbars"
 
 export type ToolbarPosition = [ToolbarsSide | string, number]
 

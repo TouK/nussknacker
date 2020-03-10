@@ -8,8 +8,9 @@ import ProcessUtils from "../../common/ProcessUtils"
 import Errors from "./Errors"
 import ValidTips from "./ValidTips"
 import Warnings from "./Warnings"
-import {DragHandle} from "../right-panel/toolbars/DragHandle"
-import {CollapsibleToolbar} from "../right-panel/toolbars/CollapsibleToolbar"
+import {DragHandle} from "../right-panel/toolbarsComponents/DragHandle"
+import {CollapsibleToolbar} from "../right-panel/toolbarsComponents/CollapsibleToolbar"
+import i18next from "i18next"
 
 export class Tips extends Component {
 
@@ -31,7 +32,7 @@ export class Tips extends Component {
     const warnings = (currentProcess.validationResult || {}).warnings
 
     return (
-      <CollapsibleToolbar title="tips" id="TIPS-INFO">
+      <CollapsibleToolbar title={i18next.t("panels.tips.title", "Tips")} id="TIPS-INFO">
         <DragHandle>
           <div id="tipsPanel" className={this.props.isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
             <Scrollbars
