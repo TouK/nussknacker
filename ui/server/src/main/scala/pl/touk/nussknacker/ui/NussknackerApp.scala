@@ -47,12 +47,11 @@ object NussknackerApp extends App with Directives with LazyLogging {
   prepareUncaughtExceptionHandler()
 
   private val config = system.settings.config.withFallback(ConfigFactory.load("defaultConfig.conf"))
-
-  private val hsqlEnabled = config.getAs[Boolean]("jdbcServer.enabled")
-  private val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer").map(DatabaseServer(_))
+  private val jdbcServerConfig = config.getAs[DatabaseServer.Config]("jdbcServer")
+  private val hsqlServer = jdbcServerConfig.map(DatabaseServer(_))
 
   // Default true because of back compatibility
-  if (hsqlEnabled.getOrElse(true)) {
+  if (jdbcServerConfig.exists(_.enabled.getOrElse(true))) {
     hsqlServer.foreach(_.start())
   }
 
