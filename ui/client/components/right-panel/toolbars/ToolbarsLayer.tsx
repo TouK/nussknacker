@@ -3,7 +3,7 @@ import {DragDropContext, DropResult} from "react-beautiful-dnd"
 import {ToolbarsSide} from "../../../reducers/toolbars"
 import {useDispatch} from "react-redux"
 import {moveToolbar, registerToolbars} from "../../../actions/nk/toolbars"
-import {ToolbarsPanel} from "./ToolbarsPanel"
+import {ToolbarsContainer} from "./ToolbarsContainer"
 import cn from "classnames"
 
 import styles from "./ToolbarsLayer.styl"
@@ -46,12 +46,12 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
     <DragDropContext onDragEnd={onDragEnd} onDragStart={() => {setIsDragging(true)}}>
 
       <SidePanel side={PanelSide.Left} className={cn(styles.left, isDragging && styles.isDraggingStarted)}>
-        <ToolbarsPanel
+        <ToolbarsContainer
           availableToolbars={toolbars}
           side={ToolbarsSide.TopLeft}
           className={cn(styles.top)}
         />
-        <ToolbarsPanel
+        <ToolbarsContainer
           availableToolbars={toolbars}
           side={ToolbarsSide.BottomLeft}
           className={cn(styles.bottom)}
@@ -59,12 +59,12 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
       </SidePanel>
 
       <SidePanel side={PanelSide.Right} className={cn(styles.right, isDragging && styles.isDraggingStarted)}>
-        <ToolbarsPanel
+        <ToolbarsContainer
           availableToolbars={toolbars}
           side={ToolbarsSide.TopRight}
           className={cn(styles.top)}
         />
-        <ToolbarsPanel
+        <ToolbarsContainer
           availableToolbars={toolbars}
           side={ToolbarsSide.BottomRight}
           className={cn(styles.bottom)}
