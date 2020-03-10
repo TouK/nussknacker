@@ -19,13 +19,13 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
  */
 @ConfiguredJsonCodec sealed trait ParameterValidator {
 
-  def isValid(paramName: String, value: String, label: Option[String] = None)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit]
+  def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit]
 
 }
 
 case object MandatoryValueValidator extends ParameterValidator {
 
-  override def isValid(paramName: String, value: String, label: Option[String] = None)
+  override def isValid(paramName: String, value: String, label: Option[String])
                       (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
     if (StringUtils.isNotBlank(value)) valid(Unit) else invalid(EmptyMandatoryParameter(paramName))
@@ -34,7 +34,7 @@ case object MandatoryValueValidator extends ParameterValidator {
 
 case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
 
-  override def isValid(paramName: String, value: String, label: Option[String] = None)
+  override def isValid(paramName: String, value: String, label: Option[String])
                       (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
     val values = possibleValues.map(possibleValue => possibleValue.expression)
@@ -44,7 +44,7 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
 
 case object LiteralIntValidator extends ParameterValidator {
 
-  override def isValid(paramName: String, value: String, label: Option[String] = None)
+  override def isValid(paramName: String, value: String, label: Option[String])
                       (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
     if (Try(value.toInt).isSuccess) valid(Unit) else invalid(ProcessCompilationError.InvalidLiteralIntValue(paramName, label, value))

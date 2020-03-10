@@ -3,11 +3,13 @@ import ProcessUtils from "../../../../common/ProcessUtils"
 import {DualEditorMode, editors, EditorType} from "./expression/Editor"
 import SwitchIcon from "./expression/SwitchIcon"
 import FixedValuesEditor from "./expression/FixedValuesEditor"
-import _ from "lodash"
+import {isEmpty} from "lodash"
+import {ExpressionObj} from "./expression/types"
+import {defaultFormatter, spelFormatters} from "./expression/Formatter"
 
 type Props = {
   fieldType?: string,
-  expressionObj: $TodoType,
+  expressionObj: ExpressionObj,
   showSwitch: boolean,
   renderFieldLabel?: Function,
   fieldLabel?: string,
@@ -42,7 +44,7 @@ class EditableEditor extends React.Component<Props, State> {
     const {param, expressionObj, values} = this.props
     this.state = {
       displayRawEditor: !(param?.editor.defaultMode === DualEditorMode.SIMPLE &&
-          editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
+        editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
     }
   }
 
@@ -56,7 +58,7 @@ class EditableEditor extends React.Component<Props, State> {
 
     const editorType = paramType === EditorType.FIXED_VALUES_PARAMETER_EDITOR ?
       EditorType.FIXED_VALUES_PARAMETER_EDITOR :
-      !_.isEmpty(param) ? param.editor.type : EditorType.RAW_PARAMETER_EDITOR
+      !isEmpty(param) ? param.editor.type : EditorType.RAW_PARAMETER_EDITOR
     const editor = editors[editorType]
 
     const Editor = editor.editor(param, this.state.displayRawEditor, expressionObj)
@@ -71,6 +73,8 @@ class EditableEditor extends React.Component<Props, State> {
           values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
           validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
           components={editor.components(param)}
+          formatter={expressionObj.language === "spel" && !isEmpty(spelFormatters[param.typ.refClazzName]) ?
+            spelFormatters[param.typ.refClazzName] : defaultFormatter}
         />
         {
             param?.editor?.type === EditorType.DUAL_PARAMETER_EDITOR && (

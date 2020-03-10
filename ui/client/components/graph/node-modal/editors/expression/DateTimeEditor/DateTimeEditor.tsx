@@ -1,23 +1,38 @@
-import {useTranslation} from "react-i18next"
 import i18next from "i18next"
 import {ExpressionObj} from "../types"
 import React from "react"
-import {DatepickerEditorProps, DatepickerEditor, JavaTimeTypes, isParseable} from "./DatepickerEditor"
+import {DatepickerEditor, DatepickerEditorProps} from "./DatepickerEditor"
 import {isEmpty} from "lodash"
+import {spelFormatters, SpelFormatterType} from "../Formatter"
+import moment from "moment"
+
+const dateFormat = "DD-MM-YYYY"
+const timeFormat = "HH:mm"
+const dateTimeFormat = `${dateFormat} ${timeFormat}`
+const isParseable = (expression: ExpressionObj): boolean => {
+  const date = spelFormatters[SpelFormatterType.DateTime].decode(expression.expression)
+  return date && moment(date, dateTimeFormat).isValid()
+}
 
 export function DateTimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
-  const {i18n} = useTranslation()
-  const dateFormat = i18n.t("editors.LocalDateTime.dateFormat", "DD-MM-YYYY")
-  const timeFormat = i18n.t("editors.LocalDateTime.timeFormat", "HH:mm")
-  return <DatepickerEditor {...props} dateFormat={dateFormat} timeFormat={timeFormat} expressionType={JavaTimeTypes.LOCAL_DATE_TIME}/>
+
+  const {formatter} = props
+
+  return (
+    <DatepickerEditor
+      {...props}
+      momentFormat={dateTimeFormat}
+      dateFormat={dateFormat}
+      timeFormat={timeFormat}
+      formatter={formatter || spelFormatters[SpelFormatterType.DateTime]}
+    />
+  )
 }
 
 DateTimeEditor.switchableToHint = () => i18next.t("editors.LocalDateTime.switchableToHint", "Switch to basic mode")
 DateTimeEditor.notSwitchableToHint = () => i18next.t(
-    "editors.LocalDateTime.notSwitchableToHint",
-    "Expression must be valid dateTime to switch to basic mode",
+  "editors.LocalDateTime.notSwitchableToHint",
+  "Expression must be valid dateTime to switch to basic mode"
 )
-DateTimeEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj, JavaTimeTypes.LOCAL_DATE_TIME) || isEmpty(
-    expressionObj.expression,
-)
+DateTimeEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression)
 
