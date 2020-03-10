@@ -1,5 +1,3 @@
-import {ProcessPropertiesState} from "../../components/right-panel/types"
-
 export type Edge = $TodoType
 
 export type GroupId = string
@@ -8,7 +6,11 @@ export type GroupType = {
 }
 
 export type NodeId = string
-export type NodeType = ProcessPropertiesState
+export type NodeType = {
+  id: NodeId,
+  isSubprocess: boolean,
+
+}
 
 export type Process = $TodoType
 export type ProcessId = string
