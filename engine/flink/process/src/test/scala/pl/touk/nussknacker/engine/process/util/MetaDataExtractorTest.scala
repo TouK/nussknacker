@@ -7,10 +7,12 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, Stream
 
 class MetaDataExtractorTest extends FunSuite with Matchers {
 
-  val metaData = MetaData("test", StreamMetaData(), false, Some(ProcessAdditionalFields(None, Set.empty, Map(
+  private val metaData = MetaData("test", StreamMetaData(), false, Some(ProcessAdditionalFields(None, Set.empty, Map(
     "dateTime" -> "2020-02-25T00:00",
     "date" -> "2020-02-25",
-    "time" -> "00:01:00"
+    "time" -> "00:01:00",
+    "duration" -> "P3DT2H",
+    "period" -> "P3Y2M"
   ))))
 
   test("extract date time property") {
@@ -26,5 +28,13 @@ class MetaDataExtractorTest extends FunSuite with Matchers {
   test("extract time property") {
     MetaDataExtractor.extractTimeProperty(metaData, "time", LocalTime.now()) shouldBe
       LocalTime.of(0, 1, 0)
+  }
+
+  test("extract duration property") {
+    MetaDataExtractor.extractDurationProperty(metaData, "duration", Duration.ZERO) shouldBe Duration.ofHours(74)
+  }
+
+  test("extract period property") {
+    MetaDataExtractor.extractPeriodProperty(metaData, "period", Period.ZERO) shouldBe Period.of(3, 2, 0)
   }
 }
