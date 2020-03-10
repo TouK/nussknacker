@@ -7,7 +7,7 @@ import {businessViewChanged} from "../../../../actions/nk/ui/layout"
 import {RootState} from "../../../../reducers/index"
 import {getProcessId, getProcessVersionId, isBusinessView, isPristine} from "../../selectors/graph"
 import {ToolbarButton} from "../../ToolbarButton"
-import {businessViewActive, businessViewInactive} from "../../../../assets/icons/InlinedSvgs"
+import {businessViewInactive} from "../../../../assets/icons/InlinedSvgs"
 
 type Props = StateProps
 
@@ -17,7 +17,8 @@ function BussinesViewSwitch(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.view-bussinesView.label", "business")}
-      icon={businessView ? businessViewActive : businessViewInactive}
+      icon={businessViewInactive}
+      isActive={businessView}
       disabled={!nothingToSave}
       onClick={() => {
         businessViewChanged(!businessView)

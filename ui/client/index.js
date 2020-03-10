@@ -25,22 +25,24 @@ const rootContainer = document.getElementById("root")
 
 Modal.setAppElement(rootContainer)
 ReactDOM.render(
-  <AppContainer>
-    <Suspense fallback={<div>Loading...</div>}>
-      <ErrorBoundary>
-        <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
-            <Router history={history}>
-              <NussknackerInitializer>
-                <Notifications/>
-                <EspApp/>
-              </NussknackerInitializer>
-            </Router>
-          </PersistGate>
-        </Provider>
-      </ErrorBoundary>
-    </Suspense>
-  </AppContainer>,
+  (
+    <AppContainer>
+      <Suspense fallback={<div>Loading...</div>}>
+        <ErrorBoundary>
+          <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+              <Router history={history}>
+                <NussknackerInitializer>
+                  <Notifications/>
+                  <EspApp/>
+                </NussknackerInitializer>
+              </Router>
+            </PersistGate>
+          </Provider>
+        </ErrorBoundary>
+      </Suspense>
+    </AppContainer>
+  ),
   rootContainer,
 )
 

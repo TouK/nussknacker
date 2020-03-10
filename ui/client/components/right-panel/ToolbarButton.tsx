@@ -17,11 +17,18 @@ interface Props {
   onMouseOver?: ReactEventHandler,
   onMouseOut?: ReactEventHandler,
   onClick: ReactEventHandler,
+  hasError?: boolean,
+  isActive?: boolean,
 }
 
-export function ToolbarButton({onDrop, title, className, iconClassName, labelClassName, disabled, name, icon, ...props}: Props) {
+export function ToolbarButton({onDrop, title, className, iconClassName, labelClassName, disabled, name, icon, hasError, isActive, ...props}: Props) {
   const {small} = useContext(ToolbarButtonsContext)
-  const classNames = cn(styles.button, disabled && styles.disabled, small && styles.small, className)
+  const classNames = cn(
+    styles.button,
+    hasError && styles.hasError,
+    isActive && styles.isActive,
+    disabled && styles.disabled,
+    small && styles.small, className)
   const buttonProps = {
     ...props,
     title: title || name,

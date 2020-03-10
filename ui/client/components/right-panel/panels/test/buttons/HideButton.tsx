@@ -2,10 +2,10 @@ import React from "react"
 import {useTranslation} from "react-i18next"
 import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
-import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {hideRunProcessDetails} from "../../../../../actions/nk/process"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {getShowRunProcessDetails} from "../../../selectors/graph"
+import { buttonHide } from "../../../../../assets/icons/InlinedSvgs"
 
 type Props = StateProps
 
@@ -16,7 +16,7 @@ function HideButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.test-hide.button", "hide")}
-      icon={InlinedSvgs.buttonHide}
+      icon={buttonHide}
       disabled={!showRunProcessDetails}
       onClick={() => hideRunProcessDetails()}
     />

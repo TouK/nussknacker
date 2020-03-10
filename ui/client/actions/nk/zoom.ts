@@ -1,7 +1,8 @@
 import {events} from "../../analytics/TrackingEvents"
 import {reportEvent} from "./reportEvent"
+import Graph from "../../components/graph/Graph"
 
-export function zoomIn(graph) {
+export function zoomIn(graph: Graph) {
   return (dispatch) => {
     graph.zoomIn()
 
@@ -17,7 +18,7 @@ export function zoomIn(graph) {
   }
 }
 
-export function zoomOut(graph) {
+export function zoomOut(graph: Graph) {
   return (dispatch) => {
     graph.zoomOut()
 

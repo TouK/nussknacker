@@ -73,5 +73,5 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
   )
 }
 
-export default memo(ToolbarsLayer)
+export default (ToolbarsLayer)
 

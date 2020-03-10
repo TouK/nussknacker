@@ -181,7 +181,7 @@
     "import/no-unresolved": [
       "error",
       {
-        "ignore": ["\\?inline"]
+        "ignore": ["\\?inline", "!raw-loader!"]
       }
     ],
     "i18next/no-literal-string": [

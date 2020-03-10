@@ -14,16 +14,14 @@ import {useTranslation} from "react-i18next"
 import {getCapabilities} from "../../selectors/other"
 import Properties from "../edit/buttons/PropertiesButton"
 import {isSubprocess} from "../../selectors/graph"
-import {PassedProps} from "../../ToolsLayer"
 import {ToolbarButtons} from "../../../Process/ToolbarButtons"
+import {useGraph} from "../../../graph/GraphContext"
 
-type OwnPropsPick = Pick<PassedProps, "exportGraph">
-
-type OwnProps = OwnPropsPick
-type Props = OwnProps & StateProps
+type Props = StateProps
 
 function ProcessPanel(props: Props) {
-  const {capabilities, exportGraph, featuresSettings, isSubprocess} = props
+  const {capabilities, featuresSettings, isSubprocess} = props
+  const graphGetter = useGraph()
   const {t} = useTranslation()
 
   return (
@@ -34,7 +32,7 @@ function ProcessPanel(props: Props) {
         {capabilities.deploy && !isEmpty(featuresSettings?.remoteEnvironment) ? <MigrateButton/> : null}
         {capabilities.write ? <ImportButton/> : null}
         <JSONButton/>
-        <PDFButton exportGraph={exportGraph}/>
+        <PDFButton exportGraph={() => graphGetter().exportGraph()}/>
         {capabilities.write ? <ArchiveButton/> : null}
       </ToolbarButtons>
     </CollapsibleToolbar>

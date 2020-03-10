@@ -8,8 +8,6 @@ import {hot} from "react-hot-loader"
 import {getFetchedProcessDetails} from "./selectors/graph"
 import Toolbars from "./Toolbars"
 
-export type Graph = $TodoType
-
 type SelectionActions = {
   copy: (event: SyntheticEvent) => void,
   canCopy: boolean,
@@ -20,10 +18,7 @@ type SelectionActions = {
 }
 
 export type PassedProps = {
-  graphLayoutFunction: () => $TodoType,
-  exportGraph: () => $TodoType,
   selectionActions: SelectionActions,
-  graphGetter: () => Graph,
 }
 
 type OwnProps = {
@@ -37,11 +32,9 @@ function ToolsLayer(props: Props) {
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
 
   return (
-    <>
-      <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
-        <Toolbars {...passProps}/>
-      </SpinnerWrapper>
-    </>
+    <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
+      <Toolbars {...passProps}/>
+    </SpinnerWrapper>
   )
 }
 

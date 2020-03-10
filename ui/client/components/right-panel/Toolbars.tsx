@@ -26,10 +26,7 @@ export interface Toolbar {
 
 function Toolbars(props: PassedProps) {
   const {
-    graphLayoutFunction,
-    exportGraph,
     selectionActions,
-    graphGetter,
   } = props
 
   const toolbars: Toolbar[] = [
@@ -40,21 +37,17 @@ function Toolbars(props: PassedProps) {
     },
     {
       id: "VIEW-PANEL",
-      component: <ViewPanel graphGetter={graphGetter}/>,
+      component: <ViewPanel/>,
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "EDIT-PANEL",
-      component: <EditPanel graphLayoutFunction={graphLayoutFunction} selectionActions={selectionActions}/>,
+      component: <EditPanel selectionActions={selectionActions}/>,
       defaultSide: ToolbarsSide.TopRight,
     },
-    // {
-    //   id: "DEPLOYMENT-PANEL",
-    //   component: <DeploymentPanel/>,
-    // },
     {
       id: "PROCESS-PANELS",
-      component: <ProcessPanels exportGraph={exportGraph}/>,
+      component: <ProcessPanels/>,
       defaultSide: ToolbarsSide.TopRight,
     },
     {

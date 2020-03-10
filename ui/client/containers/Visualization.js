@@ -16,6 +16,7 @@ import {getLoggedUser} from "../components/right-panel/selectors/settings"
 import {getProcessCategory} from "../components/right-panel/selectors/graph"
 import {getCapabilities} from "../components/right-panel/selectors/other"
 import ToolsLayer from "../components/right-panel/ToolsLayer"
+import {GraphProvider} from "../components/graph/GraphContext"
 
 class Visualization extends React.Component {
 
@@ -278,9 +279,7 @@ class Visualization extends React.Component {
       NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
 
-  getGraphInstance = () => this.graphRef.current && this.graphRef.current.getDecoratedComponentInstance()
-  graphLayoutFun = () => this.getGraphInstance().directedLayout()
-  exportGraphFun = () => this.getGraphInstance().exportGraph()
+  getGraphInstance = () => this.graphRef.current?.getDecoratedComponentInstance()
 
   render() {
 
@@ -295,20 +294,19 @@ class Visualization extends React.Component {
           navigate={path => this.props.history.push(path)}
         />
 
-        <ToolsLayer
-          graphLayoutFunction={this.graphLayoutFun}
-          exportGraph={this.exportGraphFun}
-          graphGetter={this.getGraphInstance}
-          isReady={this.state.dataResolved}
-          selectionActions={{
-            copy: () => this.copySelection(null, true),
-            canCopy: this.canCopySelection(),
-            cut: () => this.cutSelection(null),
-            canCut: this.canCutSelection(),
-            paste: () => this.pasteSelectionFromClipboard(null),
-            canPaste: true,
-          }}
-        />
+        <GraphProvider graph={this.getGraphInstance}>
+          <ToolsLayer
+            isReady={this.state.dataResolved}
+            selectionActions={{
+              copy: () => this.copySelection(null, true),
+              canCopy: this.canCopySelection(),
+              cut: () => this.cutSelection(null),
+              canCut: this.canCutSelection(),
+              paste: () => this.pasteSelectionFromClipboard(null),
+              canPaste: true,
+            }}
+          />
+        </GraphProvider>
 
         <SpinnerWrapper isReady={!graphNotReady}>
           {!_.isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}

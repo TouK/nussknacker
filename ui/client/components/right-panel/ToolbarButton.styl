@@ -41,6 +41,19 @@ buttonTextColor = #b3b3b3
             outline-offset -1px
             z-index 10000
 
+    .has-error
+        &.button
+            border-color errorColor
+        .icon svg *
+            fill errorColor
+        .label
+            color errorColor
+
+    .is-active
+        .icon svg *
+            fill okColor
+        .label
+            color okColor
 
     .small
         width buttonSmallSize

@@ -1,33 +1,23 @@
 import React from "react"
-import {connect} from "react-redux"
+import {useDispatch} from "react-redux"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {layout} from "../../../../../actions/nk/ui/layout"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../ToolsLayer"
+import {useGraph} from "../../../../graph/GraphContext"
 
-type OwnPropsPick = Pick<PassedProps, "graphLayoutFunction">
-
-type OwnProps = OwnPropsPick
-type Props = OwnProps & StateProps
-
-function LayoutButton(props: Props) {
-  const {graphLayoutFunction, layout} = props
+function LayoutButton() {
+  const dispatch = useDispatch()
   const {t} = useTranslation()
+  const graphGetter = useGraph()
 
   return (
     <ToolbarButton
       name={t("panels.actions.edit-layout.button", "layout")}
       icon={InlinedSvgs.buttonLayout}
-      onClick={() => layout(graphLayoutFunction)}
+      onClick={() => dispatch(layout(() => graphGetter().directedLayout()))}
     />
   )
 }
 
-const mapDispatch = {
-  layout,
-}
-
-type StateProps = typeof mapDispatch
-
-export default connect(null, mapDispatch)(LayoutButton)
+export default LayoutButton

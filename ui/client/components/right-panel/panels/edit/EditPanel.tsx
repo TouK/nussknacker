@@ -12,13 +12,11 @@ import {useSelector} from "react-redux"
 import {getCapabilities} from "../../selectors/other"
 import {ToolbarButtons} from "../../../Process/ToolbarButtons"
 
-type Props = Pick<PassedProps,
-  | "graphLayoutFunction"
-  | "selectionActions">
+type Props = Pick<PassedProps, "selectionActions">
 
 function EditPanel(props: Props) {
   const capabilities = useSelector(getCapabilities)
-  const {graphLayoutFunction, selectionActions} = props
+  const {selectionActions} = props
   const {t} = useTranslation()
 
   return (
@@ -26,7 +24,7 @@ function EditPanel(props: Props) {
       <ToolbarButtons small>
         {capabilities.write ? <Undo/> : null}
         {capabilities.write ? <Redo/> : null}
-        {capabilities.write ? <Layout graphLayoutFunction={graphLayoutFunction}/> : null}
+        {capabilities.write ? <Layout/> : null}
         {capabilities.write ? <Copy selectionActions={selectionActions}/> : null}
         {capabilities.write ? <Paste selectionActions={selectionActions}/> : null}
         {capabilities.write ? <Delete selectionActions={selectionActions}/> : null}

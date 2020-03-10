@@ -3,12 +3,11 @@ import {RootState} from "../../../../../reducers/index"
 import ProcessUtils from "../../../../../common/ProcessUtils"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
-import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {displayModalNodeDetails} from "../../../../../actions/nk/modal"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {isPristine, getProcessToDisplay} from "../../../selectors/graph"
 import {useTranslation} from "react-i18next"
-import cn from "classnames"
+import {settingsIcon} from "../../../../../assets/icons/InlinedSvgs"
 
 type Props = StateProps
 
@@ -16,13 +15,11 @@ function PropertiesButton(props: Props) {
   const {hasErrors, processToDisplay, displayModalNodeDetails} = props
   const {t} = useTranslation()
 
-  const propertiesBtnClass = cn({"esp-button-error": hasErrors && !ProcessUtils.hasNoPropertiesErrors(processToDisplay)})
-
   return (
     <ToolbarButton
       name={t("panels.actions.edit-properties.button", "properties")}
-      icon={InlinedSvgs.buttonSettings}
-      className={propertiesBtnClass}
+      hasError={hasErrors && !ProcessUtils.hasNoPropertiesErrors(processToDisplay)}
+      icon={settingsIcon}
       onClick={() => displayModalNodeDetails(
         processToDisplay?.properties,
         undefined,
