@@ -2,19 +2,18 @@ import BoolEditor from "./BoolEditor"
 import RawEditor from "./RawEditor"
 import StringEditor from "./StringEditor"
 import FixedValuesEditor from "./FixedValuesEditor"
-import _ from "lodash"
+import {concat, isEmpty} from "lodash"
 import {ExpressionObj} from "./types"
 import i18next from "i18next"
 import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Error, Validator, validators, ValidatorName} from "../Validators"
+import {Error, Validator, ValidatorName, validators} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
 import {components, TimeRangeComponentType} from "./Duration/TimeRangeComponent"
-import SpelStringEditor from "./SpelStringEditor";
 
 type ParamType = $TodoType
 type ValuesType = Array<string>
@@ -57,12 +56,15 @@ export enum EditorType {
   CRON_EDITOR = "CronParameterEditor",
 }
 
-const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
-  paramConfig === undefined ?
-    validators[ValidatorName.MandatoryParameterValidator]() :
-    paramConfig.validators.map(validator => validators[validator.type](_, _, paramConfig.editor.possibleValues)),
-  validators[ValidatorName.ErrorValidator](errors, fieldLabel)
-)
+const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => {
+  const defaultValidator = validators[ValidatorName.MandatoryParameterValidator]();
+  const configuredValidators = paramConfig.validators?.map(validator => validators[validator.type](errors, fieldLabel, paramConfig.editor.possibleValues))
+  const errorValidator = isEmpty(errors) ? [] : [validators[ValidatorName.ErrorValidator](errors, fieldLabel)]
+  return concat(
+    isEmpty(configuredValidators) ? defaultValidator : configuredValidators,
+    errorValidator
+  )
+}
 
 /* eslint-enable i18next/no-literal-string */
 
@@ -85,7 +87,7 @@ export const editors: Record<EditorType, EditorConfig> = {
   },
   [EditorType.STRING_PARAMETER_EDITOR]: {
     ...defaults,
-    editor: (param, displayRawEditor, expressionObj) => expressionObj?.language === "spel" ?  SpelStringEditor : StringEditor,
+    editor: () => StringEditor,
     hint: (switchable) => switchable ? StringEditor.switchableToHint() : StringEditor.notSwitchableToHint(),
     switchableTo: (expressionObj) => StringEditor.switchableTo(expressionObj),
   },

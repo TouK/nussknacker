@@ -8,6 +8,7 @@ export enum HandledErrorType {
   MandatoryParameterValidator = "MandatoryParameterValidator",
   WrongDateFormat = "WrongDateFormat",
   InvalidLiteralIntValue = "InvalidLiteralIntValue",
+  InvalidPropertyFixedValue = "InvalidPropertyFixedValue",
 }
 
 export enum ValidatorName {
@@ -37,14 +38,13 @@ export type Error = {
   typ: string,
 }
 
-const error = (errors: Array<Error>, fieldName: string): Error =>
-  errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
+const error = (errors: Array<Error>, fieldName: string): Error => errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
 
 export const errorValidator = (errors: Array<Error>, fieldName: string): Validator => ({
   isValid: () => !error(errors, fieldName),
   message: error(errors, fieldName)?.message,
   description: error(errors, fieldName)?.description,
-  handledErrorType: HandledErrorType[error(errors, fieldName)?.typ],
+  handledErrorType: error(errors, fieldName)?.typ ? HandledErrorType[error(errors, fieldName)?.typ] : "ErrorValidator",
   validatorType: ValidatorType.Backend,
 })
 
@@ -73,10 +73,11 @@ export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Valid
 })
 
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
-  return chain(validators)
-    .groupBy(validator => validator.handledErrorType)
-    .map((value, key) => chain(value).sortBy(validator => validator.validatorType).head().value())
-    .value()
+  return isEmpty(validators) ? [] :
+    chain(validators)
+      .groupBy(validator => validator.handledErrorType)
+      .map((value, key) => chain(value).sortBy(validator => validator.validatorType).head().value())
+      .value()
 }
 
 export function allValid(validators: Array<Validator>, values: Array<string>): boolean {

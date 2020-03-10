@@ -62,7 +62,7 @@ object Validations {
       validator <- validators.getOrElse(param.name, List.empty)
     } yield (param, validator)
     val validationResults = paramWithValidatorList.map {
-      case (param, validator) => validator.isValid(param.name, param.expression.expression).toValidatedNel
+      case (param, validator) => validator.isValid(param.name, param.expression.expression, None).toValidatedNel
     }
     validationResults.sequence.map(_ => Unit)
   }
