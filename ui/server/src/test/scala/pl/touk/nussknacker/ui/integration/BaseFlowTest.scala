@@ -36,7 +36,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val mainRoute = NussknackerApp.initializeRoute(ConfigWithScalaVersion.config)
+  private val (mainRoute, _) = NussknackerApp.initializeRoute(ConfigWithScalaVersion.config)
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 

@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
+import java.util.concurrent.TimeUnit
+
 import sttp.client._
 import sttp.client.circe._
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import sttp.model.Uri
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 case class InfluxConfig(influxUrl: String, user: String, password: String, database: String = "esp")
 
@@ -37,9 +40,8 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
       .map(_.results.head.series)
   }
 
-  def close(): Unit = {
-    backend.close()
-  }
+  def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
+
 }
 
 case class InfluxResponse(results: List[InfluxResult] = Nil)

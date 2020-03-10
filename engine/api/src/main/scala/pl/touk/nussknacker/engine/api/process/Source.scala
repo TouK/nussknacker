@@ -23,7 +23,9 @@ trait TestDataGenerator { self: Source[_] =>
 /**
   * [[pl.touk.nussknacker.engine.api.process.SourceFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]
-* */
+  * IMPORTANT lifecycle notice:
+  * Implementations of this class *must not* allocate resources (connections, file handles etc.)
+  */
 trait SourceFactory[+T] extends Serializable {
   def clazz : Class[_]
 }

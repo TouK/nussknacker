@@ -175,6 +175,9 @@ object TestFactory extends TestPermissions{
     override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
+
+    override def close(): Unit = {}
+
   }
 
   class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {

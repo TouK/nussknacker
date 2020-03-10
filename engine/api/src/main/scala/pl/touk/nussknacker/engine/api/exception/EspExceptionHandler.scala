@@ -27,6 +27,9 @@ object EspExceptionHandler {
 /**
   * [[pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.exception.EspExceptionHandler]]
+  *
+  * IMPORTANT lifecycle notice:
+  * Implementations of this class *must not* allocate resources (connections, file handles etc.)
   **/
 trait ExceptionHandlerFactory {}
 

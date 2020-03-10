@@ -21,7 +21,7 @@ trait CountsReporterCreator {
 }
 
 
-trait CountsReporter {
+trait CountsReporter extends AutoCloseable {
 
   def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]]
 

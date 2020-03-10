@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.concurrent.Future
 
-trait ProcessManager {
+trait ProcessManager extends AutoCloseable {
 
   //TODO: savepointPath is very flink specific, how can we handle that differently?
   def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: User) : Future[Unit]
