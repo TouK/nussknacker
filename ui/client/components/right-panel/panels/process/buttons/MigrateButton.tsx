@@ -7,8 +7,8 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDialog"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {getFeatureSettings} from "../../../selectors/settings"
-import {isDeployPossible, getProcessVersionId, getProcessId} from "../../../selectors/graph"
+import {getFeatureSettings} from "../../../../../reducers/selectors/settings"
+import {isDeployPossible, getProcessVersionId, getProcessId} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 
 function MigrateButton(props: StateProps) {

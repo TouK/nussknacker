@@ -4,10 +4,10 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
-import {areAllModalsClosed} from "../../../selectors/ui"
+import {areAllModalsClosed} from "../../../../../reducers/selectors/ui"
 import {undo} from "../../../../../actions/undoRedoActions"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {getHistory} from "../../../selectors/graph"
+import {getHistory} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 
 type Props = StateProps

@@ -5,7 +5,7 @@ import {toggleToolbar} from "../../../actions/nk/toolbars"
 import {useDragHandler} from "./DragHandle"
 import Panel from "react-bootstrap/lib/Panel"
 import classNames from "classnames"
-import {getIsCollapsed} from "../selectors/toolbars"
+import {getIsCollapsed} from "../../../reducers/selectors/toolbars"
 import ErrorBoundary from "react-error-boundary"
 
 export function CollapsibleToolbar({title, children, isHidden, id}: PropsWithChildren<{ id?: string, title?: string, isHidden?: boolean }>) {

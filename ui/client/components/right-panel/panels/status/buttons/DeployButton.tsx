@@ -5,7 +5,7 @@ import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../../../actions/nk/tooltips"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {isDeployPossible, isSaveDisabled, hasError, getProcessId} from "../../../selectors/graph"
+import {isDeployPossible, isSaveDisabled, hasError, getProcessId} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {loadProcessState} from "../../../../../actions/nk/process"
 

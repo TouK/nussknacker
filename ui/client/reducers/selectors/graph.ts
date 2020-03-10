@@ -1,8 +1,8 @@
-import {RootState} from "../../../reducers/index"
-import {GraphState} from "../types"
+import {RootState} from "../index"
+import {GraphState} from "../../components/right-panel/types"
 import {createSelector} from "reselect"
-import ProcessStateUtils from "../../Process/ProcessStateUtils"
-import ProcessUtils from "../../../common/ProcessUtils"
+import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
+import ProcessUtils from "../../common/ProcessUtils"
 
 const getGraph = (state: RootState): GraphState => state.graphReducer
 

@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next"
 import SideNodeDetails from "./SideNodeDetails"
 import {CollapsibleToolbar} from "../../toolbars/CollapsibleToolbar"
 import {useSelector} from "react-redux"
-import {getCapabilities} from "../../selectors/other"
+import {getCapabilities} from "../../../../reducers/selectors/other"
 
 function DetailsPanel() {
   const capabilities = useSelector(getCapabilities)

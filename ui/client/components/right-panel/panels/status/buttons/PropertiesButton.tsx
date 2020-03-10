@@ -5,7 +5,7 @@ import {connect} from "react-redux"
 import {events} from "../../../../../analytics/TrackingEvents"
 import {displayModalNodeDetails} from "../../../../../actions/nk/modal"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {isPristine, getProcessToDisplay} from "../../../selectors/graph"
+import {isPristine, getProcessToDisplay} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {settingsIcon} from "../../../../../assets/icons/InlinedSvgs"
 

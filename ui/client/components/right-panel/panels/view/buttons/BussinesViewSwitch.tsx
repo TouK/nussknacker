@@ -5,7 +5,7 @@ import {bindActionCreators} from "redux"
 import {fetchProcessToDisplay} from "../../../../../actions/nk/process"
 import {businessViewChanged} from "../../../../../actions/nk/ui/layout"
 import {RootState} from "../../../../../reducers/index"
-import {getProcessId, getProcessVersionId, isBusinessView, isPristine} from "../../../selectors/graph"
+import {getProcessId, getProcessVersionId, isBusinessView, isPristine} from "../../../../../reducers/selectors/graph"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {businessViewInactive} from "../../../../../assets/icons/InlinedSvgs"
 

@@ -8,10 +8,11 @@ import "react-treeview/react-treeview.css"
 import "../stylesheets/toolBox.styl"
 
 import Tool from "./Tool"
-import {getProcessDefinitionData} from "./right-panel/selectors/settings"
-import {getProcessCategory} from "./right-panel/selectors/graph"
+import {getProcessDefinitionData} from "../reducers/selectors/settings"
+import {getProcessCategory} from "../reducers/selectors/graph"
 import {toggleToolboxGroup} from "../actions/nk/toolbars"
-import {getOpenedNodeGroups} from "./right-panel/selectors/toolbars"
+import {getOpenedNodeGroups} from "../reducers/selectors/toolbars"
+import cn from "classnames"
 
 export default function ToolBox() {
   const dispatch = useDispatch()
@@ -37,12 +38,12 @@ export default function ToolBox() {
   return (
     <div id="toolbox">
       <div>
-        {nodesToAdd.map((nodeGroup, i) => {
+        {nodesToAdd.map(nodeGroup => {
           const label =
             <span className={"group-label"} onClick={() => toggleGroup(nodeGroup)}>{nodeGroup.name}</span>
           return (
             <TreeView
-              itemClassName={nodeGroupIsEmpty(nodeGroup) ? "disabled" : ""}
+              itemClassName={cn(nodeGroupIsEmpty(nodeGroup) && "disabled")}
               key={nodeGroup.name}
               nodeLabel={label}
               collapsed={!openedNodeGroups[nodeGroup.name]}

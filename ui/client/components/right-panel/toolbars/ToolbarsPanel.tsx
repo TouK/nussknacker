@@ -18,7 +18,7 @@ import styles from "./ToolbarsLayer.styl"
 import cn from "classnames"
 import {DragHandlerContext} from "./DragHandle"
 import {Toolbar} from "../Toolbars"
-import {getToolbars} from "../selectors/toolbars"
+import {getToolbars} from "../../../reducers/selectors/toolbars"
 
 interface Rubric extends DraggableRubric {
   source: DraggableLocation,

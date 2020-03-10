@@ -1,5 +1,5 @@
-import {RootState} from "../../../reducers/index"
-import {SettingsState} from "../../../reducers/settings"
+import {RootState} from "../index"
+import {SettingsState} from "../settings"
 import {createSelector} from "reselect"
 
 const getSettings = (state: RootState): SettingsState => state.settings

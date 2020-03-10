@@ -4,7 +4,7 @@ import HttpService from "../../../../../http/HttpService"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {toggleProcessActionDialog} from "../../../../../actions/nk/toggleProcessActionDialog"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {isCancelPossible, getProcessId} from "../../../selectors/graph"
+import {isCancelPossible, getProcessId} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {loadProcessState} from "../../../../../actions/nk/process"
 

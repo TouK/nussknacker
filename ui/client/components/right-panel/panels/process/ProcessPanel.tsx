@@ -9,19 +9,17 @@ import JSONButton from "./buttons/JSONButton"
 import ImportButton from "./buttons/ImportButton"
 import CompareButton from "./buttons/CompareButton"
 import MigrateButton from "./buttons/MigrateButton"
-import {getFeatureSettings} from "../../selectors/settings"
+import {getFeatureSettings} from "../../../../reducers/selectors/settings"
 import {useTranslation} from "react-i18next"
-import {getCapabilities} from "../../selectors/other"
+import {getCapabilities} from "../../../../reducers/selectors/other"
 import Properties from "../status/buttons/PropertiesButton"
-import {isSubprocess} from "../../selectors/graph"
+import {isSubprocess} from "../../../../reducers/selectors/graph"
 import {ToolbarButtons} from "../../toolbars/ToolbarButtons"
-import {useGraph} from "../../../graph/GraphContext"
 
 type Props = StateProps
 
 function ProcessPanel(props: Props) {
   const {capabilities, featuresSettings, isSubprocess} = props
-  const graphGetter = useGraph()
   const {t} = useTranslation()
 
   return (
@@ -32,7 +30,7 @@ function ProcessPanel(props: Props) {
         {capabilities.deploy && !isEmpty(featuresSettings?.remoteEnvironment) ? <MigrateButton/> : null}
         {capabilities.write ? <ImportButton/> : null}
         <JSONButton/>
-        <PDFButton exportGraph={() => graphGetter().exportGraph()}/>
+        <PDFButton/>
         {capabilities.write ? <ArchiveButton/> : null}
       </ToolbarButtons>
     </CollapsibleToolbar>

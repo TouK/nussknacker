@@ -1,6 +1,6 @@
-import {RootState} from "../../../reducers/index"
+import {RootState} from "../index"
 import {createSelector} from "reselect"
-import {UiState} from "../../../reducers/ui"
+import {UiState} from "../ui"
 
 const getUi = (state: RootState): UiState => state.ui
 

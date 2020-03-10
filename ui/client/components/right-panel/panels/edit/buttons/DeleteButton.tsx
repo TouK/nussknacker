@@ -6,13 +6,14 @@ import NodeUtils from "../../../../graph/NodeUtils"
 import {isEmpty} from "lodash"
 import {deleteSelection} from "../../../../../actions/nk/selection"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {getSelectionState, getNodeToDisplay} from "../../../selectors/graph"
+import {getSelectionState, getNodeToDisplay} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../ToolsLayer"
+import {SelectionActions} from "../EditPanel"
 
-type OwnPropsPick = Pick<PassedProps, "selectionActions">
+type OwnProps = {
+  selectionActions: SelectionActions,
+}
 
-type OwnProps = OwnPropsPick
 type Props = OwnProps & StateProps
 
 function DeleteButton(props: Props) {

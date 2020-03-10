@@ -1,6 +1,6 @@
-import {RootState} from "../../../reducers/index"
+import {RootState} from "../index"
 import {createSelector} from "reselect"
-import {ToolbarsState} from "../../../reducers/toolbars"
+import {ToolbarsState} from "../toolbars"
 
 export const getToolbars = (state: RootState): ToolbarsState => state.toolbars
 

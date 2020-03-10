@@ -5,7 +5,7 @@ import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import NodeUtils from "../../../../graph/NodeUtils"
 import {ungroup} from "../../../../../actions/nk/groups"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {getNodeToDisplay} from "../../../selectors/graph"
+import {getNodeToDisplay} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 
 type Props = StateProps

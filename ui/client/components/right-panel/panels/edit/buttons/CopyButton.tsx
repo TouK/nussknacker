@@ -4,11 +4,12 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import {copySelection} from "../../../../../actions/nk/selection"
 import {ToolbarButton} from "../../../ToolbarButton"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../ToolsLayer"
+import {SelectionActions} from "../EditPanel"
 
-type OwnPropsPick = Pick<PassedProps, "selectionActions">
+type OwnProps = {
+  selectionActions: SelectionActions,
+}
 
-type OwnProps = OwnPropsPick
 type Props = OwnProps & StateProps
 
 function CopyButton(props: Props) {

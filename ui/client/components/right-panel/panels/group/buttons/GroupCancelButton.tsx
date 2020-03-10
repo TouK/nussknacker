@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {cancelGrouping} from "../../../../../actions/nk/groups"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {getGroupingState} from "../../../selectors/graph"
+import {getGroupingState} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 
 type Props = StateProps

@@ -5,7 +5,7 @@ import {connect} from "react-redux"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {exportProcessToJSON} from "../../../../../actions/nk/importExport"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {getProcessVersionId, getProcessToDisplay} from "../../../selectors/graph"
+import {getProcessVersionId, getProcessToDisplay} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 
 type Props = StateProps

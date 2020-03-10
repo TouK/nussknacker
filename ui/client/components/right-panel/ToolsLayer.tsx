@@ -5,7 +5,7 @@ import "../../stylesheets/userPanel.styl"
 
 import SpinnerWrapper from "../SpinnerWrapper"
 import {hot} from "react-hot-loader"
-import {getFetchedProcessDetails} from "./selectors/graph"
+import {getFetchedProcessDetails} from "../../reducers/selectors/graph"
 import Toolbars from "./Toolbars"
 import {SelectionActions} from "./panels/edit/EditPanel"
 

@@ -6,7 +6,7 @@ import Ungroup from "./buttons/UngroupButton"
 import GroupCancel from "./buttons/GroupCancelButton"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import {getCapabilities} from "../../selectors/other"
+import {getCapabilities} from "../../../../reducers/selectors/other"
 import {ToolbarButtons} from "../../toolbars/ToolbarButtons"
 
 function GroupPanel() {

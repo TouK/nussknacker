@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import Dialogs from "../../../../modals/Dialogs"
 import {toggleModalDialog} from "../../../../../actions/nk/modal"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {hasOneVersion} from "../../../selectors/graph"
+import {hasOneVersion} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 
 type Props = StateProps

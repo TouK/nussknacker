@@ -5,7 +5,7 @@ import {ScrollbarsExtended} from "./ScrollbarsExtended"
 import ErrorBoundary from "react-error-boundary"
 import TogglePanel from "../TogglePanel"
 import {useDispatch, useSelector} from "react-redux"
-import {isRightPanelOpened, isLeftPanelOpened} from "../right-panel/selectors/ui"
+import {isRightPanelOpened, isLeftPanelOpened} from "../../reducers/selectors/ui"
 import {toggleRightPanel, toggleLeftPanel} from "../../actions/nk/ui/layout"
 
 export function useSidePanelToggle(side: "LEFT" | "RIGHT") {

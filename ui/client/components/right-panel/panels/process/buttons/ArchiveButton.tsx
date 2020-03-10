@@ -9,7 +9,7 @@ import {events} from "../../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../../actions/nk/ui/toggleConfirmDialog"
 import {bindActionCreators} from "redux"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {isRunning, getProcessId} from "../../../selectors/graph"
+import {isRunning, getProcessId} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 
 function ArchiveButton(props: StateProps) {

@@ -5,29 +5,23 @@ import {connect} from "react-redux"
 import * as InlinedSvgs from "../../../../../assets/icons/InlinedSvgs"
 import {exportProcessToPdf} from "../../../../../actions/nk/importExport"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {isBusinessView, getProcessVersionId, getProcessId} from "../../../selectors/graph"
+import {isBusinessView, getProcessVersionId, getProcessId} from "../../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
-import {PassedProps} from "../../../ToolsLayer"
+import {useGraph} from "../../../../graph/GraphContext"
 
-type OwnPropsPick = Pick<PassedProps,
-  | "exportGraph">
-
-type OwnProps = OwnPropsPick
-type Props = OwnProps & StateProps
+type Props = StateProps
 
 function PDFButton(props: Props) {
-  const {
-    exportGraph, processId, businessView, versionId, canExport,
-    exportProcessToPdf,
-  } = props
+  const {processId, businessView, versionId, canExport, exportProcessToPdf} = props
   const {t} = useTranslation()
+  const graphGetter = useGraph()
 
   return (
     <ToolbarButton
       name={t("panels.actions.process-PDF.button", "PDF")}
       icon={InlinedSvgs.pdf}
       disabled={!canExport}
-      onClick={() => exportProcessToPdf(processId, versionId, exportGraph(), businessView)}
+      onClick={() => exportProcessToPdf(processId, versionId, graphGetter().exportGraph(), businessView)}
     />
   )
 }

@@ -4,8 +4,8 @@ import {RootState} from "../../../../../reducers/index"
 import {connect} from "react-redux"
 import {hideRunProcessDetails} from "../../../../../actions/nk/process"
 import {ToolbarButton} from "../../../ToolbarButton"
-import {getShowRunProcessDetails} from "../../../selectors/graph"
-import { buttonHide } from "../../../../../assets/icons/InlinedSvgs"
+import {getShowRunProcessDetails} from "../../../../../reducers/selectors/graph"
+import {buttonHide} from "../../../../../assets/icons/InlinedSvgs"
 
 type Props = StateProps
 
