@@ -11,6 +11,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
  `processTypes`  configuration should be used from now on.
 * [#763](https://github.com/TouK/nussknacker/pull/763) Some API traits (ProcessManager, DictRegistry DictQueryService, CountsReporter) 
     now extend `java.lang.AutoCloseable`.
+* Old way or additional properties configuration should be replaced by the new one, which is now mapped to `Map[String, AdditionalPropertyConfig]`
 
 ## In version 0.0.12
 
