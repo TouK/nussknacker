@@ -1,7 +1,7 @@
 import React from "react"
 import Input from "../field/Input"
 import {Editor} from "./Editor"
-import {Formatter} from "./Formatter"
+import {Formatter, FormatterType, typeFormatters} from "./Formatter"
 import i18next from "i18next"
 
 type Props = {
@@ -14,13 +14,13 @@ type Props = {
 const StringEditor: Editor<Props> = (props: Props) => {
 
   const {expressionObj, onValueChange, className, formatter} = props
-
+  const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter
 
   return (
     <Input
       {...props}
-      onChange={(event) => onValueChange(formatter.encode(event.target.value))}
-      value={formatter.decode(expressionObj.expression)}
+      onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
+      value={stringFormatter.decode(expressionObj.expression)}
       formattedValue={expressionObj.expression}
       className={className}
     />

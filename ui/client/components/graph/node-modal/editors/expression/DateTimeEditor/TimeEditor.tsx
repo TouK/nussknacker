@@ -3,18 +3,19 @@ import {ExpressionObj} from "../types"
 import React from "react"
 import {isEmpty} from "lodash"
 import {DatepickerEditor, DatepickerEditorProps} from "./DatepickerEditor"
-import {spelFormatters, SpelFormatterType} from "../Formatter"
+import {FormatterType, spelFormatters, typeFormatters} from "../Formatter"
 import moment from "moment"
 
 const timeFormat = "HH:mm:ss"
 const isParseable = (expression: ExpressionObj): boolean => {
-  const date = spelFormatters[SpelFormatterType.Time].decode(expression.expression)
+  const date = spelFormatters[FormatterType.Time].decode(expression.expression)
   return date && moment(date, timeFormat).isValid()
 }
 
 export function TimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
 
   const {formatter} = props
+  const dateFormatter = formatter == null ? typeFormatters[FormatterType.Time] : formatter
 
   return (
     <DatepickerEditor
@@ -22,7 +23,7 @@ export function TimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "ex
       momentFormat={timeFormat}
       dateFormat={null}
       timeFormat={timeFormat}
-      formatter={formatter || spelFormatters[SpelFormatterType.Time]}
+      formatter={dateFormatter}
     />
   )
 }

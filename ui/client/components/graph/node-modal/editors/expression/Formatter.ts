@@ -9,7 +9,7 @@ export type Formatter = {
   decode: (value: string) => any,
 }
 
-export enum SpelFormatterType {
+export enum FormatterType {
   String = "java.lang.String",
   Duration = "java.time.Duration",
   Period = "java.time.Period",
@@ -63,12 +63,22 @@ const spelLocalTimeFormatter: Formatter = {
   },
 }
 
+const localTimeFormatter: Formatter = {
+  encode: (m: moment.Moment) => `${m.startOf("second").format("HH:mm:ss")}`,
+  decode: value => value,
+}
+
 const spelDateFormatter: Formatter = {
   encode: (m: moment.Moment) => `T(java.time.LocalDate).parse('${m.startOf("day").format("YYYY-MM-DD")}')`,
   decode: value => {
     const result = /^T\(java\.time\..*\)\.parse\(['"](.*)['"]\)$/.exec(value)
     return result == null ? null : result[1]
   },
+}
+
+const dateFormatter: Formatter = {
+  encode: (m: moment.Moment) => `${m.startOf("day").format("YYYY-MM-DD")}`,
+  decode: value => value,
 }
 
 const spelDateTimeFormatter: Formatter = {
@@ -79,17 +89,32 @@ const spelDateTimeFormatter: Formatter = {
   },
 }
 
+const dateTimeFormatter: Formatter = {
+  encode: (m: moment.Moment) => `${m.startOf("minute").format("YYYY-MM-DDTHH:mm")}`,
+  decode: value => value,
+}
+
 export const defaultFormatter: Formatter = {
   encode: value => value,
   decode: value => value,
 }
 
-export const spelFormatters: Record<SpelFormatterType, Formatter> = {
-  [SpelFormatterType.String]: stringSpelFormatter,
-  [SpelFormatterType.Duration]: spelDurationFormatter,
-  [SpelFormatterType.Period]: spelPeriodFormatter,
-  [SpelFormatterType.Cron]: spelCronFormatter,
-  [SpelFormatterType.Time]: spelLocalTimeFormatter,
-  [SpelFormatterType.Date]: spelDateFormatter,
-  [SpelFormatterType.DateTime]: spelDateTimeFormatter,
+export const spelFormatters: Record<FormatterType, Formatter> = {
+  [FormatterType.String]: stringSpelFormatter,
+  [FormatterType.Duration]: spelDurationFormatter,
+  [FormatterType.Period]: spelPeriodFormatter,
+  [FormatterType.Cron]: spelCronFormatter,
+  [FormatterType.Time]: spelLocalTimeFormatter,
+  [FormatterType.Date]: spelDateFormatter,
+  [FormatterType.DateTime]: spelDateTimeFormatter,
+}
+
+export const typeFormatters: Record<FormatterType, Formatter> = {
+  [FormatterType.Duration]: spelDurationFormatter,
+  [FormatterType.Period]: spelPeriodFormatter,
+  [FormatterType.Time]: localTimeFormatter,
+  [FormatterType.Date]: dateFormatter,
+  [FormatterType.DateTime]: dateTimeFormatter,
+  [FormatterType.String]: defaultFormatter,
+  [FormatterType.Cron]: defaultFormatter,
 }
