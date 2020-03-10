@@ -8,8 +8,8 @@ import ProcessUtils from "../../common/ProcessUtils"
 import Errors from "./Errors"
 import ValidTips from "./ValidTips"
 import Warnings from "./Warnings"
-import {DragHandle} from "../right-panel/toolbarsComponents/DragHandle"
-import {CollapsibleToolbar} from "../right-panel/toolbarsComponents/CollapsibleToolbar"
+import {DragHandle} from "../toolbarComponents/DragHandle"
+import {CollapsibleToolbar} from "../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
 
 export class Tips extends Component {

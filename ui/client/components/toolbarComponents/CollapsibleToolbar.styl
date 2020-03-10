@@ -1,0 +1,54 @@
+@require "../../stylesheets/_variables.styl"
+
+:local(.wrapper)
+    backdrop-filter blur(8px)
+    pointer-events auto
+
+:local(.panel)
+    background rgba(panelBackground, 1)
+    border 1px solid panelBorder
+
+    &-heading
+        background panelHeaderBackground
+        color panelHeaderText
+        text-transform uppercase
+
+    &-title
+        font-size panelHeaderTextSize
+        font-family 'Open Sans'
+        font-weight 600
+        color panelHeaderText
+        display flex
+        align-items stretch
+        justify-content flex-start
+
+        & > a
+        & > a:focus
+        & > a:hover
+            display block
+            text-decoration none
+            color panelHeaderText
+            height panelHeaderTextSize * 2
+            line-height @height
+            padding 0 (panelHeaderTextSize / 2)
+            flex 1
+            overflow hidden
+            text-overflow ellipsis
+
+    &-body
+        min-width (sidebarWidth - 2)
+        color panelText
+
+    min-width sidebarWidth
+    max-width sidebarWidth
+
+    &:local(.collapsing)
+        transition all .2s ease-in-out
+
+    &:local(.expanding)
+        transition all .3s ease-in-out
+
+    &:local(.collapsed)
+        min-width 80px
+        max-width @min-width
+        opacity .86
