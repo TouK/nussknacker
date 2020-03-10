@@ -436,8 +436,8 @@ object ProcessCompiler {
   def apply(classLoader: ClassLoader,
             definitions: ProcessDefinition[ObjectWithMethodDef],
             dictRegistry: DictRegistry,
-            expressionCompilerCreate: (ClassLoader, DictRegistry, ExpressionDefinition[ObjectWithMethodDef]) => ExpressionCompiler): ProcessCompiler = {
-    val expressionCompiler = expressionCompilerCreate(classLoader, dictRegistry, definitions.expressionConfig)
+            expressionCompilerCreate: (ClassLoader, DictRegistry, ExpressionDefinition[ObjectWithMethodDef], ClassExtractionSettings) => ExpressionCompiler): ProcessCompiler = {
+    val expressionCompiler = expressionCompilerCreate(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
     val sub = new PartSubGraphCompiler(classLoader, expressionCompiler, definitions.expressionConfig, definitions.services)
     new ProcessCompiler(classLoader, sub, definitions, expressionCompiler)
   }
