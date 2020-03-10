@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 import scala.reflect.runtime._
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
-                          dictTyper: SpelDictTyper, strictMethodsChecking: Boolean) extends LazyLogging {
+                          dictTyper: SpelDictTyper, strictMethodsChecking: Boolean)(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
 
