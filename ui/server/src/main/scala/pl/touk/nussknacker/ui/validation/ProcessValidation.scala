@@ -34,7 +34,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
 
   val uiValidationError = "UiValidation"
 
-  import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
+  import pl.touk.nussknacker.engine.util.Implicits._
 
   private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalFieldsConfig, uiValidationError)
 
@@ -169,7 +169,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
       (for {
         error <- errors.toList.filterNot(globalErrors.contains).filterNot(processPropertyErrors.contains)
         nodeId <- error.nodeIds
-      } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).flatGroupByKey,
+      } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
       processPropertyErrors.map(PrettyValidationErrors.formatErrorMessage),
       globalErrors.map(PrettyValidationErrors.formatErrorMessage)
     )
