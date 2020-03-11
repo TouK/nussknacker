@@ -9,7 +9,6 @@ export type NodeId = string
 export type NodeType = {
   id: NodeId,
   isSubprocess: boolean,
-
 }
 
 export type Process = $TodoType
