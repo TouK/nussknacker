@@ -63,8 +63,8 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
       case (TypedTaggedValue(leftType, _), notTaggedRightType) if !strictTypeChecking =>
         singleCommonSupertype(leftType, notTaggedRightType)
       case (_: TypedTaggedValue, _) => Typed.empty
-      case (notTaggedRightType, TypedTaggedValue(leftType, _)) if !strictTypeChecking =>
-        singleCommonSupertype(notTaggedRightType, leftType)
+      case (notTaggedLeftType, TypedTaggedValue(rightType, _)) if !strictTypeChecking =>
+        singleCommonSupertype(notTaggedLeftType, rightType)
       case (_, _: TypedTaggedValue) => Typed.empty
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
