@@ -2,9 +2,8 @@ package pl.touk.nussknacker.engine.definition.validator
 
 import java.lang.reflect.Parameter
 
+import javax.validation.constraints.NotBlank
 import pl.touk.nussknacker.engine.api.definition.{NotBlankValueValidator, ParameterValidator}
-import pl.touk.nussknacker.engine.definition.validator.adnotation.NotBlank
-
 object NotBlankValueValidatorExtractor extends ValidatorExtractor {
 
   override def extract(param: Parameter): Option[ParameterValidator] = {
