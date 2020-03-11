@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.api.dict.{DictInstance, DictRegistry}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypingResult, Unknown}
@@ -223,7 +224,8 @@ object SpelExpressionParser extends LazyLogging {
               strictTypeChecking: Boolean,
               imports: List[String],
               flavour: Flavour,
-              strictMethodsChecking: Boolean): SpelExpressionParser = {
+              strictMethodsChecking: Boolean)
+             (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
       "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),

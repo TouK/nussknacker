@@ -68,6 +68,8 @@ object ExpressionServiceQuery {
     ExpressionCompiler.withoutOptimization(
       modelData.modelClassLoader.classLoader,
       modelData.dictServices.dictRegistry,
-      modelData.processDefinition.expressionConfig)
+      modelData.processDefinition.expressionConfig,
+      modelData.processDefinition.settings
+    )
   }
 }
