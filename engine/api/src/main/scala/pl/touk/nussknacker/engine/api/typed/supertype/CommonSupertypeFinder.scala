@@ -10,8 +10,10 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * This class, like CanBeSubclassDeterminer is in spirit of "Be type safety as much as possible, but also provide some helpful
   * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
+  *
+  * TODO: strictTypeChecking was added as quickFix for compare Type with TaggedType. We should remove it after we will support creating model with TaggedType field
   */
-class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStrategy) {
+class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStrategy, strictTypeChecking: Boolean) {
 
   def commonSupertype(left: TypingResult, right: TypingResult)
                      (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingResult =
@@ -58,7 +60,11 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
             }
             .getOrElse(Typed.empty)
         }
+      case (TypedTaggedValue(leftType, _), notTaggedRightType) if !strictTypeChecking =>
+        singleCommonSupertype(leftType, notTaggedRightType)
       case (_: TypedTaggedValue, _) => Typed.empty
+      case (notTaggedLeftType, TypedTaggedValue(rightType, _)) if !strictTypeChecking =>
+        singleCommonSupertype(notTaggedLeftType, rightType)
       case (_, _: TypedTaggedValue) => Typed.empty
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
