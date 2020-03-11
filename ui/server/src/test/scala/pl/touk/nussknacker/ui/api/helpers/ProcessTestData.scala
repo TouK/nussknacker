@@ -48,6 +48,7 @@ object ProcessTestData {
   val otherExistingServiceId = "fooService"
   val otherExistingServiceId2 = "fooService2"
   val otherExistingServiceId3 = "fooService3"
+  val notBlankExistingServiceId = "notBlank"
 
   val processorId = "fooProcessor"
 
@@ -65,6 +66,7 @@ object ProcessTestData {
     .withService(processorId, classOf[Void])
     .withService(otherExistingServiceId2, Parameter("expression"))
     .withService(otherExistingServiceId3, Parameter("expression", Typed.typedClass(classOf[String]), classOf[String]))
+    .withService(notBlankExistingServiceId, Parameter.notBlank("expression", Typed.typedClass(classOf[String]), classOf[String]))
     .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
       clearsContext = false, manyInputs = false))
     .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
@@ -216,6 +218,13 @@ object ProcessTestData {
       .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
       .emptySink("sink", existingSinkFactory)
   }
+
+  val invalidProcessWithBlankParameter: EspProcess =
+    EspProcessBuilder.id("fooProcess")
+      .exceptionHandler()
+      .source("source", existingSourceFactory)
+      .enricher("custom", "out1", notBlankExistingServiceId, "expression" -> "''")
+      .emptySink("sink", existingSinkFactory)
 
   val sampleDisplayableProcess = {
     DisplayableProcess(

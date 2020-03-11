@@ -33,11 +33,19 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     }
   }
 
-  it should "find errors in process with empty mandatory parameters" in {
+  it should "find errors in process with Mandatory parameters" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithEmptyMandatoryParameter)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include ("Empty expression for mandatory parameter")
+      entity should include ("No expression for mandatory parameter")
+    }
+  }
+
+  it should "find errors in process with NotBlank parameters" in {
+    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithBlankParameter)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include ("Blank expression for not blank parameter")
     }
   }
 

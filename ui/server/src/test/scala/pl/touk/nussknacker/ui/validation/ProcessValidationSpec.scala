@@ -255,7 +255,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     validationResult.saveAllowed shouldBe true
   }
 
-  test("check for empty expression in mandatory parameter") {
+  test("check for no expression in mandatory parameter") {
     val process = createProcess(
       List(
         Source("inID", SourceRef("barSource", List())),
@@ -270,8 +270,8 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes shouldBe Map(
       "custom" -> List(NodeValidationError(
-        "EmptyMandatoryParameter",
-        "Empty expression for mandatory parameter",
+        "ErrorValidationParameter",
+        "No expression for mandatory parameter",
         "Please fill expression for this parameter",
         Some("expression"),
         NodeValidationErrorType.SaveAllowed
