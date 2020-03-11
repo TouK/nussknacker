@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.time.LocalDateTime
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{Parameter}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}

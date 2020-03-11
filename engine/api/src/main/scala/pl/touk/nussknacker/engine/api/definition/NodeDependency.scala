@@ -16,8 +16,8 @@ object Parameter {
 
   def apply[T: ClassTag](name: String): Parameter = Parameter(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
 
-  def apply(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
-    Parameter(name, typ, runtimeClass, editor = None, validators = List(MandatoryValueValidator), // we want to have mandatory parameters by default because it can protect us from NPE in some cases
+  def apply(name: String, typ: TypingResult, runtimeClass: Class[_], validators: List[ParameterValidator] = List.empty): Parameter =
+    Parameter(name, typ, runtimeClass, editor = None, validators = List(MandatoryValueValidator) ++ validators, // we want to have mandatory parameters by default because it can protect us from NPE in some cases
       additionalVariables = Map.empty, branchParam = false)
 
   def optional[T:ClassTag](name: String): Parameter =
@@ -25,6 +25,9 @@ object Parameter {
 
   def optional(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
     Parameter(name, typ, runtimeClass, editor = None, validators = List.empty, additionalVariables = Map.empty, branchParam = false)
+
+  def notBlank(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
+    Parameter(name, typ, runtimeClass, validators = List(NotBlankValueValidator))
 }
 
 case class Parameter(name: String,

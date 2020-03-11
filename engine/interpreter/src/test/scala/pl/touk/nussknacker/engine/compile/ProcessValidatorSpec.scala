@@ -9,7 +9,7 @@ import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -65,7 +65,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         Parameter[Long]("long"))
       , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
-      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData())
+      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
+      "withNotBlankParams" -> (ObjectDefinition.withParams(List(Parameter.notBlank("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -168,8 +169,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
-  test ("find empty expressions for mandatory parameters") {
-    val processWithInvalidExpresssion =
+  test ("find mandatory expressions for mandatory parameters") {
+    val processWithInvalidExpression =
       EspProcessBuilder
         .id("process1")
         .exceptionHandler()
@@ -177,8 +178,34 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .customNode("customNodeId", "event", "withMandatoryParams", "mandatoryParam" -> "")
         .emptySink("emptySink", "sink")
 
-    validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(EmptyMandatoryParameter("mandatoryParam", "customNodeId"), _)) =>
+    }
+  }
+
+  test ("find blank expressions for notBlank parameter") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId1", "event", "withNotBlankParams", "notBlankParam" -> "''")
+        .customNode("customNodeId2", "event", "withNotBlankParams", "notBlankParam" -> "'   '")
+        .customNode("customNodeId3", "event", "withNotBlankParams", "notBlankParam" -> " '' ")
+        .customNode("customNodeId4", "event", "withNotBlankParams", "notBlankParam" -> "'")
+        .customNode("customNodeId5", "event", "withNotBlankParams", "notBlankParam" -> " '")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+        BlankParameter("notBlankParam", "customNodeId1"),
+        List(
+         BlankParameter("notBlankParam", "customNodeId2"),
+         BlankParameter("notBlankParam", "customNodeId3"),
+         BlankParameter("notBlankParam", "customNodeId4"),
+         BlankParameter("notBlankParam", "customNodeId5")
+        )
+      )) =>
     }
   }
 
