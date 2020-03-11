@@ -6,6 +6,7 @@ import {toggleModalDialog} from "../../../../actions/nk/modal"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {hasOneVersion} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/compare.svg"
 
 type Props = StateProps
 
@@ -19,7 +20,7 @@ function CompareButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.process-compare.button", "compare")}
-      icon={"new/compare.svg"}
+      icon={<Icon/>}
       disabled={hasOneVersion}
       onClick={() => toggleModalDialog(Dialogs.types.compareVersions)}
     />

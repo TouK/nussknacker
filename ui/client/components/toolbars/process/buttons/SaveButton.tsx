@@ -2,13 +2,13 @@ import React from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import Dialogs from "../../../modals/Dialogs"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {toggleModalDialog} from "../../../../actions/nk/modal"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {isSaveDisabled} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import cn from "classnames"
 import classes from "./SaveButton.styl"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/save.svg"
 
 type Props = StateProps
 
@@ -19,7 +19,7 @@ function SaveButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.process-save.button", "save")}
-      icon={InlinedSvgs.buttonSave}
+      icon={<Icon/>}
       labelClassName={cn("button-label", !saveDisabled && classes.unsaved)}
       disabled={saveDisabled}
       onClick={() =>

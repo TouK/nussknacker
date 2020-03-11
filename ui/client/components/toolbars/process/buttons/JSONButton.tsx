@@ -2,11 +2,11 @@ import React from "react"
 import {RootState} from "../../../../reducers/index"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import {connect} from "react-redux"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {exportProcessToJSON} from "../../../../actions/nk/importExport"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getProcessVersionId, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/JSON.svg"
 
 type Props = StateProps
 
@@ -20,7 +20,7 @@ function JSONButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.process-JSON.button", "JSON")}
-      icon={InlinedSvgs.buttonExport}
+      icon={<Icon/>}
       disabled={!canExport}
       onClick={() => exportProcessToJSON(processToDisplay, versionId)}
     />

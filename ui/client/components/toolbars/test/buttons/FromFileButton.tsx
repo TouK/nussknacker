@@ -3,11 +3,11 @@ import {useTranslation} from "react-i18next"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {testProcessFromFile} from "../../../../actions/nk/process"
 import {reportEvent} from "../../../../actions/nk/reportEvent"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getTestCapabilities, getProcessId, getProcessToDisplay} from "../../../../reducers/selectors/graph"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/from-file.svg"
 
 type Props = StateProps
 
@@ -19,7 +19,7 @@ function FromFileButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.test-fromFile.button", "from file")}
-      icon={InlinedSvgs.buttonFromFile}
+      icon={<Icon/>}
       disabled={!testCapabilities.canBeTested}
       onDrop={(files) => files.forEach((file) => testProcessFromFile(processId, file, processToDisplay))}
       onClick={() => reportEvent({

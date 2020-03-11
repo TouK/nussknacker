@@ -4,12 +4,12 @@ import {connect} from "react-redux"
 import * as DialogMessages from "../../../../common/DialogMessages"
 import HttpService from "../../../../http/HttpService"
 import {events} from "../../../../analytics/TrackingEvents"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {toggleConfirmDialog} from "../../../../actions/nk/ui/toggleConfirmDialog"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getFeatureSettings} from "../../../../reducers/selectors/settings"
 import {isDeployPossible, getProcessVersionId, getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/migrate.svg"
 
 function MigrateButton(props: StateProps) {
   const {
@@ -21,7 +21,7 @@ function MigrateButton(props: StateProps) {
   return (
     <ToolbarButton
       name={t("panels.actions.process-migrate.button", "migrate")}
-      icon={InlinedSvgs.buttonMigrate}
+      icon={<Icon/>}
       disabled={!deployPossible}
       onClick={() => toggleConfirmDialog(
         true,

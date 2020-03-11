@@ -9,6 +9,7 @@ import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getSelectionState, getNodeToDisplay} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {SelectionActions} from "../EditPanel"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/delete.svg"
 
 type OwnProps = {
   selectionActions: SelectionActions,
@@ -23,7 +24,7 @@ function DeleteButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.edit-delete.button", "delete")}
-      icon={"new/delete.svg"}
+      icon={<Icon/>}
       disabled={!NodeUtils.isPlainNode(nodeToDisplay) || isEmpty(selectionState)}
       onClick={() => deleteSelection(
         selectionState,

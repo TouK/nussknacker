@@ -11,6 +11,7 @@ import {bindActionCreators} from "redux"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {isRunning, getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/archive.svg"
 
 function ArchiveButton(props: StateProps) {
   const {
@@ -22,7 +23,7 @@ function ArchiveButton(props: StateProps) {
   return (
     <ToolbarButton
       name={t("panels.actions.process-archive.button", "archive")}
-      icon={"new/archive.svg"}
+      icon={<Icon/>}
       disabled={isRunning}
       onClick={() => !isRunning && toggleConfirmDialog(
         true,

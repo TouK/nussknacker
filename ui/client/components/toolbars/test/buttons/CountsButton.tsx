@@ -5,6 +5,7 @@ import {toggleModalDialog} from "../../../../actions/nk/modal"
 import {RootState} from "../../../../reducers/index"
 import Dialogs from "../../../modals/Dialogs"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/counts.svg"
 
 type Props = StateProps
 
@@ -15,7 +16,7 @@ function CountsButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.test-counts.button", "counts")}
-      icon={"new/counts.svg"}
+      icon={<Icon/>}
       onClick={() => toggleModalDialog(Dialogs.types.calculateCounts)}
     />
   )

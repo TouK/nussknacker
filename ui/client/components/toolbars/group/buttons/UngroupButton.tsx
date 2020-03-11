@@ -1,12 +1,12 @@
 import React from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import NodeUtils from "../../../graph/NodeUtils"
 import {ungroup} from "../../../../actions/nk/groups"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getNodeToDisplay} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/ungroup.svg"
 
 type Props = StateProps
 
@@ -17,7 +17,7 @@ function UngroupButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.group-ungroup.button", "ungroup")}
-      icon={InlinedSvgs.buttonUngroup}
+      icon={<Icon/>}
       disabled={!NodeUtils.nodeIsGroup(nodeToDisplay)}
       onClick={() => ungroup(nodeToDisplay)}
     />

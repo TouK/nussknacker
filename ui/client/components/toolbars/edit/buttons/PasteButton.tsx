@@ -5,6 +5,7 @@ import {pasteSelection} from "../../../../actions/nk/selection"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {useTranslation} from "react-i18next"
 import {SelectionActions} from "../EditPanel"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/paste.svg"
 
 type OwnProps = {
   selectionActions: SelectionActions,
@@ -20,7 +21,7 @@ function PasteButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.edit-paste.button", "paste")}
-      icon={"new/paste.svg"}
+      icon={<Icon/>}
       disabled={!canPaste}
       onClick={event => pasteSelection(
         () => paste(event),

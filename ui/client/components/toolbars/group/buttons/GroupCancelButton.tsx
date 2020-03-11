@@ -1,11 +1,11 @@
 import React from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {cancelGrouping} from "../../../../actions/nk/groups"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getGroupingState} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/group-cancel.svg"
 
 type Props = StateProps
 
@@ -16,7 +16,7 @@ function GroupFinishButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.group-cancel.button", "cancel")}
-      icon={InlinedSvgs.buttonGroupCancel}
+      icon={<Icon/>}
       disabled={!groupingState}
       onClick={cancelGrouping}
     />

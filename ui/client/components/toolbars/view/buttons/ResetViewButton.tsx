@@ -1,9 +1,9 @@
 import {useTranslation} from "react-i18next"
 import {useDispatch} from "react-redux"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {resetToolbars} from "../../../../actions/nk/toolbars"
 import React from "react"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/resetgui.svg"
 
 export function ResetViewButton() {
   const {t} = useTranslation()
@@ -12,7 +12,7 @@ export function ResetViewButton() {
   return (
     <ToolbarButton
       name={t("panels.actions.view-reset.label", "reset")}
-      icon={InlinedSvgs.resetGui}
+      icon={<Icon/>}
       onClick={() => dispatch(resetToolbars())}
     />
   )

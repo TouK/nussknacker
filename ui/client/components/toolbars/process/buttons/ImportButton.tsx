@@ -2,13 +2,13 @@ import React from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {importFiles} from "../../../../actions/nk/importExport"
 import {reportEvent} from "../../../../actions/nk/reportEvent"
 import {bindActionCreators} from "redux"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/import.svg"
 
 type Props = StateProps
 
@@ -19,7 +19,7 @@ function ImportButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.process-import.button", "import")}
-      icon={InlinedSvgs.buttonImport}
+      icon={<Icon/>}
       disabled={false}
       onClick={() => reportEvent({
         category: events.categories.rightPanel,

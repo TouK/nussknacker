@@ -7,7 +7,7 @@ import {displayModalNodeDetails} from "../../../../actions/nk/modal"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {isPristine, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
-import {settingsIcon} from "../../../../assets/icons/InlinedSvgs"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/properties.svg"
 
 type Props = StateProps
 
@@ -19,7 +19,7 @@ function PropertiesButton(props: Props) {
     <ToolbarButton
       name={t("panels.actions.edit-properties.button", "properties")}
       hasError={hasErrors && !ProcessUtils.hasNoPropertiesErrors(processToDisplay)}
-      icon={settingsIcon}
+      icon={<Icon/>}
       onClick={() => displayModalNodeDetails(
         processToDisplay?.properties,
         undefined,

@@ -7,7 +7,7 @@ import {ToolbarButtonsContext} from "./ToolbarButtons"
 
 interface Props {
   name: string,
-  icon: string,
+  icon: JSX.Element | string,
   className?: string,
   iconClassName?: string,
   labelClassName?: string,

@@ -1,12 +1,12 @@
 import React from "react"
 import {useSelector, useDispatch} from "react-redux"
 import HttpService from "../../../../http/HttpService"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {toggleProcessActionDialog} from "../../../../actions/nk/toggleProcessActionDialog"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {isCancelPossible, getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {loadProcessState} from "../../../../actions/nk/process"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/stop.svg"
 
 export default function CancelDeployButton() {
   const {t} = useTranslation()
@@ -18,7 +18,7 @@ export default function CancelDeployButton() {
     <ToolbarButton
       name={t("panels.actions.deploy-canel.button", "cancel")}
       disabled={!cancelPossible}
-      icon={InlinedSvgs.buttonCancel}
+      icon={<Icon/>}
       onClick={() => dispatch(toggleProcessActionDialog(
         t("panels.actions.deploy-canel.dialog", "Cancel process"),
         (p, c) => HttpService.cancel(p, c).finally(() => dispatch(loadProcessState(processId))),

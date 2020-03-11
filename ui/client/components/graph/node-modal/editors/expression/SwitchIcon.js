@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
-import * as LoaderUtils from "../../../../../common/LoaderUtils"
+import {ReactComponent as Icon} from "../../../../../assets/img/buttons/switch.svg"
 
 export default function SwitchIcon(props) {
 
@@ -15,7 +15,7 @@ export default function SwitchIcon(props) {
               onClick={onClick}
               disabled={!switchable || readOnly}
               title={title()}>
-        <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
+        <Icon/>
       </button> : null
   )
 }

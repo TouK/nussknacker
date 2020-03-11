@@ -5,6 +5,7 @@ import {copySelection} from "../../../../actions/nk/selection"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {useTranslation} from "react-i18next"
 import {SelectionActions} from "../EditPanel"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/copy.svg"
 
 type OwnProps = {
   selectionActions: SelectionActions,
@@ -20,7 +21,7 @@ function CopyButton(props: Props) {
   return (
     <ToolbarButton
       name={t("panels.actions.edit-copy.button", "copy")}
-      icon={"new/copy.svg"}
+      icon={<Icon/>}
       disabled={!canCopy}
       onClick={event => copySelection(
         () => copy(event),

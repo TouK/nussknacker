@@ -1,13 +1,13 @@
 import React from "react"
 import {useDispatch, useSelector} from "react-redux"
 import HttpService from "../../../../http/HttpService"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../../actions/nk/tooltips"
 import {toggleProcessActionDialog} from "../../../../actions/nk/toggleProcessActionDialog"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {isDeployPossible, isSaveDisabled, hasError, getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {loadProcessState} from "../../../../actions/nk/process"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/deploy.svg"
 
 export default function DeployButton() {
   const dispatch = useDispatch()
@@ -29,7 +29,7 @@ export default function DeployButton() {
     <ToolbarButton
       name={t("panels.actions.deploy.button", "deploy")}
       disabled={!deployPossible}
-      icon={InlinedSvgs.buttonDeploy}
+      icon={<Icon/>}
       title={deployToolTip}
       onClick={() => dispatch(toggleProcessActionDialog(
         t("panels.actions.deploy.dialog", "Deploy process"),

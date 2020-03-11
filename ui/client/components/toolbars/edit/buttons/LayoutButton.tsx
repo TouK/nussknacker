@@ -1,10 +1,10 @@
 import React from "react"
 import {useDispatch} from "react-redux"
-import * as InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import {layout} from "../../../../actions/nk/ui/layout"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {useTranslation} from "react-i18next"
 import {useGraph} from "../../../graph/GraphContext"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/layout.svg"
 
 function LayoutButton() {
   const dispatch = useDispatch()
@@ -14,7 +14,7 @@ function LayoutButton() {
   return (
     <ToolbarButton
       name={t("panels.actions.edit-layout.button", "layout")}
-      icon={InlinedSvgs.buttonLayout}
+      icon={<Icon/>}
       onClick={() => dispatch(layout(() => graphGetter().directedLayout()))}
     />
   )
