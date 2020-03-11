@@ -9,7 +9,7 @@ import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{Parameter}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankValueValidator, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -179,7 +179,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(EmptyMandatoryParameter("mandatoryParam", "customNodeId"), _)) =>
+      case Invalid(NonEmptyList(ErrorValidationParameter(MandatoryValueValidator, "mandatoryParam", "customNodeId"), _)) =>
     }
   }
 
@@ -198,12 +198,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        BlankParameter("notBlankParam", "customNodeId1"),
+        ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId1"),
         List(
-         BlankParameter("notBlankParam", "customNodeId2"),
-         BlankParameter("notBlankParam", "customNodeId3"),
-         BlankParameter("notBlankParam", "customNodeId4"),
-         BlankParameter("notBlankParam", "customNodeId5")
+         ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId2"),
+         ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId3"),
+         ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId4"),
+         ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId5")
         )
       )) =>
     }

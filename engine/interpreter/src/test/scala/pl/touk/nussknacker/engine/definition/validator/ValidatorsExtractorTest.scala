@@ -4,9 +4,9 @@ import java.time.LocalDate
 import java.util.Optional
 
 import javax.annotation.Nullable
+import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankValueValidator}
-import pl.touk.nussknacker.engine.definition.validator.adnotation.NotBlank
 
 class ValidatorsExtractorTest extends FunSuite with Matchers {
 

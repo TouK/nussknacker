@@ -166,6 +166,7 @@ val flywayV = "5.2.4"
 val confluentV = "4.1.2"
 val jbcryptV = "0.4"
 val cronParserV = "3.1.1"
+val javaxValidationApiV = "2.0.1.Final"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -441,6 +442,7 @@ lazy val interpreter = (project in engine("interpreter")).
         "org.springframework" % "spring-expression" % springV,
         //needed by scala-compiler for spring-expression...
         "com.google.code.findbugs" % "jsr305" % "3.0.2",
+        "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test"
