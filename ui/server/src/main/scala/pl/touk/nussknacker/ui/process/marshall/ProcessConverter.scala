@@ -123,7 +123,7 @@ object ProcessConverter {
 
   private def createNextEdge(id: String, tail: List[CanonicalNode], edgeType: Option[EdgeType] = None): List[displayablenode.Edge] = {
     tail.headOption.map {
-      case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => displayablenode.Edge(id, joinId, None)
+      case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => displayablenode.Edge(id, joinId, edgeType)
       case n => displayablenode.Edge(id, n.id, edgeType)
     }.toList
   }
