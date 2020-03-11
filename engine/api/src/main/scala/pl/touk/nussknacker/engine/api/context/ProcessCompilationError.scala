@@ -142,6 +142,14 @@ object ProcessCompilationError {
       ErrorValidationParameter(validator, paramName, nodeId.id)
   }
 
+  case class BlankParameter(paramName: String, nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object BlankParameter {
+    def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      BlankParameter(paramName, nodeId.id)
+  }
+
   case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
