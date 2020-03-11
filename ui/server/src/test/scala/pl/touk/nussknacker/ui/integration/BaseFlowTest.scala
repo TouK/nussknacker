@@ -127,19 +127,19 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "stringRequiredProperty" -> new UiAdditionalPropertyConfig(
           Some("default"),
           StringParameterEditor,
-          Some(List(MandatoryValueValidator)),
+          List(MandatoryValueValidator),
           Some("label")
         ),
         "intOptionalProperty" -> new UiAdditionalPropertyConfig(
           None,
           StringParameterEditor,
-          Some(List(LiteralIntValidator)),
+          List(LiteralIntValidator),
           None
         ),
         "fixedValueOptionalProperty" -> new UiAdditionalPropertyConfig(
           None,
           FixedValuesParameterEditor(fixedPossibleValues),
-          Some(List(FixedValuesValidator(fixedPossibleValues))),
+          List(FixedValuesValidator(fixedPossibleValues)),
           None
         )
       )

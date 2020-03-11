@@ -6,12 +6,13 @@ import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 
 @JsonCodec case class UiAdditionalPropertyConfig(defaultValue: Option[String],
                                                  editor: ParameterEditor,
-                                                 validators: Option[List[ParameterValidator]],
+                                                 validators: List[ParameterValidator],
                                                  label: Option[String])
 
 object UiAdditionalPropertyConfig {
   def apply(config: AdditionalPropertyConfig): UiAdditionalPropertyConfig = {
     val editor = UiAdditionalPropertyEditorDeterminer.determine(config)
-    new UiAdditionalPropertyConfig(config.defaultValue, editor, config.validators, config.label)
+    val determined = AdditionalPropertyValidatorDeterminerChain(config).determine()
+    new UiAdditionalPropertyConfig(config.defaultValue, editor, determined, config.label)
   }
 }

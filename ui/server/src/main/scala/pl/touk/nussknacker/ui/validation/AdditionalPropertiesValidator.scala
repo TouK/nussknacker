@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, Param
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.definition.additionalproperty.AdditionalPropertyValidatorDeterminerChain
 
 
 class AdditionalPropertiesValidator(additionalPropertiesConfig: Map[ProcessingType, Map[String, AdditionalPropertyConfig]]) {
@@ -47,7 +48,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: Map[ProcessingTy
 
   private def getConfiguredValidationsResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
     val validatorsByPropertyName = config
-      .map(propertyConfig => propertyConfig._1 -> propertyConfig._2.validators.getOrElse(List.empty))
+      .map(propertyConfig => propertyConfig._1 -> AdditionalPropertyValidatorDeterminerChain(propertyConfig._2).determine())
 
     val propertiesWithConfiguredValidator = for {
       property <- additionalProperties

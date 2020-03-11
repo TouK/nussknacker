@@ -34,7 +34,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
     Map(TestProcessingTypes.Streaming -> Map(
       "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryValueValidator)), Some("label")),
-      "fixedValueOptionalProperty" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
+      "fixedValueOptionalProperty" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), None, None),
       "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralIntValidator)), Some("label"))
     )),
     sampleResolver,
