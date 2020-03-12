@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
-import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidEndingCustomNode, MissingParameters, NodeId}
@@ -381,19 +380,19 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("validate nodes after union if validation of part before fails") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
-      GraphBuilder
-        .source("sourceId1", "mySource")
-        .filter("invalidFilter", "not.a.valid.expression")
-        .branchEnd("branch1", "join1"),
-      GraphBuilder
-        .branch("join1", "unionTransformer", Some("outPutVar"),
-          List(
-            "branch1" -> List("key" -> "'key1'", "value" -> "#input")
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "mySource")
+          .filter("invalidFilter", "not.a.valid.expression")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .branch("join1", "unionTransformer", Some("outPutVar"),
+            List(
+              "branch1" -> List("key" -> "'key1'", "value" -> "#input")
+            )
           )
-        )
-        .processorEnd("stringService", "stringService", "stringParam" -> "''")
-    ))
+          .processorEnd("stringService", "stringService" , "stringParam" -> "''")
+      ))
     val validationResult = validator.validate(process)
 
     validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(Map("branch1" -> Typed[String]))
@@ -417,7 +416,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
             "branch2" -> List("key" -> "'key2'", "value" -> "#input.length()")
           )
         )
-        .processorEnd("stringService", "stringService", "stringParam" -> serviceExpression)
+        .processorEnd("stringService", "stringService" , "stringParam" -> serviceExpression)
     ))
 
   test("extract expression typing info from join") {
@@ -436,7 +435,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
               "branch2" -> List("key" -> "'key2'", "value" -> "123")
             )
           )
-          .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
+          .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
       ))
 
     val validationResult = validator.validate(process)
@@ -459,6 +458,5 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "stringService" -> Map("stringParam" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String])))
     )
   }
-
-
+  
 }

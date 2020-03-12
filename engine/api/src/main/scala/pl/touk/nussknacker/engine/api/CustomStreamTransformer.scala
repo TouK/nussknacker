@@ -29,6 +29,7 @@ abstract class CustomStreamTransformer {
   // TODO: remove after full switch to ContextTransformation API
   def canHaveManyInputs: Boolean = false
 
+  // For now it is only option in API interpreted by compiler but actually not supported by flink runtime.
   def canBeEnding: Boolean = false 
   
 }

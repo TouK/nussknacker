@@ -89,15 +89,11 @@ trait ProcessValidator extends LazyLogging {
 }
 
 protected trait ProcessCompilerBase {
-
+  
   protected def definitions: ProcessDefinition[ObjectWithMethodDef]
-
   protected def sourceFactories: Map[String, ObjectWithMethodDef] = definitions.sourceFactories
-
   protected def sinkFactories: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.SinkAdditionalData)] = definitions.sinkFactories
-
   protected def exceptionHandlerFactory: ObjectWithMethodDef = definitions.exceptionHandlerFactory
-
   protected val customStreamTransformers: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.CustomTransformerAdditionalData)] = definitions.customStreamTransformers
   protected val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[ObjectWithMethodDef] = definitions.expressionConfig
 
@@ -149,10 +145,10 @@ protected trait ProcessCompilerBase {
     //we use fold here (and not map/sequence), because we can compile part which starts from Join only when we
     //know compilation results (stored in BranchEndContexts) of all branches that end in this join
     val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextSourcePart) =>
-      val compiledPart = compile(nextSourcePart, branchContexts)
-      //we don't use andThen on CompilationResult, since we don't want to stop if there are errors in part
-      val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
-      (nextResult, branchContexts.addPart(nextSourcePart.node, compiledPart))
+        val compiledPart = compile(nextSourcePart, branchContexts)
+        //we don't use andThen on CompilationResult, since we don't want to stop if there are errors in part
+        val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
+        (nextResult, branchContexts.addPart(nextSourcePart.node, compiledPart))
     }
     result.map(NonEmptyList.fromListUnsafe)
   }
@@ -271,8 +267,8 @@ protected trait ProcessCompilerBase {
         CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
           compiledgraph.part.SinkPart(obj, node, ctx)
         )
-      case endingCustom@EndingCustomNodePart(node@splittednode.EndingNode(data)) =>
-        CustomNodeCompiler.compileEndingCustomNodePart(endingCustom, node, data, ctx)
+      case CustomNodePart(node@splittednode.EndingNode(data), _, _) =>
+        CustomNodeCompiler.compileEndingCustomNodePart(part, node, data, ctx)
       case CustomNodePart(node@splittednode.OneOutputSubsequentNode(data, _), _, _) =>
         CustomNodeCompiler.compileCustomNodePart(part, node, data, Left(ctx))
     }
@@ -291,7 +287,7 @@ protected trait ProcessCompilerBase {
 
   object CustomNodeCompiler {
 
-    def compileEndingCustomNodePart(part: EndingCustomNodePart, node: splittednode.EndingNode[CustomNode], data: CustomNodeData,
+    def compileEndingCustomNodePart(part: ProcessPart, node: splittednode.EndingNode[CustomNode], data: CustomNodeData,
                                     ctx: ValidationContext)
                                    (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.EndingCustomPart] = {
       val (typingInfo, validatedNextCtx, compiledNode) = compileCustomNodeObject(data, Left(ctx), ending = true)
@@ -406,19 +402,19 @@ protected trait ProcessCompilerBase {
 
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(nodeDefinition.parameters,
       parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
-      createObject[T](nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
-        val typingInfo = compiledParameters.flatMap {
-          case TypedParameter(name, TypedExpression(_, _, typingInfo)) =>
-            List(name -> typingInfo)
-          case TypedParameter(paramName, TypedExpressionMap(valueByBranch)) =>
-            valueByBranch.map {
-              case (branch, TypedExpression(_, _, typingInfo)) =>
-                val expressionId = NodeTypingInfo.branchParameterExpressionId(paramName, branch)
-                expressionId -> typingInfo
-            }
-        }.toMap
-        (typingInfo, obj)
-      }
+        createObject[T](nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
+          val typingInfo = compiledParameters.flatMap {
+            case TypedParameter(name, TypedExpression(_, _, typingInfo)) =>
+              List(name -> typingInfo)
+            case TypedParameter(paramName, TypedExpressionMap(valueByBranch)) =>
+              valueByBranch.map {
+                case (branch, TypedExpression(_, _, typingInfo)) =>
+                  val expressionId = NodeTypingInfo.branchParameterExpressionId(paramName, branch)
+                  expressionId -> typingInfo
+              }
+          }.toMap
+          (typingInfo, obj)
+        }
     }
     (compiledObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), compiledObjectWithTypingInfo.map(_._2))
   }
