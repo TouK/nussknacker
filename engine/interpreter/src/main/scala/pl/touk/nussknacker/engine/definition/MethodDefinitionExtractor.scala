@@ -69,16 +69,24 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
         // TODO JOIN: for branchParams we should rather look at Map's value type
         val paramType = extractParameterType(p)
-        val editor = EditorExtractor.extract(p)
-        val validators = ValidatorsExtractor.extract(p)
-        Parameter(name, Typed(paramType), p.getType, editor, validators, additionalVariables(p), branchParamName.isDefined)
+        val extractedEditor = EditorExtractor.extract(p)
+        val validators = tryToDetermineValidators(p, extractedEditor)
+        Parameter(name, Typed(paramType), p.getType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined)
       }
     }.toList
 
     new OrderedDependencies(dependencies)
   }
 
-  private def additionalVariables(p: reflect.Parameter): Map[String, TypingResult] =
+  private def tryToDetermineValidators(param: java.lang.reflect.Parameter, extractedEditor: Option[ParameterEditor]) = {
+    val possibleEditor: Option[ParameterEditor] = extractedEditor match {
+      case Some(editor) => Some(editor)
+      case None => ParameterTypeEditorDeterminer.tryDetermine(param)
+    }
+    ValidatorsExtractor(possibleEditor).extract(param)
+  }
+
+  private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, TypingResult] =
     Option(p.getAnnotation(classOf[AdditionalVariables]))
       .map(_.value().map(additionalVariable =>
         additionalVariable.name() -> Typed(additionalVariable.clazz())).toMap

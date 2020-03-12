@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.time.LocalDateTime
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, Parameter}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -28,6 +28,7 @@ import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -48,12 +49,14 @@ object ProcessTestData {
   val otherExistingServiceId = "fooService"
   val otherExistingServiceId2 = "fooService2"
   val otherExistingServiceId3 = "fooService3"
+  val otherExistingServiceId4 = "fooService4"
 
   val processorId = "fooProcessor"
 
   val existingStreamTransformer = "transformer"
   val otherExistingStreamTransformer = "otherTransformer"
   val otherExistingStreamTransformer2 = "otherTransformer2"
+  val otherTransformer3 = "otherTransformer3"
 
   val processDefinition = ProcessDefinitionBuilder.empty
     .withSourceFactory(existingSourceFactory)
@@ -65,6 +68,15 @@ object ProcessTestData {
     .withService(processorId, classOf[Void])
     .withService(otherExistingServiceId2, Parameter("expression"))
     .withService(otherExistingServiceId3, Parameter("expression", Typed.typedClass(classOf[String]), classOf[String]))
+    .withService(otherExistingServiceId4, Parameter(
+      "expression",
+      Typed.typedClass(classOf[JavaSampleEnum]),
+      classOf[JavaSampleEnum],
+      Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
+      List(FixedValuesValidator(List(FixedExpressionValue("a", "a")))),
+      Map.empty,
+      branchParam = false)
+    )
     .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
       clearsContext = false, manyInputs = false))
     .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
@@ -214,6 +226,14 @@ object ProcessTestData {
       .exceptionHandler()
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
+      .emptySink("sink", existingSinkFactory)
+  }
+
+  val invalidProcessWithWrongFixedExpressionValue = {
+    EspProcessBuilder.id("fooProcess")
+      .exceptionHandler()
+      .source("source", existingSourceFactory)
+      .enricher("custom", "out1", otherExistingServiceId4, "expression" -> "wrong fixed value")
       .emptySink("sink", existingSinkFactory)
   }
 

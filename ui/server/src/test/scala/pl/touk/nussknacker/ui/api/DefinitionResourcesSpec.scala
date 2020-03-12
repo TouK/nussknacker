@@ -283,6 +283,34 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
+  it("return info about validator based on param fixed value editor") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val validator: Json = getParamValidator("paramService", "param")
+
+      validator shouldBe Json.arr(
+        Json.obj("type" -> Json.fromString("MandatoryValueValidator")),
+        Json.obj(
+          "possibleValues" -> Json.arr(
+            Json.obj(
+              "expression" -> Json.fromString("'a'"),
+              "label" -> Json.fromString("a")
+            ),
+            Json.obj(
+              "expression" -> Json.fromString("'b'"),
+              "label" -> Json.fromString("b")
+            ),
+            Json.obj(
+              "expression" -> Json.fromString("'c'"),
+              "label" -> Json.fromString("c")
+            )
+          ),
+          "type" -> Json.fromString("FixedValuesValidator")
+      ))
+    }
+  }
+
   it("return default value based on editor possible values") {
     getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
       status shouldBe StatusCodes.OK
