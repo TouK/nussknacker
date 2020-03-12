@@ -33,9 +33,14 @@
         pointer-events inherit
 
     .wrapper
+        min-height 100%
+        display flex
         transition all .25s
         overflow hidden
+
 
         &.enabled
             background rgba(black, 0.05)
             backdrop-filter blur(8px)
+            @supports (not ((-webkit-backdrop-filter: blur(2em)) or (backdrop-filter: blur(2em))))
+                background rgba(#999, 0.8)
