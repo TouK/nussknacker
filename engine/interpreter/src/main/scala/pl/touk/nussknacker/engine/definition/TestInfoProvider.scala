@@ -32,7 +32,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
     modelData.dictServices.dictRegistry,
-    modelData.processDefinition.expressionConfig)
+    modelData.processDefinition.expressionConfig,
+    modelData.processDefinition.settings)
 
   private lazy val factory = new ProcessObjectFactory(evaluator)
 

@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.FilterTrue
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, sampleResolver}
@@ -34,7 +35,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 
-  val validation: ProcessValidation = {
+  lazy val validation: ProcessValidation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam,
       ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, Map.empty,
@@ -154,5 +155,34 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     ProcessCanonizer.canonize(normal) shouldBe canonical
     //here we want to check that displayable process is converted to Esp just like we'd expect using EspProcessBuilder
     normal shouldBe processViaBuilder
+  }
+
+  test("Convert branches to displayable") {
+    import pl.touk.nussknacker.engine.spel.Implicits._
+
+    val process = ProcessCanonizer.canonize(EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "sourceType1")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .source("sourceId2", "sourceType1")
+          .filter("filter2", "false")
+          .branchEnd("branch2", "join1"),
+        GraphBuilder
+          .branch("join1", "union", Some("outPutVar"),
+            List("branch1" -> Nil, "branch2" -> Nil)
+          )
+          .sink("end", "#outPutVar","outType1")
+      )))
+
+    val displayableProcess = ProcessConverter.toDisplayable(process, "type1")
+
+    displayableProcess.edges.toSet shouldBe Set(
+      Edge("sourceId1", "join1", None),
+      Edge("sourceId2", "filter2", None),
+      Edge("filter2", "join1", Some(FilterTrue)),
+      Edge("join1", "end", None)
+    )
+
   }
 }
