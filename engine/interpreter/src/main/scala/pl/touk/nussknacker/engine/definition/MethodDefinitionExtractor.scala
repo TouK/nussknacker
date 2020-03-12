@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.validator.{MandatoryValueValidatorExtractor, ValidatorsExtractor}
+import pl.touk.nussknacker.engine.definition.validator.{MandatoryValidatorExtractor, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of

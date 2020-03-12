@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ErrorVali
 
 //TODO: These validators should be moved to separated module
 
-case object MandatoryValueValidator extends ParameterValidator {
+case object MandatoryParameterValidator extends ParameterValidator {
 
   override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isNotBlank(expression)) valid(Unit) else invalid(ErrorValidationParameter(this, paramName))

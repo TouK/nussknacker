@@ -58,7 +58,7 @@ export enum EditorType {
 
 const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
   param === undefined ?
-    validators[ValidatorName.MandatoryValueValidator]() :
+    validators[ValidatorName.MandatoryParameterValidator]() :
     param.validators.map(validator => validators[validator.type]()),
   validators[ValidatorName.ErrorValidator](errors, fieldLabel)
 )

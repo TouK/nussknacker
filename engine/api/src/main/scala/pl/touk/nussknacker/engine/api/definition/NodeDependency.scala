@@ -21,7 +21,7 @@ object Parameter {
 
   // we want to have mandatory parameters by default because it can protect us from NPE in some cases)
   def apply(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
-    Parameter(name, typ, runtimeClass, validators = List(MandatoryValueValidator))
+    Parameter(name, typ, runtimeClass, validators = List(MandatoryParameterValidator))
 
   def optional[T:ClassTag](name: String): Parameter =
     Parameter.optional(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)

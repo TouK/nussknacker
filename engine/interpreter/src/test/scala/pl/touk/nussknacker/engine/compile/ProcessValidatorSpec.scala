@@ -9,7 +9,7 @@ import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -179,7 +179,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ErrorValidationParameter(MandatoryValueValidator, "mandatoryParam", "customNodeId"), _)) =>
+      case Invalid(NonEmptyList(ErrorValidationParameter(MandatoryParameterValidator, "mandatoryParam", "customNodeId"), _)) =>
     }
   }
 
