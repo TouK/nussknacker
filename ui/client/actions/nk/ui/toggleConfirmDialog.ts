@@ -8,7 +8,7 @@ export type ToggleConfirmDialogAction = {
   text: string,
   confirmText: string,
   denyText: string,
-  onConfirmCallback: $TodoType,
+  onConfirmCallback: () => void,
 }
 
 export function toggleConfirmDialog(
