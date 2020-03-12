@@ -10,10 +10,20 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.{ProcessManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 
-/*
-  Currently, the only implementation is map-based, but in the future it will allow to reload ProcessingTypeData related stuff
-  without restarting the app
-  TODO: ensure by types (e.g. appropriate monad?? ;)) that all the methods except mapValues are invoked only in context of single request (or initialization)
+/**
+ *  NOTICE: This is probably *temporary* solution. We want to be able to:
+ *  - reload elements of ProcessingTypeData
+ *  - have option to add new ProcessingTypeData dynamically (though currently it's not supported)
+ *  - use only those elements which are needed in given place
+ *
+ *  In the future we'll probably have better way of controlling how ProcessingTypeData is used, e.g. by
+ *    - custom Directives or custom routes.
+ *    - appropriate variant of Reader monad :)
+ *
+ *  Now we just want to be able to easily check usages of ProcessingTypeData elements
+ *
+ *  Currently, the only implementation is map-based, but in the future it will allow to reload ProcessingTypeData related stuff
+ *  without restarting the app
  */
 trait ProcessingTypeDataProvider[+T] {
 
