@@ -45,9 +45,9 @@ object PrettyValidationErrors {
       // Parameter validation error cases
       case ErrorValidationParameter(validator, paramName, _) => validator match {
         case MandatoryParameterValidator =>
-          validation(validator, s"No expression found for mandatory parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
+          validation(validator, s"Parameter expression is mandatory", s"Please fill expression for this parameter", fieldName = Some(paramName))
         case NotBlankParameterValidator =>
-          validation(validator, s"Blank expression for not blank parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
+          validation(validator, s"Parameter expression can't be blank", s"Please fill expression for this parameter", fieldName = Some(paramName))
       }
 
       //exceptions below should not really happen (unless services change and process becomes invalid)
