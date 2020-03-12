@@ -5,15 +5,17 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
+import pl.touk.nussknacker.engine.management.FlinkProcessManager
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.process.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
@@ -41,28 +43,28 @@ object TestFactory extends TestPermissions{
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
 
   val processValidation = new ProcessValidation(
-    Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-    Map(TestProcessingTypes.Streaming -> Map()),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
     sampleResolver,
-    Map.empty
+    emptyProcessingTypeDataProvider
   )
-  val processResolving = new UIProcessResolving(processValidation, Map.empty)
+  val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
   val posting = new ProcessPosting
-  val buildInfo = Map("engine-version" -> "0.1")
+  val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DbWriteProcessRepository[Future](dbs, modelVersions.map(TestProcessingTypes.Streaming -> _).toMap)
+    new DbWriteProcessRepository[Future](dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
         with WriteProcessRepository with BasicRepository
 
-  def newSubprocessRepository(db: DbConfig) = {
+  def newSubprocessRepository(db: DbConfig): DbSubprocessRepository = {
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
   }
 
   def newDeploymentProcessRepository(db: DbConfig) = new ProcessActionRepository(db,
-    Map(TestProcessingTypes.Streaming -> buildInfo))
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
@@ -85,6 +87,10 @@ object TestFactory extends TestPermissions{
   def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty): LoggedUser = LoggedUser(id, username, permissions)
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
+
+  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*) = new MapBasedProcessingTypeDataProvider[T](Map(data: _*))
+
+  def emptyProcessingTypeDataProvider = new MapBasedProcessingTypeDataProvider[Nothing](Map.empty)
 
   object MockProcessManager {
     val savepointPath = "savepoints/123-savepoint"

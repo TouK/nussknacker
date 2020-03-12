@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 
@@ -21,11 +21,11 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
 
 }
 
-class ProcessModelMigrator(migrationsMap: Map[ProcessingType, ProcessMigrations]) {
+class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrations]) {
 
   def migrateProcess(processDetails: ProcessDetails) : Option[MigrationResult] = {
     for {
-      migrations <- migrationsMap.get(processDetails.processingType)
+      migrations <- migrations.forType(processDetails.processingType)
       displayable <- processDetails.json
     } yield migrateWithMigrations(migrations, ProcessConverter.fromDisplayable(displayable), processDetails.modelVersion)
   }

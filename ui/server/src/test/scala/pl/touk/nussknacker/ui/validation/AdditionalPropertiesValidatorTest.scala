@@ -3,12 +3,12 @@ package pl.touk.nussknacker.ui.validation
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.definition.{AdditionalProcessProperty, PropertyType}
 
 class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
   private val validator = new AdditionalPropertiesValidator(
-    Map(
+    TestFactory.mapProcessingTypeDataProvider(
       "streaming" -> Map(
         "propReq" -> AdditionalProcessProperty(
           "foo", PropertyType.integer, None, isRequired = true, None

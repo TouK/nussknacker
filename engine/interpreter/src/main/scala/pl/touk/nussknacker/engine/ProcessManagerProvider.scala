@@ -22,7 +22,6 @@ trait ProcessManagerProvider {
   def supportsSignals: Boolean
 }
 
-
 case class ProcessingTypeData(processManager: ProcessManager,
                               modelData: ModelData,
                               emptyProcessCreate: Boolean => TypeSpecificData,
@@ -66,9 +65,10 @@ object ProcessingTypeData {
 
   type ProcessingType = String
 
-  def createProcessManager(processManagerProvider: ProcessManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
-    val ProcessingTypeConfig(_, classPathConfig, managerConfig, processConfig) = processTypeConfig
-    val modelData = ModelData(processConfig, classPathConfig)
+
+  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
+    val modelData = processTypeConfig.toModelData
+    val managerConfig = processTypeConfig.engineConfig
     val manager = processManagerProvider.createProcessManager(modelData, managerConfig)
     val queryableClient = processManagerProvider.createQueryableClient(managerConfig)
     ProcessingTypeData(

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDeploymentProcessRepository, newProcessActivityRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, mapProcessingTypeDataProvider, newDeploymentProcessRepository, newProcessActivityRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.JobStatusService
@@ -34,7 +34,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
   private val managementActor = system.actorOf(
       ManagementActor.props(
-        Map(TestProcessingTypes.Streaming -> processManager),
+        mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processManager),
         processRepository,
         deploymentProcessRepository,
         TestFactory.sampleResolver,

@@ -14,23 +14,24 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
+import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import shapeless.syntax.typeable._
 
 object ProcessValidation{
-  def apply(data: Map[ProcessingType, ModelData],
-            additionalFields: Map[ProcessingType, Map[String, AdditionalProcessProperty]],
+  def apply(data: ProcessingTypeDataProvider[ModelData],
+            additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalProcessProperty]],
             subprocessResolver: SubprocessResolver,
-            customProcessNodesValidators: Map[ProcessingType, CustomProcessValidator]) : ProcessValidation = {
+            customProcessNodesValidators: ProcessingTypeDataProvider[CustomProcessValidator]) : ProcessValidation = {
     new ProcessValidation(data.mapValues(_.validator), additionalFields, subprocessResolver, customProcessNodesValidators)
   }
 }
 
-class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
-                        additionalFieldsConfig: Map[ProcessingType, Map[String, AdditionalProcessProperty]],
+class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator],
+                        additionalFieldsConfig: ProcessingTypeDataProvider[Map[String, AdditionalProcessProperty]],
                         subprocessResolver: SubprocessResolver,
-                        customProcessNodesValidators: Map[ProcessingType, CustomProcessValidator]) {
+                        customProcessNodesValidators: ProcessingTypeDataProvider[CustomProcessValidator]) {
 
   val uiValidationError = "UiValidation"
 
@@ -61,7 +62,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
   }
 
   def processingTypeValidationWithTypingInfo(canonical: CanonicalProcess, processingType: ProcessingType): ValidationResult = {
-    validators.get(processingType) match {
+    validators.forType(processingType) match {
       case None =>
         ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(processingType)))
       case Some(processValidator) =>
@@ -177,7 +178,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
 
   private def validateWithCustomProcessValidator(process: DisplayableProcess): ValidationResult = {
     customProcessNodesValidators
-      .get(process.processingType)
+      .forType(process.processingType)
       .map(_.validate(process))
       .getOrElse(ValidationResult.success)
   }

@@ -22,7 +22,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeT
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult, ValidationWarnings}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{SampleSubprocessRepository, sampleResolver}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{SampleSubprocessRepository, emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
@@ -163,11 +163,11 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   }
 
   test("not allow required process fields") {
-    val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-      Map(TestProcessingTypes.Streaming -> Map(
+    val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalProcessProperty("label1", string, None, true, None),
         "field2" -> AdditionalProcessProperty("label2", string, None, false, None)
-      )), sampleResolver, Map.empty)
+      )), sampleResolver, emptyProcessingTypeDataProvider)
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "a", "field2" -> "b"))) shouldBe 'ok
 
@@ -185,11 +185,11 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
   test("don't validate properties on subprocess") {
 
-    val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-      Map(TestProcessingTypes.Streaming -> Map(
+    val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalProcessProperty("label1", string, None, true, None),
         "field2" -> AdditionalProcessProperty("label2", string, None, true, None)
-      )), sampleResolver, Map.empty)
+      )), sampleResolver, emptyProcessingTypeDataProvider)
 
     val process = validProcessWithFields(Map())
     val subprocess = process.copy(properties = process.properties.copy(isSubprocess = true))
@@ -199,11 +199,11 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   }
 
   test("validate type) process field") {
-    val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-      Map(TestProcessingTypes.Streaming -> Map(
+    val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalProcessProperty("label", select, None, isRequired = false, values = Some("true" :: "false" :: Nil)),
         "field2" -> AdditionalProcessProperty("label", integer, None, isRequired = false, None)
-      )), sampleResolver, Map.empty)
+      )), sampleResolver, emptyProcessingTypeDataProvider)
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) shouldBe 'ok
     processValidation.validate(validProcessWithFields(Map("field1" -> "false"))) shouldBe 'ok
@@ -215,10 +215,10 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   }
 
   test("handle unknown properties validation") {
-    val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-      Map(TestProcessingTypes.Streaming -> Map(
+    val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
         "field2" -> AdditionalProcessProperty("label", integer, None, isRequired = false, None)
-      )), sampleResolver, Map.empty)
+      )), sampleResolver, emptyProcessingTypeDataProvider)
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) should not be 'ok
 
@@ -329,10 +329,10 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val processDefinition = ProcessDefinitionBuilder.empty.withSourceFactory("processSource").withSinkFactory("processSink")
     val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
     val processValidation: ProcessValidation = new ProcessValidation(
-      validators = Map(TestProcessingTypes.Streaming -> validator),
-      Map(TestProcessingTypes.Streaming -> Map()),
+      validators = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> validator),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
       subprocessResolver = new SubprocessResolver(new SampleSubprocessRepository(Set(invalidSubprocess))),
-      Map.empty)
+      emptyProcessingTypeDataProvider)
 
     (processValidation, process)
   }

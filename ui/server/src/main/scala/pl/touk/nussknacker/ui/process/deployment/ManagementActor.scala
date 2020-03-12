@@ -19,6 +19,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
@@ -29,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object ManagementActor {
-  def props(managers: Map[ProcessingType, ProcessManager],
+  def props(managers: ProcessingTypeDataProvider[ProcessManager],
             processRepository: FetchingProcessRepository[Future],
             deployedProcessRepository: ProcessActionRepository,
             subprocessResolver: SubprocessResolver,
@@ -39,7 +40,7 @@ object ManagementActor {
   }
 }
 
-class ManagementActor(managers: Map[ProcessingType, ProcessManager],
+class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: ProcessActionRepository,
                       subprocessResolver: SubprocessResolver,
@@ -254,7 +255,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
                                    savepointPath: Option[String],
                                    comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
-    val processManagerValue = managers(processingType)
+    val processManagerValue = managers.forTypeUnsafe(processingType)
 
     for {
       deploymentResolved <- resolvedDeploymentData
@@ -284,7 +285,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   }
 
   private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessManager] = {
-    processRepository.fetchProcessingType(processId).map(managers)
+    processRepository.fetchProcessingType(processId).map(managers.forTypeUnsafe)
   }
 
   //during deployment using Client.run Flink holds some data in statics and there is an exception when

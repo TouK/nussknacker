@@ -28,6 +28,7 @@ import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -75,10 +76,10 @@ object ProcessTestData {
   val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
 
   val validation = new ProcessValidation(
-    Map(TestProcessingTypes.Streaming -> validator),
-    Map(TestProcessingTypes.Streaming -> Map()),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> validator),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
     new SubprocessResolver(new SetSubprocessRepository(Set())),
-    Map.empty
+    emptyProcessingTypeDataProvider
   )
 
   val validProcess : EspProcess = validProcessWithId("fooProcess")
