@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 object UiAdditionalPropertyConfig {
   def apply(config: AdditionalPropertyConfig): UiAdditionalPropertyConfig = {
     val editor = UiAdditionalPropertyEditorDeterminer.determine(config)
-    val determined = AdditionalPropertyValidatorDeterminerChain(config).determine()
-    new UiAdditionalPropertyConfig(config.defaultValue, editor, determined, config.label)
+    val determinedValidators = AdditionalPropertyValidatorDeterminerChain(config).determine()
+    new UiAdditionalPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
   }
 }

@@ -56,7 +56,6 @@ object ProcessTestData {
   val existingStreamTransformer = "transformer"
   val otherExistingStreamTransformer = "otherTransformer"
   val otherExistingStreamTransformer2 = "otherTransformer2"
-  val otherTransformer3 = "otherTransformer3"
 
   val processDefinition = ProcessDefinitionBuilder.empty
     .withSourceFactory(existingSourceFactory)

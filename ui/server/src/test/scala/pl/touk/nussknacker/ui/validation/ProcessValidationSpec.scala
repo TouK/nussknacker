@@ -270,6 +270,47 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
+  test("check for wrong fixed expression value in node parameter") {
+    val process: DisplayableProcess = createProcessWithParams(List(evaluatedparam.Parameter("expression", Expression("spel", "wrong fixed value"))), Map.empty)
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("expression"), NodeValidationErrorType.SaveNotAllowed))) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("check for wrong fixed expression value in additional property") {
+    val process = createProcessWithParams(List.empty, Map(
+      "fixedValueOptionalProperty" -> "wrong fixed value",
+      "requiredStringProperty" -> "test"
+    ))
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("fixedValueOptionalProperty"), NodeValidationErrorType.SaveNotAllowed)) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  private def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]) = {
+    createProcess(
+      List(
+        Source("inID", SourceRef("barSource", List())),
+        Enricher("custom", ServiceRef("fooService4", nodeParams), "out"),
+        Sink("out", SinkRef("barSink", List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None)),
+      TestProcessingTypes.Streaming,
+      Set.empty,
+      additionalProperties
+    )
+  }
+
   private def createProcess(nodes: List[NodeData],
                             edges: List[Edge],
                             `type`: ProcessingTypeData.ProcessingType = TestProcessingTypes.Streaming,

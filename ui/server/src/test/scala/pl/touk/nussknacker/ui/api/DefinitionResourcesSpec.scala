@@ -7,6 +7,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.definition.FixedValuesValidator
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestProcessingTypes}
@@ -283,7 +284,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
-  it("return info about validator based on param fixed value editor") {
+  it("return info about validator based on param fixed value editor for node parameters") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
@@ -308,6 +309,35 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
           ),
           "type" -> Json.fromString("FixedValuesValidator")
       ))
+    }
+  }
+
+  it("return info about validator based on param fixed value editor for additional properties") {
+    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val validators: Json = responseAs[Json].hcursor
+        .downField("additionalPropertiesConfig")
+        .downField("fixedValueOptionalProperty")
+        .downField("validators")
+        .focus.get
+
+      validators shouldBe
+        Json.arr(
+          Json.obj(
+            "possibleValues" -> Json.arr(
+              Json.obj(
+                "expression" -> Json.fromString("1"),
+                "label" -> Json.fromString("1")
+              ),
+              Json.obj(
+                "expression" -> Json.fromString("2"),
+                "label" -> Json.fromString("2")
+              )
+            ),
+            "type" -> Json.fromString("FixedValuesValidator")
+          )
+        )
     }
   }
 

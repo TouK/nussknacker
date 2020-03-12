@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 
 class AdditionalPropertyValidatorsDeterminerChainTest extends FunSuite with Matchers {
 
-  test("determine validator based on config") {
+  test("determine property validator based on config") {
     val config = AdditionalPropertyConfig(
       None,
       None,
@@ -19,7 +19,7 @@ class AdditionalPropertyValidatorsDeterminerChainTest extends FunSuite with Matc
     determined shouldBe List(MandatoryValueValidator)
   }
 
-  test("determine validator based on fixed value editor") {
+  test("determine propertty validator based on fixed value editor") {
     val possibleValues = List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
     val config = AdditionalPropertyConfig(
       None,
