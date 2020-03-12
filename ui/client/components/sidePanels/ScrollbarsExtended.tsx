@@ -15,8 +15,12 @@ export function ScrollbarsExtended({children, onScrollToggle}: PropsWithChildren
 
   useEffect(() => {
     window.addEventListener("mouseover", onUpdate)
+    window.addEventListener("click", onUpdate)
+    window.addEventListener("keyup", onUpdate)
     return () => {
       window.removeEventListener("mouseover", onUpdate)
+      window.removeEventListener("click", onUpdate)
+      window.removeEventListener("keyup", onUpdate)
     }
   }, [onUpdate])
 
