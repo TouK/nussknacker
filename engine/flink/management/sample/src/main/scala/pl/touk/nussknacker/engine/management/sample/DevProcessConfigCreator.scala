@@ -13,6 +13,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.{Encoder, Json}
 import javax.annotation.Nullable
+import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
@@ -511,11 +512,24 @@ class SimpleTypesService extends Service with Serializable {
                `type` = SimpleEditorType.BOOL_EDITOR
              ) booleanParam: Boolean,
 
-             @ParamName("stringParam")
+             @ParamName("DualParam")
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.SIMPLE
-             ) string: String,
+             )
+             @NotBlank
+             dualParam: String,
+
+             @ParamName("SimpleParam")
+             @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+             simpleParam: String,
+
+             @ParamName("RawParam")
+             @DualEditor(
+               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+               defaultMode = DualEditorMode.RAW
+             )
+             rawParam: String,
 
              @ParamName("intParam")
              @RawEditor intParam: Int,

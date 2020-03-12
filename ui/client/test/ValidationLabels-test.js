@@ -20,12 +20,12 @@ describe("test validation labels", () => {
 
   const testCases = [
     {
-      description: "display only fe validation label when both be and fe validators available for the same error type",
-      errorType: HandledErrorType.MandatoryParameterValidator .toString(),
+      description: () => "display only fe validation label when both be and fe validators available for the same error type",
+      errorType: HandledErrorType.MandatoryParameterValidator.toString(),
       expectedBackendValidationLabels: 0,
     },
     {
-      description: "display both validation labels for different error type",
+      description: () => "display both validation labels for different error type",
       errorType: HandledErrorType.WrongDateFormat.toString(),
       expectedBackendValidationLabels: 1,
     },
@@ -44,7 +44,7 @@ describe("test validation labels", () => {
 
       //then
       const container = document.body
-      expect(getAllByText(container, mandatoryValueValidator.message).length).toBe(1)
+      expect(getAllByText(container, mandatoryValueValidator.message()).length).toBe(1)
       const backendValidationLabels = queryAllByText(container, backendErrorMessage)
       expect((backendValidationLabels === null ? [] : backendValidationLabels).length).toBe(expectedBackendValidationLabels)
     })

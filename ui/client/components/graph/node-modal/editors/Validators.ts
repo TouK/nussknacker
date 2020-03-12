@@ -1,4 +1,5 @@
 import {chain, isEmpty} from "lodash"
+import i18next from "i18next"
 
 export enum ValidatorType {
   Frontend, Backend,
@@ -6,18 +7,15 @@ export enum ValidatorType {
 
 export enum HandledErrorType {
   MandatoryParameterValidator = "MandatoryParameterValidator",
+  NotBlankParameterValidator = "NotBlankParameterValidator",
   WrongDateFormat = "WrongDateFormat",
-}
-
-export enum ValidatorName {
-  MandatoryParameterValidator = "MandatoryParameterValidator",
   ErrorValidator = "ErrorValidator",
 }
 
 export type Validator = {
   isValid: (...args: any[]) => boolean,
-  message: string,
-  description: string,
+  message: () => string,
+  description: () => string,
   handledErrorType: HandledErrorType,
   validatorType: ValidatorType,
 }
@@ -34,17 +32,27 @@ const error = (errors: Array<Error>, fieldName: string): Error =>
 
 export const errorValidator = (errors: Array<Error>, fieldName: string): Validator => ({
   isValid: () => !error(errors, fieldName),
-  message: error(errors, fieldName)?.message,
-  description: error(errors, fieldName)?.description,
+  message: () => error(errors, fieldName)?.message,
+  description: () => error(errors, fieldName)?.description,
   handledErrorType: HandledErrorType[error(errors, fieldName)?.typ],
   validatorType: ValidatorType.Backend,
 })
 
 export const mandatoryValueValidator: Validator = {
   isValid: value => !isEmpty(value),
-  message: "This field is mandatory and cannot be empty",
-  description: "Please fill expression for this parameter",
+  message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression is mandatory"),
+  description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
   handledErrorType: HandledErrorType.MandatoryParameterValidator,
+  validatorType: ValidatorType.Frontend,
+}
+
+const blankStringLiteralPattern = new RegExp("'\\s*'")
+
+export const notBlankValueValidator: Validator = {
+  isValid: value => !blankStringLiteralPattern.test(value.trim()),
+  message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression can't be blank"),
+  description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
+  handledErrorType: HandledErrorType.NotBlankParameterValidator,
   validatorType: ValidatorType.Frontend,
 }
 
@@ -59,7 +67,9 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
   return withoutDuplications(validators).every(validator => validator.isValid(...values))
 }
 
-export const validators: Record<ValidatorName, (errors?: Array<Error>, fieldName?: string) => Validator> = {
-  [ValidatorName.MandatoryParameterValidator]: () => mandatoryValueValidator,
-  [ValidatorName.ErrorValidator]: (errors, fieldName) => errorValidator(errors, fieldName),
+export const validators: Record<HandledErrorType, (errors?: Array<Error>, fieldName?: string) => Validator> = {
+  [HandledErrorType.MandatoryParameterValidator]: () => mandatoryValueValidator,
+  [HandledErrorType.NotBlankParameterValidator]: () => notBlankValueValidator,
+  [HandledErrorType.ErrorValidator]: (errors, fieldName) => errorValidator(errors, fieldName),
+  [HandledErrorType.WrongDateFormat]: (errors, fieldName) => errorValidator(errors, fieldName),
 }
