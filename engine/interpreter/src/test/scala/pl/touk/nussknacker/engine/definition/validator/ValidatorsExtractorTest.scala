@@ -6,7 +6,7 @@ import java.util.Optional
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankValueValidator}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankParameterValidator}
 
 class ValidatorsExtractorTest extends FunSuite with Matchers {
 
@@ -50,10 +50,10 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   }
 
   test("extract nullable notBlank value validator when @Nullable @NotBlank annotation detected") {
-    ValidatorsExtractor.extract(nullableNotBlankParam) shouldBe List(NotBlankValueValidator)
+    ValidatorsExtractor.extract(nullableNotBlankParam) shouldBe List(NotBlankParameterValidator)
   }
 
   test("extract notBlank value validator when @NotBlank annotation detected") {
-    ValidatorsExtractor.extract(notBlankParam) shouldBe List(MandatoryValueValidator, NotBlankValueValidator)
+    ValidatorsExtractor.extract(notBlankParam) shouldBe List(MandatoryValueValidator, NotBlankParameterValidator)
   }
 }

@@ -9,7 +9,7 @@ import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankValueValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -66,7 +66,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
       "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
-      "withNotBlankParams" -> (ObjectDefinition.withParams(List(Parameter.notBlank("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData())
+      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -194,16 +194,17 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .customNode("customNodeId3", "event", "withNotBlankParams", "notBlankParam" -> " '' ")
         .customNode("customNodeId4", "event", "withNotBlankParams", "notBlankParam" -> "'")
         .customNode("customNodeId5", "event", "withNotBlankParams", "notBlankParam" -> " '")
+        .customNode("customNodeId6", "event", "withNotBlankParams", "notBlankParam" -> "'123'")
         .emptySink("emptySink", "sink")
 
-    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId1"),
+        ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId1"),
         List(
-         ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId2"),
-         ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId3"),
-         ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId4"),
-         ErrorValidationParameter(NotBlankValueValidator, "notBlankParam", "customNodeId5")
+         ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId2"),
+         ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId3"),
+         ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId4"),
+         ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId5")
         )
       )) =>
     }

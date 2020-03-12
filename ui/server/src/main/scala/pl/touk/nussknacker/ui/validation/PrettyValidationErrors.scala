@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.validation
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankValueValidator}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankParameterValidator}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
@@ -32,7 +32,7 @@ object PrettyValidationErrors {
         node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
       case ErrorValidationParameter(MandatoryValueValidator, paramName, _) =>
         node(s"No expression for mandatory parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
-      case ErrorValidationParameter(NotBlankValueValidator, paramName, _) =>
+      case ErrorValidationParameter(NotBlankParameterValidator, paramName, _) =>
         node(s"Blank expression for not blank parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
       //exceptions below should not really happen (unless services change and process becomes invalid)
       case MissingCustomNodeExecutor(id, _) => node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")

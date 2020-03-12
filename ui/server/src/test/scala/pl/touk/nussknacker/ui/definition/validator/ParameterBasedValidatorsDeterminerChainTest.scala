@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.validator
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankValueValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, NotBlankParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 
 class ParameterBasedValidatorsDeterminerChainTest extends FunSuite with Matchers {
@@ -17,11 +17,11 @@ class ParameterBasedValidatorsDeterminerChainTest extends FunSuite with Matchers
 
   test("determine validators based on config") {
     val param = Parameter.optional[String]("param")
-    val config = ParameterConfig(None, None, Some(List(MandatoryValueValidator, NotBlankValueValidator)))
+    val config = ParameterConfig(None, None, Some(List(MandatoryValueValidator, NotBlankParameterValidator)))
 
     val validators = ParameterValidatorsDeterminerChain(config).determineValidators(param)
 
-    validators shouldBe List(MandatoryValueValidator, NotBlankValueValidator)
+    validators shouldBe List(MandatoryValueValidator, NotBlankParameterValidator)
   }
 
   test("override validators based on annotation with those from config") {

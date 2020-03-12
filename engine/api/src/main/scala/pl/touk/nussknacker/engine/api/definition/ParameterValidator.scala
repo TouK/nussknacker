@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ErrorVali
  * to `pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor` which should decide whether new validator
  * should appear in configuration for certain parameter
   *
-  * TODO: Everyone should have chance create own validator
+  * TODO: It shouldn't be a sealed trait. We should allow everyone to create own ParameterValidator
  */
 @ConfiguredJsonCodec sealed trait ParameterValidator {
 
@@ -29,11 +29,11 @@ case object MandatoryValueValidator extends ParameterValidator {
     if (StringUtils.isNotBlank(expression)) valid(Unit) else invalid(ErrorValidationParameter(this, paramName))
 }
 
-case object NotBlankValueValidator extends ParameterValidator {
+case object NotBlankParameterValidator extends ParameterValidator {
 
   override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (isExpressionNotBlank(expression)) valid(Unit) else invalid(ErrorValidationParameter(this, paramName))
+    if (isNotBlank(expression)) valid(Unit) else invalid(ErrorValidationParameter(this, paramName))
 
-  private def isExpressionNotBlank(expression: String): Boolean =
-      StringUtils.trim(StringUtils.strip(StringUtils.trim(expression), "'")).length  > 0
+  private def isNotBlank(expression: String): Boolean =
+    StringUtils.isNotBlank(StringUtils.strip(StringUtils.trim(expression), "'"))
 }
