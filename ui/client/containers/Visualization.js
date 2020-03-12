@@ -8,13 +8,13 @@ import * as JsonUtils from "../common/JsonUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 import Graph from "../components/graph/Graph"
+import {GraphProvider} from "../components/graph/GraphContext"
 import NodeUtils from "../components/graph/NodeUtils"
-import UserRightPanel from "../components/right-panel/UserRightPanel"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
-import UserLeftPanel from "../components/UserLeftPanel"
-import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
+import UserRightPanel from "../components/right-panel/UserRightPanel"
+import UserLeftPanel from "../components/UserLeftPanel"
 
 class Visualization extends React.Component {
 
@@ -89,7 +89,7 @@ class Visualization extends React.Component {
         this.fetchProcessState()
         this.state.processStateIntervalId = setInterval(
           () => this.fetchProcessState(),
-          this.state.processStateIntervalTime
+          this.state.processStateIntervalTime,
         )
       }
     }).catch((error) => {
@@ -217,8 +217,8 @@ class Visualization extends React.Component {
 
   canCopySelection() {
     return this.props.allModalsClosed &&
-        !_.isEmpty(this.props.selectionState) &&
-        NodeUtils.containsOnlyPlainNodesWithoutGroups(this.props.selectionState, this.props.processToDisplay)
+      !_.isEmpty(this.props.selectionState) &&
+      NodeUtils.containsOnlyPlainNodesWithoutGroups(this.props.selectionState, this.props.processToDisplay)
   }
 
   cutSelection = (event) => {
@@ -272,16 +272,18 @@ class Visualization extends React.Component {
 
   canAddNode(node) {
     return this.props.capabilities.write &&
-        NodeUtils.isNode(node) &&
-        !NodeUtils.nodeIsGroup(node) &&
-        NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
+      NodeUtils.isNode(node) &&
+      !NodeUtils.nodeIsGroup(node) &&
+      NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
+
+  getGraphInstance = () => this.graphRef.current?.getDecoratedComponentInstance()
 
   render() {
     const {leftPanelIsOpened, actions, loggedUser} = this.props
 
     //it has to be that way, because graph is redux component
-    const getGraph = () => this.graphRef.current.getDecoratedComponentInstance()
+    const getGraph = () => this.getGraphInstance()
     const graphLayoutFun = () => getGraph().directedLayout()
     const exportGraphFun = () => getGraph().exportGraph()
     const zoomOutFun = () => this.props.actions.zoomOut(getGraph())
@@ -295,36 +297,38 @@ class Visualization extends React.Component {
           when={!this.props.nothingToSave}
           navigate={path => this.props.history.push(path)}
         />
+        <GraphProvider graph={this.getGraphInstance}>
 
-        <UserLeftPanel
-          isOpened={leftPanelIsOpened}
-          onToggle={actions.toggleLeftPanel}
-          loggedUser={loggedUser}
-          capabilities={this.props.capabilities}
-          isReady={this.state.dataResolved}
-          processName={this.props.processToDisplay ? this.props.processToDisplay.id : ""}
-        />
+          <UserLeftPanel
+            isOpened={leftPanelIsOpened}
+            onToggle={actions.toggleLeftPanel}
+            loggedUser={loggedUser}
+            capabilities={this.props.capabilities}
+            isReady={this.state.dataResolved}
+            processName={this.props.processToDisplay ? this.props.processToDisplay.id : ""}
+          />
 
-        <UserRightPanel
-          graphLayoutFunction={graphLayoutFun}
-          exportGraph={exportGraphFun}
-          zoomIn={zoomInFun}
-          zoomOut={zoomOutFun}
-          capabilities={this.props.capabilities}
-          isReady={this.state.dataResolved}
-          selectionActions={{
-            copy: () => this.copySelection(null, true),
-            canCopy: this.canCopySelection(),
-            cut: () => this.cutSelection(null),
-            canCut: this.canCutSelection(),
-            paste: () => this.pasteSelectionFromClipboard(null),
-            canPaste: true,
-          }}
-          copySelection={() => this.copySelection(null, true)}
-          cutSelection={() => this.cutSelection(null)}
-          pasteSelection={() => this.pasteSelection(null)}
-        />
+          <UserRightPanel
+            graphLayoutFunction={graphLayoutFun}
+            exportGraph={exportGraphFun}
+            zoomIn={zoomInFun}
+            zoomOut={zoomOutFun}
+            capabilities={this.props.capabilities}
+            isReady={this.state.dataResolved}
+            selectionActions={{
+              copy: () => this.copySelection(null, true),
+              canCopy: this.canCopySelection(),
+              cut: () => this.cutSelection(null),
+              canCut: this.canCutSelection(),
+              paste: () => this.pasteSelectionFromClipboard(null),
+              canPaste: true,
+            }}
+            copySelection={() => this.copySelection(null, true)}
+            cutSelection={() => this.cutSelection(null)}
+            pasteSelection={() => this.pasteSelection(null)}
+          />
 
+        </GraphProvider>
         <SpinnerWrapper isReady={!graphNotReady}>
           {!_.isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
         </SpinnerWrapper>
@@ -339,8 +343,8 @@ Visualization.header = "Visualization"
 function mapState(state) {
   const processCategory = _.get(state, "graphReducer.fetchedProcessDetails.processCategory")
   const canDelete = state.ui.allModalsClosed &&
-      !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
-      state.settings.loggedUser.canWrite(processCategory)
+    !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
+    state.settings.loggedUser.canWrite(processCategory)
   const loggedUser = state.settings.loggedUser
   const isArchived = _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
   return {
