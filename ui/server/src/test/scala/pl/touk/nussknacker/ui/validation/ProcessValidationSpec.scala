@@ -54,13 +54,13 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     )
     validator.validate(process) should matchPattern {
       case ValidationResult(
-        ValidationErrors(nodes, Nil, Nil),
-        ValidationWarnings.success,
-        //TODO: add typing results in this case
-        _,
-        _
+      ValidationErrors(nodes, Nil, Nil),
+      ValidationWarnings.success,
+      //TODO: add typing results in this case
+      _,
+      _
       ) if nodes == Map("subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError,
-          EdgeType.SubprocessOutput("out2")))) =>
+        EdgeType.SubprocessOutput("out2")))) =>
     }
   }
 
@@ -79,11 +79,11 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     )
     validator.validate(process) should matchPattern {
       case ValidationResult(
-        ValidationErrors(_, Nil, globalErrors),
-        ValidationWarnings.success,
-        //TODO: add typing results in this case
-        _,
-        _
+      ValidationErrors(_, Nil, globalErrors),
+      ValidationWarnings.success,
+      //TODO: add typing results in this case
+      _,
+      _
       ) if globalErrors == List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("in"))) =>
     }
   }
@@ -100,11 +100,11 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     )
     validator.validate(process) should matchPattern {
       case ValidationResult(
-        ValidationErrors(nodes, Nil, Nil),
-        ValidationWarnings.success,
-        //TODO: add typing results in this case
-        _,
-        _
+      ValidationErrors(nodes, Nil, Nil),
+      ValidationWarnings.success,
+      //TODO: add typing results in this case
+      _,
+      _
       ) if nodes == Map("loose" -> List(PrettyValidationErrors.looseNode(validator.uiValidationError))) =>
     }
 
@@ -157,10 +157,10 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     )
     validator.validate(process) should matchPattern {
       case ValidationResult(
-        ValidationErrors(_, Nil, errors),
-        ValidationWarnings.success,
-        _,
-        _
+      ValidationErrors(_, Nil, errors),
+      ValidationWarnings.success,
+      _,
+      _
       ) if errors == List(PrettyValidationErrors.noValidatorKnown(TestProcessingTypes.RequestResponse)) =>
     }
   }
@@ -282,50 +282,50 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     validationResult.saveAllowed shouldBe true
   }
 
-  test("validates and returns type info of subprocess output fields") {
-    val subprocess = CanonicalProcess(
-      MetaData("sub1", StreamMetaData(), isSubprocess = true),
-      ExceptionHandlerRef(List()),
-      nodes = List(
-        FlatNode(SubprocessInputDefinition(
-          "in", List(SubprocessParameter("param1", SubprocessClazzRef[String]))
-        )),
-        FlatNode(SubprocessOutputDefinition(
-          "out1", "output", List(Field("foo", "42L"))
-        ))
-      ),
-      additionalBranches = None)
-    val (processValidation, process) = mockProcessValidationAndProcess(subprocess)
-    val validationResult = processValidation.validate(process)
-    validationResult.errors.invalidNodes shouldBe 'empty
-    validationResult.variableTypes("out")("output") shouldBe TypedObjectTypingResult(Map(
-      "foo" -> Typed(classOf[java.lang.Long])
-    ))
-  }
+    test("validates and returns type info of subprocess output fields") {
+      val subprocess = CanonicalProcess(
+        MetaData("sub1", StreamMetaData(), isSubprocess = true),
+        ExceptionHandlerRef(List()),
+        nodes = List(
+          FlatNode(SubprocessInputDefinition(
+            "in", List(SubprocessParameter("param1", SubprocessClazzRef[String]))
+          )),
+          FlatNode(SubprocessOutputDefinition(
+            "out1", "output", List(Field("foo", "42L"))
+          ))
+        ),
+        additionalBranches = None)
+      val (processValidation, process) = mockProcessValidationAndProcess(subprocess)
+      val validationResult = processValidation.validate(process)
+      validationResult.errors.invalidNodes shouldBe 'empty
+      validationResult.variableTypes("out")("output") shouldBe TypedObjectTypingResult(Map(
+        "foo" -> Typed(classOf[java.lang.Long])
+      ))
+    }
 
-  test("check for empty expression in mandatory parameter") {
-    val process = createProcess(
-      List(
-        Source("inID", SourceRef("barSource", List())),
-        Enricher("custom", ServiceRef("fooService3", List(evaluatedparam.Parameter("expression", Expression("spel", "")))), "out"),
-        Sink("out", SinkRef("barSink", List()))
-      ),
-      List(Edge("inID", "custom", None), Edge("custom", "out", None))
-    )
+    test("check for empty expression in mandatory parameter") {
+      val process = createProcess(
+        List(
+          Source("inID", SourceRef("barSource", List())),
+          Enricher("custom", ServiceRef("fooService3", List(evaluatedparam.Parameter("expression", Expression("spel", "")))), "out"),
+          Sink("out", SinkRef("barSink", List()))
+        ),
+        List(Edge("inID", "custom", None), Edge("custom", "out", None))
+      )
 
-    val result = validator.validate(process)
+      val result = validator.validate(process)
 
-    result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes shouldBe Map(
-      "custom" -> List(NodeValidationError(
-        "EmptyMandatoryParameter",
-        "Empty expression for mandatory parameter",
-        "Please fill expression for this parameter",
-        Some("expression"),
-        NodeValidationErrorType.SaveAllowed
-      )))
-    result.warnings shouldBe ValidationWarnings.success
-  }
+      result.errors.globalErrors shouldBe empty
+      result.errors.invalidNodes shouldBe Map(
+        "custom" -> List(NodeValidationError(
+          "EmptyMandatoryParameter",
+          "Empty expression for mandatory parameter",
+          "Please fill expression for this parameter",
+          Some("expression"),
+          NodeValidationErrorType.SaveAllowed
+        )))
+      result.warnings shouldBe ValidationWarnings.success
+    }
 
   private def createProcess(nodes: List[NodeData],
                             edges: List[Edge],
