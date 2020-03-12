@@ -1,0 +1,8 @@
+multipass: true
+pretty: true
+plugins:
+  - removeOffCanvasPaths: true
+  - inlineStyles:
+      onlyMatchedOnce: false
+  - removeUselessStrokeAndFill:
+      removeNone: true
