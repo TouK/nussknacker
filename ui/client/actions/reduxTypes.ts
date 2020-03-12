@@ -6,10 +6,11 @@ import {UiActions} from "./nk/ui/uiActions"
 import {SettingsActions} from "./settingsActions"
 
 export type Action =
-    | ReportEventAction
-    | UiActions
-    | SettingsActions
-    | DisplayProcessActivityAction
+  | ReportEventAction
+  | UiActions
+  | SettingsActions
+  | DisplayProcessActivityAction
+  | ToolbarActions
 
 type A = { type: ActionTypes } | Action
 

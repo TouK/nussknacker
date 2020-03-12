@@ -1,0 +1,41 @@
+@import "../../stylesheets/_variables.styl"
+
+:local
+    .vertical {
+    }
+
+    .track
+        bottom 8px
+        top 8px
+        right 3px
+
+        //:global(.LEFT) &
+        //    left 3px
+        //
+        //:global(.RIGHT) &
+        //    right 3px
+
+        width 8px !important
+        background-color rgba(white, .05)
+        border-radius 8px
+        backdrop-filter blur(1px) // sync rendering with other blurred items
+
+    .thumb
+        border-radius 8px
+        background-color rgba(black, .4)
+        backdrop-filter blur(2px) // sync rendering with other blurred items
+
+
+    .enabled
+        pointer-events auto
+
+    .disabled
+        pointer-events inherit
+
+    .wrapper
+        transition all .25s
+        overflow hidden
+
+        &.enabled
+            background rgba(black, 0.05)
+            backdrop-filter blur(8px)
