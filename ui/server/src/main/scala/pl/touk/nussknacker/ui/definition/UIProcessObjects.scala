@@ -5,7 +5,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, Parameter, ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
@@ -145,7 +145,7 @@ object UIObjectDefinition {
                                                      additionalVariables: Map[String, TypingResult],
                                                      branchParam: Boolean) {
 
-  def isOptional: Boolean = !validators.contains(MandatoryValueValidator)
+  def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
 }
 

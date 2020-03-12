@@ -23,7 +23,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryValueValidator, Parameter, ServiceWithExplicitMethod, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, Parameter, ServiceWithExplicitMethod, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, LabeledExpression, RawEditor, SimpleEditor, SimpleEditorType}
@@ -200,8 +200,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         .withNodeConfig(SingleNodeConfig.zero.copy(
           category = Some("types"),
           params = Some(Map(
-            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator))),
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator)))
+            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator))),
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)))
           ))
         )),
       "collectionTypesService"  -> all(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(

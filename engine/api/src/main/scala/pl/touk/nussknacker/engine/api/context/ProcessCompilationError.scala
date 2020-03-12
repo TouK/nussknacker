@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.context
 
 import cats.Applicative
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api.definition.ParameterValidator
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -133,12 +134,12 @@ object ProcessCompilationError {
       WrongParameters(requiredParameters, passedParameters, nodeId.id)
   }
 
-  case class EmptyMandatoryParameter(paramName: String, nodeId: String)
+  case class ErrorValidationParameter(validator: ParameterValidator, paramName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
-  object EmptyMandatoryParameter {
-    def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      EmptyMandatoryParameter(paramName, nodeId.id)
+  object ErrorValidationParameter {
+    def apply(validator: ParameterValidator, paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      ErrorValidationParameter(validator, paramName, nodeId.id)
   }
 
   case class OverwrittenVariable(variableName: String, nodeId: String)

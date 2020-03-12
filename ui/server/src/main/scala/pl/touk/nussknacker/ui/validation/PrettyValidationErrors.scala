@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.validation
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameterValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
@@ -12,9 +13,20 @@ import pl.touk.nussknacker.ui.definition.{AdditionalProcessProperty, PropertyTyp
 object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
     val typ = ReflectUtils.fixedClassSimpleNameWithoutParentModule(error.getClass)
-    def node(message: String, description: String,
+
+    def node(message: String,
+             description: String,
              errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
-             fieldName: Option[String] = None) = NodeValidationError(typ, message, description, fieldName, errorType)
+             fieldName: Option[String] = None): NodeValidationError
+      = NodeValidationError(typ, message, description, fieldName, errorType)
+
+    def validation(validator: ParameterValidator,
+                   message: String,
+                   description: String,
+                   errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
+                   fieldName: Option[String] = None): NodeValidationError
+      = NodeValidationError(ReflectUtils.fixedClassSimpleNameWithoutParentModule(validator.getClass), message, description, fieldName, errorType)
+
     error match {
       case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
         s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
@@ -29,8 +41,15 @@ object PrettyValidationErrors {
         node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
-      case EmptyMandatoryParameter(paramName, _) =>
-        node(s"Empty expression for mandatory parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
+
+      // Parameter validation error cases
+      case ErrorValidationParameter(validator, paramName, _) => validator match {
+        case MandatoryParameterValidator =>
+          validation(validator, s"No expression found for mandatory parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
+        case NotBlankParameterValidator =>
+          validation(validator, s"Blank expression for not blank parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
+      }
+
       //exceptions below should not really happen (unless services change and process becomes invalid)
       case MissingCustomNodeExecutor(id, _) => node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")
       case MissingService(id, _) => node(s"Missing processor/enricher: $id", s"Please check the name of processor/enricher, $id is not available")

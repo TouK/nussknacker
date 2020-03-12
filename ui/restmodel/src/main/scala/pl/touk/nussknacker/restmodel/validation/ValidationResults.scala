@@ -100,8 +100,7 @@ object ValidationResults {
                                  message: String,
                                  description: String,
                                  fieldName: Option[String],
-                                 errorType: NodeValidationErrorType.Value
-                                )
+                                 errorType: NodeValidationErrorType.Value)
 
   object NodeValidationErrorType extends Enumeration {
 

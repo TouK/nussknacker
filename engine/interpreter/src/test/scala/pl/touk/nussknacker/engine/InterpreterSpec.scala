@@ -6,6 +6,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
 import javax.annotation.Nullable
+import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
@@ -57,7 +58,8 @@ class InterpreterSpec extends FunSuite with Matchers {
     "optionTypesService" -> OptionTypesService,
     "optionalTypesService" -> OptionalTypesService,
     "nullableTypesService" -> NullableTypesService,
-    "mandatoryTypesService" -> MandatoryTypesService
+    "mandatoryTypesService" -> MandatoryTypesService,
+    "notBlankTypesService" -> NotBlankTypesService
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -607,7 +609,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretSource(process, Transaction()).asInstanceOf[String] shouldBe null
   }
 
-  test("not accept empty expression for mandatory parameter") {
+  test("not accept no expression for mandatory parameter") {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "mandatoryTypesService", "expression" -> "")
@@ -615,7 +617,19 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(expression,customNode), " +
+    }.getMessage shouldBe "Compilation errors: ErrorValidationParameter(MandatoryParameterValidator,expression,customNode), " +
+      "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
+  }
+
+  test("not accept blank expression for not blank parameter") {
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "notBlankTypesService", "expression" -> "''")
+      .sink("end", "#rawExpression", "dummySink")
+
+    intercept[IllegalArgumentException] {
+      interpretSource(process, Transaction())
+    }.getMessage shouldBe "Compilation errors: ErrorValidationParameter(NotBlankParameterValidator,expression,customNode), " +
       "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
   }
 }
@@ -712,6 +726,11 @@ object InterpreterSpec {
   object MandatoryTypesService extends Service {
     @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName("expression") expr: String) = Future.successful(expr)
+  }
+
+  object NotBlankTypesService extends Service {
+    @MethodToInvoke(returnType = classOf[String])
+    def invoke(@ParamName("expression") @NotBlank expr: String) = Future.successful(expr)
   }
 
   object TransactionSource extends SourceFactory[Transaction] {

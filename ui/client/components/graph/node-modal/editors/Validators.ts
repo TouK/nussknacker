@@ -5,12 +5,12 @@ export enum ValidatorType {
 }
 
 export enum HandledErrorType {
-  EmptyMandatoryParameter = "EmptyMandatoryParameter",
+  MandatoryParameterValidator = "MandatoryParameterValidator",
   WrongDateFormat = "WrongDateFormat",
 }
 
 export enum ValidatorName {
-  MandatoryValueValidator = "MandatoryValueValidator",
+  MandatoryParameterValidator = "MandatoryParameterValidator",
   ErrorValidator = "ErrorValidator",
 }
 
@@ -42,9 +42,9 @@ export const errorValidator = (errors: Array<Error>, fieldName: string): Validat
 
 export const mandatoryValueValidator: Validator = {
   isValid: value => !isEmpty(value),
-  message: "This field cannot be empty",
-  description: "This field cannot be empty",
-  handledErrorType: HandledErrorType.EmptyMandatoryParameter,
+  message: "This field is mandatory and cannot be empty",
+  description: "Please fill expression for this parameter",
+  handledErrorType: HandledErrorType.MandatoryParameterValidator,
   validatorType: ValidatorType.Frontend,
 }
 
@@ -60,6 +60,6 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
 }
 
 export const validators: Record<ValidatorName, (errors?: Array<Error>, fieldName?: string) => Validator> = {
-  [ValidatorName.MandatoryValueValidator]: () => mandatoryValueValidator,
+  [ValidatorName.MandatoryParameterValidator]: () => mandatoryValueValidator,
   [ValidatorName.ErrorValidator]: (errors, fieldName) => errorValidator(errors, fieldName),
 }
