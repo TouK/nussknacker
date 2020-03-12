@@ -142,14 +142,6 @@ object ProcessCompilationError {
       ErrorValidationParameter(validator, paramName, nodeId.id)
   }
 
-  case class BlankParameter(paramName: String, nodeId: String)
-    extends PartSubGraphCompilationError with InASingleNode
-
-  object BlankParameter {
-    def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      BlankParameter(paramName, nodeId.id)
-  }
-
   case class OverwrittenVariable(variableName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
