@@ -4,6 +4,7 @@ import {DisplayProcessActivityAction} from "./nk/displayProcessActivity"
 import {ReportEventAction} from "./nk/reportEvent"
 import {UiActions} from "./nk/ui/uiActions"
 import {SettingsActions} from "./settingsActions"
+import {ToolbarActions} from "./nk/toolbars"
 
 export type Action =
   | ReportEventAction
