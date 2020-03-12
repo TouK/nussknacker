@@ -41,10 +41,15 @@ object PrettyValidationErrors {
         node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
-      case ErrorValidationParameter(validator, paramName, _) =>
-        validation(validator, s"No expression found for mandatory parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
-      case ErrorValidationParameter(validator, paramName, _) =>
-        validation(validator, s"Blank expression for not blank parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
+
+      // Parameter validation error cases
+      case ErrorValidationParameter(validator, paramName, _) => validator match {
+        case MandatoryParameterValidator =>
+          validation(validator, s"No expression found for mandatory parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
+        case NotBlankParameterValidator =>
+          validation(validator, s"Blank expression for not blank parameter", s"Please fill expression for this parameter", fieldName = Some(paramName))
+      }
+
       //exceptions below should not really happen (unless services change and process becomes invalid)
       case MissingCustomNodeExecutor(id, _) => node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")
       case MissingService(id, _) => node(s"Missing processor/enricher: $id", s"Please check the name of processor/enricher, $id is not available")

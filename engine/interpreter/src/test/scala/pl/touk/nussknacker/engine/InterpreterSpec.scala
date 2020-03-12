@@ -617,7 +617,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: ErrorValidationParameter(MandatoryValueValidator,expression,customNode), " +
+    }.getMessage shouldBe "Compilation errors: ErrorValidationParameter(MandatoryParameterValidator,expression,customNode), " +
       "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
   }
 
@@ -629,7 +629,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: ErrorValidationParameter(NotBlankValueValidator,expression,customNode), " +
+    }.getMessage shouldBe "Compilation errors: ErrorValidationParameter(NotBlankParameterValidator,expression,customNode), " +
       "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
   }
 }

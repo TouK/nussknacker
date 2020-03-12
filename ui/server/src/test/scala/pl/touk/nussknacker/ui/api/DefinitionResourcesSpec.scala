@@ -249,7 +249,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       val validator: Json = getParamValidator("datesTypesService", "periodParam")
 
 
-      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryParameterValidator")))
     }
   }
 
@@ -269,7 +269,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
 
       val validator: Json = getParamValidator("optionalTypesService", "overriddenByDevConfigParam")
 
-      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryParameterValidator")))
     }
   }
 
