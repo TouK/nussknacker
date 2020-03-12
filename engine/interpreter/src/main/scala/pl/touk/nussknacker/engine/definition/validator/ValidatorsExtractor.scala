@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, Pa
 object ValidatorsExtractor {
   val validators = List(
     MandatoryValidatorExtractor,
-    new AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator)
+    AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator)
   )
 
   def extract(parameter: Parameter): List[ParameterValidator] =

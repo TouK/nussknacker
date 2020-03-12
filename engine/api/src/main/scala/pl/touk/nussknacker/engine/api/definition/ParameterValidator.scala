@@ -1,4 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
+import java.util.regex.Pattern
+
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
@@ -31,9 +33,14 @@ case object MandatoryParameterValidator extends ParameterValidator {
 
 case object NotBlankParameterValidator extends ParameterValidator {
 
-  override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (isNotBlank(expression)) valid(Unit) else invalid(ErrorValidationParameter(this, paramName))
+  private final val BlankStringLiteralPattern: Pattern = stringLiteralPattern("\\s*")
 
-  private def isNotBlank(expression: String): Boolean =
-    StringUtils.isNotBlank(StringUtils.strip(StringUtils.trim(expression), "'"))
+  private def stringLiteralPattern(pattern: String) = Pattern.compile(s"'$pattern'")
+
+  // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
+  override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    if (isBlankStringLiteral(expression)) invalid(ErrorValidationParameter(this, paramName)) else valid(Unit)
+
+  private def isBlankStringLiteral(expression: String): Boolean =
+    BlankStringLiteralPattern.matcher(expression.trim).matches()
 }

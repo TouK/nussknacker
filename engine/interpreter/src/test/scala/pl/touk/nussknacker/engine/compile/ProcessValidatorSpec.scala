@@ -192,9 +192,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .customNode("customNodeId1", "event", "withNotBlankParams", "notBlankParam" -> "''")
         .customNode("customNodeId2", "event", "withNotBlankParams", "notBlankParam" -> "'   '")
         .customNode("customNodeId3", "event", "withNotBlankParams", "notBlankParam" -> " '' ")
-        .customNode("customNodeId4", "event", "withNotBlankParams", "notBlankParam" -> "'")
-        .customNode("customNodeId5", "event", "withNotBlankParams", "notBlankParam" -> " '")
-        .customNode("customNodeId6", "event", "withNotBlankParams", "notBlankParam" -> "'123'")
+        .customNode("customNodeId4", "event", "withNotBlankParams", "notBlankParam" -> " '  ' ")
+        .customNode("customNodeId5", "event", "withNotBlankParams", "notBlankParam" -> "'test'")
         .emptySink("emptySink", "sink")
 
       validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
@@ -203,8 +202,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         List(
          ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId2"),
          ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId3"),
-         ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId4"),
-         ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId5")
+         ErrorValidationParameter(NotBlankParameterValidator, "notBlankParam", "customNodeId4")
         )
       )) =>
     }
