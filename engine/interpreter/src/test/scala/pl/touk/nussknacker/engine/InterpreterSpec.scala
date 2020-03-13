@@ -617,7 +617,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: ErrorValidationParameter(MandatoryParameterValidator,expression,customNode), " +
+    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameterError(Parameter expression is mandatory and can't be empty,Please fill expression for this parameter,expression,customNode), " +
       "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
   }
 
@@ -629,7 +629,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: ErrorValidationParameter(NotBlankParameterValidator,expression,customNode), " +
+    }.getMessage shouldBe "Compilation errors: BlankParameterError(Parameter expression value can't be blank,Please fill expression for this parameter,expression,customNode), " +
       "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
   }
 }

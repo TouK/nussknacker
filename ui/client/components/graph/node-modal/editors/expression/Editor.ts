@@ -9,7 +9,7 @@ import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Error, Validator, validators, HandledErrorType} from "../Validators"
+import {Error, Validator, validators, HandledErrorType, errorValidator, mandatoryValueValidator} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
@@ -58,23 +58,17 @@ export enum EditorType {
 
 const prepareValidators = (param: $TodoType): Array<Validator> => {
   if (param == null) { // By default we return mandatory parameter validator
-    return new Array<Validator>(validators[HandledErrorType.MandatoryParameterValidator]())
+    return new Array<Validator>(mandatoryValueValidator)
   }
 
-  return param.validators.reduce((results: Array<Validator>, validator) => {
-    const frontendValidator = validators[validator.type]
-
-    if (frontendValidator instanceof Function) {
-      results.push(frontendValidator())
-    }
-
-    return results
-  }, new Array<Validator>())
+  return param.validators
+    .map(validator => validators[validator.type])
+    .filter(v => v != null)
 }
 
 const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
   prepareValidators(param),
-  validators[HandledErrorType.ErrorValidator](errors, fieldLabel)
+  errorValidator(errors, fieldLabel)
 )
 
 /* eslint-enable i18next/no-literal-string */

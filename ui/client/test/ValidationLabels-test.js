@@ -23,7 +23,7 @@ describe("test validation labels", () => {
   const testCases = [
     {
       description: "display only fe validation label when both be and fe validators available for the same error type",
-      errorType: HandledErrorType.MandatoryParameterValidator.toString(),
+      errorType: HandledErrorType.EmptyMandatoryParameterError.toString(),
       expectedBackendValidationLabels: 0,
     },
     {

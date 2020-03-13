@@ -6,8 +6,8 @@ import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ErrorValidationParameter, NodeId}
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameterError, NodeId, BlankParameterError}
 
 /**
  * Extend this trait to configure new parameter validator which should be handled on FE.
@@ -28,7 +28,14 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ErrorVali
 case object MandatoryParameterValidator extends ParameterValidator {
 
   override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isNotBlank(expression)) valid(Unit) else invalid(ErrorValidationParameter(this, paramName))
+    if (StringUtils.isNotBlank(expression)) valid(Unit) else invalid(error(paramName, nodeId.id))
+
+  private def error(paramName: String, nodeId: String): EmptyMandatoryParameterError = EmptyMandatoryParameterError(
+    "Parameter expression is mandatory and can't be empty",
+    "Please fill expression for this parameter",
+    paramName,
+    nodeId
+  )
 }
 
 case object NotBlankParameterValidator extends ParameterValidator {
@@ -39,7 +46,14 @@ case object NotBlankParameterValidator extends ParameterValidator {
 
   // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
   override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (isBlankStringLiteral(expression)) invalid(ErrorValidationParameter(this, paramName)) else valid(Unit)
+    if (isBlankStringLiteral(expression)) invalid(error(paramName, nodeId.id)) else valid(Unit)
+
+  private def error(paramName: String, nodeId: String): BlankParameterError = BlankParameterError(
+    "Parameter expression value can't be blank",
+    "Please fill expression for this parameter",
+    paramName,
+    nodeId
+  )
 
   private def isBlankStringLiteral(expression: String): Boolean =
     BlankStringLiteralPattern.matcher(expression.trim).matches()

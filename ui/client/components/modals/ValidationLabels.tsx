@@ -8,14 +8,15 @@ type Props = {
 }
 
 export default function ValidationLabels(props: Props) {
-
   const {validators, values} = props
 
   return (
     <div className={"validation-labels"}>
       {withoutDuplications(validators).map(validator => validator.isValid(...values) ?
         null :
-        <span key={uuid4()} className="validation-label" title={validator.description()}>{validator.message()}</span>)}
+        <span key={uuid4()} className="validation-label" title={validator.description && validator.description()}>
+          {validator.message()}
+        </span>)}
     </div>
   )
 }

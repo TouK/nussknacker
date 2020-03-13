@@ -45,3 +45,10 @@ export const  valueAlreadyTaken = () => {
     "This value is already taken"
   )
 }
+
+export const valueAlreadyTakenDescription = () => {
+  return i18next.t(
+    "validation.duplicateValueDescription",
+    "Please provide new unique value"
+  )
+}

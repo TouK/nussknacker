@@ -5,11 +5,17 @@ export enum ValidatorType {
   Frontend, Backend,
 }
 
+/* eslint-disable i18next/no-literal-string */
 export enum HandledErrorType {
+  EmptyMandatoryParameterError = "EmptyMandatoryParameterError",
+  BlankParameterError = "BlankParameterError",
+  WrongDateFormat = "WrongDateFormat",
+}
+
+/* eslint-disable i18next/no-literal-string */
+export enum BackendValidator {
   MandatoryParameterValidator = "MandatoryParameterValidator",
   NotBlankParameterValidator = "NotBlankParameterValidator",
-  WrongDateFormat = "WrongDateFormat",
-  ErrorValidator = "ErrorValidator",
 }
 
 export type Validator = {
@@ -40,9 +46,9 @@ export const errorValidator = (errors: Array<Error>, fieldName: string): Validat
 
 export const mandatoryValueValidator: Validator = {
   isValid: value => !isEmpty(value),
-  message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression is mandatory"),
+  message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression is mandatory and can't be empty"),
   description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
-  handledErrorType: HandledErrorType.MandatoryParameterValidator,
+  handledErrorType: HandledErrorType.EmptyMandatoryParameterError,
   validatorType: ValidatorType.Frontend,
 }
 
@@ -50,9 +56,9 @@ const blankStringLiteralPattern = new RegExp("'\\s*'")
 
 export const notBlankValueValidator: Validator = {
   isValid: value => value != null && !blankStringLiteralPattern.test(value.trim()),
-  message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression can't be blank"),
+  message: () => i18next.t("notBlankValueValidator.message", "Parameter expression value can't be blank"),
   description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
-  handledErrorType: HandledErrorType.NotBlankParameterValidator,
+  handledErrorType: HandledErrorType.BlankParameterError,
   validatorType: ValidatorType.Frontend,
 }
 
@@ -67,10 +73,8 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
   return withoutDuplications(validators).every(validator => validator.isValid(...values))
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-export const validators: Record<HandledErrorType, (errors?: Array<Error>, fieldName?: string) => Validator> = {
-  [HandledErrorType.MandatoryParameterValidator]: () => mandatoryValueValidator,
-  [HandledErrorType.NotBlankParameterValidator]: () => notBlankValueValidator,
-  [HandledErrorType.ErrorValidator]: (errors, fieldName) => errorValidator(errors, fieldName),
+//Mapping BE Validator to FE Validator
+export const validators: Record<BackendValidator, Validator> = {
+  [BackendValidator.MandatoryParameterValidator]: mandatoryValueValidator,
+  [BackendValidator.NotBlankParameterValidator]: notBlankValueValidator,
 }
