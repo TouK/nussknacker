@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
 import java.lang.annotation.Annotation
-import java.lang.reflect
 import java.lang.reflect.Method
 
 import pl.touk.nussknacker.engine.api._
@@ -9,7 +8,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.validator.{MandatoryValueValidatorExtractor, ValidatorsExtractor}
+import pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
@@ -26,7 +25,7 @@ private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor e
 
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
-        new OrderedDependencies(obj.parameterDefinition ++ obj.additionalDependencies.map(TypedNodeDependency)),
+      new OrderedDependencies(obj.parameterDefinition ++ obj.additionalDependencies.map(TypedNodeDependency)),
       obj.returnType, obj.runtimeClass, List()))
   }
 }
@@ -36,7 +35,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
       MethodDefinition(methodToInvoke.getName,
-        (obj, args) => method.invoke(obj, args:_*), extractParameters(obj, method, nodeConfig),
+        (obj, args) => method.invoke(obj, args: _*), extractParameters(obj, method, nodeConfig),
         extractReturnTypeFromMethod(obj, method), method.getReturnType, method.getAnnotations.toList)
     }
   }
@@ -81,7 +80,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   private def tryToDetermineValidators(param: java.lang.reflect.Parameter, extractedEditor: Option[ParameterEditor]) = {
     val possibleEditor: Option[ParameterEditor] = extractedEditor match {
       case Some(editor) => Some(editor)
-      case None => ParameterTypeEditorDeterminer.tryDetermine(param)
+      case None => new ParameterTypeEditorDeterminer(param.getType).determine()
     }
     ValidatorsExtractor(possibleEditor).extract(param)
   }
@@ -140,13 +139,13 @@ object MethodDefinitionExtractor {
             throw new MissingOutputVariableException)
         case TypedNodeDependency(clazz) =>
           val foundParam = additionalDependencies.find(clazz.isInstance).getOrElse(
-                      throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
+            throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
           validateType(clazz.getName, foundParam, clazz)
           foundParam
       }
     }
 
-    private def validateType(name: String, value: AnyRef, expectedClass: Class[_]) : Unit = {
+    private def validateType(name: String, value: AnyRef, expectedClass: Class[_]): Unit = {
       if (value != null && !EspTypeUtils.signatureElementMatches(expectedClass, value.getClass)) {
         throw new IllegalArgumentException(s"Parameter $name has invalid class: ${value.getClass.getName}, should be: ${expectedClass.getName}")
       }
