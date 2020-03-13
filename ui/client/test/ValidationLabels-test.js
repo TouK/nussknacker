@@ -7,6 +7,8 @@ import {
 import ValidationLabels from "../components/modals/ValidationLabels"
 import {render} from '@testing-library/react'
 import {getAllByText, queryAllByText} from "@testing-library/dom"
+import {I18nextProvider} from "react-i18next"
+import i18n from "../i18n"
 
 describe("test validation labels", () => {
   const fieldName = "fieldName"
@@ -20,12 +22,12 @@ describe("test validation labels", () => {
 
   const testCases = [
     {
-      description: () => "display only fe validation label when both be and fe validators available for the same error type",
+      description: "display only fe validation label when both be and fe validators available for the same error type",
       errorType: HandledErrorType.MandatoryParameterValidator.toString(),
       expectedBackendValidationLabels: 0,
     },
     {
-      description: () => "display both validation labels for different error type",
+      description: "display both validation labels for different error type",
       errorType: HandledErrorType.WrongDateFormat.toString(),
       expectedBackendValidationLabels: 1,
     },
@@ -40,7 +42,11 @@ describe("test validation labels", () => {
       ]
 
       //when
-      render(<ValidationLabels validators={validators} values={[""]}/>)
+      render(
+        <I18nextProvider i18n={i18n}>
+          <ValidationLabels validators={validators} values={[""]}/>
+        </I18nextProvider>
+      )
 
       //then
       const container = document.body

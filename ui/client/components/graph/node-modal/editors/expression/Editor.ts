@@ -56,12 +56,12 @@ export enum EditorType {
   CRON_EDITOR = "CronParameterEditor",
 }
 
-const getValidators = (param: $TodoType) => {
+const prepareValidators = (param: $TodoType): Array<Validator> => {
   if (param == null) { // By default we return mandatory parameter validator
-    return validators[HandledErrorType.MandatoryParameterValidator]()
+    return new Array<Validator>(validators[HandledErrorType.MandatoryParameterValidator]())
   }
 
-  return param.validators.reduce((results: Array<Error>, validator) => {
+  return param.validators.reduce((results: Array<Validator>, validator) => {
     const frontendValidator = validators[validator.type]
 
     if (frontendValidator instanceof Function) {
@@ -69,11 +69,11 @@ const getValidators = (param: $TodoType) => {
     }
 
     return results
-  }, new Array<Error>())
+  }, new Array<Validator>())
 }
 
 const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
-  getValidators(param),
+  prepareValidators(param),
   validators[HandledErrorType.ErrorValidator](errors, fieldLabel)
 )
 
