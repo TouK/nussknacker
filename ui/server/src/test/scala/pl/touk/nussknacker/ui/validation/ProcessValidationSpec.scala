@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -31,14 +31,14 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 class ProcessValidationSpec extends FunSuite with Matchers {
 
   private val validator = new ProcessValidation(
-    Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-    Map(TestProcessingTypes.Streaming -> Map(
-      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryValueValidator)), Some("label")),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
+      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
       "fixedValueOptionalProperty" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
       "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralIntValidator)), Some("label"))
     )),
     sampleResolver,
-    Map.empty
+    emptyProcessingTypeDataProvider
   )
 
   test("check for notunique edges") {
@@ -157,7 +157,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   test("not allow required process fields") {
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryValueValidator)), Some("label1")),
+        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
         "field2" -> AdditionalPropertyConfig(None, None, None, Some("label2"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
@@ -167,7 +167,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "", "field2" -> "b")))
       .errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("MandatoryParameterValidator", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
     }
     processValidation.validate(validProcessWithFields(Map("field2" -> "b")))
       .errors.processPropertiesErrors should matchPattern {
@@ -179,8 +179,8 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryValueValidator)), Some("label1")),
-        "field2" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryValueValidator)), Some("label2"))
+        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
+        "field2" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
     val process = validProcessWithFields(Map())
@@ -265,7 +265,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
-      case Some(List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("expression"), NodeValidationErrorType.SaveAllowed))) =>
+      case Some(List(NodeValidationError("MandatoryParameterValidator", _, _, Some("expression"), NodeValidationErrorType.SaveAllowed))) =>
     }
     result.warnings shouldBe ValidationWarnings.success
   }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
@@ -20,7 +20,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
         reqFieldName -> AdditionalPropertyConfig(
           None,
           None,
-          Some(List(LiteralIntValidator, MandatoryValueValidator)),
+          Some(List(LiteralIntValidator, MandatoryParameterValidator)),
           Some(label)),
         optionalFieldName -> AdditionalPropertyConfig(
           None,
@@ -74,7 +74,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
     result.errors.processPropertiesErrors should matchPattern {
       case List(
       NodeValidationError("InvalidLiteralIntValue", _, _, Some("propReq"), NodeValidationErrorType.SaveNotAllowed),
-      NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
+      NodeValidationError("MandatoryParameterValidator", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
       ) =>
     }
   }

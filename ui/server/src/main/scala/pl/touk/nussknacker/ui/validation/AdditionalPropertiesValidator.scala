@@ -4,10 +4,11 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, NodeId, UnknownProperty}
-import pl.touk.nussknacker.engine.api.definition.ParameterValidator
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 
 
 class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
@@ -62,7 +63,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
   private def getMissingRequiredPropertyValidationResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
     config
       .filter(_._2.validators.nonEmpty)
-      .filter(_._2.validators.get.contains(MandatoryValueValidator))
+      .filter(_._2.validators.get.contains(MandatoryParameterValidator))
       .map(propertyConfig => (propertyConfig._1, propertyConfig._2, MissingRequiredPropertyValidator(additionalProperties.map(_._1))))
       .toList.map {
       case (propertyName, config, validator) => validator.isValid(propertyName, config.label).toValidatedNel

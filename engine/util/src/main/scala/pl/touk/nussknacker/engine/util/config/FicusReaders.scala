@@ -32,6 +32,6 @@ object FicusReaders {
 
   implicit val paramConfigReader: ValueReader[AdditionalPropertyConfig] = ValueReader.relative(config => {
     val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-    CirceUtil.decodeJsonUnsafe[AdditionalPropertyConfig](json, "invalid parameter validator config")
+    CirceUtil.decodeJsonUnsafe[AdditionalPropertyConfig](json, "invalid additional property config")
   })
 }

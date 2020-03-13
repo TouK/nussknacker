@@ -127,7 +127,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "stringRequiredProperty" -> new UiAdditionalPropertyConfig(
           Some("default"),
           StringParameterEditor,
-          Some(List(MandatoryValueValidator)),
+          Some(List(MandatoryParameterValidator)),
           Some("label")
         ),
         "intOptionalProperty" -> new UiAdditionalPropertyConfig(
