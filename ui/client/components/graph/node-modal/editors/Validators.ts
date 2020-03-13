@@ -67,9 +67,10 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
   return withoutDuplications(validators).every(validator => validator.isValid(...values))
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+// @ts-ignore
 export const validators: Record<HandledErrorType, (errors?: Array<Error>, fieldName?: string) => Validator> = {
   [HandledErrorType.MandatoryParameterValidator]: () => mandatoryValueValidator,
   [HandledErrorType.NotBlankParameterValidator]: () => notBlankValueValidator,
   [HandledErrorType.ErrorValidator]: (errors, fieldName) => errorValidator(errors, fieldName),
-  [HandledErrorType.WrongDateFormat]: (errors, fieldName) => errorValidator(errors, fieldName),
 }

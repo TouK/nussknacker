@@ -64,8 +64,8 @@ export const isParseable = (expression: ExpressionObj, expressionType: JavaTimeT
 }
 
 const getDateValidator = (value: string | moment.Moment, expressionType: JavaTimeTypes): Validator => ({
-  description: i18next.t("validation.wrongDateFormat", "Wrong date format"),
-  message: i18next.t("validation.wrongDateFormat", "Wrong date format"),
+  description: () => i18next.t("validation.wrongDateFormat", "Wrong date format"),
+  message: () => i18next.t("validation.wrongDateFormat", "Wrong date format"),
   isValid: () => !value || !!format(value, expressionType),
   validatorType: ValidatorType.Frontend,
   handledErrorType: HandledErrorType.WrongDateFormat,
