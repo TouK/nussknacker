@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.definition
 import java.util.regex.Pattern
 
 import pl.touk.nussknacker.engine.api.CirceUtil._
-
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec

@@ -19,7 +19,7 @@ class AdditionalPropertyValidatorsDeterminerChainTest extends FunSuite with Matc
     determined shouldBe List(MandatoryParameterValidator)
   }
 
-  test("determine propertty validator based on fixed value editor") {
+  test("determine property validator based on fixed value editor") {
     val possibleValues = List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
     val config = AdditionalPropertyConfig(
       None,
