@@ -158,7 +158,7 @@ object UIParameter {
     UIParameter(
       name = parameter.name,
       typ = parameter.typ,
-      editor = ParameterEditorDeterminerChain(paramConfig).determineEditor(parameter),
+      editor = ParameterEditorDeterminerChain(parameter, paramConfig).determineEditor(),
       validators = ParameterValidatorsDeterminerChain(paramConfig).determineValidators(parameter),
       additionalVariables = parameter.additionalVariables,
       branchParam = parameter.branchParam

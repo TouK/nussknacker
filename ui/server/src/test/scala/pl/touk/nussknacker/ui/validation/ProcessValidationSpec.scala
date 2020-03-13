@@ -3,6 +3,8 @@ package pl.touk.nussknacker.ui.validation
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryValueValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -24,6 +26,8 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeT
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{SampleSubprocessRepository, possibleValues, sampleResolver}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{SampleSubprocessRepository, emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, possibleValues, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
@@ -265,9 +269,50 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
-      case Some(List(NodeValidationError("MandatoryParameterValidator", _, _, Some("expression"), NodeValidationErrorType.SaveAllowed))) =>
+      case Some(List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("expression"), NodeValidationErrorType.SaveAllowed))) =>
     }
     result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("check for wrong fixed expression value in node parameter") {
+    val process: DisplayableProcess = createProcessWithParams(List(evaluatedparam.Parameter("expression", Expression("spel", "wrong fixed value"))), Map.empty)
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("expression"), NodeValidationErrorType.SaveNotAllowed))) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("check for wrong fixed expression value in additional property") {
+    val process = createProcessWithParams(List.empty, Map(
+      "fixedValueOptionalProperty" -> "wrong fixed value",
+      "requiredStringProperty" -> "test"
+    ))
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("fixedValueOptionalProperty"), NodeValidationErrorType.SaveNotAllowed)) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  private def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]) = {
+    createProcess(
+      List(
+        Source("inID", SourceRef("barSource", List())),
+        Enricher("custom", ServiceRef("fooService4", nodeParams), "out"),
+        Sink("out", SinkRef("barSink", List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None)),
+      TestProcessingTypes.Streaming,
+      Set.empty,
+      additionalProperties
+    )
   }
 
   private def createProcess(nodes: List[NodeData],

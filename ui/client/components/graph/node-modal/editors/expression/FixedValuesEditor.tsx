@@ -2,6 +2,8 @@ import React from "react"
 import Creatable from "react-select/creatable"
 import _ from "lodash"
 import {ExpressionObj} from "./types"
+import ValidationLabels from "../../../../modals/ValidationLabels"
+import {Validator} from "../Validators"
 
 type Props = {
   values?: $TodoType,
@@ -11,6 +13,8 @@ type Props = {
   className: string,
   defaultValue?: $TodoType,
   param?: $TodoType,
+  showValidation: boolean,
+  validators: Array<Validator>,
 }
 
 const getOptions = (values) => {
@@ -45,20 +49,23 @@ export default class FixedValuesEditor extends React.Component<Props> {
 
   render() {
     const {
-      readOnly, onValueChange, className,
+      readOnly, onValueChange, className, showValidation, validators,
     } = this.props
     const option = this.currentOption()
 
     return (
-      <Creatable
-        className={`node-value-select ${className}`}
-        classNamePrefix="node-value-select"
-        value={option}
-        onChange={(newValue) => onValueChange(newValue.value)}
-        options={this.options}
-        isDisabled={readOnly}
-        formatCreateLabel={(x) => x}
-      />
+      <React.Fragment>
+        <Creatable
+          className={`node-value-select ${className}`}
+          classNamePrefix="node-value-select"
+          value={option}
+          onChange={(newValue) => onValueChange(newValue.value)}
+          options={this.options}
+          isDisabled={readOnly}
+          formatCreateLabel={(x) => x}
+        />
+        {showValidation && <ValidationLabels validators={validators} values={[option]} additionalClassName={"fixed-values-editor"}/>}
+      </React.Fragment>
     )
   }
 }

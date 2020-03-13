@@ -51,7 +51,7 @@ class EditableEditor extends React.Component<Props, State> {
   render() {
     const {
       fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param, renderFieldLabel, fieldLabel, readOnly,
-      values, errors, fieldName,
+      values, errors, fieldName, showValidation,
     } = this.props
 
     const paramType = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression")
@@ -75,6 +75,7 @@ class EditableEditor extends React.Component<Props, State> {
           components={editor.components(param)}
           formatter={expressionObj.language === "spel" && !isEmpty(spelFormatters[param.typ.refClazzName]) ?
             spelFormatters[param.typ.refClazzName] : null}
+          showValidation={showValidation}
         />
         {
             param?.editor?.type === EditorType.DUAL_PARAMETER_EDITOR && (

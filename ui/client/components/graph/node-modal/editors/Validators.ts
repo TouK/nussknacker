@@ -64,11 +64,19 @@ export const literalIntValidator: Validator = {
   validatorType: ValidatorType.Frontend,
 }
 
+export const literalIntValidator: Validator = {
+  isValid: value => !isNaN(value),
+  message: "This value has to be an integer number",
+  description: "Please fill this field with an integer number",
+  handledErrorType: HandledErrorType.InvalidLiteralIntValue,
+  validatorType: ValidatorType.Frontend,
+}
+
 export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
   isValid: value => possibleValues.map(value => value.expression).includes(value),
-  message: `This value has to be one of values: ${possibleValues.toString()}`,
+  message: `This value has to be one of values: ${possibleValues.map(value => value.expression).join(",")}`,
   description: "Please choose one of available values",
-  handledErrorType: HandledErrorType.InvalidLiteralIntValue,
+  handledErrorType: HandledErrorType.InvalidPropertyFixedValue,
   validatorType: ValidatorType.Frontend,
 })
 

@@ -6,6 +6,8 @@ import java.util.Optional
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, MandatoryValueValidator}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameterValidator}
 
 class ValidatorsExtractorTest extends FunSuite with Matchers {
@@ -34,19 +36,31 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   }
 
   test("extract not empty validator by default") {
-    ValidatorsExtractor.extract(notAnnotatedParam) shouldBe List(MandatoryParameterValidator)
+    ValidatorsExtractor(None).extract(notAnnotatedParam) shouldBe List(MandatoryParameterValidator)
   }
 
   test("extract none mandatory value validator when @Nullable annotation detected") {
-    ValidatorsExtractor.extract(nullableAnnotatedParam) shouldBe List.empty
+    ValidatorsExtractor(None).extract(nullableAnnotatedParam) shouldBe List.empty
   }
 
   test("extract none mandatory value validator when parameter is of type Option") {
-    ValidatorsExtractor.extract(optionParam) shouldBe List.empty
+    ValidatorsExtractor(None).extract(optionParam) shouldBe List.empty
   }
 
   test("extract none mandatory value validator when parameter is of type Optional") {
-    ValidatorsExtractor.extract(optionalParam) shouldBe List.empty
+    ValidatorsExtractor(None).extract(optionalParam) shouldBe List.empty
+  }
+
+  test("determine fixed values validator when simple fixed value editor passed") {
+    val possibleValues = List(FixedExpressionValue("a", "a"))
+    ValidatorsExtractor(Some(FixedValuesParameterEditor(possibleValues))).extract(optionalParam)
+      .shouldBe(List(FixedValuesValidator(possibleValues)))
+  }
+
+  test("determine fixed values validator when dual editor with fixed simple editor passed") {
+    val possibleValues = List(FixedExpressionValue("a", "a"))
+    ValidatorsExtractor(Some(DualParameterEditor(FixedValuesParameterEditor(possibleValues), DualEditorMode.SIMPLE))).extract(optionalParam)
+      .shouldBe(List(FixedValuesValidator(possibleValues)))
   }
 
   test("extract nullable notBlank value validator when @Nullable @NotBlank annotation detected") {

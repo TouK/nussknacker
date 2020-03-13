@@ -52,6 +52,7 @@ class ExpressionField extends React.Component<Props> {
           readOnly={readOnly}
           onValueChange={(newValue) => setNodeDataAt(exprTextPath, newValue)}
           errors={errors}
+          showValidation={showValidation}
         />
       )
 

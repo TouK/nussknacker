@@ -2,10 +2,17 @@ package pl.touk.nussknacker.engine.api.definition
 import java.util.regex.Pattern
 
 import pl.touk.nussknacker.engine.api.CirceUtil._
+
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, NodeId, MissingRequiredProperty, InvalidPropertyFixedValue, InvalidLiteralIntValue}
+
+import scala.util.Try
+
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ErrorValidationParameter, InvalidPropertyFixedValue, NodeId}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 

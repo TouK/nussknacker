@@ -1,17 +1,17 @@
-package pl.touk.nussknacker.ui.definition.editor
+package pl.touk.nussknacker.engine.definition
 
 import java.time.temporal.ChronoUnit
 
-import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.definition.{DateParameterEditor, DateTimeParameterEditor, DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, ParameterEditor, PeriodParameterEditor, StringParameterEditor, TimeParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
-protected object  ParameterTypeEditorDeterminer extends ParameterEditorDeterminer {
+class ParameterTypeEditorDeterminer(val runtimeClass: Class[_]) extends ParameterEditorDeterminer {
 
-  override def determineParameterEditor(param: Parameter): Option[ParameterEditor] = {
-    param.runtimeClass match {
+  override def determine(): Option[ParameterEditor] = {
+    runtimeClass match {
       case klazz if klazz.isEnum => Some(
         FixedValuesParameterEditor(
-          possibleValues = param.runtimeClass.getEnumConstants.toList.map(extractEnumValue(param.runtimeClass))
+          possibleValues = runtimeClass.getEnumConstants.toList.map(extractEnumValue(runtimeClass))
         )
       )
       case klazz if klazz == classOf[java.lang.String] => Some(
@@ -50,13 +50,7 @@ protected object  ParameterTypeEditorDeterminer extends ParameterEditorDetermine
           defaultMode = DualEditorMode.SIMPLE
         )
       )
-      case klazz if klazz == classOf[com.cronutils.model.Cron] => Some(
-        DualParameterEditor(
-          simpleEditor = CronParameterEditor,
-          defaultMode = DualEditorMode.SIMPLE
-        )
-      )
-      case _ => Some(RawParameterEditor)
+      case _ => None
     }
   }
 
@@ -64,5 +58,4 @@ protected object  ParameterTypeEditorDeterminer extends ParameterEditorDetermine
     val enumConstName = enumClass.getMethod("name").invoke(enumConst)
     FixedExpressionValue(s"T(${enumClass.getName}).$enumConstName", enumConst.toString)
   }
-
 }
