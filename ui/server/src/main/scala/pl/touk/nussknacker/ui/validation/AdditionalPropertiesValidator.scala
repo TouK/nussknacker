@@ -6,22 +6,12 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, NodeId, UnknownProperty}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
-import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, NodeId, UnknownProperty}
-import pl.touk.nussknacker.engine.api.definition.{MandatoryValueValidator, ParameterValidator}
-import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.definition.additionalproperty.AdditionalPropertyValidatorDeterminerChain
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 
 
 class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
-class AdditionalPropertiesValidator(additionalPropertiesConfig: Map[ProcessingType, Map[String, AdditionalPropertyConfig]]) {
 
   import cats.implicits._
 

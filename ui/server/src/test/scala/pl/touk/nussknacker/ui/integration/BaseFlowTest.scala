@@ -11,8 +11,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryValueValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -129,19 +127,19 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "stringRequiredProperty" -> new UiAdditionalPropertyConfig(
           Some("default"),
           StringParameterEditor,
-          Some(List(MandatoryParameterValidator)),
+          List(MandatoryParameterValidator),
           Some("label")
         ),
         "intOptionalProperty" -> new UiAdditionalPropertyConfig(
           None,
           StringParameterEditor,
-          Some(List(LiteralIntValidator)),
+          List(LiteralIntValidator),
           None
         ),
         "fixedValueOptionalProperty" -> new UiAdditionalPropertyConfig(
           None,
           FixedValuesParameterEditor(fixedPossibleValues),
-          Some(List(FixedValuesValidator(fixedPossibleValues))),
+          List(FixedValuesValidator(fixedPossibleValues)),
           None
         )
       )

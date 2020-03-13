@@ -7,8 +7,6 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, LiteralIntValidator, MandatoryValueValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -18,13 +16,9 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
@@ -86,17 +80,6 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("Property expression has invalid value")
-    }
-  }
-
-  it should "find errors in process properties" in {
-    Post("/processValidation", posting.toEntity(TestFactory.processWithInvalidAdditionalProperties)) ~> route ~> check {
-      status shouldEqual StatusCodes.OK
-      val entity = entityAs[String]
-      entity should include ("Configured property requiredStringProperty (label) is missing")
-      entity should include ("Property fixedValueOptionalProperty has invalid value")
-      entity should include ("Unknown property unknown")
-      entity should include ("Property intOptionalProperty (label) has value of invalid type")
     }
   }
 

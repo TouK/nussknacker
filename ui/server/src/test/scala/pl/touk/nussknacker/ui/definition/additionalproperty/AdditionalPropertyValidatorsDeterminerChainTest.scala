@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.additionalproperty
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, MandatoryValueValidator}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, MandatoryParameterValidator}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 
 class AdditionalPropertyValidatorsDeterminerChainTest extends FunSuite with Matchers {
@@ -10,13 +10,13 @@ class AdditionalPropertyValidatorsDeterminerChainTest extends FunSuite with Matc
     val config = AdditionalPropertyConfig(
       None,
       None,
-      Some(List(MandatoryValueValidator)),
+      Some(List(MandatoryParameterValidator)),
       None
     )
 
     val determined = AdditionalPropertyValidatorDeterminerChain(config).determine()
 
-    determined shouldBe List(MandatoryValueValidator)
+    determined shouldBe List(MandatoryParameterValidator)
   }
 
   test("determine propertty validator based on fixed value editor") {
