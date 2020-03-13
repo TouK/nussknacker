@@ -78,7 +78,7 @@ export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Valid
 const blankStringLiteralPattern = new RegExp("'\\s*'")
 
 export const notBlankValueValidator: Validator = {
-  isValid: value => !blankStringLiteralPattern.test(value.trim()),
+  isValid: value => value != null && !blankStringLiteralPattern.test(value.trim()),
   message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression can't be blank"),
   description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
   handledErrorType: HandledErrorType.NotBlankParameterValidator,
