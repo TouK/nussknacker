@@ -1,15 +1,14 @@
 version: '3.0'
 
 services:
-# TODO: UPGRADE INFLUXDB
   influxdb:
     container_name: nussknacker_influxdb
-    image: influxdb:${INFLUXDB_VERSION-1.1.5}
-    command: ["/runWithEspDb.sh"]
+    image: influxdb:${INFLUXDB_VERSION-1.7.10-alpine}
+    environment:
+      INFLUXDB_DB: esp
     volumes:
       - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
-      - nussknacker_storage_influxdb:/var/lib/influxdb/data
-      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
+      - nussknacker_storage_influxdb:/var/lib/influxdb
 
   zookeeper:
     container_name: nussknacker_zookeeper
