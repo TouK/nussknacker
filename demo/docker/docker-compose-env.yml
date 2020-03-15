@@ -14,6 +14,8 @@ services:
   zookeeper:
     container_name: nussknacker_zookeeper
     image: zookeeper:${ZOOKEEPER_VERSION-3.5}
+    environment:
+      JVMFLAGS: "-Xms64m -Xmx128m"
     volumes:
       - nussknacker_storage_zookeeper_datalog:/datalog
       - nussknacker_storage_zookeeper_data:/data
@@ -102,7 +104,7 @@ services:
     container_name: nussknacker_elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.4.2}
     environment:
-      ES_JAVA_OPTS: -Xms128m -Xmx512m
+      ES_JAVA_OPTS: -Xms128m -Xmx256m
     volumes:
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - nussknacker_storage_elasticsearch_data:/usr/share/elasticsearch/data
@@ -121,6 +123,8 @@ services:
     depends_on:
       - elasticsearch
       - kafka
+    environment:
+      LS_JAVA_OPTS: "-Xms128m -Xmx256m"
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
