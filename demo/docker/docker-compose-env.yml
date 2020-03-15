@@ -139,19 +139,18 @@ services:
     volumes:
       - ./kibana/config/:/usr/share/kibana/config
 
-  # TODO: UPGRADE GRAFANA
   grafana:
     container_name: nussknacker_grafana
-    image: grafana/grafana:${GRAFANA_VERSION-5.4.5}
-    entrypoint: ["/runWithFlinkEspBoard.sh"]
+    image: grafana/grafana:${GRAFANA_VERSION-6.6.2}
     volumes:
-      - ./grafana/runWithFlinkEspBoard.sh:/runWithFlinkEspBoard.sh
-      - ./grafana/Flink-ESP.json:/Flink-ESP.json
+      - ./grafana:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     links:
-      - "influxdb:influxdb"
+      - influxdb
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
+      - GF_SECURITY_ALLOW_EMBEDDING=true
     depends_on:
       - influxdb
 
