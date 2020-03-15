@@ -127,6 +127,7 @@ services:
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logstash/templates:/usr/share/logstash/templates
       - nussknacker_storage_logstash_data:/usr/share/logstash/data
 
   kibana:
