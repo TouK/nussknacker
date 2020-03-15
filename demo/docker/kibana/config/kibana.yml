@@ -5,8 +5,14 @@ server.rewriteBasePath: false
 
 elasticsearch.hosts: http://elasticsearch:9200/
 
+kibana.defaultAppId: discover
+
 xpack.security.enabled: false
 xpack.monitoring.enabled: false
 xpack.ml.enabled: false
 xpack.graph.enabled: false
 xpack.reporting.enabled: false
+xpack.apm.enabled: false
+xpack.infra.enabled: false
+xpack.uptime.enabled: false
+xpack.siem.enabled: false
