@@ -9,7 +9,14 @@ import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Error, mandatoryValueValidator, Validator, ValidatorName, validators} from "../Validators"
+import {
+  Error,
+  errorValidator,
+  mandatoryValueValidator,
+  notBlankValueValidator,
+  Validator,
+  validators,
+} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
@@ -36,6 +43,7 @@ type EditorConfig = {
   components: (param: ParamType) => Array<TimeRangeComponentType>,
 }
 
+/* eslint-enable i18next/no-literal-string */
 export enum DualEditorMode {
   SIMPLE = "SIMPLE",
   RAW = "RAW",
@@ -56,27 +64,28 @@ export enum EditorType {
   CRON_EDITOR = "CronParameterEditor",
 }
 
-const prepareValidators = (param: $TodoType): Array<Validator> => {
-  if (param == null) { // By default we return mandatory parameter validator
-    return new Array<Validator>(mandatoryValueValidator)
-  }
+const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
+  const defaultValidators = [
+    mandatoryValueValidator,
+    notBlankValueValidator,
+  ]
 
-  return param.validators
-    .map(validator => validators[validator.type])
+  const configuredValidators = paramConfig.validators
+    .map(v => validators[v.type])
     .filter(v => v != null)
+    .map(v => v(paramConfig.editor.possibleValues))
+
+  return isEmpty(configuredValidators) ? defaultValidators : configuredValidators
 }
 
 const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => {
-  const defaultValidator = validators[ValidatorName.MandatoryParameterValidator]();
-  const configuredValidators = paramConfig.validators?.map(validator => validators[validator.type](errors, fieldLabel, paramConfig.editor.possibleValues))
-  const errorValidator = isEmpty(errors) ? [] : [validators[ValidatorName.ErrorValidator](errors, fieldLabel)]
+  const configuredValidators = configureValidators(paramConfig)
+  const validatorFromErrors = isEmpty(errors) ? [] : [errorValidator(errors, fieldLabel)]
   return concat(
-    isEmpty(configuredValidators) ? defaultValidator : configuredValidators,
-    errorValidator
+    configuredValidators,
+    validatorFromErrors,
   )
 }
-
-/* eslint-enable i18next/no-literal-string */
 
 const defaults = {
   validators: (param, errors, fieldLabel) => simpleEditorValidators(param, errors, fieldLabel),
