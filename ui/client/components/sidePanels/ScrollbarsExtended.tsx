@@ -13,7 +13,7 @@ export function ScrollbarsExtended({children, onScrollToggle}: PropsWithChildren
 
   const [onUpdate] = useDebouncedCallback(() => {
     const {scrollHeight = 0, clientHeight = 0} = scrollbars.current?.getValues() || {}
-    setScrollPossible(scrollHeight - clientHeight > 0)
+    setScrollPossible(scrollHeight > clientHeight)
   }, 50)
 
   useEffect(() => {
