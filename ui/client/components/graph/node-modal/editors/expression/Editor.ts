@@ -9,7 +9,7 @@ import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Error, Validator, ValidatorName, validators} from "../Validators"
+import {Error, mandatoryValueValidator, Validator, ValidatorName, validators} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
@@ -54,6 +54,16 @@ export enum EditorType {
   DURATION_EDITOR = "DurationParameterEditor",
   PERIOD_EDITOR = "PeriodParameterEditor",
   CRON_EDITOR = "CronParameterEditor",
+}
+
+const prepareValidators = (param: $TodoType): Array<Validator> => {
+  if (param == null) { // By default we return mandatory parameter validator
+    return new Array<Validator>(mandatoryValueValidator)
+  }
+
+  return param.validators
+    .map(validator => validators[validator.type])
+    .filter(v => v != null)
 }
 
 const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => {

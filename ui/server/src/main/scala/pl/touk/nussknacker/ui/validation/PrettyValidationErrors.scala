@@ -2,9 +2,8 @@ package pl.touk.nussknacker.ui.validation
 
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameterValidator, ParameterValidator}
+import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
@@ -20,12 +19,8 @@ object PrettyValidationErrors {
              fieldName: Option[String] = None): NodeValidationError
       = NodeValidationError(typ, message, description, fieldName, errorType)
 
-    def validation(validator: ParameterValidator,
-                   message: String,
-                   description: String,
-                   errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
-                   fieldName: Option[String] = None): NodeValidationError
-      = NodeValidationError(ReflectUtils.fixedClassSimpleNameWithoutParentModule(validator.getClass), message, description, fieldName, errorType)
+    def handleParameterValidationError(error: ParameterValidationError): NodeValidationError
+      = node(error.message, error.description, fieldName = Some(error.paramName))
 
     error match {
       case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
@@ -42,13 +37,7 @@ object PrettyValidationErrors {
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
 
-      // Parameter validation error cases
-      case ErrorValidationParameter(validator, paramName, _) => validator match {
-        case MandatoryParameterValidator =>
-          validation(validator, s"Parameter expression is mandatory", s"Please fill expression for this parameter", fieldName = Some(paramName))
-        case NotBlankParameterValidator =>
-          validation(validator, s"Parameter expression can't be blank", s"Please fill expression for this parameter", fieldName = Some(paramName))
-      }
+      case pve: ParameterValidationError => handleParameterValidationError(pve)
 
       //exceptions below should not really happen (unless services change and process becomes invalid)
       case MissingCustomNodeExecutor(id, _) => node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")

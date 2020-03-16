@@ -5,12 +5,19 @@ export enum ValidatorType {
   Frontend, Backend,
 }
 
+/* eslint-disable i18next/no-literal-string */
 export enum HandledErrorType {
-  MandatoryParameterValidator = "MandatoryParameterValidator",
-  NotBlankParameterValidator = "NotBlankParameterValidator",
+  EmptyMandatoryParameterError = "EmptyMandatoryParameterError",
+  BlankParameterError = "BlankParameterError",
   WrongDateFormat = "WrongDateFormat",
   InvalidLiteralIntValue = "InvalidLiteralIntValue",
   InvalidPropertyFixedValue = "InvalidPropertyFixedValue",
+}
+
+/* eslint-disable i18next/no-literal-string */
+export enum BackendValidator {
+  MandatoryParameterValidator = "MandatoryParameterValidator",
+  NotBlankParameterValidator = "NotBlankParameterValidator",
 }
 
 export enum ValidatorName {
@@ -53,9 +60,9 @@ export const errorValidator = (errors: Array<Error>, fieldName: string): Validat
 
 export const mandatoryValueValidator: Validator = {
   isValid: value => !isEmpty(value),
-  message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression is mandatory"),
-  description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
-  handledErrorType: HandledErrorType.MandatoryParameterValidator,
+  message: () => i18next.t("mandatoryValueValidator.message", "This field is mandatory and can not be empty"),
+  description: () => i18next.t("validator.description", "Please fill field for this parameter"),
+  handledErrorType: HandledErrorType.EmptyMandatoryParameterError,
   validatorType: ValidatorType.Frontend,
 }
 
@@ -79,9 +86,9 @@ const blankStringLiteralPattern = new RegExp("'\\s*'")
 
 export const notBlankValueValidator: Validator = {
   isValid: value => value != null && !blankStringLiteralPattern.test(value.trim()),
-  message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression can't be blank"),
-  description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
-  handledErrorType: HandledErrorType.NotBlankParameterValidator,
+  message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
+  description: () => i18next.t("validator.description", "Please fill field value for this parameter"),
+  handledErrorType: HandledErrorType.BlankParameterError,
   validatorType: ValidatorType.Frontend,
 }
 
