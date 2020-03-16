@@ -5,7 +5,7 @@ import {connect} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {displayModalNodeDetails} from "../../../../actions/nk/modal"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
-import {isPristine, getProcessToDisplay} from "../../../../reducers/selectors/graph"
+import {getProcessToDisplay, hasError} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/properties.svg"
 
@@ -34,7 +34,7 @@ function PropertiesButton(props: Props) {
 
 const mapState = (state: RootState) => ({
   processToDisplay: getProcessToDisplay(state),
-  hasErrors: isPristine(state),
+  hasErrors: hasError(state),
 })
 
 const mapDispatch = {
