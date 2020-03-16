@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.definition.UIParameter
 import scala.reflect.ClassTag
 
 class ConfigParameterDefaultValueDeterminerTest extends FlatSpec with Matchers {
-  private val config = new ParamDefaultValueConfig(Map("definedNode" -> Map("definedParam" -> ParameterConfig(Some("Idea"), None, None))))
+  private val config = new ParamDefaultValueConfig(Map("definedNode" -> Map("definedParam" -> ParameterConfig(Some("Idea"), None, None, None))))
   private val determiner = new ConfigParameterDefaultValueDeterminer(config)
   private val node = UINodeDefinition("definedNode", Nil)
   behavior of "ConfigParameterDefaultValueDeterminer"

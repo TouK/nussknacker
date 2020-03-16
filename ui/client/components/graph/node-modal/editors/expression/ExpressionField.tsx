@@ -1,7 +1,7 @@
 import _ from "lodash"
 import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
-import EditableExpression from "./EditableExpression"
+import EditableEditor from "../EditableEditor"
 import {EditorType} from "./Editor"
 
 type Props = {
@@ -39,7 +39,7 @@ class ExpressionField extends React.Component<Props> {
 
     if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR)
       return (
-        <EditableExpression
+        <EditableEditor
           fieldType={EditorType.FIXED_VALUES_PARAMETER_EDITOR}
           fieldLabel={fieldLabel}
           fieldName={fieldName}
@@ -52,6 +52,7 @@ class ExpressionField extends React.Component<Props> {
           readOnly={readOnly}
           onValueChange={(newValue) => setNodeDataAt(exprTextPath, newValue)}
           errors={errors}
+          showValidation={showValidation}
         />
       )
 
@@ -62,7 +63,7 @@ class ExpressionField extends React.Component<Props> {
         resultsToHide={testResultsToHide}
         toggleResult={toggleTestResult}
       >
-        <EditableExpression
+        <EditableEditor
           fieldType={fieldType}
           param={this.findParamByName(fieldLabel)}
           editorName={EditorType.RAW_PARAMETER_EDITOR}

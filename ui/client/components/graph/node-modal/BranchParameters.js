@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
-import EditableExpression from "./editors/expression/EditableExpression"
+import EditableEditor from "./editors/EditableEditor"
 
 const BranchParameters = (props) => {
 
@@ -24,7 +24,7 @@ const BranchParameters = (props) => {
                       <div className="branch-parameter-row" key={`${param.name}-${edge.from}`}>
                         <div className={"branch-param-label"}>{edge.from}</div>
                         <div className={"branch-parameter-expr-container"}>
-                          <EditableExpression
+                          <EditableEditor
                             fieldType={"expression"}
                             fieldName={branchErrorFieldName(param.name, edge.from)}
                             fieldLabel={null}

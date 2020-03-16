@@ -6,6 +6,7 @@ import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash"
 import i18next from "i18next"
 import {TimeRangeComponentType} from "./TimeRangeComponent"
+import {Formatter, FormatterType, typeFormatters} from "../Formatter"
 
 export type Period = {
   years: number,
@@ -21,11 +22,10 @@ type Props = {
   readOnly: boolean,
   isMarked: boolean,
   components: Array<TimeRangeComponentType>,
+  formatter: Formatter,
 }
 
-const SPEL_PERIOD_DECODE_REGEX = /^T\(java\.time\.Period\)\.parse\('(.*?)'\)$/
 const SPEL_PERIOD_SWITCHABLE_TO_REGEX = /^T\(java\.time\.Period\)\.parse\('P([0-9]{1,}Y)?([0-9]{1,}M)?([0-9]{1,}W)?([0-9]{1,}D)?'\)$/
-const SPEL_FORMATTED_PERIOD = (isoPeriod) => `T(java.time.Period).parse('${isoPeriod}')`
 const NONE_PERIOD = {
   years: () => null,
   months: () => null,
@@ -34,19 +34,21 @@ const NONE_PERIOD = {
 
 export default function PeriodEditor(props: Props) {
 
-  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components} = props
+  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components, formatter} = props
+
+  const periodFormatter = formatter == null ? typeFormatters[FormatterType.Period] : formatter
 
   function isPeriodDefined(period: Period): boolean {
     return period.years != null || period.months != null || period.days != null
   }
 
   function encode(period: Period): string {
-    return isPeriodDefined(period) ? SPEL_FORMATTED_PERIOD(moment.duration(period).toISOString()) : ""
+    return isPeriodDefined(period) ? periodFormatter.encode(period) : ""
   }
 
   function decode(expression: string): Period {
-    const regexExecution = SPEL_PERIOD_DECODE_REGEX.exec(expression)
-    const period = regexExecution == null ? NONE_PERIOD : moment.duration(regexExecution[1])
+    const result = periodFormatter.decode(expression)
+    const period = result == null ? NONE_PERIOD : moment.duration(result)
     return {
       years: period.years(),
       months: period.months(),

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 
 class DefaultValueDeterminerChainTest extends FunSuite with Matchers {
 
-  private val param1Config: ParameterConfig = ParameterConfig(defaultValue = Some("123"), editor = None, None)
+  private val param1Config: ParameterConfig = ParameterConfig(defaultValue = Some("123"), editor = None, None, None)
   private val confMap = Map("node1" -> Map("param1" -> param1Config))
 
   private val uiParamInt = UIParameter(Parameter[Int]("param=2"), ParameterConfig.empty)

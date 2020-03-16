@@ -18,7 +18,7 @@ class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
   private val pv = new EvaluatedParameterPreparer(
     DefaultValueDeterminerChain(
       ParamDefaultValueConfig(
-        Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> ParameterConfig(defaultValue = Some(DEFAULT_PARAMETER_VALUE), editor = None, None)))
+        Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> ParameterConfig(defaultValue = Some(DEFAULT_PARAMETER_VALUE), editor = None, None, None)))
       )
     )
   )

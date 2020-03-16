@@ -1,12 +1,13 @@
 import React from "react"
 import {ExpressionObj} from "../types"
-import moment from "moment"
 import {Validator} from "../../Validators"
 import "./timeRange.styl"
 import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash"
 import i18next from "i18next"
 import {TimeRangeComponentType} from "./TimeRangeComponent"
+import {Formatter, FormatterType, typeFormatters} from "../Formatter"
+import moment from "moment"
 
 export type Duration = {
   days: number,
@@ -22,11 +23,10 @@ type Props = {
   readOnly: boolean,
   isMarked: boolean,
   components: Array<TimeRangeComponentType>,
+  formatter: Formatter,
 }
 
-const SPEL_DURATION_DECODE_REGEX = /^T\(java\.time\.Duration\)\.parse\('(.*?)'\)$/
 const SPEL_DURATION_SWITCHABLE_TO_REGEX = /^T\(java\.time\.Duration\)\.parse\('P([0-9]{1,}D)?(T([0-9]{1,}H)?([0-9]{1,}M)?)?'\)$/
-const SPEL_FORMATTED_DURATION = (isoDuration) => `T(java.time.Duration).parse('${isoDuration}')`
 const NONE_DURATION = {
   days: () => null,
   hours: () => null,
@@ -35,19 +35,21 @@ const NONE_DURATION = {
 
 export default function DurationEditor(props: Props) {
 
-  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components} = props
+  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components, formatter} = props
+
+  const durationFormatter = formatter == null ? typeFormatters[FormatterType.Duration] : formatter
 
   function isDurationDefined(value: Duration) {
     return value.days != null || value.hours != null || value.minutes != null
   }
 
   function encode(value: Duration): string {
-    return isDurationDefined(value) ? SPEL_FORMATTED_DURATION(moment.duration(value).toISOString()) : ""
+    return isDurationDefined(value) ? durationFormatter.encode(value) : ""
   }
 
   function decode(expression: string): Duration {
-    const regexExec = SPEL_DURATION_DECODE_REGEX.exec(expression)
-    const duration = regexExec == null ? NONE_DURATION : moment.duration(regexExec[1])
+    const decodeExecResult = durationFormatter.decode(expression)
+    const duration = decodeExecResult == null ? NONE_DURATION : moment.duration(decodeExecResult)
     return {
       days: duration.days(),
       hours: duration.hours(),

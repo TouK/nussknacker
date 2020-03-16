@@ -2,14 +2,14 @@ import BoolEditor from "./BoolEditor"
 import RawEditor from "./RawEditor"
 import StringEditor from "./StringEditor"
 import FixedValuesEditor from "./FixedValuesEditor"
-import _ from "lodash"
+import {concat, isEmpty} from "lodash"
 import {ExpressionObj} from "./types"
 import i18next from "i18next"
 import React from "react"
 import {DateEditor} from "./DateTimeEditor/DateEditor"
 import {TimeEditor} from "./DateTimeEditor/TimeEditor"
 import {DateTimeEditor} from "./DateTimeEditor/DateTimeEditor"
-import {Error, Validator, validators, ValidatorName} from "../Validators"
+import {Error, Validator, ValidatorName, validators} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
@@ -26,7 +26,7 @@ export type Editor<P extends EditorProps = EditorProps> = React.ComponentType<P>
 }
 
 type EditorConfig = {
-  editor: (param?: ParamType, displayRawEditor?) => Editor,
+  editor: (param?: ParamType, displayRawEditor?: boolean, expressionObj?: ExpressionObj) => Editor,
   hint: (switchable?: boolean, currentEditor?: Editor, param?: ParamType) => string,
   showSwitch?: boolean,
   switchableTo?: (expressionObj: ExpressionObj, param?: ParamType, values?: ValuesType) => boolean,
@@ -56,12 +56,15 @@ export enum EditorType {
   CRON_EDITOR = "CronParameterEditor",
 }
 
-const simpleEditorValidators = (param: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => _.concat(
-  param === undefined ?
-    validators[ValidatorName.MandatoryParameterValidator]() :
-    param.validators.map(validator => validators[validator.type]()),
-  validators[ValidatorName.ErrorValidator](errors, fieldLabel)
-)
+const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => {
+  const defaultValidator = validators[ValidatorName.MandatoryParameterValidator]();
+  const configuredValidators = paramConfig.validators?.map(validator => validators[validator.type](errors, fieldLabel, paramConfig.editor.possibleValues))
+  const errorValidator = isEmpty(errors) ? [] : [validators[ValidatorName.ErrorValidator](errors, fieldLabel)]
+  return concat(
+    isEmpty(configuredValidators) ? defaultValidator : configuredValidators,
+    errorValidator
+  )
+}
 
 /* eslint-enable i18next/no-literal-string */
 
@@ -94,14 +97,14 @@ export const editors: Record<EditorType, EditorConfig> = {
     hint: (switchable) => switchable ? FixedValuesEditor.switchableToHint() : FixedValuesEditor.notSwitchableToHint(),
     switchableTo: (expressionObj, param, values) => FixedValuesEditor.switchableTo(
       expressionObj,
-      !_.isEmpty(values) ? values : param.editor.possibleValues,
+      !isEmpty(values) ? values : param.editor.possibleValues,
     ),
-    values: (param, values) => !_.isEmpty(values) ? values : param.editor.possibleValues,
+    values: (param, values) => !isEmpty(values) ? values : param.editor.possibleValues,
   },
   [EditorType.DUAL_PARAMETER_EDITOR]: {
-    editor: (param, displayRawEditor) => displayRawEditor ?
+    editor: (param, displayRawEditor, expressionObj) => displayRawEditor ?
       editors[EditorType.RAW_PARAMETER_EDITOR].editor() :
-      editors[param.editor.simpleEditor.type].editor(),
+      editors[param.editor.simpleEditor.type].editor(param, displayRawEditor, expressionObj),
     hint: (switchable, currentEditor, param) => currentEditor === RawEditor ?
       editors[param.editor.simpleEditor.type].hint(switchable) :
       editors[EditorType.RAW_PARAMETER_EDITOR].hint(),

@@ -1,13 +1,15 @@
 import React from "react"
-import ProcessUtils from "../../../../../common/ProcessUtils"
-import {DualEditorMode, editors, EditorType} from "./Editor"
-import SwitchIcon from "./SwitchIcon"
-import FixedValuesEditor from "./FixedValuesEditor"
-import _ from "lodash"
+import ProcessUtils from "../../../../common/ProcessUtils"
+import {DualEditorMode, editors, EditorType} from "./expression/Editor"
+import SwitchIcon from "./expression/SwitchIcon"
+import FixedValuesEditor from "./expression/FixedValuesEditor"
+import {isEmpty} from "lodash"
+import {ExpressionObj} from "./expression/types"
+import {defaultFormatter, spelFormatters, typeFormatters} from "./expression/Formatter"
 
 type Props = {
   fieldType?: string,
-  expressionObj: $TodoType,
+  expressionObj: ExpressionObj,
   showSwitch: boolean,
   renderFieldLabel?: Function,
   fieldLabel?: string,
@@ -28,7 +30,7 @@ type State = {
   displayRawEditor: boolean,
 }
 
-class EditableExpression extends React.Component<Props, State> {
+class EditableEditor extends React.Component<Props, State> {
 
   toggleEditor = (_) => {
     this.setState({
@@ -42,24 +44,24 @@ class EditableExpression extends React.Component<Props, State> {
     const {param, expressionObj, values} = this.props
     this.state = {
       displayRawEditor: !(param?.editor.defaultMode === DualEditorMode.SIMPLE &&
-          editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
+        editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
     }
   }
 
   render() {
     const {
       fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param, renderFieldLabel, fieldLabel, readOnly,
-      values, errors, fieldName,
+      values, errors, fieldName, showValidation,
     } = this.props
 
     const paramType = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression")
 
     const editorType = paramType === EditorType.FIXED_VALUES_PARAMETER_EDITOR ?
       EditorType.FIXED_VALUES_PARAMETER_EDITOR :
-      !_.isEmpty(param) ? param.editor.type : EditorType.RAW_PARAMETER_EDITOR
+      !isEmpty(param) ? param.editor.type : EditorType.RAW_PARAMETER_EDITOR
     const editor = editors[editorType]
 
-    const Editor = editor.editor(param, this.state.displayRawEditor)
+    const Editor = editor.editor(param, this.state.displayRawEditor, expressionObj)
 
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
@@ -71,6 +73,9 @@ class EditableExpression extends React.Component<Props, State> {
           values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
           validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
           components={editor.components(param)}
+          formatter={expressionObj.language === "spel" && !isEmpty(spelFormatters[param.typ.refClazzName]) ?
+            spelFormatters[param.typ.refClazzName] : null}
+          showValidation={showValidation}
         />
         {
             param?.editor?.type === EditorType.DUAL_PARAMETER_EDITOR && (
@@ -88,4 +93,4 @@ class EditableExpression extends React.Component<Props, State> {
   }
 }
 
-export default EditableExpression
+export default EditableEditor
