@@ -6,9 +6,9 @@ import java.util.Optional
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, NotBlankParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameterValidator}
+import pl.touk.nussknacker.engine.api.validation.{Literal, LiteralType}
 
 class ValidatorsExtractorTest extends FunSuite with Matchers {
 
@@ -18,6 +18,7 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private val optionalParam = getFirstParam("optionalParam", classOf[Optional[String]])
   private val nullableNotBlankParam = getFirstParam("nullableNotBlankAnnotatedParam", classOf[String])
   private val notBlankParam = getFirstParam("notBlankAnnotatedParam", classOf[String])
+  private val literalIntegerParam = getFirstParam("literalIntegerAnnotatedParam", classOf[Int])
 
   private def notAnnotated(param: String) {}
 
@@ -30,6 +31,8 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private def nullableNotBlankAnnotatedParam(@Nullable @NotBlank notBlank: String) {}
 
   private def notBlankAnnotatedParam(@NotBlank notBlank: String) {}
+
+  private def literalIntegerAnnotatedParam(@Literal(`type` = LiteralType.Integer) intParam: Int) {}
 
   private def getFirstParam(name: String, params: Class[_]*) = {
     this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
@@ -69,5 +72,9 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
 
   test("extract notBlank value validator when @NotBlank annotation detected") {
     ValidatorsExtractor(None).extract(notBlankParam) shouldBe List(MandatoryParameterValidator, NotBlankParameterValidator)
+  }
+
+  test("extract literalIntegerParam value validator when @Literal(type=LiteralType.INTEGER) annotation detected") {
+    ValidatorsExtractor(None).extract(literalIntegerParam) shouldBe List(MandatoryParameterValidator, LiteralIntValidator)
   }
 }

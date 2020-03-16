@@ -70,7 +70,7 @@ const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
     notBlankValueValidator,
   ]
 
-  const configuredValidators = paramConfig.validators
+  const configuredValidators = paramConfig?.validators
     .map(v => validators[v.type])
     .filter(v => v != null)
     .map(v => v(paramConfig.editor.possibleValues))

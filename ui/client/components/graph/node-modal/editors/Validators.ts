@@ -73,7 +73,7 @@ export const literalIntValueValidator: Validator = {
 }
 
 export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
-  isValid: value => possibleValues.find(pv => pv.expression === value.value) != null,
+  isValid: value => possibleValues.map(pv => pv.expression).includes(value),
   message: () => i18next.t("fixedValueValidator.message", "This value has to be one of values: ") + possibleValues.map(value => value.expression).join(","),
   description: () => i18next.t("fixedValueValidator.description", "Please choose one of available values"),
   handledErrorType: HandledErrorType.InvalidPropertyFixedValue,

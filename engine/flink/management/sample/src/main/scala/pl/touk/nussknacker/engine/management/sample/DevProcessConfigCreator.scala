@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableActi
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.validation.LiteralInt
+import pl.touk.nussknacker.engine.api.validation.{Literal, LiteralType}
 import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, Context, CustomStreamTransformer, DisplayJson, DisplayJsonWithEncoder, Documentation, HideToString, LazyParameter, MetaData, MethodToInvoke, ParamName, QueryableStateNames, Service, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
@@ -533,8 +533,14 @@ class SimpleTypesService extends Service with Serializable {
              rawParam: String,
 
              @ParamName("intParam")
+             @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+             @Literal(`type` = LiteralType.Integer)
+             intParam: Int,
+
+             @ParamName("rawIntParam")
              @RawEditor
-             @LiteralInt intParam: Int,
+             @Literal(`type` = LiteralType.Integer)
+             rawIntParam: Int,
 
              @ParamName("fixedValuesStringParam")
              @SimpleEditor(

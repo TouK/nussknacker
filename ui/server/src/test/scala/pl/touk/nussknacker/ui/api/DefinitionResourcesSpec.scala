@@ -48,7 +48,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor = getParamEditor("simpleTypesService", "intParam")
+      val editor = getParamEditor("simpleTypesService", "rawIntParam")
 
       editor shouldBe Json.obj("type" -> Json.fromString("RawParameterEditor"))
     }
