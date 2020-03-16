@@ -7,7 +7,7 @@ import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameterError, NodeId, BlankParameterError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, NodeId, BlankParameter}
 
 /**
  * Extend this trait to configure new parameter validator which should be handled on FE.
@@ -30,9 +30,9 @@ case object MandatoryParameterValidator extends ParameterValidator {
   override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isNotBlank(expression)) valid(Unit) else invalid(error(paramName, nodeId.id))
 
-  private def error(paramName: String, nodeId: String): EmptyMandatoryParameterError = EmptyMandatoryParameterError(
-    "Parameter expression is mandatory and can't be empty",
-    "Please fill expression for this parameter",
+  private def error(paramName: String, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
+    "This field is mandatory and can not be empty",
+    "Please fill field for this parameter",
     paramName,
     nodeId
   )
@@ -48,9 +48,9 @@ case object NotBlankParameterValidator extends ParameterValidator {
   override def isValid(paramName: String, expression: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (isBlankStringLiteral(expression)) invalid(error(paramName, nodeId.id)) else valid(Unit)
 
-  private def error(paramName: String, nodeId: String): BlankParameterError = BlankParameterError(
-    "Parameter expression value can't be blank",
-    "Please fill expression for this parameter",
+  private def error(paramName: String, nodeId: String): BlankParameter = BlankParameter(
+    "This field value is required and can not be blank",
+    "Please fill field value for this parameter",
     paramName,
     nodeId
   )

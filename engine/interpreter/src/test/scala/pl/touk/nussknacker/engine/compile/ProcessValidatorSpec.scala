@@ -179,7 +179,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(EmptyMandatoryParameterError(_, _, "mandatoryParam", "customNodeId"), _)) =>
+      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, "mandatoryParam", "customNodeId"), _)) =>
     }
   }
 
@@ -198,11 +198,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
       validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        BlankParameterError(_, _, "notBlankParam", "customNodeId1"),
+        BlankParameter(_, _, "notBlankParam", "customNodeId1"),
         List(
-          BlankParameterError(_, _, "notBlankParam", "customNodeId2"),
-          BlankParameterError(_, _, "notBlankParam", "customNodeId3"),
-          BlankParameterError(_, _, "notBlankParam", "customNodeId4")
+          BlankParameter(_, _, "notBlankParam", "customNodeId2"),
+          BlankParameter(_, _, "notBlankParam", "customNodeId3"),
+          BlankParameter(_, _, "notBlankParam", "customNodeId4")
         )
       )) =>
     }

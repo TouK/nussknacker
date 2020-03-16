@@ -37,7 +37,6 @@ object PrettyValidationErrors {
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
 
-      // Parameter validation error case
       case pve: ParameterValidationError => handleParameterValidationError(pve)
 
       //exceptions below should not really happen (unless services change and process becomes invalid)

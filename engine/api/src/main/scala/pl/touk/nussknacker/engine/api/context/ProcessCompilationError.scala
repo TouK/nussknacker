@@ -140,9 +140,9 @@ object ProcessCompilationError {
       WrongParameters(requiredParameters, passedParameters, nodeId.id)
   }
 
-  case class BlankParameterError(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+  case class BlankParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
-  case class EmptyMandatoryParameterError(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+  case class EmptyMandatoryParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
   case class OverwrittenVariable(variableName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode

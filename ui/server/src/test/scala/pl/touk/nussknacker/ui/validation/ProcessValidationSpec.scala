@@ -270,9 +270,9 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes shouldBe Map(
       "custom" -> List(NodeValidationError(
-        "EmptyMandatoryParameterError",
-        "Parameter expression is mandatory and can't be empty",
-        "Please fill expression for this parameter",
+        "EmptyMandatoryParameter",
+        "This field is mandatory and can not be empty",
+        "Please fill field for this parameter",
         Some("expression"),
         NodeValidationErrorType.SaveAllowed
       )))

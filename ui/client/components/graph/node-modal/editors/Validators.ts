@@ -46,8 +46,8 @@ export const errorValidator = (errors: Array<Error>, fieldName: string): Validat
 
 export const mandatoryValueValidator: Validator = {
   isValid: value => !isEmpty(value),
-  message: () => i18next.t("mandatoryValueValidator.message", "Parameter expression is mandatory and can't be empty"),
-  description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
+  message: () => i18next.t("mandatoryValueValidator.message", "This field is mandatory and can not be empty"),
+  description: () => i18next.t("validator.description", "Please fill field for this parameter"),
   handledErrorType: HandledErrorType.EmptyMandatoryParameterError,
   validatorType: ValidatorType.Frontend,
 }
@@ -56,8 +56,8 @@ const blankStringLiteralPattern = new RegExp("'\\s*'")
 
 export const notBlankValueValidator: Validator = {
   isValid: value => value != null && !blankStringLiteralPattern.test(value.trim()),
-  message: () => i18next.t("notBlankValueValidator.message", "Parameter expression value can't be blank"),
-  description: () => i18next.t("validator.description", "Please fill expression for this parameter"),
+  message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
+  description: () => i18next.t("validator.description", "Please fill field value for this parameter"),
   handledErrorType: HandledErrorType.BlankParameterError,
   validatorType: ValidatorType.Frontend,
 }
