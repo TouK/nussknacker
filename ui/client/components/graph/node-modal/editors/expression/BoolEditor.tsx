@@ -40,6 +40,8 @@ const BoolEditor: Editor<Props> = (props: Props) => {
       onValueChange={onValueChange}
       readOnly={readOnly}
       className={className}
+      validators={[]}
+      showValidation={true}
     />
   )
 }
