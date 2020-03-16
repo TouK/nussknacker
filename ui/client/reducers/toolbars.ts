@@ -57,17 +57,29 @@ function setupPositions(positions: Positions, toolbars: Array<[string, ToolbarsS
   }, positions)
 }
 
+function insertItemOnTargetPlaceOnList(
+  state: Positions,
+  fromToolbar: ToolbarsSide | string,
+  toToolbar: ToolbarsSide | string,
+  fromIndex: number,
+  toIndex: number,
+): [string[], string[]] {
+  const isSameToolbar = fromToolbar === toToolbar
+
+  const src = [].concat(state[fromToolbar])
+  const [item] = src.splice(fromIndex, 1)
+
+  const dst = isSameToolbar ? src : [].concat(state[toToolbar])
+  dst.splice(toIndex, 0, item)
+  return [src, dst]
+}
+
 const positions: Reducer<Positions> = (state = {}, action) => {
   switch (action.type) {
     case "MOVE_TOOLBAR":
       const [fromToolbar, fromIndex] = action.from
       const [toToolbar, toIndex] = action.to
-
-      const src = [].concat(state[fromToolbar])
-      const [item] = src.splice(fromIndex, 1)
-
-      const dst = fromToolbar === toToolbar ? src : [].concat(state[toToolbar])
-      dst.splice(toIndex, 0, item)
+      const [src, dst] = insertItemOnTargetPlaceOnList(state, fromToolbar, toToolbar, fromIndex, toIndex)
 
       return {
         ...state,
