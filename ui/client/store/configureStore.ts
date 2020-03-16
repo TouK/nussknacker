@@ -24,7 +24,6 @@ export default function configureStore() {
   const persistor = persistStore(store)
 
   if (module.hot) {
-    // eslint-disable-next-line i18next/no-literal-string
     module.hot.accept("../reducers", () => {
       const nextReducer = require("../reducers").reducer
       store.replaceReducer(persistReducer(persistConfig, nextReducer))
