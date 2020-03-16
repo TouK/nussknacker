@@ -1,19 +1,20 @@
 version: '3.0'
 
 services:
-# TODO: UPGRADE INFLUXDB
   influxdb:
     container_name: nussknacker_influxdb
-    image: influxdb:${INFLUXDB_VERSION-1.1.5}
-    command: ["/runWithEspDb.sh"]
+    image: influxdb:${INFLUXDB_VERSION-1.7.10-alpine}
+    environment:
+      INFLUXDB_DB: esp
     volumes:
       - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
-      - nussknacker_storage_influxdb:/var/lib/influxdb/data
-      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
+      - nussknacker_storage_influxdb:/var/lib/influxdb
 
   zookeeper:
     container_name: nussknacker_zookeeper
     image: zookeeper:${ZOOKEEPER_VERSION-3.5}
+    environment:
+      JVMFLAGS: "-Xms64m -Xmx128m"
     volumes:
       - nussknacker_storage_zookeeper_datalog:/datalog
       - nussknacker_storage_zookeeper_data:/data
@@ -35,8 +36,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - nussknacker_storage_kafka_data:/kafka
-    links:
-      - zookeeper
     depends_on:
       - zookeeper
 
@@ -64,9 +63,7 @@ services:
     depends_on:
       - zookeeper
       - kafka
-    links:
       - influxdb
-      - zookeeper
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
@@ -79,15 +76,11 @@ services:
       - "3063:9069"
     entrypoint: /flink-entrypoint.sh
     command: taskmanager
-    links:
-      - influxdb
-      - jobmanager
-      - kafka
-      - zookeeper
     depends_on:
       - zookeeper
       - kafka
       - jobmanager
+      - influxdb
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
@@ -100,11 +93,18 @@ services:
 
   elasticsearch:
     container_name: nussknacker_elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.4.2}
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.6.1}
     environment:
-      ES_JAVA_OPTS: -Xms128m -Xmx512m
+      cluster.name: "elk-nussknacker"
+      network.host: "0.0.0.0"
+      discovery.type: "single-node"
+      xpack.security.enabled: "false"
+      xpack.monitoring.enabled: "false"
+      xpack.ml.enabled: "false"
+      xpack.graph.enabled: "false"
+      xpack.watcher.enabled: "false"
+      ES_JAVA_OPTS: -Xms128m -Xmx256m
     volumes:
-      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - nussknacker_storage_elasticsearch_data:/usr/share/elasticsearch/data
     ulimits:
       nproc: 70000
@@ -114,41 +114,36 @@ services:
 
   logstash:
     container_name: nussknacker_logstash
-    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.4.2}
-    links:
-      - elasticsearch
-      - kafka
+    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.6.1}
     depends_on:
       - elasticsearch
       - kafka
+    environment:
+      XPACK_MONITORING_ENABLED: "false"
+      LS_JAVA_OPTS: "-Xms128m -Xmx256m"
     volumes:
-      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logstash/templates:/usr/share/logstash/templates
       - nussknacker_storage_logstash_data:/usr/share/logstash/data
 
   kibana:
     container_name: nussknacker_kibana
-    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.4.2}
-    links:
-      - elasticsearch
+    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.6.1}
     depends_on:
       - elasticsearch
     volumes:
       - ./kibana/config/:/usr/share/kibana/config
 
-  # TODO: UPGRADE GRAFANA
   grafana:
     container_name: nussknacker_grafana
-    image: grafana/grafana:${GRAFANA_VERSION-5.4.5}
-    entrypoint: ["/runWithFlinkEspBoard.sh"]
+    image: grafana/grafana:${GRAFANA_VERSION-6.6.2}
     volumes:
-      - ./grafana/runWithFlinkEspBoard.sh:/runWithFlinkEspBoard.sh
-      - ./grafana/Flink-ESP.json:/Flink-ESP.json
-    links:
-      - "influxdb:influxdb"
+      - ./grafana:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
+      - GF_SECURITY_ALLOW_EMBEDDING=true
     depends_on:
       - influxdb
 
