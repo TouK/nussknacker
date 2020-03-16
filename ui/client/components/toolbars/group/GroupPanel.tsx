@@ -10,16 +10,16 @@ import {getCapabilities} from "../../../reducers/selectors/other"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 
 function GroupPanel() {
-  const capabilities = useSelector(getCapabilities)
+  const {write} = useSelector(getCapabilities)
   const {t} = useTranslation()
 
   return (
     <CollapsibleToolbar id="GROUP-PANEL" title={t("panels.group.title", "Group")}>
       <ToolbarButtons>
-        {capabilities.write ? <GroupStart/> : null}
-        {capabilities.write ? <GroupFinish/> : null}
-        {capabilities.write ? <GroupCancel/> : null}
-        {capabilities.write ? <Ungroup/> : null}
+        {write ? <GroupStart/> : null}
+        {write ? <GroupFinish/> : null}
+        {write ? <GroupCancel/> : null}
+        {write ? <Ungroup/> : null}
       </ToolbarButtons>
     </CollapsibleToolbar>
   )
