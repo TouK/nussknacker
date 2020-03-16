@@ -1,8 +1,11 @@
+/* eslint-disable i18next/no-literal-string */
 import React, {PropsWithChildren, useRef, useState, useEffect} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
 import {useDebouncedCallback} from "use-debounce"
 import cn from "classnames"
 import styles from "./ScrollbarsExtended.styl"
+
+const OBSERVED_EVENTS = ["mouseover", "click", "keyup"]
 
 export function ScrollbarsExtended({children, onScrollToggle}: PropsWithChildren<{ onScrollToggle?: (isEnabled: boolean) => void }>) {
   const scrollbars = useRef<Scrollbars>()
@@ -14,14 +17,8 @@ export function ScrollbarsExtended({children, onScrollToggle}: PropsWithChildren
   }, 50)
 
   useEffect(() => {
-    window.addEventListener("mouseover", onUpdate)
-    window.addEventListener("click", onUpdate)
-    window.addEventListener("keyup", onUpdate)
-    return () => {
-      window.removeEventListener("mouseover", onUpdate)
-      window.removeEventListener("click", onUpdate)
-      window.removeEventListener("keyup", onUpdate)
-    }
+    OBSERVED_EVENTS.forEach(eventName => window.addEventListener(eventName, onUpdate))
+    return () => OBSERVED_EVENTS.forEach(eventName => window.removeEventListener(eventName, onUpdate))
   }, [onUpdate])
 
   useEffect(() => {
