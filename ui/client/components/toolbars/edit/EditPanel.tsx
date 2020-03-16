@@ -34,10 +34,10 @@ function EditPanel(props: Props) {
       <ToolbarButtons small>
         {write ? <Undo/> : null}
         {write ? <Redo/> : null}
-        {write ? <Layout/> : null}
         {write ? <Copy selectionActions={selectionActions}/> : null}
         {write ? <Paste selectionActions={selectionActions}/> : null}
         {write ? <Delete selectionActions={selectionActions}/> : null}
+        {write ? <Layout/> : null}
       </ToolbarButtons>
     </CollapsibleToolbar>
   )

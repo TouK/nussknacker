@@ -66,7 +66,7 @@ function Toolbars(props: Props) {
       id: "DETAILS-PANEL",
       // TODO remove SideNodeDetails? turn out to be not useful
       component: <DetailsPanel/>,
-      defaultSide: ToolbarsSide.BottomRight,
+      defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "TIPS-PANEL",
@@ -81,17 +81,17 @@ function Toolbars(props: Props) {
     {
       id: "VERSIONS-PANEL",
       component: <VersionsPanel/>,
-      defaultSide: ToolbarsSide.BottomLeft,
+      defaultSide: ToolbarsSide.TopLeft,
     },
     {
       id: "COMMENTS-PANEL",
       component: <CommentsPanel/>,
-      defaultSide: ToolbarsSide.BottomLeft,
+      defaultSide: ToolbarsSide.TopLeft,
     },
     {
       id: "ATTACHMENTS-PANEL",
       component: <AttachmentsPanel/>,
-      defaultSide: ToolbarsSide.BottomLeft,
+      defaultSide: ToolbarsSide.TopLeft,
     },
   ]
 

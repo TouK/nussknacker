@@ -13,9 +13,9 @@ function ViewPanel() {
     <CollapsibleToolbar id="VIEW-PANEL" title={t("panels.view.title", "view")}>
       <ToolbarButtons>
         <BussinesViewSwitch/>
-        <ResetViewButton/>
         <ZoomInButton/>
         <ZoomOutButton/>
+        <ResetViewButton/>
       </ToolbarButtons>
     </CollapsibleToolbar>
   )

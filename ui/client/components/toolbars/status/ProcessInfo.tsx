@@ -118,9 +118,9 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
           </SwitchTransition>
           <ToolbarButtons>
             {capabilities.write ? <SaveButton/> : null}
-            <Metrics/>
             {capabilities.deploy ? <Deploy/> : null}
             {capabilities.deploy ? <Cancel/> : null}
+            <Metrics/>
           </ToolbarButtons>
         </DragHandle>
       </CollapsibleToolbar>
