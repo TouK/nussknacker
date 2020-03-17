@@ -4,17 +4,17 @@ import java.time.temporal.ChronoUnit
 import java.time._
 
 import com.cronutils.model.Cron
+import javax.annotation.Nullable
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 
 import scala.concurrent.Future
 
-class DatesTypesService extends Service with Serializable {
+class MeetingService extends Service with Serializable {
   @MethodToInvoke
-  def invoke(@ParamName("MeetingDate") meetingDate: LocalDateTime,
-             @ParamName("CreateDate") createDate: LocalDate,
-             @ParamName("CreateTime") createTime: LocalTime,
-             @ParamName("MeetingDuration")
+  def invoke(@ParamName("Date") date: LocalDateTime,
+             @ParamName("EndTime") endTime: LocalTime,
+             @ParamName("Duration")
              @DualEditor(
                simpleEditor = new SimpleEditor(
                  `type` = SimpleEditorType.DURATION_EDITOR,
@@ -22,9 +22,9 @@ class DatesTypesService extends Service with Serializable {
                ),
                defaultMode = DualEditorMode.SIMPLE
              )
-             meetingDuration: Duration,
+             duration: Duration,
 
-             @ParamName("MeetingPeriod")
+             @ParamName("Period")
              @DualEditor(
                simpleEditor = new SimpleEditor(
                  `type` = SimpleEditorType.PERIOD_EDITOR,
@@ -32,7 +32,11 @@ class DatesTypesService extends Service with Serializable {
                ),
                defaultMode = DualEditorMode.SIMPLE
              )
-             meetingPeriod: Period,
+             period: Period,
+
+             @ParamName("NextMeeting")
+             @Nullable
+             nextMeeting: LocalDate,
 
              @ParamName("Scheduler")
              @DualEditor(
@@ -41,6 +45,7 @@ class DatesTypesService extends Service with Serializable {
                ),
                defaultMode = DualEditorMode.SIMPLE
              )
+             @Nullable
              cronScheduler: Cron
             ): Future[Unit]
   = Future.successful(Unit)

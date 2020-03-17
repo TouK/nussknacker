@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.demo.custom.{EventsCounter, TransactionAmountAggregator}
-import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService, CollectionTypesService, DatesTypesService, SimpleTypesService, ValidatorTypesService}
+import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService, MeetingService, SimpleTypesService, ValidatorTypesService}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingRestartingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
@@ -44,9 +44,11 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(config: Config): Map[String, WithCategories[Service]] = {
     Map(
+      "clientService" -> all(new ClientService),
+      "alertService" -> all(new AlertService("/tmp/alerts")),
       "validatorTypesService" -> all(new ValidatorTypesService()),
-      "datesTypesService" -> all(new DatesTypesService()),
-      "simpleTypesService" -> all(new SimpleTypesService()),
+      "meetingService" -> all(new MeetingService()),
+      "simpleTypesService" -> all(new SimpleTypesService())
     )
   }
 
