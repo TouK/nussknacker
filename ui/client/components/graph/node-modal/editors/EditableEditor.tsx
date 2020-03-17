@@ -73,7 +73,7 @@ class EditableEditor extends React.Component<Props, State> {
           values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
           validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
           components={editor.components(param)}
-          formatter={expressionObj.language === "spel" && !isEmpty(spelFormatters[param.typ.refClazzName]) ?
+          formatter={expressionObj.language === "spel" && !isEmpty(spelFormatters[param?.typ.refClazzName]) ?
             spelFormatters[param.typ.refClazzName] : null}
           showValidation={showValidation}
         />
