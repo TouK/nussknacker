@@ -8,6 +8,9 @@ import ProcessUtils from "../../common/ProcessUtils"
 import Errors from "./Errors"
 import ValidTips from "./ValidTips"
 import Warnings from "./Warnings"
+import {DragHandle} from "../toolbarComponents/DragHandle"
+import {CollapsibleToolbar} from "../toolbarComponents/CollapsibleToolbar"
+import i18next from "i18next"
 
 export class Tips extends Component {
 
@@ -29,20 +32,36 @@ export class Tips extends Component {
     const warnings = (currentProcess.validationResult || {}).warnings
 
     return (
-      <div id="tipsPanel" className={this.props.isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
-        <Scrollbars renderThumbVertical={props => <div key={uuid4()} {...props} className="thumbVertical"/>}
-                    hideTracksWhenNotNeeded={true}>
-          {<ValidTips grouping={grouping}
-                      testing={testing}
-                      hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}/>}
-          {!ProcessUtils.hasNoErrors(currentProcess) && <Errors errors={errors}
-                                                                showDetails={this.showDetails}
-                                                                currentProcess={currentProcess}/>}
-          {!ProcessUtils.hasNoWarnings(currentProcess) && <Warnings warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
-                                                                    showDetails={this.showDetails}
-                                                                    currentProcess={currentProcess}/>}
-        </Scrollbars>
-      </div>
+      <CollapsibleToolbar title={i18next.t("panels.tips.title", "Tips")} id="TIPS-INFO">
+        <DragHandle>
+          <div id="tipsPanel" className={this.props.isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
+            <Scrollbars
+              renderThumbVertical={props => <div key={uuid4()} {...props} className="thumbVertical"/>}
+              hideTracksWhenNotNeeded={true}
+            >
+              {<ValidTips
+                grouping={grouping}
+                testing={testing}
+                hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}
+              />}
+              {!ProcessUtils.hasNoErrors(currentProcess) && (
+                <Errors
+                  errors={errors}
+                  showDetails={this.showDetails}
+                  currentProcess={currentProcess}
+                />
+              )}
+              {!ProcessUtils.hasNoWarnings(currentProcess) && (
+                <Warnings
+                  warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
+                  showDetails={this.showDetails}
+                  currentProcess={currentProcess}
+                />
+              )}
+            </Scrollbars>
+          </div>
+        </DragHandle>
+      </CollapsibleToolbar>
     )
   }
 }

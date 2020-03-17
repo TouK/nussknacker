@@ -57,6 +57,13 @@ export function reducer(state: UiState = emptyUiState, action: Action): UiState 
         rightPanelIsOpened: !state.rightPanelIsOpened,
       })
     }
+    case "RESET_TOOLBARS": {
+      return withAllModalsClosed({
+        ...state,
+        leftPanelIsOpened: true,
+        rightPanelIsOpened: true,
+      })
+    }
     case "SWITCH_TOOL_TIPS_HIGHLIGHT": {
       return withAllModalsClosed({
         ...state,
