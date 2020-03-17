@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.time._
 import java.time.temporal.ChronoUnit
 import java.util
-import java.util.Optional
+import java.util.{Date, Optional}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.cronutils.model.Cron
@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableActi
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.validation.{Literal}
+import pl.touk.nussknacker.engine.api.validation.Literal
 import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, Context, CustomStreamTransformer, DisplayJson, DisplayJsonWithEncoder, Documentation, HideToString, LazyParameter, MetaData, MethodToInvoke, ParamName, QueryableStateNames, Service, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
@@ -258,10 +258,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def all[T](value: T) = WithCategories(value, "Category1", "Category2")
 
-  override def buildInfo(): Map[String, String] = {
+  override val buildInfo: Map[String, String] = {
     Map(
       "process-version" -> "0.1",
-      "engine-version" -> "0.1"
+      "engine-version" -> "0.1",
+      "generation-time" -> new Date().toString
     )
   }
 }

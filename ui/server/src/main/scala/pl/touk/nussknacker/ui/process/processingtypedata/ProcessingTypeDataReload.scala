@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 
@@ -20,7 +21,7 @@ trait ProcessingTypeDataReload {
  * to be able to wait for all operations to complete
  */
 class ReloadableProcessingTypeDataProvider(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData])
-  extends ProcessingTypeDataProvider[ProcessingTypeData] with ProcessingTypeDataReload {
+  extends ProcessingTypeDataProvider[ProcessingTypeData] with ProcessingTypeDataReload with LazyLogging {
 
   @volatile var current: ProcessingTypeDataProvider[ProcessingTypeData] = loadMethod()
   
@@ -29,9 +30,12 @@ class ReloadableProcessingTypeDataProvider(loadMethod: () => ProcessingTypeDataP
   override def all: Map[ProcessingType, ProcessingTypeData] = current.all
 
   override def reloadAll(): Unit = synchronized {
+    logger.info("Reloading processing type data")
     val old = current
     current = loadMethod()
+    logger.info("Processing type data reloaded, closing old models")
     old.all.values.foreach(_.close())
+    logger.info("Processing type data reloading finished")
   }
 }
 
