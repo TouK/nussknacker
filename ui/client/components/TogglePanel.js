@@ -8,14 +8,14 @@ import SvgDiv from "./SvgDiv"
 export default class TogglePanel extends React.Component {
 
   static propTypes = {
-    type: PropTypes.oneOf(["right", "left"]).isRequired,
+    type: PropTypes.oneOf(["RIGHT", "LEFT"]).isRequired,
     isOpened: PropTypes.bool.isRequired,
     onToggle: PropTypes.func.isRequired,
   }
 
   render() {
     const {isOpened, onToggle, type} = this.props
-    const left = type === "left" ?  isOpened : !isOpened
+    const left = type === "LEFT" ?  isOpened : !isOpened
     const iconFile = `arrows/arrow-${left ? "left" : "right"}.svg`
     return (
       <SvgDiv className={cn("togglePanel", type, {"is-opened": isOpened})} onClick={onToggle} svgFile={iconFile}/>
