@@ -1,0 +1,135 @@
+@require "../../stylesheets/_variables.styl"
+
+:local
+    .droppable
+        min-width 1px
+        display flex
+        flex-direction column
+        flex-grow 1
+        justify-content space-around
+
+    .droppable:first-child
+        justify-content flex-start
+
+    .droppable:last-child
+        justify-content flex-end
+
+
+    .draggable-list
+        display flex
+        flex-direction column
+
+    .draggable-list > .background
+        position relative
+        transition all .3s
+        min-height 0
+        display flex
+        flex-direction column
+
+    .is-dragging-started .draggable-list > .background
+    .is-dragging-from > .draggable-list > .background
+    .is-dragging-over > .draggable-list > .background
+        min-height 3em
+        min-width @min-height
+
+        &::after
+            transition all .3s
+            content ''
+            position absolute
+            top 0
+            left 0
+            right 0
+            bottom 0
+            backdrop-filter blur(.5px)
+            background rgba(white, 0.2)
+            outline 3px dashed white
+            outline-offset -4px
+
+    .is-dragging-from > .draggable-list > .background
+        &::after
+            background rgba(yellow, 0.2)
+            outline-color yellow
+
+    .is-dragging-over > .draggable-list > .background
+        &::after
+            background rgba(deepskyblue, 0.2)
+            outline-color deepskyblue
+
+
+    .draggable
+
+        &.is-dragging:focus
+            outline none
+
+        &:focus
+            outline 4px solid deepskyblue
+            outline-offset -4px
+
+        .background
+            position relative
+            box-sizing border-box
+
+    .draggable.is-dragging
+        .background
+            backdrop-filter blur(8px)
+            box-shadow 0 1px 3px rgba(black, .25)
+
+        .background::after
+            transition all .3s
+            content ''
+            line-height 0
+            position absolute
+            top 0
+            left 0
+            right 0
+            bottom 0
+            backdrop-filter blur(.5px)
+            outline 2px dashed orangered
+            background rgba(orangered, .2)
+            outline-offset -3px
+
+        .content
+            transition all .3s
+            opacity .5
+
+
+    .draggable.is-animating
+        .content
+            opacity 1
+
+    .draggable.is-dragging-over
+        .content
+            opacity 1
+
+        .background::after
+            backdrop-filter none
+            background rgba(lime, .05)
+            outline 2px solid lime
+            outline-offset -2.5px
+
+
+    gap = 5px
+
+    .draggable
+        padding (gap/ 2) 0
+
+    //&.first
+    //    padding-top 0
+
+    //&.last
+    //    padding-bottom 0
+
+    .droppable
+        margin (gap/ 2) 0
+
+        &.top
+            margin-bottom 0
+
+        &.bottom
+            margin-top 0
+
+    .left .draggable-list > .background
+        align-items flex-start
+
+    .right .draggable-list > .background
+        align-items flex-end
