@@ -64,7 +64,7 @@ export default class FixedValuesEditor extends React.Component<Props> {
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
         />
-        {showValidation && <ValidationLabels validators={validators} values={[option]} additionalClassName={"fixed-values-editor"}/>}
+        {showValidation && <ValidationLabels validators={validators} values={[option.value]} additionalClassName={"fixed-values-editor"}/>}
       </React.Fragment>
     )
   }

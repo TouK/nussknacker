@@ -122,10 +122,12 @@ const validators = () =>  [
   {
     isValid: (clashedNames, name) => mandatoryValueValidator.isValid(name),
     message: mandatoryValueValidator.message,
+    description: mandatoryValueValidator.description,
   },
   {
     isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),
-    message: DialogMessages.valueAlreadyTaken(),
+    message: DialogMessages.valueAlreadyTaken,
+    description: DialogMessages.valueAlreadyTakenDescription,
   },
 ]
 

@@ -13,6 +13,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.{Encoder, Json}
 import javax.annotation.Nullable
+import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
@@ -34,6 +35,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableActi
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.validation.{Literal}
 import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, Context, CustomStreamTransformer, DisplayJson, DisplayJsonWithEncoder, Documentation, HideToString, LazyParameter, MetaData, MethodToInvoke, ParamName, QueryableStateNames, Service, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
@@ -511,19 +513,42 @@ class SimpleTypesService extends Service with Serializable {
                `type` = SimpleEditorType.BOOL_EDITOR
              ) booleanParam: Boolean,
 
-             @ParamName("stringParam")
+             @ParamName("DualParam")
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.SIMPLE
-             ) string: String,
+             )
+             @NotBlank
+             dualParam: String,
+
+             @ParamName("SimpleParam")
+             @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+             simpleParam: String,
+
+             @ParamName("RawParam")
+             @DualEditor(
+               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+               defaultMode = DualEditorMode.RAW
+             )
+             rawParam: String,
 
              @ParamName("intParam")
-             @RawEditor intParam: Int,
+             @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+             @Literal
+             intParam: Int,
+
+             @ParamName("rawIntParam")
+             @RawEditor
+             @Literal
+             rawIntParam: Int,
 
              @ParamName("fixedValuesStringParam")
              @SimpleEditor(
                `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-               possibleValues = Array(new LabeledExpression(expression = "'Max'", label = "Max"), new LabeledExpression(expression = "'Min'", label = "Min"))
+               possibleValues = Array(
+                 new LabeledExpression(expression = "'Max'", label = "Max"),
+                 new LabeledExpression(expression = "'Min'", label = "Min")
+               )
              ) fixedValuesStringParam: String,
 
              @ParamName("bigDecimalParam") bigDecimalParam: java.math.BigDecimal,

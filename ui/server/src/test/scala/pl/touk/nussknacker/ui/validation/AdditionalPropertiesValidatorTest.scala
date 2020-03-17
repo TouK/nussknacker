@@ -74,7 +74,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
     result.errors.processPropertiesErrors should matchPattern {
       case List(
       NodeValidationError("InvalidLiteralIntValue", _, _, Some("propReq"), NodeValidationErrorType.SaveNotAllowed),
-      NodeValidationError("MandatoryParameterValidator", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
+      NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
       ) =>
     }
   }

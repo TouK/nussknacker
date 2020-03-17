@@ -16,7 +16,9 @@ export default function ValidationLabels(props: Props) {
     <div className={`validation-labels ${additionalClassName}`}>
       {withoutDuplications(validators).map(validator => validator.isValid(...values) ?
         null :
-        <span key={uuid4()} className="validation-label" title={validator.description}>{validator.message}</span>)}
+        <span key={uuid4()} className="validation-label" title={validator.description && validator.description()}>
+          {validator.message()}
+        </span>)}
     </div>
   )
 }

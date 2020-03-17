@@ -10,7 +10,8 @@ case class ValidatorsExtractor(possibleEditor: Option[ParameterEditor]) {
     List(
       MandatoryValidatorExtractor,
       AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
-      FixedValueValidatorExtractor(possibleEditor)
+      FixedValueValidatorExtractor(possibleEditor),
+      LiteralValidatorExtractor
     ).flatMap(_.extract(parameter))
   }
 }

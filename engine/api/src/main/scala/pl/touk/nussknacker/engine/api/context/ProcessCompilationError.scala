@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.context
 
 import cats.Applicative
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.definition.ParameterValidator
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InASingleNode, NodeId}
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -11,6 +11,12 @@ sealed trait ProcessCompilationError {
 sealed trait ProcessUncanonizationError extends ProcessCompilationError
 
 sealed trait PartSubGraphCompilationError extends ProcessCompilationError
+
+sealed trait ParameterValidationError extends PartSubGraphCompilationError with InASingleNode {
+  def message: String
+  def description: String
+  def paramName: String
+}
 
 object ProcessCompilationError {
 
@@ -134,13 +140,9 @@ object ProcessCompilationError {
       WrongParameters(requiredParameters, passedParameters, nodeId.id)
   }
 
-  case class ErrorValidationParameter(validator: ParameterValidator, paramName: String, nodeId: String)
-    extends PartSubGraphCompilationError with InASingleNode
+  case class BlankParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
-  object ErrorValidationParameter {
-    def apply(validator: ParameterValidator, paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      ErrorValidationParameter(validator, paramName, nodeId.id)
-  }
+  case class EmptyMandatoryParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
   case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode

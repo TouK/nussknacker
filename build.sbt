@@ -351,6 +351,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
     libraryDependencies ++= {
       Seq(
         "com.cronutils" % "cron-utils" % cronParserV,
+        "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-queryable-state-runtime" % flinkV % "test",
         "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests"

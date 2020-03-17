@@ -1,27 +1,32 @@
 import {chain, isEmpty} from "lodash"
+import i18next from "i18next"
 
 export enum ValidatorType {
   Frontend, Backend,
 }
 
+/* eslint-disable i18next/no-literal-string */
 export enum HandledErrorType {
-  MandatoryParameterValidator = "MandatoryParameterValidator",
+  EmptyMandatoryParameter = "EmptyMandatoryParameter",
+  BlankParameter = "BlankParameter",
   WrongDateFormat = "WrongDateFormat",
   InvalidLiteralIntValue = "InvalidLiteralIntValue",
   InvalidPropertyFixedValue = "InvalidPropertyFixedValue",
+  ErrorValidator = "ErrorValidator",
 }
 
-export enum ValidatorName {
+/* eslint-disable i18next/no-literal-string */
+export enum BackendValidator {
   MandatoryParameterValidator = "MandatoryParameterValidator",
-  ErrorValidator = "ErrorValidator",
+  NotBlankParameterValidator = "NotBlankParameterValidator",
   LiteralIntValidator = "LiteralIntValidator",
-  FixedValueValidator = "FixedValuesValidator",
+  FixedValuesValidator = "FixedValuesValidator",
 }
 
 export type Validator = {
   isValid: (...args: any[]) => boolean,
-  message: string,
-  description: string,
+  message: () => string,
+  description: () => string,
   handledErrorType: HandledErrorType,
   validatorType: ValidatorType,
 }
@@ -38,39 +43,52 @@ export type Error = {
   typ: string,
 }
 
-const error = (errors: Array<Error>, fieldName: string): Error => errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
+const error = (errors: Array<Error>, fieldName: string): Error =>
+  errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
 
 export const errorValidator = (errors: Array<Error>, fieldName: string): Validator => ({
   isValid: () => !error(errors, fieldName),
-  message: error(errors, fieldName)?.message,
-  description: error(errors, fieldName)?.description,
-  handledErrorType: error(errors, fieldName)?.typ ? HandledErrorType[error(errors, fieldName)?.typ] : "ErrorValidator",
+  message: () => error(errors, fieldName)?.message,
+  description: () => error(errors, fieldName)?.description,
+  handledErrorType: error(errors, fieldName)?.typ ? HandledErrorType[error(errors, fieldName)?.typ] : HandledErrorType.ErrorValidator,
   validatorType: ValidatorType.Backend,
 })
 
 export const mandatoryValueValidator: Validator = {
   isValid: value => !isEmpty(value),
-  message: "This field is mandatory and cannot be empty",
-  description: "Please fill expression for this parameter",
-  handledErrorType: HandledErrorType.MandatoryParameterValidator,
+  message: () => i18next.t("mandatoryValueValidator.message", "This field is mandatory and can not be empty"),
+  description: () => i18next.t("validator.description", "Please fill field for this parameter"),
+  handledErrorType: HandledErrorType.EmptyMandatoryParameter,
   validatorType: ValidatorType.Frontend,
 }
 
-export const literalIntValidator: Validator = {
-  isValid: value => !isNaN(value),
-  message: "This value has to be an integer number",
-  description: "Please fill this field with an integer number",
+const integerLiteralPattern = new RegExp(/^-?[0-9]+$/)
+
+export const literalIntValueValidator: Validator = {
+  isValid: value => integerLiteralPattern.test(value),
+  message: () => i18next.t("literalIntValidator.message", "This value has to be an integer number"),
+  description: () => i18next.t("literalIntValidator,description", "Please fill this field with an integer number"),
   handledErrorType: HandledErrorType.InvalidLiteralIntValue,
   validatorType: ValidatorType.Frontend,
 }
 
 export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
-  isValid: value => possibleValues.map(value => value.expression).includes(value),
-  message: `This value has to be one of values: ${possibleValues.map(value => value.expression).join(",")}`,
-  description: "Please choose one of available values",
+  isValid: value => possibleValues.map(pv => pv.expression).includes(value),
+  message: () => i18next.t("fixedValueValidator.message", "This value has to be one of values: ") + possibleValues.map(value => value.expression).join(","),
+  description: () => i18next.t("fixedValueValidator.description", "Please choose one of available values"),
   handledErrorType: HandledErrorType.InvalidPropertyFixedValue,
   validatorType: ValidatorType.Frontend,
 })
+
+const blankStringLiteralPattern = new RegExp("'\\s*'")
+
+export const notBlankValueValidator: Validator = {
+  isValid: value => value != null && !blankStringLiteralPattern.test(value.trim()),
+  message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
+  description: () => i18next.t("validator.description", "Please fill field value for this parameter"),
+  handledErrorType: HandledErrorType.BlankParameter,
+  validatorType: ValidatorType.Frontend,
+}
 
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
   return isEmpty(validators) ? [] :
@@ -84,9 +102,9 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
   return withoutDuplications(validators).every(validator => validator.isValid(...values))
 }
 
-export const validators: Record<ValidatorName, (errors?: Array<Error>, fieldName?: string, possibleValues?: Array<PossibleValue>) => Validator> = {
-  [ValidatorName.MandatoryParameterValidator]: () => mandatoryValueValidator,
-  [ValidatorName.ErrorValidator]: (errors, fieldName) => errorValidator(errors, fieldName),
-  [ValidatorName.LiteralIntValidator]: () => literalIntValidator,
-  [ValidatorName.FixedValueValidator]: (errors, fieldName, possibleValues) => fixedValueValidator(possibleValues),
+export const validators: Record<BackendValidator, (...args: any[]) => Validator> = {
+  [BackendValidator.MandatoryParameterValidator]: () => mandatoryValueValidator,
+  [BackendValidator.NotBlankParameterValidator]: () => notBlankValueValidator,
+  [BackendValidator.LiteralIntValidator]: () => literalIntValueValidator,
+  [BackendValidator.FixedValuesValidator]: (possibleValues) => fixedValueValidator(possibleValues),
 }

@@ -167,7 +167,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "", "field2" -> "b")))
       .errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("MandatoryParameterValidator", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
     }
     processValidation.validate(validProcessWithFields(Map("field2" -> "b")))
       .errors.processPropertiesErrors should matchPattern {
@@ -265,7 +265,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
-      case Some(List(NodeValidationError("MandatoryParameterValidator", _, _, Some("expression"), NodeValidationErrorType.SaveAllowed))) =>
+      case Some(List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("expression"), NodeValidationErrorType.SaveAllowed))) =>
     }
     result.warnings shouldBe ValidationWarnings.success
   }
