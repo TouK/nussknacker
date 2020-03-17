@@ -70,15 +70,18 @@ jobs:
     - stage: test
       name: "Backend tests"
       script: ./ciBackendTest.sh
+      if: NOT (commit_message =~ /.*fe-only.*/)
       after_success: if [ "$COVERAGE" = true ]; then ./ciRunSbt.sh coveralls; else echo "Skipping coveralls"; fi
     - name: "Slow tests"
       script: ./ciRunSbt.sh clean ui/slow:test
+      if: NOT (commit_message =~ /.*fe-only.*/)
     - name: "Integration tests"
       script: ./ciRunSbt.sh clean management/it:test engineStandalone/it:test
+      if: NOT (commit_message =~ /.*fe-only.*/)
     - name: "Cross Scala compile"
       script: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
       # We can't use env(CROSS_BUILD) here because of some bug in travis - there is raw, not evaluated script body in env(CROSS_BUILD)
-      if: type = pull_request
+      if: type = pull_request AND NOT (commit_message =~ /.*fe-only.*/)
     - name: "Frontend tests"
       before_script:
         - nvm install $(cat .nvmrc)
