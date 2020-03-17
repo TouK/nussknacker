@@ -214,6 +214,32 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
+  test("should reload ConfigCreator") {
+
+    def generationTime = {
+      responseAs[Json].hcursor
+        .downField("processingType")
+        .downField("streaming")
+        .downField("generation-time")
+        .focus.flatMap(_.asString)
+    }
+
+    Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      val beforeReload =  generationTime
+      val beforeReload2 =  generationTime
+      beforeReload shouldBe beforeReload2
+
+      Post("/api/app/processingtype/reload") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+        Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+          val afterReload =  generationTime
+          beforeReload should not be afterReload
+        }
+      }
+    }
+
+  }
+
   private def saveProcess(endpoint: String, process: EspProcess) = {
     Post(s"$endpoint/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
