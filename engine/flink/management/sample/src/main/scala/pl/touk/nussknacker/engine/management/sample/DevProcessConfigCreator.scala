@@ -534,12 +534,12 @@ class SimpleTypesService extends Service with Serializable {
 
              @ParamName("intParam")
              @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
-             @Literal(`type` = LiteralType.Integer)
+             @Literal
              intParam: Int,
 
              @ParamName("rawIntParam")
              @RawEditor
-             @Literal(`type` = LiteralType.Integer)
+             @Literal
              rawIntParam: Int,
 
              @ParamName("fixedValuesStringParam")

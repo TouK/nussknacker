@@ -8,7 +8,7 @@ import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, NotBlankParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.validation.{Literal, LiteralType}
+import pl.touk.nussknacker.engine.api.validation.{Literal}
 
 class ValidatorsExtractorTest extends FunSuite with Matchers {
 
@@ -18,7 +18,9 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private val optionalParam = getFirstParam("optionalParam", classOf[Optional[String]])
   private val nullableNotBlankParam = getFirstParam("nullableNotBlankAnnotatedParam", classOf[String])
   private val notBlankParam = getFirstParam("notBlankAnnotatedParam", classOf[String])
-  private val literalIntegerParam = getFirstParam("literalIntegerAnnotatedParam", classOf[Int])
+  private val literalIntParam = getFirstParam("literalIntAnnotatedParam", classOf[Int])
+  private val literalIntegerParam = getFirstParam("literalIntegerAnnotatedParam", classOf[Integer])
+  private val literalStringParam = getFirstParam("literalStringAnnotatedParam", classOf[String])
 
   private def notAnnotated(param: String) {}
 
@@ -32,7 +34,11 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
 
   private def notBlankAnnotatedParam(@NotBlank notBlank: String) {}
 
-  private def literalIntegerAnnotatedParam(@Literal(`type` = LiteralType.Integer) intParam: Int) {}
+  private def literalIntAnnotatedParam(@Literal intParam: Int) {}
+
+  private def literalIntegerAnnotatedParam(@Literal integerParam: Integer) {}
+
+  private def literalStringAnnotatedParam(@Literal stringParam: String) {}
 
   private def getFirstParam(name: String, params: Class[_]*) = {
     this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
@@ -74,7 +80,15 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
     ValidatorsExtractor(None).extract(notBlankParam) shouldBe List(MandatoryParameterValidator, NotBlankParameterValidator)
   }
 
-  test("extract literalIntegerParam value validator when @Literal(type=LiteralType.INTEGER) annotation detected") {
+  test("extract literalIntParam value validator when @Literal annotation detected") {
+    ValidatorsExtractor(None).extract(literalIntParam) shouldBe List(MandatoryParameterValidator, LiteralIntValidator)
+  }
+
+  test("extract literalIntegerParam value validator when @Literal annotation detected") {
     ValidatorsExtractor(None).extract(literalIntegerParam) shouldBe List(MandatoryParameterValidator, LiteralIntValidator)
+  }
+
+  test("should not extract literalStringParam value validator when @Literal annotation detected") {
+    ValidatorsExtractor(None).extract(literalStringParam) shouldBe List(MandatoryParameterValidator)
   }
 }
