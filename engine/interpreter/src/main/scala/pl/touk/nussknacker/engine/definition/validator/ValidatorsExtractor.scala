@@ -11,7 +11,7 @@ case class ValidatorsExtractor(possibleEditor: Option[ParameterEditor]) {
       MandatoryValidatorExtractor,
       AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
       FixedValueValidatorExtractor(possibleEditor),
-      LiteralValidatorExtractor,
+      LiteralValidatorExtractor
     ).flatMap(_.extract(parameter))
   }
 }
