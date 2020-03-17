@@ -53,12 +53,14 @@ class ProcessComments extends React.Component {
                 <div className="header">
                   <Date date={comment.createDate}/>
                   <span className="comment-header"> | v{comment.processVersionId} | {comment.user}</span>
-                  {comment.user == this.props.loggedUser.id ?
+                  {comment.user != this.props.loggedUser.id ? null : (
                     <span className="remove glyphicon glyphicon-remove" onClick={this.deleteComment.bind(this, comment)}/>
-                    : null}
+                  )}
                 </div>
                 <CommentContent content={comment.content} commentSettings={this.props.commentSettings}/>
-                {this.lastComment(idx) ? null : <hr className="comment-under-line"/>}
+                {this.lastComment(idx) ? null : (
+                  <hr className="comment-under-line list-separator"/>
+                )}
               </div>
             )
           })}
@@ -69,7 +71,7 @@ class ProcessComments extends React.Component {
             type="button"
             className="espButton add-comment"
             onClick={this.addComment}
-            disabled={this.state.pendingRequest || this.state.comment == "" }
+            disabled={this.state.pendingRequest || this.state.comment == ""}
           >
             Add
           </button>
