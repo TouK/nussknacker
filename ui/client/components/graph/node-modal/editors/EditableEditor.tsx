@@ -5,7 +5,7 @@ import SwitchIcon from "./expression/SwitchIcon"
 import FixedValuesEditor from "./expression/FixedValuesEditor"
 import {isEmpty} from "lodash"
 import {ExpressionObj} from "./expression/types"
-import {defaultFormatter, spelFormatters, typeFormatters} from "./expression/Formatter"
+import {spelFormatters} from "./expression/Formatter"
 
 type Props = {
   fieldType?: string,
@@ -73,7 +73,7 @@ class EditableEditor extends React.Component<Props, State> {
           values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
           validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
           components={editor.components(param)}
-          formatter={expressionObj.language === "spel" && !isEmpty(spelFormatters[param.typ.refClazzName]) ?
+          formatter={expressionObj.language === "spel" && spelFormatters[param?.typ.refClazzName] != null ?
             spelFormatters[param.typ.refClazzName] : null}
           showValidation={showValidation}
         />
