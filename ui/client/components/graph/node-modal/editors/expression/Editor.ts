@@ -65,17 +65,17 @@ export enum EditorType {
 }
 
 const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
-  const defaultValidators = [
-    mandatoryValueValidator,
-    notBlankValueValidator,
-  ]
+  if (paramConfig == null) {
+    return [
+      mandatoryValueValidator,
+      notBlankValueValidator,
+    ]
+  }
 
-  const configuredValidators = paramConfig?.validators
+  return paramConfig.validators || []
     .map(v => validators[v.type])
     .filter(v => v != null)
     .map(v => v(paramConfig.editor.possibleValues))
-
-  return isEmpty(configuredValidators) ? defaultValidators : configuredValidators
 }
 
 const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => {
