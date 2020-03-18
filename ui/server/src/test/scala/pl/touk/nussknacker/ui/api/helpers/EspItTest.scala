@@ -9,7 +9,7 @@ import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Json, Printer, parser}
+import io.circe.{Encoder, Json, Printer, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
@@ -226,6 +226,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def getProcessDefinitionServices(): RouteTestResult = {
     Get("/processDefinitionData/services") ~> withPermissions(definitionResources, testPermissionRead)
   }
+
+  def toEntity[T:Encoder](data: T): HttpEntity.Strict = toEntity(implicitly[Encoder[T]].apply(data))
 
   private def toEntity(json: Json) = {
     val jsonString = json.pretty(Printer.spaces2.copy(dropNullValues = true, preserveOrder = true))

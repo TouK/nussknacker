@@ -215,9 +215,9 @@ export default {
       .catch(error => this.addError("Fatal validation error, cannot save", error, true))
   },
 
-  getNodeData(processId, node) {
-    return api.post(`/nodes/${processId}`, node)
-      .catch(error => this.addError("Failed to get processData", error, true))
+  getNodeAdditionalData(processId, node) {
+    return api.post(`/nodes/${processId}/additionalData`, node)
+      .catch(error => this.addError("Failed to get node additional data", error, true))
   },
 
   getTestCapabilities(process) {
