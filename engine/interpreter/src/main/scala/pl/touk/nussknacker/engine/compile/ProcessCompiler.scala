@@ -299,7 +299,6 @@ protected trait ProcessCompilerBase {
         CompilationResult(validatedNextCtx)
       ) { (nodeInvoker, nextCtx) =>
         compiledgraph.part.CustomNodePart(nodeInvoker, node, nextCtx, List.empty, List(NormalEnd(node.id)))
-//        compiledgraph.part.EndingCustomPart(nodeInvoker, node, nextCtx)
       }.distinctErrors
     }
 

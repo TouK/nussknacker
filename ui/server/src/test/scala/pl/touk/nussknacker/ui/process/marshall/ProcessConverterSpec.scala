@@ -89,7 +89,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         TestProcessingTypes.Streaming,
         ValidationResult.errors(
           Map(unexpectedEnd.id -> List(
-            NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink or processor", None, errorType = NodeValidationErrorType.SaveAllowed))),
+            NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
           List.empty,
           List.empty
         )
@@ -111,7 +111,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
       ValidationResult.errors(
-        Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink or processor", None, errorType = NodeValidationErrorType.SaveAllowed))),
+        Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
         List.empty,
         Map(

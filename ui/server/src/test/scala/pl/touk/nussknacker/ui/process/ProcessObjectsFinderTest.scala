@@ -74,7 +74,8 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       "query1" -> List(process1.id),
       "query2" -> List(process1.id),
       "query3" -> List(process1.id, process2.id),
-      "query4" -> List(process4.id)
+      "query4" -> List(process4.id),
+      "query5" -> List.empty
     )
   }
 
@@ -98,9 +99,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   test("should find unused components") {
     val table = Table(
       ("processes", "unusedComponents"),
-      (List(invalidProcessWithAllObjects), List("fooProcessor", "fooService2", "fooService3", "fooService4", "fooSource", "notBlank")),
-      (List(process1, process4), List("barService", "fooProcessor", "fooService", "fooService2", "fooService3", "fooService4", "fooSource", "notBlank")),
-      (List(process1), List("barService", "fooProcessor", "fooService", "fooService2", "fooService3", "fooService4", "fooSource",  "notBlank", "subProcess1"))
+      (List(invalidProcessWithAllObjects), List("fooProcessor", "fooService2", "fooService3", "fooService4", "fooSource", "notBlank", optionalEndingStreamTransformer)),
+      (List(process1, process4), List("barService", "fooProcessor", "fooService", "fooService2", "fooService3", "fooService4", "fooSource", "notBlank", optionalEndingStreamTransformer)),
+      (List(process1), List("barService", "fooProcessor", "fooService", "fooService2", "fooService3", "fooService4", "fooSource",  "notBlank", optionalEndingStreamTransformer, "subProcess1"))
     )
     forAll(table) { (processes, unusedComponents) =>
       val result = ProcessObjectsFinder.findUnusedComponents(processes ++ List(subprocessDetails), List(processDefinition))
