@@ -53,8 +53,9 @@ class AppResources(config: Config,
               if (set.isEmpty) {
                 HttpResponse(status = StatusCodes.OK)
               } else {
-                logger.warn(s"Processes not running: $set")
-                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.mkString(", ")}")
+                logger.warn(s"Processes not running: ${set.keys}")
+                logger.debug(s"Processes not running - more details: $set")
+                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.keys.mkString(", ")}")
               }
             }.recover[HttpResponse] {
               case NonFatal(e) =>
@@ -97,7 +98,7 @@ class AppResources(config: Config,
       }
     }
 
-  private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser) : Future[Set[String]] = {
+  private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
     for {
       processes <- processRepository.fetchDeployedProcessesDetails[Unit]()
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
@@ -106,7 +107,7 @@ class AppResources(config: Config,
         case (_, status) => status.exists(st => st.status.isDuringDeploy || st.status.isRunning)
       }.map{
         case (process, status) => (process.name, status)
-      }.keySet
+      }
     }
   }
 

@@ -231,8 +231,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
           //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           //workaround for now, not the best solution though
           //TODO: we should change logic of ManagementActor to always save action deploy
-          case _: TimeoutException => {
-            logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...")
+          case e: TimeoutException => {
+            logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
             Future.successful(Unit)
           }
         })
