@@ -6,7 +6,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.ui.definition.UIProcessObjects
-import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessTypesForCategories, ProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.EspPathMatchers

@@ -9,11 +9,11 @@ import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInf
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
 object TestInfoResources {

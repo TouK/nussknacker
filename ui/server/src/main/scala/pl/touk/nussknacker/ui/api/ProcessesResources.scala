@@ -43,6 +43,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          writeRepository: WriteProcessRepository,
