@@ -27,9 +27,9 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializatio
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 
-  def marketing[T](value: T) = WithCategories(value, "Recommendations")
-  def fraud[T](value: T) = WithCategories(value, "FraudDetection")
-  def all[T](value: T) = WithCategories(value, "Recommendations", "FraudDetection")
+  def marketing[T](value: T): WithCategories[T] = WithCategories(value, "Recommendations")
+  def fraud[T](value: T): WithCategories[T] = WithCategories(value, "FraudDetection")
+  def all[T](value: T): WithCategories[T] = WithCategories(value, "Recommendations", "FraudDetection")
 
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = {
     Map(

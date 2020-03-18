@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.avro
 
+import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -39,9 +41,17 @@ class KafkaTypedAvroSourceFactory[T: TypeInformation](config: KafkaConfig,
 
   @MethodToInvoke
   def create(processMetaData: MetaData,
-             @ParamName(`TopicParamName`) topic: String,
+             @ParamName(`TopicParamName`)
+             @DualEditor(
+               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+               defaultMode = DualEditorMode.RAW
+             )
+             @NotBlank
+             topic: String,
              // json or avro schema on this level?
-             @ParamName("schema") avroSchema: String): Source[T] with TestDataGenerator = {
+             @ParamName("schema")
+             @NotBlank
+             avroSchema: String): Source[T] with TestDataGenerator = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(config)
     new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schemaFactory.create(List(topic), config),
       Some(AvroToJsonFormatter(schemaRegistryClient, topic, formatKey))) with ReturningType {
