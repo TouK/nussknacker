@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.time._
 import java.time.temporal.ChronoUnit
@@ -14,6 +15,7 @@ import io.circe.generic.JsonCodec
 import io.circe.{Encoder, Json}
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
+import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
@@ -53,6 +55,7 @@ import pl.touk.sample.JavaSampleEnum
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Properties
 
 object DevProcessConfigCreator {
 
@@ -208,13 +211,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         )),
       "collectionTypesService"  -> all(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(
         category = Some("types"))),
-      "datesTypesService"  -> all(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types")))
+      "datesTypesService"  -> all(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+      "dynamicService" -> all(new DynamicService)
     )
   }
 
   override def customStreamTransformers(config: Config) = {
-    val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
-    val signalsTopic = config.getString("signals.topic")
     Map(
       "noneReturnTypeTransformer" -> WithCategories(NoneReturnTypeTransformer, "TESTCAT"),
       "stateful" -> all(StatefulTransformer),
@@ -612,4 +614,23 @@ class DatesTypesService extends Service with Serializable {
             ): Future[Unit] = {
     ???
   }
+}
+
+//this is to simulate model reloading - we read parameters from file
+class DynamicService extends ServiceWithExplicitMethod {
+
+  private val fileWithDefinition = new File(Properties.tmpDir, "nkDynamicServiceProperties")
+
+  override def invokeService(params: List[AnyRef])
+                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, metaData: MetaData): Future[AnyRef] = ???
+
+  //we load parameters only *once* per service creation
+  override val parameterDefinition: List[Parameter] = {
+    val paramNames = if (fileWithDefinition.exists()) {
+      FileUtils.readLines(fileWithDefinition).asScala.toList
+    } else Nil
+    paramNames.map(name => Parameter[String](name))
+  }
+
+  override def returnType: typing.TypingResult = Unknown
 }

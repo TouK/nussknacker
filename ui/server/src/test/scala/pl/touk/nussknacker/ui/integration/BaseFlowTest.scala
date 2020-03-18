@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.integration
 
+import java.io.File
 import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
@@ -9,6 +10,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
+import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
@@ -29,6 +31,7 @@ import pl.touk.nussknacker.ui.definition.additionalproperty.UiAdditionalProperty
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 
 import scala.concurrent.duration._
+import scala.util.Properties
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -216,27 +219,51 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   test("should reload ConfigCreator") {
 
-    def generationTime = {
-      responseAs[Json].hcursor
-        .downField("processingType")
-        .downField("streaming")
-        .downField("generation-time")
-        .focus.flatMap(_.asString)
-    }
+    //@see DevProcessConfigCreator.DynamicService
+    val dynamicServiceFile = new File(Properties.tmpDir, "nkDynamicServiceProperties")
 
-    Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-      status shouldEqual StatusCodes.OK
-      val beforeReload =  generationTime
-      val beforeReload2 =  generationTime
-      beforeReload shouldBe beforeReload2
-
-      Post("/api/app/processingtype/reload") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-        Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-          val afterReload =  generationTime
-          beforeReload should not be afterReload
-        }
+    def generationTime: Option[String] = {
+      Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+        status shouldEqual StatusCodes.OK
+        responseAs[Json].hcursor
+          .downField("processingType")
+          .downField("streaming")
+          .downField("generation-time")
+          .focus.flatMap(_.asString)
       }
     }
+
+    def dynamicServiceParameters: Option[List[String]] = {
+      Get("/api/processDefinitionData/services") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+        status shouldEqual StatusCodes.OK
+        val parameters = responseAs[Json].hcursor
+          .downField("streaming")
+          .downField("dynamicService")
+          .downField("parameters")
+          .focus.flatMap(_.asArray)
+        parameters.map(_.flatMap(_.asObject).flatMap(_.apply("name")).flatMap(_.asString).toList)
+      }
+    }
+    val dynamicServiceParametersBeforeReload = dynamicServiceParameters
+    //we check that buildInfo does not change
+    val beforeReload = generationTime
+    val beforeReload2 = generationTime
+    beforeReload shouldBe beforeReload2
+
+    //we generate random parameter
+    val uuid = UUID.randomUUID().toString
+    FileUtils.writeStringToFile(dynamicServiceFile, uuid)
+
+    dynamicServiceParametersBeforeReload.exists(_.contains(uuid)) shouldBe false
+    dynamicServiceParameters shouldBe dynamicServiceParametersBeforeReload
+
+    Post("/api/app/processingtype/reload") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.NoContent
+    }
+
+    val afterReload =  generationTime
+    beforeReload should not be afterReload
+    dynamicServiceParameters shouldBe Some(List(uuid))
 
   }
 
