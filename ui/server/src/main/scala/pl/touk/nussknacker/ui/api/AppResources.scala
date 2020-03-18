@@ -10,11 +10,9 @@ import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.api.AppResources.LoggableProcessStatus
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -55,7 +53,8 @@ class AppResources(config: Config,
               if (set.isEmpty) {
                 HttpResponse(status = StatusCodes.OK)
               } else {
-                logger.warn(s"Processes not running: ${set.mapValues(LoggableProcessStatus(_))}")
+                logger.warn(s"Processes not running: ${set.keys}")
+                logger.debug(s"Processes not running - more details: $set")
                 HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.keys.mkString(", ")}")
               }
             }.recover[HttpResponse] {
@@ -134,30 +133,4 @@ class AppResources(config: Config,
         Some(ProcessStatus.failedToGet)
     }
   }
-}
-
-private object AppResources {
-  private sealed trait LoggableProcessStatus
-
-  private object LoggableProcessStatus {
-    def apply(maybeStatus: Option[ProcessStatus]): LoggableProcessStatus = maybeStatus match {
-      case Some(processStatus) => from(processStatus)
-      case None => UnknownProcessStatus
-    }
-
-    private def from(status: ProcessStatus): SimpleProcessStatus = SimpleProcessStatus(
-      status.status,
-      status.deploymentId,
-      status.startTime,
-      status.errors
-    )
-  }
-
-  private case class SimpleProcessStatus(status: StateStatus,
-                                         deploymentId: Option[String],
-                                         startTime: Option[Long],
-                                         errors: List[String]
-                                        ) extends LoggableProcessStatus
-
-  private object UnknownProcessStatus extends LoggableProcessStatus
 }

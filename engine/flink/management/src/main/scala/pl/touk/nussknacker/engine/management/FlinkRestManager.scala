@@ -219,9 +219,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         savepointPath = savepointPath,
         allowNonRestoredState = true,
         programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
-    logger.info(s"Starting to deploy process: $processName with savepoint $savepointPath")
+    logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
     uploadedJarId().flatMap { jarId =>
-      logger.info(s"Deploying $processName with $savepointPath and jarId: $jarId")
+      logger.debug(s"Deploying $processName with $savepointPath and jarId: $jarId")
       basicRequest
         .post(flinkUrl.path("jars", jarId, "run"))
         .body(program)
