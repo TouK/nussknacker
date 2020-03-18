@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantP
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -25,11 +26,12 @@ import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, Subproc
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.additionalproperty.UiAdditionalPropertyConfig
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 
@@ -239,8 +241,17 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .id("test")
       .additionalFields(properties = Map("stringRequiredProperty" -> "someNotEmptyString"))
       .exceptionHandlerNoParams()
-      .source("start", "oneSource")
+      .source("start", "csv-source")
       .processorEnd("end", "dynamicService", params:_*)
+
+    def firstMockedResult(result: Json): Option[String] = result.hcursor
+      .downField("results")
+      .downField("mockedResults")
+      .downField("end")
+      .downArray.first
+      .downField("value")
+      .downField("pretty").focus
+      .flatMap(_.asString)
 
     def dynamicServiceParameters: Option[List[String]] = {
       Get("/api/processDefinitionData/services") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
@@ -260,6 +271,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     beforeReload shouldBe beforeReload2
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
+    firstMockedResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
+
 
     //we generate random parameter
     val parameterUUID = UUID.randomUUID().toString
@@ -281,6 +294,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     //now parameter is known and required
     dynamicServiceParameters shouldBe Some(List(parameterUUID))
     updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors.success
+    firstMockedResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
 
   }
 
@@ -296,6 +310,16 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     Put(s"/api/processes/$processId", TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       responseAs[ValidationResult]
+    }
+  }
+
+  private def testProcess(process: EspProcess, data: String): Json = {
+    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process)
+      , TestProcessingTypes.Streaming)
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
+    Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {
+      status shouldEqual StatusCodes.OK
+      responseAs[Json]
     }
   }
 

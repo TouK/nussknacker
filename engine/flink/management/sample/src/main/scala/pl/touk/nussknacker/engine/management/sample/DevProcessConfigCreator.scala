@@ -623,7 +623,11 @@ class DynamicService extends ServiceWithExplicitMethod {
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
   override def invokeService(params: List[AnyRef])
-                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, metaData: MetaData): Future[AnyRef] = ???
+                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, metaData: MetaData): Future[AnyRef] = {
+    val toCollect = params.mkString(",")
+    val res = ().asInstanceOf[AnyRef]
+    collector.collect(toCollect, Some(res))(Future.successful(res))
+  }
 
   //we load parameters only *once* per service creation
   override val parameterDefinition: List[Parameter] = {
