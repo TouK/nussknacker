@@ -617,6 +617,7 @@ class DatesTypesService extends Service with Serializable {
 }
 
 //this is to simulate model reloading - we read parameters from file
+//WARN: this service is Thread unsafe for reload - currently used only in @see BaseFlowTest!
 class DynamicService extends ServiceWithExplicitMethod {
 
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
@@ -632,5 +633,5 @@ class DynamicService extends ServiceWithExplicitMethod {
     paramNames.map(name => Parameter[String](name))
   }
 
-  override def returnType: typing.TypingResult = Unknown
+  override def returnType: typing.TypingResult = Typed[Unit]
 }

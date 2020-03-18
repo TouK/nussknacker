@@ -13,22 +13,25 @@ import io.circe.{Decoder, Json}
 import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.additionalproperty.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 
 import scala.concurrent.duration._
 import scala.util.Properties
@@ -51,14 +54,13 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   test("saves, updates and retrieves sample process") {
 
     val processId = UUID.randomUUID().toString
-    val endpoint = s"/api/processes/$processId"
 
     val process = EspProcessBuilder
       .id(processId)
       .exceptionHandler()
       .source("source", "csv-source").processorEnd("end", "monitor")
 
-    saveProcess(endpoint, process)
+    saveProcess(process)
   }
 
   test("initializes custom processes") {
@@ -200,7 +202,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   test("should test process with complexReturnObjectService") {
     val processId = "complexObjectProcess" + UUID.randomUUID().toString
-    val endpoint = s"/api/processes/$processId"
 
     val process = EspProcessBuilder
       .id(processId)
@@ -209,7 +210,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .enricher("enricher", "out", "complexReturnObjectService")
       .sink("end", "#input", "sendSms")
 
-    saveProcess(endpoint, process)
+    saveProcess(process)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
@@ -221,7 +222,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     //@see DevProcessConfigCreator.DynamicService
     val dynamicServiceFile = new File(Properties.tmpDir, "nk-dynamic-params.lst")
-
+    dynamicServiceFile.delete()
+    
     def generationTime: Option[String] = {
       Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
@@ -232,6 +234,13 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
           .focus.flatMap(_.asString)
       }
     }
+
+    def processWithService(params: (String, Expression)*): EspProcess = EspProcessBuilder
+      .id("test")
+      .additionalFields(properties = Map("stringRequiredProperty" -> "someNotEmptyString"))
+      .exceptionHandlerNoParams()
+      .source("start", "oneSource")
+      .processorEnd("end", "dynamicService", params:_*)
 
     def dynamicServiceParameters: Option[List[String]] = {
       Get("/api/processDefinitionData/services") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
@@ -249,13 +258,19 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     val beforeReload = generationTime
     val beforeReload2 = generationTime
     beforeReload shouldBe beforeReload2
+    //process without errors - no parameter required
+    saveProcess(processWithService()).errors shouldBe ValidationErrors.success
 
     //we generate random parameter
-    val uuid = UUID.randomUUID().toString
-    FileUtils.writeStringToFile(dynamicServiceFile, uuid)
+    val parameterUUID = UUID.randomUUID().toString
+    FileUtils.writeStringToFile(dynamicServiceFile, parameterUUID)
 
-    dynamicServiceParametersBeforeReload.exists(_.contains(uuid)) shouldBe false
+    dynamicServiceParametersBeforeReload.exists(_.contains(parameterUUID)) shouldBe false
     dynamicServiceParameters shouldBe dynamicServiceParametersBeforeReload
+    //service still does not accept parameter
+    updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors(Map("end" -> List(
+      PrettyValidationErrors.formatErrorMessage(RedundantParameters(Set(parameterUUID), "end"))
+    )), List.empty, List.empty)
 
     Post("/api/app/processingtype/reload") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.NoContent
@@ -263,19 +278,24 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     val afterReload =  generationTime
     beforeReload should not be afterReload
-    dynamicServiceParameters shouldBe Some(List(uuid))
+    //now parameter is known and required
+    dynamicServiceParameters shouldBe Some(List(parameterUUID))
+    updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors.success
 
   }
 
-  private def saveProcess(endpoint: String, process: EspProcess) = {
-    Post(s"$endpoint/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+  private def saveProcess(process: EspProcess): ValidationResult = {
+    Post(s"/api/processes/${process.id}/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
-      Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-        status shouldEqual StatusCodes.OK
-        Get(endpoint) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-          status shouldEqual StatusCodes.OK
-        }
-      }
+      updateProcess(process)
+    }
+  }
+
+  private def updateProcess(process: EspProcess): ValidationResult = {
+    val processId = process.id
+    Put(s"/api/processes/$processId", TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      responseAs[ValidationResult]
     }
   }
 
