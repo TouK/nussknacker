@@ -468,7 +468,6 @@ lazy val kafka = (project in engine("kafka")).
     name := "nussknacker-kafka",
     libraryDependencies ++= {
       Seq(
-        "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.kafka" % "kafka-clients" % kafkaV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )

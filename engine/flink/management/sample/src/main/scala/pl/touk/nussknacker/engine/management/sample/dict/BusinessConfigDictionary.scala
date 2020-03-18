@@ -3,6 +3,9 @@ package pl.touk.nussknacker.engine.management.sample.dict
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 
+/**
+  * Example dict which shows how we can use dictionary with BC
+  */
 object BusinessConfigDictionary {
   val id: String = "bc"
 

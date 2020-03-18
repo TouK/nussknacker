@@ -96,7 +96,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "datesTypesService" -> categories(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
     "campaignService" -> features(CampaignService),
     "configuratorService" -> features(ConfiguratorService),
-    "meetingService" -> features(MeetingService),
+    "meetingService" -> features(MeetingService)
   )
 
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
