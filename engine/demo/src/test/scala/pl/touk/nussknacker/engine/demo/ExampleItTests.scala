@@ -91,7 +91,7 @@ trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matche
     val in = topicPrefix + "in"
     val out = topicPrefix + "out"
 
-    val process = EspProcessBuilder
+    val process =EspProcessBuilder
         .id("example3")
         .parallelism(1)
         .exceptionHandler()

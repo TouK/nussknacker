@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.demo.custom.{EventsCounter, TransactionAmountAggregator}
-import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService, MeetingService, SimpleTypesService, ValidatorTypesService}
+import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingRestartingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
@@ -23,8 +23,6 @@ import pl.touk.nussknacker.engine.util.LoggingListener
 import CirceUtil.decodeJsonUnsafe
 import io.circe.Json
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.demo.globals.DateHelper
-import pl.touk.nussknacker.engine.demo.dicts.{DictionaryBusinessConfig, DictionaryRGB}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
@@ -45,10 +43,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   override def services(config: Config): Map[String, WithCategories[Service]] = {
     Map(
       "clientService" -> all(new ClientService),
-      "alertService" -> all(new AlertService("/tmp/alerts")),
-      "validatorTypesService" -> all(new ValidatorTypesService()),
-      "meetingService" -> all(new MeetingService()),
-      "simpleTypesService" -> all(new SimpleTypesService())
+      "alertService" -> all(new AlertService("/tmp/alerts"))
     )
   }
 
@@ -62,14 +57,14 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def createTransactionSource(kafkaConfig: KafkaConfig): SourceFactory[Transaction] = {
+  private def createTransactionSource(kafkaConfig: KafkaConfig) = {
     val transactionTimestampExtractor = new BoundedOutOfOrdernessTimestampExtractor[Transaction](Time.minutes(10)) {
       override def extractTimestamp(element: Transaction): Long = element.eventDate
     }
     kafkaSource[Transaction](kafkaConfig, decodeJsonUnsafe[Transaction](_), Some(transactionTimestampExtractor), TestParsingUtils.newLineSplit)
   }
 
-  private def createClientSource(kafkaConfig: KafkaConfig): SourceFactory[Client] = {
+  private def createClientSource(kafkaConfig: KafkaConfig) = {
     kafkaSource[Client](kafkaConfig, decodeJsonUnsafe[Client](_), None, TestParsingUtils.newLineSplit)
   }
 
@@ -106,22 +101,9 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   override def expressionConfig(config: Config): ExpressionConfig = {
     val globalProcessVariables = Map(
       "UTIL" -> all(UtilProcessHelper),
-      "TYPES" -> all(DataTypes),
-      "DATE" -> all(DateHelper),
-      "RGB" -> all(DictionaryRGB.dictInstance),
-      "BusinessConfig" -> all(DictionaryBusinessConfig.dictInstance)
+      "TYPES" -> all(DataTypes)
     )
-
-    ExpressionConfig(
-      globalProcessVariables,
-      List.empty,
-      LanguageConfiguration(List()),
-      strictTypeChecking = false,
-      dictionaries = Map(
-        DictionaryRGB.dictId -> all(DictionaryRGB.dictDefinition),
-        DictionaryBusinessConfig.dictId -> all(DictionaryBusinessConfig.dictDefinition)
-      )
-    )
+    ExpressionConfig(globalProcessVariables, List.empty)
   }
 
   override def buildInfo(): Map[String, String] = {
@@ -131,7 +113,9 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty //TODO
+  override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = {
+    Map.empty //TODO
+  }
 }
 
 class LoggingExceptionHandlerFactory(config: Config) extends ExceptionHandlerFactory {

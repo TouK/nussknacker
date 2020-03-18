@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.engine.demo.service
+package pl.touk.nussknacker.engine.management.sample.service
 
-import java.time.temporal.ChronoUnit
 import java.time._
+import java.time.temporal.ChronoUnit
 
 import com.cronutils.model.Cron
 import javax.annotation.Nullable
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 
 import scala.concurrent.Future
 
-class MeetingService extends Service with Serializable {
+object MeetingService extends Service with Serializable {
   @MethodToInvoke
   def invoke(@ParamName("Date") date: LocalDateTime,
              @ParamName("EndTime") endTime: LocalTime,

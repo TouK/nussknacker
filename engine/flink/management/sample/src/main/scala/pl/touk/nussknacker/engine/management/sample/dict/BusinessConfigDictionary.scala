@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.demo.dicts
+package pl.touk.nussknacker.engine.management.sample.dict
 
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 
-object DictionaryBusinessConfig {
-  val dictId: String = "bc"
+object BusinessConfigDictionary {
+  val id: String = "bc"
 
-  val dictDefinition: EmbeddedDictDefinition = EmbeddedDictDefinition(Map(
+  val definition: EmbeddedDictDefinition = EmbeddedDictDefinition(Map(
     "6b9469d2-6afe-41eb-ba59-9295e01374e4" -> "Marketing v1",
     "c9bf7d92-e238-4910-be64-21bea90a1fdd" -> "Nussknacker base configuration ",
     "9d6d4e3e-0ba6-43bb-8696-58432e8f6bd8" -> "Campaign 2020 News",
@@ -15,5 +15,5 @@ object DictionaryBusinessConfig {
     "1e6bfed3-2249-4f96-9426-379c006c8275" -> "Users Black List"
   ))
 
-  val dictInstance: DictInstance = DictInstance(dictId, dictDefinition)
+  val instance: DictInstance = DictInstance(id, definition)
 }

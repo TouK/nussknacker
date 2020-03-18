@@ -280,7 +280,6 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
-        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
       )
     }
@@ -400,7 +399,6 @@ lazy val demo = (project in engine("demo")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
-        "com.cronutils" % "cron-utils" % cronParserV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
       )
     }
@@ -470,6 +468,7 @@ lazy val kafka = (project in engine("kafka")).
     name := "nussknacker-kafka",
     libraryDependencies ++= {
       Seq(
+        "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.kafka" % "kafka-clients" % kafkaV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )

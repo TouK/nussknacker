@@ -13,11 +13,11 @@ class ClientService extends Service with TimeMeasuringService {
   @MethodToInvoke
   def invoke(@ParamName("clientId") clientId: String)(implicit ec: ExecutionContext): Future[Client] = {
     val clients = Map(
-      "Client1" -> Client("Client1", "Alice", "123", "#00ffff"),
-      "Client2" -> Client("Client2", "Bob", "234", "#d7af87"),
-      "Client3" -> Client("Client3", "Charles", "345", "#ffff00"),
-      "Client4" -> Client("Client4", "David", "777", "#fff"),
-      "Client5" -> Client("Client5", "Eve", "888", "#000")
+      "Client1" -> Client("Client1", "Alice", "123"),
+      "Client2" -> Client("Client2", "Bob", "234"),
+      "Client3" -> Client("Client3", "Charles", "345"),
+      "Client4" -> Client("Client4", "David", "777"),
+      "Client5" -> Client("Client5", "Eve", "888")
 
     )
     measuring {

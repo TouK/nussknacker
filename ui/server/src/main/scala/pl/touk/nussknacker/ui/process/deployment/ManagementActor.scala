@@ -254,18 +254,18 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
                                    latestVersion: ProcessVersionEntityData,
                                    savepointPath: Option[String],
                                    comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
-      val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
-      val processManagerValue = managers.forTypeUnsafe(processingType)
+    val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
+    val processManagerValue = managers.forTypeUnsafe(processingType)
 
-      for {
-        deploymentResolved <- resolvedDeploymentData
-        maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
-        processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown process Id ${latestVersion.processId}"))
-        _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentResolved, savepointPath, toManagerUser(user))
-        deployedActionData <- deployedProcessRepository.markProcessAsDeployed(
-          ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
-        )
-      } yield deployedActionData
+    for {
+      deploymentResolved <- resolvedDeploymentData
+      maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
+      processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown process Id ${latestVersion.processId}"))
+      _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentResolved, savepointPath, toManagerUser(user))
+      deployedActionData <- deployedProcessRepository.markProcessAsDeployed(
+        ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
+      )
+    } yield deployedActionData
   }
 
   private def resolveDeploymentData(data: ProcessDeploymentData) = data match {

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.demo.globals
+package pl.touk.nussknacker.engine.management.sample.global
 
 import java.time.LocalDateTime
 import java.time.Duration
