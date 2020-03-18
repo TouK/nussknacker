@@ -22,6 +22,9 @@ branches:
 #TODO: upgrade to newer (e.g. xenial) after upgrading java to > 8
 dist: trusty
 
+git:
+  depth: false
+
 env:
   global:
     - APPLICATION_NAME=nussknacker
@@ -36,8 +39,11 @@ env:
     #We do cross build in tests only for staging/master
     - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true" || echo "false"`
     - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true" || echo "false"`
+    - FE_ONLY=$(source .travis/diff_files.sh)
 
 before_script:
+  # We have to terminate jobs here because "if" checks before git checkout & before env is set.
+  - if [[ "$FE_ONLY" == "true" ]]; then travis_terminate 0; fi
   # We override maven central by google cloud because travis workers are blacklisted by maven central (Server returned HTTP response code: 403...)
   # It must be done in both ivy and maven settings, because we download deps using ivy during compile and using maven during publish (publishMavenStyle := true)
   - cp .travis.sbt.repositories $HOME/.sbt/repositories
@@ -70,18 +76,15 @@ jobs:
     - stage: test
       name: "Backend tests"
       script: ./ciBackendTest.sh
-      if: NOT (commit_message =~ /.*fe-only.*/)
       after_success: if [ "$COVERAGE" = true ]; then ./ciRunSbt.sh coveralls; else echo "Skipping coveralls"; fi
     - name: "Slow tests"
       script: ./ciRunSbt.sh clean ui/slow:test
-      if: NOT (commit_message =~ /.*fe-only.*/)
     - name: "Integration tests"
       script: ./ciRunSbt.sh clean management/it:test engineStandalone/it:test
-      if: NOT (commit_message =~ /.*fe-only.*/)
     - name: "Cross Scala compile"
       script: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
       # We can't use env(CROSS_BUILD) here because of some bug in travis - there is raw, not evaluated script body in env(CROSS_BUILD)
-      if: type = pull_request AND NOT (commit_message =~ /.*fe-only.*/)
+      if: type = pull_request
     - name: "Frontend tests"
       before_script:
         - nvm install $(cat .nvmrc)
