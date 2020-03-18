@@ -2,10 +2,8 @@ package pl.touk.nussknacker.engine.kafka
 
 import java.nio.charset.StandardCharsets
 
-import javax.validation.constraints.NotBlank
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
@@ -20,12 +18,7 @@ class KafkaSinkFactory(config: KafkaConfig,
     this(config, FixedSerializationSchemaFactory(schema))
 
   @MethodToInvoke
-  def create(processMetaData: MetaData,
-             @ParamName(`TopicParamName`)
-             @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
-             @NotBlank
-             topic: String
-            )(metaData: MetaData): Sink = {
+  def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String)(metaData: MetaData): Sink = {
     val serializationSchema = schemaFactory.create(topic, config)
     new KafkaSink(topic, serializationSchema, s"${metaData.id}-$topic")
   }
