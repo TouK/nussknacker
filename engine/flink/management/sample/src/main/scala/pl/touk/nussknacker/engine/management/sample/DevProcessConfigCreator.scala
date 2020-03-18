@@ -619,7 +619,7 @@ class DatesTypesService extends Service with Serializable {
 //this is to simulate model reloading - we read parameters from file
 class DynamicService extends ServiceWithExplicitMethod {
 
-  private val fileWithDefinition = new File(Properties.tmpDir, "nkDynamicServiceProperties")
+  private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
   override def invokeService(params: List[AnyRef])
                             (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, metaData: MetaData): Future[AnyRef] = ???

@@ -220,7 +220,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   test("should reload ConfigCreator") {
 
     //@see DevProcessConfigCreator.DynamicService
-    val dynamicServiceFile = new File(Properties.tmpDir, "nkDynamicServiceProperties")
+    val dynamicServiceFile = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
     def generationTime: Option[String] = {
       Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
