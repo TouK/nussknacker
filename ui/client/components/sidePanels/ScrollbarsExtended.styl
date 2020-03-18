@@ -5,7 +5,7 @@
     }
 
     .track
-        top (scrollThumbSize - toolbarsGap)
+        top (toolbarsGap - scrollThumbSize/3)
         bottom @top
 
         :global(.LEFT) &
@@ -21,7 +21,7 @@
     .thumb
         cursor all-scroll
         border-radius scrollThumbSize
-        background-color rgba(black, .35)
+        background-color rgba(black, .45)
 
     .enabled
         pointer-events auto
