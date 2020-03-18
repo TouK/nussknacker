@@ -33,6 +33,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
+import pl.touk.nussknacker.engine.splittedgraph.end.NormalEnd
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -289,7 +290,7 @@ protected trait ProcessCompilerBase {
 
     def compileEndingCustomNodePart(part: ProcessPart, node: splittednode.EndingNode[CustomNode], data: CustomNodeData,
                                     ctx: ValidationContext)
-                                   (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.EndingCustomPart] = {
+                                   (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
       val (typingInfo, validatedNextCtx, compiledNode) = compileCustomNodeObject(data, Left(ctx), ending = true)
       val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo))
 
@@ -297,7 +298,8 @@ protected trait ProcessCompilerBase {
         CompilationResult(nodeTypingInfo, compiledNode),
         CompilationResult(validatedNextCtx)
       ) { (nodeInvoker, nextCtx) =>
-        compiledgraph.part.EndingCustomPart(nodeInvoker, node, nextCtx)
+        compiledgraph.part.CustomNodePart(nodeInvoker, node, nextCtx, List.empty, List(NormalEnd(node.id)))
+//        compiledgraph.part.EndingCustomPart(nodeInvoker, node, nextCtx)
       }.distinctErrors
     }
 

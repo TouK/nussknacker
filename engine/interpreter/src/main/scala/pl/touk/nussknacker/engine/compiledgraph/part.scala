@@ -28,16 +28,10 @@ object part {
   sealed trait SubsequentPart extends ProcessPart
 
   case class CustomNodePart(transformer: AnyRef,
-                            node: splittednode.OneOutputNode[CustomNodeData], validationContext: ValidationContext,
+                            node: splittednode.SplittedNode[CustomNodeData], validationContext: ValidationContext,
                             nextParts: List[SubsequentPart], ends: List[End]) extends PotentiallyStartPart with SubsequentPart {
     override type T = CustomNodeData
 
-  }
-
-  case class EndingCustomPart(obj: AnyRef, node: splittednode.EndingNode[CustomNode], validationContext: ValidationContext) extends SubsequentPart {
-    override type T = CustomNodeData
-
-    val ends = List(NormalEnd(node.id))
   }
   
   case class SinkPart(obj: api.process.Sink, node: splittednode.EndingNode[Sink], validationContext: ValidationContext) extends SubsequentPart {
