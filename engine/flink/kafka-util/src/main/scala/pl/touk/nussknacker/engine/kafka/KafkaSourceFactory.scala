@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
+import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
@@ -8,6 +9,7 @@ import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializatio
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
@@ -44,7 +46,14 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
     this(config, FixedDeserializationSchemaFactory(new KafkaDeserializationSchemaWrapper(schema)), timestampAssigner, testPrepareInfo)
 
   @MethodToInvoke
-  def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] with TestDataGenerator = {
+  def create(processMetaData: MetaData,
+             @ParamName(`TopicParamName`)
+             @DualEditor(
+               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+               defaultMode = DualEditorMode.RAW
+             )
+             @NotBlank
+             topic: String): Source[T] with TestDataGenerator = {
     createSource(processMetaData, List(topic), schemaFactory.create(List(topic), config))
   }
 
