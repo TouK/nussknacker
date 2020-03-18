@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, Sub
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import shapeless.syntax.typeable._
 

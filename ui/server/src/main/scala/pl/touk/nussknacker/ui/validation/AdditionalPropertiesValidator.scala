@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.additionalproperty.AdditionalPropertyValidatorDeterminerChain
-import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 
 class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {

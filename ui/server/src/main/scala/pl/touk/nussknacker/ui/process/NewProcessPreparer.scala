@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 object NewProcessPreparer {
 

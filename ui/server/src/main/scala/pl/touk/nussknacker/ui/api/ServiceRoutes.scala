@@ -18,7 +18,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
                    (implicit ec: ExecutionContext)

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
-import pl.touk.nussknacker.ui.process.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigrations], processValidation: ProcessValidation) {
 
