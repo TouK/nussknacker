@@ -349,7 +349,7 @@ protected trait ProcessCompilerBase {
                                       (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
       (contextTransformationDefOpt, validationContexts) match {
         case (_, _) if ending && !additionalData.canBeEnding =>
-          Invalid(NonEmptyList.of(InvalidEndingCustomNode(node.nodeType, node.id)))
+          Invalid(NonEmptyList.of(InvalidTailOfBranch(node.id)))
         case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
           // copying global variables because custom transformation may override them -> todo in ValidationContext
           transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))

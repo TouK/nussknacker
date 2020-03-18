@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidEndingCustomNode, MissingParameters, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidTailOfBranch, MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -255,7 +255,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       .endingCustomNode("custom1", Some("outputVar"), "nonEndingCustomNodeReturningTransformation", "stringVal" -> "'someValue'")
 
     validator.validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(InvalidEndingCustomNode(_, "custom1"), _)) =>
+      case Invalid(NonEmptyList(InvalidTailOfBranch("custom1"), _)) =>
     }
   }
 
@@ -264,7 +264,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       .endingCustomNode("custom1", Some("outputVar"), "nonEndingCustomNodeReturningUnit", "stringVal" -> "'someValue'")
 
     validator.validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(InvalidEndingCustomNode(_, "custom1"), _)) =>
+      case Invalid(NonEmptyList(InvalidTailOfBranch("custom1"), _)) =>
     }
   }
   

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, 
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions{
+class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions {
 
   private val processTypesForCategories = new ProcessTypesForCategories(ConfigWithScalaVersion.config)
 
@@ -21,14 +21,14 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
     val groups = prepareGroups(Map(), Map("custom" -> Some("CUSTOM"), "sinks"->Some("BAR")))
 
-    groups.map(_.name) shouldBe List("sources", "base", "CUSTOM", "enrichers", "BAR", "services")
+    groups.map(_.name) shouldBe List("sources", "base", "CUSTOM", "enrichers", "BAR", "optionalEndingCustom", "services")
   }
 
   test("return groups with hidden base group") {
 
     val groups = prepareGroups(Map.empty, Map("base" -> None))
 
-    groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "services", "sinks")
+    groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "optionalEndingCustom", "services", "sinks")
   }
 
   test("return objects sorted by label case insensitive") {
@@ -58,7 +58,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   }
 
   test("return objects sorted by label with mapped categories") {
-    val groups = prepareGroups(Map(), Map("custom" -> Some("base")))
+    val groups = prepareGroups(Map(), Map("custom" -> Some("base"), "optionalEndingCustom" -> Some("base")))
 
     validateGroups(groups, 5)
 
@@ -68,10 +68,10 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     baseNodeGroups should have size 1
 
     val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
-    // 6 nodes from base + 3 custom nodes
-    baseNodes should have size (6 + 3)
+    // 6 nodes from base + 3 custom nodes + 1 optional ending custom node
+    baseNodes should have size (6 + 3 + 1)
     baseNodes.filter(n => n.`type` == "filter") should have size 1
-    baseNodes.filter(n => n.`type` == "customNode") should have size 3
+    baseNodes.filter(n => n.`type` == "customNode") should have size 4
 
   }
 
@@ -79,7 +79,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
     val groups = prepareGroups(
       Map("barService" -> "foo", "barSource" -> "fooBar"),
-      Map("custom" -> Some("base")))
+      Map("custom" -> Some("base"), "optionalEndingCustom" -> Some("base")))
 
     validateGroups(groups, 7)
 
@@ -89,10 +89,10 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     baseNodeGroups should have size 1
 
     val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
-    // 6 nodes from base + 3 custom nodes
-    baseNodes should have size (6 + 3)
+    // 6 nodes from base + 3 custom nodes + 1 optional ending custom node
+    baseNodes should have size (6 + 3 + 1)
     baseNodes.filter(n => n.`type` == "filter") should have size 1
-    baseNodes.filter(n => n.`type` == "customNode") should have size 3
+    baseNodes.filter(n => n.`type` == "customNode") should have size 4
 
     val fooNodes = groups.filter(_.name == "foo").flatMap(_.possibleNodes)
     fooNodes should have size 1
