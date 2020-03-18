@@ -30,7 +30,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader
+import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
@@ -97,7 +97,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val db = initDb(config)
 
-    val typeToConfig = ProcessingTypeDataReader.readProcessingTypeData(config)
+    val (typeToConfig, reload) = BasicProcessingTypeDataReload.wrapWithReloader(
+      () => ProcessingTypeDataReader.loadProcessingTypeData(config))
 
     val analyticsConfig = AnalyticsConfig(config)
 
@@ -138,7 +139,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, typeToConfig, modelData, processRepository, processValidation, jobStatusService)
+    val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, jobStatusService)
 
     val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
 

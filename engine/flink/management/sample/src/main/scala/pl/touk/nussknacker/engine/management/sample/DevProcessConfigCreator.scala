@@ -258,11 +258,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def all[T](value: T) = WithCategories(value, "Category1", "Category2")
 
+  //we generate static generation-time during ConfigCreator creation to test reload mechanisms
   override val buildInfo: Map[String, String] = {
     Map(
       "process-version" -> "0.1",
       "engine-version" -> "0.1",
-      "generation-time" -> new Date().toString
+      "generation-time" -> LocalDateTime.now().toString
     )
   }
 }

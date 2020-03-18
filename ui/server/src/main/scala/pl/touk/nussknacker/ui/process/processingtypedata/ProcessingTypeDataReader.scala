@@ -16,12 +16,7 @@ object ProcessingTypeDataReader extends LazyLogging {
   private val processManagerProviders = ServiceLoader.load(classOf[ProcessManagerProvider])
     .asScala.toList.map(p => p.name -> p).toMap
 
-  def readProcessingTypeData(config: Config): ProcessingTypeDataProvider[ProcessingTypeData] with ProcessingTypeDataReload = {
-    def load(): MapBasedProcessingTypeDataProvider[ProcessingTypeData] = loadProcessingTypeData(config)
-    new ReloadableProcessingTypeDataProvider(load)
-  }
-
-  private def loadProcessingTypeData(config: Config) = {
+  def loadProcessingTypeData(config: Config): ProcessingTypeDataProvider[ProcessingTypeData] = {
     val types: Map[ProcessingType, ProcessingTypeConfig] = readProcessingTypeConfig(config)
     val valueMap = types.map {
       case (name, typeConfig) =>
@@ -33,14 +28,12 @@ object ProcessingTypeDataReader extends LazyLogging {
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData](valueMap)
   }
 
-  private def readProcessingTypeConfig(config: Config) = {
+  private def readProcessingTypeConfig(config: Config): Map[String, ProcessingTypeConfig] = {
     implicit val reader: ValueReader[Map[String, ProcessingTypeConfig]] = ValueReader.relative { config =>
       config.root().entrySet().asScala.map(_.getKey).map { key =>
         key -> config.as[ProcessingTypeConfig](key)(ProcessingTypeConfig.reader)
       }.toMap
     }
-
-    val types = config.as[Map[String, ProcessingTypeConfig]]("processTypes")
-    types
+    config.as[Map[String, ProcessingTypeConfig]]("processTypes")
   }
 }
