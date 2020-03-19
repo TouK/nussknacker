@@ -72,16 +72,18 @@ export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Valid
 const literalRegExpPattern = (pattern: string) => new RegExp(pattern)
 
 export const notBlankValueValidator: Validator = {
-  isValid: value => !isEmpty(value) && !literalRegExpPattern("'\\s*'").test(value.trim()),
+  isValid: value => !literalRegExpPattern("'\\s*'").test(value.trim()),
   message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
   description: () => i18next.t("validator.description", "Please fill field value for this parameter"),
   handledErrorType: HandledErrorType.BlankParameter,
   validatorType: ValidatorType.Frontend,
 }
 
+const isBlankValue = (value: string) => !mandatoryValueValidator.isValid(value)
+
 export const regExpValueValidator = (pattern: string, message: string, description: string): Validator => ({
-  //Empty value should be not validate - we want to chain validators
-  isValid: value => !notBlankValueValidator.isValid(value) || literalRegExpPattern(pattern).test(value.trim()),
+  //Blank value should be not validate - we want to chain validators
+  isValid: value => isBlankValue(value) || literalRegExpPattern(pattern).test(value.trim()),
   message: () => message,
   description: () => description,
   handledErrorType: HandledErrorType.MismatchParameter,

@@ -5,11 +5,12 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
+import javax.annotation.Nullable
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, MandatoryParameterValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -66,7 +67,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
       "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
-      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData())
+      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
+      "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(Parameter("nullableLiteralIntegerParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.integerValidator)))), emptyQueryNamesData()),
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -196,13 +198,61 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .customNode("customNodeId5", "event", "withNotBlankParams", "notBlankParam" -> "'test'")
         .emptySink("emptySink", "sink")
 
-      validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
         BlankParameter(_, _, "notBlankParam", "customNodeId1"),
         List(
           BlankParameter(_, _, "notBlankParam", "customNodeId2"),
           BlankParameter(_, _, "notBlankParam", "customNodeId3"),
           BlankParameter(_, _, "notBlankParam", "customNodeId4")
+        )
+      )) =>
+    }
+  }
+
+  test ("valid for Literal Integer param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "12")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test ("valid for Nullable Literal Integer param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test ("mismatch for Nullable Literal Integer param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "as")
+        .customNode("customNodeId2", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "1.23")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+        MismatchParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
+        List(
+          MismatchParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
         )
       )) =>
     }

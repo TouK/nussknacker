@@ -6,7 +6,7 @@ import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{BlankParameter, EmptyMandatoryParameter, InvalidPropertyFixedValue, NodeId, MismatchParameter}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{BlankParameter, EmptyMandatoryParameter, InvalidPropertyFixedValue, MismatchParameter, NodeId}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 
 import scala.reflect.ClassTag
@@ -42,9 +42,7 @@ case object MandatoryParameterValidator extends ParameterValidator {
 
 case object NotBlankParameterValidator extends ParameterValidator {
 
-  private def stringLiteralPattern(pattern: String): Pattern = Pattern.compile(s"'$pattern'")
-
-  private final val blankStringLiteralPattern: Pattern = stringLiteralPattern("\\s*")
+  private final val blankStringLiteralPattern: Pattern = Pattern.compile("'\\s*'")
 
   // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
   override def isValid(paramName: String, expression: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
@@ -73,12 +71,15 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
 case class RegExpParameterValidator(pattern: String, message: String, description: String) extends ParameterValidator {
   override def isValid(paramName: String, value: String, label: Option[String])
                       (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-    //Empty value should be not validate - we want to chain validators
-    if (!NotBlankParameterValidator.isValid(paramName, value, label).isValid || Pattern.compile(pattern).matcher(value).matches())
+    //Blank value should be not validate - we want to chain validators
+    if (isBlank(paramName, value, label) || Pattern.compile(pattern).matcher(value).matches())
       valid(Unit)
     else
       invalid(MismatchParameter(message, description, paramName, nodeId.id))
   }
+
+    def isBlank(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Boolean =
+      MandatoryParameterValidator.isValid(paramName, value, label).isInvalid
 }
 
 case object LiteralParameterValidator {
