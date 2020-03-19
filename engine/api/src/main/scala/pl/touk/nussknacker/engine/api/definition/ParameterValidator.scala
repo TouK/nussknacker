@@ -7,7 +7,9 @@ import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{BlankParameter, EmptyMandatoryParameter, InvalidPropertyFixedValue, NodeId, NotMatchParameter}
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError}
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
+
+import scala.reflect.ClassTag
 
 /**
  * Extend this trait to configure new parameter validator which should be handled on FE.
@@ -68,17 +70,27 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
   }
 }
 
-case class RegExpValidator(pattern: String, message: String, description: String) extends ParameterValidator {
+case class RegExpParameterValidator(pattern: String, message: String, description: String) extends ParameterValidator {
   override def isValid(paramName: String, value: String, label: Option[String])
                       (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
     if (Pattern.compile(pattern).matcher(value).matches()) valid(Unit) else invalid(NotMatchParameter(message, description, paramName, nodeId.id))
   }
 }
 
-case object LiteralValidators {
-  val integerValidator: RegExpValidator = RegExpValidator(
+case object LiteralParameterValidator {
+  val integerValidator: RegExpParameterValidator = RegExpParameterValidator(
     "^-?[0-9]+$",
     "This field value has to be an integer number",
     "Please fill field by proper integer type"
   )
+
+  def apply(clazz: Class[_]): Option[ParameterValidator] =
+    clazz match {
+      case clazz if clazz == classOf[Int] => Some(integerValidator)
+      case clazz if clazz == classOf[Integer] => Some(integerValidator)
+      case _  => None
+    }
+
+  def apply[T: ClassTag]: Option[ParameterValidator] =
+    LiteralParameterValidator(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 }

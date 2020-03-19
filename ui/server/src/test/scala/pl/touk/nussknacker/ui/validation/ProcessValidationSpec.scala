@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralValidators, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -35,7 +35,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
       "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
       "fixedValueOptionalProperty" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
-      "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralValidators.integerValidator)), Some("label"))
+      "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
     )),
     sampleResolver,
     emptyProcessingTypeDataProvider
@@ -195,7 +195,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), Some("label")),
-        "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralValidators.integerValidator)), Some("label"))
+        "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) shouldBe 'ok
@@ -210,7 +210,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   test("handle unknown properties validation") {
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-        "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralValidators.integerValidator)), Some("label"))
+        "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
     val result = processValidation.validate(validProcessWithFields(Map("field1" -> "true")))
@@ -277,7 +277,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
-      case Some(List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("expression"), NodeValidationErrorType.SaveNotAllowed))) =>
+      case Some(List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("expression"), NodeValidationErrorType.SaveAllowed))) =>
     }
     result.warnings shouldBe ValidationWarnings.success
   }
@@ -292,7 +292,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     result.errors.globalErrors shouldBe empty
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("fixedValueOptionalProperty"), NodeValidationErrorType.SaveNotAllowed)) =>
+      case List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("fixedValueOptionalProperty"), NodeValidationErrorType.SaveAllowed)) =>
     }
     result.warnings shouldBe ValidationWarnings.success
   }

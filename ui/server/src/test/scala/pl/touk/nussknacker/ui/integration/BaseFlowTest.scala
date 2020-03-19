@@ -11,7 +11,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralValidators, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -133,7 +133,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "intOptionalProperty" -> new UiAdditionalPropertyConfig(
           None,
           StringParameterEditor,
-          List(LiteralValidators.integerValidator),
+          List(LiteralParameterValidator.integerValidator),
           None
         ),
         "fixedValueOptionalProperty" -> new UiAdditionalPropertyConfig(
@@ -157,7 +157,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       val entity = responseAs[String]
 
       entity should include("Configured property stringRequiredProperty (label) is missing")
-      entity should include("Property intOptionalProperty has value of invalid type")
+      entity should include(LiteralParameterValidator.integerValidator.message)
       entity should include("Unknown property unknown")
       entity should include("Property fixedValueOptionalProperty has invalid value")
     }
