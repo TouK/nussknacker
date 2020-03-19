@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -47,7 +46,7 @@ class FlinkStreamingProcessRegistrarKafkaSpec
         .processorEnd("service", "logService", "all" -> "#input"))
     )
 
-    ProcessTestHelpers.processInvoker.invokeWithKafka(
+    helpers.ProcessTestHelpers.processInvoker.invokeWithKafka(
       process, KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
     ) {
       val keys = 10

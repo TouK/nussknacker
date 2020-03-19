@@ -178,7 +178,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       id = processId,
       properties = ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), isSubprocess = true, subprocessVersions = Map()),
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
-        SubprocessOutputDefinition("output1", "out1")),
+        SubprocessOutputDefinition("output1", "out1", List.empty)),
       edges = List(Edge("input1", "output1", None)),
       processingType = TestProcessingTypes.Streaming
     )

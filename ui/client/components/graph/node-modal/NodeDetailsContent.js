@@ -23,6 +23,7 @@ import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import AdditionalProperty from "./AdditionalProperty"
+import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -177,19 +178,17 @@ export class NodeDetailsContent extends React.Component {
             />
         )
       case "SubprocessOutputDefinition":
-        return (
-            <div className="node-table-body">
-              {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
-              {this.createField(
-                  "input",
-                  "Output name",
-                  "outputName",
-                  false,
-                  [mandatoryValueValidator, errorValidator(fieldErrors, "outputName")],
-              )}
-              {this.descriptionField()}
-            </div>
-        )
+        return <SubprocessOutputDefinition
+            renderFieldLabel={this.renderFieldLabel}
+            removeElement={this.removeElement}
+            onChange={this.setNodeDataAt}
+            node={this.state.editedNode}
+            addElement={this.addElement}
+            isMarked={this.isMarked}
+            readOnly={!this.props.isEditMode}
+            showValidation={showValidation}
+            errors={fieldErrors}
+        />;
       case "Filter":
         return (
             <div className="node-table-body">
@@ -308,16 +307,17 @@ export class NodeDetailsContent extends React.Component {
         )
       case "VariableBuilder":
         return <MapVariable
-            renderFieldLabel={this.renderFieldLabel}
-            removeElement={this.removeElement}
-            onChange={this.setNodeDataAt}
-            node={this.state.editedNode}
-            addElement={this.addElement}
-            isMarked={this.isMarked}
-            readOnly={!this.props.isEditMode}
-            showValidation={showValidation}
-            errors={fieldErrors}
-        />
+          varNameLabel={"Variable Name"}
+          renderFieldLabel={this.renderFieldLabel}
+          removeElement={this.removeElement}
+          onChange={this.setNodeDataAt}
+          node={this.state.editedNode}
+          addElement={this.addElement}
+          isMarked={this.isMarked}
+          readOnly={!this.props.isEditMode}
+          showValidation={showValidation}
+          errors={fieldErrors}
+        />;
       case "Variable":
         return <Variable
             renderFieldLabel={this.renderFieldLabel}
