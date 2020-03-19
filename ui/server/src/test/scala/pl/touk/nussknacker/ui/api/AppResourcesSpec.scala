@@ -19,20 +19,28 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataPr
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
 
 import scala.collection.JavaConverters._
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with PatientScalaFutures
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  def processStatus(deploymentId: Option[String], status: StateStatus): ProcessStatus =
+  private val emptyReload = new ProcessingTypeDataReload {
+    override def reloadAll(): Unit = ???
+  }
+
+  private def processStatus(deploymentId: Option[String], status: StateStatus): ProcessStatus =
     ProcessStatus.simple(status, deploymentId, List.empty)
+
+  private def prepareBasicAppResources(statusCheck: TestProbe) = {
+    new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
+      new JobStatusService(statusCheck.ref))
+  }
 
   test("it should return healthcheck also if cannot retrieve statuses") {
     val statusCheck = TestProbe()
-
-    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
-      new JobStatusService(statusCheck.ref))
+    val resources = prepareBasicAppResources(statusCheck)
 
     createDeployedProcess("id1")
     createDeployedProcess("id2")
@@ -57,8 +65,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
   test("it shouldn't return healthcheck when process canceled") {
     val statusCheck = TestProbe()
-    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
-      new JobStatusService(statusCheck.ref))
+    val resources = prepareBasicAppResources(statusCheck)
 
     createDeployedCanceledProcess(ProcessName("id1"),  isSubprocess = false)
     createDeployedProcess(ProcessName("id2"),  isSubprocess = false)
@@ -76,9 +83,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
   test("it should return healthcheck ok if statuses are ok") {
     val statusCheck = TestProbe()
-
-    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
-      new JobStatusService(statusCheck.ref))
+    val resources = prepareBasicAppResources(statusCheck)
 
     createDeployedProcess("id1")
     createDeployedProcess("id2")
@@ -97,9 +102,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
   test("it should not report deployment in progress as fail") {
     val statusCheck = TestProbe()
-
-    val resources = new AppResources(ConfigFactory.empty(), typeToConfig, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
-      new JobStatusService(statusCheck.ref))
+    val resources = prepareBasicAppResources(statusCheck)
 
     createDeployedProcess("id1")
 
@@ -122,8 +125,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val modelData = LocalModelData(ConfigFactory.empty(), creatorWithBuildInfo)
 
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
-    val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
-      typeToConfig, mapProcessingTypeDataProvider("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
+    val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)), emptyReload,
+       mapProcessingTypeDataProvider("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
 
     val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
     result ~> check {
