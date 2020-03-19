@@ -162,7 +162,7 @@ object node {
 
 
   //this is used after resolving subprocess, used for detecting when subprocess ends and context should change
-  case class SubprocessOutput(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+  case class SubprocessOutput(id: String, outputName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends OneOutputSubsequentNodeData
 
   //this is used only in subprocess definition
@@ -172,7 +172,7 @@ object node {
     extends SourceNodeData with RealNodeData
 
   //this is used only in subprocess definition
-  case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+  case class SubprocessOutputDefinition(id: String, outputName: String, fields: List[Field] = List.empty, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends EndingNodeData with RealNodeData
 
   //we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has TypedResult which has *real* class inside
