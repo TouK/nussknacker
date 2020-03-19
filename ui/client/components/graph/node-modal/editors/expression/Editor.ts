@@ -72,6 +72,7 @@ const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
     ]
   }
 
+  //Try to create validators with args - all configuration is from BE. It's dynamic mapping
   return (paramConfig.validators || [])
     .map(v => ({fun: validators[v.type], args: omit(v, ["type"])}))
     .filter(v => v.fun != null)

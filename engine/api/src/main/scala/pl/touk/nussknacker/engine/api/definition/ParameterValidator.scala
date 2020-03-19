@@ -6,7 +6,7 @@ import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{BlankParameter, EmptyMandatoryParameter, InvalidPropertyFixedValue, NodeId, NotMatchParameter}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{BlankParameter, EmptyMandatoryParameter, InvalidPropertyFixedValue, NodeId, MismatchParameter}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 
 import scala.reflect.ClassTag
@@ -73,7 +73,11 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
 case class RegExpParameterValidator(pattern: String, message: String, description: String) extends ParameterValidator {
   override def isValid(paramName: String, value: String, label: Option[String])
                       (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-    if (Pattern.compile(pattern).matcher(value).matches()) valid(Unit) else invalid(NotMatchParameter(message, description, paramName, nodeId.id))
+    //Empty value should be not validate - we want to chain validators
+    if (!NotBlankParameterValidator.isValid(paramName, value, label).isValid || Pattern.compile(pattern).matcher(value).matches())
+      valid(Unit)
+    else
+      invalid(MismatchParameter(message, description, paramName, nodeId.id))
   }
 }
 

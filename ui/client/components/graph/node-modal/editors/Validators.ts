@@ -12,7 +12,7 @@ export enum HandledErrorType {
   WrongDateFormat = "WrongDateFormat",
   InvalidPropertyFixedValue = "InvalidPropertyFixedValue",
   ErrorValidator = "ErrorValidator",
-  NotMatchParameter = "NotMatchParameter",
+  MismatchParameter = "MismatchParameter",
 }
 
 /* eslint-disable i18next/no-literal-string */
@@ -81,13 +81,10 @@ export const notBlankValueValidator: Validator = {
 
 export const regExpValueValidator = (pattern: string, message: string, description: string): Validator => ({
   //Empty value should be not validate - we want to chain validators
-  isValid: value => {
-    console.log("Value", value)
-    return !notBlankValueValidator.isValid(value) || literalRegExpPattern(pattern).test(value.trim())
-  },
+  isValid: value => !notBlankValueValidator.isValid(value) || literalRegExpPattern(pattern).test(value.trim()),
   message: () => message,
   description: () => description,
-  handledErrorType: HandledErrorType.NotMatchParameter,
+  handledErrorType: HandledErrorType.MismatchParameter,
   validatorType: ValidatorType.Frontend,
 })
 
