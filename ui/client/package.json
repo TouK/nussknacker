@@ -156,6 +156,7 @@
     "node-libs-browser": "^0.7.0",
     "puppeteer": "^2.0.0",
     "raw-loader": "^0.5.1",
+    "react-scrollbars-custom": "^4.0.21",
     "style-loader": "^0.23.1",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
