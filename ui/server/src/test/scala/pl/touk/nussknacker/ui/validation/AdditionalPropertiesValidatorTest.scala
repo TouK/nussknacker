@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralValidators, MandatoryParameterValidator, RegExpValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
@@ -20,7 +20,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
         reqFieldName -> AdditionalPropertyConfig(
           None,
           None,
-          Some(List(LiteralIntValidator, MandatoryParameterValidator)),
+          Some(List(LiteralValidators.integerValidator, MandatoryParameterValidator)),
           Some(label)),
         optionalFieldName -> AdditionalPropertyConfig(
           None,
@@ -73,7 +73,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-      NodeValidationError("InvalidLiteralIntValue", _, _, Some("propReq"), NodeValidationErrorType.SaveNotAllowed),
+      NodeValidationError("NotMatchParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed),
       NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
       ) =>
     }
@@ -89,7 +89,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("InvalidLiteralIntValue", _, _, Some("propReq"), NodeValidationErrorType.SaveNotAllowed)) =>
+      case List(NodeValidationError("NotMatchParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)) =>
     }
   }
 

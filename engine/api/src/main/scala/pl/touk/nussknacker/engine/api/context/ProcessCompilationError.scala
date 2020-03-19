@@ -144,6 +144,8 @@ object ProcessCompilationError {
 
   case class EmptyMandatoryParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
+  case class NotMatchParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
   case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
@@ -166,14 +168,6 @@ object ProcessCompilationError {
   object InvalidPropertyFixedValue {
     def apply(paramName: String, label: Option[String], value: String, values: List[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)
-  }
-
-  case class InvalidLiteralIntValue(paramName: String, label: Option[String], value: String, nodeId: String)
-    extends PartSubGraphCompilationError with InASingleNode
-
-  object InvalidLiteralIntValue {
-    def apply(paramName: String, label: Option[String], value: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      InvalidLiteralIntValue(paramName, label, value, nodeId.id)
   }
 
   case class OverwrittenVariable(variableName: String, nodeId: String)

@@ -64,7 +64,6 @@ object PrettyValidationErrors {
       case DisablingNoOutputsSubprocess(id) => node(s"Cannot disable subprocess $id. Hasn't outputs", "Please check subprocess definition")
       case MissingRequiredProperty(fieldName, label, _) => missingRequiredProperty(typ, fieldName, label)
       case UnknownProperty(propertyName, _) => unknownProperty(typ, propertyName)
-      case InvalidLiteralIntValue(fieldName, label, value, _) => invalidLiteralIntValue(typ, fieldName, label, value)
       case InvalidPropertyFixedValue(fieldName, label, value, values, _) => invalidPropertyFixedValue(typ, fieldName, label, value, values)
     }
   }
@@ -118,17 +117,6 @@ object PrettyValidationErrors {
     )
   }
 
-  private def invalidLiteralIntValue(typ: String, propertyName: String, label: Option[String], value: String) = {
-    val labelText = getLabel(label)
-    NodeValidationError(
-      typ,
-      s"Property $propertyName$labelText has value of invalid type",
-      s"Expected integer, got: '$value'.",
-      fieldName = Some(propertyName),
-      errorType = NodeValidationErrorType.SaveNotAllowed
-    )
-  }
-
   private def invalidPropertyFixedValue(typ: String, propertyName: String, label: Option[String], value: String, values: List[String]) = {
     val labelText = getLabel(label)
     NodeValidationError(
@@ -136,7 +124,7 @@ object PrettyValidationErrors {
       s"Property $propertyName$labelText has invalid value",
       s"Expected one of ${values.mkString(", ")}, got: '$value'.",
       Some(propertyName),
-      NodeValidationErrorType.SaveNotAllowed
+      NodeValidationErrorType.SaveAllowed
     )
   }
 

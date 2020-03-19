@@ -6,10 +6,8 @@ import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, BlankParameter, InvalidPropertyFixedValue, NodeId}
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
-
-import scala.util.Try
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{BlankParameter, EmptyMandatoryParameter, InvalidPropertyFixedValue, NodeId, NotMatchParameter}
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError}
 
 /**
  * Extend this trait to configure new parameter validator which should be handled on FE.
@@ -42,9 +40,9 @@ case object MandatoryParameterValidator extends ParameterValidator {
 
 case object NotBlankParameterValidator extends ParameterValidator {
 
-  private final val BlankStringLiteralPattern: Pattern = stringLiteralPattern("\\s*")
+  private def stringLiteralPattern(pattern: String): Pattern = Pattern.compile(s"'$pattern'")
 
-  private def stringLiteralPattern(pattern: String) = Pattern.compile(s"'$pattern'")
+  private final val blankStringLiteralPattern: Pattern = stringLiteralPattern("\\s*")
 
   // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
   override def isValid(paramName: String, expression: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
@@ -57,7 +55,7 @@ case object NotBlankParameterValidator extends ParameterValidator {
     nodeId
   )
   private def isBlankStringLiteral(expression: String): Boolean =
-    BlankStringLiteralPattern.matcher(expression.trim).matches()
+    blankStringLiteralPattern.matcher(expression.trim).matches()
 }
 
 case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
@@ -70,11 +68,17 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
   }
 }
 
-case object LiteralIntValidator extends ParameterValidator {
-
+case class RegExpValidator(pattern: String, message: String, description: String) extends ParameterValidator {
   override def isValid(paramName: String, value: String, label: Option[String])
                       (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-
-    if (Try(value.toInt).isSuccess) valid(Unit) else invalid(ProcessCompilationError.InvalidLiteralIntValue(paramName, label, value))
+    if (Pattern.compile(pattern).matcher(value).matches()) valid(Unit) else invalid(NotMatchParameter(message, description, paramName, nodeId.id))
   }
+}
+
+case object LiteralValidators {
+  val integerValidator: RegExpValidator = RegExpValidator(
+    "^-?[0-9]+$",
+    "This field value has to be an integer number",
+    "Please fill field by proper integer type"
+  )
 }

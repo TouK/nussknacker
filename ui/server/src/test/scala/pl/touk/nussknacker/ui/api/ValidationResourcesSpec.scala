@@ -7,7 +7,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, FixedValuesValidator, LiteralValidators, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -31,7 +31,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
       "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
       "fixedValueOptionalProperty" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
-      "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralIntValidator)), Some("label"))
+      "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralValidators.integerValidator)), Some("label"))
     )),
     sampleResolver,
     emptyProcessingTypeDataProvider

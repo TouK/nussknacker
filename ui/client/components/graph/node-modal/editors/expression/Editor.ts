@@ -2,7 +2,7 @@ import BoolEditor from "./BoolEditor"
 import RawEditor from "./RawEditor"
 import StringEditor from "./StringEditor"
 import FixedValuesEditor from "./FixedValuesEditor"
-import {concat, isEmpty} from "lodash"
+import {concat, isEmpty, omit} from "lodash"
 import {ExpressionObj} from "./types"
 import i18next from "i18next"
 import React from "react"
@@ -73,9 +73,9 @@ const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
   }
 
   return (paramConfig.validators || [])
-    .map(v => validators[v.type])
-    .filter(v => v != null)
-    .map(v => v(paramConfig.editor.possibleValues))
+    .map(v => ({fun: validators[v.type], args: omit(v, ["type"])}))
+    .filter(v => v.fun != null)
+    .map(v => v.fun(v.args))
 }
 
 const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => {
