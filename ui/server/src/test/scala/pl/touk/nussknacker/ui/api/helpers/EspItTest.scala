@@ -73,7 +73,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   )
 
   val featureTogglesConfig = FeatureTogglesConfig.create(testConfig)
-  val typeToConfig = ProcessingTypeDataReader.readProcessingTypeData(testConfig)
+  val typeToConfig = ProcessingTypeDataReader.loadProcessingTypeData(testConfig)
 
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 

@@ -144,7 +144,13 @@ trait ExpressionRewriter {
       case n: Source =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
-      case _: BranchEndData | _: Split | _: SubprocessInputDefinition | _: SubprocessOutputDefinition | _: SubprocessOutput => data
+      case n: SubprocessOutputDefinition =>
+        n.copy(
+          fields = rewriteFields(n.fields))
+      case n: SubprocessOutput =>
+        n.copy(
+          fields = rewriteFields(n.fields))
+      case _: BranchEndData | _: Split | _: SubprocessInputDefinition => data
     }
 
   private def rewriteFields(list: List[Field])(implicit metaData: MetaData, nodeId: NodeId): List[Field] =

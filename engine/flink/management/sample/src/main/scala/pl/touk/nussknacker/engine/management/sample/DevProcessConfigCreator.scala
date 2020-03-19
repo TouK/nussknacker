@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import java.time.LocalDateTime
+
 import com.typesafe.config.Config
 import io.circe.Encoder
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -96,7 +98,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "datesTypesService" -> categories(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
     "campaignService" -> features(CampaignService),
     "configuratorService" -> features(ConfiguratorService),
-    "meetingService" -> features(MeetingService)
+    "meetingService" -> features(MeetingService),
+    "dynamicService" -> categories(new DynamicService)
   )
 
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
@@ -142,8 +145,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def buildInfo(): Map[String, String] = Map(
-    "process-version" -> "0.1",
-    "engine-version" -> "0.1"
-  )
+  //we generate static generation-time during ConfigCreator creation to test reload mechanisms
+  override val buildInfo: Map[String, String] = {
+    Map(
+      "process-version" -> "0.1",
+      "engine-version" -> "0.1",
+      "generation-time" -> LocalDateTime.now().toString
+    )
+  }
 }
