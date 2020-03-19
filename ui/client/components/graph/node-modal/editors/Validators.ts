@@ -20,7 +20,7 @@ export enum BackendValidator {
   MandatoryParameterValidator = "MandatoryParameterValidator",
   NotBlankParameterValidator = "NotBlankParameterValidator",
   FixedValuesValidator = "FixedValuesValidator",
-  RegExpValidator = "RegExpValidator",
+  RegExpParameterValidator = "RegExpParameterValidator",
 }
 
 export type Validator = {
@@ -81,7 +81,10 @@ export const notBlankValueValidator: Validator = {
 
 export const regExpValueValidator = (pattern: string, message: string, description: string): Validator => ({
   //Empty value should be not validate - we want to chain validators
-  isValid: value => !notBlankValueValidator.isValid(value) || literalRegExpPattern(pattern).test(value.trim()),
+  isValid: value => {
+    console.log("Value", value)
+    return !notBlankValueValidator.isValid(value) || literalRegExpPattern(pattern).test(value.trim())
+  },
   message: () => message,
   description: () => description,
   handledErrorType: HandledErrorType.NotMatchParameter,
@@ -104,5 +107,5 @@ export const validators: Record<BackendValidator, (...args: any[]) => Validator>
   [BackendValidator.MandatoryParameterValidator]: () => mandatoryValueValidator,
   [BackendValidator.NotBlankParameterValidator]: () => notBlankValueValidator,
   [BackendValidator.FixedValuesValidator]: ({possibleValues}) => fixedValueValidator(possibleValues),
-  [BackendValidator.RegExpValidator]: ({pattern, message, description}) => regExpValueValidator(pattern, message, description),
+  [BackendValidator.RegExpParameterValidator]: ({pattern, message, description}) => regExpValueValidator(pattern, message, description),
 }
