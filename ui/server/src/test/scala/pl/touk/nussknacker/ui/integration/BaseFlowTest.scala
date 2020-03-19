@@ -53,6 +53,21 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(1.minute)
 
+  //@see DevProcessConfigCreator.DynamicService, TODO: figure out how to make reload test more robust...
+  //currently we delete file in beforeAll, because it's used *also* in initialization...
+  val dynamicServiceFile = new File(Properties.tmpDir, "nk-dynamic-params.lst")
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    dynamicServiceFile.delete()
+  }
+
+  override def afterAll(): Unit = {
+    dynamicServiceFile.delete()
+    super.afterAll()
+  }
+
+
   test("saves, updates and retrieves sample process") {
 
     val processId = UUID.randomUUID().toString
@@ -222,10 +237,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   test("should reload ConfigCreator") {
 
-    //@see DevProcessConfigCreator.DynamicService
-    val dynamicServiceFile = new File(Properties.tmpDir, "nk-dynamic-params.lst")
-    dynamicServiceFile.delete()
-    
     def generationTime: Option[String] = {
       Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
