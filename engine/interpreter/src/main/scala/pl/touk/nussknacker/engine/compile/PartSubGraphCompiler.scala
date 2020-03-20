@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, ExpressionTypingInfo}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.typed.ServiceReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
