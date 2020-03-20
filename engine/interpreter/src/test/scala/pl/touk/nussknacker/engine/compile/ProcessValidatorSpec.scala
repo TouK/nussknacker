@@ -69,6 +69,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
       "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
       "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(Parameter("nullableLiteralIntegerParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.integerValidator)))), emptyQueryNamesData()),
+      "withRegExpParam" -> (ObjectDefinition.withParams(List(Parameter("regExpParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.numberValidator)))), emptyQueryNamesData()),
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -238,7 +239,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
-  test ("mismatch for Nullable Literal Integer param") {
+  test ("invalid for Nullable Literal Integer param") {
     val processWithInvalidExpression =
       EspProcessBuilder
         .id("process1")
@@ -250,10 +251,27 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        MismatchParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
+        InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
         List(
-          MismatchParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
+          InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
         )
+      )) =>
+    }
+  }
+
+  test ("mismatch for Literal Number param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withRegExpParam", "regExpParam" -> "as")
+        .customNode("customNodeId2", "event", "withRegExpParam", "regExpParam" -> "1.23")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+        MismatchParameter(_, _, "regExpParam", "customNodeId"), _
       )) =>
     }
   }

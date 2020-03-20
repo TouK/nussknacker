@@ -157,7 +157,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       val entity = responseAs[String]
 
       entity should include("Configured property stringRequiredProperty (label) is missing")
-      entity should include(LiteralParameterValidator.integerValidator.message)
+      entity should include("This field value has to be an integer number")
       entity should include("Unknown property unknown")
       entity should include("Property fixedValueOptionalProperty has invalid value")
     }

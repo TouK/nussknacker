@@ -144,6 +144,8 @@ object ProcessCompilationError {
 
   case class EmptyMandatoryParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
+  case class InvalidIntegerLiteralParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
   case class MismatchParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
   case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)

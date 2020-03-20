@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
 
 class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
   private val reqFieldName = "propReq"
+  private val regexpFieldName = "propRegExp"
   private val optionalFieldName = "propOpt"
   private val optFixedFieldName = "propOptFixed"
   private val possibleValues = List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
@@ -21,6 +22,11 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
           None,
           None,
           Some(List(LiteralParameterValidator.integerValidator, MandatoryParameterValidator)),
+          Some(label)),
+        regexpFieldName -> AdditionalPropertyConfig(
+          None,
+          None,
+          Some(List(LiteralParameterValidator.numberValidator)),
           Some(label)),
         optionalFieldName -> AdditionalPropertyConfig(
           None,
@@ -73,9 +79,38 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-      NodeValidationError("NotMatchParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed),
-      NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
+        NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
       ) =>
+    }
+  }
+
+  test("validate regexp config with empty property") {
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
+      ProcessAdditionalFields(None, Set.empty, properties = Map(
+        "propReq" -> "1",
+        "propRegExp" -> ""
+      ))
+    ))
+
+    val result = validator.validate(process)
+
+    result.errors.processPropertiesErrors should matchPattern {
+      case List() =>
+    }
+  }
+
+  test("validate config with invalid property") {
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
+      ProcessAdditionalFields(None, Set.empty, properties = Map(
+        "propReq" -> "1",
+        "propRegExp" -> "asd"
+      ))
+    ))
+
+    val result = validator.validate(process)
+
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("MismatchParameter", _, _, Some("propRegExp"),  NodeValidationErrorType.SaveAllowed)) =>
     }
   }
 
@@ -89,7 +124,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("NotMatchParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("InvalidIntegerLiteralParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)) =>
     }
   }
 

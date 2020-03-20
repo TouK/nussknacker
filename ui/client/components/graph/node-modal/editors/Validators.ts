@@ -11,6 +11,7 @@ export enum HandledErrorType {
   BlankParameter = "BlankParameter",
   WrongDateFormat = "WrongDateFormat",
   InvalidPropertyFixedValue = "InvalidPropertyFixedValue",
+  InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
   ErrorValidator = "ErrorValidator",
   MismatchParameter = "MismatchParameter",
 }
@@ -21,6 +22,7 @@ export enum BackendValidator {
   NotBlankParameterValidator = "NotBlankParameterValidator",
   FixedValuesValidator = "FixedValuesValidator",
   RegExpParameterValidator = "RegExpParameterValidator",
+  LiteralIntegerValidator = "LiteralIntegerValidator",
 }
 
 export type Validator = {
@@ -79,16 +81,23 @@ export const notBlankValueValidator: Validator = {
   validatorType: ValidatorType.Frontend,
 }
 
-const isBlankValue = (value: string) => !mandatoryValueValidator.isValid(value)
-
 export const regExpValueValidator = (pattern: string, message: string, description: string): Validator => ({
   //Blank value should be not validate - we want to chain validators
-  isValid: value => isBlankValue(value) || literalRegExpPattern(pattern).test(value.trim()),
+  isValid: value => isEmpty(value) || literalRegExpPattern(pattern).test(value.trim()),
   message: () => message,
   description: () => description,
   handledErrorType: HandledErrorType.MismatchParameter,
   validatorType: ValidatorType.Frontend,
 })
+
+export const literalIntegerValueValidator: Validator = {
+  //Blank value should be not validate - we want to chain validators
+  isValid: value => isEmpty(value) || literalRegExpPattern("^-?[0-9]+$").test(value),
+  message: () => i18next.t("literalIntegerValueValidator.message",  "This field value has to be an integer number"),
+  description: () => i18next.t("literalIntegerValueValidator,description", "Please fill field by proper integer type"),
+  handledErrorType: HandledErrorType.InvalidIntegerLiteralParameter,
+  validatorType: ValidatorType.Frontend,
+}
 
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
   return isEmpty(validators) ? [] :
@@ -105,6 +114,7 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
 export const validators: Record<BackendValidator, (...args: any[]) => Validator> = {
   [BackendValidator.MandatoryParameterValidator]: () => mandatoryValueValidator,
   [BackendValidator.NotBlankParameterValidator]: () => notBlankValueValidator,
+  [BackendValidator.LiteralIntegerValidator]: () => literalIntegerValueValidator,
   [BackendValidator.FixedValuesValidator]: ({possibleValues}) => fixedValueValidator(possibleValues),
   [BackendValidator.RegExpParameterValidator]: ({pattern, message, description}) => regExpValueValidator(pattern, message, description),
 }

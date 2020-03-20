@@ -71,7 +71,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       entity should include ("Configured property requiredStringProperty (label) is missing")
       entity should include ("Property fixedValueOptionalProperty has invalid value")
       entity should include ("Unknown property unknown")
-      entity should include (LiteralParameterValidator.integerValidator.message)
+      entity should include ("This field value has to be an integer number")
     }
   }
 
