@@ -44,7 +44,7 @@ class ProcessUtils {
 
   findAvailableVariables = (nodeId, process, processDefinition, fieldName, processCategory) => {
     const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
-    const variablesFromValidation = _.get(process.validationResult, `variableTypes.${  nodeId}`)
+    const variablesFromValidation = _.get(process, ["validationResult", "variableTypes", nodeId])
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const additionalVariablesForParam = nodeId ? this._additionalVariablesForParameter(nodeId, process, processDefinition, fieldName) : {}
     const variables = {...variablesForNode, ...additionalVariablesForParam}
