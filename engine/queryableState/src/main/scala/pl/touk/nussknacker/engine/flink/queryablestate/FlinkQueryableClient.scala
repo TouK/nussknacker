@@ -99,7 +99,13 @@ class FlinkQueryableClient(createClients: => List[QueryableStateClient]) extends
   }
 
   def close(): Unit = {
-    clients.foreach(_.shutdownAndWait())
+    //QueryableClient are not particularly robust, so we don't want to crash on exit
+    try {
+      clients.foreach(_.shutdownAndWait())
+    } catch {
+      case NonFatal(e) =>
+        logger.warn(s"Failed to close queryable client(s)", e)
+    }
   }
 
 }

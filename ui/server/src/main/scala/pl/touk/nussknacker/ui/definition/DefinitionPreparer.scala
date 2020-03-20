@@ -109,7 +109,7 @@ object DefinitionPreparer {
     } else {
       NodeGroup("subprocessDefinition", List(
         NodeToAdd("input", "input", SubprocessInputDefinition("", List()), readCategories),
-        NodeToAdd("output", "output", SubprocessOutputDefinition("", "output"), readCategories)
+        NodeToAdd("output", "output", SubprocessOutputDefinition("", "output", List.empty), readCategories)
       ))
     }
 
@@ -173,7 +173,7 @@ object DefinitionPreparer {
 
     val subprocessOutputs = if (isSubprocess) List() else subprocessesDetails.map(_.canonical).map { process =>
       val outputs = ProcessConverter.findNodes(process).collect {
-        case SubprocessOutputDefinition(_, name, _) => name
+        case SubprocessOutputDefinition(_, name, _, _) => name
       }
       //TODO: enable choice of output type
       NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput),

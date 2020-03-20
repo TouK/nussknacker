@@ -34,11 +34,11 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
         val output = nextNodesMap.keys.head
         resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
           val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
-          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data))::FlatNode(SubprocessOutput(outputId, output, None))::resolvedNexts
+          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data))::FlatNode(SubprocessOutput(outputId, output, List.empty, None))::resolvedNexts
         }
-      case canonicalnode.Subprocess(subprocessInput@SubprocessInput(dataId, _, _, isDisabled, _), nextNodes) =>
+      case canonicalnode.Subprocess(subprocessInput:SubprocessInput, nextNodes) =>
         subprocesses.get(subprocessInput.ref.id) match {
-          case Some(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes, additionalBranches)) =>
+          case Some(CanonicalProcess(_, _, FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes, _)) =>
             checkProcessParameters(subprocessInput.ref, parameters.map(_.name), subprocessInput.id).andThen { _ =>
               val nextResolvedV = nextNodes.map { case (k, v) =>
                 resolveCanonical(idPrefix)(v).map((k, _))
@@ -64,8 +64,8 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
   private def replaceCanonicalList(replacement: Map[String, List[CanonicalNode]]): List[CanonicalNode] => CompilationValid[List[CanonicalNode]] = {
 
     iterateOverCanonicals({
-      case FlatNode(SubprocessOutputDefinition(id, name, add)) => replacement.get(name) match {
-        case Some(nodes) => Valid(FlatNode(SubprocessOutput(id, name, add)) :: nodes)
+      case FlatNode(SubprocessOutputDefinition(id, name, fields, add)) => replacement.get(name) match {
+        case Some(nodes) => Valid(FlatNode(SubprocessOutput(id, name, fields, add)) :: nodes)
         case None => Invalid(NonEmptyList.of(UnknownSubprocessOutput(name, id)))
       }
     }, NodeDataFun.id)

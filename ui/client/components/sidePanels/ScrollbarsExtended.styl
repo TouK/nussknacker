@@ -5,26 +5,26 @@
     }
 
     .track
-        bottom 8px
-        top 8px
-        right 3px
+        top (toolbarsGap - scrollThumbSize/3)
+        bottom @top
 
-        //:global(.LEFT) &
-        //    left 3px
-        //
-        //:global(.RIGHT) &
-        //    right 3px
+        :global(.LEFT) &
+            right 0
 
-        width 8px !important
-        background-color rgba(white, .05)
-        border-radius 8px
-        backdrop-filter blur(1px) // sync rendering with other blurred items
+        :global(.RIGHT) &
+            left 0
+
+        width (scrollThumbSize - 1px)
+        background-color transparent
+        border-radius scrollThumbSize
 
     .thumb
-        border-radius 8px
-        background-color rgba(black, .4)
-        backdrop-filter blur(2px) // sync rendering with other blurred items
+        cursor all-scroll
+        border-radius scrollThumbSize
+        background-color rgba(black, .45)
 
+    .content
+        display flex
 
     .enabled
         pointer-events auto
@@ -38,9 +38,8 @@
         transition all .25s
         overflow hidden
 
-
         &.enabled
-            background rgba(black, 0.05)
+            background rgba(black, 0.15)
             backdrop-filter blur(8px)
             @supports (not ((-webkit-backdrop-filter: blur(2em)) or (backdrop-filter: blur(2em))))
-                background rgba(#999, 0.8)
+                background rgba(#999999, 0.8)

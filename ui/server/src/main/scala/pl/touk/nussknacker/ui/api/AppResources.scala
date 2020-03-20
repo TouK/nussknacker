@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppResources(config: Config,
-                   typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
+                   processingTypeDataReload: ProcessingTypeDataReload,
                    modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
@@ -54,8 +54,9 @@ class AppResources(config: Config,
               if (set.isEmpty) {
                 HttpResponse(status = StatusCodes.OK)
               } else {
-                logger.warn(s"Processes not running: $set")
-                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.mkString(", ")}")
+                logger.warn(s"Processes not running: ${set.keys}")
+                logger.debug(s"Processes not running - more details: $set")
+                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.keys.mkString(", ")}")
               }
             }.recover[HttpResponse] {
               case NonFatal(e) =>
@@ -95,10 +96,21 @@ class AppResources(config: Config,
             }
           }
         }
+      } ~ pathPrefix("processingtype" / "reload") {
+        authorize(user.isAdmin) {
+          post {
+            pathEnd {
+              complete {
+                processingTypeDataReload.reloadAll()
+                HttpResponse(StatusCodes.NoContent)
+              }
+            }
+          }
+        }
       }
     }
 
-  private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser) : Future[Set[String]] = {
+  private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
     for {
       processes <- processRepository.fetchDeployedProcessesDetails[Unit]()
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
@@ -107,7 +119,7 @@ class AppResources(config: Config,
         case (_, status) => status.exists(st => st.status.isDuringDeploy || st.status.isRunning)
       }.map{
         case (process, status) => (process.name, status)
-      }.keySet
+      }
     }
   }
 
