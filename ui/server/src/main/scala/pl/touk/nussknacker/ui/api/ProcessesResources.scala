@@ -299,7 +299,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               }
             }
           }
-        } ~ new NodesResources(processRepository, typeToConfig).securedRoute
+        } ~ new NodesResources(processRepository, new AdditionalInfoProvider(typeToConfig)).securedRoute
       }
   }
 

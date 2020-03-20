@@ -2,6 +2,7 @@ import React, {useState, useEffect} from "react"
 import HttpService from "../../../http/HttpService"
 import ReactMarkdown from "react-markdown/with-html"
 import "../../../stylesheets/markdown.styl"
+import {useDebounce} from "use-debounce"
 
 type Props = {
   processId: string,
@@ -23,11 +24,14 @@ export default function NodeAdditionalInfoBox(props: Props) {
     processId, node,
   } = props
 
+  //We don't use redux here since this additionalData is local to this component. We use debounce, as
+  //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
+  const [debouncedNode] = useDebounce(node, 1000)
   useEffect(() => {
     if (node?.type) {
-      HttpService.getNodeAdditionalData(processId, node).then(res => setAdditionalData(res.data))
+      HttpService.getNodeAdditionalData(processId, debouncedNode).then(res => setAdditionalData(res.data))
     }
-  }, [processId, node])
+  }, [processId, debouncedNode])
 
   const type = additionalData?.type
   if (!type) {
