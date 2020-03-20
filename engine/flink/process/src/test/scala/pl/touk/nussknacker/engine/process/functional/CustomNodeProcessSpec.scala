@@ -30,6 +30,25 @@ class CustomNodeProcessSpec extends FunSuite with Matchers {
 
   }
 
+  test("be able to use maps, lists and output var after optional ending custom nodes") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("map", "map", "{:}")
+      .buildSimpleVariable("list", "list", "{}")
+      .buildSimpleVariable("str", "strVar", "'someStr'")
+      .customNode("custom", "outRec", "optionalEndingCustom", "param" -> "#strVar")
+      .buildSimpleVariable("mapToString", "mapToString", "#map.toString()")
+      .buildSimpleVariable("listToString", "listToString", "#list.toString()")
+      .buildSimpleVariable("outputVarToString", "outRecToString", "#outRec.toString()")
+      .emptySink("out", "monitor")
+
+    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
+
+    //without certain hack (see SpelHack & SpelMapHack) this throws exception.
+    processInvoker.invokeWithSampleData(process, data)
+  }
+
   test("fire alert when aggregate threshold exceeded") {
 
     val process = EspProcessBuilder.id("proc1")
@@ -254,6 +273,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers {
     thrown.getMessage shouldBe s"Compilation errors: ExpressionParseError(There is no property 'value999' in type: ${classOf[SimpleRecord].getName},delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
   }
 
+
   test("should evaluate blank expression used in lazy parameter as a null") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
@@ -267,6 +287,21 @@ class CustomNodeProcessSpec extends FunSuite with Matchers {
     processInvoker.invokeWithSampleData(process, data)
 
     MockService.data shouldBe List(null)
+  }
+
+  test("be able to end process with optional ending custom node") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("map", "map", "{:}")
+      .buildSimpleVariable("list", "list", "{}")
+      .endingCustomNode("custom", None, "optionalEndingCustom", "param" -> "#input.id")
+
+    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
+
+    //without certain hack (see SpelHack & SpelMapHack) this throws exception.
+    processInvoker.invokeWithSampleData(process, data)
+    MockService.data shouldBe List("1")
   }
 
 }

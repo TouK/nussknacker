@@ -311,6 +311,20 @@ object SampleNodes {
 
   }
 
+  object OptionalEndingCustom extends CustomStreamTransformer {
+    
+    override def canBeEnding: Boolean = true
+
+    @MethodToInvoke
+    def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+        val afterMap = start.map(context.lazyParameterHelper.lazyMapFunction[Any](param))
+        afterMap.addSink(element => MockService.add(element.value))
+        afterMap
+      })
+
+  }
+  
   class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
     extends FlinkProcessSignalSender with KafkaSignalStreamConnector {
 
