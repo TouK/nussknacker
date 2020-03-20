@@ -111,7 +111,7 @@ object ProcessCompilationError {
     def apply(name: String)(implicit nodeId: NodeId): ProcessCompilationError =
       MissingCustomNodeExecutor(name, nodeId.id)
   }
-
+  
   case class MissingParameters(params: Set[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 

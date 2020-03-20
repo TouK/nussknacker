@@ -30,7 +30,7 @@ object PrettyValidationErrors {
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
       case EmptyProcess => node("Empty process", "Process is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Process can start only from source node")
-      case InvalidTailOfBranch(_) => node("Invalid end of process", "Process branch can only end with sink or processor")
+      case InvalidTailOfBranch(_) => node("Invalid end of process", "Process branch can only end with sink, processor or ending custom transformer")
 
       case MissingParameters(params, NodeTypingInfo.ExceptionHandlerNodeId) =>
         node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")

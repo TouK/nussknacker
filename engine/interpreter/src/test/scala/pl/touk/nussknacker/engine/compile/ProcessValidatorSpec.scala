@@ -40,7 +40,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   import spel.Implicits._
 
-  private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext, false)
+  private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext, false, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
     Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),

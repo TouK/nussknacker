@@ -76,7 +76,7 @@ object DefinitionPreparer {
     )
 
     val customTransformers = NodeGroup("custom",
-      processDefinition.customStreamTransformers.map {
+      processDefinition.customStreamTransformers.collect {
         // branchParameters = List.empty can be tricky here. We moved template for branch parameters to NodeToAdd because
         // branch parameters inside node.Join are branchId -> List[Parameter] and on node template level we don't know what
         // branches will be. After moving this parameters to BranchEnd it will disappear from here.
@@ -85,7 +85,14 @@ object DefinitionPreparer {
         case (id, uiObjectDefinition) if customTransformerAdditionalData(id).manyInputs => NodeToAdd("customNode", id,
           node.Join("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition), List.empty),
           filterCategories(uiObjectDefinition), objDefBranchParams(id, uiObjectDefinition))
-        case (id, uiObjectDefinition) => NodeToAdd("customNode", id,
+        case (id, uiObjectDefinition) if !customTransformerAdditionalData(id).canBeEnding => NodeToAdd("customNode", id,
+          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
+      }.toList
+    )
+
+    val optionalEndingCustomTransformers = NodeGroup("optionalEndingCustom",
+      processDefinition.customStreamTransformers.collect {
+        case (id, uiObjectDefinition) if customTransformerAdditionalData(id).canBeEnding => NodeToAdd("customNode", id,
           CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
       }.toList
     )
@@ -136,7 +143,7 @@ object DefinitionPreparer {
       List(inputs),
       List(base),
       List(enrichers, customTransformers) ++ subprocesses,
-      List(services, sinks))
+      List(services, optionalEndingCustomTransformers, sinks))
 
     virtualGroups
       .zipWithIndex

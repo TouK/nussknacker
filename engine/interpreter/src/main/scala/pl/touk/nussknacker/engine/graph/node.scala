@@ -113,7 +113,7 @@ object node {
 
   case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter],
                         additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
-    extends OneOutputSubsequentNodeData with CustomNodeData {
+    extends OneOutputSubsequentNodeData with CustomNodeData with EndingNodeData {
     override val componentId = nodeType
   }
 
@@ -140,7 +140,7 @@ object node {
     //TODO: remove it and replace with sth more understandable
     def joinReference: JoinReference = JoinReference(artificialNodeId, joinId)
   }
-
+  
   case class Sink(
                    id: String,
                    ref: SinkRef,

@@ -34,6 +34,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
         .exceptionHandler()
         .source("a", "")
         .filter("b", "alamakota == 'true'", nestedGraph("b"))
+        .customNode("b", "alamakota == 'true'", "someRef")
         .buildVariable("c", "fooVar", "f1" -> "expr1", "f2" -> "expr2")
         .enricher("d", "barVar", "dService", "p1" -> "expr3")
         .switch("f", "expr4", "eVar", nestedGraph("e"), Case("e1", GraphBuilder.emptySink("endE1", "")))
@@ -55,6 +56,18 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     result should equal(Some(process))
   }
 
+  it should "marshall and unmarshall to same process with ending custom node" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("a", "")
+      .endingCustomNode("d", None, "endingCustomNode", "p1" -> "expr3")
+
+    val result = marshallAndUnmarshall(process)
+
+    result should equal(Some(process))
+  }
+  
   it should "marshall and unmarshall to same process with additional fields" in {
     val processAdditionalFields = Table(
       "processAditionalFields",
@@ -151,10 +164,8 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     val source = FlatNode(Source("s1", SourceRef("a", List())))
 
     checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression("", "")), List()))
-    checkOneInvalid("custom", source, canonicalnode.FlatNode(CustomNode("custom", Some("out"), "t1", List())))
     checkOneInvalid("split", source, canonicalnode.SplitNode(Split("split"), List.empty))
     checkOneInvalid("switch", source, canonicalnode.SwitchNode(Switch("switch", Expression("", ""), ""), List.empty, List.empty))
-
   }
 
   private def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
