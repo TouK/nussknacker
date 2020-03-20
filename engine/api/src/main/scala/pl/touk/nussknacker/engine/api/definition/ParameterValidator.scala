@@ -74,9 +74,12 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
 }
 
 case class RegExpParameterValidator(pattern: String, message: String, description: String) extends ParameterValidator {
+
+  lazy val regexpPattern: Pattern = Pattern.compile(pattern)
+
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-    if (StringUtils.isBlank(value) || Pattern.compile(pattern).matcher(value).matches())
+    if (StringUtils.isBlank(value) || regexpPattern.matcher(value).matches())
       valid(Unit)
     else
       invalid(MismatchParameter(message, description, paramName, nodeId.id))
@@ -97,6 +100,7 @@ case object LiteralIntegerValidator extends ParameterValidator {
 }
 
 case object LiteralParameterValidator {
+
   lazy val integerValidator: ParameterValidator = LiteralIntegerValidator
 
   lazy val numberValidator: RegExpParameterValidator = RegExpParameterValidator(
