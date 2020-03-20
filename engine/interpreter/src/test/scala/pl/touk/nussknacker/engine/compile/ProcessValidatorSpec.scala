@@ -69,7 +69,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
       "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
       "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(Parameter("nullableLiteralIntegerParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.integerValidator)))), emptyQueryNamesData()),
-      "withRegExpParam" -> (ObjectDefinition.withParams(List(Parameter("regExpParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.numberValidator)))), emptyQueryNamesData()),
+      "withRegExpParam" -> (ObjectDefinition.withParams(List(Parameter("regExpParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.numberValidator)))), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
