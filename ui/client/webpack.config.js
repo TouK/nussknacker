@@ -25,16 +25,27 @@ if (!isProd) {
   ]
 }
 
-const cssLoader = {
-  loader: "css-loader",
-  options: {
-    modules: {
-      mode: "global",
-      localIdentName: "[name]--[local]--[hash:base64:5]",
+const cssLoaders = [
+  "style-loader",
+  {
+    loader: "css-loader",
+    options: {
+      modules: {
+        mode: "global",
+        localIdentName: "[name]--[local]--[hash:base64:5]",
+      },
+      localsConvention: "camelCase",
     },
-    localsConvention: "camelCase",
   },
-}
+  {
+    loader: "postcss-loader",
+    options: {
+      plugins: [
+        require("autoprefixer"),
+      ],
+    },
+  },
+]
 
 const fileLoader = {
   loader: "file-loader",
@@ -152,21 +163,15 @@ module.exports = {
       },
       {
         test: /\.css?$/,
-        use: ["style-loader", cssLoader],
+        use: cssLoaders,
       },
       {
         test: /\.styl$/,
-        use: ["style-loader", cssLoader, {
-          loader: "stylus-loader",
-          options: {
-            use: [require("nib")()],
-            import: ["~nib/lib/nib/index.styl"],
-          },
-        }],
+        use: [...cssLoaders, "stylus-loader"],
       },
       {
         test: /\.less$/,
-        use: ["style-loader", cssLoader, "less-loader"],
+        use: [...cssLoaders, "less-loader"],
       },
       {
         test: /\.(eot|ttf|woff|woff2)$/,
