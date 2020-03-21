@@ -1,9 +1,3 @@
-import {makeElement} from "./element"
-import {makeLink} from "./link"
-import {boundingRect} from "./rect"
-
-export default {
-  makeElement,
-  boundingRect,
-  makeLink,
-}
+export {makeElement} from "./element"
+export {makeLink} from "./link"
+export {boundingRect} from "./rect"

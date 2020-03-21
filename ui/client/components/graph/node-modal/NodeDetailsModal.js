@@ -12,8 +12,8 @@ import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
 import HttpService from "../../../http/HttpService"
 import cssVariables from "../../../stylesheets/_variables.styl"
-import {BareGraph} from "../Graph"
 import NodeUtils from "../NodeUtils"
+import {SubProcessGraph} from "../SubProcessGraph.tsx"
 import NodeDetailsContent from "./NodeDetailsContent"
 import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
@@ -125,7 +125,7 @@ class NodeDetailsModal extends React.Component {
   renderSubprocess() {
     //we don't use _.get here, because currentNodeId can contain spaces etc...
     const subprocessCounts = (this.props.processCounts[this.state.currentNodeId] || {}).subprocessCounts || {}
-    return (<BareGraph processCounts={subprocessCounts} processToDisplay={this.state.subprocessContent}/>)
+    return (<SubProcessGraph processCounts={subprocessCounts} processToDisplay={this.state.subprocessContent}/>)
   }
 
   toogleCloseModalOnEsc = () => {

@@ -1,6 +1,6 @@
 import {events} from "../../analytics/TrackingEvents"
+import {Graph} from "../../components/graph/Graph"
 import {reportEvent} from "./reportEvent"
-import Graph from "../../components/graph/Graph"
 
 export function zoomIn(graph: Graph) {
   return (dispatch) => {

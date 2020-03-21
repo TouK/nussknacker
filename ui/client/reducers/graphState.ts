@@ -1,5 +1,5 @@
-import {ProcessStateType, ProcessType} from "../components/Process/types"
 import {NodeType} from "../actions/nk/models"
+import {ProcessStateType, ProcessType} from "../components/Process/types"
 
 type GraphHistoryAction = $TodoType
 
@@ -26,4 +26,5 @@ export type GraphState = {
   testCapabilities?: $TodoType,
   testResults: $TodoType,
   processCounts: $TodoType,
+  edgeToDisplay: $TodoType,
 }

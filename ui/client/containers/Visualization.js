@@ -7,9 +7,9 @@ import ClipboardUtils from "../common/ClipboardUtils"
 import * as JsonUtils from "../common/JsonUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
-import Graph from "../components/graph/Graph"
 import {GraphProvider} from "../components/graph/GraphContext"
 import NodeUtils from "../components/graph/NodeUtils"
+import {ProcessGraph} from "../components/graph/ProcessGraph.tsx"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import "../stylesheets/visualization.styl"
@@ -304,7 +304,7 @@ class Visualization extends React.Component {
         </GraphProvider>
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          {!_.isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
+          {!_.isEmpty(this.props.processDefinitionData) ? <ProcessGraph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
         </SpinnerWrapper>
       </div>
     )

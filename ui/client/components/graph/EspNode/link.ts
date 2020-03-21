@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import NodeUtils from "../NodeUtils"
 import {edgeStroke, rectWidth} from "./misc"
 import * as joint from "jointjs/index"
@@ -5,7 +6,7 @@ import * as joint from "jointjs/index"
 export function makeLink(edge, forExport) {
   const label = NodeUtils.edgeLabel(edge)
 
-  let labels = []
+  const labels = []
   if (label.length !== 0) {
     labels.push({
       position: 0.5,
