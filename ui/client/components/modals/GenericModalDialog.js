@@ -52,15 +52,19 @@ class GenericModalDialog extends React.Component {
   render() {
     const style = `espModal ${  this.props.style || "confirmationModal"}`
     return (
-      <Modal isOpen={this.props.modalDialog.openDialog === this.props.type}
-             shouldCloseOnOverlayClick={false}
-             onRequestClose={this.closeDialog}>
+      <Modal
+        isOpen={this.props.modalDialog.openDialog === this.props.type}
+        shouldCloseOnOverlayClick={false}
+        onRequestClose={this.closeDialog}
+      >
         <div className="draggable-container">
           <Draggable bounds="parent" handle=".modal-draggable-handle">
             <div className={style}>
-              {this.props.header ? (<div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70c6ce"}}>
-                <span>{this.props.header}</span>
-              </div>) : null}
+              {this.props.header ? (
+                <div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70c6ce"}}>
+                  <span>{this.props.header}</span>
+                </div>
+              ) : null}
               <div className="modalContentDark">
                 {this.props.children}
                 <div className="confirmationButtons">

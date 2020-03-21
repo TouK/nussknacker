@@ -5,9 +5,11 @@ import HTML5Backend from "react-dnd-html5-backend"
 
 class DragArea extends React.Component {
   render() {
-    return (<div>
-      {this.props.children}
-    </div>)
+    return (
+      <div>
+        {this.props.children}
+      </div>
+    )
 
   }
 }

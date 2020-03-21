@@ -1,8 +1,8 @@
 import React from "react"
 import "./timeRange.styl"
 import classNames from "classnames"
-import {Duration} from "./DurationEditor";
-import {Period} from "./PeriodEditor";
+import {Duration} from "./DurationEditor"
+import {Period} from "./PeriodEditor"
 
 export type TimeRangeComponentType = {
   label: string,

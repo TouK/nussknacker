@@ -22,9 +22,11 @@ class PreventExitDialog extends React.Component {
 
   render() {
     return (
-      <Modal isOpen={this.props.visible}
-             shouldCloseOnOverlayClick={false}
-             onRequestClose={this.closeDialog}>
+      <Modal
+        isOpen={this.props.visible}
+        shouldCloseOnOverlayClick={false}
+        onRequestClose={this.closeDialog}
+      >
         <div className="draggable-container">
           <div className="espModal confirmationModal modalContentDark">
             <p>{DialogMessages.unsavedProcessChanges()}</p>

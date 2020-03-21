@@ -8,7 +8,7 @@ export default function TestResults(props) {
   const {nodeId, resultsToShow} = props
 
   return (
-    resultsToShow && !_.isEmpty(resultsToShow.context.variables) ?
+    resultsToShow && !_.isEmpty(resultsToShow.context.variables) ? (
       <div className="node-table-body node-test-results">
         <div className="node-row">
           <div className="node-label">
@@ -16,29 +16,34 @@ export default function TestResults(props) {
           </div>
         </div>
         {
-          Object.keys(resultsToShow.context.variables).map((key, ikey) =>
+          Object.keys(resultsToShow.context.variables).map((key, ikey) => (
             <div className="node-row" key={ikey}>
               <div className="node-label">{key}:</div>
               <TestValue value={resultsToShow.context.variables[key]} shouldHideTestResults={false}/>
-            </div>)
+            </div>
+          ))
         }
         {
           resultsToShow && !_.isEmpty(resultsToShow.mockedResultsForCurrentContext) ?
-            (resultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
-                <span className="testResultDownload">
-            <a download={`${nodeId  }-single-input`} key={index} href={downloadableHref(mockedValue.value.pretty)}>
-              <span className="glyphicon glyphicon-download"/> Results for this input</a></span>,
-            ) : null
+            resultsToShow.mockedResultsForCurrentContext.map((mockedValue, index) => (
+              <span className="testResultDownload">
+                <a download={`${nodeId  }-single-input`} key={index} href={downloadableHref(mockedValue.value.pretty)}>
+                  <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
+            )) : null
         }
         {
-          resultsToShow && !_.isEmpty(resultsToShow.mockedResultsForEveryContext) ?
+          resultsToShow && !_.isEmpty(resultsToShow.mockedResultsForEveryContext) ? (
             <span className="testResultDownload">
-            <a download={`${nodeId  }-all-inputs`}
-               href={downloadableHref(mergedMockedResults(resultsToShow.mockedResultsForEveryContext))}>
-            <span className="glyphicon glyphicon-download"/> Results for all inputs</a></span>
-            : null
+              <a
+                download={`${nodeId  }-all-inputs`}
+                href={downloadableHref(mergedMockedResults(resultsToShow.mockedResultsForEveryContext))}
+              >
+                <span className="glyphicon glyphicon-download"/> Results for all inputs</a></span>
+          ) :
+            null
         }
-      </div> : null
+      </div>
+    ) : null
   )
 
   function mergedMockedResults(mockedResults) {

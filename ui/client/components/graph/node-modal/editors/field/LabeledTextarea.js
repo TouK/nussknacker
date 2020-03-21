@@ -18,7 +18,8 @@ export const LabeledTextarea = (props) => {
           value={value}
           onChange={onChange}
           readOnly={readOnly}
-          autoFocus={autoFocus}/>
+          autoFocus={autoFocus}
+        />
         {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
       </div>
     </div>

@@ -65,7 +65,8 @@ class Services extends BaseAdminTab {
           response: {},
           errorMessage: null,
         },
-      })
+      }
+    )
   }
 
   serviceList() {
@@ -86,20 +87,18 @@ class Services extends BaseAdminTab {
 
     return (
       <span>
-        {_.map(params, (param) =>
-          this.formRow(
-            `param_${  param.name}`,
-            <span>{param.name}
-              <div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
-            <span>
-              <input
-                className="node-input"
-                value={this.findParamExpression(param.name)}
-                onChange={e => setParam(param.name)(e.target.value)}
-              />
-            </span>,
-          ),
-        )}
+        {_.map(params, (param) => this.formRow(
+          `param_${  param.name}`,
+          <span>{param.name}
+            <div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
+          <span>
+            <input
+              className="node-input"
+              value={this.findParamExpression(param.name)}
+              onChange={e => setParam(param.name)(e.target.value)}
+            />
+          </span>,
+        ))}
       </span>
     )
   }
@@ -199,7 +198,7 @@ class Services extends BaseAdminTab {
 
   hasSomeValue = (o) => {
     //_.isEmpty(123) returns true... more: https://github.com/lodash/lodash/issues/496
-    return (_.isNumber(o) || _.isBoolean(o)) || !_.isEmpty(o)
+    return _.isNumber(o) || _.isBoolean(o) || !_.isEmpty(o)
   }
 }
 
@@ -208,19 +207,16 @@ Services.key = "services"
 
 export function mapProcessDefinitionToServices(services) {
   return _.sortBy(
-    _.flatMap(services, (typeServices, processingType) =>
-      _.map(typeServices, (service, name) => ({
-          name: name,
-          categories: service.categories,
-          parameters: _.map(service.parameters, p => ({
-            name: p.name,
-            refClazzName: p.typ.refClazzName,
-          })),
-          returnClassName: service.returnType == null ? null : service.returnType.refClazzName,
-          processingType: processingType,
-        }),
-      ),
-    ), s => s.name,
+    _.flatMap(services, (typeServices, processingType) => _.map(typeServices, (service, name) => ({
+      name: name,
+      categories: service.categories,
+      parameters: _.map(service.parameters, p => ({
+        name: p.name,
+        refClazzName: p.typ.refClazzName,
+      })),
+      returnClassName: service.returnType == null ? null : service.returnType.refClazzName,
+      processingType: processingType,
+    }))), s => s.name,
   )
 }
 

@@ -72,13 +72,14 @@ export class ProcessHistoryComponent extends React.Component<Props, State> {
                 <br/>
                 <small><i><Date date={version.createDate}/></i></small>
                 <br/>
-                {version.processVersionId === lastDeployedAction?.processVersionId ?
+                {version.processVersionId === lastDeployedAction?.processVersionId ? (
                   <small key={index}>
                     <i><Date date={lastDeployedAction?.performedAt}/></i>
                     <span className="label label-info">
                       {t("processHistory.lastDeployed", "Last deployed")}
                     </span>
-                  </small> : null
+                  </small>
+                ) : null
                 }
               </li>
             )

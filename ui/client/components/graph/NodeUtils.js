@@ -56,7 +56,7 @@ class NodeUtils {
         ...edge,
         from: _.includes(group.nodes, edge.from) ? id : edge.from,
         to: _.includes(group.nodes, edge.to) ? id : edge.to,
-      })).filter(a => !(_.eq(a.from, a.to)))
+      })).filter(a => !_.eq(a.from, a.to))
     })
     return edges
   }
@@ -79,7 +79,7 @@ class NodeUtils {
       .map(nodeToAdd => ProcessUtils.findNodeDefinitionIdOrType(nodeToAdd.node))
     const nodeDefinitionId = ProcessUtils.findNodeDefinitionIdOrType(node)
     return availableIdsInCategory.includes(nodeDefinitionId)
-}
+  }
 
   getIncomingEdges = (nodeId, process) => this.edgesFromProcess(process).filter(e => e.to === nodeId)
 
@@ -108,18 +108,21 @@ class NodeUtils {
   createGroup = (process, newGroup) => {
     const groupId = newGroup.join("-")
     return this._update("properties.additionalFields.groups",
-                    (groups) => _.concat((groups || []), [{id: groupId, nodes: newGroup}]), process)
+      (groups) => _.concat(groups || [], [{id: groupId, nodes: newGroup}]),
+      process)
   }
 
   ungroup = (process, groupToDeleteId) => {
     return this._update("properties.additionalFields.groups",
-          (groups) => groups.filter(e => !_.isEqual(e.id, groupToDeleteId)), process)
+      (groups) => groups.filter(e => !_.isEqual(e.id, groupToDeleteId)),
+      process)
   }
 
   editGroup = (process, oldGroupId, newGroup) => {
     const groupForState = {id: newGroup.id, nodes: newGroup.ids}
     return this._update("properties.additionalFields.groups",
-             (groups) => _.concat((groups.filter(g => g.id !== oldGroupId)), [groupForState]), process)
+      (groups) => _.concat(groups.filter(g => g.id !== oldGroupId), [groupForState]),
+      process)
   }
 
   updateGroupsAfterNodeIdChange = (process, oldNodeId, newNodeId) => {
@@ -133,10 +136,10 @@ class NodeUtils {
   edgesForNode = (node, processDefinitionData, forInput) => {
     const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node)
     //TODO: when we add more configuration for joins, probably more complex logic will be needed
-    const data =  (processDefinitionData.edgesForNodes
+    const data =  processDefinitionData.edgesForNodes
       .filter(e => !forInput || e.isForInputDefinition === forInput)
       //here we use == in second comparison, as we sometimes compare null to undefined :|
-      .find(e => e.nodeId.type === _.get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition))
+      .find(e => e.nodeId.type === _.get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition)
     return data || {edges: [null], canChooseNodes: false}
   }
 
@@ -162,7 +165,7 @@ class NodeUtils {
 
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)
-    return (fromId !== toId) && this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
+    return fromId !== toId && this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
   }
 
   //TODO: this function should already exists in lodash?
@@ -173,10 +176,10 @@ class NodeUtils {
   _changeGroupNodes = (processToDisplay, nodeOperation) => {
     return this._update("properties.additionalFields.groups",
       (groups) => (groups || []).map(group => ({
-                    ...group,
-                    nodes: nodeOperation(group.nodes),
-                  })), processToDisplay,
-    )
+        ...group,
+        nodes: nodeOperation(group.nodes),
+      })),
+      processToDisplay)
   }
 
   _canHaveMoreInputs = (nodeTo, nodeInputs, processDefinitionData) => {

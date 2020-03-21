@@ -5,7 +5,7 @@ import TestValue from "./TestValue"
 
 export default function ExpressionTestResults(props) {
   const {fieldName, resultsToShow, resultsToHide, toggleResult} = props
-  const testValue = fieldName ? (resultsToShow && resultsToShow.expressionResults[fieldName]) : null
+  const testValue = fieldName ? resultsToShow && resultsToShow.expressionResults[fieldName] : null
   const shouldHideTestResults = resultsToHide.has(fieldName)
   const showIconClass = shouldHideTestResults ? "glyphicon glyphicon-eye-close" : "glyphicon glyphicon-eye-open"
 

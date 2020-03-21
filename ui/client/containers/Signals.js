@@ -47,14 +47,17 @@ export class Signals extends React.Component {
               <div className="node-row">
                 <div className="node-label">Signal type</div>
                 <div className="node-value">
-                  <select className="node-input" onChange={(e) => {
-                    const nextSignalType = e.target.value
-                    this.setState({
-                      signalType: nextSignalType,
-                      signalParams: {},
-                      processId: this.firstProcessForSignal(nextSignalType),
-                    })
-                  }}>
+                  <select
+                    className="node-input"
+                    onChange={(e) => {
+                      const nextSignalType = e.target.value
+                      this.setState({
+                        signalType: nextSignalType,
+                        signalParams: {},
+                        processId: this.firstProcessForSignal(nextSignalType),
+                      })
+                    }}
+                  >
                     {_.map(_.keys(this.state.signals), (sig, index) => (
                       <option key={index} value={sig}>{sig}</option>))}
                   </select>
@@ -65,7 +68,7 @@ export class Signals extends React.Component {
                 <div className="node-value">
                   <select className="node-input" onChange={(e) => this.setState({processId: e.target.value})}>
                     {(currentSignal.availableProcesses || [])
-                    .map((process, index) => (<option key={index} value={process}>{process}</option>))}
+                      .map((process, index) => (<option key={index} value={process}>{process}</option>))}
                   </select>
                 </div>
               </div>
@@ -74,17 +77,24 @@ export class Signals extends React.Component {
                   <div className="node-row" key={idx}>
                     <div className="node-label">{param}</div>
                     <div className="node-value">
-                      <input className="node-input" type="text" value={this.state.signalParams[param] || ""}
-                             onChange={(e) => this.changeParamValue(param, e.target.value)}/>
+                      <input
+                        className="node-input"
+                        type="text"
+                        value={this.state.signalParams[param] || ""}
+                        onChange={(e) => this.changeParamValue(param, e.target.value)}
+                      />
                     </div>
                   </div>
                 )
               })}
             </div>
-            <button type="button" className="modalButton"
-                    disabled={_.isEmpty(this.state.signalType) || _.isEmpty(this.state.processId)}
-                    title={sendSignalButtonTooltip}
-                    onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}>Send
+            <button
+              type="button"
+              className="modalButton"
+              disabled={_.isEmpty(this.state.signalType) || _.isEmpty(this.state.processId)}
+              title={sendSignalButtonTooltip}
+              onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}
+            >Send
               signal
             </button>
           </div>

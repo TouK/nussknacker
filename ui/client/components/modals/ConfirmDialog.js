@@ -30,18 +30,28 @@ class ConfirmDialog extends React.Component {
   render() {
     const confirmDialog = this.props.confirmDialog
     return (
-      <Modal isOpen={confirmDialog.isOpen}
-             shouldCloseOnOverlayClick={false}
-             onRequestClose={this.closeDialog}>
+      <Modal
+        isOpen={confirmDialog.isOpen}
+        shouldCloseOnOverlayClick={false}
+        onRequestClose={this.closeDialog}
+      >
         <div className="draggable-container">
           <div className="espModal confirmationModal modalContentDark">
             <p>{confirmDialog.text}</p>
             <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings}/>
             <div className="confirmationButtons">
-              <button type="button" title={confirmDialog.denyText} className="modalButton"
-                      onClick={this.closeDialog}>{confirmDialog.denyText}</button>
-              <button type="button" title={confirmDialog.confirmText} className="modalButton"
-                      onClick={this.confirm}>{confirmDialog.confirmText}</button>
+              <button
+                type="button"
+                title={confirmDialog.denyText}
+                className="modalButton"
+                onClick={this.closeDialog}
+              >{confirmDialog.denyText}</button>
+              <button
+                type="button"
+                title={confirmDialog.confirmText}
+                className="modalButton"
+                onClick={this.confirm}
+              >{confirmDialog.confirmText}</button>
             </div>
           </div>
         </div>

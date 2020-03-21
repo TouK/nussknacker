@@ -62,12 +62,11 @@ class CalculateCountsDialog extends React.Component {
     this.state = this.initState
   }
 
-  confirm = () =>
-    this.props.actions.fetchAndDisplayProcessCounts(
-      this.props.processId,
-      Moment(this.state.processCountsDateFrom),
-      Moment(this.state.processCountsDateTo),
-    );
+  confirm = () => this.props.actions.fetchAndDisplayProcessCounts(
+    this.props.processId,
+    Moment(this.state.processCountsDateFrom),
+    Moment(this.state.processCountsDateTo),
+  );
 
   setRawDate = (date, stateChange) => {
     stateChange(Moment(date, dateFormat))
@@ -79,9 +78,9 @@ class CalculateCountsDialog extends React.Component {
   render() {
     return (
       <GenericModalDialog
-          init={() => this.setState(this.initState)}
-          confirm={this.confirm}
-          type={Dialogs.types.calculateCounts}
+        init={() => this.setState(this.initState)}
+        confirm={this.confirm}
+        type={Dialogs.types.calculateCounts}
       >
         <p>Process counts from</p>
         <div className="datePickerContainer">
@@ -109,9 +108,7 @@ class CalculateCountsDialog extends React.Component {
         </div>
         <p>Quick ranges</p>
         {
-          this.predefinedRanges.map(range =>
-            (<button type="button" key={range.name} title={range.name} className="predefinedRangeButton" onClick={() => this.setTime(range)}>{range.name}</button>),
-          )
+          this.predefinedRanges.map(range => (<button type="button" key={range.name} title={range.name} className="predefinedRangeButton" onClick={() => this.setTime(range)}>{range.name}</button>))
         }
       </GenericModalDialog>
     )

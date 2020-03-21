@@ -44,7 +44,7 @@ module.exports = function(config) {
         flags: [
           //this is needed for our CI server
           "--no-sandbox",
-       ],
+        ],
       },
     },
     singleRun: false,

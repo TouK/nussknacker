@@ -63,18 +63,28 @@ class CompareVersionsDialog extends React.Component {
     const versionId = (versionPrefix || "") + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
-        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {DateUtils.formatAbsolutely(version.createDate)}</option>)
+        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {DateUtils.formatAbsolutely(version.createDate)}</option>
+    )
   }
 
   render() {
     return (
-      <GenericModalDialog init={() => this.setState(this.initState)} header="compare versions"
-                          type={Dialogs.types.compareVersions} style="compareModal">
+      <GenericModalDialog
+        init={() => this.setState(this.initState)}
+        header="compare versions"
+        type={Dialogs.types.compareVersions}
+        style="compareModal"
+      >
 
         <div className="esp-form-row">
           <p>Version to compare</p>
-          <select autoFocus={true} id="otherVersion" className="node-input" value={this.state.otherVersion || ""}
-                  onChange={(e) => this.loadVersion(e.target.value)}>
+          <select
+            autoFocus={true}
+            id="otherVersion"
+            className="node-input"
+            value={this.state.otherVersion || ""}
+            onChange={(e) => this.loadVersion(e.target.value)}
+          >
             <option key="" value=""/>
             {this.props.versions.filter(version => this.props.version !== version.processVersionId).map((version, index) => this.createVersionElement(version))}
             {this.state.remoteVersions.map((version, index) => this.createVersionElement(version, this.remotePrefix))}
@@ -86,20 +96,29 @@ class CompareVersionsDialog extends React.Component {
               <div>
                 <div className="esp-form-row">
                   <p>Difference to pick</p>
-                  <select id="otherVersion" className="node-input"
-                          value={this.state.currentDiffId || ""}
-                          onChange={(e) => this.setState({currentDiffId: e.target.value})}>
+                  <select
+                    id="otherVersion"
+                    className="node-input"
+                    value={this.state.currentDiffId || ""}
+                    onChange={(e) => this.setState({currentDiffId: e.target.value})}
+                  >
                     <option key="" value=""/>
                     {_.keys(this.state.difference).map((diffId) => (
                       <option key={diffId} value={diffId}>{diffId}</option>))}
                   </select>
                 </div>
                 {this.state.currentDiffId ?
-                  (<Scrollbars hideTracksWhenNotNeeded={true} autoHeightMin={"100px"}
-                               autoHeight autoHeightMax={"390px"}
-                               renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
-                    {this.printDiff(this.state.currentDiffId)}
-                  </Scrollbars>) : null }
+                  (
+                    <Scrollbars
+                      hideTracksWhenNotNeeded={true}
+                      autoHeightMin={"100px"}
+                      autoHeight
+                      autoHeightMax={"390px"}
+                      renderThumbVertical={props => <div {...props} className="thumbVertical"/>}
+                    >
+                      {this.printDiff(this.state.currentDiffId)}
+                    </Scrollbars>
+                  ) : null }
               </div>
             ) : null
         }
@@ -149,33 +168,45 @@ class CompareVersionsDialog extends React.Component {
   }
 
   printNode(node, pathsToMark) {
-    return node ? (<NodeDetailsContent isEditMode={false}
-                                       showValidation={false}
-                                       showSwitch={false}
-                                       node={node}
-                                       pathsToMark={pathsToMark}
-                                       onChange={() => {}}/>) :
+    return node ? (
+      <NodeDetailsContent
+        isEditMode={false}
+        showValidation={false}
+        showSwitch={false}
+        node={node}
+        pathsToMark={pathsToMark}
+        onChange={() => {}}
+      />
+    ) :
       (<div className="notPresent">Node not present</div>)
   }
 
   printEdge(edge, pathsToMark) {
-    return edge ? (<EdgeDetailsContent edge={edge}
-                                       readOnly={true}
-                                       showValidation={false}
-                                       showSwitch={false}
-                                       changeEdgeTypeValue={() => {}}
-                                       updateEdgeProp={() => {}}
-                                       pathsToMark={pathsToMark}/>) :
+    return edge ? (
+      <EdgeDetailsContent
+        edge={edge}
+        readOnly={true}
+        showValidation={false}
+        showSwitch={false}
+        changeEdgeTypeValue={() => {}}
+        updateEdgeProp={() => {}}
+        pathsToMark={pathsToMark}
+      />
+    ) :
       (<div className="notPresent">Edge not present</div>)
   }
 
   printProperties(property, pathsToMark) {
-    return property ? (<NodeDetailsContent isEditMode={false}
-                                           showValidation={false}
-                                           showSwitch={false}
-                                           node={property}
-                                           pathsToMark={pathsToMark}
-                                           onChange={() => {}}/>) :
+    return property ? (
+      <NodeDetailsContent
+        isEditMode={false}
+        showValidation={false}
+        showSwitch={false}
+        node={property}
+        pathsToMark={pathsToMark}
+        onChange={() => {}}
+      />
+    ) :
       (<div className="notPresent">Properties not present</div>)
   }
 }

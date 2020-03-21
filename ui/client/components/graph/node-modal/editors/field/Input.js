@@ -7,7 +7,7 @@ import classNames from "classnames"
 export const Input = (props) => {
   const {
     isMarked, showValidation, className, placeholder, autoFocus, onChange, value, validators, readOnly,
-    formattedValue, type, inputClassName, onFocus
+    formattedValue, type, inputClassName, onFocus,
   } = props
 
   return (
@@ -21,7 +21,7 @@ export const Input = (props) => {
             placeholder={placeholder}
             className={classNames([
               !showValidation || allValid(validators, [formattedValue ? formattedValue : value]) ? "node-input" : "node-input node-input-with-error",
-              inputClassName
+              inputClassName,
             ])}
             value={value || ""}
             onChange={onChange}
@@ -54,7 +54,7 @@ Input.propTypes = {
 }
 
 Input.defaultProps = {
-  type: "text"
+  type: "text",
 }
 
 export default Input

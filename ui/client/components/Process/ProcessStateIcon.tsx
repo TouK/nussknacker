@@ -75,16 +75,15 @@ class ProcessStateIcon extends React.Component<Props, State> {
     const overlay = (
       <Popover id="state-icon-popover" title={processName}>
         <strong>{tooltip}</strong>
-        { errors.length !== 0 ?
+        { errors.length !== 0 ? (
           <div>
             <span>{t("stateIcon.errors", "Errors:")}</span>
             <ul>
-              {errors.map((error, key) =>
-                <li key={key}>{error}</li>,
-              )}
+              {errors.map((error, key) => <li key={key}>{error}</li>)}
             </ul>
           </div>
-          : null
+        ) :
+          null
         }
       </Popover>
     )
@@ -110,14 +109,16 @@ class ProcessStateIcon extends React.Component<Props, State> {
     const iconClass = `state-icon${isStateLoaded === false ? " state-pending" : ""}`
     const transitionKey = `${process.id}-${icon}`
 
-    const image = <img
-      src={icon}
-      alt={tooltip}
-      title={tooltip}
-      className={iconClass}
-      height={height}
-      width={width}
-    />
+    const image = (
+      <img
+        src={icon}
+        alt={tooltip}
+        title={tooltip}
+        className={iconClass}
+        height={height}
+        width={width}
+      />
+    )
 
     return animation === true ? (
       <SwitchTransition>
@@ -130,7 +131,7 @@ class ProcessStateIcon extends React.Component<Props, State> {
 }
 
 const enhance = compose(
-    withTranslation(),
+  withTranslation(),
 )
 
 export default enhance(ProcessStateIcon)

@@ -38,15 +38,19 @@ export class Archive extends BaseProcesses {
     return (
       <div className="Page">
         <div id="process-top-bar">
-          <SearchFilter onChange={this.onSearchChange}
-                        value={this.state.search}/>
+          <SearchFilter
+            onChange={this.onSearchChange}
+            value={this.state.search}
+          />
 
-          <TableSelect defaultValue={this.state.selectedCategories}
-                       options={this.props.filterCategories}
-                       placeholder={"Select categories.."}
-                       onChange={this.onCategoryChange}
-                       isMulti={true}
-                       isSearchable={true}/>
+          <TableSelect
+            defaultValue={this.state.selectedCategories}
+            options={this.props.filterCategories}
+            placeholder={"Select categories.."}
+            onChange={this.onCategoryChange}
+            isMulti={true}
+            isSearchable={true}
+          />
 
           <TableSelect
             defaultValue={this.state.selectedIsSubrocess}
@@ -54,7 +58,8 @@ export class Archive extends BaseProcesses {
             placeholder="Select process type.."
             onChange={this.onIsSubprocessChange}
             isMulti={false}
-            isSearchable={false}/>
+            isSearchable={false}
+          />
         </div>
 
         <LoaderSpinner show={this.state.showLoader}/>
@@ -92,9 +97,11 @@ export class Archive extends BaseProcesses {
                   <Td column="subprocess" className="centered-column">
                     <Glyphicon glyph={process.isSubprocess ? "ok" : "remove"}/>
                   </Td>
-                  <Td column="modifyDate"
-                      className="centered-column"
-                      value={process.modificationDate}>
+                  <Td
+                    column="modifyDate"
+                    className="centered-column"
+                    value={process.modificationDate}
+                  >
                     <Date date={process.modificationDate}/>
                   </Td>
                   <Td column="view" className="edit-column">

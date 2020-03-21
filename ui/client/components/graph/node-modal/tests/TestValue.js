@@ -4,15 +4,18 @@ import Textarea from "react-textarea-autosize"
 export default function TestValue(props) {
 
   const {value, shouldHideTestResults} = props
-  const hiddenClassPart = (shouldHideTestResults ? " partly-hidden" : "")
+  const hiddenClassPart = shouldHideTestResults ? " partly-hidden" : ""
 
   return (
     <div className={`node-value${  hiddenClassPart}`}>
       {
-        _.get(value, "original") ?
-          <Textarea className="node-input"
-                    readOnly={true}
-                    value={value.original}/> : null
+        _.get(value, "original") ? (
+          <Textarea
+            className="node-input"
+            readOnly={true}
+            value={value.original}
+          />
+        ) : null
       }
       <Textarea
         className="node-input"

@@ -178,7 +178,7 @@
   },
   "lint-staged": {
     "**/*.(js|ts)?(x)": [
-      "npm run lint -- --fix",
+      "npm run lint -- --rule 'i18next/no-literal-string: warn' --fix",
       "git add"
     ]
   }

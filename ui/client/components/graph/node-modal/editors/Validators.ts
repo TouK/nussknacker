@@ -43,8 +43,7 @@ export type Error = {
   typ: string,
 }
 
-const error = (errors: Array<Error>, fieldName: string): Error =>
-  errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
+const error = (errors: Array<Error>, fieldName: string): Error => errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
 
 export const errorValidator = (errors: Array<Error>, fieldName: string): Validator => ({
   isValid: () => !error(errors, fieldName),

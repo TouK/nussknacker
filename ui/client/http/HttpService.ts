@@ -75,7 +75,7 @@ export default {
 
   fetchProcessDefinitionData(processingType, isSubprocess, data) {
     return api.post(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`, data)
-      .then((response => {
+      .then(response => {
         // This is a walk-around for having part of node template (branch parameters) outside of itself.
         // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
         response.data.nodesToAdd.forEach(nodeAggregates => {
@@ -85,7 +85,7 @@ export default {
         })
 
         return response
-      }))
+      })
       .catch((error) => this.addError("Cannot find chosen versions", error, true))
   },
 

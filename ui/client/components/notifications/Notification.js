@@ -12,10 +12,11 @@ export default function Notification(props) {
       <div className="icon" dangerouslySetInnerHTML={{__html: icon}}/>
       <div className={"notification-details"}>
         {!_.isEmpty(message) && <span className={"notification-text"}>{message}</span>}
-        {!_.isEmpty(details) &&
-        <Dotdotdot clamp={"380px"}>
-          <span className={"notification-text"}>{details}</span>
-        </Dotdotdot>}
+        {!_.isEmpty(details) && (
+          <Dotdotdot clamp={"380px"}>
+            <span className={"notification-text"}>{details}</span>
+          </Dotdotdot>
+        )}
       </div>
       <HeaderIcon className={"dismiss-icon"} icon={InlinedSvgs.tipsClose}/>
     </div>
