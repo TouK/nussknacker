@@ -108,15 +108,15 @@ case object LiteralParameterValidator {
     "This field value has to be an number",
     "Please fill field by proper number type"
   )
-  
+
+  /**
+    * A now we support only simple literals like: Int / Integer.
+    * Option / Optional / LazyParam are not allowed.
+    */
   def apply(clazz: Class[_]): Option[ParameterValidator] =
     clazz match {
       case clazz if clazz == classOf[Int] => Some(integerValidator)
-      case clazz if clazz == classOf[Option[Int]] => Some(integerValidator)
-      case clazz if clazz == classOf[Optional[Int]] => Some(integerValidator)
       case clazz if clazz == classOf[Integer] => Some(integerValidator)
-      case clazz if clazz == classOf[Option[Integer]] => Some(integerValidator)
-      case clazz if clazz == classOf[Optional[Integer]] => Some(integerValidator)
       case _ => None
     }
 
