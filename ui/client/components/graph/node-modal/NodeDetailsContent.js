@@ -23,6 +23,7 @@ import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import AdditionalProperty from "./AdditionalProperty"
+import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 
 //move state to redux?
@@ -729,6 +730,7 @@ export class NodeDetailsContent extends React.Component {
         <TestErrors resultsToShow={this.state.testResultsToShow}/>
         {this.customNode(fieldErrors)}
         <TestResults nodeId={this.props.node.id} resultsToShow={this.state.testResultsToShow}/>
+        <NodeAdditionalInfoBox node={this.state.editedNode} processId={this.props.processToDisplay.id}/>
       </div>
     )
   }

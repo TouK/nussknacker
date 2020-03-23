@@ -27,7 +27,7 @@ export default function TestResults(props) {
           resultsToShow && !_.isEmpty(resultsToShow.mockedResultsForCurrentContext) ?
             resultsToShow.mockedResultsForCurrentContext.map((mockedValue, index) => (
               <span className="testResultDownload">
-                <a download={`${nodeId  }-single-input`} key={index} href={downloadableHref(mockedValue.value.pretty)}>
+                <a download={`${nodeId  }-single-input`} key={index} href={downloadableHref(stringifyMockedValue(mockedValue))}>
                   <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
             )) : null
         }
@@ -47,10 +47,15 @@ export default function TestResults(props) {
   )
 
   function mergedMockedResults(mockedResults) {
-    return _.join(mockedResults.map((mockedValue) => mockedValue.value.pretty), "\n\n")
+    return _.join(mockedResults.map((mockedValue) => stringifyMockedValue(mockedValue)), "\n\n")
   }
 
   function downloadableHref(content) {
     return `data:application/octet-stream;charset=utf-8,${  encodeURIComponent(content)}`
+  }
+
+  function stringifyMockedValue(mockedValue) {
+    const content = mockedValue.value.pretty;
+    return  _.isObject(content) ? JSON.stringify(content) : content;
   }
 }
