@@ -72,8 +72,7 @@ export default function DurationEditor(props: Props) {
   )
 }
 
-DurationEditor.switchableTo = (expressionObj: ExpressionObj) =>
-  SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression)
+DurationEditor.switchableTo = (expressionObj: ExpressionObj) => SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression)
 
 DurationEditor.switchableToHint = () => i18next.t("editors.duration.switchableToHint", "Switch to basic mode")
 

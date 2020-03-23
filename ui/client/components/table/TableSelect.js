@@ -45,7 +45,8 @@ export default class TableSelect extends React.Component {
           placeholder={placeholder}
           onChange={onChange}
           styles={this.customSelectStyles}
-          theme={this.customSelectTheme}/>
+          theme={this.customSelectTheme}
+        />
       </div>
     )
   }

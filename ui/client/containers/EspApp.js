@@ -72,7 +72,7 @@ export class EspApp extends React.Component {
   environmentAlert(params) {
     if (params && params.content)
       return (
-          <span className={`indicator ${params.cssClass}`} title={params.content}>{params.content}</span>
+        <span className={`indicator ${params.cssClass}`} title={params.content}>{params.content}</span>
       )
   }
 
@@ -82,34 +82,37 @@ export class EspApp extends React.Component {
       <div id="app-container">
         <div className="hide">{JSON.stringify(__GIT__)}</div>
         <MenuBar
-            {...this.props}
-            app={EspApp}
-            leftElement={this.renderTopLeftButton()}
-            rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
+          {...this.props}
+          app={EspApp}
+          leftElement={this.renderTopLeftButton()}
+          rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
         />
         <main>
           <DragArea>
             <AllDialogs/>
             <div id="working-area" className={this.props.leftPanelIsOpened ? "is-opened" : null}>
               <ErrorHandler>
-                <Route path={EspApp.path} render={({location}) => (
-                  <TransitionGroup>
-                    <CSSTransition key={location.pathname} classNames="fade" timeout={{enter: 300, exit: 300}}>
-                      <Switch location={location}>
-                        <Route path={SubProcesses.path} component={SubProcesses} exact/>
-                        <Route path={Archive.path} component={Archive} exact/>
-                        <Route path={Processes.path} component={Processes} exact/>
-                        <Route path={Visualization.path} component={Visualization} exact/>
-                        <Route path={Metrics.path} component={Metrics} exact/>
-                        <Route path={Search.path} component={Search} exact/>
-                        <Route path={Signals.path} component={Signals} exact/>
-                        <Route path={AdminPage.path} component={AdminPage} exact/>
-                        <Redirect from={EspApp.path} to={Processes.path} exact/>
-                        <Route component={NotFound}/>
-                      </Switch>
-                    </CSSTransition>
-                  </TransitionGroup>
-                )}/>
+                <Route
+                  path={EspApp.path}
+                  render={({location}) => (
+                    <TransitionGroup>
+                      <CSSTransition key={location.pathname} classNames="fade" timeout={{enter: 300, exit: 300}}>
+                        <Switch location={location}>
+                          <Route path={SubProcesses.path} component={SubProcesses} exact/>
+                          <Route path={Archive.path} component={Archive} exact/>
+                          <Route path={Processes.path} component={Processes} exact/>
+                          <Route path={Visualization.path} component={Visualization} exact/>
+                          <Route path={Metrics.path} component={Metrics} exact/>
+                          <Route path={Search.path} component={Search} exact/>
+                          <Route path={Signals.path} component={Signals} exact/>
+                          <Route path={AdminPage.path} component={AdminPage} exact/>
+                          <Redirect from={EspApp.path} to={Processes.path} exact/>
+                          <Route component={NotFound}/>
+                        </Switch>
+                      </CSSTransition>
+                    </TransitionGroup>
+                  )}
+                />
               </ErrorHandler>
             </div>
           </DragArea>

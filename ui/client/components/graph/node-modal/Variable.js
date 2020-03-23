@@ -13,19 +13,24 @@ const Variable = (props) => {
 
   return (
     <div className="node-table-body node-variable-builder-body">
-      <LabeledInput renderFieldLabel={() => renderFieldLabel("Name")}
-                    value={node.id}
-                    onChange={(event) => onChange("id", event.target.value)}
-                    isMarked={isMarked("id")} readOnly={readOnly}
-                    showValidation={showValidation}
-                    validators={[mandatoryValueValidator, errorValidator(errors, "id")]}/>
-      <LabeledInput renderFieldLabel={() => renderFieldLabel("Variable Name")}
-                    value={node.varName}
-                    onChange={(event) => onChange("varName", event.target.value)}
-                    isMarked={isMarked("varName")}
-                    readOnly={readOnly}
-                    showValidation={showValidation}
-                    validators={[mandatoryValueValidator, errorValidator(errors, "varName")]}/>
+      <LabeledInput
+        renderFieldLabel={() => renderFieldLabel("Name")}
+        value={node.id}
+        onChange={(event) => onChange("id", event.target.value)}
+        isMarked={isMarked("id")}
+        readOnly={readOnly}
+        showValidation={showValidation}
+        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+      />
+      <LabeledInput
+        renderFieldLabel={() => renderFieldLabel("Variable Name")}
+        value={node.varName}
+        onChange={(event) => onChange("varName", event.target.value)}
+        isMarked={isMarked("varName")}
+        readOnly={readOnly}
+        showValidation={showValidation}
+        validators={[mandatoryValueValidator, errorValidator(errors, "varName")]}
+      />
       <EditableEditor
         fieldName="expression"
         fieldLabel={"Expression"}
@@ -37,13 +42,15 @@ const Variable = (props) => {
         showSwitch={false}
         errors={errors}
       />
-      <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
-                       value={_.get(node, "additionalFields.description", "")}
-                       path="additionalFields.description"
-                       onChange={(event) => onChange("additionalFields.description", event.target.value)}
-                       isMarked={isMarked("additionalFields.description")}
-                       readOnly={readOnly}
-                       className={"node-input"}/>
+      <LabeledTextarea
+        renderFieldLabel={() => renderFieldLabel("Description")}
+        value={_.get(node, "additionalFields.description", "")}
+        path="additionalFields.description"
+        onChange={(event) => onChange("additionalFields.description", event.target.value)}
+        isMarked={isMarked("additionalFields.description")}
+        readOnly={readOnly}
+        className={"node-input"}
+      />
     </div>
   )
 }

@@ -33,7 +33,7 @@ const attrsConfig = () => {
   return {
     ".": {
       magnet: false,
-		},
+    },
     ".body": {
       fill: "none",
       width: rectWidth,
@@ -105,13 +105,13 @@ const portsAttrs = () => {
 
 const portInAttrs = () => {
   return Object.assign({},  portsAttrs(), {
-  ".port circle": {
-    fill: "#FFFFFF",
-    magnet: "passive",
-    stroke: edgeStroke,
-    strokeWidth: "1",
-    type: "input",
-  }})
+    ".port circle": {
+      fill: "#FFFFFF",
+      magnet: "passive",
+      stroke: edgeStroke,
+      strokeWidth: "1",
+      type: "input",
+    }})
 }
 
 const portOutAttrs = () => {
@@ -121,22 +121,22 @@ const portOutAttrs = () => {
       stroke: edgeStroke,
       strokeWidth: "1",
       type: "output",
-  }})
+    }})
 }
 
 joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
-	markup: nodeMarkup,
-	portMarkup: '<g class="port"><circle class="port-body"/></g>',
-	portLabelMarkup: null,
+  markup: nodeMarkup,
+  portMarkup: '<g class="port"><circle class="port-body"/></g>',
+  portLabelMarkup: null,
 
-	defaults: joint.util.deepSupplement({
-		type: "devs.GenericModel",
-		attrs: attrsConfig(),
-		size: {width: 1, height: 1},
-		inPorts: [],
-		outPorts: [],
-		ports: {
-			groups: {
+  defaults: joint.util.deepSupplement({
+    type: "devs.GenericModel",
+    attrs: attrsConfig(),
+    size: {width: 1, height: 1},
+    inPorts: [],
+    outPorts: [],
+    ports: {
+      groups: {
         in: {
           position: "top",
           attrs: portInAttrs(),
@@ -145,9 +145,9 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
           position: "bottom",
           attrs: portOutAttrs(),
         },
-			},
-		},
-	}, joint.shapes.devs.Model.prototype.defaults),
+      },
+    },
+  }, joint.shapes.devs.Model.prototype.defaults),
 })
 
 export function makeElement(node, processCounts, forExport, nodesSettings){
@@ -168,7 +168,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
   const pxPerChar = 8
   const countsPadding = 8
   //dynamically sized width
-  const testResultsWidth = (_.toArray(_.toString(processCounts ? processCounts.all : "")).length * pxPerChar) + 2 * countsPadding
+  const testResultsWidth = _.toArray(_.toString(processCounts ? processCounts.all : "")).length * pxPerChar + 2 * countsPadding
   let attrs = {
     ".background": {
       width: width,
@@ -240,7 +240,7 @@ function getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testR
 
   const hasCounts = !_.isEmpty(processCounts)
   const hasErrors = hasCounts && processCounts && processCounts.errors > 0
-  const countsContent = hasCounts ?  (processCounts ? `${processCounts.all}` : "0") : ""
+  const countsContent = hasCounts ?  processCounts ? `${processCounts.all}` : "0" : ""
   let extraDigitsCount = Math.max(countsContent.length - breakPoint, 0)
   extraDigitsCount = Math.min(extraDigitsCount, maxExtraDigits)
 
@@ -391,7 +391,7 @@ export function makeLink(edge, forExport) {
       edge: edge,
       forExport: forExport,
     },
- })
+  })
 }
 
 export default {

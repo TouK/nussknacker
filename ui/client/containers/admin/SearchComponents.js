@@ -65,7 +65,8 @@ class SearchComponents extends BaseAdminTab {
 
         <SearchFilter
           value={this.state.search}
-          onChange={this.onSearchChange}/>
+          onChange={this.onSearchChange}
+        />
 
         <LoaderSpinner show={this.state.showLoader}/>
 

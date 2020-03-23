@@ -25,13 +25,10 @@ export class ProcessAttachments extends React.Component<Props, State> {
 
   addAttachment = (files: File[]) => {
     this.setState({pendingRequest: true})
-    Promise.all(files.map((file)=>
-      this.props.actions.addAttachment(this.props.processId, this.props.processVersionId, file),
-    )).then(() => {
+    Promise.all(files.map((file)=> this.props.actions.addAttachment(this.props.processId, this.props.processVersionId, file))).then(() => {
       this.setState(this.initState)
     })
   }
-
 
   render() {
     const {attachments, t} = this.props
@@ -39,22 +36,22 @@ export class ProcessAttachments extends React.Component<Props, State> {
       <div className="process-attachments">
         <ul className="process-attachments-list">
           {attachments.map((attachment, idx) => (
-              <div key={idx} className={"attachment-section"}>
-                <div className="download-attachment">
-                  <div
-                      className="espButton download-button"
-                      dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
-                      onClick={() => HttpService.downloadAttachment(attachment.processId, attachment.processVersionId, attachment.id)}
-                  />
-                </div>
-                <div className={"attachment-details"}>
-                  <div className="header">
-                    <Date date={attachment.createDate}/>
-                    <span>{` | v${attachment.processVersionId} | ${attachment.user}`}</span>
-                  </div>
-                  <p> {attachment.fileName} </p>
-                </div>
+            <div key={idx} className={"attachment-section"}>
+              <div className="download-attachment">
+                <div
+                  className="espButton download-button"
+                  dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
+                  onClick={() => HttpService.downloadAttachment(attachment.processId, attachment.processVersionId, attachment.id)}
+                />
               </div>
+              <div className={"attachment-details"}>
+                <div className="header">
+                  <Date date={attachment.createDate}/>
+                  <span>{` | v${attachment.processVersionId} | ${attachment.user}`}</span>
+                </div>
+                <p> {attachment.fileName} </p>
+              </div>
+            </div>
           ))}
         </ul>
         <div className="add-attachments">

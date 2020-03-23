@@ -44,7 +44,7 @@ export function objectDiff(object, base) {
   const changes = (object, base) => {
     return _.transform(object, function (result, value, key) {
       if (base && !_.isEqual(value, base[key])) {
-        result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value
+        result[key] = _.isObject(value) && _.isObject(base[key]) ? changes(value, base[key]) : value
       }
     })
   }

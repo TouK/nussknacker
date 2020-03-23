@@ -85,7 +85,7 @@ export function reducer(state, action) {
       if (state.groupingState) {
         const newNodeId = action.nodeToDisplay.id
         return {
-           ...state,
+          ...state,
           groupingState: canGroup(state, action.nodeToDisplay) ?
             _.concat(state.groupingState, newNodeId) : state.groupingState,
         }
@@ -124,7 +124,7 @@ export function reducer(state, action) {
         ...state,
         ...updateAfterNodeIdChange(state.layout, action.processAfterChange, action.before.id, action.after.id),
       }
-        return {
+      return {
         ...stateAfterNodeRename,
         processToDisplay: {
           ...stateAfterNodeRename.processToDisplay,
@@ -352,9 +352,9 @@ function updateAfterNodeDelete(state, idToDelete) {
 }
 
 function createUniqueNodeId(initialId, usedIds, isCopy) {
-  return initialId && !_.includes(usedIds, initialId)
-    ? initialId
-    : generateUniqueNodeId(initialId, usedIds, 1, isCopy)
+  return initialId && !_.includes(usedIds, initialId) ?
+    initialId :
+    generateUniqueNodeId(initialId, usedIds, 1, isCopy)
 }
 
 function generateUniqueNodeId(initialId, usedIds, nodeCounter, isCopy) {

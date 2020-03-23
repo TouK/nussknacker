@@ -27,8 +27,11 @@ class SaveProcessDialog extends React.Component {
 
   render() {
     return (
-      <GenericModalDialog init={() => this.setState(this.initState)}
-        confirm={this.confirm} type={Dialogs.types.saveProcess}>
+      <GenericModalDialog
+        init={() => this.setState(this.initState)}
+        confirm={this.confirm}
+        type={Dialogs.types.saveProcess}
+      >
         <p>Save process {this.props.processId}</p>
         <CommentInput onChange={this.onInputChange.bind(this)} value={this.state.comment}/>
       </GenericModalDialog>

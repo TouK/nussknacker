@@ -13,11 +13,14 @@ export default function TableRowIcon(props) {
     }
   }
 
-  return <Glyphicon glyph={glyph}
-                    title={title}
-                    onClick={onClick}
-                    className={"processes-table-row-icon"}
-                    tabIndex={0}
-                    onKeyPress={handleKeyPress}
-  />
+  return (
+    <Glyphicon
+      glyph={glyph}
+      title={title}
+      onClick={onClick}
+      className={"processes-table-row-icon"}
+      tabIndex={0}
+      onKeyPress={handleKeyPress}
+    />
+  )
 }

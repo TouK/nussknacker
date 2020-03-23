@@ -9,14 +9,17 @@ export default function SwitchIcon(props) {
   const title = () => readOnly ? "Switching to basic mode is disabled. You are in read-only mode" : hint
 
   return (
-    shouldShowSwitch ?
-      <button id={"switch-button"}
-              className={`inlined switch-icon${displayRawEditor ? " active " : ""}${readOnly ? " read-only " : ""}`}
-              onClick={onClick}
-              disabled={!switchable || readOnly}
-              title={title()}>
+    shouldShowSwitch ? (
+      <button
+        id={"switch-button"}
+        className={`inlined switch-icon${displayRawEditor ? " active " : ""}${readOnly ? " read-only " : ""}`}
+        onClick={onClick}
+        disabled={!switchable || readOnly}
+        title={title()}
+      >
         <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
-      </button> : null
+      </button>
+    ) : null
   )
 }
 

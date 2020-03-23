@@ -7,20 +7,22 @@ import GenericModalDialog from "./GenericModalDialog"
 
 class InfoModal extends React.Component {
 
-    render() {
-        return (
-            <GenericModalDialog init={() => {}}
-                                 type={Dialogs.types.infoModal}>
-                <p>{this.props.modalDialog.text}</p>
-            </GenericModalDialog>
-        )
-    }
+  render() {
+    return (
+      <GenericModalDialog
+        init={() => {}}
+        type={Dialogs.types.infoModal}
+      >
+        <p>{this.props.modalDialog.text}</p>
+      </GenericModalDialog>
+    )
+  }
 }
 
 function mapState(state) {
-    return {
-        modalDialog: state.ui.modalDialog || {},
-    }
+  return {
+    modalDialog: state.ui.modalDialog || {},
+  }
 }
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(InfoModal)

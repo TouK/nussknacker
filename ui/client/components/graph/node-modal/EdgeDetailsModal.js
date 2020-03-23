@@ -43,29 +43,31 @@ class EdgeDetailsModal extends React.Component {
   }
 
   performEdgeEdit = () => {
-    this.setState( {pendingRequest: true})
+    this.setState({pendingRequest: true})
     this.props.actions.editEdge(this.props.processToDisplay, this.props.edgeToDisplay, this.state.editedEdge).then (() => {
-      this.setState( {pendingRequest: false})
+      this.setState({pendingRequest: false})
       this.closeModal()
     })
   }
 
   renderModalButtons() {
-    return ([
+    return [
       <button key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
         Cancel
       </button>,
-      !this.props.readOnly ? <LaddaButton
-        key="1"
-        title="Apply edge details"
-        className="modalButton pull-right modalConfirmButton"
-        loading={this.state.pendingRequest}
-        data-style="zoom-in"
-        onClick={this.performEdgeEdit}
-      >
-        Apply
-      </LaddaButton> : null
-    ])
+      !this.props.readOnly ? (
+        <LaddaButton
+          key="1"
+          title="Apply edge details"
+          className="modalButton pull-right modalConfirmButton"
+          loading={this.state.pendingRequest}
+          data-style="zoom-in"
+          onClick={this.performEdgeEdit}
+        >
+          Apply
+        </LaddaButton>
+      ) : null,
+    ]
   }
 
   updateEdgeProp = (prop, value) => {
@@ -96,9 +98,11 @@ class EdgeDetailsModal extends React.Component {
     const {readOnly} = this.props
     return (
       <div className="objectModal">
-        <Modal isOpen={isOpen}
-               shouldCloseOnOverlayClick={false}
-               onRequestClose={this.closeModal}>
+        <Modal
+          isOpen={isOpen}
+          shouldCloseOnOverlayClick={false}
+          onRequestClose={this.closeModal}
+        >
           <div className="draggable-container">
             <Draggable bounds="parent" handle=".modal-draggable-handle">
               <div className="espModal">
@@ -139,8 +143,8 @@ function mapState(state) {
     edgeToDisplay: state.graphReducer.edgeToDisplay,
     processToDisplay: state.graphReducer.processToDisplay,
     edgeErrors: errors,
-    readOnly: !state.settings.loggedUser.canWrite(processCategory)
-      || _.get(state, "graphReducer.fetchedProcessDetails.isArchived"),
+    readOnly: !state.settings.loggedUser.canWrite(processCategory) ||
+      _.get(state, "graphReducer.fetchedProcessDetails.isArchived"),
     processDefinitionData: state.settings.processDefinitionData,
     showEdgeDetailsModal: state.ui.showEdgeDetailsModal,
   }

@@ -81,7 +81,8 @@ function mapState(state) {
     settings: Object.assign(
       {},
       _.get(state.settings, "featuresSettings.commentSettings"),
-      _.get(state.settings, "featuresSettings.deploySettings")),
+      _.get(state.settings, "featuresSettings.deploySettings")
+    ),
     processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
     processHasWarnings: !processHasNoWarnings,
     action: config.action,

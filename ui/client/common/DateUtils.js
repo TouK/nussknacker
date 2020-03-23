@@ -3,11 +3,11 @@ import {displayDateFormat} from "../config"
 
 class DateUtils {
     formatRelatively = (dateTimeString) => {
-        return Moment(dateTimeString).calendar(null, {sameElse: displayDateFormat})
+      return Moment(dateTimeString).calendar(null, {sameElse: displayDateFormat})
     }
 
     formatAbsolutely = (dateTimeString) => {
-        return dateTimeString.replace("T", " | ").substring(0, 18)
+      return dateTimeString.replace("T", " | ").substring(0, 18)
     }
 }
 

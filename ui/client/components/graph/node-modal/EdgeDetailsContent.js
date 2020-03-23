@@ -46,7 +46,8 @@ export default class EdgeDetailsContent extends React.Component {
             edgeErrors={edgeErrors}
             readOnly={readOnly}
             isMarked={this.isMarked}
-            changeEdgeTypeValue={changeEdgeTypeValue}>
+            changeEdgeTypeValue={changeEdgeTypeValue}
+          >
             <EditableEditor
               fieldType={"expression"}
               fieldLabel={"Expression"}

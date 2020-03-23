@@ -2,9 +2,11 @@
 import React, {createContext, PropsWithChildren, useContext} from "react"
 import Graph from "./Graph"
 
-const GraphContext = createContext<() => Graph>(null)
+type GraphContextType = () => Graph
 
-export const GraphProvider = ({graph, children}: PropsWithChildren<{ graph: () => Graph }>) => (
+const GraphContext = createContext<GraphContextType>(null)
+
+export const GraphProvider = ({graph, children}: PropsWithChildren<{ graph: GraphContextType }>) => (
   <GraphContext.Provider value={graph}>
     {children}
   </GraphContext.Provider>

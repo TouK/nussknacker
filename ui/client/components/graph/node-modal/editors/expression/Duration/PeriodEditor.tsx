@@ -71,8 +71,7 @@ export default function PeriodEditor(props: Props) {
   )
 }
 
-PeriodEditor.switchableTo = (expressionObj: ExpressionObj) =>
-  SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression)
+PeriodEditor.switchableTo = (expressionObj: ExpressionObj) => SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression)
 
 PeriodEditor.switchableToHint = () => i18next.t("editors.period.switchableToHint", "Switch to basic mode")
 

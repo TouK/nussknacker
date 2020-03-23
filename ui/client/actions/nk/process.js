@@ -52,9 +52,9 @@ export function displayCurrentProcessVersion(processId) {
 export function saveProcess(processId, processJson, comment) {
   return (dispatch) => {
     return HttpService.saveProcess(processId, processJson, comment)
-        .then((response) => dispatch(displayCurrentProcessVersion(processId)))
-        .then((response) => dispatch(displayProcessActivity(processId)))
-        .then((response) => dispatch(UndoRedoActions.clear()))
+      .then((response) => dispatch(displayCurrentProcessVersion(processId)))
+      .then((response) => dispatch(displayProcessActivity(processId)))
+      .then((response) => dispatch(UndoRedoActions.clear()))
   }
 }
 
@@ -65,8 +65,8 @@ export function importProcess(processId, file) {
     })
 
     return HttpService.importProcess(processId, file)
-        .then((process) => dispatch(updateImportedProcess(process.data)))
-        .catch((error) => dispatch({type: "LOADING_FAILED"}))
+      .then((process) => dispatch(updateImportedProcess(process.data)))
+      .catch((error) => dispatch({type: "LOADING_FAILED"}))
   }
 }
 
@@ -90,7 +90,7 @@ export function calculateProcessAfterChange(process, before, after, dispatch) {
   if (NodeUtils.nodeIsProperties(after)) {
     const subprocessVersions = after.subprocessVersions || process.properties.subprocessVersions
     return dispatch(
-        fetchProcessDefinition(process.processingType, process.properties.isSubprocess, subprocessVersions),
+      fetchProcessDefinition(process.processingType, process.properties.isSubprocess, subprocessVersions),
     ).then((processDef) => {
       const processWithNewSubprocessSchema = alignSubprocessesWithSchema(process, processDef.processDefinitionData)
       return GraphUtils.mapProcessWithNewNode(processWithNewSubprocessSchema, before, after)
@@ -118,26 +118,24 @@ export function testProcessFromFile(id, testDataFile, process) {
     })
 
     dispatch(reportEvent({
-          category: events.categories.rightPanel,
-          action: events.actions.buttonClick,
-          name: "from file",
-        },
-    ))
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "from file",
+    }))
 
     HttpService.testProcess(id, testDataFile, process)
-        .then(response => dispatch(displayTestResults(response.data)))
-        .catch(error => dispatch({type: "LOADING_FAILED"}))
+      .then(response => dispatch(displayTestResults(response.data)))
+      .catch(error => dispatch({type: "LOADING_FAILED"}))
   }
 }
 
 export function hideRunProcessDetails() {
   return (dispatch) => {
     dispatch(reportEvent({
-          category: events.categories.rightPanel,
-          action: events.actions.buttonClick,
-          name: "hide",
-        },
-    ))
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: "hide",
+    }))
 
     return dispatch({
       type: "HIDE_RUN_PROCESS_DETAILS",
@@ -152,10 +150,9 @@ function displayTestResults(testResults) {
       testResults: testResults.results,
     })
     dispatch({
-          type: "DISPLAY_PROCESS_COUNTS",
-          processCounts: testResults.counts,
-        },
-    )
+      type: "DISPLAY_PROCESS_COUNTS",
+      processCounts: testResults.counts,
+    })
   }
 }
 

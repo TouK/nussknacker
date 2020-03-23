@@ -57,7 +57,8 @@ class CustomProcesses extends BaseProcesses {
         <div id="process-top-bar">
           <SearchFilter
             value={this.state.search}
-            onChange={this.onSearchChange}/>
+            onChange={this.onSearchChange}
+          />
         </div>
 
         <LoaderSpinner show={this.state.showLoader}/>
@@ -110,13 +111,13 @@ class CustomProcesses extends BaseProcesses {
                   <Td column="deploy" className="deploy-column">
                     { ProcessStateUtils.canDeploy(this.getProcessState(process)) ? (
                       <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)}/>
-                      ): null
+                    ): null
                     }
                   </Td>
                   <Td column="cancel" className="cancel-column">
                     { ProcessStateUtils.canCancel(this.getProcessState(process)) ? (
                       <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)}/>
-                      ): null
+                    ): null
                     }
                   </Td>
                 </Tr>

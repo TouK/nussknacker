@@ -34,8 +34,10 @@ class QueriedStateTable extends React.Component {
         <div>
           <div className="esp-form-row">
             <p>Query name</p>
-            <select value={this.selectedQueryName()} onChange={(e) =>
-              this.setState({queryName: e.target.value, processId: this.processesForQueryName(e.target.value)[0]})}>
+            <select
+              value={this.selectedQueryName()}
+              onChange={(e) => this.setState({queryName: e.target.value, processId: this.processesForQueryName(e.target.value)[0]})}
+            >
               {_.keys(this.props.availableQueryableStates).map((queryName, index) => (<option key={index} value={queryName}>{queryName}</option>))}
             </select>
           </div>
@@ -48,8 +50,13 @@ class QueriedStateTable extends React.Component {
           <div className="esp-form-row">
             <p>Key (optional)</p>
             <input value={this.state.key} onChange={(e) => this.setState({key: e.target.value})}/>
-            <button type="button" className="modalButton" disabled={_.isEmpty(this.selectedQueryName()) || _.isEmpty(this.selectedProcessId())} title={queryButtonTooltip}
-                    onClick={this.queryState.bind(this, this.selectedProcessId(), this.selectedQueryName(), this.state.key)}>Query</button>
+            <button
+              type="button"
+              className="modalButton"
+              disabled={_.isEmpty(this.selectedQueryName()) || _.isEmpty(this.selectedProcessId())}
+              title={queryButtonTooltip}
+              onClick={this.queryState.bind(this, this.selectedProcessId(), this.selectedQueryName(), this.state.key)}
+            >Query</button>
           </div>
         </div>
       )
@@ -110,14 +117,18 @@ class QueriedStateTable extends React.Component {
 
   renderJsonTree = (value) => {
     return (
-      <JSONTree data={value} hideRoot={true} theme={{
-        label: {
-          fontWeight: "normal",
-        },
-        tree: {
-          backgroundColor: "none",
-        },
-      }}/>
+      <JSONTree
+        data={value}
+        hideRoot={true}
+        theme={{
+          label: {
+            fontWeight: "normal",
+          },
+          tree: {
+            backgroundColor: "none",
+          },
+        }}
+      />
     )
   }
 

@@ -1,10 +1,9 @@
 import _ from "lodash"
 import React from "react"
 
-const parametersEquals = (oldParameter, newParameter) =>
-  oldParameter
-  && newParameter
-  && oldParameter.name === newParameter.name
+const parametersEquals = (oldParameter, newParameter) => oldParameter &&
+  newParameter &&
+  oldParameter.name === newParameter.name
 
 const newFields = (oldParameters, newParameters) => _.differenceWith(newParameters, oldParameters, parametersEquals)
 const removedFields = (oldParameters, newParameters) => _.differenceWith(oldParameters, newParameters, parametersEquals)
@@ -34,13 +33,13 @@ export default function ParameterList(props) {
   const nodeId = props.savedNode.id
   return (
     <span>
-        {diffParams.unchanged.map((params, index) => {
-          return (
-            <div className="node-block" key={nodeId + params.name + index}>
-              {props.createListField(params, index)}
-            </div>
-          )
-        })}
+      {diffParams.unchanged.map((params, index) => {
+        return (
+          <div className="node-block" key={nodeId + params.name + index}>
+            {props.createListField(params, index)}
+          </div>
+        )
+      })}
       {diffParams.added.map((params, index) => {
         const newIndex = index + diffParams.unchanged.length
         return (
@@ -56,6 +55,6 @@ export default function ParameterList(props) {
           </div>
         )
       })}
-          </span>
+    </span>
   )
 }

@@ -54,8 +54,7 @@ class Visualization extends React.Component {
     }
   }
 
-  allowBindCopyShortcut = () =>
-    this.props.allModalsClosed && _.isEmpty(this.props.selectionState) === false
+  allowBindCopyShortcut = () => this.props.allModalsClosed && _.isEmpty(this.props.selectionState) === false
 
   bindPasteShortcut() {
     return (event) => this.props.actions.pasteSelection(
@@ -164,8 +163,7 @@ class Visualization extends React.Component {
     _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
   }
 
-  fetchProcessDetails = (businessView) =>
-    this.props.actions.fetchProcessToDisplay(this.props.match.params.processId, undefined, businessView)
+  fetchProcessDetails = (businessView) => this.props.actions.fetchProcessToDisplay(this.props.match.params.processId, undefined, businessView)
 
   fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails.id)
 

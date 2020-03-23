@@ -48,7 +48,7 @@ export function canInjectNode(process, sourceId, middleManId, targetId, processD
 
 function deleteEdge(process, fromId, toId) {
   return {
-  ...process,
+    ...process,
     edges: _.reject(process.edges, (e) => e.from === fromId && e.to === toId),
   }
 }

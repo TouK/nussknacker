@@ -56,7 +56,7 @@ export class Metrics extends React.Component {
   getDashboardName() {
     const processingType = this.state.processingType
     const processingTypeToDashboard = this.props.settings.processingTypeToDashboard
-    return (processingTypeToDashboard && processingTypeToDashboard[processingType]) || this.props.settings.defaultDashboard
+    return processingTypeToDashboard && processingTypeToDashboard[processingType] || this.props.settings.defaultDashboard
   }
 }
 

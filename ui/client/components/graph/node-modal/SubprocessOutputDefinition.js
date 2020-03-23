@@ -9,57 +9,64 @@ import MapVariable from "./MapVariable"
 
 const SubprocessOutputDefinition = ({isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel}) => {
 
-    const addField = () => {
-        addElement("fields", {name: "", uuid: uuid4(), expression: {expression: "", language: "spel"}})
-    }
+  const addField = () => {
+    addElement("fields", {name: "", uuid: uuid4(), expression: {expression: "", language: "spel"}})
+  }
 
-    const onInputChange = (path, event) => onChange(path, event.target.value)
+  const onInputChange = (path, event) => onChange(path, event.target.value)
 
-    return (
-        <div className="node-table-body node-variable-builder-body">
-            <LabeledInput renderFieldLabel={() => renderFieldLabel("Name")}
-                          value={node.id}
-                          onChange={(event) => onInputChange("id", event)}
-                          isMarked={isMarked("id")}
-                          readOnly={readOnly}
-                          showValidation={showValidation}
-                          validators={[mandatoryValueValidator, errorValidator(errors, "id")]}/>
+  return (
+    <div className="node-table-body node-variable-builder-body">
+      <LabeledInput
+        renderFieldLabel={() => renderFieldLabel("Name")}
+        value={node.id}
+        onChange={(event) => onInputChange("id", event)}
+        isMarked={isMarked("id")}
+        readOnly={readOnly}
+        showValidation={showValidation}
+        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+      />
 
-            <LabeledInput renderFieldLabel={() => renderFieldLabel("Output name")}
-                          value={node.outputName}
-                          onChange={(event) => onInputChange("outputName", event)}
-                          isMarked={isMarked("outputName")}
-                          readOnly={readOnly}
-                          showValidation={showValidation}
-                          validators={[mandatoryValueValidator, errorValidator(errors, "outputName")]}/>
+      <LabeledInput
+        renderFieldLabel={() => renderFieldLabel("Output name")}
+        value={node.outputName}
+        onChange={(event) => onInputChange("outputName", event)}
+        isMarked={isMarked("outputName")}
+        readOnly={readOnly}
+        showValidation={showValidation}
+        validators={[mandatoryValueValidator, errorValidator(errors, "outputName")]}
+      />
 
-            <Map label="Fields"
-                 onChange={onChange}
-                 fields={node.fields}
-                 removeField={removeElement}
-                 namespace="fields"
-                 addField={addField}
-                 isMarked={isMarked}
-                 readOnly={readOnly}
-                 showValidation={showValidation}
-                 showSwitch={false}
-                 errors={errors}/>
+      <Map
+        label="Fields"
+        onChange={onChange}
+        fields={node.fields}
+        removeField={removeElement}
+        namespace="fields"
+        addField={addField}
+        isMarked={isMarked}
+        readOnly={readOnly}
+        showValidation={showValidation}
+        showSwitch={false}
+        errors={errors}
+      />
 
-            <LabeledTextarea renderFieldLabel={() => renderFieldLabel("Description")}
-                             value={_.get(node, "additionalFields.description", "")}
-                             onChange={(event) => onInputChange("additionalFields.description", event)}
-                             isMarked={isMarked("additionalFields.description")}
-                             readOnly={readOnly}
-                             className={"node-input"}/>
-        </div>
-    )
+      <LabeledTextarea
+        renderFieldLabel={() => renderFieldLabel("Description")}
+        value={_.get(node, "additionalFields.description", "")}
+        onChange={(event) => onInputChange("additionalFields.description", event)}
+        isMarked={isMarked("additionalFields.description")}
+        readOnly={readOnly}
+        className={"node-input"}
+      />
+    </div>
+  )
 }
 
 SubprocessOutputDefinition.propTypes = MapVariable.propTypes
 SubprocessOutputDefinition.defaultProps = MapVariable.defaultProps
 SubprocessOutputDefinition.availableFields = (_node_) => {
-    return ["id", "outputName"]
+  return ["id", "outputName"]
 }
-
 
 export default SubprocessOutputDefinition

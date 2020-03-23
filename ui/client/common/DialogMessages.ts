@@ -3,8 +3,8 @@ import {ProcessId} from "../actions/nk/models"
 
 export const unsavedProcessChanges = () => {
   return i18next.t(
-      "dialogMessages.unsavedProcessChanges",
-      "There are some unsaved process changes. Do you want to discard unsaved changes?",
+    "dialogMessages.unsavedProcessChanges",
+    "There are some unsaved process changes. Do you want to discard unsaved changes?",
   )
 }
 
@@ -14,9 +14,9 @@ export const deploy = (processId: ProcessId) => {
 
 export const migrate = (processId, environmentId) => {
   return i18next.t(
-      "dialogMessages.migrate",
-      "Are you sure you want to migrate {{processId}} to {{environmentId}}?",
-      {processId, environmentId},
+    "dialogMessages.migrate",
+    "Are you sure you want to migrate {{processId}} to {{environmentId}}?",
+    {processId, environmentId},
   )
 }
 
@@ -34,8 +34,8 @@ export const deleteComment = () => {
 
 export const cantArchiveRunningProcess = () => {
   return i18next.t(
-      "dialogMessages.cantArchiveRunningProcess",
-      "You can't archive running process! Stop it first and then click 'archive' button again.",
+    "dialogMessages.cantArchiveRunningProcess",
+    "You can't archive running process! Stop it first and then click 'archive' button again.",
   )
 }
 

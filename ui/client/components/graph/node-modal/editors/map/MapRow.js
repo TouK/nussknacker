@@ -9,35 +9,40 @@ export default function MapRow(props) {
 
   return (
     <div className="node-row movable-row">
-      <MapKey rowKey={field}
-              showValidation={showValidation}
-              validators={[mandatoryValueValidator]}
-              autofocus={false}
-              isMarked={isMarked(paths)}
-              readOnly={readOnly}
-              paths={paths}
-              onChange={onChange}/>
+      <MapKey
+        rowKey={field}
+        showValidation={showValidation}
+        validators={[mandatoryValueValidator]}
+        autofocus={false}
+        isMarked={isMarked(paths)}
+        readOnly={readOnly}
+        paths={paths}
+        onChange={onChange}
+      />
 
-      <MapValue rowKey={field}
-                value={field.expression}
-                isMarked={isMarked(paths)}
-                paths={paths}
-                errors={errors}
-                showValidation={showValidation}
-                showSwitch={showSwitch}
-                readOnly={readOnly}
-                onChange={onChange}/>
+      <MapValue
+        rowKey={field}
+        value={field.expression}
+        isMarked={isMarked(paths)}
+        paths={paths}
+        errors={errors}
+        showValidation={showValidation}
+        showSwitch={showSwitch}
+        readOnly={readOnly}
+        onChange={onChange}
+      />
 
       {
-        readOnly ? null :
+        readOnly ? null : (
           <div className={`node-value fieldRemove${  isMarked(paths) ? " marked" : ""}`}>
             <button
               className="addRemoveButton"
               title="Remove field"
-              onClick={onRemoveField}>-
+              onClick={onRemoveField}
+            >-
             </button>
           </div>
-      }
+        )}
     </div>
   )
 }
