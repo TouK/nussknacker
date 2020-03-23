@@ -1,6 +1,6 @@
 import {ThunkAction} from "../reduxTypes"
 import {reportEvent} from "./reportEvent"
-import {ProcessId} from "./models"
+import {ProcessId} from "../../types"
 
 export type ToggleProcessActionModalAction = {
   type: "TOGGLE_PROCESS_ACTION_MODAL",

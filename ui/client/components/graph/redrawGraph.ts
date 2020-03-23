@@ -1,12 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
+import {GroupId, Process} from "../../types"
 import {debugTime} from "./debugTime"
-import * as EspNode from "./EspNode"
+import {boundingRect, makeElement, makeLink} from "./EspNode"
 import NodeUtils from "./NodeUtils"
 
 export function redrawGraph(
-  process,
-  expandedGroups,
+  process: Process,
+  expandedGroups: GroupId[],
   processCounts,
   forExport,
   processDefinitionData,
@@ -22,18 +23,16 @@ export function redrawGraph(
   const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
   t = debugTime(t, "start")
 
-  const nodes = _.map(nodesWithGroups, (n) => {
-    return EspNode.makeElement(n, processCounts[n.id], forExport, processDefinitionData.nodesConfig || {})
-  })
+  const nodes = nodesWithGroups.map(n => makeElement(n, processCounts[n.id], forExport, processDefinitionData.nodesConfig || {}))
 
   t = debugTime(t, "nodes")
 
-  const edges = _.map(edgesWithGroups, (e) => EspNode.makeLink(e, forExport))
+  const edges = _.map(edgesWithGroups, (e) => makeLink(e, forExport))
   t = debugTime(t, "links")
 
   const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups).map(expandedGroup => ({
     group: expandedGroup,
-    rect: EspNode.boundingRect(nodes, expandedGroup, layout, NodeUtils.createGroupNode(nodesWithGroups, expandedGroup)),
+    rect: boundingRect(nodes, expandedGroup, layout, NodeUtils.createGroupNode(nodesWithGroups, expandedGroup)),
   }))
 
   t = debugTime(t, "bounding")

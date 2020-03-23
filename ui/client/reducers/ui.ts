@@ -1,4 +1,4 @@
-import {GroupId, ProcessId} from "../actions/nk/models"
+import {GroupId, ProcessId} from "../types"
 import {Action} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"
 

@@ -1,4 +1,4 @@
-import {NodeType} from "../actions/nk/models"
+import {NodeType} from "../types"
 import {ProcessStateType, ProcessType} from "../components/Process/types"
 
 type GraphHistoryAction = $TodoType
@@ -18,7 +18,7 @@ export type GraphState = {
   fetchedProcessDetails?: ProcessType,
   processToDisplay?: ProcessToDisplayState,
   businessView: boolean,
-  nodeToDisplay: $TodoType,
+  nodeToDisplay: NodeType,
   selectionState?: string[],
   groupingState?: $TodoType,
   history: GraphHistory,

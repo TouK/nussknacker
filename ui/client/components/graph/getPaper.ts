@@ -1,6 +1,6 @@
 import * as joint from "jointjs"
 import {dia} from "jointjs"
-import * as EspNode from "./EspNode"
+import {makeLink} from "./EspNode"
 
 type Attrs = {
   el: $TodoType,
@@ -36,7 +36,7 @@ export function getPaper({el, height, width, model, canWrite, validateConnection
       }
     },
     linkPinning: false,
-    defaultLink: EspNode.makeLink({}),
+    defaultLink: makeLink({}),
   }
   return new joint.dia.Paper(options)
 }

@@ -1,5 +1,5 @@
 import i18next from "i18next"
-import {ProcessId} from "../actions/nk/models"
+import {ProcessId} from "../types"
 
 export const unsavedProcessChanges = () => {
   return i18next.t(

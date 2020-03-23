@@ -2,7 +2,7 @@ import {events} from "../../analytics/TrackingEvents"
 import NodeUtils from "../../components/graph/NodeUtils"
 import HttpService from "../../http/HttpService"
 import {ThunkAction} from "../reduxTypes"
-import {GroupId, GroupType, NodeId, NodeType, Process} from "./models"
+import {GroupId, GroupType, NodeId, NodeType, Process} from "../../types"
 import {reportEvent} from "./reportEvent"
 
 export function startGrouping(): ThunkAction {
