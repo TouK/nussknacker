@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
 import expandIcon from "../../../assets/img/expand.svg"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
@@ -62,8 +63,8 @@ function getBodyContent(node) {
   }
 }
 
-function getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight) {
-  const {breakPoint, fontSizeStep, maxExtraDigits, defaultFontSize} = summaryCountConfig
+function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
+  const {breakPoint, maxExtraDigits} = summaryCountConfig
 
   const hasCounts = !_.isEmpty(processCounts)
   const hasErrors = hasCounts && processCounts && processCounts.errors > 0
@@ -83,7 +84,7 @@ function getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testR
 
 export function makeElement(node, processCounts, forExport, nodesSettings) {
   const description = _.get(node.additionalFields, "description", null)
-  const {text: bodyContent, multiline} = getBodyContent(node)
+  const {text: bodyContent} = getBodyContent(node)
   const hasCounts = !_.isEmpty(processCounts)
   const width = rectWidth
   const height = rectHeight
@@ -134,7 +135,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings) {
       refY: height,
       height: testResultsHeight,
     },
-    ".testResultsSummary": getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight),
+    ".testResultsSummary": getTestResultsSummaryAttr(processCounts, width, testResultsWidth),
     ".groupElements": {
       display: NodeUtils.nodeIsGroup(node) ? "block" : "none",
     },

@@ -11,12 +11,13 @@ import {getProcessCategory, getSelectionState} from "../../reducers/selectors/gr
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import cssVariables from "../../stylesheets/_variables.styl"
 import "../../stylesheets/graph.styl"
-import * as EspNode from "./EspNode"
+import {getPaper} from "./getPaper"
 import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
+import {redrawGraph} from "./redrawGraph"
 
 export class Graph extends React.Component {
 
@@ -166,39 +167,23 @@ export class Graph extends React.Component {
     return this.state.exported
   }
 
-  validateConnection = (cellViewS, magnetS, cellViewT, magnetT) => {
-    const from = cellViewS.model.id
-    const to = cellViewT.model.id
-    return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData)
+  validateConnection() {
+    const {processToDisplay, processDefinitionData} = this.props
+    return (cellViewS, magnetS, cellViewT, magnetT) => {
+      const from = cellViewS.model.id
+      const to = cellViewT.model.id
+      return magnetT && NodeUtils.canMakeLink(from, to, processToDisplay, processDefinitionData)
+    }
   }
 
   createPaper = () => {
     const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly
-    return new joint.dia.Paper({
-      el: this.getEspGraphRef(),
-      gridSize: 1,
-      height: this.parent.clientHeight,
-      width: this.parent.clientWidth - 2 * this.props.padding,
-      model: this.graph,
-      snapLinks: {radius: 75},
-      interactive: function (cellView) {
-        const model = cellView.model
-        if (!canWrite) {
-          return false
-        } else if (model instanceof joint.dia.Link) {
-          // Disable the default vertex add and label move functionality on pointerdown.
-          return {vertexAdd: false, labelMove: false}
-        } else if (model.get && model.get("backgroundObject")) {
-          //Disable moving group rect
-          return false
-        } else {
-          return true
-        }
-      },
-      linkPinning: false,
-      defaultLink: EspNode.makeLink({}),
-      validateConnection: this.validateConnection,
-    })
+    const el = this.getEspGraphRef()
+    const height = this.parent.clientHeight
+    const width = this.parent.clientWidth - 2 * this.props.padding
+    const model = this.graph
+    const validateConnection = this.validateConnection()
+    return getPaper({el, height, width, model, canWrite, validateConnection})
       .on("cell:pointerup", (cellView, evt, x, y) => {
         this.changeLayoutIfNeeded()
         this.handleInjectBetweenNodes(cellView)
@@ -263,66 +248,20 @@ export class Graph extends React.Component {
     }
   }
 
-  time = (start, name) => {
-    const now = window.performance.now()
-    //uncomment to track performance...
-    //console.log("time: ", name, now - start)
-    return now
-  }
-
   drawGraph = (process, layout, processCounts, processDefinitionData, forExport, expandedGroups) => {
+    const {graph, _updateChangedCells, _layout} = this
     this.redrawing = true
-    //leaving performance debug for now, as there is still room for improvement:
-    //handling forExport and processCounts without need of full redraw
-    const performance = window.performance
-    let t = performance.now()
-
-    const nodesWithGroups = NodeUtils.nodesFromProcess(process, expandedGroups)
-    const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
-    t = this.time(t, "start")
-
-    const nodes = _.map(nodesWithGroups, (n) => {
-      return EspNode.makeElement(n, processCounts[n.id], forExport, processDefinitionData.nodesConfig || {})
-    })
-
-    t = this.time(t, "nodes")
-
-    const edges = _.map(edgesWithGroups, (e) => EspNode.makeLink(e, forExport))
-    t = this.time(t, "links")
-
-    const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups).map(expandedGroup => ({
-      group: expandedGroup,
-      rect: EspNode.boundingRect(nodes, expandedGroup, layout, NodeUtils.createGroupNode(nodesWithGroups, expandedGroup)),
-    }))
-
-    t = this.time(t, "bounding")
-
-    const cells = boundingRects.map(g => g.rect).concat(nodes.concat(edges))
-
-    const newCells = _.filter(cells, cell => !this.graph.getCell(cell.id))
-    const deletedCells = _.filter(this.graph.getCells(), oldCell => !_.find(cells, cell => cell.id === oldCell.id))
-    const changedCells = _.filter(cells, cell => {
-      const old = this.graph.getCell(cell.id)
-      //TODO: some different ways of comparing?
-      return old && JSON.stringify(old.get("definitionToCompare")) !== JSON.stringify(cell.get("definitionToCompare"))
-    })
-
-    t = this.time(t, "compute")
-
-    if (newCells.length + deletedCells.length + changedCells.length > 3) {
-      this.graph.resetCells(cells)
-    } else {
-      this.graph.removeCells(deletedCells)
-      this._updateChangedCells(changedCells)
-      this.graph.addCells(newCells)
-    }
-    t = this.time(t, "redraw")
-
-    this._layout(layout)
-    this.time(t, "layout")
-
-    _.forEach(boundingRects, rect => rect.rect.toBack())
-
+    redrawGraph(
+      process,
+      expandedGroups,
+      processCounts,
+      forExport,
+      processDefinitionData,
+      layout,
+      graph,
+      _updateChangedCells.bind(this),
+      _layout.bind(this),
+    )
     this.redrawing = false
   }
 

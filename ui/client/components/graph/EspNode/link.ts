@@ -1,9 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import NodeUtils from "../NodeUtils"
 import {edgeStroke, rectWidth} from "./misc"
-import * as joint from "jointjs/index"
+import * as joint from "jointjs"
 
-export function makeLink(edge, forExport) {
+export function makeLink(edge, forExport?) {
   const label = NodeUtils.edgeLabel(edge)
 
   const labels = []
@@ -60,7 +60,6 @@ export function makeLink(edge, forExport) {
         fill: "white",
         d: "M 10 0 L 0 5 L 10 10 L 8 5 z",
       },
-      minLen: label ? 20 : 10,
     },
     edgeData: edge,
     definitionToCompare: {
