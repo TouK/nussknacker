@@ -22,6 +22,7 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private val literalIntegerParam = getFirstParam("literalIntegerAnnotatedParam", classOf[Integer])
   private val literalNullableIntegerParam = getFirstParam("literalNullableIntegerAnnotatedParam", classOf[Integer])
   private val literalStringParam = getFirstParam("literalStringAnnotatedParam", classOf[String])
+  private val optionLiteralIntParam = getFirstParam("optionIntAnnotatedParam", classOf[Option[Int]])
 
   private def notAnnotated(param: String) {}
 
@@ -36,6 +37,8 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private def notBlankAnnotatedParam(@NotBlank notBlank: String) {}
 
   private def literalIntAnnotatedParam(@Literal intParam: Int) {}
+
+  private def optionIntAnnotatedParam(@Literal intParam: Option[Int]) {}
 
   private def literalIntegerAnnotatedParam(@Literal integerParam: Integer) {}
 
@@ -93,6 +96,10 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
 
   test("extract literalOptionalIntegerParam value validator when @Nullable @Literal annotation detected") {
     ValidatorsExtractor(None).extract(literalNullableIntegerParam) shouldBe List(LiteralParameterValidator.integerValidator)
+  }
+
+  test("extract optionLiteralIntParam value validator when @Literal annotation detected") {
+    ValidatorsExtractor(None).extract(optionLiteralIntParam) shouldBe List(LiteralParameterValidator.integerValidator)
   }
 
   test("should not extract literalStringParam value validator when @Literal annotation detected") {

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import java.util.Optional
 import java.util.regex.Pattern
 
 import cats.data.Validated
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 
 import scala.reflect.ClassTag
 import scala.util.Try
-
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 /**
@@ -112,7 +112,11 @@ case object LiteralParameterValidator {
   def apply(clazz: Class[_]): Option[ParameterValidator] =
     clazz match {
       case clazz if clazz == classOf[Int] => Some(integerValidator)
+      case clazz if clazz == classOf[Option[Int]] => Some(integerValidator)
+      case clazz if clazz == classOf[Optional[Int]] => Some(integerValidator)
       case clazz if clazz == classOf[Integer] => Some(integerValidator)
+      case clazz if clazz == classOf[Option[Integer]] => Some(integerValidator)
+      case clazz if clazz == classOf[Optional[Integer]] => Some(integerValidator)
       case _ => None
     }
 
