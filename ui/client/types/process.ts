@@ -8,3 +8,7 @@ export type Process = {
 }
 
 export type ProcessId = string
+
+export type ProcessDefinitionData = {
+  nodesConfig: $TodoType,
+}

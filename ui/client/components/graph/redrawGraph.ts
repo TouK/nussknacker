@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
-import {GroupId, Process} from "../../types"
+import {GroupId, Process, ProcessDefinitionData} from "../../types"
 import {debugTime} from "./debugTime"
 import {boundingRect, makeElement, makeLink} from "./EspNode"
 import NodeUtils from "./NodeUtils"
@@ -9,8 +9,8 @@ export function redrawGraph(
   process: Process,
   expandedGroups: GroupId[],
   processCounts,
-  forExport,
-  processDefinitionData,
+  forExport: boolean,
+  processDefinitionData: ProcessDefinitionData,
   layout,
   graph,
   _updateChangedCells,
@@ -23,7 +23,7 @@ export function redrawGraph(
   const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
   t = debugTime(t, "start")
 
-  const nodes = nodesWithGroups.map(n => makeElement(n, processCounts[n.id], forExport, processDefinitionData.nodesConfig || {}))
+  const nodes = nodesWithGroups.map(node => makeElement(node, processCounts[node.id], forExport, processDefinitionData.nodesConfig || {}))
 
   t = debugTime(t, "nodes")
 

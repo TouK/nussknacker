@@ -83,7 +83,7 @@ function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
   }
 }
 
-export function makeElement(node: NodeType, processCounts, forExport, nodesSettings) {
+export function makeElement(node: NodeType, processCounts, forExport: boolean, nodesSettings) {
   const description = node.additionalFields?.description || null
   const {text: bodyContent} = getBodyContent(node)
   const hasCounts = !_.isEmpty(processCounts)
