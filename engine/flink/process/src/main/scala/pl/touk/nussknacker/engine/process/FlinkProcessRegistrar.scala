@@ -73,12 +73,12 @@ object FlinkProcessRegistrar {
   }
 
 
-  class RateMeterFunction[T](groupId: String) extends RichMapFunction[T, T] {
+  class RateMeterFunction[T](groupId: String, nodeId: String) extends RichMapFunction[T, T] {
     private var instantRateMeter : RateMeter = _
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
-      instantRateMeter = InstantRateMeterWithCount.register(Map(), List(groupId), new MetricUtils(getRuntimeContext))
+      instantRateMeter = InstantRateMeterWithCount.register(Map("nodeId" -> nodeId), List(groupId), new MetricUtils(getRuntimeContext))
     }
 
     override def map(value: T): T = {
