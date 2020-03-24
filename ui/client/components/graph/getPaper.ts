@@ -11,12 +11,9 @@ type Attrs = {
   canWrite?: boolean,
 }
 
-export function getPaper({el, height, width, model, canWrite, validateConnection}: Attrs) {
+export function getPaper({canWrite, validateConnection, ...opts}: Attrs) {
   const options = {
-    el,
-    height,
-    width,
-    model,
+    ...opts,
     validateConnection,
     gridSize: 1,
     snapLinks: {radius: 75},

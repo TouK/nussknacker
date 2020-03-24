@@ -1,32 +1,28 @@
 /* eslint-disable i18next/no-literal-string */
-import _ from "lodash"
+import _, {isEmpty} from "lodash"
 import expandIcon from "../../../assets/img/expand.svg"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
 import * as LoaderUtils from "../../../common/LoaderUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import SVGUtils from "../../../common/SVGUtils"
 import {absoluteBePath} from "../../../common/UrlUtils"
-import {NodeType} from "../../../types"
+import {NodeId, NodeType} from "../../../types"
 import NodeUtils from "../NodeUtils"
 import {EspNodeShape} from "./esp"
 import {maxLineCount, maxLineLength, rectHeight, rectWidth, summaryCountConfig} from "./misc"
 
-function getBodyContent(node) {
-  const bodyContent = node.id || ""
-
-  if (bodyContent.length <= maxLineLength) {
+function getBodyContent(nodeId: NodeId = ""): { text: string, multiline?: boolean } {
+  if (nodeId.length <= maxLineLength) {
     return {
-      text: bodyContent,
-      multiline: false,
+      text: nodeId,
     }
   }
 
-  const splitContent = bodyContent.split(" ")
+  const splitContent = nodeId.split(" ")
 
   if (splitContent[0].length > maxLineLength) {
     return {
-      text: `${bodyContent.slice(0, maxLineLength)}...`,
-      multiline: false,
+      text: `${nodeId.slice(0, maxLineLength)}...`,
     }
   }
 
@@ -85,8 +81,8 @@ function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
 
 export function makeElement(node: NodeType, processCounts, forExport: boolean, nodesSettings) {
   const description = node.additionalFields?.description || null
-  const {text: bodyContent} = getBodyContent(node)
-  const hasCounts = !_.isEmpty(processCounts)
+  const {text: bodyContent} = getBodyContent(node.id)
+  const hasCounts = !isEmpty(processCounts)
   const width = rectWidth
   const height = rectHeight
   const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon

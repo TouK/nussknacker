@@ -34,7 +34,7 @@ export class Graph extends React.Component {
     super(props)
 
     this.graph = new joint.dia.Graph()
-    this.graph.on("remove", (e, f) => {
+    this.graph.on("remove", (e) => {
       if (e.isLink && !this.redrawing) {
         this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
       }
@@ -54,22 +54,18 @@ export class Graph extends React.Component {
   }
 
   componentDidMount() {
+    const {processCounts, layout, expandedGroups, nodeToDisplay, processDefinitionData, processToDisplay} = this.props
     this.processGraphPaper = this.createPaper()
-    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, true, [])
+
+    this.drawGraph(processToDisplay, layout, processCounts, processDefinitionData, true, [])
     this._prepareContentForExport()
-    this.drawGraph(
-      this.props.processToDisplay,
-      this.props.layout,
-      this.props.processCounts,
-      this.props.processDefinitionData,
-      false,
-      this.props.expandedGroups,
-    )
+
+    this.drawGraph(processToDisplay, layout, processCounts, processDefinitionData, false, expandedGroups)
     this.panAndZoom = this.enablePanZoom()
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
     this.cursorBehaviour()
-    this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
+    this.highlightNodes(processToDisplay, nodeToDisplay)
     _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
     this.updateDimensions()
   }
