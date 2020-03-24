@@ -152,9 +152,9 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
 
       val start = source
           .sourceStream(env, metaData)
-          .process(new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration))
-          .map(new RateMeterFunction[Any]("source"))
-          .map(InitContextFunction(metaData.id, part.node.id))
+          .process(new EventTimeDelayMeterFunction("eventtimedelay", part.id, eventTimeMetricDuration))
+          .map(new RateMeterFunction[Any]("source", part.id))
+          .map(InitContextFunction(metaData.id, part.id))
 
       val asyncAssigned = wrapAsync(start, part.node, part.validationContext, "interpretation")
 
@@ -356,7 +356,7 @@ object FlinkStreamingProcessRegistrar {
     }
   }
 
-  class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration) extends ProcessFunction[T, T] {
+  class EventTimeDelayMeterFunction[T](groupId: String, nodeId: String, slidingWindow: FiniteDuration) extends ProcessFunction[T, T] {
 
     lazy val histogramMeter = new DropwizardHistogramWrapper(
       new Histogram(new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)))
@@ -372,8 +372,8 @@ object FlinkStreamingProcessRegistrar {
 
     override def open(parameters: Configuration): Unit = {
       val metrics = new MetricUtils(getRuntimeContext)
-      metrics.histogram(NonEmptyList.of(groupId, "histogram"), Map.empty, histogramMeter)
-      metrics.gauge[Long, Gauge[Long]](NonEmptyList.of(groupId, "minimalDelay"), Map.empty, minimalDelayGauge)
+      metrics.histogram(NonEmptyList.of(groupId, "histogram"), Map("nodeId" -> nodeId), histogramMeter)
+      metrics.gauge[Long, Gauge[Long]](NonEmptyList.of(groupId, "minimalDelay"), Map("nodeId" -> nodeId), minimalDelayGauge)
     }
 
     override def processElement(value: T, ctx: ProcessFunction[T, T]#Context, out: Collector[T]): Unit = {

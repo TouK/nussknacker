@@ -72,10 +72,10 @@ class MetricUtils(runtimeContext: RuntimeContext) {
 
     nameParts match {
 
-      //RateMeterFunction, no tags here
-      case l@NonEmptyList("source", _) => tagMode(l, Map.empty)
-      //EventTimeDelayMeterFunction, no tags here
-      case l@NonEmptyList("eventtimedelay", _) => tagMode(l, Map.empty)
+      //RateMeterFunction, nodeId tag
+      case l@NonEmptyList("source", _) => insertNodeId(l)
+      //EventTimeDelayMeterFunction, nodeId tag
+      case l@NonEmptyList("eventtimedelay", _) => insertNodeId(l)
 
       //EndRateMeterFunction, nodeId tag
       case l@NonEmptyList("end", _) => insertNodeId(l)

@@ -61,9 +61,9 @@ Metrics in streaming (Flink mode)
 
 | Measurement                  | Additional tags | Metric type           | Description           |
 | -------------                | --------------- | -----------           | -------------         |
-| source                       | -               | instantRateWithCount  | TODO: handle joins    |
-| eventtimedelay.histogram     | -               | historgram            | only for              |
-| eventtimedelay.minimalDelay  | -               | gauge                 | time from last event (eventTime) to system time |
+| source                       | nodeId          | instantRateWithCount  |   |
+| eventtimedelay.histogram     | nodeId          | historgram            | only for sources with eventTime, measures delay from event time to system time |
+| eventtimedelay.minimalDelay  | nodeId          | gauge                 | time from last event (eventTime) to system time |
 | end                          | nodeId          | instantRateWithCount  | for sinks and end processors                      |
 | dead_end                     | nodeId          | instantRateWithCount  | for event filtered out on filters, switches etc.                      |
 
