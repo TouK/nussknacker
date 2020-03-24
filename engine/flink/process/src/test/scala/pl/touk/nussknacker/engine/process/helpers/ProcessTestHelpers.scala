@@ -32,7 +32,7 @@ object ProcessTestHelpers {
                              processVersion: ProcessVersion = ProcessVersion.empty,
                              parallelism: Int = 1): Unit = {
 
-      val creator: ProcessConfigCreator = prepareCreator(data, KafkaConfig("http://notexist.pl", None, None))
+      val creator: ProcessConfigCreator = prepareCreator(data, KafkaConfig("http://notexist.pl", None, None, None))
 
       val env = StoppableExecutionEnvironment(configuration)
       try {

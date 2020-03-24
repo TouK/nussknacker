@@ -29,8 +29,9 @@ class KafkaSinkFactory(config: KafkaConfig,
              @NotBlank
              topic: String
             )(metaData: MetaData): Sink = {
-    val serializationSchema = schemaFactory.create(topic, config)
-    new KafkaSink(topic, serializationSchema, s"${metaData.id}-$topic")
+    val _topic = NamespaceUtil.alterTopicNameIfNamespaced(topic, config)
+    val serializationSchema = schemaFactory.create(_topic, config)
+    new KafkaSink(_topic, serializationSchema, s"${metaData.id}-${_topic}")
   }
 
   class KafkaSink(topic: String, serializationSchema: KafkaSerializationSchema[Any], clientId: String) extends BasicFlinkSink with Serializable {

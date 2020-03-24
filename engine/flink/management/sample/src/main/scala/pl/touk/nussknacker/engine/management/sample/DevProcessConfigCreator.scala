@@ -45,7 +45,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT")
 
-  private def kafkaConfig(config: Config) = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
+  private def kafkaConfig(config: Config) = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None, None)
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
