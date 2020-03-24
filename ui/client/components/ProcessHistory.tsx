@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import {mapDispatchWithEspActions} from "../actions/ActionsUtils"
 import {unsavedProcessChanges} from "../common/DialogMessages"
 import ProcessUtils from "../common/ProcessUtils"
-import "../stylesheets/processHistory.styl"
+import styles from "../stylesheets/processHistory.styl"
 import Date from "./common/Date"
 import {compose} from "redux"
 import {WithTranslation} from "react-i18next/src"
@@ -59,7 +59,7 @@ export class ProcessHistoryComponent extends React.Component<Props, State> {
     const {t, history, lastDeployedAction} = this.props
 
     return (
-      <Scrollbars renderTrackHorizontal={() => <div className="hide"/>} autoHeight autoHeightMax={300} hideTracksWhenNotNeeded={true}>
+      <Scrollbars renderTrackVertical={(props) => <div {...props} className={styles.innerScroll}/>} renderTrackHorizontal={() => <div className="hide"/>} autoHeight autoHeightMax={300} hideTracksWhenNotNeeded={true}>
         <ul id="process-history">
           {history.map((version: ProcessVersionType, index: number) => {
             return (
