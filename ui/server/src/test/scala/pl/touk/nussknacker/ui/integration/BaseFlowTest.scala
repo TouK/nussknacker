@@ -14,7 +14,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -155,7 +155,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "intOptionalProperty" -> new UiAdditionalPropertyConfig(
           None,
           StringParameterEditor,
-          List(LiteralIntValidator),
+          List(LiteralParameterValidator.integerValidator),
           None
         ),
         "fixedValueOptionalProperty" -> new UiAdditionalPropertyConfig(
@@ -179,7 +179,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       val entity = responseAs[String]
 
       entity should include("Configured property stringRequiredProperty (label) is missing")
-      entity should include("Property intOptionalProperty has value of invalid type")
+      entity should include("This field value has to be an integer number")
       entity should include("Unknown property unknown")
       entity should include("Property fixedValueOptionalProperty has invalid value")
     }
@@ -193,7 +193,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       id = processId,
       properties = ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), isSubprocess = true, subprocessVersions = Map()),
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
-        SubprocessOutputDefinition("output1", "out1", List.empty)),
+        SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
       processingType = TestProcessingTypes.Streaming
     )

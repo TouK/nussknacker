@@ -10,17 +10,19 @@ export enum HandledErrorType {
   EmptyMandatoryParameter = "EmptyMandatoryParameter",
   BlankParameter = "BlankParameter",
   WrongDateFormat = "WrongDateFormat",
-  InvalidLiteralIntValue = "InvalidLiteralIntValue",
   InvalidPropertyFixedValue = "InvalidPropertyFixedValue",
+  InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
   ErrorValidator = "ErrorValidator",
+  MismatchParameter = "MismatchParameter",
 }
 
 /* eslint-disable i18next/no-literal-string */
 export enum BackendValidator {
   MandatoryParameterValidator = "MandatoryParameterValidator",
   NotBlankParameterValidator = "NotBlankParameterValidator",
-  LiteralIntValidator = "LiteralIntValidator",
   FixedValuesValidator = "FixedValuesValidator",
+  RegExpParameterValidator = "RegExpParameterValidator",
+  LiteralIntegerValidator = "LiteralIntegerValidator",
 }
 
 export type Validator = {
@@ -61,16 +63,6 @@ export const mandatoryValueValidator: Validator = {
   validatorType: ValidatorType.Frontend,
 }
 
-const integerLiteralPattern = new RegExp(/^-?[0-9]+$/)
-
-export const literalIntValueValidator: Validator = {
-  isValid: value => integerLiteralPattern.test(value),
-  message: () => i18next.t("literalIntValidator.message", "This value has to be an integer number"),
-  description: () => i18next.t("literalIntValidator,description", "Please fill this field with an integer number"),
-  handledErrorType: HandledErrorType.InvalidLiteralIntValue,
-  validatorType: ValidatorType.Frontend,
-}
-
 export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
   isValid: value => possibleValues.map(pv => pv.expression).includes(value),
   message: () => i18next.t("fixedValueValidator.message", "This value has to be one of values: ") + possibleValues.map(value => value.expression).join(","),
@@ -79,13 +71,31 @@ export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Valid
   validatorType: ValidatorType.Frontend,
 })
 
-const blankStringLiteralPattern = new RegExp("'\\s*'")
+const literalRegExpPattern = (pattern: string) => new RegExp(pattern)
 
 export const notBlankValueValidator: Validator = {
-  isValid: value => value != null && !blankStringLiteralPattern.test(value.trim()),
+  isValid: value => !literalRegExpPattern("'\\s*'").test(value.trim()),
   message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
   description: () => i18next.t("validator.description", "Please fill field value for this parameter"),
   handledErrorType: HandledErrorType.BlankParameter,
+  validatorType: ValidatorType.Frontend,
+}
+
+export const regExpValueValidator = (pattern: string, message: string, description: string): Validator => ({
+  //Blank value should be not validate - we want to chain validators
+  isValid: value => isEmpty(value) || literalRegExpPattern(pattern).test(value.trim()),
+  message: () => message,
+  description: () => description,
+  handledErrorType: HandledErrorType.MismatchParameter,
+  validatorType: ValidatorType.Frontend,
+})
+
+export const literalIntegerValueValidator: Validator = {
+  //Blank value should be not validate - we want to chain validators
+  isValid: value => isEmpty(value) || literalRegExpPattern("^-?[0-9]+$").test(value),
+  message: () => i18next.t("literalIntegerValueValidator.message",  "This field value has to be an integer number"),
+  description: () => i18next.t("literalIntegerValueValidator,description", "Please fill field by proper integer type"),
+  handledErrorType: HandledErrorType.InvalidIntegerLiteralParameter,
   validatorType: ValidatorType.Frontend,
 }
 
@@ -104,6 +114,7 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
 export const validators: Record<BackendValidator, (...args: any[]) => Validator> = {
   [BackendValidator.MandatoryParameterValidator]: () => mandatoryValueValidator,
   [BackendValidator.NotBlankParameterValidator]: () => notBlankValueValidator,
-  [BackendValidator.LiteralIntValidator]: () => literalIntValueValidator,
-  [BackendValidator.FixedValuesValidator]: (possibleValues) => fixedValueValidator(possibleValues),
+  [BackendValidator.LiteralIntegerValidator]: () => literalIntegerValueValidator,
+  [BackendValidator.FixedValuesValidator]: ({possibleValues}) => fixedValueValidator(possibleValues),
+  [BackendValidator.RegExpParameterValidator]: ({pattern, message, description}) => regExpValueValidator(pattern, message, description),
 }

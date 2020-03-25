@@ -2,13 +2,14 @@ package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntValidator, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, RegExpParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
 
 class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
   private val reqFieldName = "propReq"
+  private val regexpFieldName = "propRegExp"
   private val optionalFieldName = "propOpt"
   private val optFixedFieldName = "propOptFixed"
   private val possibleValues = List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
@@ -20,7 +21,12 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
         reqFieldName -> AdditionalPropertyConfig(
           None,
           None,
-          Some(List(LiteralIntValidator, MandatoryParameterValidator)),
+          Some(List(LiteralParameterValidator.integerValidator, MandatoryParameterValidator)),
+          Some(label)),
+        regexpFieldName -> AdditionalPropertyConfig(
+          None,
+          None,
+          Some(List(LiteralParameterValidator.numberValidator)),
           Some(label)),
         optionalFieldName -> AdditionalPropertyConfig(
           None,
@@ -73,9 +79,38 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-      NodeValidationError("InvalidLiteralIntValue", _, _, Some("propReq"), NodeValidationErrorType.SaveNotAllowed),
-      NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
+        NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
       ) =>
+    }
+  }
+
+  test("validate regexp config with empty property") {
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
+      ProcessAdditionalFields(None, Set.empty, properties = Map(
+        "propReq" -> "1",
+        "propRegExp" -> ""
+      ))
+    ))
+
+    val result = validator.validate(process)
+
+    result.errors.processPropertiesErrors should matchPattern {
+      case List() =>
+    }
+  }
+
+  test("validate config with invalid property") {
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
+      ProcessAdditionalFields(None, Set.empty, properties = Map(
+        "propReq" -> "1",
+        "propRegExp" -> "asd"
+      ))
+    ))
+
+    val result = validator.validate(process)
+
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(NodeValidationError("MismatchParameter", _, _, Some("propRegExp"),  NodeValidationErrorType.SaveAllowed)) =>
     }
   }
 
@@ -89,7 +124,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("InvalidLiteralIntValue", _, _, Some("propReq"), NodeValidationErrorType.SaveNotAllowed)) =>
+      case List(NodeValidationError("InvalidIntegerLiteralParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)) =>
     }
   }
 
@@ -114,7 +149,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-      NodeValidationError("InvalidPropertyFixedValue", _, _, Some(optFixedFieldName), NodeValidationErrorType.SaveNotAllowed),
+      NodeValidationError("InvalidPropertyFixedValue", _, _, Some(optFixedFieldName), NodeValidationErrorType.SaveAllowed),
       NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed)
       ) =>
     }
