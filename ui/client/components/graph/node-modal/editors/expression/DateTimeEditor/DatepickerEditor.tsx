@@ -72,8 +72,8 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
   const isValid = allValid(validators, [expression])
 
   const getDateValidator = (value: string | moment.Moment): Validator => ({
-    description: i18next.t("validation.wrongDateFormat", "Wrong date format"),
-    message: i18next.t("validation.wrongDateFormat", "Wrong date format"),
+    description: () => i18next.t("validation.wrongDateFormat", "Wrong date format"),
+    message: () => i18next.t("validation.wrongDateFormat", "Wrong date format"),
     isValid: () => !value || !!encode(value),
     validatorType: ValidatorType.Frontend,
     handledErrorType: HandledErrorType.WrongDateFormat,

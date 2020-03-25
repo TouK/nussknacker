@@ -6,7 +6,7 @@ import {isEmpty} from "lodash"
 import {FormatterType, spelFormatters, typeFormatters} from "../Formatter"
 import moment from "moment"
 
-const dateFormat = "DD-MM-YYYY"
+const dateFormat = "YYYY-MM-DD"
 const timeFormat = "HH:mm"
 const dateTimeFormat = `${dateFormat} ${timeFormat}`
 const isParseable = (expression: ExpressionObj): boolean => {
