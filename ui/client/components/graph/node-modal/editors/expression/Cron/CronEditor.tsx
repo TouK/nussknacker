@@ -6,7 +6,7 @@ import "react-cron-generator/dist/cron-builder.css"
 import Input from "../../field/Input"
 import "./cronEditorStyle.styl"
 import i18next from "i18next"
-import {Formatter} from "../Formatter"
+import {Formatter, FormatterType, typeFormatters} from "../Formatter"
 
 export type CronExpression = string
 
@@ -31,12 +31,14 @@ export default function CronEditor(props: Props) {
 
   const {expressionObj, validators, isMarked, onValueChange, showValidation, readOnly, formatter} = props
 
+  const cronFormatter = formatter == null ? typeFormatters[FormatterType.Cron] : formatter
+
   function encode(value) {
-    return value == "" ? "" : formatter.encode(value)
+    return value == "" ? "" : cronFormatter.encode(value)
   }
 
   function decode(expression: string): CronExpression {
-    const result = formatter.decode(expression)
+    const result = cronFormatter.decode(expression)
     return result == null ? "" : result
   }
 
