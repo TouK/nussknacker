@@ -28,7 +28,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.NussknackerApp
+import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerApp, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.additionalproperty.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -47,7 +47,10 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val (mainRoute, _) = NussknackerApp.initializeRoute(ConfigWithScalaVersion.config)
+  private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
+    system.settings.config,
+    NussknackerAppInitializer.initDb(system.settings.config)
+  )
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
