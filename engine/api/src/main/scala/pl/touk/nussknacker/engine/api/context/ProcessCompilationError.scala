@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.context
 
 import cats.Applicative
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InASingleNode, NodeId}
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -10,6 +11,12 @@ sealed trait ProcessCompilationError {
 sealed trait ProcessUncanonizationError extends ProcessCompilationError
 
 sealed trait PartSubGraphCompilationError extends ProcessCompilationError
+
+sealed trait ParameterValidationError extends PartSubGraphCompilationError with InASingleNode {
+  def message: String
+  def description: String
+  def paramName: String
+}
 
 object ProcessCompilationError {
 
@@ -104,7 +111,7 @@ object ProcessCompilationError {
     def apply(name: String)(implicit nodeId: NodeId): ProcessCompilationError =
       MissingCustomNodeExecutor(name, nodeId.id)
   }
-
+  
   case class MissingParameters(params: Set[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
@@ -133,6 +140,37 @@ object ProcessCompilationError {
       WrongParameters(requiredParameters, passedParameters, nodeId.id)
   }
 
+  case class BlankParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
+  case class EmptyMandatoryParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
+  case class InvalidIntegerLiteralParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
+  case class MismatchParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
+  case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object MissingRequiredProperty {
+    def apply(paramName: String, label: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      MissingRequiredProperty(paramName, label, nodeId.id)
+  }
+
+  case class UnknownProperty(paramName: String, nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object UnknownProperty {
+    def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      UnknownProperty(paramName, nodeId.id)
+  }
+
+  case class InvalidPropertyFixedValue(paramName: String, label: Option[String], value: String, values: List[String], nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object InvalidPropertyFixedValue {
+    def apply(paramName: String, label: Option[String], value: String, values: List[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)
+  }
 
   case class OverwrittenVariable(variableName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode

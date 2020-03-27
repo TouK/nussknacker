@@ -12,9 +12,10 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessAlreadyExists
-import pl.touk.nussknacker.ui.security.api.Permission
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,7 +30,7 @@ class DBFetchingProcessRepositorySpec
     with TestPermissions {
   import cats.syntax.either._
 
-  private val writingRepo = new DbWriteProcessRepository[Future](db, Map(TestProcessingTypes.Streaming -> 0))
+  private val writingRepo = new DbWriteProcessRepository[Future](db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0))
     with WriteProcessRepository with BasicRepository {
     override protected def now: LocalDateTime = currentTime
   }
@@ -37,7 +38,7 @@ class DBFetchingProcessRepositorySpec
 
   private val fetching = DBFetchingProcessRepository.create(db)
 
-  private implicit val user = TestFactory.adminUser()
+  private implicit val user: LoggedUser = TestFactory.adminUser()
 
   test("fetch processes for category") {
 

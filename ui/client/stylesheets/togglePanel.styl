@@ -1,7 +1,7 @@
 @import "./_variables.styl"
 
 .togglePanel
-  position: fixed
+  position: absolute
   bottom: 0
   height: 25px
   width: 25px
@@ -15,9 +15,9 @@
     right: 0
 
     &.is-opened
-      right: sidebarWidth
+      right: panelWidth
 
   &.left
     left: 0
     &.is-opened
-      left: sidebarWidth
+      left: panelWidth

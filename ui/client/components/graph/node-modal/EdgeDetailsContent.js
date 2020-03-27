@@ -3,7 +3,7 @@ import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import BaseModalContent from "./BaseModalContent"
-import EditableExpression from "./editors/expression/EditableExpression"
+import EditableEditor from "./editors/EditableEditor"
 
 export default class EdgeDetailsContent extends React.Component {
   static propTypes = {
@@ -46,8 +46,9 @@ export default class EdgeDetailsContent extends React.Component {
             edgeErrors={edgeErrors}
             readOnly={readOnly}
             isMarked={this.isMarked}
-            changeEdgeTypeValue={changeEdgeTypeValue}>
-            <EditableExpression
+            changeEdgeTypeValue={changeEdgeTypeValue}
+          >
+            <EditableEditor
               fieldType={"expression"}
               fieldLabel={"Expression"}
               renderFieldLabel={this.renderFieldLabel}

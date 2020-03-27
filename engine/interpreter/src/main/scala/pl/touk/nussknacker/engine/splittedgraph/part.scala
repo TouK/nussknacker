@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.splittedgraph
 
-import pl.touk.nussknacker.engine.graph.node.{OneOutputSubsequentNode => _, EndingNode => _, SourceNode => _, _}
-import pl.touk.nussknacker.engine.splittedgraph.end.{End, NormalEnd}
+import pl.touk.nussknacker.engine.graph.node.{SubsequentNode => _, OneOutputSubsequentNode => _, EndingNode => _, SourceNode => _, _}
+import pl.touk.nussknacker.engine.splittedgraph.end.End
 import pl.touk.nussknacker.engine.splittedgraph.splittednode._
 
 object part {
@@ -20,10 +20,10 @@ object part {
 
   sealed trait SubsequentPart extends ProcessPart
 
-  case class CustomNodePart(node: OneOutputSubsequentNode[CustomNode], nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
+  case class CustomNodePart(node: SubsequentNode[CustomNode], nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
     override type T = CustomNode
   }
-
+  
   case class SinkPart(node: EndingNode[Sink]) extends SubsequentPart {
     override type T = Sink
 

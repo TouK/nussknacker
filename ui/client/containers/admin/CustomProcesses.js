@@ -40,13 +40,13 @@ class CustomProcesses extends BaseProcesses {
 
   deploy = (process) => () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.name), () => {
-      return HttpService.deploy(process.name).then(() => this.reload())
+      return HttpService.deploy(process.name).finally(() => this.reload())
     })
   }
 
   cancel = (process) => () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.name), () => {
-      return HttpService.cancel(process.name).then(() => this.reload())
+      return HttpService.cancel(process.name).finally(() => this.reload())
     })
   }
 
@@ -57,7 +57,8 @@ class CustomProcesses extends BaseProcesses {
         <div id="process-top-bar">
           <SearchFilter
             value={this.state.search}
-            onChange={this.onSearchChange}/>
+            onChange={this.onSearchChange}
+          />
         </div>
 
         <LoaderSpinner show={this.state.showLoader}/>
@@ -110,13 +111,13 @@ class CustomProcesses extends BaseProcesses {
                   <Td column="deploy" className="deploy-column">
                     { ProcessStateUtils.canDeploy(this.getProcessState(process)) ? (
                       <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)}/>
-                      ): null
+                    ): null
                     }
                   </Td>
                   <Td column="cancel" className="cancel-column">
                     { ProcessStateUtils.canCancel(this.getProcessState(process)) ? (
                       <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)}/>
-                      ): null
+                    ): null
                     }
                   </Td>
                 </Tr>

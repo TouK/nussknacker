@@ -7,11 +7,11 @@ export default function NodeErrorsLinkSection(props) {
 
   const {nodeIds, message, showDetails, currentProcess, className} = props
 
-  return !_.isEmpty(nodeIds) &&
+  return !_.isEmpty(nodeIds) && (
     <div className={className}>
       <ErrorHeader message={message}/>
       {
-        nodeIds.map((nodeId, index) =>
+        nodeIds.map((nodeId, index) => (
           <NodeErrorLink
             key={uuid4()}
             onClick={nodeId === "properties" ?
@@ -19,12 +19,12 @@ export default function NodeErrorsLinkSection(props) {
               event => showDetails(event, NodeUtils.getNodeById(nodeId, currentProcess))
             }
             nodeId={nodeId}
-            addSeparator={index < (nodeIds.length - 1)}
-          />,
-        )
+            addSeparator={index < nodeIds.length - 1}
+          />
+        ))
       }
     </div>
-}
+  )}
 
 const ErrorHeader = (props) => {
   const {message, className} = props

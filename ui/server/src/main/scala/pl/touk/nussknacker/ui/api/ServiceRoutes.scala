@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, MessageEntity, ResponseEntity}
+import akka.http.scaladsl.model.{HttpResponse, ResponseEntity}
 import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
@@ -15,14 +15,12 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Encoder, Json, ObjectEncoder}
+import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
-import io.circe.syntax._
-import pl.touk.nussknacker.engine.api.process.WithCategories
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
-class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
+class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
                    (implicit ec: ExecutionContext)
   extends Directives
     with RouteWithUser
@@ -60,7 +58,7 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
   private def invokeServicePath(implicit user: LoggedUser) =
     path("service" / Segment / Segment) { (processingType, serviceName) =>
       post {
-        val modelData = modelDataMap(processingType)
+        val modelData = modelDataMap.forTypeUnsafe(processingType)
         authorize(canUserInvokeService(user, serviceName, modelData)) {
           entity(as[List[Parameter]]) { params =>
             complete {
@@ -73,20 +71,14 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
 
   private[api] def canUserInvokeService(user: LoggedUser, serviceName: String, modelData: ModelData): Boolean = {
 
-    def hasUserDeployPermissionForServiceWithCategories(withCategories: WithCategories[_]) = {
-      def isAllowed(categoryName: String): Boolean =
-        user.can(categoryName, Permission.Deploy)
-
-      withCategories.categories.exists(isAllowed)
+    def hasUserDeployPermissionForCategories(categories: List[String]) = {
+      def isAllowed(categoryName: String): Boolean = user.can(categoryName, Permission.Deploy)
+      categories.exists(isAllowed)
     }
 
-    val servicesMap = //TODO: partly dulicated with ServiceQuery.serviceMethodMap
-      modelData.withThisAsContextClassLoader{
-        modelData.configCreator.services(modelData.processConfig)
-      }
+    val servicesToCategories = modelData.processDefinition.services.mapValues(_.categories)
 
-    servicesMap.get(serviceName)
-      .forall(hasUserDeployPermissionForServiceWithCategories)
+    servicesToCategories.get(serviceName).forall(hasUserDeployPermissionForCategories)
   }
 
   private def invokeService(serviceName: String, modelData: ModelData, params: List[Parameter]): Future[QueryResult] = {

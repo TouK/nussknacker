@@ -188,12 +188,15 @@
   background-color: rgba(0, 0, 0, 0)
 
 .validation-label
-  color errorColor
+  color errorColor !important
   margin-top 3px
   font-size 12px
 
 .validation-labels
   display inline-grid
+  &.fixed-values-editor
+    padding-left 20%
+    flex-basis 100%
 
 .processes-table-row-icon
   padding 10px

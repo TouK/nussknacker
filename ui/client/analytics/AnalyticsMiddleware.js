@@ -13,7 +13,7 @@ export const analyticsMiddleware = ({dispatch, getState}) => next => action => {
   return next(action)
 }
 
-const actionTracked = action => !_.isEmpty(action)
-  && !_.isEmpty(action.tracking)
+const actionTracked = action => !_.isEmpty(action) &&
+  !_.isEmpty(action.tracking)
 
 const analytics = (analyticsSettings) => new Analytics(analyticsSettings)

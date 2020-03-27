@@ -2,10 +2,16 @@ package pl.touk.nussknacker.engine.definition.validator
 
 import java.lang.reflect.Parameter
 
-import pl.touk.nussknacker.engine.api.definition.ParameterValidator
+import javax.validation.constraints.NotBlank
+import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, ParameterEditor, ParameterValidator}
 
-object ValidatorsExtractor {
+case class ValidatorsExtractor(possibleEditor: Option[ParameterEditor]) {
   def extract(parameter: Parameter): List[ParameterValidator] = {
-    List(MandatoryValueValidatorExtractor).flatMap(_.extract(parameter)).toList
+    List(
+      MandatoryValidatorExtractor,
+      AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
+      FixedValueValidatorExtractor(possibleEditor),
+      LiteralValidatorExtractor
+    ).flatMap(_.extract(parameter))
   }
 }

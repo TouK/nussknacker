@@ -48,7 +48,7 @@ class FlinkBatchProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) =>
       val start = env
         .createInput[Any](source.toFlink)(source.classTag, source.typeInformation)
         .name(s"${metaData.id}-source")
-        .map(new RateMeterFunction[Any]("source"))
+        .map(new RateMeterFunction[Any]("source", part.id))
         .map(InitContextFunction(metaData.id, part.node.id))
         .flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, part.node, part.validationContext))
         .name(s"${metaData.id}-${part.node.id}-interpretation")

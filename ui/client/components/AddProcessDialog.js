@@ -53,9 +53,11 @@ class AddProcessDialog extends React.Component {
   render() {
     const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
-      <Modal isOpen={this.props.isOpen}
-             shouldCloseOnOverlayClick={false}
-             onRequestClose={this.closeDialog}>
+      <Modal
+        isOpen={this.props.isOpen}
+        shouldCloseOnOverlayClick={false}
+        onRequestClose={this.closeDialog}
+      >
         <div className="draggable-container">
           <Draggable bounds="parent" handle=".modal-draggable-handle">
             <div className="espModal">
@@ -71,19 +73,27 @@ class AddProcessDialog extends React.Component {
                     <div className="node-row">
                       <div className="node-label">Name</div>
                       <div className="node-value">
-                        <input autoFocus={true} type="text" id="newProcessId" className="node-input"
-                               value={this.state.processId}
-                               onChange={(e) => this.setState({processId: e.target.value})}/>
-                         <ValidationLabels validators={validators()} values={[this.props.clashedNames, this.state.processId]}/>
+                        <input
+                          autoFocus={true}
+                          type="text"
+                          id="newProcessId"
+                          className="node-input"
+                          value={this.state.processId}
+                          onChange={(e) => this.setState({processId: e.target.value})}
+                        />
+                        <ValidationLabels validators={validators()} values={[this.props.clashedNames, this.state.processId]}/>
                       </div>
                     </div>
                     <div className="node-row">
                       <div className="node-label">Category</div>
                       <div className="node-value">
-                        <select id="processCategory" className="node-input"
-                                onChange={(e) => this.setState({processCategory: e.target.value})}>
+                        <select
+                          id="processCategory"
+                          className="node-input"
+                          onChange={(e) => this.setState({processCategory: e.target.value})}
+                        >
                           {this.props.categories.map((cat, index) => (
-                              <option key={index} value={cat}>{cat}</option>))}
+                            <option key={index} value={cat}>{cat}</option>))}
                         </select>
                       </div>
                     </div>
@@ -122,10 +132,12 @@ const validators = () =>  [
   {
     isValid: (clashedNames, name) => mandatoryValueValidator.isValid(name),
     message: mandatoryValueValidator.message,
+    description: mandatoryValueValidator.description,
   },
   {
     isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),
-    message: DialogMessages.valueAlreadyTaken(),
+    message: DialogMessages.valueAlreadyTaken,
+    description: DialogMessages.valueAlreadyTakenDescription,
   },
 ]
 

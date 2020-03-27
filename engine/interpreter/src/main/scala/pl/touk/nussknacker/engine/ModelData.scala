@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -51,7 +51,7 @@ case class ClassLoaderModelData(processConfigFromConfiguration: ModelConfigToLoa
 
 }
 
-trait ModelData extends ConfigCreatorSignalDispatcher {
+trait ModelData extends AutoCloseable {
 
   def migrations: ProcessMigrations
 
@@ -82,6 +82,10 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   def processConfigFromConfiguration: ModelConfigToLoad
 
-  override lazy val processConfig: Config = processConfigFromConfiguration.loadConfig(modelClassLoader.classLoader)
+  lazy val processConfig: Config = processConfigFromConfiguration.loadConfig(modelClassLoader.classLoader)
+
+  def close(): Unit = {
+    dictServices.close()
+  }
 
 }

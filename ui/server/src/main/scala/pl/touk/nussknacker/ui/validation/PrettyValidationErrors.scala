@@ -1,20 +1,27 @@
 package pl.touk.nussknacker.ui.validation
 
+import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
-import pl.touk.nussknacker.ui.definition.{AdditionalProcessProperty, PropertyType}
 
 object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
     val typ = ReflectUtils.fixedClassSimpleNameWithoutParentModule(error.getClass)
-    def node(message: String, description: String,
+
+    def node(message: String,
+             description: String,
              errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
-             fieldName: Option[String] = None) = NodeValidationError(typ, message, description, fieldName, errorType)
+             fieldName: Option[String] = None): NodeValidationError
+      = NodeValidationError(typ, message, description, fieldName, errorType)
+
+    def handleParameterValidationError(error: ParameterValidationError): NodeValidationError
+      = node(error.message, error.description, fieldName = Some(error.paramName))
+
     error match {
       case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
         s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
@@ -23,12 +30,15 @@ object PrettyValidationErrors {
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
       case EmptyProcess => node("Empty process", "Process is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Process can start only from source node")
-      case InvalidTailOfBranch(_) => node("Invalid end of process", "Process branch can only end with sink or processor")
+      case InvalidTailOfBranch(_) => node("Invalid end of process", "Process branch can only end with sink, processor or ending custom transformer")
 
       case MissingParameters(params, NodeTypingInfo.ExceptionHandlerNodeId) =>
         node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
+
+      case pve: ParameterValidationError => handleParameterValidationError(pve)
+
       //exceptions below should not really happen (unless services change and process becomes invalid)
       case MissingCustomNodeExecutor(id, _) => node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")
       case MissingService(id, _) => node(s"Missing processor/enricher: $id", s"Please check the name of processor/enricher, $id is not available")
@@ -52,6 +62,9 @@ object PrettyValidationErrors {
       case UnknownSubprocessOutput(id, _) => node(s"Unknown subprocess output $id", "Please check subprocess definition")
       case DisablingManyOutputsSubprocess(id, _) => node(s"Cannot disable subprocess $id. Has many outputs", "Please check subprocess definition")
       case DisablingNoOutputsSubprocess(id) => node(s"Cannot disable subprocess $id. Hasn't outputs", "Please check subprocess definition")
+      case MissingRequiredProperty(fieldName, label, _) => missingRequiredProperty(typ, fieldName, label)
+      case UnknownProperty(propertyName, _) => unknownProperty(typ, propertyName)
+      case InvalidPropertyFixedValue(fieldName, label, value, values, _) => invalidPropertyFixedValue(typ, fieldName, label, value, values)
     }
   }
 
@@ -64,6 +77,7 @@ object PrettyValidationErrors {
     NodeValidationError(typ, "Node id contains invalid characters",
       "\", . and ' are not allowed in node id", fieldName = None, errorType = NodeValidationErrorType.RenderNotAllowed)
   }
+
   def duplicatedNodeIds(typ: String, duplicates: List[String]): NodeValidationError = {
     NodeValidationError(typ, "Two nodes cannot have same id", s"Duplicate node ids: ${duplicates.mkString(", ")}", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
@@ -83,25 +97,39 @@ object PrettyValidationErrors {
     NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
   }
 
-  def unknownProperty(typ: String, fieldName: String): NodeValidationError =
-      NodeValidationError(typ, s"Unknown field $fieldName", s"Field $fieldName is not known", fieldName = Some(fieldName), errorType = NodeValidationErrorType.SaveAllowed)
+  def unknownProperty(typ: String, propertyName: String): NodeValidationError =
+    NodeValidationError(
+      typ,
+      s"Unknown property $propertyName",
+      s"Property $propertyName is not known",
+      Some(propertyName),
+      NodeValidationErrorType.SaveAllowed
+    )
 
-  def emptyRequiredField(typ: String, fieldName: String, label: String): NodeValidationError =
-    NodeValidationError(typ, s"Field $fieldName ($label) cannot be empty", s"$label cannot be empty", fieldName = Some(fieldName), errorType = NodeValidationErrorType.SaveAllowed)
+  private def missingRequiredProperty(typ: String, fieldName: String, label: Option[String]) = {
+    val labelText = getLabel(label)
+    NodeValidationError(
+      typ,
+      s"Configured property $fieldName$labelText is missing",
+      s"Please fill missing property $fieldName$labelText",
+      Some(fieldName),
+      NodeValidationErrorType.SaveAllowed
+    )
+  }
 
-  def invalidFieldValueType(typ: String, fieldName: String, property: AdditionalProcessProperty, `type`: PropertyType.Value, value: String): NodeValidationError =
-    if (`type` == PropertyType.select)
-      NodeValidationError(
-        typ,
-        s"Field $fieldName (${property.label}) has invalid value",
-        s"Expected one of ${property.values.getOrElse(Nil).mkString(", ")}, got: '$value'.",
-        fieldName = Some(fieldName),
-        errorType = NodeValidationErrorType.SaveNotAllowed)
-    else
-      NodeValidationError(
-        typ,
-        s"Field $fieldName (${property.label}) has value of invalid type",
-        s"Expected ${`type`}, got: '$value'.",
-        fieldName = Some(fieldName),
-        errorType = NodeValidationErrorType.SaveNotAllowed)
+  private def invalidPropertyFixedValue(typ: String, propertyName: String, label: Option[String], value: String, values: List[String]) = {
+    val labelText = getLabel(label)
+    NodeValidationError(
+      typ,
+      s"Property $propertyName$labelText has invalid value",
+      s"Expected one of ${values.mkString(", ")}, got: '$value'.",
+      Some(propertyName),
+      NodeValidationErrorType.SaveAllowed
+    )
+  }
+
+  private def getLabel(label: Option[String]) = label match {
+    case Some(text) => s" ($text)"
+    case None => StringUtils.EMPTY
+  }
 }

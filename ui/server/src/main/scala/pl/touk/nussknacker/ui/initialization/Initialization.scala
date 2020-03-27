@@ -16,6 +16,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser, Permission}
@@ -29,7 +30,7 @@ import scala.concurrent.{Await, ExecutionContext}
 object Initialization {
 
   implicit val nussknackerUser: LoggedUser = NussknackerInternalUser
-  def init(migrations: Map[ProcessingType, ProcessMigrations],
+  def init(migrations: ProcessingTypeDataProvider[ProcessMigrations],
            db: DbConfig,
            environment: String,
            customProcesses: Option[Map[String, String]])(implicit ec: ExecutionContext) : Unit = {
@@ -140,7 +141,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
   }
 }
 
-class AutomaticMigration(migrations: Map[ProcessingType, ProcessMigrations],
+class AutomaticMigration(migrations: ProcessingTypeDataProvider[ProcessMigrations],
                          repository: DbWriteProcessRepository[DB], fetchingProcessRepository: DBFetchingProcessRepository[DB]) extends InitialOperation {
 
   private val migrator = new ProcessModelMigrator(migrations)

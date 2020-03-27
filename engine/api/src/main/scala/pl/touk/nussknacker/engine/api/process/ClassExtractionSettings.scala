@@ -126,7 +126,7 @@ object ClassExtractionSettings {
     List(
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.generic\\.IndexedRecord")),
-        Pattern.compile("(getSchema|compareTo|put)")),
+        Pattern.compile("(get|getSchema|compareTo|put)")),
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.specific\\.SpecificRecordBase")),
         Pattern.compile("(getConverion|getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)"))

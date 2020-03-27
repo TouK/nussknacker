@@ -22,7 +22,7 @@ class SslBindingSpec extends FlatSpec with Matchers {
     implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.config)
     implicit val materializer: Materializer = ActorMaterializer()
 
-    val route = NussknackerApp.initializeRoute(system.settings.config)
+    val (route, closeables) = NussknackerApp.initializeRoute(system.settings.config)
     val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)
     val httpsContext = HttpsConnectionContextFactory.createContext(keyStoreConfig)
 
@@ -39,6 +39,7 @@ class SslBindingSpec extends FlatSpec with Matchers {
     } finally {
       Await.result(binding.unbind(), 10.seconds)
       Await.result(system.terminate(), 10.seconds)
+      closeables.foreach(_.close())
     }
   }
 

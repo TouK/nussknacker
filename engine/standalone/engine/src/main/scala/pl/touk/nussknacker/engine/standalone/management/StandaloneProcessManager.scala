@@ -85,6 +85,10 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
+
+  override def close(): Unit = {
+    
+  }
 }
 
 object StandaloneTestMain {

@@ -1,30 +1,28 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, MediaTypes, StatusCodes}
+import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import com.typesafe.config.ConfigFactory
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, DisplayableAsJson}
-import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.ui.api.ServiceRoutes.JsonThrowable
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.api.helpers.{TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Decoder.Result
 import io.circe.generic.JsonCodec
-import io.circe.{Decoder, HCursor}
+import io.circe.Decoder
+import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.util.service.query.ExpressionServiceQuery.ParametersCompilationException
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
-import pl.touk.nussknacker.ui.api.helpers.TestPermissions
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 
 class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
 
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 
-  private implicit val user = LoggedUser("1", "admin", category1Deploy)
-  private val modelData = FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config)
-  private val serviceRoutes = new ServiceRoutes(Map(TestProcessingTypes.Streaming -> modelData))
+  private implicit val user: LoggedUser = LoggedUser("1", "admin", category1Deploy)
+  private val modelData = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData
+  private val serviceRoutes = new ServiceRoutes(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> modelData))
 
   implicit val queryResultDecoder: Decoder[QueryResult] = Decoder.decodeJson
       .map(_.hcursor.downField("result").focus.flatMap(_.asString).getOrElse(""))

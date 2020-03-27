@@ -5,6 +5,7 @@ import {reducer as httpErrorHandler} from "./httpErrorHandler"
 import {reducer as processActivity} from "./processActivity"
 import {reducer as settings} from "./settings"
 import {reducer as ui} from "./ui"
+import {reducer as toolbars} from "./toolbars"
 
 import {undoRedoReducer as undoRedo} from "./undoRedo"
 
@@ -15,6 +16,7 @@ export const reducer = combineReducers({
   ui,
   processActivity,
   notifications,
+  toolbars,
 })
 
 export type RootState = ReturnType<typeof reducer>

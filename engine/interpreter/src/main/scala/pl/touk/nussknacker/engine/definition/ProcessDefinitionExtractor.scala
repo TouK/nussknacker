@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -101,13 +100,13 @@ object ProcessDefinitionExtractor {
     val transformer = objectWithMethodDef.obj.asInstanceOf[CustomStreamTransformer]
     val queryNamesAnnotation = objectWithMethodDef.methodDef.annotations.flatMap(_.cast[QueryableStateNames])
     val queryNames = queryNamesAnnotation.flatMap(_.values().toList).toSet
-    CustomTransformerAdditionalData(queryNames, transformer.clearsContext, transformer.canHaveManyInputs)
+    CustomTransformerAdditionalData(queryNames, transformer.clearsContext, transformer.canHaveManyInputs, transformer.canBeEnding)
   }
 
   type TransformerId = String
   type QueryableStateName = String
 
-  case class CustomTransformerAdditionalData(queryableStateNames: Set[QueryableStateName], clearsContext: Boolean, manyInputs: Boolean)
+  case class CustomTransformerAdditionalData(queryableStateNames: Set[QueryableStateName], clearsContext: Boolean, manyInputs: Boolean, canBeEnding: Boolean)
 
   case class SinkAdditionalData(requiresOutput: Boolean)
 

@@ -6,15 +6,16 @@ import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.definition.TestingCapabilities
+import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class SignalsResources(modelData: Map[String, ModelData],
+class SignalsResources(modelData: ProcessingTypeDataProvider[ModelData],
                        val processRepository: FetchingProcessRepository[Future],
                        val processAuthorizer:AuthorizeProcess)(implicit val ec: ExecutionContext)
   extends Directives
@@ -32,7 +33,7 @@ class SignalsResources(modelData: Map[String, ModelData],
             complete {
               processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).map[ToResponseMarshallable] {
                 case Some(process) =>
-                  modelData(process.processingType).dispatchSignal(signalType, processId.name.value, params.mapValues(_.asInstanceOf[AnyRef]))
+                  SignalDispatcher.dispatchSignal(modelData.forTypeUnsafe(process.processingType))(signalType, processId.name.value, params.mapValues(_.asInstanceOf[AnyRef]))
                 case None =>
                   HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
               }
@@ -52,7 +53,7 @@ class SignalsResources(modelData: Map[String, ModelData],
   private def prepareSignalDefinitions(implicit user: LoggedUser): Future[Map[String, SignalDefinition]] = {
     //TODO: only processes that are deployed right now??
     processRepository.fetchAllProcessesDetails[DisplayableProcess]().map { processList =>
-      ProcessObjectsFinder.findSignals(processList, modelData.values.map(_.processDefinition))
+      ProcessObjectsFinder.findSignals(processList, modelData.all.values.map(_.processDefinition))
     }
   }
 

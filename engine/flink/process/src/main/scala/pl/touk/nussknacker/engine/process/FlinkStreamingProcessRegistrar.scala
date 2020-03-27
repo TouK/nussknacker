@@ -3,28 +3,28 @@ package pl.touk.nussknacker.engine.process
 import java.util.Collections
 import java.util.concurrent.TimeUnit
 
+import cats.data.NonEmptyList
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
-import org.apache.flink.runtime.state.{AbstractStateBackend, StateBackend}
+import org.apache.flink.runtime.state.StateBackend
+import org.apache.flink.streaming.api.datastream
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
+import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
-import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, ProcessFunction}
-import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator, StreamOperatorFactory}
+import org.apache.flink.streaming.api.operators.StreamOperatorFactory
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
-import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.{TimeCharacteristic, datastream}
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
+import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -34,7 +34,7 @@ import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
-import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
+import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, MetricUtils}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar._
@@ -55,8 +55,9 @@ import scala.util.{Failure, Success}
 
 class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
                                      eventTimeMetricDuration: FiniteDuration,
-                                     checkpointInterval: FiniteDuration,
-                                     enableObjectReuse: Boolean, diskStateBackend: Option[StateBackend])
+                                     checkpointConfig: Option[CheckpointConfig],
+                                     enableObjectReuse: Boolean,
+                                     diskStateBackend: Option[StateBackend])
   extends FlinkProcessRegistrar[StreamExecutionEnvironment] {
 
   import FlinkProcessRegistrar._
@@ -151,9 +152,9 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
 
       val start = source
           .sourceStream(env, metaData)
-          .process(new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration))
-          .map(new RateMeterFunction[Any]("source"))
-          .map(InitContextFunction(metaData.id, part.node.id))
+          .process(new EventTimeDelayMeterFunction("eventtimedelay", part.id, eventTimeMetricDuration))
+          .map(new RateMeterFunction[Any]("source", part.id))
+          .map(InitContextFunction(metaData.id, part.id))
 
       val asyncAssigned = wrapAsync(start, part.node, part.validationContext, "interpretation")
 
@@ -240,17 +241,22 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
   }
 
   private def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
-    val checkpointIntervalToSetInMillis = streamMetaData.checkpointIntervalDuration.getOrElse(checkpointInterval).toMillis
-    env.enableCheckpointing(checkpointIntervalToSetInMillis)
-
-    //TODO: should this be configurable?
-    env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointIntervalToSetInMillis / 2)
-    env.getCheckpointConfig.setMaxConcurrentCheckpoints(1)
+    val processSpecificCheckpointIntervalDuration = streamMetaData.checkpointIntervalDuration
+    val checkpointIntervalToSet = processSpecificCheckpointIntervalDuration.orElse(checkpointConfig.map(_.checkpointInterval)).map(_.toMillis)
+    checkpointIntervalToSet.foreach { checkpointIntervalToSetInMillis =>
+      env.enableCheckpointing(checkpointIntervalToSetInMillis)
+      env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointConfig.flatMap(_.minPauseBetweenCheckpoints).map(_.toMillis).getOrElse(checkpointIntervalToSetInMillis / 2))
+      env.getCheckpointConfig.setMaxConcurrentCheckpoints(checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1))
+      checkpointConfig.flatMap(_.tolerableCheckpointFailureNumber).foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
+    }
   }
 }
 
 
 object FlinkStreamingProcessRegistrar {
+
+  // We cannot use LazyLogging trait here because class already has LazyLogging and scala ends with cycle during resolution...
+  private lazy val logger: Logger = Logger(LoggerFactory.getLogger(classOf[FlinkStreamingProcessRegistrar].getName))
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -261,18 +267,26 @@ object FlinkStreamingProcessRegistrar {
 
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
-    val checkpointInterval = config.as[FiniteDuration]("checkpointInterval")
+
+    // TODO checkpointInterval is deprecated - remove it in future
+    val checkpointInterval = config.getAs[FiniteDuration](path = "checkpointInterval")
+    if (checkpointInterval.isDefined) {
+      logger.warn("checkpointInterval config property is deprecated, use checkpointConfig.checkpointInterval instead")
+    }
+
+    val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
+      .orElse(checkpointInterval.map(CheckpointConfig(_)))
 
     new FlinkStreamingProcessRegistrar(
       compileProcess = compiler.compileProcess,
       eventTimeMetricDuration = eventTimeMetricDuration,
-      checkpointInterval = checkpointInterval,
       enableObjectReuse = enableObjectReuse,
       diskStateBackend =  {
         if (compiler.diskStateBackendSupport) {
           config.getAs[RocksDBStateBackendConfig]("rocksDB").map(StateConfiguration.prepareRocksDBStateBackend)
         } else None
-      }
+      },
+      checkpointConfig = checkpointConfig
     )
   }
 
@@ -342,7 +356,7 @@ object FlinkStreamingProcessRegistrar {
     }
   }
 
-  class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration) extends ProcessFunction[T, T] {
+  class EventTimeDelayMeterFunction[T](groupId: String, nodeId: String, slidingWindow: FiniteDuration) extends ProcessFunction[T, T] {
 
     lazy val histogramMeter = new DropwizardHistogramWrapper(
       new Histogram(new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)))
@@ -357,9 +371,9 @@ object FlinkStreamingProcessRegistrar {
     var lastElementTime : Option[Long] = None
 
     override def open(parameters: Configuration): Unit = {
-      val group = getRuntimeContext.getMetricGroup.addGroup(groupId)
-      group.histogram("histogram", histogramMeter)
-      group.gauge[Long, Gauge[Long]]("minimalDelay", minimalDelayGauge)
+      val metrics = new MetricUtils(getRuntimeContext)
+      metrics.histogram(NonEmptyList.of(groupId, "histogram"), Map("nodeId" -> nodeId), histogramMeter)
+      metrics.gauge[Long, Gauge[Long]](NonEmptyList.of(groupId, "minimalDelay"), Map("nodeId" -> nodeId), minimalDelayGauge)
     }
 
     override def processElement(value: T, ctx: ProcessFunction[T, T]#Context, out: Collector[T]): Unit = {
@@ -381,16 +395,16 @@ object FlinkStreamingProcessRegistrar {
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
 
-      val parentGroupForNormalEnds = getRuntimeContext.getMetricGroup.addGroup("end")
-      val parentGroupForDeadEnds = getRuntimeContext.getMetricGroup.addGroup("dead_end")
+      val parentGroupForNormalEnds = "end"
+      val parentGroupForDeadEnds = "dead_end"
 
-      def registerRateMeter(end: End) = {
+      def registerRateMeter(end: End): InstantRateMeterWithCount = {
         val baseGroup = end match {
-          case normal: NormalEnd => parentGroupForNormalEnds
-          case dead: DeadEnd => parentGroupForDeadEnds
-          case e: BranchEnd => parentGroupForDeadEnds
+          case _: NormalEnd => parentGroupForNormalEnds
+          case _: DeadEnd => parentGroupForDeadEnds
+          case _: BranchEnd => parentGroupForDeadEnds
         }
-        InstantRateMeterWithCount.register(baseGroup.addGroup(end.nodeId))
+        InstantRateMeterWithCount.register(Map("nodeId" -> end.nodeId), List(baseGroup), new MetricUtils(getRuntimeContext))
       }
 
       meterByReference = ends.map { end =>
@@ -403,7 +417,7 @@ object FlinkStreamingProcessRegistrar {
       }.toMap[PartReference, RateMeter]
     }
 
-    override def map(value: InterpretationResult) = {
+    override def map(value: InterpretationResult): InterpretationResult = {
       val meter = meterByReference.getOrElse(value.reference, throw new IllegalArgumentException("Unexpected reference: " + value.reference))
       meter.mark()
       value

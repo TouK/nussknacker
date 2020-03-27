@@ -8,15 +8,17 @@ export const LabeledInput = (props) => {
   return (
     <div className="node-row">
       {renderFieldLabel()}
-      <Input isMarked={isMarked}
-             readOnly={readOnly}
-             value={value}
-             className={"node-value"}
-             autoFocus={autofocus}
-             placeholder={placeholder}
-             showValidation={showValidation}
-             validators={validators}
-             onChange={onChange}/>
+      <Input
+        isMarked={isMarked}
+        readOnly={readOnly}
+        value={value}
+        className={"node-value"}
+        autoFocus={autofocus}
+        placeholder={placeholder}
+        showValidation={showValidation}
+        validators={validators}
+        onChange={onChange}
+      />
     </div>
   )
 }

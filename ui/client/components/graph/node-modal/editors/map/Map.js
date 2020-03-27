@@ -6,7 +6,7 @@ const Map = (props) => {
 
   const {
     label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation, expressionValue,
-    showSwitch, errors
+    showSwitch, errors,
   } = props
 
   return (
@@ -15,26 +15,32 @@ const Map = (props) => {
       <div className="node-value">
         <div className="fieldsControl">
           {
-            fields.map((field, index) => (<MapRow key={field.uuid}
-                                                  field={field}
-                                                  showValidation={showValidation}
-                                                  showSwitch={showSwitch}
-                                                  readOnly={readOnly}
-                                                  paths={`${namespace}[${index}]`}
-                                                  isMarked={isMarked}
-                                                  onChange={onChange}
-                                                  onRemoveField={() => removeField(namespace, index)}
-                                                  errors={errors}/>))
+            fields.map((field, index) => (
+              <MapRow
+                key={field.uuid}
+                field={field}
+                showValidation={showValidation}
+                showSwitch={showSwitch}
+                readOnly={readOnly}
+                paths={`${namespace}[${index}]`}
+                isMarked={isMarked}
+                onChange={onChange}
+                onRemoveField={() => removeField(namespace, index)}
+                errors={errors}
+              />
+            ))
           }
           {
-            readOnly ? null :
+            readOnly ? null : (
               <div>
-                <button onClick={addField}
-                        className="addRemoveButton"
-                        title="Add field">+
+                <button
+                  onClick={addField}
+                  className="addRemoveButton"
+                  title="Add field"
+                >+
                 </button>
               </div>
-          }
+            )}
         </div>
       </div>
     </div>

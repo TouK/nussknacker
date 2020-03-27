@@ -13,7 +13,10 @@ trait Sink {
 /**
   * [[pl.touk.nussknacker.engine.api.process.SinkFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.process.Sink]]
-* */
+  *
+  * IMPORTANT lifecycle notice:
+  * Implementations of this class *must not* allocate resources (connections, file handles etc.)
+  */
 trait SinkFactory extends Serializable {
 
   def requiresOutput: Boolean = true

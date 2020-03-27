@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 /**
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
   * validation of process created in UI and before process save.
   * Also it handles "reverse" resolving process done before returning process to UI
   */
-class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingType: Map[ProcessingType, ProcessDictSubstitutor]) {
+class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor]) {
 
   def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
     val v = validation.withExpressionParsers {
@@ -26,21 +27,18 @@ class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingT
 
   def resolveExpressions(displayable: DisplayableProcess, typingInfo: Map[String, Map[String, ExpressionTypingInfo]]): CanonicalProcess = {
     val canonical = ProcessConverter.fromDisplayable(displayable)
-    substitutorByProcessingType.get(displayable.processingType)
+    substitutorByProcessingType.forType(displayable.processingType)
       .map(_.substitute(canonical, typingInfo))
       .getOrElse(canonical)
   }
 
   def validateBeforeUiReverseResolving(canonical: CanonicalProcess, processingType: ProcessingType): ValidationResult = {
-    val v = validation.withExpressionParsers {
-      case spel: SpelExpressionParser => spel.looselyTypingDictKeys
-    }
-    v.processingTypeValidationWithTypingInfo(canonical, processingType)
+    validation.processingTypeValidationWithTypingInfo(canonical, processingType)
   }
 
   def reverseResolveExpressions(canonical: CanonicalProcess, processingType: ProcessingType, businessView: Boolean,
                                 validationResult: ValidationResult): ValidatedDisplayableProcess = {
-    val substituted = substitutorByProcessingType.get(processingType)
+    val substituted = substitutorByProcessingType.forType(processingType)
       .map(_.reversed.substitute(canonical, validationResult.typingInfo))
       .getOrElse(canonical)
     val displayable = ProcessConverter.toDisplayable(substituted, processingType, businessView)

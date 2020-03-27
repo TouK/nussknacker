@@ -5,11 +5,12 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
+import javax.annotation.Nullable
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, MandatoryParameterValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -31,7 +32,6 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
-import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
@@ -41,7 +41,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   import spel.Implicits._
 
-  private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext, false)
+  private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext, false, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
     Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
@@ -65,7 +65,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]), Parameter("lazyInt", Typed[Integer], classOf[LazyParameter[_]]),
         Parameter[Long]("long"))
       , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData())
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
+      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
+      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
+      "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(Parameter("nullableLiteralIntegerParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.integerValidator)))), emptyQueryNamesData()),
+      "withRegExpParam" -> (ObjectDefinition.withParams(List(Parameter("regExpParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.numberValidator)))), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -165,6 +169,110 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+    }
+  }
+
+  test ("find mandatory expressions for mandatory parameters") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withMandatoryParams", "mandatoryParam" -> "")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, "mandatoryParam", "customNodeId"), _)) =>
+    }
+  }
+
+  test ("find blank expressions for notBlank parameter") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId1", "event", "withNotBlankParams", "notBlankParam" -> "''")
+        .customNode("customNodeId2", "event", "withNotBlankParams", "notBlankParam" -> "'   '")
+        .customNode("customNodeId3", "event", "withNotBlankParams", "notBlankParam" -> " '' ")
+        .customNode("customNodeId4", "event", "withNotBlankParams", "notBlankParam" -> " '  ' ")
+        .customNode("customNodeId5", "event", "withNotBlankParams", "notBlankParam" -> "'test'")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+        BlankParameter(_, _, "notBlankParam", "customNodeId1"),
+        List(
+          BlankParameter(_, _, "notBlankParam", "customNodeId2"),
+          BlankParameter(_, _, "notBlankParam", "customNodeId3"),
+          BlankParameter(_, _, "notBlankParam", "customNodeId4")
+        )
+      )) =>
+    }
+  }
+
+  test ("valid for Literal Integer param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "12")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test ("valid for Nullable Literal Integer param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test ("invalid for Nullable Literal Integer param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "as")
+        .customNode("customNodeId2", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "1.23")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+        InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
+        List(
+          InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
+        )
+      )) =>
+    }
+  }
+
+  test ("mismatch for Literal Number param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withRegExpParam", "regExpParam" -> "as")
+        .customNode("customNodeId2", "event", "withRegExpParam", "regExpParam" -> "1.23")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+        MismatchParameter(_, _, "regExpParam", "customNodeId"), _
+      )) =>
     }
   }
 

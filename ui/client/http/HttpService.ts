@@ -75,7 +75,7 @@ export default {
 
   fetchProcessDefinitionData(processingType, isSubprocess, data) {
     return api.post(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`, data)
-      .then((response => {
+      .then(response => {
         // This is a walk-around for having part of node template (branch parameters) outside of itself.
         // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
         response.data.nodesToAdd.forEach(nodeAggregates => {
@@ -85,7 +85,7 @@ export default {
         })
 
         return response
-      }))
+      })
       .catch((error) => this.addError("Cannot find chosen versions", error, true))
   },
 
@@ -122,12 +122,12 @@ export default {
     return api.get(url, {params: {businessView}})
   },
 
-  fetchProcessesStatus() {
+  fetchProcessesStates() {
     return api.get("/processes/status")
       .catch(error => this.addError("Cannot fetch statuses", error))
   },
 
-  fetchSingleProcessStatus(processId) {
+  fetchProcessState(processId) {
     return api.get(`/processes/${processId}/status`)
       .catch(error => this.addError("Cannot fetch status", error))
   },
@@ -213,6 +213,11 @@ export default {
   validateProcess(process) {
     return api.post("/processValidation", process)
       .catch(error => this.addError("Fatal validation error, cannot save", error, true))
+  },
+
+  getNodeAdditionalData(processId, node) {
+    return api.post(`/nodes/${processId}/additionalData`, node)
+      .catch(error => this.addError("Failed to get node additional data", error, true))
   },
 
   getTestCapabilities(process) {

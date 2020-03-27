@@ -19,6 +19,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
@@ -29,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object ManagementActor {
-  def props(managers: Map[ProcessingType, ProcessManager],
+  def props(managers: ProcessingTypeDataProvider[ProcessManager],
             processRepository: FetchingProcessRepository[Future],
             deployedProcessRepository: ProcessActionRepository,
             subprocessResolver: SubprocessResolver,
@@ -39,7 +40,7 @@ object ManagementActor {
   }
 }
 
-class ManagementActor(managers: Map[ProcessingType, ProcessManager],
+class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: ProcessActionRepository,
                       subprocessResolver: SubprocessResolver,
@@ -121,6 +122,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessStatus =
     (processState, lastAction) match {
+      case (Some(state), _) if state.status.isFailed => ProcessStatus(state)
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
       case (Some(state), _) if state.status.isFollowingDeployAction => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
@@ -134,7 +136,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
       case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
       case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished | FlinkStateStatus.Restarting if lastAction.isEmpty =>
-        ProcessStatus.simpleErrorProcessWithoutAction(Some(state))
+        ProcessStatus.simpleWarningProcessWithoutAction(Some(state))
       case _ => ProcessStatus(state)
     }
 
@@ -154,11 +156,11 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
     lastAction match {
       case Some(action) if action.isCanceled =>
-        ProcessStatus.simpleErrorShouldNotBeRunning(Option(state))
+        ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), true)
       case Some(_) =>
         ProcessStatus(state)
       case None =>
-        ProcessStatus.simpleErrorShouldNotBeRunning(Option(state))
+        ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), false)
     }
 
   //This method handles some corner cases for deployed action mismatch state version
@@ -168,19 +170,19 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
       case Some(state) =>
         state.version match {
           case Some(_) if !state.status.isFollowingDeployAction =>
-            ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, processState)
+            ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId != action.processVersionId =>
             ProcessStatus.simpleErrorMismatchDeployedVersion(ver.versionId, action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId == action.processVersionId =>
             ProcessStatus(state)
           case None => //TODO: we should remove Option from ProcessVersion?
-            ProcessStatus.simpleErrorMissingDeployedVersion(action.processVersionId, action.user, processState)
+            ProcessStatus.simpleWarningMissingDeployedVersion(action.processVersionId, action.user, processState)
           case _ =>
-            ProcessStatus.simple(SimpleStateStatus.DeployedWithError) //Generic
+            ProcessStatus.simple(SimpleStateStatus.Error) //Generic
           // c error in other cases
         }
       case None =>
-        ProcessStatus.simpleErrorShouldRunning(action.processVersionId, action.user, Option.empty)
+        ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, Option.empty)
     }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
@@ -253,7 +255,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
                                    savepointPath: Option[String],
                                    comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
-    val processManagerValue = managers(processingType)
+    val processManagerValue = managers.forTypeUnsafe(processingType)
 
     for {
       deploymentResolved <- resolvedDeploymentData
@@ -283,7 +285,7 @@ class ManagementActor(managers: Map[ProcessingType, ProcessManager],
   }
 
   private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessManager] = {
-    processRepository.fetchProcessingType(processId).map(managers)
+    processRepository.fetchProcessingType(processId).map(managers.forTypeUnsafe)
   }
 
   //during deployment using Client.run Flink holds some data in statics and there is an exception when

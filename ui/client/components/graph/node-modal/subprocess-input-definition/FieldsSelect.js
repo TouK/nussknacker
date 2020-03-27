@@ -46,11 +46,11 @@ const FieldsSelect = (props) => {
             })
           }
           {
-            readOnly ? null :
+            readOnly ? null : (
               <div>
                 <button className="addRemoveButton" title="Add field" onClick={() => addField()}>+</button>
               </div>
-          }
+            )}
         </div>
       </div>
     </div>

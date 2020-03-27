@@ -9,6 +9,7 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
-import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.process._
@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
+import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
@@ -40,23 +41,23 @@ object NussknackerApp extends App with Directives with LazyLogging {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
-  private implicit val system = ActorSystem("nussknacker-ui")
-  private implicit val materializer = ActorMaterializer()
+  private implicit val system: ActorSystem = ActorSystem("nussknacker-ui")
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   prepareUncaughtExceptionHandler()
 
   private val config = system.settings.config.withFallback(ConfigFactory.load("defaultConfig.conf"))
-
-  private val hsqlEnabled = config.getAs[Boolean]("jdbcServer.enabled")
-  private val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer").map(DatabaseServer(_))
+  private val jdbcServerConfig = config.getAs[DatabaseServer.Config]("jdbcServer")
+  private val hsqlServer = jdbcServerConfig.map(DatabaseServer(_))
 
   // Default true because of back compatibility
-  if (hsqlEnabled.getOrElse(true)) {
+  if (jdbcServerConfig.exists(_.enabled.getOrElse(true))) {
     hsqlServer.foreach(_.start())
   }
 
-  private val route = initializeRoute(config)
+  private val (route, objectsToClose) = initializeRoute(config)
 
   // TODO: switch to general configuration via application.conf when https://github.com/akka/akka-http/issues/55 will be ready
   val port = config.getInt("http.port")
@@ -86,7 +87,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     )
   }
 
-  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer): Route = {
+  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
 
     val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes", 500 * 1024 * 1000)
@@ -96,7 +97,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val db = initDb(config)
 
-    val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+    val (typeToConfig, reload) = BasicProcessingTypeDataReload.wrapWithReloader(
+      () => ProcessingTypeDataReader.loadProcessingTypeData(config))
 
     val analyticsConfig = AnalyticsConfig(config)
 
@@ -109,9 +111,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
-    val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
+    val additionalProperties = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty))
     val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
-    val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver, customProcessNodesValidators)
+    val processValidation = ProcessValidation(modelData, additionalProperties, subprocessResolver, customProcessNodesValidators)
 
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
@@ -137,7 +139,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, typeToConfig, modelData, processRepository, processValidation, jobStatusService)
+    val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, jobStatusService)
+
+    val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
@@ -145,11 +149,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
           processRepository = processRepository,
           writeRepository = writeProcessRepository,
           jobStatusService = jobStatusService,
-          processActivityRepository = processActivityRepository,
           processValidation = processValidation,
           processResolving = processResolving,
           typesForCategories = typesForCategories,
-          newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
+          newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties),
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
           typeToConfig = typeToConfig
@@ -167,12 +170,12 @@ object NussknackerApp extends App with Directives with LazyLogging {
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
       )
+
       val optionalRoutes = List(
         featureTogglesConfig.remoteEnvironment
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
-        featureTogglesConfig.counts
-          .map(prepareCountsReporter(environment, _))
+        countsReporter
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
         featureTogglesConfig.attachments
           .map(path => new ProcessAttachmentService(path, processActivityRepository))
@@ -195,7 +198,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"))
-    CorsSupport.cors(featureTogglesConfig.development) {
+    val route = CorsSupport.cors(featureTogglesConfig.development) {
       pathPrefixTest(!"api") {
         webResources.route
       } ~  pathPrefix("api") {
@@ -206,6 +209,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         }
       }
     }
+    (route, typeToConfig.all.values ++ countsReporter.toList)
   }
 
   //by default, we use InfluxCountsReporterCreator
@@ -238,11 +242,12 @@ object NussknackerApp extends App with Directives with LazyLogging {
   }
 
   //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails
-  private def prepareUncaughtExceptionHandler() = {
+  private def prepareUncaughtExceptionHandler(): Unit = {
     //TODO: should we set it only on main thread?
     Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = {
         logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
+        objectsToClose.foreach(_.close())
         hsqlServer.foreach(_.shutdown())
         system.terminate()
       }

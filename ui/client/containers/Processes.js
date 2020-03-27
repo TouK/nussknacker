@@ -80,25 +80,33 @@ export class Processes extends BaseProcesses {
       <div className="Page">
         <HealthCheck/>
         <div id="process-top-bar">
-          <SearchFilter onChange={this.onSearchChange}
-                        value={this.state.search}/>
+          <SearchFilter
+            onChange={this.onSearchChange}
+            value={this.state.search}
+          />
 
-          <TableSelect defaultValue={this.state.selectedCategories}
-                       options={this.props.filterCategories}
-                       placeholder={"Select categories.."}
-                       onChange={this.onCategoryChange}
-                       isMulti={true}
-                       isSearchable={true}/>
+          <TableSelect
+            defaultValue={this.state.selectedCategories}
+            options={this.props.filterCategories}
+            placeholder={"Select categories.."}
+            onChange={this.onCategoryChange}
+            isMulti={true}
+            isSearchable={true}
+          />
 
-          <TableSelect defaultValue={this.state.selectedDeployedOption}
-                       options={this.deployedOptions}
-                       placeholder="Select deployed info.."
-                       onChange={this.onDeployedChange}
-                       isMulti={false}
-                       isSearchable={false}/>
+          <TableSelect
+            defaultValue={this.state.selectedDeployedOption}
+            options={this.deployedOptions}
+            placeholder="Select deployed info.."
+            onChange={this.onDeployedChange}
+            isMulti={false}
+            isSearchable={false}
+          />
 
-          <AddProcessButton loggedUser={this.props.loggedUser}
-                            onClick={() => this.setState({showAddProcess: true})}/>
+          <AddProcessButton
+            loggedUser={this.props.loggedUser}
+            onClick={() => this.setState({showAddProcess: true})}
+          />
         </div>
 
         <AddProcessDialog
@@ -107,7 +115,8 @@ export class Processes extends BaseProcesses {
           isSubprocess={false}
           visualizationPath={Processes.path}
           message="Create new process"
-          clashedNames={this.state.clashedNames}/>
+          clashedNames={this.state.clashedNames}
+        />
 
         <LoaderSpinner show={this.state.showLoader}/>
 

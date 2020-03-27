@@ -42,13 +42,12 @@ class NodeDetailsModal extends React.Component {
   componentDidMount() {
     const {nodeToDisplay, showNodeDetailsModal, businessView, subprocessVersions} = this.props
     const isChromium = !!window.chrome
-    if (nodeToDisplay && this.state.subprocessContent === null && showNodeDetailsModal && (NodeUtils.nodeType(nodeToDisplay) === "SubprocessInput")) {
+    if (nodeToDisplay && this.state.subprocessContent === null && showNodeDetailsModal && NodeUtils.nodeType(nodeToDisplay) === "SubprocessInput") {
       if (isChromium) { //Subprocesses work only in Chromium, there is problem with jonint and SVG
         const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
         HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion, businessView).then((response) => {
-            this.setState({...this.state, subprocessContent: response.data.json})
-          },
-        )
+          this.setState({...this.state, subprocessContent: response.data.json})
+        })
       } else {
         console.warn("Displaying subprocesses is available only in Chromium based browser.")
       }
@@ -66,21 +65,20 @@ class NodeDetailsModal extends React.Component {
   }
 
   performNodeEdit = () => {
-    this.setState( {pendingRequest: true})
+    this.setState({pendingRequest: true})
 
     const actionResult = this.isGroup() ?
-      this.props.actions.editGroup(this.props.processToDisplay, this.props.nodeToDisplay.id, this.state.editedNode)
-      : this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode)
+      this.props.actions.editGroup(this.props.processToDisplay, this.props.nodeToDisplay.id, this.state.editedNode) :
+      this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode)
 
     actionResult.then (() => {
-        this.setState( {pendingRequest: false})
-        this.closeModal()
-      }, () => this.setState( {pendingRequest: false}),
-    )
+      this.setState({pendingRequest: false})
+      this.closeModal()
+    }, () => this.setState({pendingRequest: false}))
   }
 
   updateNodeState = (newNodeState) => {
-    this.setState( {editedNode: newNodeState})
+    this.setState({editedNode: newNodeState})
   }
 
   onNodeGroupChange = (event) => {
@@ -89,25 +87,25 @@ class NodeDetailsModal extends React.Component {
   }
 
   renderModalButtons() {
-    return ([
+    return [
       this.isGroup() ? this.renderGroupUngroup() : null,
       <button key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
         Cancel
       </button>,
-      !this.props.readOnly ?
-          <LaddaButton
-              key="1"
-              title="Apply node details"
-              className="modalButton pull-right modalConfirmButton"
-              loading={this.state.pendingRequest}
-              data-style="zoom-in"
-              onClick={this.performNodeEdit}
-          >
-            Apply
-          </LaddaButton>
-          :
-          null,
-    ] )
+      !this.props.readOnly ? (
+        <LaddaButton
+          key="1"
+          title="Apply node details"
+          className="modalButton pull-right modalConfirmButton"
+          loading={this.state.pendingRequest}
+          data-style="zoom-in"
+          onClick={this.performNodeEdit}
+        >
+          Apply
+        </LaddaButton>
+      )        :
+        null,
+    ] 
   }
 
   renderGroupUngroup() {
@@ -116,8 +114,8 @@ class NodeDetailsModal extends React.Component {
 
     const id = this.state.editedNode.id
     const expanded = _.includes(this.props.expandedGroups, id)
-    return  expanded ? (<button type="button" key="0" title="Collapse group" className="modalButton" onClick={collapse}>Collapse</button>)
-         : (<button type="button" title="Expand group" key="0" className="modalButton" onClick={expand}>Expand</button>)
+    return  expanded ? (<button type="button" key="0" title="Collapse group" className="modalButton" onClick={collapse}>Collapse</button>) :
+      (<button type="button" title="Expand group" key="0" className="modalButton" onClick={expand}>Expand</button>)
   }
 
   isGroup() {
@@ -143,35 +141,43 @@ class NodeDetailsModal extends React.Component {
 
     return (
       <div className="objectModal">
-        <Modal shouldCloseOnOverlayClick={false}
-               shouldCloseOnEsc={this.state.shouldCloseOnEsc}
-               isOpen={isOpen}
-               onRequestClose={this.closeModal}>
+        <Modal
+          shouldCloseOnOverlayClick={false}
+          shouldCloseOnEsc={this.state.shouldCloseOnEsc}
+          isOpen={isOpen}
+          onRequestClose={this.closeModal}
+        >
           <div className="draggable-container">
             <Draggable bounds="parent" handle=".modal-draggable-handle">
               <div className="espModal">
                 <NodeDetailsModalHeader node={nodeToDisplay} docsUrl={nodeSetting.docsUrl}/>
                 <div className="modalContentDark" id="modal-content">
-                  <Scrollbars hideTracksWhenNotNeeded={true} autoHeight
-                              autoHeightMax={cssVariables.modalContentMaxHeight}
-                              renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+                  <Scrollbars
+                    hideTracksWhenNotNeeded={true}
+                    autoHeight
+                    autoHeightMax={cssVariables.modalContentMaxHeight}
+                    renderThumbVertical={props => <div {...props} className="thumbVertical"/>}
+                  >
                     {
-                      this.isGroup() ?
+                      this.isGroup() ? (
                         <NodeGroupDetailsContent
                           testResults={nodeTestResults}
                           node={this.state.editedNode}
                           onChange={this.onNodeGroupChange}
                           readOnly={readOnly}
-                        /> :
-                        <NodeDetailsContent isEditMode={!readOnly}
-                                            showValidation={true}
-                                            showSwitch={true}
-                                            node={this.state.editedNode}
-                                            nodeErrors={nodeErrors}
-                                            onChange={this.updateNodeState}
-                                            toogleCloseOnEsc={this.toogleCloseModalOnEsc}
-                                            testResults={nodeTestResults(this.state.currentNodeId)}/>
-                    }
+                        />
+                      ) : (
+                        <NodeDetailsContent
+                          isEditMode={!readOnly}
+                          showValidation={true}
+                          showSwitch={true}
+                          node={this.state.editedNode}
+                          nodeErrors={nodeErrors}
+                          onChange={this.updateNodeState}
+                          toogleCloseOnEsc={this.toogleCloseModalOnEsc}
+                          testResults={nodeTestResults(this.state.currentNodeId)}
+                        />
+                      )}
                     {
                       //FIXME: adjust height of modal with subprocess in some reasonable way :|
                       this.state.subprocessContent ? this.renderSubprocess() : null
@@ -194,8 +200,8 @@ class NodeDetailsModal extends React.Component {
 
 function mapState(state) {
   const nodeId = state.graphReducer.nodeToDisplay.id
-  const errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, [])
-    : _.get(state.graphReducer.processToDisplay, "validationResult.errors.processPropertiesErrors", [])
+  const errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, []) :
+    _.get(state.graphReducer.processToDisplay, "validationResult.errors.processPropertiesErrors", [])
   const nodeToDisplay = state.graphReducer.nodeToDisplay
   const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
   const processDefinitionData = state.settings.processDefinitionData || {}
@@ -207,11 +213,11 @@ function mapState(state) {
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
-    readOnly: !state.settings.loggedUser.canWrite(processCategory)
-      || state.graphReducer.businessView
-      || state.graphReducer.nodeToDisplayReadonly
-      || _.get(state, "graphReducer.fetchedProcessDetails.isArchived")
-      || false,
+    readOnly: !state.settings.loggedUser.canWrite(processCategory) ||
+      state.graphReducer.businessView ||
+      state.graphReducer.nodeToDisplayReadonly ||
+      _.get(state, "graphReducer.fetchedProcessDetails.isArchived") ||
+      false,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,
     processDefinitionData: processDefinitionData,

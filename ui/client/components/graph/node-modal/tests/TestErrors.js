@@ -6,7 +6,7 @@ export default function TestErrors(props) {
 
   const {resultsToShow} = props
 
-  return (resultsToShow && resultsToShow.error) ?
+  return resultsToShow && resultsToShow.error ? (
     <div className="node-table-body">
       <div className="node-row">
         <div className="node-label">
@@ -16,5 +16,6 @@ export default function TestErrors(props) {
           <div className="node-error">{resultsToShow.error}</div>
         </div>
       </div>
-    </div> : null
+    </div>
+  ) : null
 }

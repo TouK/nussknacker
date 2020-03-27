@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 import UnitTestsProcessConfigCreator._
+import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 
 /**
  * This config creator is for purpose of unit testing... maybe we should merge it with DevProcessConfigCreator?

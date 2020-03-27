@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react"
+import React, {useEffect, useState} from "react"
 import {ExpressionObj} from "../types"
 import {useTranslation} from "react-i18next"
 import DateTimePicker from "react-datetime"
@@ -8,14 +8,12 @@ import {useDebouncedCallback} from "use-debounce"
 import moment from "moment"
 import ValidationLabels from "../../../../../modals/ValidationLabels"
 import i18next from "i18next"
-import * as ExpressionFormatter from "./dateExpresionFormats"
-import {allValid, Validator} from "../../Validators"
+import {allValid, HandledErrorType, Validator, ValidatorType} from "../../Validators"
+import {Formatter} from "../Formatter"
 
 /* eslint-disable i18next/no-literal-string */
 export enum JavaTimeTypes {
-  LOCAL_DATE = "LocalDate",
   LOCAL_DATE_TIME = "LocalDateTime",
-  LOCAL_TIME = "LocalTime",
 }
 
 export type DatepickerEditorProps = {
@@ -27,57 +25,39 @@ export type DatepickerEditorProps = {
   showValidation: boolean,
   isMarked: boolean,
   editorFocused: boolean,
-  expressionType: JavaTimeTypes,
-  dateFormat: string,
-  timeFormat?: string | boolean,
+  formatter: Formatter,
+  momentFormat: string,
+  dateFormat?: string,
+  timeFormat?: string,
 }
-
-const parse = ({expression}: ExpressionObj, expressionType: JavaTimeTypes): moment.Moment | null => {
-  const parseRegExp = ExpressionFormatter.getParseRegExp()
-  const [fullString, date] = parseRegExp.exec(expression) || []
-  const formats = expressionType === JavaTimeTypes.LOCAL_TIME ?
-    ExpressionFormatter.getTimeOnlyFormat() :
-    ExpressionFormatter.getDateTimeFormat()
-
-  const m = moment(date, formats)
-  return m.isValid() ? m : null
-}
-
-function format(value: string | moment.Moment, expressionType: JavaTimeTypes): string {
-  const m = moment(value)
-  if (m.isValid()) {
-    switch (expressionType) {
-      case JavaTimeTypes.LOCAL_DATE_TIME:
-        return ExpressionFormatter.createLocalDateTime(m)
-      case JavaTimeTypes.LOCAL_DATE:
-        return ExpressionFormatter.createLocalDate(m)
-      case JavaTimeTypes.LOCAL_TIME:
-        return ExpressionFormatter.createLocalTime(m)
-    }
-  }
-  return ""
-}
-
-export const isParseable = (expression: ExpressionObj, expressionType: JavaTimeTypes): boolean => {
-  const date = parse(expression, expressionType)
-  return date && date.isValid()
-}
-
-const getDateValidator = (value: string | moment.Moment, expressionType: JavaTimeTypes): Validator => ({
-  description: i18next.t("validation.wrongDateFormat", "Wrong date format"),
-  message: i18next.t("validation.wrongDateFormat", "Wrong date format"),
-  isValid: () => !value || !!format(value, expressionType),
-})
 
 export function DatepickerEditor(props: DatepickerEditorProps) {
   const {i18n} = useTranslation()
-  const {className, expressionObj, onValueChange, expressionType, readOnly, validators, showValidation, isMarked, editorFocused, ...other} = props
-  const [value, setValue] = useState<string | moment.Moment>(parse(expressionObj, expressionType))
+  const {
+    className, expressionObj, onValueChange, readOnly, validators, showValidation, isMarked,
+    editorFocused, formatter, momentFormat, ...other
+  } = props
+
+  function encode(value: string | moment.Moment): string {
+    const m = moment(value, momentFormat)
+    if (m.isValid()) {
+      return formatter.encode(m)
+    }
+    return ""
+  }
+
+  const decode = (expression): moment.Moment | null => {
+    const date = formatter.decode(expression)
+    const m = moment(date, momentFormat)
+    return m.isValid() ? m : null
+  }
+
   const {expression} = expressionObj
+  const [value, setValue] = useState<string | moment.Moment>(decode(expression) == null ? null : decode(expression))
   const [onChange] = useDebouncedCallback(
     value => {
-      const date = format(value, expressionType)
-      onValueChange(date)
+      const encoded = encode(value)
+      onValueChange(encoded)
     },
     200,
   )
@@ -91,8 +71,16 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
 
   const isValid = allValid(validators, [expression])
 
+  const getDateValidator = (value: string | moment.Moment): Validator => ({
+    description: () => i18next.t("validation.wrongDateFormat", "Wrong date format"),
+    message: () => i18next.t("validation.wrongDateFormat", "Wrong date format"),
+    isValid: () => !value || !!encode(value),
+    validatorType: ValidatorType.Frontend,
+    handledErrorType: HandledErrorType.WrongDateFormat,
+  })
+
   const localValidators = [
-    getDateValidator(value, expressionType),
+    getDateValidator(value),
   ]
 
   return (

@@ -1,7 +1,6 @@
 import _ from "lodash"
 
-const getPossibleNodesInCategory = (possibleNodes, category) =>
-  possibleNodes.filter(node => node.categories.includes(category))
+const getPossibleNodesInCategory = (possibleNodes, category) => possibleNodes.filter(node => node.categories.includes(category))
 
 const getNodesToAddInCategory = (processDefinitionData, category) => {
   return (processDefinitionData.nodesToAdd || []).map(group => {

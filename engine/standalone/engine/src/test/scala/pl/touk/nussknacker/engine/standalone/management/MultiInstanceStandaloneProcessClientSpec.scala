@@ -29,6 +29,8 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       name shouldBe id
       Future.failed(failure)
     }
+
+    def close(): Unit = {}
   }
   private val failure = new Exception("Fail")
 
@@ -108,5 +110,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       name shouldBe id
       Future.successful(status)
     }
+    
+    override def close(): Unit = {}
   }
 }

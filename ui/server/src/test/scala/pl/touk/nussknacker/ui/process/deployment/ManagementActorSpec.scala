@@ -11,7 +11,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDeploymentProcessRepository, newProcessActivityRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, mapProcessingTypeDataProvider, newDeploymentProcessRepository, newProcessActivityRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.JobStatusService
@@ -34,7 +34,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
   private val managementActor = system.actorOf(
       ManagementActor.props(
-        Map(TestProcessingTypes.Streaming -> processManager),
+        mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processManager),
         processRepository,
         deploymentProcessRepository,
         TestFactory.sampleResolver,
@@ -120,39 +120,42 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
-  test("Should return state with error when state is running and process is canceled") {
+  test("Should return state with warning when state is running and process is canceled") {
     val id =  prepareCanceledProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.Running) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(true))
     }
   }
 
-  test("Should return state with error when state is running and process is not deployed") {
+  test("Should return state with warning when state is running and process is not deployed") {
     val id = prepareProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.Running) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldNotBeRunningDescription)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(false))
     }
   }
 
-  test("Should return state with error when state is during canceled and process hasn't action") {
+  test("Should return state with warning when state is during canceled and process hasn't action") {
     val id = prepareProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
     }
   }
 
@@ -162,9 +165,9 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(SimpleStateStatus.Finished) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
     }
   }
 
@@ -174,9 +177,9 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(FlinkStateStatus.Restarting) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorProcessWithoutAction)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
     }
   }
 
@@ -186,9 +189,10 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.DeployedWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
     }
   }
 
@@ -198,9 +202,10 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withEmptyProcessState {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.DeployedWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorShouldRunningDescription)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
     }
   }
 
@@ -211,21 +216,35 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processManager.withProcessStateVersion(SimpleStateStatus.Running, version) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionDescription)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionDescription)
     }
   }
 
-  test("Should return error state when state is running with empty version and process is deployed") {
+  test("Should always return process manager failure, even if some other verifications return invalid") {
+    val id =  prepareDeployedProcess(processName).futureValue
+    val version = Some(ProcessVersion(versionId = 2, processName = ProcessName(""), user = "", modelVersion = None))
+
+    processManager.withProcessStateVersion(SimpleStateStatus.Failed, version) {
+      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Failed)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
+    }
+  }
+
+  test("Should return warning state when state is running with empty version and process is deployed") {
     val id =  prepareDeployedProcess(processName).futureValue
 
     processManager.withProcessStateVersion(SimpleStateStatus.Running, Option.empty) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.RunningWithError)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
+      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployWarningIcon)
       state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.errorMissingDeployedVersionDescription)
+      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.missingDeployedVersionDescription)
     }
   }
 

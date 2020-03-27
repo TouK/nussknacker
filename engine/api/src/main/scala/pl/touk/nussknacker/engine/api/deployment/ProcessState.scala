@@ -44,7 +44,6 @@ object ProcessState {
       errors
     )
 
-  @JsonCodec case class StateStatusCodec(clazz: String, value: String)
 }
 
 @JsonCodec case class ProcessState(deploymentId: DeploymentId,
@@ -81,17 +80,18 @@ object StateStatus {
   def isDuringDeploy: Boolean = false
   def isFinished: Boolean = false
   def isRunning: Boolean = false
+  def isFailed: Boolean = false
   def canDeploy: Boolean = false
   def name: String
 
   def isFollowingDeployAction: Boolean = isDuringDeploy || isRunning
 }
 
-final case class NotEstablishedStateStatus(name: String) extends StateStatus
-
-final case class StoppedStateStatus(name: String) extends StateStatus {
+final case class AllowDeployStateStatus(name: String) extends StateStatus {
   override def canDeploy: Boolean = true
 }
+
+final case class NotEstablishedStateStatus(name: String) extends StateStatus
 
 final case class DuringDeployStateStatus(name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true
@@ -107,6 +107,12 @@ final case class RunningStateStatus(name: String) extends StateStatus {
   override def canDeploy: Boolean = true
 }
 
-final case class ErrorStateStatus(name: String) extends StateStatus {
+final case class FailedStateStatus(name: String) extends StateStatus {
+  override def isFailed: Boolean = true
   override def canDeploy: Boolean = true
 }
+
+// This status class is a walk around for fact that StateStatus is encoded and decoded. It causes that there is no easy option
+// to add own status with some specific fields without passing Encoders and Decoders to many places in application.
+// TODO: we should find places where StateStatuses are encoded and decoded and replace them with some DTOs for this purpose
+class CustomStateStatus(val name: String) extends StateStatus

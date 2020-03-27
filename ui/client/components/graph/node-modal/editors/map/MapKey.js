@@ -7,14 +7,16 @@ export default function MapKey(props) {
 
   return (
     <div className={`node-value fieldName${  isMarked ? " marked" : ""}`}>
-      <Input isMarked={isMarked}
-             readOnly={readOnly}
-             value={rowKey.name}
-             placeholder="Field name"
-             autofocus={autofocus}
-             showValidation={showValidation}
-             validators={validators}
-             onChange={(e) => onChange(`${paths}.name`, e.target.value)}/>
+      <Input
+        isMarked={isMarked}
+        readOnly={readOnly}
+        value={rowKey.name}
+        placeholder="Field name"
+        autofocus={autofocus}
+        showValidation={showValidation}
+        validators={validators}
+        onChange={(e) => onChange(`${paths}.name`, e.target.value)}
+      />
     </div>
   )
 }

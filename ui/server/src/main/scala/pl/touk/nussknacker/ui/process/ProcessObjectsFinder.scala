@@ -11,7 +11,6 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import shapeless.syntax.typeable._
 
 object ProcessObjectsFinder {
-  import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def findSignals(processes: List[ProcessDetails],
@@ -32,7 +31,7 @@ object ProcessObjectsFinder {
     }.toMap
   }
 
-  //TODO return Map[ProcessingType, List[String]]?
+  //TODO return ProcessingTypeDataProvider[List[String]]?
   def findUnusedComponents(processes: List[ProcessDetails],
                            processDefinitions: List[ProcessDefinition[ObjectDefinition]]): List[String] = {
     val extracted = extractProcesses(processes.flatMap(_.json))

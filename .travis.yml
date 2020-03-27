@@ -22,6 +22,9 @@ branches:
 #TODO: upgrade to newer (e.g. xenial) after upgrading java to > 8
 dist: trusty
 
+git:
+  depth: false
+
 env:
   global:
     - APPLICATION_NAME=nussknacker
@@ -36,8 +39,11 @@ env:
     #We do cross build in tests only for staging/master
     - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true" || echo "false"`
     - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true" || echo "false"`
+    - FE_ONLY=$(source .travis/diff_files.sh)
 
 before_script:
+  # We have to terminate jobs here because "if" checks before git checkout & before env is set.
+  - if [[ "$FE_ONLY" == "true" ]]; then travis_terminate 0; fi
   # We override maven central by google cloud because travis workers are blacklisted by maven central (Server returned HTTP response code: 403...)
   # It must be done in both ivy and maven settings, because we download deps using ivy during compile and using maven during publish (publishMavenStyle := true)
   - cp .travis.sbt.repositories $HOME/.sbt/repositories

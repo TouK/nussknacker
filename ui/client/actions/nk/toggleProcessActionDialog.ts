@@ -1,14 +1,19 @@
 import {ThunkAction} from "../reduxTypes"
 import {reportEvent} from "./reportEvent"
+import {ProcessId} from "./models"
 
 export type ToggleProcessActionModalAction = {
-  type: "TOGGLE_PROCESS_ACTION_MODAL";
-  message: string;
-  action: string;
-  displayWarnings: boolean;
+  type: "TOGGLE_PROCESS_ACTION_MODAL",
+  message: string,
+  action: (processId: ProcessId, comment: string) => void,
+  displayWarnings: boolean,
 }
 
-export function toggleProcessActionDialog(message: string, action: string, displayWarnings: boolean): ThunkAction {
+export function toggleProcessActionDialog(
+  message: string,
+  action: (processId: ProcessId, comment: string) => void,
+  displayWarnings: boolean,
+): ThunkAction {
   return (dispatch) => {
     dispatch(reportEvent({
       category: "right_panel",
@@ -18,9 +23,9 @@ export function toggleProcessActionDialog(message: string, action: string, displ
 
     return dispatch({
       type: "TOGGLE_PROCESS_ACTION_MODAL",
-      message: message,
-      action: action,
-      displayWarnings: displayWarnings,
+      message,
+      action,
+      displayWarnings,
     })
   }
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.queryablestate
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.JobID
+import org.apache.flink.api.common.{ExecutionConfig, JobID}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.queryablestate.client.QueryableStateClient
@@ -14,7 +14,24 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 object FlinkQueryableClient {
+
+  /**
+   * Creates FlinkQueryableClient using Flink's default deserialization strategy (ExecutionConfig)
+   * @param queryableStateProxyUrl comma separated list of proxy urls
+   */
   def apply(queryableStateProxyUrl: String): FlinkQueryableClient = {
+    FlinkQueryableClient(queryableStateProxyUrl, new ExecutionConfig)
+  }
+
+  /**
+   * Creates FlinkQueryableClient using custom deserialization strategy (ExecutionConfig)
+   * @param queryableStateProxyUrl comma separated list of proxy urls
+   * @param executionConfig config that is used by underlying QueryableStateClient - you can use it to set deserialization strategy.
+   *                        keep in mind that deserializers should match serializers used in state. in case if you query
+   *                        state serialized by NK process, probable you should prepare this config using
+   *                        `pl.touk.nussknacker.engine.process.util.Serializers.registerSerializers()` method.
+   */
+  def apply(queryableStateProxyUrl: String, executionConfig: ExecutionConfig): FlinkQueryableClient = {
 
     //TODO: this is workaround for https://issues.apache.org/jira/browse/FLINK-10225, we want to be able to configure all task managers
     val queryableStateProxyUrlsParts = queryableStateProxyUrl.split(",").toList.map { url =>
@@ -22,7 +39,9 @@ object FlinkQueryableClient {
     }
     def createClients = queryableStateProxyUrlsParts.map {
       case (queryableStateProxyHost, queryableStateProxyPort) =>
-        new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort)
+        val client = new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort)
+        client.setExecutionConfig(executionConfig)
+        client
     }
     new FlinkQueryableClient(createClients)
   }
@@ -53,7 +72,7 @@ class FlinkQueryableClient(createClients: => List[QueryableStateClient]) extends
           valueState.value()
         }.recoverWith {
           case NonFatal(e) =>
-            logger.debug(s"Failed to fetch state from $next with ${e.getMessage}", e)
+            logger.trace(s"Failed to fetch state from $next with ${e.getMessage}", e)
             tryToFetchState(rest, Some(e))
         }
       case Nil =>
@@ -79,8 +98,14 @@ class FlinkQueryableClient(createClients: => List[QueryableStateClient]) extends
     fetchState[V](jobId, queryName, QueryableState.defaultKey)
   }
 
-  def shutdown(): Unit = {
-    clients.foreach(_.shutdownAndWait())
+  def close(): Unit = {
+    //QueryableClient are not particularly robust, so we don't want to crash on exit
+    try {
+      clients.foreach(_.shutdownAndWait())
+    } catch {
+      case NonFatal(e) =>
+        logger.warn(s"Failed to close queryable client(s)", e)
+    }
   }
 
 }

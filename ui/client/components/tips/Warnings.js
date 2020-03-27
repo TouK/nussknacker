@@ -24,24 +24,30 @@ export default class Warnings extends React.Component {
         {warnings.length > 0 && <HeaderIcon className={"icon"} icon={InlinedSvgs.tipsWarning}/>}
         <div>
           {
-            Object.entries(groupedByMessage).map(([message, warnings]) =>
-              <div key={uuid4()}
-                   className={"warning-tips"}
-                   title={warnings.description}>
+            Object.entries(groupedByMessage).map(([message, warnings]) => (
+              <div
+                key={uuid4()}
+                className={"warning-tips"}
+                title={warnings.description}
+              >
                 <span>{headerMessageByWarningMessage.get(message)}</span>
                 <div className={"warning-links"}>
                   {
-                    warnings.map((warning, index) =>
-                      <Link key={uuid4()}
-                            className={"node-warning-link"}
-                            to={""}
-                            onClick={event => showDetails(event, NodeUtils.getNodeById(warning.key, currentProcess))}>
+                    warnings.map((warning, index) => (
+                      <Link
+                        key={uuid4()}
+                        className={"node-warning-link"}
+                        to={""}
+                        onClick={event => showDetails(event, NodeUtils.getNodeById(warning.key, currentProcess))}
+                      >
                         <span>{warning.key}</span>
-                        {(index < warnings.length - 1) ? separator : null}
-                      </Link>)
+                        {index < warnings.length - 1 ? separator : null}
+                      </Link>
+                    ))
                   }
                 </div>
-              </div>)
+              </div>
+            ))
           }
         </div>
       </div>

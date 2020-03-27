@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.Source
-import pl.touk.nussknacker.engine.variables.{GlobalVariablesPreparer, MetaVariables}
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import shapeless.syntax.typeable._
 
 trait TestInfoProvider {
@@ -44,12 +44,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
   }
 
-  private def extractSourceFactory(source: Source): Option[SourceFactory[_]] = {
-    // this wrapping with model class loader is necessary because during sourceFactories creation, some classes
-    // can be not loaded yet - for example dynamically loaded AvroKryoSerializerUtils (from flink-avro library)
-    modelData.withThisAsContextClassLoader {
-      modelData.configCreator.sourceFactories(modelData.processConfig).get(source.ref.typ).map(_.value)
-    }
+  private def extractSourceFactory(source: Source): Option[ObjectWithMethodDef] = {
+    modelData.processWithObjectsDefinition.sourceFactories.get(source.ref.typ)
   }
 
   override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[Array[Byte]] =
@@ -58,8 +54,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source[Any]] = {
     implicit val nodeId: NodeId = NodeId(source.id)
     for {
-      sourceFactory <- extractSourceFactory(source)
-      definition = ObjectWithMethodDef.withEmptyConfig(sourceFactory, ProcessObjectDefinitionExtractor.source)
+      definition <- extractSourceFactory(source)
       sourceParams <- prepareSourceParams(definition, source)
       sourceObj = factory.create[process.Source[Any]](definition, sourceParams, None)
     } yield sourceObj

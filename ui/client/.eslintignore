@@ -1,5 +1,5 @@
-brace/
-flow-typed/
-test/
 node_modules/
-dist/
+/brace/
+/flow-typed/
+/test/
+/dist/

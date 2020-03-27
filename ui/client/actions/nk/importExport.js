@@ -5,12 +5,12 @@ import {reportEvent} from "./reportEvent"
 export function importFiles(files, processId) {
   return (dispatch) => {
     files.forEach(
-        file => dispatch(importProcess(processId, file)),
+      file => dispatch(importProcess(processId, file)),
     )
 
-    return ({
+    return {
       type: "IMPORT_FILES",
-    })
+    }
   }
 }
 

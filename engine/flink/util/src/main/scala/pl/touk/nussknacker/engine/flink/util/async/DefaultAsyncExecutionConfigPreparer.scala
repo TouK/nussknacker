@@ -49,11 +49,17 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
 }
 
-case class DefaultAsyncExecutionConfigPreparer(bufferSize: Int, parallelismMultiplier: Int) extends AsyncExecutionContextPreparer with LazyLogging {
+case class DefaultAsyncExecutionConfigPreparer(bufferSize: Int,
+                                               workers: Option[Int],
+                                               @Deprecated parallelismMultiplier: Option[Int]) extends AsyncExecutionContextPreparer with LazyLogging {
 
   def prepareExecutionContext(processId: String, parallelism: Int) : ExecutionContext = {
-    logger.info(s"Creating asyncExecutor for $processId, parallelism: $parallelism, multiplier: $parallelismMultiplier")
-    DefaultAsyncExecutionConfigPreparer.getExecutionContext(parallelism * parallelismMultiplier, processId)
+    logger.info(s"Creating asyncExecutor for $processId, parallelism: $parallelism, workers: $workers, multiplier: $parallelismMultiplier")
+    parallelismMultiplier.foreach(_ => logger.warn("Parallelism multiplier is deprecated. Use workers parameter"))
+    val executionContextWorkers = workers
+      .orElse(parallelismMultiplier.map(_ * parallelism))
+      .getOrElse(throw new IllegalStateException("Neither workers nor parallelismMultiplier was defined"))
+    DefaultAsyncExecutionConfigPreparer.getExecutionContext(executionContextWorkers, processId)
   }
 
   def close() : Unit = {

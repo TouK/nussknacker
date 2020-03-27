@@ -9,10 +9,12 @@ import com.typesafe.config.ConfigValueFactory
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.{FlinkStateStatus, FlinkStreamingProcessManagerProvider}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -233,18 +235,18 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   }
 
   test("extract process definition") {
-    val definition = FlinkStreamingProcessManagerProvider.defaultTypeConfig(config).toModelData.processDefinition
+    val definition = processingTypeConfig.toModelData.processDefinition
     definition.services should contain key "accountService"
   }
 
   test("dispatch process signal to kafka") {
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = config
-      .withValue("processConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
-    val flinkModelData = FlinkStreamingProcessManagerProvider.defaultTypeConfig(configWithSignals).toModelData
+      .withValue("modelConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
+    val flinkModelData = ProcessingTypeConfig.read(configWithSignals).toModelData
 
     val consumer = kafkaClient.createConsumer()
-    flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
+    SignalDispatcher.dispatchSignal(flinkModelData)("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
     val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
     val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
@@ -266,7 +268,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     eventually {
 
       val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
-      logger.debug(s"Waiting for deploy: ${process.id}, ${jobStatus}")
+      logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
 
       jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
       jobStatus.map(_.status.isRunning) shouldBe Some(true)
@@ -281,7 +283,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
         .futureValue
         .filter(_.status.isRunning)
 
-      logger.debug(s"waiting for jobs: ${processId}, ${runningJobs}")
+      logger.debug(s"waiting for jobs: $processId, $runningJobs")
       if (runningJobs.nonEmpty) {
         throw new IllegalStateException("Job still exists")
       }

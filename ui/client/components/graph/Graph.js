@@ -87,9 +87,9 @@ class Graph extends React.Component {
     }
   }
 
-    componentWillUnmount() {
-        _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
-    }
+  componentWillUnmount() {
+    _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
+  }
 
   componentWillUpdate(nextProps, nextState) {
     const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
@@ -272,8 +272,7 @@ class Graph extends React.Component {
 
     const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups).map(expandedGroup => ({
       group: expandedGroup,
-      rect: EspNode.boundingRect(nodes, expandedGroup, layout,
-        NodeUtils.createGroupNode(nodesWithGroups, expandedGroup)),
+      rect: EspNode.boundingRect(nodes, expandedGroup, layout, NodeUtils.createGroupNode(nodesWithGroups, expandedGroup)),
     }))
 
     t = this.time(t, "bounding")
@@ -363,9 +362,8 @@ class Graph extends React.Component {
     const invalidNodeIds = _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes)
     const selectedNodeIds = selectionState || []
 
-    invalidNodeIds.forEach(id =>
-      selectedNodeIds.includes(id) ?
-        this.highlightNode(id, "node-focused-with-validation-error") : this.highlightNode(id, "node-validation-error"));
+    invalidNodeIds.forEach(id => selectedNodeIds.includes(id) ?
+      this.highlightNode(id, "node-focused-with-validation-error") : this.highlightNode(id, "node-validation-error"));
 
     (groupingState || []).forEach(id => this.highlightNode(id, "node-grouping"))
     selectedNodeIds.forEach(id => {

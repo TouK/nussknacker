@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.integration
 
+import java.io.File
 import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
@@ -9,50 +10,74 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
+import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryValueValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.definition.additionalproperty.UiAdditionalPropertyConfig
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 
 import scala.concurrent.duration._
+import scala.util.Properties
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
+
+  import io.circe.syntax._
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val mainRoute = NussknackerApp.initializeRoute(ConfigWithScalaVersion.config)
+  private val (mainRoute, _) = NussknackerApp.initializeRoute(ConfigWithScalaVersion.config)
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(1.minute)
 
+  //@see DevProcessConfigCreator.DynamicService, TODO: figure out how to make reload test more robust...
+  //currently we delete file in beforeAll, because it's used *also* in initialization...
+  val dynamicServiceFile = new File(Properties.tmpDir, "nk-dynamic-params.lst")
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    dynamicServiceFile.delete()
+  }
+
+  override def afterAll(): Unit = {
+    dynamicServiceFile.delete()
+    super.afterAll()
+  }
+
+
   test("saves, updates and retrieves sample process") {
 
     val processId = UUID.randomUUID().toString
-    val endpoint = s"/api/processes/$processId"
 
     val process = EspProcessBuilder
       .id(processId)
       .exceptionHandler()
       .source("source", "csv-source").processorEnd("end", "monitor")
 
-    saveProcess(endpoint, process)
+    saveProcess(process)
   }
 
   test("initializes custom processes") {
@@ -61,7 +86,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
-  test("ensure config is properly parsed") {
+  test("ensure nodes config is properly parsed") {
     Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("nodesConfig").focus.get
       val settings = Decoder[Map[String, SingleNodeConfig]].decodeJson(settingsJson).right.get
@@ -71,7 +96,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "filter" -> SingleNodeConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None),
         "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
         "enricher" -> SingleNodeConfig(
-          Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None))),
+          Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
           Some("Filter.svg"),
           //docs url comes from reference.conf in managementSample
           Some("https://touk.github.io/nussknacker/enricher"),
@@ -79,9 +104,9 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         ),
         "multipleParamsService" -> SingleNodeConfig(
           Some(Map(
-            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None),
-            "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None)
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None, None),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
+            "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None, None)
           )),
           None,
           None,
@@ -90,7 +115,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None),
         "sub1" -> SingleNodeConfig(
           Some(Map(
-            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None)
+            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
           )),
           None,
           None,
@@ -98,8 +123,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         ),
         "optionalTypesService" -> SingleNodeConfig(
           Some(Map(
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty)),
-            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryValueValidator)))
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
+            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
           )),
           None,
           None,
@@ -113,6 +138,53 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
+  test("ensure additional properties config is properly applied") {
+    Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      val settingsJson = responseAs[Json].hcursor.downField("additionalPropertiesConfig").focus.get
+      val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
+
+      val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).right.get
+
+      val underTest = Map(
+        "stringRequiredProperty" -> new UiAdditionalPropertyConfig(
+          Some("default"),
+          StringParameterEditor,
+          List(MandatoryParameterValidator),
+          Some("label")
+        ),
+        "intOptionalProperty" -> new UiAdditionalPropertyConfig(
+          None,
+          StringParameterEditor,
+          List(LiteralParameterValidator.integerValidator),
+          None
+        ),
+        "fixedValueOptionalProperty" -> new UiAdditionalPropertyConfig(
+          None,
+          FixedValuesParameterEditor(fixedPossibleValues),
+          List(FixedValuesValidator(fixedPossibleValues)),
+          None
+        )
+      )
+
+      settings shouldBe underTest
+    }
+  }
+
+  test("validate process additional properties") {
+    Post(
+      "/api/processValidation",
+      HttpEntity(ContentTypes.`application/json`, TestFactory.processWithInvalidAdditionalProperties.asJson.spaces2)
+    ) ~> addCredentials(credentials) ~> mainRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val entity = responseAs[String]
+
+      entity should include("Configured property stringRequiredProperty (label) is missing")
+      entity should include("This field value has to be an integer number")
+      entity should include("Unknown property unknown")
+      entity should include("Property fixedValueOptionalProperty has invalid value")
+    }
+  }
+
   test("be able to work with subprocess with custom class inputs") {
     val processId = UUID.randomUUID().toString
     val endpoint = s"/api/processes/$processId"
@@ -121,7 +193,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       id = processId,
       properties = ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), isSubprocess = true, subprocessVersions = Map()),
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
-        SubprocessOutputDefinition("output1", "out1", List.empty)),
+        SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
       processingType = TestProcessingTypes.Streaming
     )
@@ -147,7 +219,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   test("should test process with complexReturnObjectService") {
     val processId = "complexObjectProcess" + UUID.randomUUID().toString
-    val endpoint = s"/api/processes/$processId"
 
     val process = EspProcessBuilder
       .id(processId)
@@ -156,7 +227,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .enricher("enricher", "out", "complexReturnObjectService")
       .sink("end", "#input", "sendSms")
 
-    saveProcess(endpoint, process)
+    saveProcess(process)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
@@ -164,15 +235,102 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
-  private def saveProcess(endpoint: String, process: EspProcess) = {
-    Post(s"$endpoint/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-      status shouldEqual StatusCodes.Created
-      Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+  test("should reload ConfigCreator") {
+
+    def generationTime: Option[String] = {
+      Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
-        Get(endpoint) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-          status shouldEqual StatusCodes.OK
-        }
+        responseAs[Json].hcursor
+          .downField("processingType")
+          .downField("streaming")
+          .downField("generation-time")
+          .focus.flatMap(_.asString)
       }
+    }
+
+    def processWithService(params: (String, Expression)*): EspProcess = EspProcessBuilder
+      .id("test")
+      .additionalFields(properties = Map("stringRequiredProperty" -> "someNotEmptyString"))
+      .exceptionHandlerNoParams()
+      .source("start", "csv-source")
+      .processorEnd("end", "dynamicService", params:_*)
+
+    def firstMockedResult(result: Json): Option[String] = result.hcursor
+      .downField("results")
+      .downField("mockedResults")
+      .downField("end")
+      .downArray.first
+      .downField("value")
+      .downField("pretty").focus
+      .flatMap(_.asString)
+
+    def dynamicServiceParameters: Option[List[String]] = {
+      Get("/api/processDefinitionData/services") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+        status shouldEqual StatusCodes.OK
+        val parameters = responseAs[Json].hcursor
+          .downField("streaming")
+          .downField("dynamicService")
+          .downField("parameters")
+          .focus.flatMap(_.asArray)
+        parameters.map(_.flatMap(_.asObject).flatMap(_.apply("name")).flatMap(_.asString).toList)
+      }
+    }
+    val dynamicServiceParametersBeforeReload = dynamicServiceParameters
+    //we check that buildInfo does not change
+    val beforeReload = generationTime
+    val beforeReload2 = generationTime
+    beforeReload shouldBe beforeReload2
+    //process without errors - no parameter required
+    saveProcess(processWithService()).errors shouldBe ValidationErrors.success
+    firstMockedResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
+
+
+    //we generate random parameter
+    val parameterUUID = UUID.randomUUID().toString
+    FileUtils.writeStringToFile(dynamicServiceFile, parameterUUID)
+
+    dynamicServiceParametersBeforeReload.exists(_.contains(parameterUUID)) shouldBe false
+    dynamicServiceParameters shouldBe dynamicServiceParametersBeforeReload
+    //service still does not accept parameter
+    updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors(Map("end" -> List(
+      PrettyValidationErrors.formatErrorMessage(RedundantParameters(Set(parameterUUID), "end"))
+    )), List.empty, List.empty)
+
+    Post("/api/app/processingtype/reload") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.NoContent
+    }
+
+    val afterReload =  generationTime
+    beforeReload should not be afterReload
+    //now parameter is known and required
+    dynamicServiceParameters shouldBe Some(List(parameterUUID))
+    updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors.success
+    firstMockedResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
+
+  }
+
+  private def saveProcess(process: EspProcess): ValidationResult = {
+    Post(s"/api/processes/${process.id}/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.Created
+      updateProcess(process)
+    }
+  }
+
+  private def updateProcess(process: EspProcess): ValidationResult = {
+    val processId = process.id
+    Put(s"/api/processes/$processId", TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      responseAs[ValidationResult]
+    }
+  }
+
+  private def testProcess(process: EspProcess, data: String): Json = {
+    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process)
+      , TestProcessingTypes.Streaming)
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
+    Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {
+      status shouldEqual StatusCodes.OK
+      responseAs[Json]
     }
   }
 

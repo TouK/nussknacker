@@ -1,0 +1,21 @@
+package pl.touk.nussknacker.engine.management.sample.service
+
+import java.time.LocalDateTime
+import java.util.Optional
+
+import javax.annotation.Nullable
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
+
+import scala.concurrent.Future
+
+class OptionalTypesService extends Service with Serializable {
+  @MethodToInvoke
+  def invoke(@ParamName("scalaOptionParam") scalaOptionParam: Option[Int],
+             @ParamName("javaOptionalParam") javaOptionalParam: Optional[Int],
+             @ParamName("nullableParam") @Nullable nullableParam: Int,
+             @ParamName("dateTimeParam") @Nullable dateTimeParam: LocalDateTime,
+             @ParamName("overriddenByDevConfigParam") overriddenByDevConfigParam: Option[String],
+             @ParamName("overriddenByFileConfigParam") overriddenByFileConfigParam: Option[String]): Future[Unit] = {
+    ???
+  }
+}

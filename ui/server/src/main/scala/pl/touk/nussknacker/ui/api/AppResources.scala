@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -22,8 +23,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppResources(config: Config,
-                   typeToConfig: Map[ProcessingType, ProcessingTypeData],
-                   modelData: Map[ProcessingType, ModelData],
+                   processingTypeDataReload: ProcessingTypeDataReload,
+                   modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
@@ -35,7 +36,7 @@ class AppResources(config: Config,
       get {
         complete {
           val globalBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map()).mapValues(_.asJson)
-          val modelDataInfo = modelData.map {
+          val modelDataInfo = modelData.all.map {
             case (k,v) => (k.toString, v.configCreator.buildInfo())
           }.asJson
           (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
@@ -80,7 +81,7 @@ class AppResources(config: Config,
       } ~ path("unusedComponents")  {
         get {
           complete {
-            val definition = modelData.values.map(_.processDefinition).toList
+            val definition = modelData.all.values.map(_.processDefinition).toList
             processRepository.fetchAllProcessesDetails[DisplayableProcess]().map { processes =>
               ProcessObjectsFinder.findUnusedComponents(processes, definition)
             }
@@ -92,6 +93,17 @@ class AppResources(config: Config,
           get {
             complete {
               io.circe.parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
+            }
+          }
+        }
+      } ~ pathPrefix("processingtype" / "reload") {
+        authorize(user.isAdmin) {
+          post {
+            pathEnd {
+              complete {
+                processingTypeDataReload.reloadAll()
+                HttpResponse(StatusCodes.NoContent)
+              }
             }
           }
         }

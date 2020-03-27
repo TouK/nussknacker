@@ -25,6 +25,35 @@ if (!isProd) {
   ]
 }
 
+const cssLoaders = [
+  "style-loader",
+  {
+    loader: "css-loader",
+    options: {
+      modules: {
+        mode: "global",
+        localIdentName: "[name]--[local]--[hash:base64:5]",
+      },
+      localsConvention: "camelCase",
+    },
+  },
+  {
+    loader: "postcss-loader",
+    options: {
+      plugins: [
+        require("autoprefixer"),
+      ],
+    },
+  },
+]
+
+const fileLoader = {
+  loader: "file-loader",
+  options: {
+    name: "assets/images/[name][hash].[ext]",
+  },
+}
+
 module.exports = {
   mode: NODE_ENV,
   optimization: {
@@ -131,32 +160,65 @@ module.exports = {
         test: /\.[tj]sx?$/,
         use: ["babel-loader"],
         exclude: /node_modules/,
-        include: __dirname,
       },
       {
         test: /\.css?$/,
-        loaders: ["style-loader", "css-loader"],
-        include: __dirname,
+        use: cssLoaders,
       },
       {
         test: /\.styl$/,
-        loaders: ["style-loader", "css-loader", "stylus-loader"],
-        include: __dirname,
+        use: [...cssLoaders, "stylus-loader"],
       },
       {
         test: /\.less$/,
-        loaders: ["style-loader", "css-loader", "less-loader"],
-        include: __dirname,
+        use: [...cssLoaders, "less-loader"],
       },
       {
         test: /\.(eot|ttf|woff|woff2)$/,
-        loader: "file-loader?name=assets/fonts/[name].[ext]",
-        include: __dirname,
+        use: [fileLoader],
       },
       {
-        test: /\.(svg|png|jpg)$/,
-        loader: "file-loader?name=assets/images/[name].[ext]",
-        include: __dirname,
+        test: /\.(png|jpg)$/,
+        use: [fileLoader],
+      },
+
+      {
+        test: /\.svg$/,
+        enforce: "pre",
+        use: [
+          "svg-transform-loader",
+          {
+            loader: "svgo-loader",
+            options: {
+              externalConfig: ".svgo.yml",
+            },
+          },
+        ],
+      },
+
+      {
+        test: /\.svg$/,
+        oneOf: [
+          {
+            exclude: /node_modules/,
+            issuer: {
+              test: /\.[tj]sx?$/,
+            },
+            use: [
+              "babel-loader",
+              {
+                loader: "@svgr/webpack",
+                options: {
+                  svgo: true,
+                },
+              },
+              fileLoader,
+            ],
+          },
+          {
+            use: [fileLoader],
+          },
+        ],
       },
     ],
   },

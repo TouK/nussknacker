@@ -1,23 +1,29 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import java.util.concurrent.atomic.{AtomicReference}
+import java.util.concurrent.atomic.AtomicReference
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkStreamingProcessManagerProvider}
-import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.management.FlinkProcessManager
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
+import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,29 +45,47 @@ object TestFactory extends TestPermissions{
   val sampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
 
+  val possibleValues = List(FixedExpressionValue("a", "a"))
   val processValidation = new ProcessValidation(
-    Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-    Map(TestProcessingTypes.Streaming -> Map()),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
     sampleResolver,
-    Map.empty
+    emptyProcessingTypeDataProvider
   )
-  val processResolving = new UIProcessResolving(processValidation, Map.empty)
+  val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
   val posting = new ProcessPosting
-  val buildInfo = Map("engine-version" -> "0.1")
+  val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
+
+  val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
+    id = "fooProcess",
+    properties = ProcessProperties(StreamMetaData(
+      Some(2)),
+      ExceptionHandlerRef(List.empty),
+      isSubprocess = false,
+      Some(ProcessAdditionalFields(Some("process description"), Set.empty, Map(
+        "intOptionalProperty" -> "text",
+        "unknown" -> "x",
+        "fixedValueOptionalProperty" -> "wrong fixed value"
+      ))),
+      subprocessVersions = Map.empty),
+    nodes = List.empty,
+    edges = List.empty,
+    processingType = TestProcessingTypes.Streaming
+  )
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DbWriteProcessRepository[Future](dbs, modelVersions.map(TestProcessingTypes.Streaming -> _).toMap)
+    new DbWriteProcessRepository[Future](dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
         with WriteProcessRepository with BasicRepository
 
-  def newSubprocessRepository(db: DbConfig) = {
+  def newSubprocessRepository(db: DbConfig): DbSubprocessRepository = {
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
   }
 
   def newDeploymentProcessRepository(db: DbConfig) = new ProcessActionRepository(db,
-    Map(TestProcessingTypes.Streaming -> buildInfo))
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
@@ -85,12 +109,16 @@ object TestFactory extends TestPermissions{
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
+  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*) = new MapBasedProcessingTypeDataProvider[T](Map(data: _*))
+
+  def emptyProcessingTypeDataProvider = new MapBasedProcessingTypeDataProvider[Nothing](Map.empty)
+
   object MockProcessManager {
     val savepointPath = "savepoints/123-savepoint"
     val stopSavepointPath = "savepoints/246-stop-savepoint"
   }
 
-  class MockProcessManager extends FlinkProcessManager(FlinkStreamingProcessManagerProvider.defaultModelData(ConfigWithScalaVersion.config), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
+  class MockProcessManager extends FlinkProcessManager(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData, shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     import MockProcessManager._
 
@@ -106,7 +134,7 @@ object TestFactory extends TestPermissions{
     override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: User): Future[Unit] =
       deployResult
 
-    private var deployResult: Future[Unit] = Future.successful()
+    private var deployResult: Future[Unit] = Future.successful(())
 
     private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(SimpleStateStatus.Running))
 
@@ -117,7 +145,7 @@ object TestFactory extends TestPermissions{
         action
       } finally {
         promise.complete(Try(Unit))
-        deployResult = Future.successful()
+        deployResult = Future.successful(())
       }
     }
 
@@ -126,7 +154,7 @@ object TestFactory extends TestPermissions{
       try {
         action
       } finally {
-        deployResult = Future.successful()
+        deployResult = Future.successful(())
       }
     }
 
@@ -174,6 +202,9 @@ object TestFactory extends TestPermissions{
     override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
+
+    override def close(): Unit = {}
+
   }
 
   class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {

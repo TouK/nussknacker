@@ -7,7 +7,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.definition.FixedValuesValidator
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestProcessingTypes}
@@ -48,13 +48,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("simpleTypesService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "intParam")
-        .downField("editor")
-        .focus.get
+      val editor = getParamEditor("simpleTypesService", "rawIntParam")
 
       editor shouldBe Json.obj("type" -> Json.fromString("RawParameterEditor"))
     }
@@ -64,13 +58,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("simpleTypesService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "booleanParam")
-        .downField("editor")
-        .focus.get
+      val editor: Json = getParamEditor("simpleTypesService", "booleanParam")
 
       editor shouldBe Json.obj("type" -> Json.fromString("BoolParameterEditor"))
     }
@@ -80,13 +68,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("simpleTypesService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "stringParam")
-        .downField("editor")
-        .focus.get
+      val editor = getParamEditor("simpleTypesService", "DualParam")
 
       editor shouldBe Json.obj(
         "simpleEditor" -> Json.obj("type" -> Json.fromString("StringParameterEditor")),
@@ -100,14 +82,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("enricher")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "param")
-        .downField("editor")
-        .focus.get
-      (List(FixedExpressionValue("test", "test")))
+      val editor: Json = getParamEditor("enricher", "param")
 
       editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
     }
@@ -142,13 +117,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("multipleParamsService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "foo")
-        .downField("editor")
-        .focus.get
+      val editor: Json = getParamEditor("multipleParamsService", "foo")
 
       editor shouldBe Json.obj(
         "type" -> Json.fromString("FixedValuesParameterEditor"),
@@ -166,13 +135,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("multipleParamsService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "bar")
-        .downField("editor")
-        .focus.get
+      val editor: Json = getParamEditor("multipleParamsService", "bar")
 
       editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
     }
@@ -182,13 +145,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("multipleParamsService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "baz")
-        .downField("editor")
-        .focus.get
+      val editor: Json = getParamEditor("multipleParamsService", "baz")
 
       editor shouldBe Json.obj(
         "type" -> Json.fromString("FixedValuesParameterEditor"),
@@ -210,13 +167,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val editor: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("echoEnumService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "id")
-        .downField("editor")
-        .focus.get
+      val editor: Json = getParamEditor("echoEnumService", "id")
 
       editor shouldBe Json.obj(
         "type" -> Json.fromString("FixedValuesParameterEditor"),
@@ -238,14 +189,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val params = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("multipleParamsService")
-        .downField("parameters")
-      val editor: Json = params
-        .downAt(_.hcursor.get[String]("name").right.value == "quax")
-        .downField("editor")
-        .focus.get
+      val editor: Json = getParamEditor("multipleParamsService", "quax")
 
       editor shouldBe Json.obj(
         "simpleEditor" -> Json.obj("type" -> Json.fromString("StringParameterEditor")),
@@ -255,19 +199,58 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
+  it("should return info about editor based on annotation for Duration param") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = getParamEditor("datesTypesService", "durationParam")
+
+      editor shouldBe Json.obj(
+        "simpleEditor" -> Json.obj(
+          "type" -> Json.fromString("DurationParameterEditor"),
+          "timeRangeComponents" -> Json.arr(Json.fromString("DAYS"), Json.fromString("HOURS"))
+        ),
+        "type" -> Json.fromString("DualParameterEditor"),
+        "defaultMode" -> Json.fromString("SIMPLE")
+      )
+    }
+  }
+
+  it("should return info about editor based on annotation for Period param") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = getParamEditor("datesTypesService","periodParam" )
+
+      editor shouldBe Json.obj(
+        "simpleEditor" -> Json.obj(
+          "type" -> Json.fromString("PeriodParameterEditor"),
+          "timeRangeComponents" -> Json.arr(Json.fromString("YEARS"), Json.fromString("MONTHS"))
+        ),
+        "type" -> Json.fromString("DualParameterEditor"),
+        "defaultMode" -> Json.fromString("SIMPLE")
+      )
+    }
+  }
+
+  it("should return info about editor based on annotation for Cron param") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val editor: Json = getParamEditor("datesTypesService","cronScheduleParam" )
+
+      editor shouldBe Json.obj("type" -> Json.fromString("CronParameterEditor"))
+    }
+  }
+
   it("return mandatory value validator by default") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val validator: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("datesTypesService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "periodParam")
-        .downField("validators")
-        .focus.get
+      val validator: Json = getParamValidator("datesTypesService", "periodParam")
 
-      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
+
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryParameterValidator")))
     }
   }
 
@@ -275,13 +258,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val validator: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("optionalTypesService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "nullableParam")
-        .downField("validators")
-        .focus.get
+      val validator: Json = getParamValidator("optionalTypesService", "nullableParam")
 
       validator shouldBe Json.arr()
     }
@@ -291,15 +268,9 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val validator: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("optionalTypesService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "overriddenByDevConfigParam")
-        .downField("validators")
-        .focus.get
+      val validator: Json = getParamValidator("optionalTypesService", "overriddenByDevConfigParam")
 
-      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryValueValidator")))
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryParameterValidator")))
     }
   }
 
@@ -307,15 +278,107 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
 
-      val validator: Json = responseAs[Json].hcursor
-        .downField("streaming")
-        .downField("optionalTypesService")
-        .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "overriddenByFileConfigParam")
-        .downField("validators")
-        .focus.get
+      val validator: Json = getParamValidator("optionalTypesService", "overriddenByFileConfigParam")
 
       validator shouldBe Json.arr()
     }
+  }
+
+  it("return info about validator based on param fixed value editor for node parameters") {
+    getProcessDefinitionServices() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val validator: Json = getParamValidator("paramService", "param")
+
+      validator shouldBe Json.arr(
+        Json.obj("type" -> Json.fromString("MandatoryParameterValidator")),
+        Json.obj(
+          "possibleValues" -> Json.arr(
+            Json.obj(
+              "expression" -> Json.fromString("'a'"),
+              "label" -> Json.fromString("a")
+            ),
+            Json.obj(
+              "expression" -> Json.fromString("'b'"),
+              "label" -> Json.fromString("b")
+            ),
+            Json.obj(
+              "expression" -> Json.fromString("'c'"),
+              "label" -> Json.fromString("c")
+            )
+          ),
+          "type" -> Json.fromString("FixedValuesValidator")
+      ))
+    }
+  }
+
+  it("return info about validator based on param fixed value editor for additional properties") {
+    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val validators: Json = responseAs[Json].hcursor
+        .downField("additionalPropertiesConfig")
+        .downField("fixedValueOptionalProperty")
+        .downField("validators")
+        .focus.get
+
+      validators shouldBe
+        Json.arr(
+          Json.obj(
+            "possibleValues" -> Json.arr(
+              Json.obj(
+                "expression" -> Json.fromString("1"),
+                "label" -> Json.fromString("1")
+              ),
+              Json.obj(
+                "expression" -> Json.fromString("2"),
+                "label" -> Json.fromString("2")
+              )
+            ),
+            "type" -> Json.fromString("FixedValuesValidator")
+          )
+        )
+    }
+  }
+
+  it("return default value based on editor possible values") {
+    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val defaultExpression: Json = responseAs[Json].hcursor
+        .downField("nodesToAdd")
+        .downAt(_.hcursor.get[String]("name").right.value == "enrichers")
+        .downField("possibleNodes")
+        .downAt(_.hcursor.get[String]("label").right.value == "echoEnumService")
+        .downField("node")
+        .downField("service")
+        .downField("parameters")
+        .downAt(_.hcursor.get[String]("name").right.value == "id")
+        .downField("expression")
+        .downField("expression")
+        .focus.get
+
+      defaultExpression shouldBe Json.fromString("T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE")
+    }
+  }
+
+  private def getParamEditor(serviceName: String, paramName: String) = {
+    responseAs[Json].hcursor
+      .downField("streaming")
+      .downField(serviceName)
+      .downField("parameters")
+      .downAt(_.hcursor.get[String]("name").right.value == paramName)
+      .downField("editor")
+      .focus.get
+  }
+
+  private def getParamValidator(serviceName: String, paramName: String) = {
+    responseAs[Json].hcursor
+      .downField("streaming")
+      .downField(serviceName)
+      .downField("parameters")
+      .downAt(_.hcursor.get[String]("name").right.value == paramName)
+      .downField("validators")
+      .focus.get
   }
 }

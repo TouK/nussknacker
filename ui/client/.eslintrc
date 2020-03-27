@@ -2,7 +2,8 @@
   "env": {
     "browser": true,
     "es6": true,
-    "node": true
+    "node": true,
+    "jasmine": true
   },
   "parser": "babel-eslint",
   "extends": [
@@ -177,6 +178,12 @@
       "error",
       "never"
     ],
+    "import/no-unresolved": [
+      "error",
+      {
+        "ignore": ["!raw-loader!"]
+      }
+    ],
     "i18next/no-literal-string": [
       "error",
       {
@@ -205,6 +212,7 @@
           "describe"
         ],
         "ignoreAttribute": [
+          "onHandleColor",
           "svgFile",
           "bounds",
           "handle",

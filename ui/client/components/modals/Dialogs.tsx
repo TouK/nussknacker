@@ -10,15 +10,15 @@ import SaveProcessDialog from "./SaveProcessDialog"
 export class AllDialogs extends React.Component {
   render() {
     return (
-        <div>
-          <ConfirmDialog/>
-          <ProcessActionDialog/>
-          <InfoModal/>
-          <SaveProcessDialog/>
-          <GenerateTestDataDialog/>
-          <CalculateCountsDialog/>
-          <CompareVersionsDialog/>
-        </div>
+      <div>
+        <ConfirmDialog/>
+        <ProcessActionDialog/>
+        <InfoModal/>
+        <SaveProcessDialog/>
+        <GenerateTestDataDialog/>
+        <CalculateCountsDialog/>
+        <CompareVersionsDialog/>
+      </div>
     )
   }
 }

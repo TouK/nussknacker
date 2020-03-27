@@ -5,7 +5,7 @@ import {ThunkAction} from "../../reduxTypes"
 import {reportEvent} from "../reportEvent"
 
 export type Layout = $TodoType
-export type GraphLayoutFunction = $TodoType
+export type GraphLayoutFunction = () => void
 export type BusinessView = $TodoType
 
 export type LayoutChangedAction = { layout: Layout, type: "LAYOUT_CHANGED" }

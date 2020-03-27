@@ -1,11 +1,14 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -13,15 +16,27 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport {
 
-  val route = withPermissions(new ValidationResources(processResolving), testPermissionRead)
+  val processValidation = new ProcessValidation(
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
+      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
+      "fixedValueOptionalProperty" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
+      "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
+    )),
+    sampleResolver,
+    emptyProcessingTypeDataProvider
+  )
+  val route: Route = withPermissions(new ValidationResources(new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)), testPermissionRead)
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -30,6 +45,41 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include ("MissingSourceFactory")
+    }
+  }
+
+  it should "find errors in process with Mandatory parameters" in {
+    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithEmptyMandatoryParameter)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include ("This field is mandatory and can not be empty")
+    }
+  }
+
+  it should "find errors in process with NotBlank parameters" in {
+    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithBlankParameter)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include ("This field value is required and can not be blank")
+    }
+  }
+
+  it should "find errors in process properties" in {
+    Post("/processValidation", posting.toEntity(TestFactory.processWithInvalidAdditionalProperties)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include ("Configured property requiredStringProperty (label) is missing")
+      entity should include ("Property fixedValueOptionalProperty has invalid value")
+      entity should include ("Unknown property unknown")
+      entity should include ("This field value has to be an integer number")
+    }
+  }
+
+  it should "find errors in process with wrong fixed expression value" in {
+    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithWrongFixedExpressionValue)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include("Property expression has invalid value")
     }
   }
 

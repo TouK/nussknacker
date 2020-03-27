@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.graph.node.asProcessor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import shapeless.Typeable._
 import shapeless.syntax.typeable.typeableOps
@@ -14,7 +15,7 @@ import shapeless.syntax.typeable.typeableOps
 class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with PatientScalaFutures with Matchers with TestPermissions{
 
   private def migrator(migrations: Int*) =
-    new ProcessModelMigrator(Map(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*)))
+    new ProcessModelMigrator(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*)))
 
   val processId = "fooProcess"
 

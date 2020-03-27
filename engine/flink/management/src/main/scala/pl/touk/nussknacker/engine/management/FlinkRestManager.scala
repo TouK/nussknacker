@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
@@ -12,14 +12,15 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import sttp.client._
 import sttp.client.circe._
 import sttp.model.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 
 class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName: String)
@@ -103,8 +104,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               startTime = Some(duplicates.head.`start-time`),
               errors = List(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
             ))
-          case one::_ =>
-            val stateStatus = one.state match {
+          case jobs =>
+            val job = findRunningOrFirst(jobs)
+            val stateStatus = job.state match {
               case JobStatus.RUNNING => FlinkStateStatus.Running
               case JobStatus.FINISHED => FlinkStateStatus.Finished
               case JobStatus.RESTARTING => FlinkStateStatus.Restarting
@@ -112,20 +114,20 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
               case _ => FlinkStateStatus.Failed
             }
-            checkVersion(one.jid, name).map { version =>
+            withVersion(job.jid, name).map { version =>
               //TODO: return error when there's no correct version in process
               //currently we're rather lax on this, so that this change is backward-compatible
               //we log debug here for now, since it's invoked v. often
               if (version.isEmpty) {
-                logger.debug(s"No correct version in deployed process: ${one.name}")
+                logger.debug(s"No correct version in deployed process: ${job.name}")
               }
 
               Some(ProcessState(
-                DeploymentId(one.jid),
+                DeploymentId(job.jid),
                 stateStatus,
                 version = version,
                 definitionManager = processStateDefinitionManager,
-                startTime = Some(one.`start-time`),
+                startTime = Some(job.`start-time`),
                 attributes = Option.empty,
                 errors = List.empty
               ))
@@ -134,8 +136,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       }
   }
 
+  private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(_.state == JobStatus.RUNNING).getOrElse(jobOverviews.head)
+
   //TODO: cache by jobId?
-  private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
+  private def withVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
     basicRequest
       .get(flinkUrl.path("jobs", jobId, "config"))
       .response(asJson[JobConfig])
@@ -243,6 +247,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     case Right(_) => Future.successful(())
     case Left(error) => Future.failed(new RuntimeException(s"Request failed: $error, code: ${response.code}"))
   }
+
+  override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
+
 }
 
 object flinkRestModel {
@@ -252,8 +259,9 @@ object flinkRestModel {
   /*
   When #programArgsList is not set in request Flink warns that
   <pre>Configuring the job submission via query parameters is deprecated. Please migrate to submitting a JSON request instead.</pre>
+  But now we can't add #programArgsList support because of back compatibility of Flink 1.6..
    */
-  @JsonCodec(encodeOnly = true) case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean, programArgsList: List[String] = Nil)
+  @JsonCodec(encodeOnly = true) case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
 
   @JsonCodec(encodeOnly = true) case class SavepointTriggerRequest(`target-directory`: Option[String], `cancel-job`: Boolean)
 

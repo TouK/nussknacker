@@ -21,35 +21,36 @@ export default class Errors extends React.Component {
     )
   }
 
-  headerIcon = (errors) =>
-    _.isEmpty(errors.globalErrors) && _.isEmpty(errors.invalidNodes) && _.isEmpty(errors.processPropertiesErrors) ? null :
-      <HeaderIcon className={"icon"} icon={InlinedSvgs.tipsError}/>
+  headerIcon = (errors) => _.isEmpty(errors.globalErrors) && _.isEmpty(errors.invalidNodes) && _.isEmpty(errors.processPropertiesErrors) ? null :
+  <HeaderIcon className={"icon"} icon={InlinedSvgs.tipsError}/>
 
   errorTips = (errors) => {
     const globalErrors = errors.globalErrors
     const nodeErrors = errors.invalidNodes
     const propertiesErrors = errors.processPropertiesErrors
 
-    return _.isEmpty(nodeErrors) && _.isEmpty(propertiesErrors) && _.isEmpty(globalErrors) ? null :
+    return _.isEmpty(nodeErrors) && _.isEmpty(propertiesErrors) && _.isEmpty(globalErrors) ? null : (
       <div className={"node-error-section"}>
         <div>
           {this.globalErrorsTips(globalErrors)}
           {this.nodeErrorsTips(propertiesErrors, nodeErrors)}
         </div>
       </div>
-  }
+    )}
 
-  globalErrorsTips = (globalErrors) =>
+  globalErrorsTips = (globalErrors) => (
     <div>
       {
         globalErrors.map((error, idx) => this.globalError(error, null))
       }
     </div>
+  )
 
-  globalError = (error, suffix) =>
+  globalError = (error, suffix) => (
     <span key={uuid4()} title={error.description}>
-        {(suffix ? `${suffix  }: ` : "") + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
+      {(suffix ? `${suffix  }: ` : "") + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
     </span>
+  )
 
   nodeErrorsTips = (propertiesErrors, nodeErrors) => {
     const {showDetails, currentProcess} = this.props

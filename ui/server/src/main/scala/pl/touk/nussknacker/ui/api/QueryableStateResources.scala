@@ -7,16 +7,16 @@ import io.circe.Json
 import io.circe.parser.parse
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.QueryableStateName
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeData],
+class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                               val processRepository: FetchingProcessRepository[Future],
                               jobStatusService: JobStatusService,
                               val processAuthorizer:AuthorizeProcess)
@@ -27,7 +27,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
+  import pl.touk.nussknacker.engine.util.Implicits._
 
   def securedRoute(implicit user: LoggedUser): Route = {
 
@@ -52,7 +52,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
 
   private def prepareQueryableStates()(implicit user: LoggedUser): Future[Map[String, List[QueryableStateName]]] = {
     processRepository.fetchAllProcessesDetails[DisplayableProcess]().map { processList =>
-      ProcessObjectsFinder.findQueries(processList, typeToConfig.values.map(_.modelData.processDefinition))
+      ProcessObjectsFinder.findQueries(processList, typeToConfig.all.values.map(_.modelData.processDefinition))
     }
   }
 
@@ -75,7 +75,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
   }
 
   private def fetchState(processingType: String, jobId: String, queryName: String, key: Option[String]): Future[String] = {
-    typeToConfig(processingType).queryableClient match {
+    typeToConfig.forTypeUnsafe(processingType).queryableClient match {
       case None => Future.failed(new Exception(s"Queryable client not found for processing type $processingType"))
       case Some(queryableClient) =>
         key match {

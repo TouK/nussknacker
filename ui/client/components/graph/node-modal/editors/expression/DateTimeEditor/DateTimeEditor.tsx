@@ -1,23 +1,39 @@
-import {useTranslation} from "react-i18next"
 import i18next from "i18next"
 import {ExpressionObj} from "../types"
 import React from "react"
-import {DatepickerEditorProps, DatepickerEditor, JavaTimeTypes, isParseable} from "./DatepickerEditor"
+import {DatepickerEditor, DatepickerEditorProps} from "./DatepickerEditor"
 import {isEmpty} from "lodash"
+import {FormatterType, spelFormatters, typeFormatters} from "../Formatter"
+import moment from "moment"
 
-export function DateTimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
-  const {i18n} = useTranslation()
-  const dateFormat = i18n.t("editors.LocalDateTime.dateFormat", "DD-MM-YYYY")
-  const timeFormat = i18n.t("editors.LocalDateTime.timeFormat", "HH:mm")
-  return <DatepickerEditor {...props} dateFormat={dateFormat} timeFormat={timeFormat} expressionType={JavaTimeTypes.LOCAL_DATE_TIME}/>
+const dateFormat = "YYYY-MM-DD"
+const timeFormat = "HH:mm"
+const dateTimeFormat = `${dateFormat} ${timeFormat}`
+const isParseable = (expression: ExpressionObj): boolean => {
+  const date = spelFormatters[FormatterType.DateTime].decode(expression.expression)
+  return date && moment(date, dateTimeFormat).isValid()
 }
 
-DateTimeEditor.switchableToHint = i18next.t("editors.LocalDateTime.switchableToHint", "Switch to basic mode")
-DateTimeEditor.notSwitchableToHint = i18next.t(
-    "editors.LocalDateTime.notSwitchableToHint",
-    "Expression must be valid dateTime to switch to basic mode",
+export function DateTimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
+
+  const {formatter} = props
+  const dateFormatter = formatter == null ? typeFormatters[FormatterType.DateTime] : formatter
+
+  return (
+    <DatepickerEditor
+      {...props}
+      momentFormat={dateTimeFormat}
+      dateFormat={dateFormat}
+      timeFormat={timeFormat}
+      formatter={dateFormatter}
+    />
+  )
+}
+
+DateTimeEditor.switchableToHint = () => i18next.t("editors.LocalDateTime.switchableToHint", "Switch to basic mode")
+DateTimeEditor.notSwitchableToHint = () => i18next.t(
+  "editors.LocalDateTime.notSwitchableToHint",
+  "Expression must be valid dateTime to switch to basic mode"
 )
-DateTimeEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj, JavaTimeTypes.LOCAL_DATE_TIME) || isEmpty(
-    expressionObj.expression,
-)
+DateTimeEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression)
 

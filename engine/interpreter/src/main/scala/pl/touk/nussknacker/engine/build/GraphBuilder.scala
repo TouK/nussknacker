@@ -66,6 +66,10 @@ trait GraphBuilder[R] {
   def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R]  =
     build(node => creator(OneOutputSubsequentNode(CustomNode(id, Some(outputVar), customNodeRef, params.map(Parameter.tupled).toList), node)))
 
+  // outputVar must be provided always when parameter with @OutputVariableName annotation is used - look into comment in @OutputVariableName
+  def endingCustomNode(id: String, outputVar: Option[String], customNodeRef: String, params: (String, Expression)*): R  =
+    creator(EndingNode(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList)))
+  
   def customNodeNoOutput(id: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R]  =
     build(node => creator(OneOutputSubsequentNode(CustomNode(id, None, customNodeRef, params.map(Parameter.tupled).toList), node)))
 

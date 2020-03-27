@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.api.defaults.{NodeDefinition, ParameterDefaultValueDeterminer}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, SinkAdditionalData}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -15,6 +14,7 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
+import pl.touk.nussknacker.ui.definition.defaults.{ParameterDefaultValueDeterminer, UINodeDefinition}
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -27,28 +27,29 @@ import scala.collection.immutable.ListMap
 object DefinitionPreparer {
 
   def prepareNodesToAdd(user: LoggedUser,
-                        processDefinition: ProcessDefinition[ObjectDefinition],
+                        processDefinition: UIProcessDefinition,
                         isSubprocess: Boolean,
-                        subprocessInputs: Map[String, ObjectDefinition],
                         defaultsStrategy: ParameterDefaultValueDeterminer,
                         nodesConfig: Map[String, SingleNodeConfig],
                         nodeCategoryMapping: Map[String, Option[String]],
-                        typesForCategories: ProcessTypesForCategories
+                        typesForCategories: ProcessTypesForCategories,
+                        sinkAdditionalData: Map[String, SinkAdditionalData],
+                        customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData]
                        ): List[NodeGroup] = {
     val evaluator = new EvaluatedParameterPreparer(defaultsStrategy)
     val readCategories = typesForCategories.getAllCategories.filter(user.can(_, Read))
 
-    def filterCategories(objectDefinition: ObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
+    def filterCategories(objectDefinition: UIObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 
-    def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
-      evaluator.prepareEvaluatedParameter(NodeDefinition(id, objDefinition.parameters))
+    def objDefParams(id: String, objDefinition: UIObjectDefinition): List[Parameter] =
+      evaluator.prepareEvaluatedParameter(UINodeDefinition(id, objDefinition.parameters))
 
-    def objDefBranchParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
-      evaluator.prepareEvaluatedBranchParameter(NodeDefinition(id, objDefinition.parameters))
+    def objDefBranchParams(id: String, objDefinition: UIObjectDefinition): List[Parameter] =
+      evaluator.prepareEvaluatedBranchParameter(UINodeDefinition(id, objDefinition.parameters))
 
-    def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
+    def serviceRef(id: String, objDefinition: UIObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
-    val returnsUnit = ((_: String, objectDefinition: ObjectDefinition)
+    val returnsUnit = ((_: String, objectDefinition: UIObjectDefinition)
     => objectDefinition.hasNoReturn).tupled
 
     //TODO: make it possible to configure other defaults here.
@@ -75,25 +76,32 @@ object DefinitionPreparer {
     )
 
     val customTransformers = NodeGroup("custom",
-      processDefinition.customStreamTransformers.map {
+      processDefinition.customStreamTransformers.collect {
         // branchParameters = List.empty can be tricky here. We moved template for branch parameters to NodeToAdd because
         // branch parameters inside node.Join are branchId -> List[Parameter] and on node template level we don't know what
         // branches will be. After moving this parameters to BranchEnd it will disappear from here.
         // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
         // TODO: keep only custom node ids in nodesToAdd element and move templates to parameters definition API
-        case (id, (objDefinition, additionalData)) if additionalData.manyInputs => NodeToAdd("customNode", id,
-          node.Join("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition), List.empty),
-          filterCategories(objDefinition), objDefBranchParams(id, objDefinition))
-        case (id, (objDefinition, additionalData)) => NodeToAdd("customNode", id,
-          CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition)), filterCategories(objDefinition))
+        case (id, uiObjectDefinition) if customTransformerAdditionalData(id).manyInputs => NodeToAdd("customNode", id,
+          node.Join("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition), List.empty),
+          filterCategories(uiObjectDefinition), objDefBranchParams(id, uiObjectDefinition))
+        case (id, uiObjectDefinition) if !customTransformerAdditionalData(id).canBeEnding => NodeToAdd("customNode", id,
+          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
+      }.toList
+    )
+
+    val optionalEndingCustomTransformers = NodeGroup("optionalEndingCustom",
+      processDefinition.customStreamTransformers.collect {
+        case (id, uiObjectDefinition) if customTransformerAdditionalData(id).canBeEnding => NodeToAdd("customNode", id,
+          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
       }.toList
     )
 
     val sinks = NodeGroup("sinks",
       processDefinition.sinkFactories.map {
-        case (id, (objDefinition, SinkAdditionalData(requiresOutput))) => NodeToAdd("sink", id,
-          Sink("", SinkRef(id, objDefParams(id, objDefinition)),
-            if (requiresOutput) Some(Expression("spel", "#input")) else None), filterCategories(objDefinition)
+        case (id, uiObjectDefinition) => NodeToAdd("sink", id,
+          Sink("", SinkRef(id, objDefParams(id, uiObjectDefinition)),
+            if (sinkAdditionalData(id).requiresOutput) Some(Expression("spel", "#input")) else None), filterCategories(uiObjectDefinition)
         )
       }.toList)
 
@@ -116,9 +124,9 @@ object DefinitionPreparer {
     val subprocesses = if (!isSubprocess) {
       List(
         NodeGroup("subprocesses",
-          subprocessInputs.map {
+          processDefinition.subprocessInputs.map {
             case (id, definition) =>
-              val nodes = evaluator.prepareEvaluatedParameter(NodeDefinition(id, definition.parameters))
+              val nodes = evaluator.prepareEvaluatedParameter(UINodeDefinition(id, definition.parameters))
               NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
           }.toList))
     } else {
@@ -135,7 +143,7 @@ object DefinitionPreparer {
       List(inputs),
       List(base),
       List(enrichers, customTransformers) ++ subprocesses,
-      List(services, sinks))
+      List(services, optionalEndingCustomTransformers, sinks))
 
     virtualGroups
       .zipWithIndex

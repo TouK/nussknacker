@@ -20,7 +20,7 @@
     margin: 0 5px 0
 
 tipsPanel(bkrd-color, txt-color = undefined)
-  height: 105px
+  height: 75px
   background-color: bkrd-color
   padding: 10px
   font-weight: light
@@ -39,7 +39,11 @@ tipsPanel(bkrd-color, txt-color = undefined)
   tipsPanel(#4D4D4D)
 
 .tipsPanelHighlighted
-  tipsPanel(hrColor, black)
+  tipsPanel(alpha(errorColor,0.1), defaultTextColor)
+
+.tipsPanelHighlighted
+  outline: 2px solid errorColor
+  outline-offset -2px
 
 .node-error-section
   margin-bottom 5px

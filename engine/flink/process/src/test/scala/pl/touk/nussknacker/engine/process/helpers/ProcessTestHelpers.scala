@@ -94,7 +94,8 @@ object ProcessTestHelpers {
         "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions),
         "signalReader" -> WithCategories(CustomSignalReader),
         "transformWithTime" -> WithCategories(TransformerWithTime),
-        "transformWithNullable" -> WithCategories(TransformerWithNullableParam)
+        "transformWithNullable" -> WithCategories(TransformerWithNullableParam),
+        "optionalEndingCustom" -> WithCategories(OptionalEndingCustom)
       )
 
       override def listeners(config: Config) = List()

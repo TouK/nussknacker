@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper, LooseKeysDictTyper}
+import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -136,7 +136,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   override final val languageId: String = flavour.languageId
 
   override def parseWithoutContextValidation(original: String): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
-    if (StringUtils.isBlank(original)) {
+    if (shouldUseNullExpression(original)) {
       // This will work only with @Nullable for now because for Option/Optional is needed expectedType
       Valid(NullExpression(original, Unknown, flavour))
     } else {
@@ -147,7 +147,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   }
 
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
-    if (StringUtils.isBlank(original)) {
+    if (shouldUseNullExpression(original)) {
       Valid(TypedExpression(
         NullExpression(original, expectedType, flavour),
         expectedType,
@@ -162,6 +162,9 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
     }
   }
 
+  private def shouldUseNullExpression(original: String): Boolean
+    = flavour != Template && StringUtils.isBlank(original)
+
   private def baseParse(original: String): Validated[NonEmptyList[ExpressionParseError], Expression] = {
     Validated.catchNonFatal(parser.parseExpression(original, flavour.parserContext.orNull)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage)))
   }
@@ -175,9 +178,6 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
 
   def typingDictLabels =
     new SpelExpressionParser(parser, validator.withTyper(_.withDictTyper(new LabelsDictTyper(dictRegistry))), dictRegistry, enableSpelForceCompile, flavour, prepareEvaluationContext)
-
-  def looselyTypingDictKeys =
-    new SpelExpressionParser(parser, validator.withTyper(_.withDictTyper(new LooseKeysDictTyper(dictRegistry))), dictRegistry, enableSpelForceCompile, flavour, prepareEvaluationContext)
 
 }
 
@@ -251,7 +251,8 @@ object SpelExpressionParser extends LazyLogging {
       MapLikePropertyAccessor
     )
 
-    val commonSupertypeFinder = new CommonSupertypeFinder(if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union)
+    val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
+    val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
     val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry), strictMethodsChecking))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour,
       prepareEvaluationContext(classLoader, imports, propertyAccessors, functions))

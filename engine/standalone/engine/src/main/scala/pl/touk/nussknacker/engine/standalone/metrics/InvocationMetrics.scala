@@ -16,7 +16,7 @@ trait InvocationMetrics extends WithEspTimers {
   private val nodeErrorTimers : collection.concurrent.TrieMap[String, EspTimer] = collection.concurrent.TrieMap()
 
   //TODO: maybe var initialized in `open`?
-  private lazy val succesTimer = espTimer("success")
+  private lazy val successTimer = espTimer(Map(), NonEmptyList.of("invocation", "success"))
 
   def measureTime[T](invocation: => Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]])(implicit ec: ExecutionContext) :
     Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]]= {
@@ -25,7 +25,7 @@ trait InvocationMetrics extends WithEspTimers {
       val future = invocation
       future.onComplete {
         case Success(Left(errors)) => errors.toList.foreach(ex => markErrorTimer(start, ex.nodeId))
-        case Success(Right(_)) => succesTimer.update(start)
+        case Success(Right(_)) => successTimer.update(start)
         case Failure(e) => markErrorTimer(start)
       }
       future
@@ -36,6 +36,6 @@ trait InvocationMetrics extends WithEspTimers {
 
   private def markErrorTimer(startTime: Long, nodeId: Option[String] = None) : Unit = {
     val id = nodeId.getOrElse("unknown")
-    nodeErrorTimers.getOrElseUpdate(id, espTimer(id)).update(startTime)
+    nodeErrorTimers.getOrElseUpdate(id, espTimer(Map("nodeId" -> id), NonEmptyList.of("invocation", "failure"))).update(startTime)
   }
 }

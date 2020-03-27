@@ -3,7 +3,7 @@ import {isEmpty} from "lodash"
 import React from "react"
 import FixedValuesEditor from "./FixedValuesEditor"
 import {ExpressionObj} from "./types"
-import {EditorType} from "./EditorType"
+import {Editor} from "./Editor"
 
 type Props = {
   expressionObj: ExpressionObj,
@@ -23,7 +23,7 @@ const parseable = (expressionObj) => {
   return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE
 }
 
-const BoolEditor: EditorType<Props> = (props: Props) => {
+const BoolEditor: Editor<Props> = (props: Props) => {
   const {expressionObj, readOnly, onValueChange, className} = props
 
   const trueValue = {expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true")}
@@ -40,6 +40,8 @@ const BoolEditor: EditorType<Props> = (props: Props) => {
       onValueChange={onValueChange}
       readOnly={readOnly}
       className={className}
+      validators={[]}
+      showValidation={true}
     />
   )
 }
@@ -47,6 +49,7 @@ const BoolEditor: EditorType<Props> = (props: Props) => {
 export default BoolEditor
 
 BoolEditor.switchableTo = (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression)
-BoolEditor.switchableToHint = "Switch to basic mode"
-BoolEditor.notSwitchableToHint = "Expression must be equal to true or false to switch to basic mode"
+BoolEditor.switchableToHint = () => i18next.t("editors.bool.switchableToHint", "Switch to basic mode")
+BoolEditor.notSwitchableToHint = () =>  i18next.t("editors.bool.notSwitchableToHint",
+  "Expression must be equal to true or false to switch to basic mode")
 

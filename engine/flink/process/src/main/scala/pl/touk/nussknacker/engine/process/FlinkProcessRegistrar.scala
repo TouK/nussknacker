@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, ProcessVersion}
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
-import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
+import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, MetricUtils}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
 import pl.touk.nussknacker.engine.process.util.Serializers
@@ -65,7 +65,7 @@ object FlinkProcessRegistrar {
         case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
       }) match {
         case Left(ir) =>
-          exceptionHandler.handling(None, input)(ir.foreach(collector.collect))
+          ir.foreach(collector.collect)
         case Right(info) =>
           exceptionHandler.handle(info)
       }
@@ -73,13 +73,12 @@ object FlinkProcessRegistrar {
   }
 
 
-  class RateMeterFunction[T](groupId: String) extends RichMapFunction[T, T] {
+  class RateMeterFunction[T](groupId: String, nodeId: String) extends RichMapFunction[T, T] {
     private var instantRateMeter : RateMeter = _
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
-
-      instantRateMeter = InstantRateMeterWithCount.register(getRuntimeContext.getMetricGroup.addGroup(groupId))
+      instantRateMeter = InstantRateMeterWithCount.register(Map("nodeId" -> nodeId), List(groupId), new MetricUtils(getRuntimeContext))
     }
 
     override def map(value: T): T = {

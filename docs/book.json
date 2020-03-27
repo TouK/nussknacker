@@ -2,6 +2,6 @@
     "plugins": [],
     "variables": {
         "nussknackerVersion": "0.0.11",
-        "flinkMajorVersion": "1.7"
+        "flinkMajorVersion": "1.9"
     }
 }

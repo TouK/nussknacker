@@ -133,6 +133,15 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     ))
   }
 
+  test("return running status if cancelled job has last-modification date later then running job") {
+    statuses = List(JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING), JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED))
+
+    val manager = createManager(statuses)
+    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+      manager, DeploymentId("2343"), FlinkStateStatus.Running, startTime = Some(10L)
+    ))
+  }
+
   test("return last terminal state if not running") {
     statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED), JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED))
 

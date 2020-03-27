@@ -137,7 +137,7 @@ object typing {
 
     def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypingResult = TypedClass(toRuntime[T], params)
 
-    def empty = TypedUnion(Set.empty)
+    def empty: TypedUnion = TypedUnion(Set.empty)
 
     def apply[T: ClassTag]: TypingResult = apply(toRuntime[T])
 
@@ -165,7 +165,7 @@ object typing {
 
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 
-    def tagged(typ: SingleTypingResult, tag: String) = TypedTaggedValue(typ, tag)
+    def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
 
     def fromInstance(obj: Any): TypingResult = {
       obj match {

@@ -15,17 +15,19 @@ export default function NodeGroupDetailsContent(props) {
               <input type="text" readOnly={readOnly} className="node-input" value={node.id} onChange={onChange}/>
             </div>
           </div>
-          {node.nodes.map((node, idx) =>
+          {node.nodes.map((node, idx) => (
             <div key={idx}>
-              <NodeDetailsContent isEditMode={false}
-                                  showValidation={true}
-                                  showSwitch={true}
-                                  node={node}
-                                  nodeErrors={props.nodeErrors}
-                                  testResults={testResults(node.id)}/>
+              <NodeDetailsContent
+                isEditMode={false}
+                showValidation={true}
+                showSwitch={true}
+                node={node}
+                nodeErrors={props.nodeErrors}
+                testResults={testResults(node.id)}
+              />
               <hr/>
-            </div>,
-          )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

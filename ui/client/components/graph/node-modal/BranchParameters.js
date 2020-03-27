@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
-import EditableExpression from "./editors/expression/EditableExpression"
+import EditableEditor from "./editors/EditableEditor"
 
 const BranchParameters = (props) => {
 
@@ -15,34 +15,33 @@ const BranchParameters = (props) => {
             <div className="fieldsControl">
               {
                 joinDef.incomingEdges.map((edge, edgeIndex) => {
-                    // It could be tricky - we assume that node data is filled by template (or actual values)
-                    // in the same order as here, but it is true because for filling is used the same JoinDef
-                    const path = `branchParameters[${edgeIndex}].parameters[${paramIndex}]`
-                    const paramValue = node.branchParameters[edgeIndex].parameters[paramIndex]
-                    const fieldName = `value-${param.name}-${edge.from}`
-                    return (
-                      <div className="branch-parameter-row" key={`${param.name}-${edge.from}`}>
-                        <div className={"branch-param-label"}>{edge.from}</div>
-                        <div className={"branch-parameter-expr-container"}>
-                          <EditableExpression
-                            fieldType={"expression"}
-                            fieldName={branchErrorFieldName(param.name, edge.from)}
-                            fieldLabel={null}
-                            onValueChange={((value) => onChange(`${path}.expression.expression`, value))}
-                            expressionObj={paramValue.expression}
-                            readOnly={readOnly}
-                            isMarked={isMarked(path)}
-                            showValidation={showValidation}
-                            rowClassName={"branch-parameter-expr"}
-                            valueClassName={"branch-parameter-expr-value"}
-                            showSwitch={showSwitch}
-                            errors={errors}
-                          />
-                        </div>
+                  // It could be tricky - we assume that node data is filled by template (or actual values)
+                  // in the same order as here, but it is true because for filling is used the same JoinDef
+                  const path = `branchParameters[${edgeIndex}].parameters[${paramIndex}]`
+                  const paramValue = node.branchParameters[edgeIndex].parameters[paramIndex]
+                  const fieldName = `value-${param.name}-${edge.from}`
+                  return (
+                    <div className="branch-parameter-row" key={`${param.name}-${edge.from}`}>
+                      <div className={"branch-param-label"}>{edge.from}</div>
+                      <div className={"branch-parameter-expr-container"}>
+                        <EditableEditor
+                          fieldType={"expression"}
+                          fieldName={branchErrorFieldName(param.name, edge.from)}
+                          fieldLabel={null}
+                          onValueChange={((value) => onChange(`${path}.expression.expression`, value))}
+                          expressionObj={paramValue.expression}
+                          readOnly={readOnly}
+                          isMarked={isMarked(path)}
+                          showValidation={showValidation}
+                          rowClassName={"branch-parameter-expr"}
+                          valueClassName={"branch-parameter-expr-value"}
+                          showSwitch={showSwitch}
+                          errors={errors}
+                        />
                       </div>
-                    )
-                  },
-                )
+                    </div>
+                  )
+                })
               }
             </div>
           </div>
