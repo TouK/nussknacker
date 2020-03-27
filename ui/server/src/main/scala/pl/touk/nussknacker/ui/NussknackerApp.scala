@@ -42,20 +42,6 @@ trait NusskanckerAppRouter extends Directives with LazyLogging {
 
   def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable])
 
-  //by default, we use InfluxCountsReporterCreator
-  protected def prepareCountsReporter(env: String, config: Config): CountsReporter = {
-    val configAtKey = config.atKey(CountsReporterCreator.reporterCreatorConfigPath)
-    val creator = Multiplicity(ScalaServiceLoader.load[CountsReporterCreator](getClass.getClassLoader)) match {
-      case One(cr) =>
-        cr
-      case Empty() =>
-        new InfluxCountsReporterCreator
-      case Many(many) =>
-        throw new IllegalArgumentException(s"Many CountsReporters found: ${many.mkString(", ")}")
-    }
-
-    creator.createReporter(env, configAtKey)
-  }
 }
 
 object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
@@ -186,6 +172,21 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     }
 
     (route, typeToConfig.all.values ++ countsReporter.toList)
+  }
+
+  //by default, we use InfluxCountsReporterCreator
+  private def prepareCountsReporter(env: String, config: Config): CountsReporter = {
+    val configAtKey = config.atKey(CountsReporterCreator.reporterCreatorConfigPath)
+    val creator = Multiplicity(ScalaServiceLoader.load[CountsReporterCreator](getClass.getClassLoader)) match {
+      case One(cr) =>
+        cr
+      case Empty() =>
+        new InfluxCountsReporterCreator
+      case Many(many) =>
+        throw new IllegalArgumentException(s"Many CountsReporters found: ${many.mkString(", ")}")
+    }
+
+    creator.createReporter(env, configAtKey)
   }
 }
 
