@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import sttp.client._
 import sttp.client.circe._
@@ -104,8 +104,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               startTime = Some(duplicates.head.`start-time`),
               errors = List(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
             ))
-          case one::_ =>
-            val stateStatus = one.state match {
+          case jobs =>
+            val job = findRunningOrFirst(jobs)
+            val stateStatus = job.state match {
               case JobStatus.RUNNING => FlinkStateStatus.Running
               case JobStatus.FINISHED => FlinkStateStatus.Finished
               case JobStatus.RESTARTING => FlinkStateStatus.Restarting
@@ -113,20 +114,20 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
               case _ => FlinkStateStatus.Failed
             }
-            checkVersion(one.jid, name).map { version =>
+            withVersion(job.jid, name).map { version =>
               //TODO: return error when there's no correct version in process
               //currently we're rather lax on this, so that this change is backward-compatible
               //we log debug here for now, since it's invoked v. often
               if (version.isEmpty) {
-                logger.debug(s"No correct version in deployed process: ${one.name}")
+                logger.debug(s"No correct version in deployed process: ${job.name}")
               }
 
               Some(ProcessState(
-                DeploymentId(one.jid),
+                DeploymentId(job.jid),
                 stateStatus,
                 version = version,
                 definitionManager = processStateDefinitionManager,
-                startTime = Some(one.`start-time`),
+                startTime = Some(job.`start-time`),
                 attributes = Option.empty,
                 errors = List.empty
               ))
@@ -135,8 +136,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       }
   }
 
+  private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(_.state == JobStatus.RUNNING).getOrElse(jobOverviews.head)
+
   //TODO: cache by jobId?
-  private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
+  private def withVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
     basicRequest
       .get(flinkUrl.path("jobs", jobId, "config"))
       .response(asJson[JobConfig])
