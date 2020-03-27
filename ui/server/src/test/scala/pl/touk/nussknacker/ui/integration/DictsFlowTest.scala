@@ -13,9 +13,10 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.NussknackerApp
+import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerApp, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+
 import scala.concurrent.duration._
 
 class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
@@ -25,7 +26,10 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val (mainRoute, _) = NussknackerApp.initializeRoute(system.settings.config)
+  private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
+    system.settings.config,
+    NussknackerAppInitializer.initDb(system.settings.config)
+  )
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
