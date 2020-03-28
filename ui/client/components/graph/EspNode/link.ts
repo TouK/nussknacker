@@ -1,9 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
+import * as joint from "jointjs"
+import {Edge} from "../../../types"
 import NodeUtils from "../NodeUtils"
 import {edgeStroke, rectWidth} from "./misc"
-import * as joint from "jointjs"
 
-export function makeLink(edge, forExport?) {
+export const makeLink = (forExport?: boolean) => (edge: Edge) => {
   const label = NodeUtils.edgeLabel(edge)
 
   const labels = []

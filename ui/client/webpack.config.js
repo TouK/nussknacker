@@ -13,7 +13,10 @@ const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
 const entry = {
-  main: path.resolve(__dirname, "./index.js"),
+  main: [
+    "@babel/polyfill",
+    path.resolve(__dirname, "./index.js"),
+  ],
 }
 
 let previouslyPrintedPercentage = 0
@@ -55,6 +58,8 @@ const fileLoader = {
 }
 
 module.exports = {
+  //JSDOM deps override
+  node: {fs: "empty", child_process: "empty", net: "empty", tls: "empty"},
   mode: NODE_ENV,
   optimization: {
     splitChunks: {
@@ -85,6 +90,8 @@ module.exports = {
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
     alias: {
       "react-dom": "@hot-loader/react-dom",
+      "jointjs": "jointjs/joint.mjs",
+      "jointjs/dist/joint.css": "jointjs/dist/joint.css",
     },
   },
   entry: entry,
@@ -157,9 +164,22 @@ module.exports = {
         loader: "html-loader?minimize=false",
       },
       {
-        test: /\.[tj]sx?$/,
+        test: /\.m?[tj]sx?$/,
         use: ["babel-loader"],
         exclude: /node_modules/,
+      },
+      {
+        test: /\.worker\.(js|ts)$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: "comlink-loader",
+            options: {
+              singleton: true,
+            },
+          },
+          "babel-loader",
+        ],
       },
       {
         test: /\.css?$/,

@@ -1,8 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
-import * as dagre from "dagre"
 import * as joint from "jointjs"
-import "jointjs/dist/joint.css"
-import _ from "lodash"
+// import "jointjs/dist/joint.css"
+import _, {isEmpty, isEqual} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import svgPanZoom from "svg-pan-zoom"
@@ -11,6 +10,7 @@ import {getProcessCategory, getSelectionState} from "../../reducers/selectors/gr
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import cssVariables from "../../stylesheets/_variables.styl"
 import "../../stylesheets/graph.styl"
+import {directedLayout} from "./directedLayout.ts"
 import {getPaper} from "./getPaper"
 import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
@@ -134,21 +134,9 @@ export class Graph extends React.Component {
   }
 
   directedLayout() {
-    //TODO `layout` method can take graph or cells
-    //when joint.layout.DirectedGraph.layout(this.graph) is used here
-    //  then `toFront()` method works as expected but there are issues with group fold/unfold
-    //when joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')) is used here
-    // then `toFront()` method does not work at all, but group fold/unfold works just fine
-    joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get("backgroundObject")), {
-      graphlib: dagre.graphlib,
-      dagre: dagre,
-      nodeSep: 0,
-      edgeSep: 0,
-      rankSep: 75,
-      minLen: 0,
-      rankDir: "TB",
-    })
-    this.changeLayoutIfNeeded()
+    console.time("layout2")
+    directedLayout(this.graph, this.changeLayoutIfNeeded.bind(this))
+    console.timeEnd("layout2")
   }
 
   zoomIn() {
@@ -262,12 +250,14 @@ export class Graph extends React.Component {
   }
 
   _layout(layout) {
-    if (_.isEmpty(layout)) {
+    if (isEmpty(layout)) {
       this.directedLayout()
     } else {
-      _.forEach(layout, el => {
+      layout.forEach(el => {
         const cell = this.graph.getCell(el.id)
-        if (cell && JSON.stringify(cell.get("position")) !== JSON.stringify(el.position)) cell.set("position", el.position)
+        if (cell && JSON.stringify(cell.get("position")) !== JSON.stringify(el.position)) {
+          cell.set("position", el.position)
+        }
       })
     }
   }
@@ -353,14 +343,16 @@ export class Graph extends React.Component {
     }
   }
 
-  changeLayoutIfNeeded = () => {
-    let newLayout = this.graph.getElements().filter(el => !el.get("backgroundObject")).map(el => {
-      const pos = el.get("position")
-      return {id: el.id, position: pos}
-    })
+  changeLayoutIfNeeded() {
+    const graph = this.graph
+    const {readonly, layout, actions} = this.props
 
-    if (!_.isEqual(this.props.layout, newLayout) && !this.props.readonly) {
-      this.props.actions && this.props.actions.layoutChanged(newLayout)
+    const newLayout = graph.getElements()
+      .filter(el => !el.get("backgroundObject"))
+      .map(el => ({id: el.id, position: el.get("position")}))
+
+    if (!isEqual(layout, newLayout) && !readonly) {
+      actions && actions.layoutChanged(newLayout)
     }
   }
 
@@ -378,11 +370,11 @@ export class Graph extends React.Component {
       maxZoom: 10,
     })
 
-    this.processGraphPaper.on("blank:pointerdown", (evt, x, y) => {
+    this.processGraphPaper.on("blank:pointerdown", () => {
       panAndZoom.enablePan()
     })
 
-    this.processGraphPaper.on("cell:pointerup blank:pointerup", (cellView, event) => {
+    this.processGraphPaper.on("cell:pointerup blank:pointerup", () => {
       panAndZoom.disablePan()
     })
 
@@ -397,7 +389,7 @@ export class Graph extends React.Component {
   }
 
   changeNodeDetailsOnClick() {
-    this.processGraphPaper.on("cell:pointerdblclick", (cellView, evt, x, y) => {
+    this.processGraphPaper.on("cell:pointerdblclick", (cellView) => {
       if (this.props.groupingState) {
         return
       }
@@ -551,8 +543,8 @@ export class Graph extends React.Component {
   render() {
     const toRender = (
       <div id="graphContainer" style={{padding: this.props.padding}}>
-        {this.props.showNodeDetailsModal ? <NodeDetailsModal/> : null}
-        {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
+        {this.props.showNodeDetailsModal ? <NodeDetailsModal /> : null}
+        {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal /> : null}
         <div ref={this.espGraphRef} id={this.props.divId}></div>
       </div>
     )

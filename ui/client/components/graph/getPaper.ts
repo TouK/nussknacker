@@ -1,5 +1,6 @@
 import * as joint from "jointjs"
 import {dia} from "jointjs"
+import {Edge} from "../../types"
 import {makeLink} from "./EspNode"
 
 type Attrs = {
@@ -33,7 +34,7 @@ export function getPaper({canWrite, validateConnection, ...opts}: Attrs) {
       }
     },
     linkPinning: false,
-    defaultLink: makeLink({}),
+    defaultLink: makeLink()({} as Edge),
   }
   return new joint.dia.Paper(options)
 }

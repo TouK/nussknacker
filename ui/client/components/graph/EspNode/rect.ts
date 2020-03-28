@@ -2,7 +2,7 @@ import collapseIcon from "../../../assets/img/collapse.svg"
 import * as GraphUtils from "../GraphUtils"
 import boundingMarkup from "../markups/bounding.html"
 import {rectHeight} from "./misc"
-import * as joint from "jointjs/index"
+import * as joint from "jointjs"
 
 export function boundingRect(nodes, expandedGroup, layout, group) {
   const boundingRect = GraphUtils.computeBoundingRect(expandedGroup, layout, nodes, rectHeight, 15)

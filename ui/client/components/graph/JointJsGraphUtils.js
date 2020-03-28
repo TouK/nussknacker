@@ -1,4 +1,4 @@
-import * as joint from "jointjs/index"
+import * as joint from "jointjs"
 
 export function findLinkBelowCell(jointJsGraph, cellView, paper) {
   return jointJsGraph.get("cells").find((cell) => {

@@ -6,7 +6,7 @@ import * as LoaderUtils from "../../../common/LoaderUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import SVGUtils from "../../../common/SVGUtils"
 import {absoluteBePath} from "../../../common/UrlUtils"
-import {NodeId, NodeType} from "../../../types"
+import {NodeId, NodeType, ProcessDefinitionData} from "../../../types"
 import NodeUtils from "../NodeUtils"
 import {EspNodeShape} from "./esp"
 import {maxLineCount, maxLineLength, rectHeight, rectWidth, summaryCountConfig} from "./misc"
@@ -79,7 +79,7 @@ function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
   }
 }
 
-export function makeElement(node: NodeType, processCounts, forExport: boolean, nodesSettings) {
+export const makeElement = (processCounts, forExport: boolean, nodesSettings) => (node: NodeType) => {
   const description = node.additionalFields?.description || null
   const {text: bodyContent} = getBodyContent(node.id)
   const hasCounts = !isEmpty(processCounts)
