@@ -1,29 +1,23 @@
-package pl.touk.nussknacker.engine.namespaces
+package pl.touk.nussknacker.engine.process
 
 import java.nio.charset.StandardCharsets
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory, KafkaSpec, KafkaUtils}
-import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
+import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class NamespacedSourceSinkItSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers {
+class NamespacedSourceSinkTest extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers {
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
   import KafkaUtils._
@@ -36,38 +30,25 @@ class NamespacedSourceSinkItSpec extends FunSuite with BeforeAndAfterAll with Ka
 
   test("should send message to topic with appended namespace") {
     val message = "dummy message"
+    kafkaClient.sendMessage(namespacedTopic(inputTopic), message)
+
     val process = EspProcessBuilder
         .id("id")
         .parallelism(1)
         .exceptionHandler()
-        .source("input", "kafka-in", "topic" -> s"'$inputTopic'")
-        .sink("output", "#input", "kafka-out", "topic" -> s"'$outputTopic'")
-
+        .source("input", "real-kafka", "topic" -> s"'$inputTopic'")
+        .sink("output", "#input", "kafka-string", "topic" -> s"'$outputTopic'")
 
     run(process) {
       val consumer = kafkaClient.createConsumer()
-      val processed = consumer.consume(namespacedTopic(outputTopic)).take(1).map(msg => new String(msg.message(), StandardCharsets.UTF_8))
-      processed shouldBe message
+      val processed = consumer.consume(namespacedTopic(outputTopic)).take(1).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
+      processed shouldEqual List(message)
     }
   }
 
-  private lazy val configCreator = new EmptyProcessConfigCreator {
-    override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = {
-      val kafkaConfig = config.as[KafkaConfig]("kafka")
-      Map("kafka-in" ->
-        WithCategories(
-          new KafkaSourceFactory[String](
-            kafkaConfig, new SimpleStringSchema, None, TestParsingUtils.newLineSplit),
-          "Default"))
-    }
-
-    override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
-      val kafkaConfig = config.as[KafkaConfig]("kafka")
-      Map("kafka-out" ->
-        WithCategories(
-          new KafkaSinkFactory(kafkaConfig, new SimpleSerializationSchema[Any](_, _.toString)),
-          "Default"))
-    }
+  private lazy val configCreator: DevProcessConfigCreator = new DevProcessConfigCreator {
+    override def signals(config: Config): Map[String, Nothing] =
+      Map.empty
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())

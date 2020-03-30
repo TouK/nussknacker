@@ -27,6 +27,8 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 import pl.touk.nussknacker.engine.management.sample.source.{BoundedSource, CsvSource, NoEndingSource, OneSource}
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.Ficus._
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -45,7 +47,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT")
 
-  private def kafkaConfig(config: Config) = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None, None)
+  private def kafkaConfig(config: Config) = config.as[KafkaConfig]("kafka")
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
