@@ -8,7 +8,7 @@ import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkSink}
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedSerializationSchemaFactory, SerializationSchemaFactory}
 
@@ -33,7 +33,7 @@ class KafkaSinkFactory(config: KafkaConfig,
     new KafkaSink(topic, serializationSchema, s"${metaData.id}-$topic")
   }
 
-  class KafkaSink(topic: String, serializationSchema: KafkaSerializationSchema[Any], clientId: String) extends FlinkSink with Serializable {
+  class KafkaSink(topic: String, serializationSchema: KafkaSerializationSchema[Any], clientId: String) extends BasicFlinkSink with Serializable {
     override def toFlinkFunction: SinkFunction[Any] = {
       PartitionByKeyFlinkKafkaProducer(config, topic, serializationSchema, clientId)
     }

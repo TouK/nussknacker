@@ -60,6 +60,23 @@ class ProcessSpec extends FunSuite with Matchers {
     MockService.data should have size 0
   }
 
+  test("handles lazy params in sinks") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .emptySink("end", "lazyParameterSink", "intParam" -> "#input.value1 + 4")
+
+
+    val data = List(
+      SimpleRecord("1", 3, "a", new Date(0))
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    SinkForInts.data shouldBe List(7)
+  }
+
+
   test("allow global vars in source config") {
 
     val process = EspProcessBuilder.id("proc1")

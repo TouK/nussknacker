@@ -82,7 +82,8 @@ object ProcessTestHelpers {
       override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
-        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings))
+        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
+        "lazyParameterSink"-> WithCategories(LazyParameterSinkFactory)
       )
 
       override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(

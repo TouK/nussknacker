@@ -188,9 +188,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
             //TODO: maybe this logic should be moved to compiler instead?
             testRunId match {
               case None =>
-                startAfterSinkEvaluated
-                  .map(_.output)
-                  .addSink(sink.toFlinkFunction)
+                sink.registerSink(startAfterSinkEvaluated, new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)))
               case Some(runId) =>
                 val typ = part.node.data.ref.typ
                 val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
