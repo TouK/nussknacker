@@ -12,6 +12,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#763](https://github.com/TouK/nussknacker/pull/763) Some API traits (ProcessManager, DictRegistry DictQueryService, CountsReporter) 
     now extend `java.lang.AutoCloseable`.
 * Old way or additional properties configuration should be replaced by the new one, which is now mapped to `Map[String, AdditionalPropertyConfig]`
+* [#839](https://github.com/TouK/nussknacker/pull/839) `FlinkSink` API changed, current implementation is now `BasicFlinkSink`
 
 ## In version 0.0.12
 

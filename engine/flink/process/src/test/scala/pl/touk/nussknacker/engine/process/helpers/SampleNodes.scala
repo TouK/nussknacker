@@ -8,7 +8,8 @@ import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.FilterFunction
+import org.apache.flink.api.common.functions.{FilterFunction, RuntimeContext}
+import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.{AscendingTimestampExtractor, BoundedOutOfOrdernessTimestampExtractor}
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeseri
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
@@ -335,10 +336,30 @@ object SampleNodes {
 
   }
 
+  object LazyParameterSinkFactory extends SinkFactory {
+
+    override def requiresOutput: Boolean = false
+
+    @MethodToInvoke
+    def createSink(@ParamName("intParam") value: LazyParameter[Int]): Sink = new FlinkSink {
+
+      override def registerSink(dataStream: DataStream[InterpretationResult], lazyParameterFunctionHelper: FlinkLazyParameterFunctionHelper): DataStreamSink[_] = {
+        dataStream
+          .map(_.finalContext)
+          .map(lazyParameterFunctionHelper.lazyMapFunction(value))
+          .map(_.value.asInstanceOf[Any])
+          .addSink(SinkForInts.toFlinkFunction)
+      }
+
+      override def testDataOutput: Option[Any => String] = None
+    }
+
+  }
+
 
   object MockService extends Service with WithDataList[Any]
 
-  case object MonitorEmptySink extends FlinkSink {
+  case object MonitorEmptySink extends BasicFlinkSink {
     val invocationsCount = new AtomicInteger(0)
 
     def clear(): Unit = {
@@ -354,7 +375,7 @@ object SampleNodes {
     }
   }
 
-  case object SinkForInts extends FlinkSink with WithDataList[Int] {
+  case object SinkForInts extends BasicFlinkSink with WithDataList[Int] {
 
     override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
       override def invoke(value: Any): Unit = {
@@ -366,7 +387,7 @@ object SampleNodes {
     override def testDataOutput: Option[Any => String] = Some(_.toString.toInt.toString)
   }
 
-  case object SinkForStrings extends FlinkSink with WithDataList[String] {
+  case object SinkForStrings extends BasicFlinkSink with WithDataList[String] {
     override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
       override def invoke(value: Any): Unit = {
         add(value.toString)
