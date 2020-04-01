@@ -40,7 +40,7 @@ export default class FixedValuesEditor extends React.Component<Props> {
   currentOption = () => {
     const {expressionObj, param} = this.props
 
-    return expressionObj && this.options.find((option) => option.value === expressionObj.expession) ||  // current value with label taken from options
+    return expressionObj && this.options.find((option) => option.value === expressionObj.expression) ||  // current value with label taken from options
         expressionObj && {value: expressionObj.expression, label: expressionObj.expression} ||          // current value is no longer valid option? Show it anyway, let user know. Validation should take care
         null                                                                                            // just leave undefined and let the user explicitly select one
   }
