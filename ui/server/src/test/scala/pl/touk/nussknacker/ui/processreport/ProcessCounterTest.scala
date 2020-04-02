@@ -1,30 +1,35 @@
 package pl.touk.nussknacker.ui.processreport
 
-import org.scalatest.{FlatSpec, Matchers}
+import cats.data.NonEmptyList
+import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.SetSubprocessRepository
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
 //about actual values, only assigns them to nodes
-class ProcessCounterTest extends FlatSpec with Matchers {
+class ProcessCounterTest extends FunSuite with Matchers {
 
   import spel.Implicits._
 
-  it should "compute counts for simple process" in {
+  private val defaultCounter = new ProcessCounter(new SetSubprocessRepository(Set()))
+
+  test("compute counts for simple process") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
       .id("test").parallelism(1).exceptionHandler()
       .source("source1", "")
       .filter("filter1", "")
       .emptySink("sink11", ""))
-    val counter = new ProcessCounter(subprocessRepository(Set()))
 
-    val computed = counter.computeCounts(process, Map("source1" -> RawCount(30L, 5L),
+    val computed = defaultCounter.computeCounts(process, Map("source1" -> RawCount(30L, 5L),
       "filter1" -> RawCount(20, 10)).get)
 
     computed shouldBe Map(
@@ -34,12 +39,46 @@ class ProcessCounterTest extends FlatSpec with Matchers {
     )
   }
 
-  it should "compute counts with groups" in {
+  test("compute counts for branches") {
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("source1", "source")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .source("source2", "source")
+          .branchEnd("branch2", "join1"),
+        GraphBuilder
+          .branch("join1", "union", None,
+            List(
+              "branch1" -> List(),
+              "branch2" -> List()
+            )
+          )
+          .emptySink("end", "sink")
+      ))
+    val result = defaultCounter.computeCounts(ProcessCanonizer.canonize(process), Map(
+      "source1" -> RawCount(1, 0),
+      "source2" -> RawCount(2, 0),
+      "join1" -> RawCount(3, 0),
+      "end" -> RawCount(4, 0)
+    ).get)
+
+    result shouldBe Map(
+      "source1" -> NodeCount(1, 0),
+      "source2" -> NodeCount(2, 0),
+      "join1" -> NodeCount(3, 0),
+      "end" -> NodeCount(4, 0)
+    )
+
+
+  }
+
+  test("compute counts with groups") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
       .id("test").parallelism(1).exceptionHandler()
       .source("source1", "")
       .filter("filter1", "")
-      .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), false,
+      .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), isSubprocess = false,
         Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11"))), Map.empty))))
     val processCounter = new ProcessCounter(subprocessRepository(Set()))
 
@@ -54,7 +93,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
     )
   }
 
-  it should "compute counts for subprocess" in {
+  test("compute counts for subprocess") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
       .id("test").parallelism(1).exceptionHandler()
       .source("source1", "")
@@ -95,9 +134,9 @@ class ProcessCounterTest extends FlatSpec with Matchers {
   }
 
 
-  private def subprocessRepository(processes: Set[CanonicalProcess]) = {
+  private def subprocessRepository(processes: Set[CanonicalProcess]): SubprocessRepository = {
     new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, Long]) = {
+      override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
         processes.map(c => SubprocessDetails(c, "category1"))
       }
     }
