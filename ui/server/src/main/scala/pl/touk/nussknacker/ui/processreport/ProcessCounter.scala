@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
+import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData, SubprocessInputDefinition}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import shapeless.syntax.typeable._
 
@@ -29,6 +29,8 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
       nodes.flatMap {
         //TODO: this is a bit of a hack. Metric for subprocess input is counted in node with subprocess occurrence id...
         case FlatNode(SubprocessInputDefinition(id, _, _)) => Map(id -> nodeCountOption(None))
+        //BranchEndData is kind of artifical entity
+        case FlatNode(BranchEndData(_)) => Map.empty[String, NodeCount]
         case FlatNode(node) => Map(node.id -> nodeCount(node.id))
         case FilterNode(node, nextFalse) => computeCountsSamePrefixes(nextFalse) + (node.id -> nodeCount(node.id))
         case SwitchNode(node, nexts, defaultNext) =>
@@ -42,7 +44,8 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
       }.toMap
 
     }
-    val valuesWithoutGroups = computeCounts(List())(canonicalProcess.nodes)
+    val allStartNodes = canonicalProcess.nodes :: canonicalProcess.additionalBranches.toList.flatten
+    val valuesWithoutGroups = allStartNodes.map(startNode => computeCounts(List())(startNode)).reduceOption(_ ++ _).getOrElse(Map.empty)
 
     val valuesForGroups: Map[String, NodeCount] = computeValuesForGroups(valuesWithoutGroups, canonicalProcess)
     valuesWithoutGroups ++ valuesForGroups
