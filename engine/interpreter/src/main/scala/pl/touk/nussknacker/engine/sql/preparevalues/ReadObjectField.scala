@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.sql.preparevalues
 
-import java.sql.Timestamp
-import java.time.{LocalDateTime, ZoneId}
+import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
 
-import org.springframework.expression.PropertyAccessor
-import org.springframework.expression.spel.support.{ReflectivePropertyAccessor, StandardEvaluationContext}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaPropertyAccessor, StaticPropertyAccessor, TypedMapPropertyAccessor}
+import org.springframework.expression.spel.support.StandardEvaluationContext
+import pl.touk.nussknacker.engine.spel.internal.propertyAccessors
 import pl.touk.nussknacker.engine.sql.TimestampUtils
+
+import scala.annotation.tailrec
 
 private[preparevalues] trait ReadObjectField {
   def readField(obj:Any, name: String) : Any
@@ -15,7 +16,7 @@ private[preparevalues] trait ReadObjectField {
 private[preparevalues] object ReadObjectField extends ReadObjectField {
 
   //we do it with spring accessors, because field name extraction is spel-compatible, so here we should also respect same rules
-  private val accessors = List[PropertyAccessor](TypedMapPropertyAccessor, MapPropertyAccessor, ScalaPropertyAccessor, StaticPropertyAccessor, new ReflectivePropertyAccessor)
+  private val accessors = propertyAccessors.configured()
 
   private val ec = new StandardEvaluationContext()
 
@@ -30,6 +31,7 @@ private[preparevalues] object ReadObjectField extends ReadObjectField {
   }
 
 
+  @tailrec
   private def additionalConversions(value: Any): Any = {
     value match {
       case bd: scala.math.BigDecimal =>
