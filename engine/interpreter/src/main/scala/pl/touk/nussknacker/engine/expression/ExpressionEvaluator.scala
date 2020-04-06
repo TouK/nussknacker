@@ -81,6 +81,8 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
                  (implicit ec: ExecutionContext, metaData: MetaData): Future[ValueWithContext[R]] = {
     val lazyValuesProvider = lazyValuesProviderCreator(ec, metaData, nodeId)
+    //FIXME: this is *not* performant when we have some global variables, we should not add to map here, but e.g. push
+    //lookup logic down to expressions
     val ctxWithGlobals = ctx.withVariables(globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj))
 
     expr.evaluate[R](ctxWithGlobals, lazyValuesProvider).map { valueWithLazyContext =>
