@@ -4,6 +4,7 @@ import LanguageDetector from "i18next-browser-languagedetector"
 import Backend from "i18next-xhr-backend"
 import {initReactI18next} from "react-i18next"
 import moment from "moment"
+import {nkPath} from "./config"
 
 i18n
   .use(Backend)
@@ -14,7 +15,7 @@ i18n
     defaultNS: "main",
     fallbackLng: "en",
     backend: {
-      loadPath: "/static/assets/locales/{{lng}}/{{ns}}.json",
+      loadPath: `${nkPath  }/static/assets/locales/{{lng}}/{{ns}}.json`,
     },
     whitelist: ["en", "pl"],
     interpolation: {
