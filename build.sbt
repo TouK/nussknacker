@@ -462,6 +462,14 @@ lazy val interpreter = (project in engine("interpreter")).
   ).
   dependsOn(util, testUtil % "test")
 
+lazy val benchmarks = (project in engine("benchmarks")).
+  settings(commonSettings).
+  enablePlugins(JmhPlugin).
+  settings(
+    name := "nussknacker-benchmarks",
+  ).dependsOn(interpreter)
+
+
 lazy val kafka = (project in engine("kafka")).
   settings(commonSettings).
   settings(

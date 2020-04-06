@@ -11,6 +11,7 @@ class GlobalVariablesPreparer(userDefinedGlobalVariables: Map[String, ObjectWith
     if (hideMetaVariable) {
       userDefinedGlobalVariables
     } else {
+      //FIXME: this is *not* performant, currently we do it for *each* expression execution
       userDefinedGlobalVariables + (Interpreter.MetaParamName -> MetaVariables.withType(metaData))
     }
   }
