@@ -8,7 +8,7 @@ trait KafkaSpec extends { self: Suite with BeforeAndAfterAll =>
   var kafkaClient: KafkaClient = _
   val kafkaBrokerConfig = Map.empty[String, String]
 
-  lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None, None)
+  lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
 
   override protected def beforeAll(): Unit = {
     AvailablePortFinder.withAvailablePortsBlocked(2) {

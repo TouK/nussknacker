@@ -152,7 +152,6 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
         return new KafkaConfig(
                 config.getString("kafka.kafkaAddress"),
                 Option.empty(),
-                Option.empty(),
                 Option.empty()
         );
     }

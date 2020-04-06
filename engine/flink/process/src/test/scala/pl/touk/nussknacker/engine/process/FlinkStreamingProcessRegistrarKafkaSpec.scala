@@ -45,7 +45,7 @@ class FlinkStreamingProcessRegistrarKafkaSpec
       NonEmptyList.of(GraphBuilder.source("source", "kafka-keyvalue", "topic" -> s"""'$inTopic'""")
         .processorEnd("service", "logService", "all" -> "#input"))
     )
-
+    
     helpers.ProcessTestHelpers.processInvoker.invokeWithKafka(
       process, KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
     ) {

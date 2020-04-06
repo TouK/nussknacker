@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.engine.util.namespaces.{ObjectNamingProvider, ObjectNamingUsageKey}
 import sttp.client._
 import sttp.client.circe._
 import sttp.model.Uri
@@ -80,6 +81,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
+    val preparedName = objectNaming.prepareName(name.value, ObjectNamingUsageKey.flinkProcess)
     basicRequest
       .get(flinkUrl.path("jobs", "overview"))
       .response(asJson[JobsResponse])
@@ -88,7 +91,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .flatMap { jobs =>
 
         val jobsForName = jobs.jobs
-          .filter(_.name == name.value)
+          .filter(_.name == preparedName)
           .sortBy(_.`last-modification`)
           .reverse
 

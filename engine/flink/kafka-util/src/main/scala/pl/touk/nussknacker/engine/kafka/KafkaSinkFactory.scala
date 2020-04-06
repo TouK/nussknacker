@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkSink}
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedSerializationSchemaFactory, SerializationSchemaFactory}
+import pl.touk.nussknacker.engine.util.namespaces.{ObjectNamingProvider, ObjectNamingUsageKey}
 
 class KafkaSinkFactory(config: KafkaConfig,
                        schemaFactory: SerializationSchemaFactory[Any]) extends SinkFactory {
@@ -29,9 +30,11 @@ class KafkaSinkFactory(config: KafkaConfig,
              @NotBlank
              topic: String
             )(metaData: MetaData): Sink = {
-    val _topic = NamespaceUtil.alterTopicNameIfNamespaced(topic, config)
-    val serializationSchema = schemaFactory.create(_topic, config)
-    new KafkaSink(_topic, serializationSchema, s"${metaData.id}-${_topic}")
+    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
+    val preparedTopic = objectNaming.prepareName(topic, ObjectNamingUsageKey.kafkaTopic)
+    // val _topic = NamespaceUtil.alterTopicNameIfNamespaced(topic, config)
+    val serializationSchema = schemaFactory.create(preparedTopic, config)
+    new KafkaSink(preparedTopic, serializationSchema, s"${metaData.id}-${preparedTopic}")
   }
 
   class KafkaSink(topic: String, serializationSchema: KafkaSerializationSchema[Any], clientId: String) extends BasicFlinkSink with Serializable {

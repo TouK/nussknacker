@@ -9,6 +9,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.util.namespaces.{ObjectNamingProvider, ObjectNamingUsageKey}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -80,7 +82,8 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ProcessState => Future[T]): Future[T] = {
-    val name = processName.value
+    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
+    val name = objectNaming.prepareName(processName.value, ObjectNamingUsageKey.flinkProcess)
     findJobStatus(processName).flatMap {
       case Some(state) if state.status.isRunning =>
         action(state)
@@ -108,13 +111,22 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     } yield savepointPath
   }
 
+
   private def prepareProgramArgs(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
     val configPart = modelData.processConfigFromConfiguration.render()
+    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
+
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson)
+        // this is a very ugly temporary solution; once namespaces are configurable in the database as well,
+        // the process name should be modified accordingly when the process is saved
+        val decoded = ProcessMarshaller.fromJson(processAsJson).getOrElse(throw new Exception("Couldn't decode json"))
+        val preparedDecoded = decoded.copy(metaData = decoded.metaData.copy(id =
+          objectNaming.prepareName(decoded.metaData.id, ObjectNamingUsageKey.flinkProcess)))
+        val preparedEncoded = ProcessMarshaller.toJson(preparedDecoded).toString()
+        List(preparedEncoded, toJsonString(processVersion), configPart, buildInfoJson)
       case CustomProcess(_) =>
-        List(processVersion.processName.value, configPart, buildInfoJson)
+        List(objectNaming.prepareName(processVersion.processName.value, ObjectNamingUsageKey.flinkProcess), configPart, buildInfoJson)
     }
   }
   private def toJsonString(processVersion: ProcessVersion): String = {

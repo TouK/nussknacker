@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, FixedDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.util.namespaces.{ObjectNamingProvider, ObjectNamingUsageKey}
 
 import scala.collection.JavaConverters._
 
@@ -106,21 +107,22 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
         with TestDataParserProvider[T]
         with TestDataGenerator {
 
-    def _topics: List[String] = topics.map(NamespaceUtil.alterTopicNameIfNamespaced(_, config))
+    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
+    def preparedTopics: List[String] = topics.map(objectNaming.prepareName(_, ObjectNamingUsageKey.kafkaTopic))
 
     override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
     override def flinkSourceFunction: SourceFunction[T] = {
-      _topics.foreach(KafkaEspUtils.setToLatestOffsetIfNeeded(config, _, consumerGroupId))
+      preparedTopics.foreach(KafkaEspUtils.setToLatestOffsetIfNeeded(config, _, consumerGroupId))
       createFlinkSource()
     }
 
     protected def createFlinkSource(): FlinkKafkaConsumer[T] = {
-      new FlinkKafkaConsumer[T](_topics.asJava, schema, KafkaEspUtils.toProperties(config, Some(consumerGroupId)))
+      new FlinkKafkaConsumer[T](preparedTopics.asJava, schema, KafkaEspUtils.toProperties(config, Some(consumerGroupId)))
     }
 
     override def generateTestData(size: Int): Array[Byte] = {
-      val listsFromAllTopics = _topics.map(KafkaEspUtils.readLastMessages(_, size, config))
+      val listsFromAllTopics = preparedTopics.map(KafkaEspUtils.readLastMessages(_, size, config))
       val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
       val formatted = recordFormatterOpt.map(formatter => merged.map(formatter.formatRecord)).getOrElse {
         merged.map(_.value())
@@ -131,7 +133,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
     override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
       override def parseTestData(merged: Array[Byte]): List[T] =
         testPrepareInfo.splitData(merged).map { formatted =>
-          val topic = _topics.head
+          val topic = preparedTopics.head
           val record = recordFormatterOpt
             .map(formatter => formatter.parseRecord(formatted))
             .getOrElse(new ProducerRecord(topic, formatted))
