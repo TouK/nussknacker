@@ -7,7 +7,7 @@ trait ObjectNamingProvider extends LazyLogging  {
   def create(classLoader: ClassLoader): ObjectNaming
 }
 
-object ObjectNamingProvider extends ObjectNamingProvider {
+object ObjectNamingProvider extends ObjectNamingProvider with Serializable {
   def create(classLoader: ClassLoader): ObjectNaming = {
     ScalaServiceLoader.loadClass[ObjectNaming](classLoader) {
       DefaultObjectNaming()
