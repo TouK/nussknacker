@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.util.namespaces
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
-trait ObjectNamingProvider extends LazyLogging  {
+trait ObjectNamingProvider extends LazyLogging with Serializable {
   def create(classLoader: ClassLoader): ObjectNaming
 }
 
-object ObjectNamingProvider extends ObjectNamingProvider with Serializable {
+object ObjectNamingProvider extends ObjectNamingProvider {
   def create(classLoader: ClassLoader): ObjectNaming = {
     ScalaServiceLoader.loadClass[ObjectNaming](classLoader) {
       DefaultObjectNaming()
