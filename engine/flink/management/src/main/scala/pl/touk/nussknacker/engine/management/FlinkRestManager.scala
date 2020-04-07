@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
-import pl.touk.nussknacker.engine.util.namespaces.{ObjectNamingProvider, ObjectNamingUsageKey}
 import sttp.client._
 import sttp.client.circe._
 import sttp.model.Uri

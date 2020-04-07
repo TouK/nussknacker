@@ -9,8 +9,6 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.namespaces.{ObjectNamingProvider, ObjectNamingUsageKey}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -82,13 +80,14 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ProcessState => Future[T]): Future[T] = {
+    val name = processName.value
     findJobStatus(processName).flatMap {
       case Some(state) if state.status.isRunning =>
         action(state)
       case Some(state) =>
-        Future.failed(new IllegalStateException(s"Job $processName is not running, status: ${state.status.name}"))
+        Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status.name}"))
       case None =>
-        Future.failed(new IllegalStateException(s"Job $processName not found"))
+        Future.failed(new IllegalStateException(s"Job $name not found"))
     }
   }
 
@@ -109,10 +108,8 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     } yield savepointPath
   }
 
-
   private def prepareProgramArgs(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
     val configPart = modelData.processConfigFromConfiguration.render()
-
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
         List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson)
