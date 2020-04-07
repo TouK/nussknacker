@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, Para
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{BaseKafkaSourceFactory, KafkaConfig, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 object sources {
@@ -22,16 +23,16 @@ object sources {
   import collection.JavaConverters._
 
   class GenericJsonSourceFactory(config: KafkaConfig) extends KafkaSourceFactory[java.util.Map[_, _]](
-    config, JsonMapDeserialization, None, TestParsingUtils.newLineSplit)
+    config, JsonMapDeserialization, None, TestParsingUtils.newLineSplit, ObjectNamingProvider)
 
   class GenericTypedJsonSourceFactory(config: KafkaConfig) extends BaseKafkaSourceFactory[TypedMap](
-    config,  None, TestParsingUtils.newLineSplit) {
+    config,  None, TestParsingUtils.newLineSplit, ObjectNamingProvider) {
 
     @MethodToInvoke
     def create(processMetaData: MetaData,  @ParamName("topic") topic: String,
                @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
       val schema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
-      new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema, None) with ReturningType {
+      new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema, None, ObjectNamingProvider) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }
     }

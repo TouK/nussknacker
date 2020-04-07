@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.collection.JavaConverters._
@@ -467,7 +468,9 @@ object SampleNodes {
   class KeyValueKafkaSourceFactory(kafkaConfig: KafkaConfig) extends KafkaSourceFactory[KeyValue](
               kafkaConfig,
               new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e)),
-              Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)), TestParsingUtils.newLineSplit)
+              Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
+              TestParsingUtils.newLineSplit,
+              ObjectNamingProvider)
 
 
 }

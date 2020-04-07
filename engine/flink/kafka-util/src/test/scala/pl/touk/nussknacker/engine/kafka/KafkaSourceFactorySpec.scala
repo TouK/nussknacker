@@ -7,6 +7,7 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaSpec with Matchers {
 
@@ -25,7 +26,8 @@ class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaS
     kafkaClient.sendMessage(topic, "", part1(1), Some(1))
 
 
-    val sourceFactory = new KafkaSourceFactory[String](kafkaConfig, new SimpleStringSchema, None, TestParsingUtils.newLineSplit)
+    val sourceFactory = new KafkaSourceFactory[String](kafkaConfig, new SimpleStringSchema, None,
+      TestParsingUtils.newLineSplit, ObjectNamingProvider)
 
     val dataFor3 = sourceFactory.create(MetaData("", StreamMetaData()), topic).generateTestData(3)
     val dataFor5 = sourceFactory.create(MetaData("", StreamMetaData()), topic).generateTestData(5)

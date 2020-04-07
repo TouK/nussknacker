@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -52,13 +53,19 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
     "monitor" -> categories(SinkFactory.noParam(EmptySink)),
-    "kafka-string" -> all(new KafkaSinkFactory(kafkaConfig(config), new SimpleSerializationSchema[Any](_, _.toString)))
+    "kafka-string" -> all(new KafkaSinkFactory(kafkaConfig(config),
+                                new SimpleSerializationSchema[Any](_, _.toString),
+                                ObjectNamingProvider))
   )
 
   override def listeners(config: Config) = List(LoggingListener)
 
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "real-kafka" -> all(new KafkaSourceFactory[String](kafkaConfig(config), new SimpleStringSchema, None, TestParsingUtils.newLineSplit)),
+    "real-kafka" -> all(new KafkaSourceFactory[String](kafkaConfig(config),
+                                                        new SimpleStringSchema,
+                                                        None,
+                                                        TestParsingUtils.newLineSplit,
+                                                        ObjectNamingProvider)),
     "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),

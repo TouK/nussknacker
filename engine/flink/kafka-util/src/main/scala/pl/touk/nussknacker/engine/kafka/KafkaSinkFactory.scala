@@ -11,14 +11,16 @@ import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkSink}
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedSerializationSchemaFactory, SerializationSchemaFactory}
-import pl.touk.nussknacker.engine.util.namespaces.{ObjectNamingProvider, ObjectNamingUsageKey}
+import pl.touk.nussknacker.engine.util.namespaces.{NamingContext, ObjectNamingProvider, ObjectNamingUsageKey}
 
 class KafkaSinkFactory(config: KafkaConfig,
-                       schemaFactory: SerializationSchemaFactory[Any]) extends SinkFactory {
+                       schemaFactory: SerializationSchemaFactory[Any],
+                       objectNamingProvider: ObjectNamingProvider) extends SinkFactory {
 
   def this(config: KafkaConfig,
-           schema: String => KafkaSerializationSchema[Any]) =
-    this(config, FixedSerializationSchemaFactory(schema))
+           schema: String => KafkaSerializationSchema[Any],
+           objectNamingProvider: ObjectNamingProvider) =
+    this(config, FixedSerializationSchemaFactory(schema), objectNamingProvider)
 
   @MethodToInvoke
   def create(processMetaData: MetaData,
@@ -30,9 +32,8 @@ class KafkaSinkFactory(config: KafkaConfig,
              @NotBlank
              topic: String
             )(metaData: MetaData): Sink = {
-    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
-    val preparedTopic = objectNaming.prepareName(topic, ObjectNamingUsageKey.kafkaTopic)
-    // val _topic = NamespaceUtil.alterTopicNameIfNamespaced(topic, config)
+    val objectNaming = objectNamingProvider.create(getClass.getClassLoader)
+    val preparedTopic = objectNaming.prepareName(topic, new NamingContext(ObjectNamingUsageKey.kafkaTopic))
     val serializationSchema = schemaFactory.create(preparedTopic, config)
     new KafkaSink(preparedTopic, serializationSchema, s"${metaData.id}-${preparedTopic}")
   }

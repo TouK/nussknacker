@@ -30,6 +30,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.SerializationSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.schemas;
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider$;
 import scala.Option;
 import scala.collection.JavaConverters;
 
@@ -89,6 +90,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
                 schema,
                 Option.apply(extractor),
                 TestParsingUtils.newLineSplit(),
+                ObjectNamingProvider$.MODULE$,
                 TypeInformation.of(Transaction.class)
         );
     }
@@ -106,7 +108,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
         };
         SerializationSchemaFactory<Object> schema = (topic, kafkaConfig1) ->
             new schemas.SimpleSerializationSchema<>(topic, serializer, null);
-        KafkaSinkFactory factory = new KafkaSinkFactory(kafkaConfig, schema);
+        KafkaSinkFactory factory = new KafkaSinkFactory(kafkaConfig, schema, ObjectNamingProvider$.MODULE$);
         Map<String, WithCategories<SinkFactory>> m = new HashMap<>();
         m.put("kafka-stringSink", all(factory));
         return m;

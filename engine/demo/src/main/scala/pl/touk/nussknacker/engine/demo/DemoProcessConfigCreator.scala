@@ -24,6 +24,7 @@ import CirceUtil.decodeJsonUnsafe
 import io.circe.Json
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 
@@ -73,7 +74,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
                                               timestampAssigner: Option[TimestampAssigner[T]],
                                               testPrepareInfo: TestDataSplit): SourceFactory[T] = {
     val schema = new EspDeserializationSchema[T](bytes => decode(bytes))
-    new KafkaSourceFactory[T](config, schema, timestampAssigner , testPrepareInfo)
+    new KafkaSourceFactory[T](config, schema, timestampAssigner , testPrepareInfo, ObjectNamingProvider)
   }
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
@@ -88,7 +89,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   }
 
   private def kafkaSink(kafkaConfig: KafkaConfig, serializationSchema: String => KafkaSerializationSchema[Any]) : SinkFactory = {
-    new KafkaSinkFactory(kafkaConfig, serializationSchema)
+    new KafkaSinkFactory(kafkaConfig, serializationSchema, ObjectNamingProvider)
   }
 
   override def listeners(config: Config): Seq[ProcessListener] = {

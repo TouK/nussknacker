@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactor
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
@@ -52,7 +53,9 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     val schemaRegistryClientFactory = createSchemaRegistryClientFactory
     Map(
       "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(kafkaConfig)),
-      "kafka-avro" -> defaultCategory(new KafkaSinkFactory(kafkaConfig, createGenericAvroSerializationSchemaFactory(schemaRegistryClientFactory)))
+      "kafka-avro" -> defaultCategory(new KafkaSinkFactory(kafkaConfig,
+        createGenericAvroSerializationSchemaFactory(schemaRegistryClientFactory),
+        ObjectNamingProvider))
     )
   }
 

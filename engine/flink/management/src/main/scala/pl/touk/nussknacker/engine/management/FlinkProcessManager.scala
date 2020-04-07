@@ -82,15 +82,13 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ProcessState => Future[T]): Future[T] = {
-    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
-    val name = objectNaming.prepareName(processName.value, ObjectNamingUsageKey.flinkProcess)
     findJobStatus(processName).flatMap {
       case Some(state) if state.status.isRunning =>
         action(state)
       case Some(state) =>
-        Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status.name}"))
+        Future.failed(new IllegalStateException(s"Job $processName is not running, status: ${state.status.name}"))
       case None =>
-        Future.failed(new IllegalStateException(s"Job $name not found"))
+        Future.failed(new IllegalStateException(s"Job $processName not found"))
     }
   }
 
@@ -114,19 +112,12 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   private def prepareProgramArgs(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
     val configPart = modelData.processConfigFromConfiguration.render()
-    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
 
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        // this is a very ugly temporary solution; once namespaces are configurable in the database as well,
-        // the process name should be modified accordingly when the process is saved
-        val decoded = ProcessMarshaller.fromJson(processAsJson).getOrElse(throw new Exception("Couldn't decode json"))
-        val preparedDecoded = decoded.copy(metaData = decoded.metaData.copy(id =
-          objectNaming.prepareName(decoded.metaData.id, ObjectNamingUsageKey.flinkProcess)))
-        val preparedEncoded = ProcessMarshaller.toJson(preparedDecoded).toString()
-        List(preparedEncoded, toJsonString(processVersion), configPart, buildInfoJson)
+        List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson)
       case CustomProcess(_) =>
-        List(objectNaming.prepareName(processVersion.processName.value, ObjectNamingUsageKey.flinkProcess), configPart, buildInfoJson)
+        List(processVersion.processName.value, configPart, buildInfoJson)
     }
   }
   private def toJsonString(processVersion: ProcessVersion): String = {

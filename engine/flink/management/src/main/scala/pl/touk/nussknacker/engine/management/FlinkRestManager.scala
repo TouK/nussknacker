@@ -81,8 +81,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
-    val objectNaming = ObjectNamingProvider(getClass.getClassLoader)
-    val preparedName = objectNaming.prepareName(name.value, ObjectNamingUsageKey.flinkProcess)
     basicRequest
       .get(flinkUrl.path("jobs", "overview"))
       .response(asJson[JobsResponse])
@@ -91,7 +89,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .flatMap { jobs =>
 
         val jobsForName = jobs.jobs
-          .filter(_.name == preparedName)
+          .filter(_.name == name.value)
           .sortBy(_.`last-modification`)
           .reverse
 
