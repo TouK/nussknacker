@@ -15,7 +15,7 @@
 
 // quick-n-serialize an SVG dom, needed for IE9 where there's no XMLSerializer nor SVG.xml
 // s: SVG dom, which is the <svg> elemennt
-function xmlSerializerForIE(s) {
+function xmlSerializerForIE(s): string {
   let out = ""
 
   out += `<${s.nodeName}`
@@ -37,10 +37,10 @@ function xmlSerializerForIE(s) {
   return out
 }
 
-export function toXml(node) {
+export function toXml(node: Node) {
   return window.XMLSerializer ? new XMLSerializer().serializeToString(node) : xmlSerializerForIE(node)
 }
 
-export function svgTowDataURL(svgStr) {
+export function svgTowDataURL(svgStr: string) {
   return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgStr)))}`
 }
