@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import * as joint from "jointjs"
-import css from "!raw-loader!stylus-loader!./export.styl"
+import css from "!raw-loader!./export.styl"
 import {toXml} from "../../../common/SVGUtils"
 import {memoize} from "lodash"
 
