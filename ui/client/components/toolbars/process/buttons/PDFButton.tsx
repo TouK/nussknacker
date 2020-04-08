@@ -21,7 +21,10 @@ function PDFButton(props: Props) {
       name={t("panels.actions.process-PDF.button", "PDF")}
       icon={<Icon/>}
       disabled={!canExport}
-      onClick={() => exportProcessToPdf(processId, versionId, graphGetter().exportGraph(), businessView)}
+      onClick={async () => {
+        const exportedGraph = await graphGetter().exportGraph()
+        exportProcessToPdf(processId, versionId, exportedGraph, businessView)
+      }}
     />
   )
 }
