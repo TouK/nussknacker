@@ -10,9 +10,11 @@ class ParameterTypeEditorDeterminer(val runtimeClass: Class[_]) extends Paramete
   override def determine(): Option[ParameterEditor] = {
     runtimeClass match {
       case klazz if klazz.isEnum => Some(
-        FixedValuesParameterEditor(
+        // We can pick here simple editor, but for compatibility reasons we choose dual editor instead
+        // - to be able to provide some other expression
+        DualParameterEditor(FixedValuesParameterEditor(
           possibleValues = runtimeClass.getEnumConstants.toList.map(extractEnumValue(runtimeClass))
-        )
+        ), DualEditorMode.SIMPLE)
       )
       case klazz if klazz == classOf[java.lang.String] => Some(
         DualParameterEditor(
