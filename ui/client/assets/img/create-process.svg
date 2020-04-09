@@ -1,11 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20.3 20.3">
-  <defs>
-    <style>
-      .a {
-        fill: #fff;
-      }
-    </style>
-  </defs>
-  <title>create-process</title>
-  <path class="a" d="M8.55,0h3.2V8.55H20.3v3.2H11.75V20.3H8.55V11.75H0V8.55H8.55Z"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20.3 20.3"><path d="M8.55 0h3.2v8.55h8.55v3.2h-8.55v8.55h-3.2v-8.55H0v-3.2h8.55z" fill="#fff"/></svg>

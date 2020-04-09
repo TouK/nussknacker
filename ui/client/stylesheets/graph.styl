@@ -609,10 +609,13 @@ espPanelButton()
   background-color modalInputBkgColor
   border none
   padding 0
-  &.active
+
+:local
+  .switch-icon-active
     path
       fill #8fad60
-  &.read-only
+
+  .switch-icon-read-only
     path
       opacity 0.3
 

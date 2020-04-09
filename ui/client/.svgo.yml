@@ -2,6 +2,7 @@ multipass: true
 pretty: true
 plugins:
   - removeOffCanvasPaths: true
+  # We inline styles because otherwise those styles are globally visible and can cause some unexpected behaviour
   - inlineStyles:
       onlyMatchedOnce: false
   - removeUselessStrokeAndFill:
