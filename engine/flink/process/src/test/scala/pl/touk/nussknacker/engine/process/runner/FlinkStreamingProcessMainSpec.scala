@@ -7,6 +7,7 @@ import io.circe.Encoder
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -50,7 +51,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
 
   )
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map(
     "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink), "c2"),
     "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
   )
@@ -60,7 +61,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "transformWithTime" -> WithCategories(TransformerWithTime)
   )
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
+  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
     "input" -> WithCategories(simpleRecordSource(Nil), "cat2"),
     "jsonInput" -> WithCategories(jsonSource, "cat2"),
     "typedJsonInput" -> WithCategories(TypedJsonSource, "cat2")

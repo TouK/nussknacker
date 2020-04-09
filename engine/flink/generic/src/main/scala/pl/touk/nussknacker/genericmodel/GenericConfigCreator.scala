@@ -6,6 +6,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SimpleSlidingAggregateTransformer
@@ -30,15 +31,17 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     "union" -> defaultCategory(UnionTransformer)
   )
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = {
+  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     val schemaRegistryClientFactory = createSchemaRegistryClientFactory
     val avroSourceFactory = new KafkaAvroSourceFactory(kafkaConfig,
-      createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory), schemaRegistryClientFactory, None)
+      createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory), schemaRegistryClientFactory,
+      None, objectNaming = objectNaming)
     val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(kafkaConfig,
-      createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory), schemaRegistryClientFactory, None)
-    Map("kafka-json" -> defaultCategory(new GenericJsonSourceFactory(kafkaConfig)),
-        "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(kafkaConfig)),
+      createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory), schemaRegistryClientFactory,
+      None, objectNaming = objectNaming)
+    Map("kafka-json" -> defaultCategory(new GenericJsonSourceFactory(kafkaConfig, objectNaming)),
+        "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(kafkaConfig, objectNaming)),
         "kafka-avro" -> defaultCategory(avroSourceFactory),
         "kafka-typed-avro" -> defaultCategory(avroTypedSourceFactory)
     )
@@ -48,14 +51,14 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   : DeserializationSchemaFactory[GenericData.Record] =
     new AvroDeserializationSchemaFactory[GenericData.Record](schemaRegistryClientFactory, useSpecificAvroReader = false)
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
+  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     val schemaRegistryClientFactory = createSchemaRegistryClientFactory
     Map(
-      "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(kafkaConfig)),
+      "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(kafkaConfig, objectNaming)),
       "kafka-avro" -> defaultCategory(new KafkaSinkFactory(kafkaConfig,
         createGenericAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-        ObjectNamingProvider))
+        objectNaming))
     )
   }
 

@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory;
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming;
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig$;
 import pl.touk.nussknacker.engine.api.process.SinkFactory;
 import pl.touk.nussknacker.engine.api.process.SourceFactory;
@@ -30,7 +31,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.SerializationSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.schemas;
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider$;
 import scala.Option;
 import scala.collection.JavaConverters;
 
@@ -54,15 +54,15 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     }
 
     @Override
-    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(Config config) {
+    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(Config config, ObjectNaming objectNaming) {
         KafkaConfig kafkaConfig = getKafkaConfig(config);
-        KafkaSourceFactory<Transaction> sourceFactory = getTransactionKafkaSourceFactory(kafkaConfig);
+        KafkaSourceFactory<Transaction> sourceFactory = getTransactionKafkaSourceFactory(kafkaConfig, objectNaming);
         Map<String, WithCategories<SourceFactory<?>>> m = new HashMap<>();
         m.put("kafka-transaction", all(sourceFactory));
         return m;
     }
 
-    private KafkaSourceFactory<Transaction> getTransactionKafkaSourceFactory(KafkaConfig kafkaConfig) {
+    private KafkaSourceFactory<Transaction> getTransactionKafkaSourceFactory(KafkaConfig kafkaConfig, ObjectNaming objectNaming) {
         BoundedOutOfOrdernessTimestampExtractor<Transaction> extractor = new BoundedOutOfOrdernessTimestampExtractor<Transaction>(Time.minutes(10)) {
             @Override
             public long extractTimestamp(Transaction element) {
@@ -90,13 +90,13 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
                 schema,
                 Option.apply(extractor),
                 TestParsingUtils.newLineSplit(),
-                ObjectNamingProvider$.MODULE$,
+                objectNaming,
                 TypeInformation.of(Transaction.class)
         );
     }
 
     @Override
-    public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config) {
+    public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config, ObjectNaming objectNaming) {
         KafkaConfig kafkaConfig = getKafkaConfig(config);
 
         schemas.ToStringSerializer<Object> serializer = element -> {
@@ -108,7 +108,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
         };
         SerializationSchemaFactory<Object> schema = (topic, kafkaConfig1) ->
             new schemas.SimpleSerializationSchema<>(topic, serializer, null);
-        KafkaSinkFactory factory = new KafkaSinkFactory(kafkaConfig, schema, ObjectNamingProvider$.MODULE$);
+        KafkaSinkFactory factory = new KafkaSinkFactory(kafkaConfig, schema, objectNaming);
         Map<String, WithCategories<SinkFactory>> m = new HashMap<>();
         m.put("kafka-stringSink", all(factory));
         return m;

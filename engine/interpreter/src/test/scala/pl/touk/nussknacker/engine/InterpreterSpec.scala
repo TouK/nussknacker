@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyValuesProvider, UsingLazyValues}
+import pl.touk.nussknacker.engine.api.namespaces.{DefaultObjectNaming, ObjectNaming}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -120,10 +121,10 @@ class InterpreterSpec extends FunSuite with Matchers {
 
       override def services(config: Config): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
 
-      override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] =
+      override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] =
         Map("transaction-source" -> WithCategories(TransactionSource))
 
-      override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]]
+      override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]]
       = Map("dummySink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {
         override def testDataOutput: Option[(Any) => String] = None
       })))
@@ -132,7 +133,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)))
     }
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ConfigFactory.empty())
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ConfigFactory.empty(), DefaultObjectNaming)
 
     failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader))
   }

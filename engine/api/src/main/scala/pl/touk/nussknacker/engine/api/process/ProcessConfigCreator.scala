@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.process
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 
 /**
@@ -15,9 +16,9 @@ trait ProcessConfigCreator extends Serializable {
 
   def services(config: Config) : Map[String, WithCategories[Service]]
 
-  def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]]
+  def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]]
 
-  def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]]
+  def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]]
 
   def listeners(config: Config): Seq[ProcessListener]
 

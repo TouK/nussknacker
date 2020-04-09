@@ -2,18 +2,18 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import java.util.UUID
 
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object sinks {
 
   private val encoder = BestEffortJsonEncoder(failOnUnkown = false)
 
-  class GenericKafkaJsonSink(kafkaConfig: KafkaConfig) extends KafkaSinkFactory(kafkaConfig,
-    GenericJsonSerialization, ObjectNamingProvider)
+  class GenericKafkaJsonSink(kafkaConfig: KafkaConfig, objectNaming: ObjectNaming) extends KafkaSinkFactory(kafkaConfig,
+    GenericJsonSerialization, objectNaming)
 
   case class GenericJsonSerialization(topic: String) extends SimpleSerializationSchema[Any](topic, element => {
       val objToEncode = element match {

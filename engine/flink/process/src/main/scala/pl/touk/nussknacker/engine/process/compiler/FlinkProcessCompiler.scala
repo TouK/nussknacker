@@ -6,6 +6,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.{ModelConfigToLoad, ModelData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
@@ -24,13 +25,16 @@ import scala.concurrent.duration.FiniteDuration
 
 //This class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
 //and we have ModelConfigToLoad and not whole config
-class FlinkProcessCompiler(creator: ProcessConfigCreator, configToLoad: ModelConfigToLoad, val diskStateBackendSupport: Boolean) extends Serializable {
+class FlinkProcessCompiler(creator: ProcessConfigCreator,
+                           configToLoad: ModelConfigToLoad,
+                           val diskStateBackendSupport: Boolean,
+                           objectNaming: ObjectNaming) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfigFromConfiguration, true)
+  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfigFromConfiguration, true, modelData.objectNaming)
 
   def compileProcess(process: EspProcess, processVersion: ProcessVersion)(userCodeClassLoader: ClassLoader): CompiledProcessWithDeps = {
     val config = loadConfig(userCodeClassLoader)
@@ -68,7 +72,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator, configToLoad: ModelCon
   }
 
   protected def definitions(config: Config): ProcessDefinition[ObjectWithMethodDef] = {
-    ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
+    ProcessDefinitionExtractor.extractObjectWithMethods(creator, config, objectNaming)
   }
 
   protected def listeners(config: Config): Seq[ProcessListener] = {

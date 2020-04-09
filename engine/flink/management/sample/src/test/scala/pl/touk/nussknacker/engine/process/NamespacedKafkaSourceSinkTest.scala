@@ -2,31 +2,27 @@ package pl.touk.nussknacker.engine.process
 
 import java.nio.charset.StandardCharsets
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.namespaces.{NamingContext, ObjectNaming, ObjectNamingUsageKey}
+import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
+import pl.touk.nussknacker.engine.management.sample.signal.RemoveLockProcessSignalFactory
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.namespaces.{NamingContext, ObjectNaming, ObjectNamingProvider}
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.Ficus._
-import org.apache.flink.api.common.serialization.SimpleStringSchema
-import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 
 
 
-class NamespacedSourceSinkTest extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers {
+class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers {
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
   import KafkaUtils._
@@ -50,12 +46,16 @@ class NamespacedSourceSinkTest extends FunSuite with BeforeAndAfterAll with Kafk
 
     run(process) {
       val consumer = kafkaClient.createConsumer()
-      val processed = consumer.consume(namespacedTopic(outputTopic)).take(1).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
+      val processed = consumer
+        .consume(namespacedTopic(outputTopic))
+        .take(1)
+        .map(msg => new String(msg.message(), StandardCharsets.UTF_8))
+        .toList
       processed shouldEqual List(message)
     }
   }
 
-  private lazy val configCreator: DevProcessConfigCreator = new NamespacedProcessConfigCreator
+  private lazy val configCreator: DevProcessConfigCreator = new TestProcessConfig
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   private val env = new StreamExecutionEnvironment(stoppableEnv)
@@ -66,7 +66,8 @@ class NamespacedSourceSinkTest extends FunSuite with BeforeAndAfterAll with Kafk
     val config = ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("namespace", fromAnyRef(namespaceName))
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, configCreator)), config)
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, configCreator,
+      objectNaming = new TestObjectNaming)), config)
   }
 
   override protected def afterAll(): Unit = {
@@ -81,23 +82,13 @@ class NamespacedSourceSinkTest extends FunSuite with BeforeAndAfterAll with Kafk
 }
 
 case class TestObjectNaming() extends ObjectNaming {
-  override def prepareName(originalName: String, namingContext: NamingContext): String =
-    s"ns_$originalName"
+  override def prepareName(originalName: String, namingContext: NamingContext): String = namingContext.usageKey match {
+    case ObjectNamingUsageKey.kafkaTopic => s"ns_$originalName"
+    case _ => originalName
+  }
+
 }
 
-object TestNamingProvider extends ObjectNamingProvider {
-  override def create(classLoader: ClassLoader): ObjectNaming = TestObjectNaming()
-}
-
-class NamespacedProcessConfigCreator extends DevProcessConfigCreator {
-  override def signals(config: Config): Map[String, Nothing] =
-    Map.empty
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
-    "kafka-string" -> WithCategories(new KafkaSinkFactory(config.as[KafkaConfig]("kafka"),
-        new SimpleSerializationSchema[Any](_, _.toString), TestNamingProvider),
-      "Default"))
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "real-kafka" -> WithCategories(new KafkaSourceFactory[String](config.as[KafkaConfig]("kafka"),
-        new SimpleStringSchema, None, TestParsingUtils.newLineSplit, TestNamingProvider),
-      "Default"))
+class TestProcessConfig extends DevProcessConfigCreator {
+  override def signals(config: Config): Map[String, WithCategories[RemoveLockProcessSignalFactory]] = Map.empty
 }

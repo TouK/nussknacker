@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.testing
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
@@ -15,10 +16,10 @@ class EmptyProcessConfigCreator
   override def services(config: Config): Map[String, WithCategories[Service]] =
     Map.empty
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] =
+  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] =
     Map.empty
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] =
+  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] =
     Map.empty
 
   override def listeners(config: Config): Seq[ProcessListener] =

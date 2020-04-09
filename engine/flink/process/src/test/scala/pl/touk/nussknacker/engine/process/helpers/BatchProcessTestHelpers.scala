@@ -10,6 +10,7 @@ import org.apache.flink.api.java.io.{DiscardingOutputFormat, TextInputFormat, Te
 import org.apache.flink.api.scala._
 import org.apache.flink.core.fs.Path
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, ProcessVersion}
 import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSink, FlinkBatchSource, FlinkBatchSourceFactory, NoParamBatchSourceFactory}
@@ -42,12 +43,12 @@ object BatchProcessTestHelpers {
 
     def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]): ProcessConfigCreator = new EmptyProcessConfigCreator {
 
-      override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[Any]]] = Map(
+      override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[Any]]] = Map(
         "input" -> WithCategories(new NoParamBatchSourceFactory(new FlinkCollectionBatchSource[SimpleRecord](exConfig, data))),
         "textLineSource" -> WithCategories(TextLineSourceFactory)
       )
 
-      override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+      override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map(
         "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
         "textLineSink" -> WithCategories(TextLineSinkFactory)
       )

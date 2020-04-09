@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeseri
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -465,12 +466,12 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  class KeyValueKafkaSourceFactory(kafkaConfig: KafkaConfig) extends KafkaSourceFactory[KeyValue](
+  class KeyValueKafkaSourceFactory(kafkaConfig: KafkaConfig, objectNaming: ObjectNaming) extends KafkaSourceFactory[KeyValue](
               kafkaConfig,
               new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e)),
               Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
               TestParsingUtils.newLineSplit,
-              ObjectNamingProvider)
+              objectNaming)
 
 
 }

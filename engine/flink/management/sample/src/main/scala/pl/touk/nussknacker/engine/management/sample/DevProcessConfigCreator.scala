@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object DevProcessConfigCreator {
@@ -50,22 +51,22 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def kafkaConfig(config: Config) = config.as[KafkaConfig]("kafka")
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
     "monitor" -> categories(SinkFactory.noParam(EmptySink)),
     "kafka-string" -> all(new KafkaSinkFactory(kafkaConfig(config),
                                 new SimpleSerializationSchema[Any](_, _.toString),
-                                ObjectNamingProvider))
+                                objectNaming))
   )
 
   override def listeners(config: Config) = List(LoggingListener)
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "real-kafka" -> all(new KafkaSourceFactory[String](kafkaConfig(config),
                                                         new SimpleStringSchema,
                                                         None,
                                                         TestParsingUtils.newLineSplit,
-                                                        ObjectNamingProvider)),
+                                                        objectNaming)),
     "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),

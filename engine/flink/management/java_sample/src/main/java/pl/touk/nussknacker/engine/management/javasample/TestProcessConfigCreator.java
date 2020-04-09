@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory;
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming;
 import pl.touk.nussknacker.engine.api.process.SinkFactory;
 import pl.touk.nussknacker.engine.api.process.SourceFactory;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
@@ -26,12 +27,12 @@ public class TestProcessConfigCreator implements ProcessConfigCreator {
     }
 
     @Override
-    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(Config config) {
+    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(Config config, ObjectNaming objectNaming) {
         return Collections.singletonMap("source", objects.source());
     }
 
     @Override
-    public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config) {
+    public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config, ObjectNaming objectNaming) {
         return Collections.singletonMap("sink", objects.sink());
     }
 

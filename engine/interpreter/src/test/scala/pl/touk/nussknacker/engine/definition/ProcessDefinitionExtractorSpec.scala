@@ -5,6 +5,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
+import pl.touk.nussknacker.engine.api.namespaces.{DefaultObjectNaming, ObjectNaming}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -14,7 +15,7 @@ import scala.concurrent.Future
 class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
-    ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, ConfigFactory.load())
+    ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, ConfigFactory.load(), DefaultObjectNaming)
 
   test("extract definitions") {
     val signal1 = processDefinition.signalsWithTransformers.get("signal1")
@@ -54,9 +55,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter[Int]("param1")), Typed[String]), "cat")
     )
 
-    override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map()
+    override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = Map()
 
-    override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map()
+    override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map()
 
     override def listeners(config: Config): Seq[ProcessListener] = List()
 

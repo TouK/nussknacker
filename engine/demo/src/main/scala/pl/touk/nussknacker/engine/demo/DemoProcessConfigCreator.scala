@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.demo
 
 import com.typesafe.config.Config
+import io.circe.Json
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -8,8 +9,11 @@ import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
@@ -18,13 +22,9 @@ import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingRestartingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
-import CirceUtil.decodeJsonUnsafe
-import io.circe.Json
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 
@@ -48,48 +48,52 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = {
+  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
-    val transactionSource = createTransactionSource(kafkaConfig)
-    val clientSource = createClientSource(kafkaConfig)
+    val transactionSource = createTransactionSource(kafkaConfig, objectNaming)
+    val clientSource = createClientSource(kafkaConfig, objectNaming)
     Map(
       "kafka-transaction" -> all(transactionSource),
       "kafka-client" -> all(clientSource)
     )
   }
 
-  private def createTransactionSource(kafkaConfig: KafkaConfig) = {
+  private def createTransactionSource(kafkaConfig: KafkaConfig, objectNaming: ObjectNaming) = {
     val transactionTimestampExtractor = new BoundedOutOfOrdernessTimestampExtractor[Transaction](Time.minutes(10)) {
       override def extractTimestamp(element: Transaction): Long = element.eventDate
     }
-    kafkaSource[Transaction](kafkaConfig, decodeJsonUnsafe[Transaction](_), Some(transactionTimestampExtractor), TestParsingUtils.newLineSplit)
+    kafkaSource[Transaction](kafkaConfig, decodeJsonUnsafe[Transaction](_), Some(transactionTimestampExtractor),
+      TestParsingUtils.newLineSplit, objectNaming)
   }
 
-  private def createClientSource(kafkaConfig: KafkaConfig) = {
-    kafkaSource[Client](kafkaConfig, decodeJsonUnsafe[Client](_), None, TestParsingUtils.newLineSplit)
+  private def createClientSource(kafkaConfig: KafkaConfig, objectNaming: ObjectNaming) = {
+    kafkaSource[Client](kafkaConfig, decodeJsonUnsafe[Client](_), None, TestParsingUtils.newLineSplit, objectNaming)
   }
 
   private def kafkaSource[T: TypeInformation](config: KafkaConfig,
                                               decode: Array[Byte] => T,
                                               timestampAssigner: Option[TimestampAssigner[T]],
-                                              testPrepareInfo: TestDataSplit): SourceFactory[T] = {
+                                              testPrepareInfo: TestDataSplit,
+                                              objectNaming: ObjectNaming): SourceFactory[T] = {
     val schema = new EspDeserializationSchema[T](bytes => decode(bytes))
-    new KafkaSourceFactory[T](config, schema, timestampAssigner , testPrepareInfo, ObjectNamingProvider)
+    new KafkaSourceFactory[T](config, schema, timestampAssigner , testPrepareInfo, objectNaming)
   }
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
+  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     val stringOrJsonSink = kafkaSink(kafkaConfig, new SimpleSerializationSchema[Any](_, {
       case a: DisplayJson => a.asJson.noSpaces
       case a: Json => a.noSpaces
       case a: String => a
       case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
-    }))
+    }), objectNaming)
     Map("kafka-stringSink" -> all(stringOrJsonSink))
   }
 
-  private def kafkaSink(kafkaConfig: KafkaConfig, serializationSchema: String => KafkaSerializationSchema[Any]) : SinkFactory = {
-    new KafkaSinkFactory(kafkaConfig, serializationSchema, ObjectNamingProvider)
+  private def kafkaSink(kafkaConfig: KafkaConfig,
+                        serializationSchema: String => KafkaSerializationSchema[Any],
+                        objectNaming: ObjectNaming) : SinkFactory = {
+    new KafkaSinkFactory(kafkaConfig, serializationSchema, objectNaming)
   }
 
   override def listeners(config: Config): Seq[ProcessListener] = {

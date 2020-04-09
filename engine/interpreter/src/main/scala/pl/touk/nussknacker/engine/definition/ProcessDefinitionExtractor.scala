@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -24,12 +25,14 @@ object ProcessDefinitionExtractor {
 
   import pl.touk.nussknacker.engine.util.Implicits._
   //TODO: move it to ProcessConfigCreator??
-  def extractObjectWithMethods(creator: ProcessConfigCreator, config: Config) : ProcessDefinition[ObjectWithMethodDef] = {
+  def extractObjectWithMethods(creator: ProcessConfigCreator,
+                               config: Config,
+                               objectNaming: ObjectNaming) : ProcessDefinition[ObjectWithMethodDef] = {
 
     val services = creator.services(config)
     val signals = creator.signals(config)
-    val sourceFactories = creator.sourceFactories(config)
-    val sinkFactories = creator.sinkFactories(config)
+    val sourceFactories = creator.sourceFactories(config, objectNaming)
+    val sinkFactories = creator.sinkFactories(config, objectNaming)
     val exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
     val customStreamTransformers = creator.customStreamTransformers(config)
     val expressionConfig = creator.expressionConfig(config)

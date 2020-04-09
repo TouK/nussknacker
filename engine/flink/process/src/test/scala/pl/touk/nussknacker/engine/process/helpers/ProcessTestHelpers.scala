@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -73,13 +74,13 @@ object ProcessTestHelpers {
         "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService)
       )
 
-      override def sourceFactories(config: Config): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
+      override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
         "input" -> WithCategories(SampleNodes.simpleRecordSource(data)),
         "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
-        "kafka-keyvalue" -> WithCategories(new KeyValueKafkaSourceFactory(kafkaConfig))
+        "kafka-keyvalue" -> WithCategories(new KeyValueKafkaSourceFactory(kafkaConfig, objectNaming))
       )
 
-      override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+      override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
         "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),

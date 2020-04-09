@@ -12,18 +12,19 @@ import pl.touk.nussknacker.engine.standalone.utils._
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import io.circe.Json._
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 
 import scala.concurrent.Future
 
 class TestConfigCreator extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request]),
     "request1-get-source" -> WithCategories(RequestGetSourceFactory),
     "genericGetSource" -> WithCategories(new TypedMapStandaloneSourceFactory)
   )
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map(
     "response-sink" -> WithCategories(new StandaloneSinkFactory)
   )
 

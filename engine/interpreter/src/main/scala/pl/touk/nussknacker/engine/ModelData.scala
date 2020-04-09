@@ -5,6 +5,7 @@ import java.net.URL
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object ModelData extends LazyLogging {
 
@@ -48,7 +50,7 @@ case class ClassLoaderModelData(processConfigFromConfiguration: ModelConfigToLoa
     }
   }
 
-
+  override def objectNaming: ObjectNaming = ObjectNamingProvider(modelClassLoader.classLoader)
 }
 
 trait ModelData extends AutoCloseable {
@@ -57,9 +59,11 @@ trait ModelData extends AutoCloseable {
 
   def configCreator: ProcessConfigCreator
 
+  def objectNaming: ObjectNaming
+
   lazy val processWithObjectsDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     withThisAsContextClassLoader {
-      ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig)
+      ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig, objectNaming)
     }
 
   lazy val processDefinition: ProcessDefinition[ObjectDefinition] = ProcessDefinitionExtractor.toObjectDefinition(processWithObjectsDefinition)

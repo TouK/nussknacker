@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDa
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
 import org.apache.flink.api.scala._
+import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
@@ -102,12 +103,12 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
 
   private def createAvroSourceFactory(useSpecificAvroReader: Boolean) = {
     new KafkaAvroSourceFactory[AnyRef](kafkaConfig, new AvroDeserializationSchemaFactory(MockSchemaRegistryClientFactory, useSpecificAvroReader),
-      MockSchemaRegistryClientFactory, None)
+      MockSchemaRegistryClientFactory, None, objectNaming = DefaultObjectNaming)
   }
 
   private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation] = {
     new KafkaAvroSourceFactory(kafkaConfig, new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockSchemaRegistryClientFactory),
-      MockSchemaRegistryClientFactory, None, formatKey = true)
+      MockSchemaRegistryClientFactory, None, formatKey = true, objectNaming = DefaultObjectNaming)
   }
 
 }

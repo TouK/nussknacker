@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 import UnitTestsProcessConfigCreator._
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 
 /**
@@ -86,7 +87,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     "TariffService"  -> all(new TariffService)
   )
 
-  override def sourceFactories(config: Config) = {
+  override def sourceFactories(config: Config, objectNaming: ObjectNaming) = {
     Map(
       "PageVisits" -> recommendation(new RunningSourceFactory[PageVisit]((count: Int) => PageVisit(s"${count % 20}", LocalDateTime.now(),
         s"/products/product${count % 14}", s"10.1.3.${count % 15}"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
@@ -106,7 +107,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def sinkFactories(config: Config) = Map(
+  override def sinkFactories(config: Config, objectNaming: ObjectNaming) = Map(
     "ReportFraud" -> fraud(SinkFactory.noParam(EmptySink)),
     "Recommend" -> recommendation(SinkFactory.noParam(EmptySink)),
     "KafkaSink" -> fraud(SinkFactory.noParam(EmptySink))

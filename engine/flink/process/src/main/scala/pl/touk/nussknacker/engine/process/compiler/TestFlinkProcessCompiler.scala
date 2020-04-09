@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.{ModelConfigToLoad, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListener
@@ -21,7 +22,8 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfigToLoad,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
-                               testData: TestData, executionConfig: ExecutionConfig) extends StubbedFlinkProcessCompiler(process, creator, config) {
+                               testData: TestData, executionConfig: ExecutionConfig,
+                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, config, objectNaming) {
 
 
   override protected def listeners(config: Config): Seq[ProcessListener] = List(collectingListener) ++ super.listeners(config)

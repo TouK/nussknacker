@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.util.namespaces
+package pl.touk.nussknacker.engine.api.namespaces
 
 trait ObjectNaming {
   def prepareName(originalName: String, namingContext: NamingContext): String
 }
 
-case class DefaultObjectNaming() extends ObjectNaming {
+case object DefaultObjectNaming extends ObjectNaming {
   override def prepareName(originalName: String, namingContext: NamingContext): String =
     originalName
 }

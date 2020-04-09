@@ -112,7 +112,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     val creator = modelData.configCreator
     val config = modelData.processConfig
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config, modelData.objectNaming)
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
 

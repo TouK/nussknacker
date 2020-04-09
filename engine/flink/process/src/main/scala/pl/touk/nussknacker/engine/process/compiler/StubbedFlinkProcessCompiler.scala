@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
 import org.apache.flink.api.common.serialization.DeserializationSchema
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.{ModelConfigToLoad, ModelData}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -16,8 +17,8 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
-abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: ProcessConfigCreator, config: ModelConfigToLoad)
-  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport = false) {
+abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: ProcessConfigCreator, config: ModelConfigToLoad, objectNaming: ObjectNaming)
+  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport = false, objectNaming) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 

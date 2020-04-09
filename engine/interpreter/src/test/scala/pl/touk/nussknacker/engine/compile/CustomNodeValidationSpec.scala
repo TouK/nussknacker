@@ -7,6 +7,7 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidTailOfBranch, MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.namespaces.{DefaultObjectNaming, ObjectNaming}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -42,10 +43,10 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "optionalEndingTransformer" -> WithCategories(OptionalEndingStreamTransformer)
     )
 
-    override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = Map(
       "mySource" -> WithCategories(SimpleStringSource))
 
-    override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+    override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map(
       "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {
         override def testDataOutput = None
       })))
@@ -175,7 +176,8 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
-  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator, ConfigFactory.empty)
+  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator,
+    ConfigFactory.empty, DefaultObjectNaming)
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
   test("valid process") {

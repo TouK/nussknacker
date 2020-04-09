@@ -13,6 +13,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -145,11 +146,11 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] =
     Map("aggregate" -> WithCategories(SlidingAggregateTransformer))
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] =
+  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] =
     Map("start" -> WithCategories(NoParamSourceFactory(new CollectionSource[TestRecord](new ExecutionConfig,
       input, Some(TestRecord.timestampExtractor), Typed[TestRecord]))))
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] =
+  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] =
     Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
 
   override def expressionConfig(config: Config): ExpressionConfig

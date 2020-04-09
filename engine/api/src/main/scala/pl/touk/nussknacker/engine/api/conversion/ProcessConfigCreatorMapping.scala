@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.conversion
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
@@ -21,11 +22,11 @@ object ProcessConfigCreatorMapping {
       override def services(config: Config) : Map[String, WithCategories[Service]] = {
         jcreator.services(config).asScala.toMap
       }
-      override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = {
-        jcreator.sourceFactories(config).asScala.toMap
+      override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = {
+        jcreator.sourceFactories(config, objectNaming).asScala.toMap
       }
-      override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
-        jcreator.sinkFactories(config).asScala.toMap
+      override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = {
+        jcreator.sinkFactories(config, objectNaming).asScala.toMap
       }
       override def listeners(config: Config): Seq[ProcessListener] = {
         jcreator.listeners(config).asScala.toSeq
