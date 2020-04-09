@@ -39,10 +39,10 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
 
     val determiner = ParameterEditorDeterminerChain(param, config)
 
-    determiner.determineEditor() shouldBe FixedValuesParameterEditor(List(
+    determiner.determineEditor() shouldBe DualParameterEditor(FixedValuesParameterEditor(List(
       FixedExpressionValue(s"T(${classOf[JavaSampleEnum].getName}).${JavaSampleEnum.FIRST_VALUE.name()}", "first_value"),
       FixedExpressionValue(s"T(${classOf[JavaSampleEnum].getName}).${JavaSampleEnum.SECOND_VALUE.name()}", "second_value")
-    ))
+    )), DualEditorMode.SIMPLE)
   }
 
   test("determine editor by type LocalDateTime") {

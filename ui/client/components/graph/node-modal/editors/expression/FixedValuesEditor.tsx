@@ -26,7 +26,7 @@ const getOptions = (values) => {
 
 export default class FixedValuesEditor extends React.Component<Props> {
 
-  public static switchableTo = (expressionObj: ExpressionObj, values) => values.includes(expressionObj.expression)
+  public static switchableTo = (expressionObj: ExpressionObj, values) => values.map(v => v.expression).includes(expressionObj.expression)
   public static switchableToHint = () => "Switch to basic mode"
   public static notSwitchableToHint = () => "Expression must be one of the expression possible values to switch basic mode"
 
@@ -52,9 +52,8 @@ export default class FixedValuesEditor extends React.Component<Props> {
     const option = this.currentOption()
 
     return (
-      <React.Fragment>
+      <div className={`node-value-select ${className}`}>
         <Creatable
-          className={`node-value-select ${className}`}
           classNamePrefix="node-value-select"
           value={option}
           onChange={(newValue) => onValueChange(newValue.value)}
@@ -62,8 +61,8 @@ export default class FixedValuesEditor extends React.Component<Props> {
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
         />
-        {showValidation && <ValidationLabels validators={validators} values={[option.value]} additionalClassName={"fixed-values-editor"}/>}
-      </React.Fragment>
+        {showValidation && <ValidationLabels validators={validators} values={[option.value]}/>}
+      </div>
     )
   }
 }
