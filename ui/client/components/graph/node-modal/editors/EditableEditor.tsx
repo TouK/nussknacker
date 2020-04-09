@@ -44,7 +44,7 @@ class EditableEditor extends React.Component<Props, State> {
     const {param, expressionObj, values} = this.props
     this.state = {
       displayRawEditor: !(param?.editor.defaultMode === DualEditorMode.SIMPLE &&
-        editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, values)),
+        editors[param?.editor.simpleEditor.type].switchableTo(expressionObj, param, values)),
     }
   }
 
