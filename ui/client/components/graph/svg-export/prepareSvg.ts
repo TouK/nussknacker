@@ -1,80 +1,57 @@
 /* eslint-disable i18next/no-literal-string */
 import * as joint from "jointjs"
 import css from "!raw-loader!./export.styl"
-import {toXml} from "../../../common/SVGUtils"
+import {toXml, svgTowDataURL} from "../../../common/SVGUtils"
 import {memoize} from "lodash"
 
-const xmlns = "http://www.w3.org/2000/svg"
-let iconId = 1
-
 function createStyle() {
-  const style = document.createElementNS(xmlns, "style")
+  const style = joint.V("style").node
   style.appendChild(document.createTextNode(css))
   return style
 }
 
-function getCanvas(width: number, height: number) {
-  const canvas = document.createElement("canvas")
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext("2d")
-  return {canvas, ctx}
-}
-
-const getPng = memoize((url: string, width: number, height: number) => {
-  const {canvas, ctx} = getCanvas(width, height)
-  return new Promise<[string, string]>(resolve => {
-    const id = `id${iconId++}`
-    const img = new Image(width, height)
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0)
-      resolve([canvas.toDataURL("image/png"), id])
-    }
-    img.src = url
-  })
+const getDataUrl = memoize(async (url: string) => {
+  const response = await fetch(url)
+  const svgStr = await response.text()
+  return {dataurl: svgTowDataURL(svgStr), id: joint.util.uniqueId("img")}
 })
 
-function getPngScale(url: string, width: number, height: number, scale = 1) {
-  return getPng(url, width * scale, height * scale)
-}
-
-export function debugInWindow(svgString: string) {
+function _debugInWindow(svg: string | SVGElement) {
+  const svgString = typeof svg === "string" ? svg : toXml(svg)
   window.open(null).document.write(svgString)
 }
 
-async function embedImage(image: SVGImageElement): Promise<[SVGImageElement, string]> {
-  const {width, height, href} = image
-  const [dataurl, id] = await getPngScale(href.baseVal, width.baseVal.value, height.baseVal.value, 10)
-  image.setAttribute("xlink:href", dataurl)
-  return [image, id]
+async function embedImage(image: joint.Vectorizer) {
+  const href = image.attr("xlink:href")
+  const {dataurl, id} = await getDataUrl(href)
+  image.attr("xlink:href", dataurl)
+  return {dataurl, id}
 }
 
-function replaceWithDef(svg: SVGSVGElement) {
-  const defs = document.createElementNS(xmlns, "defs")
-  svg.prepend(defs)
-
-  return ([image, id]: [SVGImageElement, string]) => {
-    if (!svg.getElementById(id)) {
-      const def = image.cloneNode() as SVGImageElement
-      def.setAttribute("id", id)
-      defs.append(def)
-    }
-    const use = document.createElementNS(xmlns, "use")
-    use.setAttribute("xlink:href", `#${id}`)
-    image.replaceWith(use)
+function createDefInNeeded(image: joint.Vectorizer, id: string) {
+  const defs = image.defs()
+  const existingDef = defs.findOne(`#${id}`)
+  if (!existingDef) {
+    const def = joint.V(image.clone(), {id})
+    defs.append(def)
+    return def
   }
+  return existingDef
 }
 
-async function embedImages(svg: SVGSVGElement) {
-  const nodes = svg.querySelectorAll<SVGImageElement>("image[*|href]")
-  const externalImages = Array.from(nodes)
-    .filter(({href}) => !href.baseVal.startsWith("data:image"))
-    .map(embedImage)
+async function replaceWithDef(img: joint.Vectorizer) {
+  const {id} = await embedImage(img)
+  const def = createDefInNeeded(img, id)
+  const use = joint.V("use", {["xlink:href"]: `#${def.id}`})
+  return img.node.replaceWith(use.node)
+}
 
-  if (externalImages.length) {
-    const embedded = await Promise.all(externalImages)
-    embedded.forEach(replaceWithDef(svg))
-  }
+function embedImages(svg: SVGElement) {
+  const images = joint.V(svg)
+    .find("image[*|href]")
+    .filter(i => !i.attr("xlink:href").startsWith("data:image"))
+
+  return Promise.all(images.map(replaceWithDef))
 }
 
 function hasSize(el: SVGGraphicsElement) {
@@ -86,7 +63,7 @@ function hasDisplay(el: Element) {
   return window.getComputedStyle(el).display !== "none"
 }
 
-const removeHiddenNodes = (root: SVGSVGElement) => Array
+const removeHiddenNodes = (root: SVGElement) => Array
   // TODO: find better way
   .from(root.querySelectorAll<SVGGraphicsElement>("[style*='display'], [class]"))
   .filter(el => !hasSize(el) || !hasDisplay(el))
@@ -114,12 +91,12 @@ function createPaper(placeholder: HTMLDivElement, maxSize: number, options: join
   paper.scaleContentToFit({minScale: 1.5, maxScale: 4})
   paper.fitToContent()
 
-  const svg = paper.svg as SVGSVGElement
+  const {svg} = paper
   const {width, height} = paper.getComputedSize()
   return {svg, width, height}
 }
 
-function addStyles(svg: SVGSVGElement, height: number, width: number) {
+function addStyles(svg: SVGElement, height: number, width: number) {
   svg.prepend(createStyle())
   svg.setAttribute("height", height.toString())
   svg.setAttribute("width", width.toString())
@@ -137,3 +114,4 @@ export async function prepareSvg(options: joint.dia.Paper.Options, maxSize = 150
   placeholder.remove()
   return toXml(svg)
 }
+
