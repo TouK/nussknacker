@@ -1,12 +1,1 @@
-<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
- <g>
-  <title>background</title>
-  <rect x="-1" y="-1" width="195.548267" height="195.548267" id="canvas_background" fill="none"/>
- </g>
-
- <g>
-  <title>Layer 1</title>
-  <path id="svg_6" d="m-93.653401,165.731161l-0.157787,-0.099173c-0.03981,-0.024997 -0.092267,-0.012966 -0.117351,0.026852l-0.062193,0.098988l0.301852,0.189587l0.062242,-0.098942c0.024989,-0.039866 0.013063,-0.09237 -0.026764,-0.117312l0,0zm-0.874478,0.881881l0.301869,0.189585l0.491996,-0.783218l-0.302012,-0.189634l-0.491852,0.783268l0,0zm-0.04611,0.240875l-0.006667,0.178074l0.157544,-0.08333l0.146404,-0.077301l-0.291222,-0.183014l-0.006058,0.165572l0,0l0,0z" stroke-opacity="null" stroke-width="15.5" stroke="#ffffff" fill="#ffffff"/>
-  <path stroke="#ffffff" id="svg_8" d="m16.428901,133.096941l28.624546,-29.953359l78.416482,82.017167l130.717747,-136.695278l28.634664,29.932191l-159.352411,166.669805" fill-opacity="null" stroke-opacity="null" stroke-width="15.5" fill="#ffffff"/>
- </g>
-</svg>
+<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg"><path stroke="#fff" d="M16.429 133.097l28.624-29.953 78.417 82.017L254.188 48.465l28.634 29.933-159.352 166.67" fill-opacity="null" stroke-opacity="null" stroke-width="15.5" fill="#fff"/></svg>
