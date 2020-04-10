@@ -117,7 +117,7 @@ export const editors: Record<EditorType, EditorConfig> = {
     hint: (switchable) => switchable ? FixedValuesEditor.switchableToHint() : FixedValuesEditor.notSwitchableToHint(),
     switchableTo: (expressionObj, param, values) => FixedValuesEditor.switchableTo(
       expressionObj,
-      !isEmpty(values) ? values : param.editor.possibleValues,
+      !isEmpty(values) ? values : param.editor.simpleEditor.possibleValues,
     ),
     values: (param, values) => !isEmpty(values) ? values : param.editor.possibleValues,
   },
@@ -130,7 +130,7 @@ export const editors: Record<EditorType, EditorConfig> = {
       editors[EditorType.RAW_PARAMETER_EDITOR].hint(),
     showSwitch: true,
     switchable: (editor, param, expressionObj) => editor === RawEditor ?
-      editors[param.editor.simpleEditor.type].switchableTo(expressionObj) :
+      editors[param.editor.simpleEditor.type].switchableTo(expressionObj, param) :
       true,
     values: (param) => param.editor.simpleEditor.possibleValues,
     validators: (param, errors, fieldLabel, displayRawEditor) => displayRawEditor ?
