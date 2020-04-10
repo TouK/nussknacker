@@ -1,11 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11.79 14">
-    <defs>
-        <style>.cls-book{fill:#fff;}</style>
-    </defs>
-    <title>documentation</title>
-    <g id="Layer_2" data-name="Layer 2">
-        <g id="modal_noda" data-name="modal noda">
-            <path class="cls-book" d="M0,0H.74V14H0ZM1.47,14V0H11.79V14ZM3,3.32v1.1h7.37V3.32ZM4.42,5.53v1.1H8.84V5.53Z"/>
-        </g>
-    </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11.79 14"><g data-name="Layer 2"><path d="M0 0h.74v14H0zm1.47 14V0h10.32v14zM3 3.32v1.1h7.37v-1.1zm1.42 2.21v1.1h4.42v-1.1z" fill="#fff" data-name="modal noda"/></g></svg>
