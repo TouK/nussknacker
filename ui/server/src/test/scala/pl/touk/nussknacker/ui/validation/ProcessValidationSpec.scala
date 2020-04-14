@@ -37,8 +37,8 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
       "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
-      "fixedValueOptionalProperty" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
-      "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
+      "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
+      "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
     )),
     sampleResolver,
     emptyProcessingTypeDataProvider
@@ -332,7 +332,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
   test("check for wrong fixed expression value in additional property") {
     val process = createProcessWithParams(List.empty, Map(
-      "fixedValueOptionalProperty" -> "wrong fixed value",
+      "numberOfThreads" -> "wrong fixed value",
       "requiredStringProperty" -> "test"
     ))
 
@@ -340,7 +340,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     result.errors.globalErrors shouldBe empty
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("fixedValueOptionalProperty"), NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("InvalidPropertyFixedValue", _, _, Some("numberOfThreads"), NodeValidationErrorType.SaveAllowed)) =>
     }
     result.warnings shouldBe ValidationWarnings.success
   }

@@ -30,8 +30,8 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
       "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
-      "fixedValueOptionalProperty" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
-      "intOptionalProperty" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
+      "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
+      "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
     )),
     sampleResolver,
     emptyProcessingTypeDataProvider
@@ -69,7 +69,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include ("Configured property requiredStringProperty (label) is missing")
-      entity should include ("Property fixedValueOptionalProperty has invalid value")
+      entity should include ("Property numberOfThreads has invalid value")
       entity should include ("Unknown property unknown")
       entity should include ("This field value has to be an integer number")
     }

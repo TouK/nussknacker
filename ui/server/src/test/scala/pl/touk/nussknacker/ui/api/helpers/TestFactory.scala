@@ -63,9 +63,9 @@ object TestFactory extends TestPermissions{
       ExceptionHandlerRef(List.empty),
       isSubprocess = false,
       Some(ProcessAdditionalFields(Some("process description"), Set.empty, Map(
-        "intOptionalProperty" -> "text",
+        "maxEvents" -> "text",
         "unknown" -> "x",
-        "fixedValueOptionalProperty" -> "wrong fixed value"
+        "numberOfThreads" -> "wrong fixed value"
       ))),
       subprocessVersions = Map.empty),
     nodes = List.empty,
