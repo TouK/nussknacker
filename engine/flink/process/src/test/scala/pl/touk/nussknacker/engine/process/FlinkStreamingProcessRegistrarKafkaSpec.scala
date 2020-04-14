@@ -9,13 +9,11 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
+import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 
@@ -45,9 +43,8 @@ class FlinkStreamingProcessRegistrarKafkaSpec
       NonEmptyList.of(GraphBuilder.source("source", "kafka-keyvalue", "topic" -> s"""'$inTopic'""")
         .processorEnd("service", "logService", "all" -> "#input"))
     )
-
     helpers.ProcessTestHelpers.processInvoker.invokeWithKafka(
-      process, KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
+      process, config
     ) {
       val keys = 10
       val slides = 100
@@ -79,8 +76,5 @@ class FlinkStreamingProcessRegistrarKafkaSpec
         checkResultIsCorrect()
       }
     }
-
-
   }
-
 }

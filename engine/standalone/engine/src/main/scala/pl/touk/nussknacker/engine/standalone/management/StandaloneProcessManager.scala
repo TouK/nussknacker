@@ -7,11 +7,10 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
-import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.process.{ProcessName, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion, StandaloneMetaData, TypeSpecificData}
@@ -30,6 +29,7 @@ import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.{ModelData, _}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -110,9 +110,9 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   def runTest[T](variableEncoder: Any => T): TestResults[T] = {
     val creator = modelData.configCreator
-    val config = modelData.processConfig
+    val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config, modelData.objectNaming)
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
 

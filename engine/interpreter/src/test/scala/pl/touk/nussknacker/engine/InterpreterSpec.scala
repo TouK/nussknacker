@@ -4,7 +4,7 @@ import java.util.Optional
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
@@ -15,11 +15,11 @@ import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyValuesProvider, UsingLazyValues}
-import pl.touk.nussknacker.engine.api.namespaces.{DefaultObjectNaming, ObjectNaming}
+import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Service, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -117,23 +117,23 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator {
 
-      override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = customStreamTransformersToUse.mapValuesNow(WithCategories(_))
+      override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = customStreamTransformersToUse.mapValuesNow(WithCategories(_))
 
-      override def services(config: Config): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
 
-      override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] =
+      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
         Map("transaction-source" -> WithCategories(TransactionSource))
 
-      override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]]
+      override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
       = Map("dummySink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {
         override def testDataOutput: Option[(Any) => String] = None
       })))
 
-      override def expressionConfig(config: Config): ExpressionConfig = super.expressionConfig(config)
+      override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = super.expressionConfig(processObjectDependencies)
         .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)))
     }
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ConfigFactory.empty(), DefaultObjectNaming)
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), DefaultObjectNaming))
 
     failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader))
   }

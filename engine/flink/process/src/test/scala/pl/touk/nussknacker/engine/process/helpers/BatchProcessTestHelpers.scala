@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import java.util.Date
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.io.{InputFormat, OutputFormat}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -10,8 +10,7 @@ import org.apache.flink.api.java.io.{DiscardingOutputFormat, TextInputFormat, Te
 import org.apache.flink.api.scala._
 import org.apache.flink.core.fs.Path
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, ProcessVersion}
 import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSink, FlinkBatchSource, FlinkBatchSourceFactory, NoParamBatchSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.source.FlinkCollectionBatchSource
@@ -43,21 +42,21 @@ object BatchProcessTestHelpers {
 
     def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]): ProcessConfigCreator = new EmptyProcessConfigCreator {
 
-      override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[Any]]] = Map(
+      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[Any]]] = Map(
         "input" -> WithCategories(new NoParamBatchSourceFactory(new FlinkCollectionBatchSource[SimpleRecord](exConfig, data))),
         "textLineSource" -> WithCategories(TextLineSourceFactory)
       )
 
-      override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map(
+      override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
         "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
         "textLineSink" -> WithCategories(TextLineSinkFactory)
       )
 
       // TODO: enrichers
       // TODO: custom data set transformers
-      override def customStreamTransformers(config: Config): Map[String, Nothing] = Map.empty
+      override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, Nothing] = Map.empty
 
-      override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
+      override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
         ExceptionHandlerFactory.noParams(_ => RecordingExceptionHandler)
     }
   }

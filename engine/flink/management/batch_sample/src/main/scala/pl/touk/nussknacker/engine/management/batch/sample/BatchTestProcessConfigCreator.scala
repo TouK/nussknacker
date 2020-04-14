@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.batch.sample
 
-import com.typesafe.config.Config
 import org.apache.flink.api.common.io.{InputFormat, OutputFormat}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.io.{CollectionInputFormat, TextOutputFormat}
@@ -8,7 +7,6 @@ import org.apache.flink.api.scala._
 import org.apache.flink.core.fs.Path
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.process.batch.{FlinkBatchSink, FlinkBatchSource, FlinkBatchSourceFactory}
@@ -18,31 +16,31 @@ import scala.reflect.ClassTag
 
 class BatchTestProcessConfigCreator extends ProcessConfigCreator {
 
-  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = {
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "file-sink" -> WithCategories(FileSinkFactory, "Category1", "Category2")
     )
   }
 
-  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[Any]]] = {
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[Any]]] = {
     Map(
       "elements-source" -> WithCategories(ElementsSourceFactory, "Category1", "Category2")
     )
   }
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
-  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map.empty
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map.empty
 
-  override def services(config: Config): Map[String, WithCategories[Service]] = Map.empty
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map.empty
 
-  override def listeners(config: Config): Seq[ProcessListener] = Nil
+  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = Nil
 
-  override def expressionConfig(config: Config): ExpressionConfig = ExpressionConfig.empty
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = ExpressionConfig.empty
 
   override def buildInfo(): Map[String, String] = Map.empty
 
-  override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
+  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 }
 
 object ElementsSourceFactory extends FlinkBatchSourceFactory[Any] {

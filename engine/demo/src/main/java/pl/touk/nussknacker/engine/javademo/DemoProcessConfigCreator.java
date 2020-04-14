@@ -1,13 +1,6 @@
 package pl.touk.nussknacker.engine.javademo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.typesafe.config.Config;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
@@ -16,23 +9,21 @@ import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory;
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming;
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig$;
-import pl.touk.nussknacker.engine.api.process.SinkFactory;
-import pl.touk.nussknacker.engine.api.process.SourceFactory;
-import pl.touk.nussknacker.engine.api.process.WithCategories;
+import pl.touk.nussknacker.engine.api.process.*;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
 import pl.touk.nussknacker.engine.demo.LoggingExceptionHandlerFactory;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
-import pl.touk.nussknacker.engine.kafka.KafkaConfig;
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.SerializationSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.schemas;
 import scala.Option;
 import scala.collection.JavaConverters;
+
+import java.io.IOException;
+import java.util.*;
 
 public class DemoProcessConfigCreator implements ProcessConfigCreator {
 
@@ -47,22 +38,21 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     }
 
     @Override
-    public Map<String, WithCategories<Service>> services(Config config) {
+    public Map<String, WithCategories<Service>> services(ProcessObjectDependencies processObjectDependencies) {
         Map<String, WithCategories<Service>> m = new HashMap<>();
         m.put("clientService", all(new ClientService()));
         return m;
     }
 
     @Override
-    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(Config config, ObjectNaming objectNaming) {
-        KafkaConfig kafkaConfig = getKafkaConfig(config);
-        KafkaSourceFactory<Transaction> sourceFactory = getTransactionKafkaSourceFactory(kafkaConfig, objectNaming);
+    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(ProcessObjectDependencies processObjectDependencies) {
+        KafkaSourceFactory<Transaction> sourceFactory = getTransactionKafkaSourceFactory(processObjectDependencies);
         Map<String, WithCategories<SourceFactory<?>>> m = new HashMap<>();
         m.put("kafka-transaction", all(sourceFactory));
         return m;
     }
 
-    private KafkaSourceFactory<Transaction> getTransactionKafkaSourceFactory(KafkaConfig kafkaConfig, ObjectNaming objectNaming) {
+    private KafkaSourceFactory<Transaction> getTransactionKafkaSourceFactory(ProcessObjectDependencies processObjectDependencies) {
         BoundedOutOfOrdernessTimestampExtractor<Transaction> extractor = new BoundedOutOfOrdernessTimestampExtractor<Transaction>(Time.minutes(10)) {
             @Override
             public long extractTimestamp(Transaction element) {
@@ -86,19 +76,16 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
             }
         };
         return new KafkaSourceFactory<>(
-                kafkaConfig,
                 schema,
                 Option.apply(extractor),
                 TestParsingUtils.newLineSplit(),
-                objectNaming,
+                processObjectDependencies,
                 TypeInformation.of(Transaction.class)
         );
     }
 
     @Override
-    public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config, ObjectNaming objectNaming) {
-        KafkaConfig kafkaConfig = getKafkaConfig(config);
-
+    public Map<String, WithCategories<SinkFactory>> sinkFactories(ProcessObjectDependencies processObjectDependencies) {
         schemas.ToStringSerializer<Object> serializer = element -> {
             if (element instanceof String) {
                 return (String) element;
@@ -108,14 +95,14 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
         };
         SerializationSchemaFactory<Object> schema = (topic, kafkaConfig1) ->
             new schemas.SimpleSerializationSchema<>(topic, serializer, null);
-        KafkaSinkFactory factory = new KafkaSinkFactory(kafkaConfig, schema, objectNaming);
+        KafkaSinkFactory factory = new KafkaSinkFactory(schema, processObjectDependencies);
         Map<String, WithCategories<SinkFactory>> m = new HashMap<>();
         m.put("kafka-stringSink", all(factory));
         return m;
     }
 
     @Override
-    public Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(Config config) {
+    public Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(ProcessObjectDependencies processObjectDependencies) {
         Map<String, WithCategories<CustomStreamTransformer>> m = new HashMap<>();
         m.put("eventsCounter", all(new EventsCounter()));
         m.put("transactionAmountAggregator", all(new TransactionAmountAggregator()));
@@ -123,22 +110,22 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     }
 
     @Override
-    public Map<String, WithCategories<ProcessSignalSender>> signals(Config config) {
+    public Map<String, WithCategories<ProcessSignalSender>> signals(ProcessObjectDependencies processObjectDependencies) {
         return Collections.emptyMap();
     }
 
     @Override
-    public Collection<ProcessListener> listeners(Config config) {
+    public Collection<ProcessListener> listeners(ProcessObjectDependencies processObjectDependencies) {
         return Collections.emptyList();
     }
 
     @Override
-    public ExceptionHandlerFactory exceptionHandlerFactory(Config config) {
-        return new LoggingExceptionHandlerFactory(config);
+    public ExceptionHandlerFactory exceptionHandlerFactory(ProcessObjectDependencies processObjectDependencies) {
+        return new LoggingExceptionHandlerFactory(processObjectDependencies.config());
     }
 
     @Override
-    public ExpressionConfig expressionConfig(Config config) {
+    public ExpressionConfig expressionConfig(ProcessObjectDependencies processObjectDependencies) {
         return new ExpressionConfig(
                 Collections.singletonMap("UTIL", all(new UtilProcessHelper())),
                 Collections.emptyList()
@@ -148,14 +135,6 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     @Override
     public Map<String, String> buildInfo() {
         return Collections.emptyMap();
-    }
-
-    private KafkaConfig getKafkaConfig(Config config) {
-        return new KafkaConfig(
-                config.getString("kafka.kafkaAddress"),
-                Option.empty(),
-                Option.empty()
-        );
     }
 
 }

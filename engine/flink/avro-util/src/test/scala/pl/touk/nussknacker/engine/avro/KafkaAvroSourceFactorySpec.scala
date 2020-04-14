@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.avro
 
 import java.nio.charset.StandardCharsets
 
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
@@ -9,21 +11,23 @@ import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
 import org.apache.flink.api.scala._
+import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, process}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
   import MockSchemaRegistry._
+
   import collection.JavaConverters._
 
   // schema.registry.url have to be defined even for MockSchemaRegistryClient
-  override lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.kafkaAddress,
-    Some(Map("schema.registry.url" -> "not_used")), None)
+  override lazy val config: Config = ConfigFactory.load()
+    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+    .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
 
   private lazy val keySerializer = {
     val serializer = new KafkaAvroSerializer(MockSchemaRegistry.Registry)
@@ -102,13 +106,13 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   }
 
   private def createAvroSourceFactory(useSpecificAvroReader: Boolean) = {
-    new KafkaAvroSourceFactory[AnyRef](kafkaConfig, new AvroDeserializationSchemaFactory(MockSchemaRegistryClientFactory, useSpecificAvroReader),
-      MockSchemaRegistryClientFactory, None, objectNaming = DefaultObjectNaming)
+    new KafkaAvroSourceFactory[AnyRef](new AvroDeserializationSchemaFactory(MockSchemaRegistryClientFactory, useSpecificAvroReader),
+      MockSchemaRegistryClientFactory, None, processObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming))
   }
 
   private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation] = {
-    new KafkaAvroSourceFactory(kafkaConfig, new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockSchemaRegistryClientFactory),
-      MockSchemaRegistryClientFactory, None, formatKey = true, objectNaming = DefaultObjectNaming)
+    new KafkaAvroSourceFactory(new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockSchemaRegistryClientFactory),
+      MockSchemaRegistryClientFactory, None, formatKey = true, process.ProcessObjectDependencies(config, DefaultObjectNaming))
   }
 
 }

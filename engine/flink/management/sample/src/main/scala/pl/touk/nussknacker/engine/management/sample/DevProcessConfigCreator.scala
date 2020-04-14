@@ -4,6 +4,8 @@ import java.time.LocalDateTime
 
 import com.typesafe.config.Config
 import io.circe.Encoder
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
@@ -27,10 +29,6 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 import pl.touk.nussknacker.engine.management.sample.source.{BoundedSource, CsvSource, NoEndingSource, OneSource}
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -51,29 +49,27 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def kafkaConfig(config: Config) = config.as[KafkaConfig]("kafka")
 
-  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
     "monitor" -> categories(SinkFactory.noParam(EmptySink)),
-    "kafka-string" -> all(new KafkaSinkFactory(kafkaConfig(config),
-                                new SimpleSerializationSchema[Any](_, _.toString),
-                                objectNaming))
+    "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, _.toString),
+                                                processObjectDependencies))
   )
 
-  override def listeners(config: Config) = List(LoggingListener)
+  override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
-  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "real-kafka" -> all(new KafkaSourceFactory[String](kafkaConfig(config),
-                                                        new SimpleStringSchema,
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    "real-kafka" -> all(new KafkaSourceFactory[String](new SimpleStringSchema,
                                                         None,
                                                         TestParsingUtils.newLineSplit,
-                                                        objectNaming)),
+                                                        processObjectDependencies)),
     "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
     "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource))
   )
 
-  override def services(config: Config): Map[String, WithCategories[Service]] = Map(
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
     "componentService" -> categories(EmptyService),
     "transactionService" -> categories(EmptyService),
@@ -112,7 +108,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "dynamicService" -> categories(new DynamicService)
   )
 
-  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "noneReturnTypeTransformer" -> tests(NoneReturnTypeTransformer),
     "stateful" -> categories(StatefulTransformer),
     "customFilter" -> categories(CustomFilter),
@@ -127,14 +123,15 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types")))
   )
 
-  override def signals(config: Config) = Map(
-    "removeLockSignal" -> all(new RemoveLockProcessSignalFactory(kafkaConfig(config), config.getString("signals.topic")))
+  override def signals(processObjectDependencies: ProcessObjectDependencies) = Map(
+    "removeLockSignal" -> all(new RemoveLockProcessSignalFactory(kafkaConfig(processObjectDependencies.config),
+      processObjectDependencies.config.getString("signals.topic")))
   )
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
-  override def expressionConfig(config: Config): ExpressionConfig = {
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(
       "AGG" -> categories(AggregateHelper),
       "DATE" -> all(DateProcessHelper),

@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.process
 
 import java.nio.charset.StandardCharsets
 
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.namespaces.{NamingContext, ObjectNaming, ObjectNamingUsageKey}
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -19,8 +19,6 @@ import pl.touk.nussknacker.engine.management.sample.signal.RemoveLockProcessSign
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-
-
 
 class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers {
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
@@ -82,13 +80,14 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with
 }
 
 case class TestObjectNaming() extends ObjectNaming {
-  override def prepareName(originalName: String, namingContext: NamingContext): String = namingContext.usageKey match {
-    case ObjectNamingUsageKey.kafkaTopic => s"ns_$originalName"
+  override def prepareName(originalName: String, config: Config, namingContext: NamingContext): String = namingContext.usageKey match {
+    case KafkaUsageKey => s"ns_$originalName"
     case _ => originalName
   }
 
 }
 
 class TestProcessConfig extends DevProcessConfigCreator {
-  override def signals(config: Config): Map[String, WithCategories[RemoveLockProcessSignalFactory]] = Map.empty
+  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[RemoveLockProcessSignalFactory]] =
+    Map.empty
 }

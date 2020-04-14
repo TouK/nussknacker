@@ -1,23 +1,20 @@
 package pl.touk.nussknacker.genericmodel
 
-import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.avro._
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SimpleSlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SimpleSlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
@@ -25,23 +22,22 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T) = WithCategories(obj, "Default")
 
-  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "previousValue" -> defaultCategory(PreviousValueTransformer),
     "aggregate" -> defaultCategory(SimpleSlidingAggregateTransformer),
     "union" -> defaultCategory(UnionTransformer)
   )
 
-  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = {
-    val kafkaConfig = config.as[KafkaConfig]("kafka")
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val schemaRegistryClientFactory = createSchemaRegistryClientFactory
-    val avroSourceFactory = new KafkaAvroSourceFactory(kafkaConfig,
+    val avroSourceFactory = new KafkaAvroSourceFactory(
+      createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory),
+      schemaRegistryClientFactory, None, processObjectDependencies = processObjectDependencies)
+    val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(
       createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory), schemaRegistryClientFactory,
-      None, objectNaming = objectNaming)
-    val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(kafkaConfig,
-      createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory), schemaRegistryClientFactory,
-      None, objectNaming = objectNaming)
-    Map("kafka-json" -> defaultCategory(new GenericJsonSourceFactory(kafkaConfig, objectNaming)),
-        "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(kafkaConfig, objectNaming)),
+      None, processObjectDependencies = processObjectDependencies)
+    Map("kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
+        "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(processObjectDependencies)),
         "kafka-avro" -> defaultCategory(avroSourceFactory),
         "kafka-typed-avro" -> defaultCategory(avroTypedSourceFactory)
     )
@@ -51,14 +47,13 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   : DeserializationSchemaFactory[GenericData.Record] =
     new AvroDeserializationSchemaFactory[GenericData.Record](schemaRegistryClientFactory, useSpecificAvroReader = false)
 
-  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = {
-    val kafkaConfig = config.as[KafkaConfig]("kafka")
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     val schemaRegistryClientFactory = createSchemaRegistryClientFactory
     Map(
-      "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(kafkaConfig, objectNaming)),
-      "kafka-avro" -> defaultCategory(new KafkaSinkFactory(kafkaConfig,
+      "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
+      "kafka-avro" -> defaultCategory(new KafkaSinkFactory(
         createGenericAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-        objectNaming))
+        processObjectDependencies))
     )
   }
 
@@ -66,13 +61,13 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   : SerializationSchemaFactory[Any] =
     new AvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory
     = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
   import pl.touk.nussknacker.engine.util.functions._
 
-  override def expressionConfig(config: Config): ExpressionConfig = {
-    val kafkaConfig = config.as[KafkaConfig]("kafka")
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+    val kafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
     val schemaRegistryClientFactory = createSchemaRegistryClientFactory
     ExpressionConfig(
       Map(

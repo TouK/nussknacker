@@ -3,20 +3,19 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import java.util
 
 import cats.data.NonEmptyList
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
@@ -94,7 +93,8 @@ class TransformersTest extends FunSuite with Matchers {
     val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
     try {
       val registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(model) {
-        override protected def listeners(config: Config): Seq[ProcessListener] = List(collectingListener) ++ super.listeners(config)
+        override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+          List(collectingListener) ++ super.listeners(processObjectDependencies)
       }, model.processConfig)
       registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
       val id = stoppableEnv.execute(testProcess.id)
@@ -143,20 +143,20 @@ class TransformersTest extends FunSuite with Matchers {
 
 class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
 
-  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] =
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
     Map("aggregate" -> WithCategories(SlidingAggregateTransformer))
 
-  override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] =
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
     Map("start" -> WithCategories(NoParamSourceFactory(new CollectionSource[TestRecord](new ExecutionConfig,
       input, Some(TestRecord.timestampExtractor), Typed[TestRecord]))))
 
-  override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] =
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
     Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
 
-  override def expressionConfig(config: Config): ExpressionConfig
-    = super.expressionConfig(config).copy(globalProcessVariables = Map("AGG"-> WithCategories(AggregateHelper)))
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
+    = super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG"-> WithCategories(AggregateHelper)))
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory
     = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 }
 

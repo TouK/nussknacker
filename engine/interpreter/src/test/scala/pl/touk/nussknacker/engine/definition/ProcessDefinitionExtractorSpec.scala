@@ -1,21 +1,22 @@
 package pl.touk.nussknacker.engine.definition
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
-import pl.touk.nussknacker.engine.api.namespaces.{DefaultObjectNaming, ObjectNaming}
+import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{process, _}
 
 import scala.concurrent.Future
 
 class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
-    ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, ConfigFactory.load(), DefaultObjectNaming)
+    ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator,
+      process.ProcessObjectDependencies(ConfigFactory.load(), DefaultObjectNaming))
 
   test("extract definitions") {
     val signal1 = processDefinition.signalsWithTransformers.get("signal1")
@@ -46,29 +47,29 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   }
 
   object TestCreator extends ProcessConfigCreator {
-    override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] =
+    override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "transformer1" -> WithCategories(Transformer1, "cat")
       )
 
-    override def services(config: Config): Map[String, WithCategories[Service]] = Map(
+    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter[Int]("param1")), Typed[String]), "cat")
     )
 
-    override def sourceFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SourceFactory[_]]] = Map()
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map()
 
-    override def sinkFactories(config: Config, objectNaming: ObjectNaming): Map[String, WithCategories[SinkFactory]] = Map()
+    override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map()
 
-    override def listeners(config: Config): Seq[ProcessListener] = List()
+    override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 
-    override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
+    override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
       ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 
-    override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
+    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = ExpressionConfig(Map.empty, List.empty)
 
     override def buildInfo(): Map[String, String] = Map()
 
-    override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map(
+    override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map(
       "signal1" -> WithCategories(new Signal1, "cat")
     )
   }
