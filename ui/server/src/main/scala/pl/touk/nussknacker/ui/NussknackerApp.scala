@@ -255,9 +255,11 @@ object NussknackerAppInitializer extends LazyLogging {
   }
 
   private def chooseDbProfile(config: Config): JdbcProfile = {
-    config.getOrElse[String]("db.type", "hsql") match {
-      case "hsql" => HsqldbProfile
-      case "postgres" => PostgresProfile
+    val jdbcUrlPattern = "jdbc:([0-9a-zA-Z]+):.*".r
+    config.getAs[String]("db.url") match {
+      case Some(jdbcUrlPattern("postgresql")) => PostgresProfile
+      case Some(jdbcUrlPattern("hsqldb")) => HsqldbProfile
+      case None => HsqldbProfile
     }
   }
 
