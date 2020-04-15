@@ -13,6 +13,9 @@ To see biggest differences please consult the [changelog](Changelog.md).
     now extend `java.lang.AutoCloseable`.
 * Old way or additional properties configuration should be replaced by the new one, which is now mapped to `Map[String, AdditionalPropertyConfig]`
 * [#839](https://github.com/TouK/nussknacker/pull/839) `FlinkSink` API changed, current implementation is now `BasicFlinkSink`
+* [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects
+   are invoked with `ProcessObjectDependencies` as a parameter. The API of `KafkaSinkFactory`, `KafkaSourceFactory`, and all
+   their implementations was changed.
 
 ## In version 0.0.12
 
