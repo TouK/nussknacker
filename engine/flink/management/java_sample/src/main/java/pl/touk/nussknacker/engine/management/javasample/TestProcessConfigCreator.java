@@ -1,14 +1,10 @@
 package pl.touk.nussknacker.engine.management.javasample;
 
-import com.typesafe.config.Config;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory;
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies;
 import pl.touk.nussknacker.engine.api.process.SinkFactory;
 import pl.touk.nussknacker.engine.api.process.SourceFactory;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
@@ -16,47 +12,51 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
 public class TestProcessConfigCreator implements ProcessConfigCreator {
 
     private Objects objects = new Objects();
 
     @Override
-    public Map<String, WithCategories<Service>> services(Config config) {
+    public Map<String, WithCategories<Service>> services(ProcessObjectDependencies processObjectDependencies) {
         return Collections.emptyMap();
     }
 
     @Override
-    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(Config config) {
+    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(ProcessObjectDependencies processObjectDependencies) {
         return Collections.singletonMap("source", objects.source());
     }
 
     @Override
-    public Map<String, WithCategories<SinkFactory>> sinkFactories(Config config) {
+    public Map<String, WithCategories<SinkFactory>> sinkFactories(ProcessObjectDependencies processObjectDependencies) {
         return Collections.singletonMap("sink", objects.sink());
     }
 
     @Override
-    public Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(Config config) {
+    public Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(ProcessObjectDependencies processObjectDependencies) {
         return Collections.emptyMap();
     }
 
     @Override
-    public Map<String, WithCategories<ProcessSignalSender>> signals(Config config) {
+    public Map<String, WithCategories<ProcessSignalSender>> signals(ProcessObjectDependencies processObjectDependencies) {
         return Collections.emptyMap();
     }
 
     @Override
-    public Collection<ProcessListener> listeners(Config config) {
+    public Collection<ProcessListener> listeners(ProcessObjectDependencies processObjectDependencies) {
         return Collections.emptyList();
     }
 
     @Override
-    public ExceptionHandlerFactory exceptionHandlerFactory(Config config) {
+    public ExceptionHandlerFactory exceptionHandlerFactory(ProcessObjectDependencies processObjectDependencies) {
         return objects.exceptionHandler();
     }
 
     @Override
-    public ExpressionConfig expressionConfig(Config config) {
+    public ExpressionConfig expressionConfig(ProcessObjectDependencies processObjectDependencies) {
         return new ExpressionConfig(Collections.emptyMap(), Collections.emptyList());
     }
 

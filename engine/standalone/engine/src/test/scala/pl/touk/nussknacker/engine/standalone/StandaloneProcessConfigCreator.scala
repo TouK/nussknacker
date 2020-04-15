@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.standalone
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.standalone.utils.customtransformers.ProcessSpl
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory, StandaloneSinkWithParameters}
 import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,35 +34,35 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     StandaloneProcessConfigCreator.processorService.set(processorService)
   }
 
-  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "splitter" -> WithCategories(ProcessSplitter),
     "extractor" -> WithCategories(StandaloneCustomExtractor)
   )
 
-  override def services(config: Config): Map[String, WithCategories[Service]] = Map(
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "enricherService" -> WithCategories(new EnricherService),
     "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
     "processorService" -> WithCategories(processorService)
   )
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1])
   )
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "response-sink" -> WithCategories(new StandaloneSinkFactory),
     "parameterResponse-sink" -> WithCategories(ParameterResponseSinkFactory)
   )
 
-  override def listeners(config: Config): Seq[ProcessListener] = List(LoggingListener)
+  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(LoggingListener)
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory = ExceptionHandlerFactory.noParams(md => new EspExceptionHandler {
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory = ExceptionHandlerFactory.noParams(md => new EspExceptionHandler {
     override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = logger.error("Error", exceptionInfo)
   })
 
-  override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = ExpressionConfig(Map.empty, List.empty)
 
-  override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
+  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 
   override def buildInfo(): Map[String, String] = Map.empty
 }

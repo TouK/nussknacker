@@ -6,6 +6,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.compile._
@@ -44,10 +45,11 @@ object StandaloneProcessInterpreter {
   : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = modelData.withThisAsContextClassLoader {
 
     val creator = modelData.configCreator
-    val config = modelData.processConfig
+    val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
-    val definitions = definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
-    val listeners = creator.listeners(config) ++ additionalListeners
+    val definitions = definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator,
+      processObjectDependencies))
+    val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners
 
     CompiledProcess.compile(process,
       definitions,

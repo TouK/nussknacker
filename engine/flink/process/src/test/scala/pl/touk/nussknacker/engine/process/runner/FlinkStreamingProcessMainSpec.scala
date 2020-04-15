@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.runner
 
 import java.net.ConnectException
 
-import com.typesafe.config.Config
 import io.circe.Encoder
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api._
@@ -42,7 +41,7 @@ class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
 
 class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  override def services(config: Config): Map[String, WithCategories[Service]] = Map(
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "logService" -> WithCategories(LogService, "c1"),
     "throwingService" -> WithCategories(new ThrowingService(new RuntimeException("Thrown as expected")), "c1"),
     "throwingTransientService" -> WithCategories(new ThrowingService(new ConnectException()), "c1"),
@@ -50,27 +49,27 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
 
   )
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink), "c2"),
     "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
   )
 
-  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map("stateCustom" -> WithCategories(StateCustomNode),
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map("stateCustom" -> WithCategories(StateCustomNode),
     "signalReader" -> WithCategories(CustomSignalReader),
     "transformWithTime" -> WithCategories(TransformerWithTime)
   )
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
     "input" -> WithCategories(simpleRecordSource(Nil), "cat2"),
     "jsonInput" -> WithCategories(jsonSource, "cat2"),
     "typedJsonInput" -> WithCategories(TypedJsonSource, "cat2")
   )
 
-  override def signals(config: Config): Map[String, WithCategories[TestProcessSignalFactory]] = Map("sig1" ->
+  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = Map("sig1" ->
     WithCategories(new TestProcessSignalFactory(KafkaConfig("", None, None), "")))
 
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
 }

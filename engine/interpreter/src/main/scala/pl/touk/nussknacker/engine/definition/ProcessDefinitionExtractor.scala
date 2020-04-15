@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.definition
 
-import com.typesafe.config.{Config, ConfigRenderOptions}
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CirceUtil, CustomStreamTransformer, QueryableStateNames}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import shapeless.syntax.typeable._
@@ -24,17 +24,18 @@ object ProcessDefinitionExtractor {
 
   import pl.touk.nussknacker.engine.util.Implicits._
   //TODO: move it to ProcessConfigCreator??
-  def extractObjectWithMethods(creator: ProcessConfigCreator, config: Config) : ProcessDefinition[ObjectWithMethodDef] = {
+  def extractObjectWithMethods(creator: ProcessConfigCreator,
+                               processObjectDependencies: ProcessObjectDependencies) : ProcessDefinition[ObjectWithMethodDef] = {
 
-    val services = creator.services(config)
-    val signals = creator.signals(config)
-    val sourceFactories = creator.sourceFactories(config)
-    val sinkFactories = creator.sinkFactories(config)
-    val exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
-    val customStreamTransformers = creator.customStreamTransformers(config)
-    val expressionConfig = creator.expressionConfig(config)
+    val services = creator.services(processObjectDependencies)
+    val signals = creator.signals(processObjectDependencies)
+    val sourceFactories = creator.sourceFactories(processObjectDependencies)
+    val sinkFactories = creator.sinkFactories(processObjectDependencies)
+    val exceptionHandlerFactory = creator.exceptionHandlerFactory(processObjectDependencies)
+    val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies)
+    val expressionConfig = creator.expressionConfig(processObjectDependencies)
 
-    val nodesConfig = extractNodesConfig(config)
+    val nodesConfig = extractNodesConfig(processObjectDependencies.config)
 
     val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, nodesConfig)
 
@@ -64,7 +65,7 @@ object ProcessDefinitionExtractor {
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)
 
-    val settings = creator.classExtractionSettings(config)
+    val settings = creator.classExtractionSettings(processObjectDependencies)
 
 
     ProcessDefinition[ObjectWithMethodDef](
