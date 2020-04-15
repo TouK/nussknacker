@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidTailOfBranch, MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -30,7 +31,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   import spel.Implicits._
 
   class MyProcessConfigCreator extends EmptyProcessConfigCreator {
-    override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+    override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
       "myCustomStreamTransformer" -> WithCategories(SimpleStreamTransformer),
       "addingVariableStreamTransformer" -> WithCategories(AddingVariableStreamTransformer),
       "clearingContextStreamTransformer" -> WithCategories(ClearingContextStreamTransformer),
@@ -42,15 +43,15 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "optionalEndingTransformer" -> WithCategories(OptionalEndingStreamTransformer)
     )
 
-    override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
       "mySource" -> WithCategories(SimpleStringSource))
 
-    override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+    override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
       "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {
         override def testDataOutput = None
       })))
 
-    override def services(config: Config): Map[String, WithCategories[Service]] = Map(
+    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "stringService" -> WithCategories(SimpleStringService)
     )
   }
@@ -175,7 +176,8 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
-  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator, ConfigFactory.empty)
+  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator,
+    process.ProcessObjectDependencies(ConfigFactory.empty, DefaultObjectNaming))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
   test("valid process") {

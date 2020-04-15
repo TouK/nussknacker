@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management.sample
 import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneOffset}
 
-import com.typesafe.config.Config
 import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -20,11 +19,11 @@ import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSour
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
+import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator._
+import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
-import UnitTestsProcessConfigCreator._
-import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 
 /**
  * This config creator is for purpose of unit testing... maybe we should merge it with DevProcessConfigCreator?
@@ -79,14 +78,14 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   private def recommendation[T](value: T) = WithCategories(value, recommendations)
 
-  override def customStreamTransformers(config: Config) = Map()
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies) = Map()
 
-  override def services(config: Config) = Map(
+  override def services(processObjectDependencies: ProcessObjectDependencies) = Map(
     "CustomerDataService" -> all(new CustomerDataService),
     "TariffService"  -> all(new TariffService)
   )
 
-  override def sourceFactories(config: Config) = {
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies) = {
     Map(
       "PageVisits" -> recommendation(new RunningSourceFactory[PageVisit]((count: Int) => PageVisit(s"${count % 20}", LocalDateTime.now(),
         s"/products/product${count % 14}", s"10.1.3.${count % 15}"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
@@ -106,24 +105,24 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def sinkFactories(config: Config) = Map(
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies) = Map(
     "ReportFraud" -> fraud(SinkFactory.noParam(EmptySink)),
     "Recommend" -> recommendation(SinkFactory.noParam(EmptySink)),
     "KafkaSink" -> fraud(SinkFactory.noParam(EmptySink))
   )
 
-  override def listeners(config: Config) = List()
+  override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()
 
-  override def exceptionHandlerFactory(config: Config) = new TopicHandlerFactory
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) = new TopicHandlerFactory
 
-  override def expressionConfig(config: Config) = {
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = {
     val globalProcessVariables = Map(
       "DATE" -> all(DateProcessHelper)
     )
     ExpressionConfig(globalProcessVariables, List.empty)
   }
 
-  override def signals(config: Config) = Map.empty
+  override def signals(processObjectDependencies: ProcessObjectDependencies) = Map.empty
 
   override def buildInfo() = Map(
     "process-version" -> "0.1",

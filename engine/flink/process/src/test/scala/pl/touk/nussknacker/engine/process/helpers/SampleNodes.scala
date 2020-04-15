@@ -1,36 +1,35 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import java.nio.charset.StandardCharsets
-import java.util.{Date, UUID}
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.{Date, UUID}
 
 import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.{FilterFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.{AscendingTimestampExtractor, BoundedOutOfOrdernessTimestampExtractor}
-import org.apache.flink.streaming.api.scala.DataStream
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
-import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
+import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
+import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.collection.JavaConverters._
@@ -464,10 +463,11 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  class KeyValueKafkaSourceFactory(kafkaConfig: KafkaConfig) extends KafkaSourceFactory[KeyValue](
-              kafkaConfig,
+  class KeyValueKafkaSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[KeyValue](
               new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e)),
-              Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)), TestParsingUtils.newLineSplit)
+              Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
+              TestParsingUtils.newLineSplit,
+              processObjectDependencies)
 
 
 }

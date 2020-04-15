@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 
 /**
@@ -11,26 +10,26 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
   */
 trait ProcessConfigCreator extends Serializable {
 
-  def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]]
+  def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]]
 
-  def services(config: Config) : Map[String, WithCategories[Service]]
+  def services(processObjectDependencies: ProcessObjectDependencies) : Map[String, WithCategories[Service]]
 
-  def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]]
+  def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]]
 
-  def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]]
+  def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
 
-  def listeners(config: Config): Seq[ProcessListener]
+  def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener]
 
-  def exceptionHandlerFactory(config: Config) : ExceptionHandlerFactory
+  def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) : ExceptionHandlerFactory
 
-  def expressionConfig(config: Config): ExpressionConfig
+  def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
   
   def buildInfo(): Map[String, String]
 
-  def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]]
+  def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]]
 
-  def asyncExecutionContextPreparer(config: Config): Option[AsyncExecutionContextPreparer] = None
+  def asyncExecutionContextPreparer(processObjectDependencies: ProcessObjectDependencies): Option[AsyncExecutionContextPreparer] = None
 
-  def classExtractionSettings(config: Config): ClassExtractionSettings = ClassExtractionSettings.Default
+  def classExtractionSettings(processObjectDependencies: ProcessObjectDependencies): ClassExtractionSettings = ClassExtractionSettings.Default
 
 }

@@ -8,12 +8,12 @@ import io.circe.{Decoder, Json, JsonObject}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.{BaseKafkaSourceFactory, KafkaConfig, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.{BaseKafkaSourceFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
@@ -21,17 +21,17 @@ object sources {
 
   import collection.JavaConverters._
 
-  class GenericJsonSourceFactory(config: KafkaConfig) extends KafkaSourceFactory[java.util.Map[_, _]](
-    config, JsonMapDeserialization, None, TestParsingUtils.newLineSplit)
+  class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[java.util.Map[_, _]](
+    JsonMapDeserialization, None, TestParsingUtils.newLineSplit, processObjectDependencies)
 
-  class GenericTypedJsonSourceFactory(config: KafkaConfig) extends BaseKafkaSourceFactory[TypedMap](
-    config,  None, TestParsingUtils.newLineSplit) {
+  class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends BaseKafkaSourceFactory[TypedMap](
+    None, TestParsingUtils.newLineSplit, processObjectDependencies) {
 
     @MethodToInvoke
     def create(processMetaData: MetaData,  @ParamName("topic") topic: String,
                @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
       val schema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
-      new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema, None) with ReturningType {
+      new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema, None, processObjectDependencies) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }
     }

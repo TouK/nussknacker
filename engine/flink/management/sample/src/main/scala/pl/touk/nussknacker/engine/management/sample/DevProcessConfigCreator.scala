@@ -4,6 +4,8 @@ import java.time.LocalDateTime
 
 import com.typesafe.config.Config
 import io.circe.Encoder
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
@@ -45,25 +47,29 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT")
 
-  private def kafkaConfig(config: Config) = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
+  private def kafkaConfig(config: Config) = config.as[KafkaConfig]("kafka")
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
     "monitor" -> categories(SinkFactory.noParam(EmptySink)),
-    "kafka-string" -> all(new KafkaSinkFactory(kafkaConfig(config), new SimpleSerializationSchema[Any](_, _.toString)))
+    "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, _.toString),
+                                                processObjectDependencies))
   )
 
-  override def listeners(config: Config) = List(LoggingListener)
+  override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "real-kafka" -> all(new KafkaSourceFactory[String](kafkaConfig(config), new SimpleStringSchema, None, TestParsingUtils.newLineSplit)),
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    "real-kafka" -> all(new KafkaSourceFactory[String](new SimpleStringSchema,
+                                                        None,
+                                                        TestParsingUtils.newLineSplit,
+                                                        processObjectDependencies)),
     "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
     "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource))
   )
 
-  override def services(config: Config): Map[String, WithCategories[Service]] = Map(
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
     "componentService" -> categories(EmptyService),
     "transactionService" -> categories(EmptyService),
@@ -102,7 +108,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "dynamicService" -> categories(new DynamicService)
   )
 
-  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "noneReturnTypeTransformer" -> tests(NoneReturnTypeTransformer),
     "stateful" -> categories(StatefulTransformer),
     "customFilter" -> categories(CustomFilter),
@@ -117,14 +123,15 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types")))
   )
 
-  override def signals(config: Config) = Map(
-    "removeLockSignal" -> all(new RemoveLockProcessSignalFactory(kafkaConfig(config), config.getString("signals.topic")))
+  override def signals(processObjectDependencies: ProcessObjectDependencies) = Map(
+    "removeLockSignal" -> all(new RemoveLockProcessSignalFactory(kafkaConfig(processObjectDependencies.config),
+      processObjectDependencies.config.getString("signals.topic")))
   )
 
-  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
-  override def expressionConfig(config: Config): ExpressionConfig = {
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(
       "AGG" -> categories(AggregateHelper),
       "DATE" -> all(DateProcessHelper),

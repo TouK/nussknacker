@@ -10,6 +10,8 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
@@ -32,7 +34,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
   private val creator = new DevProcessConfigCreator
 
   private val taskManagersCount = 2
-  private val config: Configuration = FlinkTestConfiguration.configuration(taskManagersCount = taskManagersCount)
+  private val configuration: Configuration = FlinkTestConfiguration.configuration(taskManagersCount = taskManagersCount)
   private var stoppableEnv: StoppableExecutionEnvironment = _
   private var env: StreamExecutionEnvironment = _
   private var registrar: FlinkStreamingProcessRegistrar = _
@@ -42,7 +44,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
     AvailablePortFinder.withAvailablePortsBlocked(1) {
       case head :: Nil =>
         queryStateProxyPortLow = head
-        stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled(config, queryStateProxyPortLow, taskManagersCount)
+        stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled(configuration, queryStateProxyPortLow, taskManagersCount)
         stoppableEnv.start()
     }
     env = new StreamExecutionEnvironment(stoppableEnv)
@@ -84,7 +86,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
       stoppableEnv.runningJobs().toList should contain (jobId)
       queryState(jobId.toString).futureValue shouldBe true
     }
-    creator.signals(TestConfig(kafkaZookeeperServer)).values
+    creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), DefaultObjectNaming)).values
       .head.value.sendSignal(DevProcessConfigCreator.oneElementValue)(lockProcess.id)
 
     eventually {

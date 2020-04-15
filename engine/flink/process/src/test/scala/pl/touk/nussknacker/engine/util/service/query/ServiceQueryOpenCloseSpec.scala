@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.util.service.query
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
@@ -35,8 +35,8 @@ class ServiceQueryOpenCloseSpec
 
   test("should be able to invoke multiple times using same config") {
     val modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
-      override def services(config: Config): Map[String, WithCategories[Service]] =
-        super.services(config) ++ Map("cast" -> WithCategories(createService))
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+        super.services(processObjectDependencies) ++ Map("cast" -> WithCategories(createService))
     })
 
     whenReady(new ServiceQuery(modelData).invoke("cast", "integer" -> 4)) {
@@ -53,8 +53,8 @@ class ServiceQueryOpenCloseSpec
 
   private def invokeService(arg: Int, service: Service) = {
     new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
-      override def services(config: Config): Map[String, WithCategories[Service]] =
-        super.services(config) ++ Map("cast" -> WithCategories(service))
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+        super.services(processObjectDependencies) ++ Map("cast" -> WithCategories(service))
     }))
       .invoke("cast", "integer" -> arg)
   }

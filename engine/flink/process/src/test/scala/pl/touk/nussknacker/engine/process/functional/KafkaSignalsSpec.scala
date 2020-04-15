@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
-import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -46,9 +45,9 @@ class KafkaSignalsSpec extends FunSuite with Matchers with BeforeAndAfterAll wit
       record(1000),
       record(1200),
       record(2000)
-    ), kafkaConfig)
+    ), config)
 
-    val modelData = LocalModelData(ConfigFactory.load(), creator)
+    val modelData = LocalModelData(config, creator)
     FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), modelData.processConfig)
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
@@ -57,7 +56,5 @@ class KafkaSignalsSpec extends FunSuite with Matchers with BeforeAndAfterAll wit
         MockService.data shouldBe List(2, 1)
       }
     }
-
   }
-
 }

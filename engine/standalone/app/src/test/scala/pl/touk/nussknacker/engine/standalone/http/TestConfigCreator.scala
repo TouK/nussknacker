@@ -1,33 +1,32 @@
 package pl.touk.nussknacker.engine.standalone.http
 
 
-import com.typesafe.config.Config
 import io.circe.Json
+import io.circe.Json._
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, Source, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
+import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils._
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import io.circe.Json._
 
 import scala.concurrent.Future
 
 class TestConfigCreator extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request]),
     "request1-get-source" -> WithCategories(RequestGetSourceFactory),
     "genericGetSource" -> WithCategories(new TypedMapStandaloneSourceFactory)
   )
 
-  override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "response-sink" -> WithCategories(new StandaloneSinkFactory)
   )
 
-  override def services(config: Config): Map[String, WithCategories[Service]] = Map(
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "lifecycleService" -> WithCategories(LifecycleService)
   )
 
