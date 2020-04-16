@@ -14,6 +14,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * Old way or additional properties configuration should be replaced by the new one, which is now mapped to `Map[String, AdditionalPropertyConfig]`
 * [#839](https://github.com/TouK/nussknacker/pull/839) `FlinkSink` API changed, current implementation is now `BasicFlinkSink`
 * [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed.
+* [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore. 
 
 ## In version 0.0.12
 

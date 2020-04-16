@@ -6,7 +6,6 @@ import sttp.client._
 import sttp.client.circe._
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.sttp.SttpJson
-import sttp.model.Uri
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -24,7 +23,7 @@ case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) ex
 //we use simplistic InfluxClient, as we only need queries
 class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) {
 
-  private val uri = Uri.parse(config.influxUrl).get
+  private val uri = uri"${config.influxUrl}"
 
   def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSerie]] = {
     basicRequest.get(uri.params("db" -> config.database, "q" -> query))
