@@ -149,15 +149,19 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
   }, joint.shapes.devs.Model.prototype.defaults),
 })
 
+export function getIconHref(node, nodesSettings) {
+  const iconFromConfig = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]?.icon
+  const defaultIconName = `${node.type}.svg`
+  return absoluteBePath(`/assets/nodes/${iconFromConfig || defaultIconName}`)
+}
+
 export function makeElement(node, processCounts, nodesSettings) {
   const description = _.get(node.additionalFields, "description", null)
   const {text: bodyContent, multiline} = getBodyContent(node)
   const hasCounts = !_.isEmpty(processCounts)
   const width = rectWidth
   const height = rectHeight
-  const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
-  const defaultIconName = `${node.type}.svg`
-  const iconHref = absoluteBePath(`/assets/nodes/${iconFromConfig ? iconFromConfig : defaultIconName}`)
+  const iconHref = getIconHref(node, nodesSettings)
   const testResultsHeight = 24
   const pxPerChar = 8
   const countsPadding = 8
