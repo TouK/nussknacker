@@ -83,7 +83,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
 
 class HttpStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
 
-  private val managementUri = Uri.parse(managementUrl).get
+  private val managementUri = uri"$managementUrl"
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
