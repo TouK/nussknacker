@@ -4,16 +4,15 @@ import collapseIcon from "../../assets/img/collapse.svg"
 import expandIcon from "../../assets/img/expand.svg"
 
 import customAttrs from "../../assets/json/nodeAttributes.json"
-import * as LoaderUtils from "../../common/LoaderUtils"
 import ProcessUtils from "../../common/ProcessUtils"
 
-import SVGUtils from "../../common/SVGUtils"
 import * as GraphUtils from "./GraphUtils"
 import boundingMarkup from "./markups/bounding.html"
 
 import nodeMarkup from "./markups/node.html"
 import NodeUtils from "./NodeUtils"
 import {absoluteBePath} from "../../common/UrlUtils"
+import "./graphTheme.styl"
 
 const rectWidth = 300
 const rectHeight = 60
@@ -150,7 +149,7 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
   }, joint.shapes.devs.Model.prototype.defaults),
 })
 
-export function makeElement(node, processCounts, forExport, nodesSettings){
+export function makeElement(node, processCounts, nodesSettings) {
   const description = _.get(node.additionalFields, "description", null)
   const {text: bodyContent, multiline} = getBodyContent(node)
   const hasCounts = !_.isEmpty(processCounts)
@@ -158,12 +157,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
   const height = rectHeight
   const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
   const defaultIconName = `${node.type}.svg`
-  const iconHref = forExport ?
-    // TODO: Currently we encode icon data to have standalone svg that can be used to generate pdf
-    //       it will works only with assets available on FE side. We should switch to fetching all icons from BE
-    //       but it will cause async fetching on some step
-    SVGUtils.svgToDataURL(LoaderUtils.loadNodeSvgContent(defaultIconName)) :
-    absoluteBePath(`/assets/nodes/${iconFromConfig ? iconFromConfig : defaultIconName}`)
+  const iconHref = absoluteBePath(`/assets/nodes/${iconFromConfig ? iconFromConfig : defaultIconName}`)
   const testResultsHeight = 24
   const pxPerChar = 8
   const countsPadding = 8
@@ -197,13 +191,17 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
       opacity: node.isDisabled ? 0.65 : 1,
     },
     ".testResultsPlaceHolder": {
-      display: hasCounts && !forExport ? "block" : "none",
+      noExport: "",
+      display: hasCounts ? "block" : "none",
       width: testResultsWidth,
       refX: width - testResultsWidth,
       refY: height,
       height: testResultsHeight,
     },
-    ".testResultsSummary": getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight),
+    ".testResultsSummary": {
+      noExport: "",
+      ...getTestResultsSummaryAttr(processCounts, width, testResultsWidth, testResultsHeight),
+    },
     ".groupElements": {
       display: NodeUtils.nodeIsGroup(node) ? "block" : "none",
     },
@@ -230,7 +228,6 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     definitionToCompare: {
       node: node,
       processCounts: processCounts,
-      forExport: forExport,
     },
   })
 }
@@ -336,7 +333,7 @@ export function boundingRect(nodes, expandedGroup, layout, group) {
   })
 }
 
-export function makeLink(edge, forExport) {
+export function makeLink(edge) {
   const label = NodeUtils.edgeLabel(edge)
 
   let labels = []
@@ -381,15 +378,13 @@ export function makeLink(edge, forExport) {
       line: {
         connection: true,
       },
-      ".link-tools": forExport ? {display: "none"} : {},
-      ".connection": forExport ? {stroke: edgeStroke, "stroke-width": 2, fill: edgeStroke} : {stroke: "white", "stroke-width": 2, fill: "none"},
-      ".marker-target": {"stroke-width": forExport ? 1 : 0, stroke: forExport ? edgeStroke : "white", fill: "white", d: "M 10 0 L 0 5 L 10 10 L 8 5 z"},
+      ".link-tools": {noExport: ""},
+      ".marker-target": {d: "M 10 0 L 0 5 L 10 10 L 8 5 z"},
       minLen: label ? 20 : 10,
     },
     edgeData: edge,
     definitionToCompare: {
       edge: edge,
-      forExport: forExport,
     },
   })
 }
