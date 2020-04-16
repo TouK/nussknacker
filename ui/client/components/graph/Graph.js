@@ -1,23 +1,22 @@
 import * as dagre from "dagre"
 import * as joint from "jointjs"
 import "jointjs/dist/joint.css"
-import _, {cloneDeep} from "lodash"
+import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import {DropTarget} from "react-dnd"
 import {connect} from "react-redux"
 import svgPanZoom from "svg-pan-zoom"
 import ActionsUtils from "../../actions/ActionsUtils"
+import SVGUtils from "../../common/SVGUtils"
 import cssVariables from "../../stylesheets/_variables.styl"
 import "../../stylesheets/graph.styl"
-import "./svg-export/export.styl"
 import EspNode from "./EspNode"
 import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils.js"
-import {prepareSvg} from "./svg-export/prepareSvg"
 
 class Graph extends React.Component {
 
@@ -43,6 +42,10 @@ class Graph extends React.Component {
 
     this.espGraphRef = React.createRef()
     this.parent = document.getElementById(this.props.parent)
+
+    this.windowListeners = {
+      resize: this.updateDimensions.bind(this),
+    }
   }
 
   getEspGraphRef = () => {
@@ -51,14 +54,24 @@ class Graph extends React.Component {
 
   componentDidMount() {
     this.processGraphPaper = this.createPaper()
-    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, this.props.expandedGroups)
+    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, true, [])
     this._prepareContentForExport()
+    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, false, this.props.expandedGroups)
     this.panAndZoom = this.enablePanZoom()
-    this.processGraphPaper.scaleContentToFit({padding: 75, maxScale: 1.25})
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
     this.cursorBehaviour()
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
+    _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
+    this.updateDimensions()
+  }
+
+  updateDimensions() {
+    this.processGraphPaper.fitToContent()
+    this.updateSvgDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    if (this.props.parent !== subprocessParent) {
+      this.processGraphPaper.setDimensions(this.parent.offsetWidth, this.parent.offsetHeight)
+    }
   }
 
   canAddNode(node) {
@@ -74,6 +87,10 @@ class Graph extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
+  }
+
   componentWillUpdate(nextProps, nextState) {
     const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
       !_.isEqual(this.props.layout, nextProps.layout) ||
@@ -82,7 +99,7 @@ class Graph extends React.Component {
       !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
       !_.isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
     if (processChanged) {
-      this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, nextProps.processDefinitionData, nextProps.expandedGroups)
+      this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, nextProps.processDefinitionData, false, nextProps.expandedGroups)
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
@@ -131,8 +148,8 @@ class Graph extends React.Component {
     this.panAndZoom.zoomOut()
   }
 
-  async exportGraph() {
-    return await prepareSvg(this._exportGraphOptions)
+  exportGraph() {
+    return this.state.exported
   }
 
   validateConnection = (cellViewS, magnetS, cellViewT, magnetT) => {
@@ -146,8 +163,8 @@ class Graph extends React.Component {
     return new joint.dia.Paper({
       el: this.getEspGraphRef(),
       gridSize: 1,
-      height: "100%",
-      width: "100%",
+      height: this.parent.clientHeight,
+      width: this.parent.clientWidth - 2 * this.props.padding,
       model: this.graph,
       snapLinks: {radius: 75},
       interactive: function (cellView) {
@@ -206,7 +223,7 @@ class Graph extends React.Component {
       const targetNodeData = target.attributes.nodeData
       const targetNode = NodeUtils.nodeIsGroup(targetNodeData) ? _.head(targetNodeData.nodes) : targetNodeData
 
-      if (NodeUtils.nodeIsGroup(middleManNode)) {
+      if (NodeUtils.nodeIsGroup(middleManNode))  {
         if (!NodeUtils.groupIncludesOneOfNodes(middleManNode, [sourceNode.id, targetNode.id])) {
           // TODO: handle inject when group is middleman
           this.props.notificationActions.info("Injecting group is not possible yet")
@@ -233,10 +250,10 @@ class Graph extends React.Component {
     return now
   }
 
-  drawGraph = (process, layout, processCounts, processDefinitionData, expandedGroups) => {
+  drawGraph = (process, layout, processCounts, processDefinitionData, forExport, expandedGroups) => {
     this.redrawing = true
     //leaving performance debug for now, as there is still room for improvement:
-    //handling processCounts without need of full redraw
+    //handling forExport and processCounts without need of full redraw
     const performance = window.performance
     let t = performance.now()
 
@@ -245,12 +262,12 @@ class Graph extends React.Component {
     t = this.time(t, "start")
 
     const nodes = _.map(nodesWithGroups, (n) => {
-      return EspNode.makeElement(n, processCounts[n.id], processDefinitionData.nodesConfig || {})
+      return EspNode.makeElement(n, processCounts[n.id], forExport, processDefinitionData.nodesConfig || {})
     })
 
     t = this.time(t, "nodes")
 
-    const edges = _.map(edgesWithGroups, (e) => EspNode.makeLink(e))
+    const edges = _.map(edgesWithGroups, (e) => EspNode.makeLink(e, forExport))
     t = this.time(t, "links")
 
     const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups).map(expandedGroup => ({
@@ -314,8 +331,24 @@ class Graph extends React.Component {
   }
 
   _prepareContentForExport = () => {
-    const {options} = this.processGraphPaper
-    this._exportGraphOptions = cloneDeep(options)
+    const oldHeight = this.getEspGraphRef().offsetHeight
+    const oldWidth = this.getEspGraphRef().offsetWidth
+    //we fit to content to be able to export svg nicely...
+    this.processGraphPaper.fitToContent()
+
+    //Hack for FOP to properly export image from svg xml
+    let svg = this.updateSvgDimensions(oldWidth, oldHeight)
+    this.setState({exported: SVGUtils.toXml(svg)})
+
+    //we have to set former width/height
+    this.processGraphPaper.setDimensions(oldWidth, oldHeight)
+  }
+
+  updateSvgDimensions = (width, height) => {
+    let svg = this.getEspGraphRef().getElementsByTagName("svg")[0]
+    svg.setAttribute("width", width)
+    svg.setAttribute("height", height)
+    return svg
   }
 
   highlightNodes = (data, nodeToDisplay, groupingState, selectionState) => {
@@ -377,7 +410,7 @@ class Graph extends React.Component {
   }
 
   enablePanZoom() {
-    const svgElement = this.getEspGraphRef().getElementsByTagName("svg").item(0)
+    const svgElement =  this.getEspGraphRef().getElementsByTagName("svg").item(0)
 
     const panAndZoom = svgPanZoom(svgElement, {
       viewportSelector: ".svg-pan-zoom_viewport",
@@ -609,7 +642,7 @@ function mapSubprocessState(state, props) {
     padding: 30,
     readonly: true,
     singleClickNodeDetailsEnabled: false,
-    nodeIdPrefixForSubprocessTests: `${state.graphReducer.nodeToDisplay.id}-`, //TODO where should it be?
+    nodeIdPrefixForSubprocessTests: `${state.graphReducer.nodeToDisplay.id  }-`, //TODO where should it be?
     processToDisplay: props.processToDisplay,
     processCounts: props.processCounts,
     ...commonState(state),

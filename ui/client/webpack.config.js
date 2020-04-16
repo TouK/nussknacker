@@ -25,7 +25,18 @@ if (!isProd) {
   ]
 }
 
-const cssPreLoaders = [
+const cssLoaders = [
+  "style-loader",
+  {
+    loader: "css-loader",
+    options: {
+      modules: {
+        mode: "global",
+        localIdentName: "[name]--[local]--[hash:base64:5]",
+      },
+      localsConvention: "camelCase",
+    },
+  },
   {
     loader: "postcss-loader",
     options: {
@@ -151,35 +162,16 @@ module.exports = {
         exclude: /node_modules/,
       },
       {
-        test: /\.(css|styl|less)?$/,
-        use: [
-          "style-loader",
-          {
-            loader: "css-loader",
-            options: {
-              modules: {
-                mode: "global",
-                localIdentName: "[name]--[local]--[hash:base64:5]",
-              },
-              localsConvention: "camelCase",
-            },
-          },
-        ],
-      },
-      {
         test: /\.css?$/,
-        enforce: "pre",
-        use: cssPreLoaders,
+        use: cssLoaders,
       },
       {
         test: /\.styl$/,
-        enforce: "pre",
-        use: [...cssPreLoaders, "stylus-loader"],
+        use: [...cssLoaders, "stylus-loader"],
       },
       {
         test: /\.less$/,
-        enforce: "pre",
-        use: [...cssPreLoaders, "less-loader"],
+        use: [...cssLoaders, "less-loader"],
       },
       {
         test: /\.(eot|ttf|woff|woff2)$/,
