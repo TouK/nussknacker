@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
+import pl.touk.nussknacker.ui.NusskanckerDefaultAppRouter.logger
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
@@ -212,6 +213,7 @@ object NussknackerAppInitializer extends LazyLogging {
     val (route, objectsToClose) = router.create(config, db)
 
     prepareUncaughtExceptionHandler(objectsToClose)
+    Runtime.getRuntime.addShutdownHook(new ShutdownHandler(objectsToClose))
 
     SslConfigParser.sslEnabled(config) match {
       case Some(keyStoreConfig) =>
@@ -269,11 +271,22 @@ object NussknackerAppInitializer extends LazyLogging {
     Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = {
         logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
-        objectsToClose.foreach(_.close())
-        hsqlServer.foreach(_.shutdown())
-        system.terminate()
+        closeAndShutdownAll(objectsToClose)
       }
     })
+  }
+
+  class ShutdownHandler(objectsToClose: Iterable[AutoCloseable]) extends Thread {
+    override def run(): Unit = {
+      logger.info("Stopping application")
+      closeAndShutdownAll(objectsToClose)
+    }
+  }
+
+  private def closeAndShutdownAll(objectsToClose: Iterable[AutoCloseable]): Unit = {
+    objectsToClose.foreach(_.close())
+    hsqlServer.foreach(_.shutdown())
+    system.terminate()
   }
 }
 
