@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient => ConfluentKafkaSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
@@ -15,8 +15,9 @@ import org.apache.flink.api.scala._
 import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, process}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.avro.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryClient, ConfluentSchemaRegistryProvider}
+import pl.touk.nussknacker.engine.kafka.{KafkaSourceFactory, KafkaSpec}
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
@@ -30,12 +31,12 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
 
   private lazy val keySerializer = {
-    val serializer = new KafkaAvroSerializer(MockSchemaRegistry.Registry)
+    val serializer = new KafkaAvroSerializer(Client.confluentClient)
     serializer.configure(Map[String, AnyRef]("schema.registry.url" -> "not_used").asJava, true)
     serializer
   }
 
-  private lazy val valueSerializer = new KafkaAvroSerializer(MockSchemaRegistry.Registry)
+  private lazy val valueSerializer = new KafkaAvroSerializer(Client.confluentClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -105,23 +106,23 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     deserializedObj shouldEqual List(givenObj)
   }
 
-  private def createAvroSourceFactory(useSpecificAvroReader: Boolean) = {
-    new KafkaAvroSourceFactory[AnyRef](new AvroDeserializationSchemaFactory(MockSchemaRegistryClientFactory, useSpecificAvroReader),
-      MockSchemaRegistryClientFactory, None, processObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming))
+  private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
+    val provider = ConfluentSchemaRegistryProvider[AnyRef](Client, useSpecificAvroReader, formatKey = false)
+    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming))
   }
 
-  private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation] = {
-    new KafkaAvroSourceFactory(new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockSchemaRegistryClientFactory),
-      MockSchemaRegistryClientFactory, None, formatKey = true, process.ProcessObjectDependencies(config, DefaultObjectNaming))
+  private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
+    val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](Client.confluentClient)
+    val provider = ConfluentSchemaRegistryProvider(Client, None, Some(deserializerFactory), useSpecificAvroReader = false, formatKey = true)
+    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming))
   }
 
 }
 
-class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClientFactory: SchemaRegistryClientFactory)
-                                                               (implicit keyTypInfo: TypeInformation[Key],
-                                                                valueTypInfo: TypeInformation[Value])
-  extends AvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
-    createTuple2TypeInformation(keyTypInfo, valueTypInfo)) {
+class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClient: ConfluentKafkaSchemaRegistryClient)(implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
+  extends ConfluentAvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClient, useSpecificAvroReader = false)(
+    createTuple2TypeInformation(keyTypInfo, valueTypInfo)
+  ) {
 
   override protected type K = Key
   override protected type V = Value
@@ -129,14 +130,6 @@ class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryCl
   override protected def createObject(key: Key, value: Value, topic: String): (Key, Value) = {
     (key, value)
   }
-
-}
-
-object MockSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
-
-  override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
-    MockSchemaRegistry.Registry
-
 }
 
 object MockSchemaRegistry {
@@ -178,19 +171,20 @@ object MockSchemaRegistry {
     """.stripMargin
   )
 
-  val Registry: MockSchemaRegistryClient = {
+  val Client: ConfluentSchemaRegistryClient = {
     val mockSchemaRegistry = new MockSchemaRegistryClient
     def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
       val subject = topic + "-" + (if (isKey) "key" else "value")
       mockSchemaRegistry.register(subject, schema)
     }
+
     registerSchema(RecordTopic, isKey = false, RecordSchemaV1)
     registerSchema(RecordTopic, isKey = false, RecordSchemaV2)
     registerSchema(IntTopic, isKey = true, IntSchema)
     registerSchema(IntTopic, isKey = false, IntSchema)
-    mockSchemaRegistry
-  }
 
+    new ConfluentSchemaRegistryClient(mockSchemaRegistry)
+  }
 }
 
 case class FullNameV1(var first: CharSequence, var last: CharSequence) extends SpecificRecordBase {

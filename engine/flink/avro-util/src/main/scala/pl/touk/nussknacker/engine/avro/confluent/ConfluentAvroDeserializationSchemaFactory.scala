@@ -1,5 +1,6 @@
-package pl.touk.nussknacker.engine.avro
+package pl.touk.nussknacker.engine.avro.confluent
 
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => ConfluentKafkaSchemaRegistryClient}
 import io.confluent.kafka.serializers._
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.common.serialization.Deserializer
@@ -9,9 +10,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchem
 trait AvroDeserializer {
   import collection.JavaConverters._
 
-  protected def createDeserializer(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig, isKey: Boolean, useSpecificAvroReader: Boolean) = {
-    // TODO: this client is never destroyed and it is potential leak of resources
-    val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+  protected def createDeserializer(schemaRegistryClient: ConfluentKafkaSchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean, useSpecificAvroReader: Boolean) = {
     val deserializer = new KafkaAvroDeserializer(schemaRegistryClient)
     val props = kafkaConfig.kafkaProperties.getOrElse(Map.empty) + (
       KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG -> useSpecificAvroReader
@@ -21,19 +20,19 @@ trait AvroDeserializer {
   }
 }
 
-class AvroDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory, useSpecificAvroReader: Boolean)
+class ConfluentAvroDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClient: ConfluentKafkaSchemaRegistryClient, useSpecificAvroReader: Boolean)
   extends KafkaDeserializationSchemaFactoryBase[T] with AvroDeserializer {
 
   override protected def createValueDeserializer(topics: List[String], kafkaConfig: KafkaConfig): Deserializer[T] =
-    createDeserializer(schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader).asInstanceOf[Deserializer[T]]
+    createDeserializer(schemaRegistryClient, kafkaConfig, isKey = false, useSpecificAvroReader).asInstanceOf[Deserializer[T]]
 }
 
-abstract class AvroKeyValueDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory, useSpecificAvroReader: Boolean)
+abstract class ConfluentAvroKeyValueDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClient: ConfluentKafkaSchemaRegistryClient, useSpecificAvroReader: Boolean)
   extends KafkaKeyValueDeserializationSchemaFactoryBase[T] with AvroDeserializer {
 
   override protected def createKeyDeserializer(topics: List[String], kafkaConfig: KafkaConfig): Deserializer[K] =
-    createDeserializer(schemaRegistryClientFactory, kafkaConfig, isKey = true, useSpecificAvroReader).asInstanceOf[Deserializer[K]]
+    createDeserializer(schemaRegistryClient, kafkaConfig, isKey = true, useSpecificAvroReader).asInstanceOf[Deserializer[K]]
 
   override protected def createValueDeserializer(topics: List[String], kafkaConfig: KafkaConfig): Deserializer[V] =
-    createDeserializer(schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader).asInstanceOf[Deserializer[V]]
+    createDeserializer(schemaRegistryClient, kafkaConfig, isKey = false, useSpecificAvroReader).asInstanceOf[Deserializer[V]]
 }

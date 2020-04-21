@@ -2,43 +2,44 @@ package pl.touk.nussknacker.engine.avro
 
 import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.avro.formatter.AvroToJsonFormatter
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.kafka.serialization.DeserializationSchemaFactory
 
-class KafkaAvroSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchemaFactory[T],
-                                                 schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                 timestampAssigner: Option[TimestampAssigner[T]],
-                                                 formatKey: Boolean = false,
+class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaRegistryProvider[T],
                                                  processObjectDependencies: ProcessObjectDependencies)
-  extends KafkaSourceFactory[T](schemaFactory, timestampAssigner,
-    TestParsingUtils.newLineSplit, processObjectDependencies) {
+  extends KafkaSourceFactory[T](
+    schemaRegistryProvider.deserializationSchemaFactory,
+    schemaRegistryProvider.timestampAssigner,
+    TestParsingUtils.newLineSplit,
+    processObjectDependencies
+  ) {
 
-  override protected def createSource(processMetaData: MetaData,
-                                      topics: List[String],
-                                      schema: KafkaDeserializationSchema[T]): KafkaSource = {
-    val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
-    new KafkaSource(consumerGroupId = processMetaData.id, topics, schema,
-      Some(AvroToJsonFormatter(schemaRegistryClient, topics.head, formatKey)), processObjectDependencies)
+  override protected def createSource(processMetaData: MetaData, topics: List[String], schema: KafkaDeserializationSchema[T]): KafkaSource = {
+    new KafkaSource(
+      consumerGroupId = processMetaData.id,
+      topics,
+      schema,
+      Some(schemaRegistryProvider.recordFormatter(topics.head, formatKey = false)),
+      processObjectDependencies
+    )
   }
 
 }
 
-class KafkaTypedAvroSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchemaFactory[T],
-                                                      schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                      timestampAssigner: Option[TimestampAssigner[T]],
-                                                      formatKey: Boolean = false,
+class KafkaTypedAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaRegistryProvider[T],
                                                       processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaSourceFactory[T](timestampAssigner, TestParsingUtils.newLineSplit, processObjectDependencies) {
+  extends BaseKafkaSourceFactory[T](
+    schemaRegistryProvider.timestampAssigner,
+    TestParsingUtils.newLineSplit,
+    processObjectDependencies
+  ) {
 
   @MethodToInvoke
   def create(processMetaData: MetaData,
@@ -53,9 +54,14 @@ class KafkaTypedAvroSourceFactory[T: TypeInformation](schemaFactory: Deserializa
              @ParamName("schema")
              @NotBlank
              avroSchema: String): Source[T] with TestDataGenerator = {
-    val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
-    new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schemaFactory.create(List(topic), kafkaConfig),
-      Some(AvroToJsonFormatter(schemaRegistryClient, topic, formatKey)), processObjectDependencies) with ReturningType {
+
+    new KafkaSource(
+      consumerGroupId = processMetaData.id,
+      List(topic),
+      schemaRegistryProvider.deserializationSchemaFactory.create(List(topic), kafkaConfig),
+      Some(schemaRegistryProvider.recordFormatter(topic, formatKey = false)),
+      processObjectDependencies
+    ) with ReturningType {
       override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(avroSchema)
     }
   }
