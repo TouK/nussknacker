@@ -107,14 +107,14 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   }
 
   private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
-    val provider = ConfluentSchemaRegistryProvider[AnyRef](Client, useSpecificAvroReader, formatKey = false)
-    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming))
+    val provider = ConfluentSchemaRegistryProvider[AnyRef](Client, useSpecificAvroReader)
+    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming), None, formatKey = false)
   }
 
   private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
     val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](Client.confluentClient)
-    val provider = ConfluentSchemaRegistryProvider(Client, None, Some(deserializerFactory), useSpecificAvroReader = false, formatKey = true)
-    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming))
+    val provider = ConfluentSchemaRegistryProvider(Client, None, Some(deserializerFactory), useSpecificAvroReader = false)
+    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming), None, formatKey = true)
   }
 
 }

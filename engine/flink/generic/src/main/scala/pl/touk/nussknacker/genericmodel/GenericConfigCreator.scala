@@ -29,8 +29,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val schemaProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
-    val avroSourceFactory = new KafkaAvroSourceFactory(schemaProvider, processObjectDependencies)
-    val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(schemaProvider, processObjectDependencies)
+    val avroSourceFactory = new KafkaAvroSourceFactory(schemaProvider, processObjectDependencies, None)
+    val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(schemaProvider, processObjectDependencies, None)
 
     Map(
       "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
@@ -41,21 +41,15 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryClientFactory = createSchemaRegistryClientFactory
+    val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
     Map(
       "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(new KafkaSinkFactory(
-        createGenericAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-        processObjectDependencies))
+      "kafka-avro" -> defaultCategory(new KafkaSinkFactory(schemaRegistryProvider.serializationSchemaFactory, processObjectDependencies))
     )
   }
 
-  protected def createGenericAvroSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistryClientFactory)
-  : SerializationSchemaFactory[Any] =
-    new AvroSerializationSchemaFactory(schemaRegistryClientFactory)
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory
-  = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
+    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
   import pl.touk.nussknacker.engine.util.functions._
 
