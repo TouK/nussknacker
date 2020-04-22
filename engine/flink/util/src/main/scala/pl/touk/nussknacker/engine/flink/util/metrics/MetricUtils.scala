@@ -88,8 +88,8 @@ class MetricUtils(runtimeContext: RuntimeContext) {
       case l@NonEmptyList("service", name :: "instantRate" :: Nil) => tagMode(NonEmptyList("serviceInstant",  tags("serviceName") :: name :: Nil), Map.empty)
       case l@NonEmptyList("service", name :: "histogram" :: Nil) => tagMode(NonEmptyList("serviceTimes", tags("serviceName") :: name :: Nil), Map.empty)
 
-      case l@NonEmptyList("error", List("instantRate")) => tagMode(l, Map.empty)
-      case l@NonEmptyList("error", List("instantRateByNode")) => insertNodeId(l)
+      case l@NonEmptyList("error", "instantRate" :: "instantRate" :: Nil) => tagMode(l, Map.empty)
+      case l@NonEmptyList("error", "instantRateByNode" :: "instantRate" :: Nil) => insertNodeId(l)
         
       //we resort to default mode...
       case _ => tagMode(nameParts, tags)
