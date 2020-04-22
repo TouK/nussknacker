@@ -316,8 +316,7 @@ lazy val management = (project in engine("flink/management")).
     name := "nussknacker-management",
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in managementSample,
-      (assembly in Compile) in managementJavaSample,
-      (assembly in Compile) in managementBatchSample
+      (assembly in Compile) in managementJavaSample
     ).value,
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
@@ -372,18 +371,6 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
       )
     }
   ).dependsOn(flinkUtil, process % "runtime")
-
-lazy val managementBatchSample = (project in engine("flink/management/batch_sample")).
-  settings(commonSettings).
-  settings(assemblySampleSettings("managementBatchSample.jar"): _*).
-  settings(
-    name := "nussknacker-management-batch-sample"  ,
-    libraryDependencies ++= {
-      Seq(
-        "org.apache.flink" %% "flink-scala" % flinkV % "provided",
-      )
-    }
-  ).dependsOn(flinkUtil, process % "runtime,test")
 
 lazy val demo = (project in engine("demo")).
   settings(commonSettings).
@@ -814,4 +801,4 @@ lazy val ui = (project in file("ui/server"))
   )
   .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
-addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
+addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
