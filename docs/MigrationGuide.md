@@ -60,6 +60,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed. `Config` is available as property of `ProcessObjectDependencies` instance.
 * [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
 * Rename `grafanaSettings` to `metricsSettings` in configuration.
+* [#874](https://github.com/TouK/nussknacker/pull/874 `FlinkSink` receives `FlinkSinkContext` instead of `FlinkLazyParameterFunctionHelper`, which is available in `FlinkSinkContext` as field 
 
 ## In version 0.0.12
 

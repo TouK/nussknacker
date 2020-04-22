@@ -342,10 +342,10 @@ object SampleNodes {
     @MethodToInvoke
     def createSink(@ParamName("intParam") value: LazyParameter[Int]): Sink = new FlinkSink {
 
-      override def registerSink(dataStream: DataStream[InterpretationResult], lazyParameterFunctionHelper: FlinkLazyParameterFunctionHelper): DataStreamSink[_] = {
+      override def registerSink(dataStream: DataStream[InterpretationResult], sinkContext: FlinkSinkContext): DataStreamSink[_] = {
         dataStream
           .map(_.finalContext)
-          .map(lazyParameterFunctionHelper.lazyMapFunction(value))
+          .map(sinkContext.lazyParameterFunctionHelper.lazyMapFunction(value))
           .map(_.value.asInstanceOf[Any])
           .addSink(SinkForInts.toFlinkFunction)
       }

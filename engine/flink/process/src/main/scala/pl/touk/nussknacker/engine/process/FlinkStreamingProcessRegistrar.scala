@@ -110,7 +110,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
     {
       val branchEnds = processWithDeps.sources.toList
         .collect { case e: SourcePart => e }
-        .map(registerSourcePart).foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){ _ ++ _}
+        .map(registerSourcePart).foldLeft(Map[BranchEndDefinition, (ValidationContext, DataStream[InterpretationResult])]()){ _ ++ _}
 
       //TODO JOIN - here we need recursion for nested joins
       branchEnds.groupBy(_._1.joinId).foreach {
@@ -128,17 +128,20 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
             case other =>
               throw new IllegalArgumentException(s"Unknown join node transformer: $other")
           }
+          val branchContexts = inputs.map {
+            case (BranchEndDefinition(id, _), (vc, _)) => id -> vc
+          }
           val customNodeContext = FlinkCustomNodeContext(metaData,
             joinId, processWithDeps.processTimeout,
             new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
-            processWithDeps.signalSenders)
+            processWithDeps.signalSenders, Right(branchContexts))
 
 
           val outputVar = joinPart.node.data.outputVar.get
           val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
           val newStart = transformer.transform(inputs
-              .map(kv => (kv._1.id, kv._2.map(_.finalContext))), customNodeContext).map(newContextFun)
+              .map(kv => (kv._1.id, kv._2._2.map(_.finalContext))), customNodeContext).map(newContextFun)
 
           val afterSplit = wrapAsync(newStart, joinPart.node, joinPart.validationContext, "branchInterpretation")
 
@@ -146,7 +149,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       }
     }
 
-    def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, DataStream[InterpretationResult]] = {
+    def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, (ValidationContext, DataStream[InterpretationResult])] = {
       //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
@@ -159,24 +162,24 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       val asyncAssigned = wrapAsync(start, part.node, part.validationContext, "interpretation")
 
       val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  be.definition ->
-        asyncAssigned.getSideOutput(OutputTag[InterpretationResult](be.nodeId))).toMap
+        (part.validationContext, asyncAssigned.getSideOutput(OutputTag[InterpretationResult](be.nodeId)))).toMap
 
       registerParts(asyncAssigned, part.nextParts, part.ends) ++ branchEnds
     }
 
     def registerParts(start: DataStream[Unit],
                       nextParts: Seq[SubsequentPart],
-                      ends: Seq[End]) : Map[BranchEndDefinition, DataStream[InterpretationResult]] = {
+                      ends: Seq[End]) : Map[BranchEndDefinition, (ValidationContext, DataStream[InterpretationResult])] = {
 
       start.getSideOutput(OutputTag[InterpretationResult](EndId))
         .addSink(new EndRateMeterFunction(ends))
       nextParts.map { part =>
         registerSubsequentPart(start.getSideOutput(OutputTag[InterpretationResult](part.id)), part)
-      }.foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){_ ++ _}
+      }.foldLeft(Map[BranchEndDefinition, (ValidationContext, DataStream[InterpretationResult])]()){_ ++ _}
     }
 
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
-                                  processPart: SubsequentPart): Map[BranchEndDefinition, DataStream[InterpretationResult]] =
+                                  processPart: SubsequentPart): Map[BranchEndDefinition, (ValidationContext, DataStream[InterpretationResult])] =
       processPart match {
 
         case part@SinkPart(sink: FlinkSink, sinkDef, validationContext) => {
@@ -188,7 +191,8 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
             //TODO: maybe this logic should be moved to compiler instead?
             testRunId match {
               case None =>
-                sink.registerSink(startAfterSinkEvaluated, new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)))
+                sink.registerSink(startAfterSinkEvaluated, FlinkSinkContext(
+                  new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)), validationContext))
               case Some(runId) =>
                 val typ = part.node.data.ref.typ
                 val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
@@ -219,7 +223,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
           val customNodeContext = FlinkCustomNodeContext(metaData,
             node.id, processWithDeps.processTimeout,
             new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
-            processWithDeps.signalSenders)
+            processWithDeps.signalSenders, Left(validationContext))
           val newStart = transformer.transform(start.map(_.finalContext), customNodeContext)
               .map(newContextFun)
           val afterSplit = wrapAsync(newStart, node, validationContext, "customNodeInterpretation")

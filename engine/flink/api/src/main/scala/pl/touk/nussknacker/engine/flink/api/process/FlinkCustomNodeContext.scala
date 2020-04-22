@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 
 import scala.concurrent.duration.FiniteDuration
@@ -10,7 +11,9 @@ case class FlinkCustomNodeContext(metaData: MetaData,
                                   nodeId: String,
                                   timeout: FiniteDuration,
                                   lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-                                  signalSenderProvider: FlinkProcessSignalSenderProvider)
+                                  signalSenderProvider: FlinkProcessSignalSenderProvider,
+                                  validationContext: Either[ValidationContext, Map[String, ValidationContext]]
+                                 )
 
 case class SignalSenderKey(id: String, klass: Class[_])
 

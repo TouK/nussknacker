@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.InterpretationResult
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.Sink
 
 /**
@@ -13,9 +14,11 @@ import pl.touk.nussknacker.engine.api.process.Sink
 trait FlinkSink extends Sink {
 
   def registerSink(dataStream: DataStream[InterpretationResult],
-                   lazyParameterFunctionHelper: FlinkLazyParameterFunctionHelper): DataStreamSink[_]
+                   sinkContext: FlinkSinkContext): DataStreamSink[_]
 
 }
+
+case class FlinkSinkContext(lazyParameterFunctionHelper: FlinkLazyParameterFunctionHelper, validationContext: ValidationContext)
 
 /**
  * This is basic Flink sink, which just uses *output* expression from sink definition
@@ -23,7 +26,7 @@ trait FlinkSink extends Sink {
 trait BasicFlinkSink extends FlinkSink {
 
   override def registerSink(dataStream: DataStream[InterpretationResult],
-                            lazyParameterFunctionHelper: FlinkLazyParameterFunctionHelper): DataStreamSink[_] = {
+                            sinkContext: FlinkSinkContext): DataStreamSink[_] = {
     dataStream.map(_.output).addSink(toFlinkFunction)
   }
 
