@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.processreport
 
+import cats.data.NonEmptyList
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, SubprocessInputDefinition}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import shapeless.syntax.typeable._
 
@@ -13,9 +14,13 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
 
   def computeCounts(canonicalProcess: CanonicalProcess, counts: String => Option[RawCount]) : Map[String, NodeCount] = {
 
-    def computeCounts(prefixes: List[String])(nodes: Iterable[CanonicalNode]) : Map[String, NodeCount] = {
+    def computeCounts(prefixes: List[String])(nodes: NonEmptyList[Iterable[CanonicalNode]]) : Map[String, NodeCount] = {
+      nodes.map(startNode => computeCountsForSingle(prefixes)(startNode)).toList.reduceOption(_ ++ _).getOrElse(Map.empty)
+    }
 
-      val computeCountsSamePrefixes = computeCounts(prefixes) _
+    def computeCountsForSingle(prefixes: List[String])(nodes: Iterable[CanonicalNode]) : Map[String, NodeCount] = {
+
+      val computeCountsSamePrefixes = computeCountsForSingle(prefixes) _
 
       def nodeCount(id: String, subprocessCounts: Map[String, NodeCount] = Map()) : NodeCount =
         nodeCountOption(Some(id), subprocessCounts)
@@ -40,13 +45,11 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
           //TODO: validate that process exists
           val subprocess = getSubprocess(canonicalProcess.metaData.subprocessVersions, node.ref.id).get
           computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(node.id,
-            computeCounts(prefixes :+ node.id)(subprocess.nodes)))
+            computeCounts(prefixes :+ node.id)(subprocess.allStartNodes)))
       }.toMap
 
     }
-    val allStartNodes = canonicalProcess.nodes :: canonicalProcess.additionalBranches.toList.flatten
-    val valuesWithoutGroups = allStartNodes.map(startNode => computeCounts(List())(startNode)).reduceOption(_ ++ _).getOrElse(Map.empty)
-
+    val valuesWithoutGroups = computeCounts(List())(canonicalProcess.allStartNodes)
     val valuesForGroups: Map[String, NodeCount] = computeValuesForGroups(valuesWithoutGroups, canonicalProcess)
     valuesWithoutGroups ++ valuesForGroups
   }

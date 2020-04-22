@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 
 sealed trait CanonicalTreeNode
 
@@ -69,8 +71,24 @@ case class CanonicalProcess(metaData: MetaData,
                            ) extends CanonicalTreeNode {
   import CanonicalProcess._
 
-  lazy val withoutDisabledNodes = copy(
-    nodes = withoutDisabled(nodes))
+  def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches.getOrElse(Nil))
+
+  def mapAllNodes(action: List[CanonicalNode] => List[CanonicalNode]): CanonicalProcess = copy(
+      nodes = action(nodes), additionalBranches = additionalBranches.map(_.map(action)))
+
+  def mapAllNodesValidated[T](action: List[CanonicalNode] => ValidatedNel[T, List[CanonicalNode]]): Validated[NonEmptyList[T], CanonicalProcess] = {
+    import cats.instances.list._
+    val syntax = ValidatedSyntax[T]
+    import syntax._
+    allStartNodes.toList.map(action).sequence.map {
+      case head :: tail => copy(nodes = head, additionalBranches = Some(tail))
+      case _ => throw new IllegalStateException("Should not happen")
+    }
+  }
+
+
+  lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
+
 }
 
 object canonicalnode {
