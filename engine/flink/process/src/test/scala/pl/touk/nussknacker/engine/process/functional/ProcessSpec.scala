@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.functional
 import java.util.Date
 
 import cats.data.NonEmptyList
-import com.sun.corba.se.impl.orbutil.graph.Graph
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
