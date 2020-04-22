@@ -8,13 +8,58 @@ To see biggest differences please consult the [changelog](Changelog.md).
  `asyncExecutionConfig.parallelismMultiplier` has been deprecated and should be replaced with `asyncExecutionConfig.workers`.
  8 should be sane default value.
 * [#722](https://github.com/TouK/nussknacker/pull/722) Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed.
- `processTypes`  configuration should be used from now on.
-* [#763](https://github.com/TouK/nussknacker/pull/763) Some API traits (ProcessManager, DictRegistry DictQueryService, CountsReporter) 
-    now extend `java.lang.AutoCloseable`.
-* Old way or additional properties configuration should be replaced by the new one, which is now mapped to `Map[String, AdditionalPropertyConfig]`
+ `processTypes` configuration should be used from now on. Example:
+    ```
+    flinkConfig {...}
+    processConfig {...}
+    ```
+    becomes:
+    ```
+    processTypes {
+      "type e.g. streaming" {
+        engineConfig { 
+          type: "flinkStreaming"
+          PUT HERE PROPERTIES OF flinkConfig FROM OLD CONFIG 
+        }
+        modelConfig {
+          classPath: PUT HERE VALUE OF flinkConfig.classPath FROM OLD CONFIG
+          PUT HERE PROPERTIES OF processConfig FROM OLD CONFIG
+        }
+      }
+    }
+    ```
+* [#763](https://github.com/TouK/nussknacker/pull/763) Some API traits (ProcessManager, DictRegistry DictQueryService, CountsReporter) now extend `java.lang.AutoCloseable`.
+* Old way of additional properties configuration should be replaced by the new one, which is now mapped to `Map[String, AdditionalPropertyConfig]`. Example in your config:
+    ```
+    additionalFieldsConfig: {
+      mySelectProperty {
+        label: "Description"
+        type: "select"
+        isRequired: false
+        values: ["true", "false"]
+      }
+    }
+    ```
+    becomes:
+    ```
+    additionalPropertiesConfig {
+      mySelectProperty {
+        label: "Description"
+        defaultValue: "false"
+        editor: {
+          type: "FixedValuesParameterEditor",
+          possibleValues: [
+            {"label": "Yes", "expression": "true"},
+            {"label": "No", "expression": "false"}
+          ]
+        }
+      }
+    }
+    ```  
 * [#839](https://github.com/TouK/nussknacker/pull/839) `FlinkSink` API changed, current implementation is now `BasicFlinkSink`
-* [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed.
-* [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore. 
+* [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed. `Config` is available as property of `ProcessObjectDependencies` instance.
+* [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
+* Rename `grafanaSettings` to `metricsSettings` in configuration.
 
 ## In version 0.0.12
 
