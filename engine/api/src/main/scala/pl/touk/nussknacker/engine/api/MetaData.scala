@@ -64,10 +64,6 @@ object StreamMetaData {
   }
 }
 
-case class BatchMetaData(parallelism: Option[Int] = None) extends TypeSpecificData {
-  override val allowLazyVars: Boolean = true
-}
-
 case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData {
   override val allowLazyVars: Boolean = true
 }
