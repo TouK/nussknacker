@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 1,
   "id": 1,
-  "iteration": 1584306833935,
+  "iteration": 1587575850349,
   "links": [],
   "panels": [
     {
@@ -38,7 +38,7 @@
       },
       "hiddenSeries": false,
       "id": 2,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -90,7 +90,7 @@
           "measurement": "source.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"source.instantRate\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), process, slot\n)\nWHERE $timeFilter\nGROUP BY time($interval), process\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"value\"), 1s) AS value\n  FROM \"source.count.count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -182,7 +182,7 @@
       },
       "hiddenSeries": false,
       "id": 3,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -241,7 +241,7 @@
           "measurement": "end.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"end.instantRate\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), env, process, action, slot\n)\nWHERE $timeFilter\nGROUP BY time($interval), process, action",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"value\"), 1s) AS value\n  FROM \"end.count.count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, action, slot\n)\nGROUP BY time($__interval), process, action\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -333,7 +333,7 @@
       },
       "hiddenSeries": false,
       "id": 5,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -360,7 +360,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_process]]-[[tag_action]]",
+          "alias": "[[tag_process]] - [[tag_action]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -392,7 +392,7 @@
           "measurement": "dead_end.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"dead_end.instantRate\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), process, action, slot\n)\nWHERE $timeFilter\nGROUP BY time($interval), process, action",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"value\"), 1s) AS value\n  FROM \"dead_end.count.count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, action, slot\n)\nGROUP BY time($__interval), process, action\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -407,65 +407,6 @@
               {
                 "params": [],
                 "type": "sum"
-              }
-            ]
-          ],
-          "tags": [
-            {
-              "key": "process",
-              "operator": "=~",
-              "value": "/$processName$/"
-            },
-            {
-              "condition": "AND",
-              "key": "env",
-              "operator": "=~",
-              "value": "/^$env$/"
-            }
-          ]
-        },
-        {
-          "alias": "[[tag_process]] - ALL EVENTS",
-          "dsType": "influxdb",
-          "groupBy": [
-            {
-              "params": [
-                "$interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "process"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "hide": false,
-          "measurement": "source.instantRate",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT sum(first)\nFROM (\n  SELECT first(value)\n  FROM \"source.instantRate\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), process, slot\n)\nWHERE $timeFilter\nGROUP BY time($interval), process",
-          "rawQuery": true,
-          "refId": "B",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
               }
             ]
           ],
@@ -543,7 +484,7 @@
       },
       "hiddenSeries": false,
       "id": 10,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -588,7 +529,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"serviceTimes.OK.p50\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($interval), \"process\", \"action\" fill(null)",
+          "query": "SELECT max(\"value\") FROM \"serviceTimes.OK.p50\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"action\" fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -669,7 +610,7 @@
       },
       "hiddenSeries": false,
       "id": 11,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -714,7 +655,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"serviceTimes.OK.p99\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($interval), \"process\", \"action\" fill(null)",
+          "query": "SELECT max(\"value\") FROM \"serviceTimes.OK.p99\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"action\" fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -795,7 +736,7 @@
       },
       "hiddenSeries": false,
       "id": 12,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -853,7 +794,7 @@
           "measurement": "serviceInstant.OK",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"serviceInstant.OK\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), process, action, slot\n)\nWHERE $timeFilter\nGROUP BY time($interval), process, action",
+          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"serviceInstant.OK\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($__interval), process, action, slot\n)\nWHERE $timeFilter\nGROUP BY time($__interval), process, action",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -946,7 +887,7 @@
       },
       "hiddenSeries": false,
       "id": 15,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -991,7 +932,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"serviceTimes.FAIL.p50\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($interval), \"process\", \"action\" fill(null)",
+          "query": "SELECT max(\"value\") FROM \"serviceTimes.FAIL.p50\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"action\" fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1072,7 +1013,7 @@
       },
       "hiddenSeries": false,
       "id": 16,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -1117,7 +1058,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"serviceTimes.FAIL.p99\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($interval), \"process\", \"action\" fill(null)",
+          "query": "SELECT max(\"value\") FROM \"serviceTimes.FAIL.p99\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"action\" fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1198,7 +1139,7 @@
       },
       "hiddenSeries": false,
       "id": 17,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -1257,7 +1198,7 @@
           "measurement": "serviceInstant.FAIL",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"serviceInstant.FAIL\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), process, action, slot\n)\nWHERE $timeFilter\nGROUP BY time($interval), process, action\n",
+          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"serviceInstant.FAIL\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), process, action, slot\n)\nWHERE $timeFilter\nGROUP BY time($__interval), process, action\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1351,7 +1292,7 @@
       },
       "hiddenSeries": false,
       "id": 4,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -1403,7 +1344,7 @@
           "measurement": "error.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"error.instantRate\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), process, slot\n)\nWHERE $timeFilter\nGROUP BY time($interval), process",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"value\"), 1s) AS value\n  FROM \"error.count.count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1495,7 +1436,7 @@
       },
       "hiddenSeries": false,
       "id": 9,
-      "interval": "30s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -1527,7 +1468,7 @@
           "groupBy": [
             {
               "params": [
-                "$interval"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -1644,7 +1585,7 @@
       },
       "hiddenSeries": false,
       "id": 8,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -1676,7 +1617,7 @@
           "groupBy": [
             {
               "params": [
-                "$interval"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -1693,7 +1634,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "eventtimedelay.min",
+          "measurement": "eventtimedelay.histogram.min",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT min(\"value\") FROM \"eventtimedelay.min\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
@@ -1787,7 +1728,7 @@
       },
       "hiddenSeries": false,
       "id": 6,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -1819,7 +1760,7 @@
           "groupBy": [
             {
               "params": [
-                "$interval"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -1836,7 +1777,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "eventtimedelay.p50",
+          "measurement": "eventtimedelay.histogram.mean",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT mean(\"value\") FROM \"eventtimedelay.p50\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
@@ -1930,7 +1871,7 @@
       },
       "hiddenSeries": false,
       "id": 7,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -1962,7 +1903,7 @@
           "groupBy": [
             {
               "params": [
-                "$interval"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -1979,7 +1920,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "eventtimedelay.max",
+          "measurement": "eventtimedelay.histogram.max",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT max(\"value\") FROM \"eventtimedelay.max\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
@@ -2073,7 +2014,7 @@
       },
       "hiddenSeries": false,
       "id": 13,
-      "interval": "10s",
+      "interval": "$interval",
       "legend": {
         "avg": false,
         "current": false,
@@ -2105,7 +2046,7 @@
           "groupBy": [
             {
               "params": [
-                "$interval"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -2258,6 +2199,80 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
+      },
+      {
+        "auto": false,
+        "auto_count": 30,
+        "auto_min": "10s",
+        "current": {
+          "selected": false,
+          "text": "10s",
+          "value": "10s"
+        },
+        "hide": 0,
+        "label": null,
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "10s",
+            "value": "10s"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "10s,1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
       }
     ]
   },
@@ -2294,5 +2309,5 @@
   "timezone": "browser",
   "title": "Flink-ESP",
   "uid": "flink-esp",
-  "version": 3
+  "version": 4
 }

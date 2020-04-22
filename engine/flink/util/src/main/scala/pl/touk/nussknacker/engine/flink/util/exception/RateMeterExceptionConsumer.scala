@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.exception
 import cats.data.NonEmptyList
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
-import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeter, MetricUtils}
+import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, MetricUtils}
 import pl.touk.nussknacker.engine.util.exception.GenericRateMeterExceptionConsumer
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
@@ -18,11 +18,10 @@ class RateMeterExceptionConsumer(val underlying: FlinkEspExceptionConsumer) exte
   }
 
   override def instantRateMeter(tags: Map[String, String], name: NonEmptyList[String]): RateMeter
-    = metricUtils.gauge[Double, InstantRateMeter](name, tags, new InstantRateMeter)
+    = InstantRateMeterWithCount.register(tags, name.toList, metricUtils)
 
   override def close(): Unit = {
     underlying.close()
   }
-
 
 }
