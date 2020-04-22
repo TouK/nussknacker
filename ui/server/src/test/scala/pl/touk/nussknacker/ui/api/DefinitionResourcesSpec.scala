@@ -315,7 +315,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
 
       val validators: Json = responseAs[Json].hcursor
         .downField("additionalPropertiesConfig")
-        .downField("fixedValueOptionalProperty")
+        .downField("numberOfThreads")
         .downField("validators")
         .focus.get
 

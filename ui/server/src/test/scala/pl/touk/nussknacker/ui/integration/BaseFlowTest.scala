@@ -149,23 +149,23 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).right.get
 
       val underTest = Map(
-        "stringRequiredProperty" -> new UiAdditionalPropertyConfig(
-          Some("default"),
+        "environment" -> new UiAdditionalPropertyConfig(
+          Some("test"),
           StringParameterEditor,
           List(MandatoryParameterValidator),
-          Some("label")
+          Some("Environment")
         ),
-        "intOptionalProperty" -> new UiAdditionalPropertyConfig(
+        "maxEvents" -> new UiAdditionalPropertyConfig(
           None,
           StringParameterEditor,
           List(LiteralParameterValidator.integerValidator),
-          None
+          Some("Max events")
         ),
-        "fixedValueOptionalProperty" -> new UiAdditionalPropertyConfig(
-          None,
+        "numberOfThreads" -> new UiAdditionalPropertyConfig(
+          Some("1"),
           FixedValuesParameterEditor(fixedPossibleValues),
           List(FixedValuesValidator(fixedPossibleValues)),
-          None
+          Some("Number of theards")
         )
       )
 
@@ -181,10 +181,10 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       status shouldEqual StatusCodes.OK
       val entity = responseAs[String]
 
-      entity should include("Configured property stringRequiredProperty (label) is missing")
+      entity should include("Configured property environment (Environment) is missing")
       entity should include("This field value has to be an integer number")
       entity should include("Unknown property unknown")
-      entity should include("Property fixedValueOptionalProperty has invalid value")
+      entity should include("Property numberOfThreads (Number of theards) has invalid value")
     }
   }
 
@@ -253,7 +253,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     def processWithService(params: (String, Expression)*): EspProcess = EspProcessBuilder
       .id("test")
-      .additionalFields(properties = Map("stringRequiredProperty" -> "someNotEmptyString"))
+      .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
       .exceptionHandlerNoParams()
       .source("start", "csv-source")
       .processorEnd("end", "dynamicService", params:_*)
