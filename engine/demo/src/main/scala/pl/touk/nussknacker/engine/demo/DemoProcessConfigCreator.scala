@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.demo.custom.{EventsCounter, TransactionAmountAggregator}
 import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService}
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingRestartingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, BrieflyLoggingRestartingExceptionHandler}
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
@@ -120,6 +120,6 @@ class LoggingExceptionHandlerFactory(config: Config) extends ExceptionHandlerFac
 
   @MethodToInvoke
   def create(metaData: MetaData): EspExceptionHandler =
-    BrieflyLoggingRestartingExceptionHandler(metaData, config)
+    BrieflyLoggingExceptionHandler(metaData)
 
 }
