@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.confluent.formatter
 
 import java.io.IOException
 
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => ConfluentSchemaRegistryClient}
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerializer
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericDatumReader
@@ -11,24 +12,23 @@ import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClient
 
 /**
   * This class is mainly copy-paste of Confluent's AvroMessageReader but with better constructor handling
   * both passing schemaRegistryClient and keySeparator.
   *
-  * @param ConfluentSchemaRegistryClient schema registry client
+  * @param confluentSchemaRegistryClient schema registry client
   * @param topic topic
   * @param parseKey if key should be parsed
   * @param keySeparator key separator
   */
-private[formatter] class ConfluentAvroMessageReader(confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
+private[confluent] class ConfluentAvroMessageReader(confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
                                                     topic: String,
                                                     parseKey: Boolean,
                                                     keySeparator: String)
   extends AbstractKafkaAvroSerializer {
 
-  schemaRegistry = confluentSchemaRegistryClient.confluentSchemaRegistryClient
+  schemaRegistry = confluentSchemaRegistryClient
 
   private val keySubject = AvroUtils.keySubject(topic)
 

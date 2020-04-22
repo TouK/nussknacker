@@ -3,21 +3,19 @@ package pl.touk.nussknacker.engine.avro.confluent.formatter
 import java.io._
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.util.Properties
 
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => ConfluentSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
-import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.confluent.formatter.ConfluentAvroToJsonFormatter._
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
 
-class ConfluentAvroToJsonFormatter(confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
-                                   formatter: ConfluentAvroMessageFormatter,
-                                   reader: ConfluentAvroMessageReader,
-                                   formatKey: Boolean) extends RecordFormatter {
+private[confluent] class ConfluentAvroToJsonFormatter(confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
+                                                      formatter: ConfluentAvroMessageFormatter,
+                                                      reader: ConfluentAvroMessageReader,
+                                                      formatKey: Boolean) extends RecordFormatter {
 
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
     val bos = new ByteArrayOutputStream()
@@ -53,6 +51,7 @@ class ConfluentAvroToJsonFormatter(confluentSchemaRegistryClient: ConfluentSchem
     else
       buffer
   }
+
   // end of copy-paste
 
   override def parseRecord(formatted: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
@@ -74,7 +73,7 @@ class ConfluentAvroToJsonFormatter(confluentSchemaRegistryClient: ConfluentSchem
       throw new IllegalStateException(s"Cannot find schema id separtor: $Separator in text: $str")
     val id = Integer.parseInt(str.substring(0, separatorIndx))
     val remaining = if (separatorIndx + 1 > str.length) "" else str.substring(separatorIndx + 1)
-    (confluentSchemaRegistryClient.schemaById(id), remaining)
+    (confluentSchemaRegistryClient.getById(id), remaining)
   }
 
 }

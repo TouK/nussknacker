@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.avro._
-import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.confluent.{ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SimpleSlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
-import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
@@ -18,6 +18,8 @@ import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   import org.apache.flink.api.scala._
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "Default")
 
@@ -55,14 +57,15 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   import pl.touk.nussknacker.engine.util.functions._
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val schemaRegistryProvider = createSchemaProvider[GenericData.Record](processObjectDependencies)
-
     ExpressionConfig(
       Map(
         "GEO" -> defaultCategory(geo),
         "NUMERIC" -> defaultCategory(numeric),
         "DATE" -> defaultCategory(date),
-        "AVRO" -> defaultCategory(new AvroUtils(schemaRegistryProvider.schemaRegistryClient))
+        "AVRO" -> defaultCategory(new AvroUtils(
+          ConfluentSchemaRegistryClientFactory,
+          processObjectDependencies.config.as[KafkaConfig]("kafka")
+        ))
       ),
       List()
     )

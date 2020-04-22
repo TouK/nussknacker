@@ -5,23 +5,25 @@ import java.nio.charset.StandardCharsets
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient => ConfluentKafkaSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient => ConfluentSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
+import org.scalatest.{Assertion, BeforeAndAfterAll, FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryClient, ConfluentSchemaRegistryProvider}
-import pl.touk.nussknacker.engine.kafka.{KafkaSourceFactory, KafkaSpec}
+import pl.touk.nussknacker.engine.avro.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
   import MockSchemaRegistry._
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   import collection.JavaConverters._
 
@@ -30,13 +32,20 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
 
-  private lazy val keySerializer = {
-    val serializer = new KafkaAvroSerializer(Client.confluentSchemaRegistryClient)
+  lazy val processObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
+
+  lazy val kafkaConfig: KafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
+
+  lazy val mockSchemaRegistryClient: SchemaRegistryClient with ConfluentSchemaRegistryClient =
+    MockConfluentSchemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+
+  private lazy val keySerializer: KafkaAvroSerializer = {
+    val serializer = new KafkaAvroSerializer(mockSchemaRegistryClient)
     serializer.configure(Map[String, AnyRef]("schema.registry.url" -> "not_used").asJava, true)
     serializer
   }
 
-  private lazy val valueSerializer = new KafkaAvroSerializer(Client.confluentSchemaRegistryClient)
+  private lazy val valueSerializer = new KafkaAvroSerializer(mockSchemaRegistryClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -89,14 +98,14 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     readLastMessageAndVerify(createKeyValueAvroSourceFactory[Int, Int], givenObj, IntTopic)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String) = {
+  private def roundTripSingleObject(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String): Assertion = {
     val serializedObj = valueSerializer.serialize(topic, givenObj)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, Some(0))
 
     readLastMessageAndVerify(sourceFactory, givenObj, topic)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String) = {
+  private def readLastMessageAndVerify(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String): Assertion = {
     val source = sourceFactory.create(MetaData("", StreamMetaData()), topic)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef]]
     val bytes = source.generateTestData(1)
@@ -107,20 +116,32 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   }
 
   private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
-    val provider = ConfluentSchemaRegistryProvider[AnyRef](Client, useSpecificAvroReader, formatKey = false)
-    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming), None)
+    val provider = ConfluentSchemaRegistryProvider[AnyRef](
+      MockConfluentSchemaRegistryClientFactory,
+      kafkaConfig,
+      useSpecificAvroReader,
+      formatKey = false
+    )
+    new KafkaAvroSourceFactory(provider, processObjectDependencies, None)
   }
 
   private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
-    val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](Client.confluentSchemaRegistryClient)
-    val provider = ConfluentSchemaRegistryProvider(Client, None, Some(deserializerFactory), useSpecificAvroReader = false, formatKey = true)
-    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming), None)
+    val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockConfluentSchemaRegistryClientFactory)
+    val provider = ConfluentSchemaRegistryProvider(
+      MockConfluentSchemaRegistryClientFactory,
+      None, Some(deserializerFactory),
+      kafkaConfig,
+      useSpecificAvroReader = false,
+      formatKey = true
+    )
+    new KafkaAvroSourceFactory(provider, processObjectDependencies, None)
   }
 
 }
 
-class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClient: ConfluentKafkaSchemaRegistryClient)(implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
-  extends ConfluentAvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClient, useSpecificAvroReader = false)(
+class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient])
+                                                               (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
+  extends ConfluentAvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
     createTuple2TypeInformation(keyTypInfo, valueTypInfo)
   ) {
 
@@ -171,20 +192,24 @@ object MockSchemaRegistry {
     """.stripMargin
   )
 
-  val Client: ConfluentSchemaRegistryClient = {
-    val mockSchemaRegistry = new MockSchemaRegistryClient
-    def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
-      val subject = topic + "-" + (if (isKey) "key" else "value")
-      mockSchemaRegistry.register(subject, schema)
+  object MockConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[ConfluentSchemaRegistryClient] with Serializable {
+    def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient with ConfluentSchemaRegistryClient = {
+      val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient
+
+      def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
+        val subject = topic + "-" + (if (isKey) "key" else "value")
+        mockSchemaRegistry.register(subject, schema)
+      }
+
+      registerSchema(RecordTopic, isKey = false, RecordSchemaV1)
+      registerSchema(RecordTopic, isKey = false, RecordSchemaV2)
+      registerSchema(IntTopic, isKey = true, IntSchema)
+      registerSchema(IntTopic, isKey = false, IntSchema)
+
+      mockSchemaRegistry
     }
-
-    registerSchema(RecordTopic, isKey = false, RecordSchemaV1)
-    registerSchema(RecordTopic, isKey = false, RecordSchemaV2)
-    registerSchema(IntTopic, isKey = true, IntSchema)
-    registerSchema(IntTopic, isKey = false, IntSchema)
-
-    new ConfluentSchemaRegistryClient(mockSchemaRegistry)
   }
+
 }
 
 case class FullNameV1(var first: CharSequence, var last: CharSequence) extends SpecificRecordBase {

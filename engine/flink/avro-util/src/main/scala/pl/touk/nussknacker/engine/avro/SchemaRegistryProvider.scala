@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 
-trait SchemaRegistryProvider[T] {
+trait SchemaRegistryProvider[T] extends Serializable {
 
   def schemaRegistryClient: SchemaRegistryClient
 

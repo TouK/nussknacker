@@ -3,19 +3,20 @@ package pl.touk.nussknacker.genericmodel
 import java.nio.charset.StandardCharsets
 
 import cats.data.NonEmptyList
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient => ConfluentSchemaRegistryClient}
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.{SchemaRegistryClient, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -32,6 +33,19 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   import MockSchemaRegistry._
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+  override lazy val config: Config = ConfigFactory.load()
+    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+    .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
+
+  lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
+
+  lazy val kafkaConfig: KafkaConfig = mockProcessObjectDependencies.config.as[KafkaConfig]("kafka")
+
+  lazy val mockSchemaRegistryClient: SchemaRegistryClient with ConfluentSchemaRegistryClient =
+    MockConfluentSchemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
@@ -237,20 +251,17 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   private lazy val creator = new GenericConfigCreator {
     override protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
-      ConfluentSchemaRegistryProvider[T](processObjectDependencies)
+      ConfluentSchemaRegistryProvider[T](MockConfluentSchemaRegistryClientFactory, mockProcessObjectDependencies, false, false)
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
-  private lazy val valueSerializer = new KafkaAvroSerializer(Registry)
-  private lazy val valueDeserializer = new KafkaAvroDeserializer(Registry)
+  private lazy val valueSerializer = new KafkaAvroSerializer(mockSchemaRegistryClient)
+  private lazy val valueDeserializer = new KafkaAvroDeserializer(mockSchemaRegistryClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val config = ConfigFactory.load()
-      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
-      .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
   }
 
@@ -271,7 +282,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
 }
 
-
 object MockSchemaRegistry {
 
   val AvroInTopic: String = "name.avro.input"
@@ -283,7 +293,7 @@ object MockSchemaRegistry {
   val AvroTypedInTopic: String = "name.avro.typed.input"
   val AvroTypedOutTopic: String = "name.avro.typed.output"
 
-  private def parser = new Schema.Parser()
+  private def parser: Schema.Parser = new Schema.Parser()
 
   val RecordSchemaString: String =
     """{
@@ -299,21 +309,25 @@ object MockSchemaRegistry {
 
   val RecordSchema: Schema = parser.parse(RecordSchemaString)
 
-  val Registry: MockSchemaRegistryClient = {
-    val mockSchemaRegistry = new MockSchemaRegistryClient
-    def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
-      val subject = topic + "-" + (if (isKey) "key" else "value")
-      mockSchemaRegistry.register(subject, schema)
+  object MockConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[ConfluentSchemaRegistryClient] with Serializable {
+    def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient with ConfluentSchemaRegistryClient = {
+      val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient
+
+      def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
+        val subject = topic + "-" + (if (isKey) "key" else "value")
+        mockSchemaRegistry.register(subject, schema)
+      }
+
+      registerSchema(AvroInTopic, isKey = false, RecordSchema)
+      registerSchema(AvroOutTopic, isKey = false, RecordSchema)
+
+      registerSchema(AvroFromScratchInTopic, isKey = false, RecordSchema)
+      registerSchema(AvroFromScratchOutTopic, isKey = false, RecordSchema)
+
+      registerSchema(AvroTypedInTopic, isKey = false, RecordSchema)
+      registerSchema(AvroTypedOutTopic, isKey = false, RecordSchema)
+
+      mockSchemaRegistry
     }
-    registerSchema(AvroInTopic, isKey = false, RecordSchema)
-    registerSchema(AvroOutTopic, isKey = false, RecordSchema)
-
-    registerSchema(AvroFromScratchInTopic, isKey = false, RecordSchema)
-    registerSchema(AvroFromScratchOutTopic, isKey = false, RecordSchema)
-
-    registerSchema(AvroTypedInTopic, isKey = false, RecordSchema)
-    registerSchema(AvroTypedOutTopic, isKey = false, RecordSchema)
-    mockSchemaRegistry
   }
-
 }

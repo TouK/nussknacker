@@ -1,16 +1,23 @@
 package pl.touk.nussknacker.engine.avro
 
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import org.apache.avro.Schema
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.functions.TimestampAssigner
-import pl.touk.nussknacker.engine.kafka.RecordFormatter
-import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
-trait SchemaRegistryClient {
+trait SchemaRegistryClient extends Serializable {
 
-  def schemaById(id: Int): Schema
+  def getById(id: Int): Schema
 
-  def schemaBySubjectAndVersion(subject: String, version: Int): String
+  def getSchemaMetadata(subject: String, version: Int): SchemaMetadata
 
-  def latestSchema(name: String): String
+  def getLatestSchemaMetadata(name: String): SchemaMetadata
+
+  def schemaMetadata(subject: String, version: Option[Int]): SchemaMetadata =
+    version
+      .map(ver => getSchemaMetadata(subject, ver))
+      .getOrElse(getLatestSchemaMetadata(subject))
+}
+
+trait SchemaRegistryClientFactory[T] extends Serializable {
+  def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient with T
 }
