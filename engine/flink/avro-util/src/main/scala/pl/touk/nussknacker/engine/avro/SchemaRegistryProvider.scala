@@ -11,6 +11,6 @@ trait SchemaRegistryProvider[T] {
 
   def serializationSchemaFactory: SerializationSchemaFactory[Any]
 
-  def recordFormatter(topic: String, formatKey: Boolean): RecordFormatter
+  def recordFormatter(topic: String): Option[RecordFormatter]
 
 }

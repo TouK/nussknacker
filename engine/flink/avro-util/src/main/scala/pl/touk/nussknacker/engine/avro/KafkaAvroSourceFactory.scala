@@ -15,8 +15,7 @@ import pl.touk.nussknacker.engine.kafka._
 
 class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaRegistryProvider[T],
                                                  processObjectDependencies: ProcessObjectDependencies,
-                                                 timestampAssigner: Option[TimestampAssigner[T]],
-                                                 formatKey: Boolean = false)
+                                                 timestampAssigner: Option[TimestampAssigner[T]])
   extends KafkaSourceFactory[T](
     schemaRegistryProvider.deserializationSchemaFactory,
     timestampAssigner,
@@ -29,15 +28,14 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
       consumerGroupId = processMetaData.id,
       topics,
       schema,
-      Some(schemaRegistryProvider.recordFormatter(topics.head, formatKey = formatKey)),
+      schemaRegistryProvider.recordFormatter(topics.head),
       processObjectDependencies
     )
 }
 
 class KafkaTypedAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaRegistryProvider[T],
                                                       processObjectDependencies: ProcessObjectDependencies,
-                                                      timestampAssigner: Option[TimestampAssigner[T]],
-                                                      formatKey: Boolean = false)
+                                                      timestampAssigner: Option[TimestampAssigner[T]])
   extends BaseKafkaSourceFactory[T](timestampAssigner, TestParsingUtils.newLineSplit, processObjectDependencies) {
 
   @MethodToInvoke
@@ -58,7 +56,7 @@ class KafkaTypedAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: Sc
       consumerGroupId = processMetaData.id,
       List(topic),
       schemaRegistryProvider.deserializationSchemaFactory.create(List(topic), kafkaConfig),
-      Some(schemaRegistryProvider.recordFormatter(topic, formatKey = formatKey)),
+      schemaRegistryProvider.recordFormatter(topic),
       processObjectDependencies
     ) with ReturningType {
       override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(avroSchema)

@@ -1,8 +1,7 @@
-package pl.touk.nussknacker.engine.avro.formatter
+package pl.touk.nussknacker.engine.avro.confluent.formatter
 
 import java.io.IOException
 
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerializer
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericDatumReader
@@ -11,25 +10,29 @@ import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
+import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClient
 
 /**
   * This class is mainly copy-paste of Confluent's AvroMessageReader but with better constructor handling
   * both passing schemaRegistryClient and keySeparator.
   *
-  * @param schemaRegistryClient schema registry client
+  * @param ConfluentSchemaRegistryClient schema registry client
   * @param topic topic
   * @param parseKey if key should be parsed
   * @param keySeparator key separator
   */
-private[formatter] class AvroMessageReader(schemaRegistryClient: SchemaRegistryClient, topic: String,
-                                           parseKey: Boolean, keySeparator: String)
+private[formatter] class ConfluentAvroMessageReader(confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
+                                                    topic: String,
+                                                    parseKey: Boolean,
+                                                    keySeparator: String)
   extends AbstractKafkaAvroSerializer {
 
-  schemaRegistry = schemaRegistryClient
+  schemaRegistry = confluentSchemaRegistryClient.confluentSchemaRegistryClient
 
-  private val keySubject = topic + "-key"
+  private val keySubject = AvroUtils.keySubject(topic)
 
-  private val valueSubject = topic + "-value"
+  private val valueSubject = AvroUtils.valueSubject(topic)
 
   private val decoderFactory = DecoderFactory.get
 

@@ -31,12 +31,12 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
 
   private lazy val keySerializer = {
-    val serializer = new KafkaAvroSerializer(Client.confluentClient)
+    val serializer = new KafkaAvroSerializer(Client.confluentSchemaRegistryClient)
     serializer.configure(Map[String, AnyRef]("schema.registry.url" -> "not_used").asJava, true)
     serializer
   }
 
-  private lazy val valueSerializer = new KafkaAvroSerializer(Client.confluentClient)
+  private lazy val valueSerializer = new KafkaAvroSerializer(Client.confluentSchemaRegistryClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -107,14 +107,14 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   }
 
   private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
-    val provider = ConfluentSchemaRegistryProvider[AnyRef](Client, useSpecificAvroReader)
-    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming), None, formatKey = false)
+    val provider = ConfluentSchemaRegistryProvider[AnyRef](Client, useSpecificAvroReader, formatKey = false)
+    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming), None)
   }
 
   private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
-    val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](Client.confluentClient)
-    val provider = ConfluentSchemaRegistryProvider(Client, None, Some(deserializerFactory), useSpecificAvroReader = false)
-    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming), None, formatKey = true)
+    val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](Client.confluentSchemaRegistryClient)
+    val provider = ConfluentSchemaRegistryProvider(Client, None, Some(deserializerFactory), useSpecificAvroReader = false, formatKey = true)
+    new KafkaAvroSourceFactory(provider, ProcessObjectDependencies(config, DefaultObjectNaming), None)
   }
 
 }

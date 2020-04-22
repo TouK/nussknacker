@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 
-trait SchemaRegistryClient extends Serializable {
+trait SchemaRegistryClient {
 
   def schemaById(id: Int): Schema
 

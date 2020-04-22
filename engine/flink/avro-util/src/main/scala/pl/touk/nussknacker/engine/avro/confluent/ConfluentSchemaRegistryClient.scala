@@ -6,15 +6,15 @@ import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.SchemaRegistryClient
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
-class ConfluentSchemaRegistryClient(var confluentClient: ConfluentKafkaSchemaRegistryClient) extends SchemaRegistryClient with Serializable {
+class ConfluentSchemaRegistryClient(val confluentSchemaRegistryClient: ConfluentKafkaSchemaRegistryClient) extends SchemaRegistryClient {
   override def schemaById(id: Int): Schema =
-    confluentClient.getById(id)
+    confluentSchemaRegistryClient.getById(id)
 
   override def schemaBySubjectAndVersion(subject: String, version: Int): String =
-    confluentClient.getSchemaMetadata(subject, version).getSchema
+    confluentSchemaRegistryClient.getSchemaMetadata(subject, version).getSchema
 
   override def latestSchema(name: String): String =
-    confluentClient.getLatestSchemaMetadata(name).getSchema
+    confluentSchemaRegistryClient.getLatestSchemaMetadata(name).getSchema
 }
 
 object ConfluentSchemaRegistryClient {

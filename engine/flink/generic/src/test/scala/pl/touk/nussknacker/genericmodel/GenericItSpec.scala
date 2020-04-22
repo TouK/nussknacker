@@ -10,9 +10,12 @@ import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, Schem
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
+import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -233,10 +236,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   }
 
   private lazy val creator = new GenericConfigCreator {
-    override protected def createSchemaRegistryClientFactory: SchemaRegistryClientFactory = new SchemaRegistryClientFactory {
-      override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
-        Registry
-    }
+    override protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
+      ConfluentSchemaRegistryProvider[T](processObjectDependencies)
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())

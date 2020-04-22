@@ -1,25 +1,25 @@
-package pl.touk.nussknacker.engine.avro.formatter
+package pl.touk.nussknacker.engine.avro.confluent.formatter
 
 import java.io.PrintStream
 import java.nio.ByteBuffer
 
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.AbstractKafkaAvroDeserializer
 import org.apache.avro.AvroRuntimeException
 import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.io.EncoderFactory
 import org.apache.kafka.common.errors.SerializationException
+import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClient
 
 /**
   * This class is mainly copy-paste of Confluent's AvroMessageFormatter but with access to writeTo method
   * with bytes instead of record.
   *
-  * @param schemaRegistryClient schema registry client
+  * @param ConfluentSchemaRegistryClient schema registry client
   */
-private[formatter] class AvroMessageFormatter(schemaRegistryClient: SchemaRegistryClient)
+private[formatter] class ConfluentAvroMessageFormatter(confluentSchemaRegistryClient: ConfluentSchemaRegistryClient)
   extends AbstractKafkaAvroDeserializer {
 
-  schemaRegistry = schemaRegistryClient
+  schemaRegistry = confluentSchemaRegistryClient.confluentSchemaRegistryClient
 
   private val encoderFactory = EncoderFactory.get
 
