@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.functional
 import java.util.Date
 
 import cats.data.NonEmptyList
+import com.sun.corba.se.impl.orbutil.graph.Graph
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -131,6 +132,32 @@ class ProcessSpec extends FunSuite with Matchers {
     processInvoker.invokeWithSampleData(process, data)
 
     MockService.data.toSet shouldBe Set(5, rec)
+  }
+
+  test("should handle diamond-like process") {
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder.source("id", "input")
+        .split("split",
+          GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
+          GraphBuilder.filter("right", "#input.id != 'b'").branchEnd("end2", "join1")
+        ),
+      GraphBuilder.branch("join1", "joinBranchExpression", Some("input33"),
+        List(
+          "end1" -> List("value" -> "#input"),
+          "end2" -> List("value" -> "#input")
+        ))
+        .processorEnd("proc2", "logService", "all" -> "#input33")
+    ))
+
+    val recA = SimpleRecord("a", 3, "a", new Date(0))
+    val recB = SimpleRecord("b", 3, "a", new Date(0))
+    val recC = SimpleRecord("c", 3, "a", new Date(0))
+
+    val data = List(recA, recB, recC)
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    MockService.data shouldBe List(recA, recB, recC, recC)
   }
 
 }
