@@ -148,15 +148,15 @@ class ProcessSpec extends FunSuite with Matchers {
         .processorEnd("proc2", "logService", "all" -> "#input33")
     ))
 
-    val recA = SimpleRecord("a", 3, "a", new Date(0))
-    val recB = SimpleRecord("b", 3, "a", new Date(0))
-    val recC = SimpleRecord("c", 3, "a", new Date(0))
+    val recA = SimpleRecord("a", 3, "a", new Date(1))
+    val recB = SimpleRecord("b", 3, "a", new Date(2))
+    val recC = SimpleRecord("c", 3, "a", new Date(3))
 
     val data = List(recA, recB, recC)
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List(recA, recB, recC, recC)
+    MockService.data.sortBy(_.asInstanceOf[SimpleRecord].date) shouldBe List(recA, recB, recC, recC)
   }
 
 }
