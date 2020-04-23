@@ -16,6 +16,7 @@ object ConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[
     val maxSchemaObject = config.getMaxSchemasPerSubject
     val originals = config.originalsWithPrefix("")
 
+    // It's fat object witch's not serialized
     new CachedSchemaRegistryClient(urls, maxSchemaObject, originals) with SchemaRegistryClient
   }
 }

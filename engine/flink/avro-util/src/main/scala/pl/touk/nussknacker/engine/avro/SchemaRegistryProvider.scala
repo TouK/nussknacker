@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFact
 
 trait SchemaRegistryProvider[T] extends Serializable {
 
-  def schemaRegistryClient: SchemaRegistryClient
+  def createSchemaRegistryClient: SchemaRegistryClient
 
   def deserializationSchemaFactory: DeserializationSchemaFactory[T]
 

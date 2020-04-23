@@ -9,15 +9,13 @@ import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SimpleSlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import org.apache.flink.api.scala._
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "Default")
@@ -63,16 +61,13 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
         "GEO" -> defaultCategory(geo),
         "NUMERIC" -> defaultCategory(numeric),
         "DATE" -> defaultCategory(date),
-        "AVRO" -> defaultCategory(new AvroUtils(
-          schemaRegistryProvider.schemaRegistryClientFactory,
-          processObjectDependencies.config.as[KafkaConfig]("kafka")
-        ))
+        "AVRO" -> defaultCategory(new AvroUtils(schemaRegistryProvider))
       ),
       List()
     )
   }
 
-  protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[GenericData.Record] =
+  protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies):SchemaRegistryProvider[GenericData.Record] =
     ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
 
 }

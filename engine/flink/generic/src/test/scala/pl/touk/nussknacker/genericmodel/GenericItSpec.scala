@@ -245,8 +245,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     }.take(1).toList
   }
 
-  private lazy val creator = new GenericConfigCreator {
-    override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[GenericData.Record] =
+  private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
+    override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[GenericData.Record] =
       ConfluentSchemaRegistryProvider[GenericData.Record](MockConfluentSchemaRegistryClientFactory, processObjectDependencies)
   }
 

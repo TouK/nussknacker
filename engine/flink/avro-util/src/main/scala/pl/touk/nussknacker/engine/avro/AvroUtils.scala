@@ -3,13 +3,12 @@ package pl.touk.nussknacker.engine.avro
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.collection.concurrent.TrieMap
 
-class AvroUtils[T](schemaRegistryClientFactory: SchemaRegistryClientFactory[T], kafkaConfig: KafkaConfig) extends Serializable {
+class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Serializable {
 
-  private lazy val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+  private lazy val schemaRegistryClient = schemaRegistryProvider.createSchemaRegistryClient
 
   private lazy val parsedSchemaCache = TrieMap.empty[String, Schema]
 
