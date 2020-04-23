@@ -60,6 +60,21 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed. `Config` is available as property of `ProcessObjectDependencies` instance.
 * [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
 * Rename `grafanaSettings` to `metricsSettings` in configuration.
+* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistry Provider. Api for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed:
+from constructor params:
+```
+schemaFactory: DeserializationSchemaFactory[T],
+schemaRegistryClientFactory: SchemaRegistryClientFactory,
+timestampAssigner: Option[TimestampAssigner[T]],
+formatKey: Boolean = false,
+processObjectDependencies: ProcessObjectDependencies
+```
+to:
+```
+schemaRegistryProvider: SchemaRegistryProvider[T],
+processObjectDependencies: ProcessObjectDependencies,
+timestampAssigner: Option[TimestampAssigner[T]]
+```
 
 ## In version 0.0.12
 
