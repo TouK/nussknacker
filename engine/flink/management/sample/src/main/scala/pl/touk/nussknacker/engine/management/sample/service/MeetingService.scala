@@ -7,10 +7,14 @@ import com.cronutils.model.Cron
 import javax.annotation.Nullable
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
+import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-object MeetingService extends Service with Serializable {
+object MeetingService extends Service with Serializable with TimeMeasuringService {
+
+  override protected def serviceName: String = "meetingService"
+
   @MethodToInvoke
   def invoke(@ParamName("Date") date: LocalDateTime,
              @ParamName("EndTime") endTime: LocalTime,
@@ -47,6 +51,12 @@ object MeetingService extends Service with Serializable {
              )
              @Nullable
              cronScheduler: Cron
-            ): Future[Unit]
-  = Future.successful(Unit)
+            )(implicit ec: ExecutionContext): Future[Unit] = measuring {
+              Thread.sleep((math.random() * 10).toLong)
+              if (math.random() < 0.25) {
+                Future.failed(new IllegalArgumentException("Bad luck, your meeting failed..."))
+              } else {
+                Future.successful(())
+              }
+  }
 }

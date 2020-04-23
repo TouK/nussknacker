@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.metrics
 
 import cats.data.NonEmptyList
-import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.metrics.{Counter, Gauge, Histogram, Meter, MetricGroup}
 import pl.touk.nussknacker.engine.flink.api.{NKGlobalParameters, RuntimeContextLifecycle}
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.{NKGlobalParameters, RuntimeContextL
   Unfortunately, current Flink Influx report doesn't allow for elastic configuration, so for now
   we translate by default to `old` way in groupsWithNameForLegacyMode
  */
-class MetricUtils(runtimeContext: RuntimeContext) extends LazyLogging {
+class MetricUtils(runtimeContext: RuntimeContext) {
 
   def counter(nameParts: NonEmptyList[String], tags: Map[String, String]): Counter = {
     val (group, name) = groupsWithName(nameParts, tags)
@@ -37,16 +36,17 @@ class MetricUtils(runtimeContext: RuntimeContext) extends LazyLogging {
     group.histogram(name, histogram)
   }
 
-  private val useNewMetricsMode: Boolean =
-    runtimeContext.getExecutionConfig.getGlobalJobParameters.asInstanceOf[NKGlobalParameters].useNewMetrics.getOrElse(false)
+  private val useNewMetricsMode: Boolean = {
+    val parameters = runtimeContext.getExecutionConfig.getGlobalJobParameters.asInstanceOf[NKGlobalParameters]
+    parameters.useNewMetrics.getOrElse(false)
+  }
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
     if (useNewMetricsMode) {
-      logger.info("Using new metrics mode")
       tagMode(nameParts, tags)
     } else {
-      logger.info("Using old metrics mode")
       groupsWithNameForLegacyMode(nameParts, tags)
+
     }
   }
 

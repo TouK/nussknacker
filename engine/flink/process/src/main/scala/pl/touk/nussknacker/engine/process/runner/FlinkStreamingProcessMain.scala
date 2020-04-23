@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
@@ -21,7 +22,8 @@ object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnviron
                                     modelData: ModelData,
                                     process: EspProcess,
                                     processVersion: ProcessVersion): Unit = {
-    env.getConfig.setGlobalJobParameters(modelData.processConfig.as("globalParameters")[NKGlobalParameters])
+    val parameters = modelData.processConfig.as[NKGlobalParameters]("globalParameters")
+    env.getConfig.setGlobalJobParameters(parameters)
     val compiler = new FlinkProcessCompiler(modelData)
     val registrar = FlinkStreamingProcessRegistrar(compiler, modelData.processConfig)
     registrar.register(env, process, processVersion)

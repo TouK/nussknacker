@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 1,
   "id": 1,
-  "iteration": 1587575850349,
+  "iteration": 1587666804798,
   "links": [],
   "panels": [
     {
@@ -511,7 +511,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_process]] - [[tag_action]]",
+          "alias": "[[tag_process]] - [[tag_serviceName]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -529,7 +529,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"serviceTimes.OK.p50\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"action\" fill(null)",
+          "query": "SELECT max(\"p50\") FROM \"service_OK_histogram\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"serviceName\" fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -637,7 +637,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_process]] - [[tag_action]]",
+          "alias": "[[tag_process]] - [[tag_serviceName]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -655,7 +655,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"serviceTimes.OK.p99\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"action\" fill(null)",
+          "query": "SELECT max(\"p99\") FROM \"service_OK_histogram\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"serviceName\" fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -763,7 +763,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "$tag_process - $tag_action",
+          "alias": "[[tag_process]] - [[tag_serviceName]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -794,7 +794,7 @@
           "measurement": "serviceInstant.OK",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"serviceInstant.OK\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($__interval), process, action, slot\n)\nWHERE $timeFilter\nGROUP BY time($__interval), process, action",
+          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"service_OK_instantRate\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($__interval), process, serviceName, slot\n)\nWHERE $timeFilter\nGROUP BY time($__interval), process, serviceName",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -914,7 +914,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_process]] - [[tag_action]]",
+          "alias": "[[tag_process]] - [[tag_serviceName]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -932,7 +932,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"serviceTimes.FAIL.p50\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"action\" fill(null)",
+          "query": "SELECT max(\"p50\") FROM \"service_FAIL_histogram\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"serviceName\" fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1040,7 +1040,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_process]] - [[tag_action]]",
+          "alias": "[[tag_process]] - [[tag_serviceName]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -1058,7 +1058,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"serviceTimes.FAIL.p99\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"action\" fill(null)",
+          "query": "SELECT max(\"p99\") FROM \"service_FAIL_histogram\" WHERE \"process\" =~ /$processName$/ AND \"env\" =~ /^$env$/ AND $timeFilter GROUP BY time($__interval), \"process\", \"serviceName\" fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1166,7 +1166,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "$tag_process - $tag_action",
+          "alias": "$tag_process - $tag_serviceName",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -1198,7 +1198,7 @@
           "measurement": "serviceInstant.FAIL",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"serviceInstant.FAIL\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($interval), process, action, slot\n)\nWHERE $timeFilter\nGROUP BY time($__interval), process, action\n",
+          "query": "SELECT sum(mean)\nFROM (\n  SELECT mean(value)\n  FROM \"service_FAIL_instantRate\"\n  WHERE process =~ /^$processName$/ AND env = '$env'\n  GROUP BY time($__interval), process, serviceName, slot\n)\nWHERE $timeFilter\nGROUP BY time($__interval), serviceName, action",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1344,7 +1344,7 @@
           "measurement": "error.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"error_count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"error_instantRate_count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -2309,5 +2309,5 @@
   "timezone": "browser",
   "title": "Flink-ESP",
   "uid": "flink-esp",
-  "version": 4
+  "version": 7
 }
