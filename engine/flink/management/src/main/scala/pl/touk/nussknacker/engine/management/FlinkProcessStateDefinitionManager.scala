@@ -12,15 +12,15 @@ object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager 
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
-    FlinkStateStatus.Restarting -> "/flink/states/deploy-restart-animated.svg"
+    FlinkStateStatus.Restarting -> "/assets/flink/states/deploy-restart-animated.svg"
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
-    FlinkStateStatus.Restarting -> "Process was deployed and now is still restarting.."
+    FlinkStateStatus.Restarting -> "Process was deployed but now is restarting..."
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
-    FlinkStateStatus.Restarting -> "Process is still restarting.."
+    FlinkStateStatus.Restarting -> "Process is restarting..."
   )
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =
