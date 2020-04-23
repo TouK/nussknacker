@@ -7,15 +7,15 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.collection.concurrent.TrieMap
 
-class AvroUtils[T](schemaRegistryClientFactory: SchemaRegistryClientFactory[T], kafkaConfig: KafkaConfig) {
+class AvroUtils[T](schemaRegistryClientFactory: SchemaRegistryClientFactory[T], kafkaConfig: KafkaConfig) extends Serializable {
+
+  private lazy val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
   private lazy val parsedSchemaCache = TrieMap.empty[String, Schema]
 
   private lazy val schemaBySubjectAndVersionCache = TrieMap.empty[(String, Int), Schema]
 
   private lazy val lastestSchemaBySubjectCache = TrieMap.empty[String, Schema]
-
-  private lazy val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
   private def parser = new Schema.Parser()
 
@@ -66,7 +66,7 @@ class AvroUtils[T](schemaRegistryClientFactory: SchemaRegistryClientFactory[T], 
 
 }
 
-object AvroUtils {
+object AvroUtils extends Serializable {
 
   def keySubject(topic: String): String =
     topic + "-key"

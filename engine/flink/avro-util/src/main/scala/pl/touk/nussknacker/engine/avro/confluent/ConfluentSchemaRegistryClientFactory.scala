@@ -10,7 +10,7 @@ object ConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[
   import collection.JavaConverters._
 
   // copied from AbstractKafkaAvroSerDe.configureClientProperties
-  def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient with ConfluentSchemaRegistryClient = {
+  def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedSchemaRegistryClient = {
     val config = new KafkaAvroDeserializerConfig(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava)
     val urls = config.getSchemaRegistryUrls
     val maxSchemaObject = config.getMaxSchemasPerSubject

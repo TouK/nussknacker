@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.avro.confluent
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => ConfluentSchemaRegistryClient}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClientFactory.TypedSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.confluent.formatter.ConfluentAvroToJsonFormatter
-import pl.touk.nussknacker.engine.avro.{SchemaRegistryClient, SchemaRegistryClientFactory, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.{SchemaRegistryClientFactory, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
@@ -16,7 +17,7 @@ class ConfluentSchemaRegistryProvider[T: TypeInformation](val schemaRegistryClie
   override def recordFormatter(topic: String): Option[RecordFormatter] =
     Some(ConfluentAvroToJsonFormatter(schemaRegistryClient, topic, formatKey))
 
-  override def schemaRegistryClient: SchemaRegistryClient with ConfluentSchemaRegistryClient =
+  override def schemaRegistryClient: TypedSchemaRegistryClient =
     schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 }
 

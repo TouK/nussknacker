@@ -1,25 +1,24 @@
 package pl.touk.nussknacker.genericmodel
 
 import org.apache.avro.generic.GenericData
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.avro._
-import pl.touk.nussknacker.engine.avro.confluent.{ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SimpleSlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
-  import org.apache.flink.api.scala._
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import org.apache.flink.api.scala._
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "Default")
 
@@ -30,9 +29,9 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
-    val avroSourceFactory = new KafkaAvroSourceFactory(schemaProvider, processObjectDependencies, None)
-    val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(schemaProvider, processObjectDependencies, None)
+    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
+    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+    val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 
     Map(
       "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
@@ -43,7 +42,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryProvider = createSchemaProvider[GenericData.Record](processObjectDependencies)
+    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
 
     Map(
       "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
@@ -57,13 +56,15 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   import pl.touk.nussknacker.engine.util.functions._
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
+
     ExpressionConfig(
       Map(
         "GEO" -> defaultCategory(geo),
         "NUMERIC" -> defaultCategory(numeric),
         "DATE" -> defaultCategory(date),
         "AVRO" -> defaultCategory(new AvroUtils(
-          ConfluentSchemaRegistryClientFactory,
+          schemaRegistryProvider.schemaRegistryClientFactory,
           processObjectDependencies.config.as[KafkaConfig]("kafka")
         ))
       ),
@@ -71,7 +72,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     )
   }
 
-  protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
-    ConfluentSchemaRegistryProvider[T](processObjectDependencies)
+  protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[GenericData.Record] =
+    ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
 
 }

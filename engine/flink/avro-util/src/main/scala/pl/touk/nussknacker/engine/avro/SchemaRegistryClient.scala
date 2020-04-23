@@ -18,6 +18,7 @@ trait SchemaRegistryClient extends Serializable {
       .getOrElse(getLatestSchemaMetadata(subject))
 }
 
-trait SchemaRegistryClientFactory[T] extends Serializable {
-  def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient with T
+trait SchemaRegistryClientFactory[Client] extends Serializable {
+  type TypedSchemaRegistryClient = SchemaRegistryClient with Client
+  def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedSchemaRegistryClient
 }

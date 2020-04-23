@@ -251,7 +251,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   private lazy val creator = new GenericConfigCreator {
     override protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
-      ConfluentSchemaRegistryProvider[T](MockConfluentSchemaRegistryClientFactory, mockProcessObjectDependencies, false, false)
+      ConfluentSchemaRegistryProvider[T](MockConfluentSchemaRegistryClientFactory, processObjectDependencies, false, false)
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
