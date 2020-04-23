@@ -10,7 +10,6 @@ import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, Schem
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -31,10 +30,10 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   import KafkaUtils._
   import MockSchemaRegistry._
-  import org.apache.flink.streaming.api.scala._
-  import spel.Implicits._
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import org.apache.flink.streaming.api.scala._
+  import spel.Implicits._
 
   override lazy val config: Config = ConfigFactory.load()
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
@@ -43,9 +42,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
 
   lazy val kafkaConfig: KafkaConfig = mockProcessObjectDependencies.config.as[KafkaConfig]("kafka")
-
-  lazy val mockSchemaRegistryClient: SchemaRegistryClient with ConfluentSchemaRegistryClient =
-    MockConfluentSchemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
@@ -250,15 +246,15 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   }
 
   private lazy val creator = new GenericConfigCreator {
-    override protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
-      ConfluentSchemaRegistryProvider[T](MockConfluentSchemaRegistryClientFactory, processObjectDependencies, false, false)
+    override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[GenericData.Record] =
+      ConfluentSchemaRegistryProvider[GenericData.Record](MockConfluentSchemaRegistryClientFactory, processObjectDependencies)
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
-  private lazy val valueSerializer = new KafkaAvroSerializer(mockSchemaRegistryClient)
-  private lazy val valueDeserializer = new KafkaAvroDeserializer(mockSchemaRegistryClient)
+  private lazy val valueSerializer = new KafkaAvroSerializer(Client)
+  private lazy val valueDeserializer = new KafkaAvroDeserializer(Client)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -309,25 +305,29 @@ object MockSchemaRegistry {
 
   val RecordSchema: Schema = parser.parse(RecordSchemaString)
 
-  object MockConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[ConfluentSchemaRegistryClient] with Serializable {
-    def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient with ConfluentSchemaRegistryClient = {
-      val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient
+  val Client: MockSchemaRegistryClient with SchemaRegistryClient = {
+    val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient
 
-      def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
-        val subject = topic + "-" + (if (isKey) "key" else "value")
-        mockSchemaRegistry.register(subject, schema)
-      }
-
-      registerSchema(AvroInTopic, isKey = false, RecordSchema)
-      registerSchema(AvroOutTopic, isKey = false, RecordSchema)
-
-      registerSchema(AvroFromScratchInTopic, isKey = false, RecordSchema)
-      registerSchema(AvroFromScratchOutTopic, isKey = false, RecordSchema)
-
-      registerSchema(AvroTypedInTopic, isKey = false, RecordSchema)
-      registerSchema(AvroTypedOutTopic, isKey = false, RecordSchema)
-
-      mockSchemaRegistry
+    def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
+      val subject = topic + "-" + (if (isKey) "key" else "value")
+      mockSchemaRegistry.register(subject, schema)
     }
+
+    registerSchema(AvroInTopic, isKey = false, RecordSchema)
+    registerSchema(AvroOutTopic, isKey = false, RecordSchema)
+
+    registerSchema(AvroFromScratchInTopic, isKey = false, RecordSchema)
+    registerSchema(AvroFromScratchOutTopic, isKey = false, RecordSchema)
+
+    registerSchema(AvroTypedInTopic, isKey = false, RecordSchema)
+    registerSchema(AvroTypedOutTopic, isKey = false, RecordSchema)
+
+    mockSchemaRegistry
   }
+
+  object MockConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[ConfluentSchemaRegistryClient] with Serializable {
+    override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedSchemaRegistryClient =
+      Client
+  }
+
 }

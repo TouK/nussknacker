@@ -26,15 +26,22 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  def apply[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient], processObjectDependencies: ProcessObjectDependencies, useSpecificAvroReader: Boolean, formatKey: Boolean): ConfluentSchemaRegistryProvider[T] = {
+  def apply[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
+                                processObjectDependencies: ProcessObjectDependencies,
+                                useSpecificAvroReader: Boolean,
+                                formatKey: Boolean): ConfluentSchemaRegistryProvider[T] = {
     val kafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
-    ConfluentSchemaRegistryProvider[T](ConfluentSchemaRegistryClientFactory, None, None, kafkaConfig, useSpecificAvroReader, formatKey)
+    ConfluentSchemaRegistryProvider[T](schemaRegistryClientFactory, None, None, kafkaConfig, useSpecificAvroReader, formatKey)
   }
 
-  def apply[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies, useSpecificAvroReader: Boolean, formatKey: Boolean): ConfluentSchemaRegistryProvider[T] = {
-    val kafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
-    ConfluentSchemaRegistryProvider[T](ConfluentSchemaRegistryClientFactory, None, None, kafkaConfig, useSpecificAvroReader, formatKey)
-  }
+  def apply[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
+                                processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider(schemaRegistryClientFactory, processObjectDependencies, useSpecificAvroReader = false, formatKey = false)
+
+  def apply[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies,
+                                useSpecificAvroReader: Boolean,
+                                formatKey: Boolean): ConfluentSchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider[T](ConfluentSchemaRegistryClientFactory, processObjectDependencies, useSpecificAvroReader, formatKey)
 
   def apply[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider(processObjectDependencies, useSpecificAvroReader = false, formatKey = false)
@@ -64,10 +71,10 @@ object ConfluentSchemaRegistryProvider extends Serializable {
                                 formatKey: Boolean): ConfluentSchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider(schemaRegistryClientFactory, None, None, kafkaConfig, useSpecificAvroReader, formatKey)
 
-  private def defaultSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient]) =
+  def defaultSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient]) =
     new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
-  private def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
+  def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
                                                                       useSpecificAvroReader: Boolean) =
     new ConfluentAvroDeserializationSchemaFactory[T](schemaRegistryClientFactory, useSpecificAvroReader)
 

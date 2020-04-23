@@ -13,6 +13,7 @@ Nussknacker versions
 * Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed. `processTypes` 
 configuration should be used from now on.
 * Change of additional properties configuration
+* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistry Provider
 
 0.0.12 (26 Oct 2019)
 --------------------
