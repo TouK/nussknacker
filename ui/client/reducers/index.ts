@@ -6,6 +6,7 @@ import {reducer as processActivity} from "./processActivity"
 import {reducer as settings} from "./settings"
 import {reducer as ui} from "./ui"
 import {reducer as toolbars} from "./toolbars"
+import {reducer as nodeDetails} from "./nodeDetailsState"
 
 import {undoRedoReducer as undoRedo} from "./undoRedo"
 
@@ -17,6 +18,7 @@ export const reducer = combineReducers({
   processActivity,
   notifications,
   toolbars,
+  nodeDetails
 })
 
 export type RootState = ReturnType<typeof reducer>

@@ -61,12 +61,18 @@ export class NodeDetailsContent extends React.Component {
     if (!_.isEqual(this.props.node, nextProps.node)) {
       this.initalizeWithProps(nextProps)
       this.setState({editedNode: nextProps.node})
+      this.props.actions.updateNodeData(this.props.processToDisplay.id,
+        this.props.processToDisplay.validationResult.variableTypes[this.state.editedNode.id], this.state.editedNode)
     }
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (!_.isEqual(prevProps.node, this.props.node) || !_.isEqual(prevProps.testResults, this.props.testResults)) {
       this.selectTestResults()
+    }
+    if (!_.isEqual(prevState.editedNode, this.state.editedNode)) {
+      this.props.actions.updateNodeData(this.props.processToDisplay.id,
+        this.props.processToDisplay.validationResult.variableTypes[this.state.editedNode.id], this.state.editedNode)
     }
   }
 
