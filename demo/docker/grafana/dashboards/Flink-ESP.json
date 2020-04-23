@@ -90,7 +90,7 @@
           "measurement": "source.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"value\"), 1s) AS value\n  FROM \"source.count.count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"source_count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -209,7 +209,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_process]] - [[tag_action]]",
+          "alias": "[[tag_process]] - [[tag_nodeId]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -226,7 +226,7 @@
             },
             {
               "params": [
-                "action"
+                "nodeId"
               ],
               "type": "tag"
             },
@@ -241,7 +241,7 @@
           "measurement": "end.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"value\"), 1s) AS value\n  FROM \"end.count.count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, action, slot\n)\nGROUP BY time($__interval), process, action\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"end_count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, nodeId, slot\n)\nGROUP BY time($__interval), process, nodeId\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -360,7 +360,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_process]] - [[tag_action]]",
+          "alias": "[[tag_process]] - [[tag_nodeId]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -377,7 +377,7 @@
             },
             {
               "params": [
-                "action"
+                "nodeId"
               ],
               "type": "tag"
             },
@@ -392,7 +392,7 @@
           "measurement": "dead_end.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"value\"), 1s) AS value\n  FROM \"dead_end.count.count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, action, slot\n)\nGROUP BY time($__interval), process, action\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"dead_end_count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, nodeId, slot\n)\nGROUP BY time($__interval), process, nodeId\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1344,7 +1344,7 @@
           "measurement": "error.instantRate",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"value\"), 1s) AS value\n  FROM \"error.count.count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"error_count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1634,17 +1634,17 @@
               "type": "fill"
             }
           ],
-          "measurement": "eventtimedelay.histogram.min",
+          "measurement": "eventtimedelay_histogram",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT min(\"value\") FROM \"eventtimedelay.min\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
+          "query": "SELECT min(\"min\") FROM \"eventtimedelay_histogram\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "value"
+                  "min"
                 ],
                 "type": "field"
               },
@@ -1777,17 +1777,17 @@
               "type": "fill"
             }
           ],
-          "measurement": "eventtimedelay.histogram.mean",
+          "measurement": "eventtimedelay_histogram",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"value\") FROM \"eventtimedelay.p50\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
+          "query": "SELECT mean(\"p50\") FROM \"eventtimedelay_histogram\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "value"
+                  "p50"
                 ],
                 "type": "field"
               },
@@ -1920,17 +1920,17 @@
               "type": "fill"
             }
           ],
-          "measurement": "eventtimedelay.histogram.max",
+          "measurement": "eventtimedelay_histogram",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT max(\"value\") FROM \"eventtimedelay.max\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
+          "query": "SELECT max(\"max\") FROM \"eventtimedelay_histogram\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "value"
+                  "max"
                 ],
                 "type": "field"
               },
@@ -2063,10 +2063,10 @@
               "type": "fill"
             }
           ],
-          "measurement": "eventtimedelay.minimalDelay",
+          "measurement": "eventtimedelay_minimalDelay",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT min(\"value\") FROM \"eventtimedelay.min\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
+          "query": "SELECT min(\"value\") FROM \"eventtimedelay_histogram\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(null)",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -2163,7 +2163,7 @@
         "multiFormat": "pipe",
         "name": "processName",
         "options": [],
-        "query": "SHOW TAG VALUES FROM \"source.instantRate\" WITH KEY = \"process\"",
+        "query": "SHOW TAG VALUES FROM \"source_instantRate\" WITH KEY = \"process\"",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -2189,7 +2189,7 @@
         "multi": false,
         "name": "env",
         "options": [],
-        "query": "SHOW TAG VALUES FROM \"source.instantRate\" WITH KEY = \"env\"",
+        "query": "SHOW TAG VALUES FROM \"source_instantRate\" WITH KEY = \"env\"",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,

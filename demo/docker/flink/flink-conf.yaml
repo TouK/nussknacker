@@ -72,12 +72,12 @@ state.backend: filesystem
 state.checkpoints.dir: file:///opt/flink/data/checkpoints
 state.savepoints.dir: file:///opt/flink/data/savepoints
 
-metrics.reporters: graphite_reporter
-metrics.reporter.graphite_reporter.class: org.apache.flink.metrics.graphite.GraphiteReporter
-metrics.reporter.graphite_reporter.host: influxdb
-metrics.reporter.graphite_reporter.port: 2003
-metrics.reporter.graphite_reporter.protocol: UDP
-metrics.reporter.graphite_reporter.interval: 1 SECONDS
+metrics.reporters: influxdb_reporter
+
+metrics.reporter.influxdb_reporter.class: org.apache.flink.metrics.influxdb.InfluxdbReporter
+metrics.reporter.influxdb_reporter.host: telegraf
+metrics.reporter.influxdb_reporter.port: 8087
+metrics.reporter.influxdb_reporter.db: esp
 
 metrics.scope.jm: demo.<host>.jobmanagerGlobal
 metrics.scope.jm.job: demo.<host>.jobmanagerJob.<job_name>

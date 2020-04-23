@@ -5,6 +5,7 @@ GROUP=${DAEMON_GROUP-"flink"}
 USER=${DAEMON_USER-"flink"}
 
 cp ${FLINK_HOME}/opt/flink-metrics-graphite-${FLINK_VERSION}.jar ${FLINK_HOME}/lib/flink-metrics-graphite-${FLINK_VERSION}.jar
+cp ${FLINK_HOME}/opt/flink-metrics-influxdb-${FLINK_VERSION}.jar ${FLINK_HOME}/lib/flink-influxdb-graphite-${FLINK_VERSION}.jar
 cp ${FLINK_HOME}/opt/flink-queryable-state-runtime_${SCALA_VERSION}-${FLINK_VERSION}.jar ${FLINK_HOME}/lib/flink-queryable-state-runtime_${SCALA_VERSION}-${FLINK_VERSION}.jar
 
 mkdir -p "$DATA_DIR/checkpoints" "$DATA_DIR/savepoints" "$DATA_DIR/storage" "$DATA_DIR/logs"
