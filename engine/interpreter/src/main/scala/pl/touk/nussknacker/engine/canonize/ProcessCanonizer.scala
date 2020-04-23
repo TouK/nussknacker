@@ -28,10 +28,8 @@ object ProcessCanonizer {
 
   def uncanonizeArtificial(canonicalProcess: CanonicalProcess): MaybeArtificial[EspProcess] = {
 
-    val allBranches = NonEmptyList.of(canonicalProcess.nodes, canonicalProcess.additionalBranches.getOrElse(List()).toArray: _*)
-
     val branches: MaybeArtificial[NonEmptyList[pl.touk.nussknacker.engine.graph.node.SourceNode]]
-      = allBranches.map(uncanonizeSource).sequence
+      = canonicalProcess.allStartNodes.map(uncanonizeSource).sequence
 
     branches.map(bList => EspProcess(canonicalProcess.metaData, canonicalProcess.exceptionHandlerRef, bList))
   }

@@ -21,7 +21,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
   def resolve(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessCompilationError, CanonicalProcess] =
-    resolveCanonical(List())(canonicalProcess.nodes).map(res => canonicalProcess.copy(nodes = res))
+    canonicalProcess.mapAllNodesValidated(resolveCanonical(List()))
 
   private def resolveCanonical(idPrefix: List[String]) :List[CanonicalNode] => ValidatedNel[ProcessCompilationError, List[CanonicalNode]] = {
     iterateOverCanonicals({
@@ -29,7 +29,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
         Invalid(NonEmptyList.of(DisablingManyOutputsSubprocess(dataId, nextNodes.keySet)))
       case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.isEmpty =>
         Invalid(NonEmptyList.of(DisablingNoOutputsSubprocess(dataId)))
-      case canonicalnode.Subprocess(data@SubprocessInput(dataId, _, _, Some(true), _), nextNodesMap) =>
+      case canonicalnode.Subprocess(data@SubprocessInput(_, _, _, Some(true), _), nextNodesMap) =>
         //TODO: disabling nodes should be in one place
         val output = nextNodesMap.keys.head
         resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>

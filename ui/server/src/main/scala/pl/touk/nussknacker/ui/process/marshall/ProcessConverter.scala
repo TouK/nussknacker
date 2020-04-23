@@ -31,13 +31,12 @@ object ProcessConverter {
 
   //FIXME: without default param
   def toDisplayable(process: CanonicalProcess, processingType: ProcessingType, businessView: Boolean = false): DisplayableProcess = {
-    val (nodes, edges) = if (businessView) {
-      toGraphInner(process.nodes.flatMap(toBusinessNode))
-    } else {
-      (process.nodes :: process.additionalBranches.getOrElse(Nil)).map(toGraphInner)
-          .reduceLeft[(List[NodeData], List[Edge])] {
-            case ((n1, e1), (n2, e2)) => (n1 ++ n2, e1 ++ e2)
-          }
+    val (nodes, edges) = {
+      process.mapAllNodes(f => if (businessView) f.flatMap(toBusinessNode) else f)
+        .allStartNodes.map(toGraphInner)
+        .reduceLeft[(List[NodeData], List[Edge])] {
+          case ((n1, e1), (n2, e2)) => (n1 ++ n2, e1 ++ e2)
+        }
     }
     val props = ProcessProperties(
       typeSpecificProperties = process.metaData.typeSpecificData,
@@ -73,7 +72,9 @@ object ProcessConverter {
     }
   }
 
-  def findNodes(process: CanonicalProcess) : List[NodeData] = toGraphInner(process.nodes)._1
+  def findNodes(process: CanonicalProcess) : List[NodeData] = {
+    process.allStartNodes.toList.flatMap(branch => toGraphInner(branch)._1)
+  }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =
     nodes match {

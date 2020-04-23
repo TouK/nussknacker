@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -183,6 +184,28 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
       Edge("filter2", "join1", Some(FilterTrue)),
       Edge("join1", "end", None)
     )
+
+  }
+
+  test("finds all nodes in diamond-shaped process") {
+
+    val process = ProcessCanonizer.canonize(EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "sourceType1")
+          .split("split1",
+            GraphBuilder .branchEnd("branch1", "join1"),
+            GraphBuilder.branchEnd("branch2", "join1")
+          ),
+        GraphBuilder
+          .branch("join1", "union", Some("outPutVar"),
+            List("branch1" -> Nil, "branch2" -> Nil)
+          )
+          .emptySink("end", "outType1")
+      )))
+
+    val foundNodes = ProcessConverter.findNodes(process)
+
+    foundNodes.map(_.id).toSet shouldBe Set("sourceId1", "split1", "join1", "end")
 
   }
 }

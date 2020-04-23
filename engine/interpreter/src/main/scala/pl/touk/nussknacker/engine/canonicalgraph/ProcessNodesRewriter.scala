@@ -21,10 +21,8 @@ trait ProcessNodesRewriter {
   def rewriteProcess(canonicalProcess: CanonicalProcess): CanonicalProcess = {
     implicit val metaData: MetaData = canonicalProcess.metaData
     canonicalProcess.copy(
-      exceptionHandlerRef = rewriteExceptionHandler(canonicalProcess.exceptionHandlerRef).getOrElse(canonicalProcess.exceptionHandlerRef),
-      nodes = rewriteNodes(canonicalProcess.nodes),
-      additionalBranches = canonicalProcess.additionalBranches.map(_.map(rewriteNodes))
-    )
+      exceptionHandlerRef = rewriteExceptionHandler(canonicalProcess.exceptionHandlerRef).getOrElse(canonicalProcess.exceptionHandlerRef)
+    ).mapAllNodes(rewriteNodes)
   }
 
   private def rewriteNodes(nodes: List[CanonicalNode])
