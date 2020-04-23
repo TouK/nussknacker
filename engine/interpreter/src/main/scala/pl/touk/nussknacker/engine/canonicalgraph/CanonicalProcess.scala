@@ -65,9 +65,9 @@ case class CanonicalProcess(metaData: MetaData,
                            //TODO: this makes sense only for StreamProcess, it should be moved to StreamMetadata
                            //not so easy to do, as it has classes from interprete and StreamMetadata is in API
                             exceptionHandlerRef: ExceptionHandlerRef,
+                            //separation of nodes and additionalBranches is just for compatibility of stored json
+                            //DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
                             nodes: List[CanonicalNode],
-                            //Separation from nodes and Option is for json backwards compatibility
-                            //in the future this form will probably be removed
                             additionalBranches: Option[List[List[CanonicalNode]]]
                            ) extends CanonicalTreeNode {
   import CanonicalProcess._
