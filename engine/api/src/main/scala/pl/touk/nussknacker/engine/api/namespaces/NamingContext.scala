@@ -6,4 +6,5 @@ class NamingContext(val usageKey: UsageKey)
 
 sealed trait UsageKey
 case object KafkaUsageKey extends UsageKey
+case object FlinkUsageKey extends UsageKey
 case class CustomUsageKey(name: String) extends UsageKey
