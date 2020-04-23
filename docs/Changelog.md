@@ -13,7 +13,8 @@ Nussknacker versions
 * Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed. `processTypes` 
 configuration should be used from now on.
 * Change of additional properties configuration
-
+* Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
+   
 0.0.12 (26 Oct 2019)
 --------------------
 * Cross builds with Scala 2.11 and 2.12

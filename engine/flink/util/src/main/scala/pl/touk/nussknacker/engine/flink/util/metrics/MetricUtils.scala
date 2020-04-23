@@ -36,17 +36,14 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     group.histogram(name, histogram)
   }
 
-  private val useNewMetricsMode: Boolean = {
-    val parameters = runtimeContext.getExecutionConfig.getGlobalJobParameters.asInstanceOf[NKGlobalParameters]
-    parameters.useNewMetrics.getOrElse(false)
-  }
+  private val useLegacyMetricsMode: Boolean =
+    NKGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).flatMap(_.useLegacyMetrics).getOrElse(false)
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
-    if (useNewMetricsMode) {
-      tagMode(nameParts, tags)
-    } else {
+    if (useLegacyMetricsMode) {
       groupsWithNameForLegacyMode(nameParts, tags)
-
+    } else {
+      tagMode(nameParts, tags)
     }
   }
 

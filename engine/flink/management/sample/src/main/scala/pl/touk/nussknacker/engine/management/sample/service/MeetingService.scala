@@ -52,8 +52,8 @@ object MeetingService extends Service with Serializable with TimeMeasuringServic
              @Nullable
              cronScheduler: Cron
             )(implicit ec: ExecutionContext): Future[Unit] = measuring {
-              Thread.sleep((math.random() * 10).toLong)
-              if (math.random() < 0.25) {
+              Thread.sleep((math.random * 10).toLong)
+              if (math.random < 0.25) {
                 Future.failed(new IllegalArgumentException("Bad luck, your meeting failed..."))
               } else {
                 Future.successful(())

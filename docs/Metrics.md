@@ -77,3 +77,22 @@ using Micrometer in the future.
 | -------------             | --------------- | --------    | ------------- |
 | invocation.success        | -               | espTimer    |               |
 | invocation.failure        | nodeId          | espTimer    |               |
+
+Reporting metrics to InfluxDB and Grafana
+-----------------------------------------
+
+We provide sample configuration and dashboard for InfluxDB & Grafana. Please check [Docker demo](https://github.com/TouK/nussknacker/tree/staging/demo/docker).
+The dashboard can be found [here](https://github.com/TouK/nussknacker/blob/staging/demo/docker/grafana/dashboards/Flink-ESP.json).
+
+While Flink provides [InfluxDB reporter](https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/metrics.html#influxdb-orgapacheflinkmetricsinfluxdbinfluxdbreporter),
+it's lacking a few of capabilities we needed. That's why in Docker demo setup we send metrics through Telegraf, to:
+- Add new tag `env` for distinguishing environments
+- Remove some internal Flink tags, which can cause uncontrolled growth of number of series in InfluxDB
+- Change some tags to more meaningful names (e.g. `job_name` to `process`)
+- Remove tag names from measurements
+Please see provided [telegraf.conf](https://github.com/touk/nussknacker/blob/master/demo/docker/telegraf/telegraf.conf) for the details.
+ 
+Legacy mode
+------------
+In the past we used graphite protocol to send metrics to InfluxDB. It was difficult to use and extended. The old way of sending
+metrics can be enabled by setting `globalParameters.useLegacyMetrics` to true in model configuration.
