@@ -61,19 +61,22 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
 * Rename `grafanaSettings` to `metricsSettings` in configuration.
 * [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistry Provider. Api for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed:
-from constructor params:
+
+old way:
 ```
-schemaFactory: DeserializationSchemaFactory[T],
-schemaRegistryClientFactory: SchemaRegistryClientFactory,
-timestampAssigner: Option[TimestampAssigner[T]],
-formatKey: Boolean = false,
-processObjectDependencies: ProcessObjectDependencies
+val clientFactory = new SchemaRegistryClientFactory
+val source = new KafkaAvroSourceFactory(
+  new AvroDeserializationSchemaFactory[GenericData.Record](clientFactory, useSpecificAvroReader = false),
+  clientFactory, 
+  None, 
+  processObjectDependencies = processObjectDependencies
+)
+
 ```
-to:
+new way:
 ```
-schemaRegistryProvider: SchemaRegistryProvider[T],
-processObjectDependencies: ProcessObjectDependencies,
-timestampAssigner: Option[TimestampAssigner[T]]
+val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
+val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 ```
 
 ## In version 0.0.12

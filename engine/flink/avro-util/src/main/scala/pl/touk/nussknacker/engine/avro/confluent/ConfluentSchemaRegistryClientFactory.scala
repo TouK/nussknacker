@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.avro.confluent
 
 import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient, SchemaRegistryClient => ConfluentSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import pl.touk.nussknacker.engine.avro.{SchemaRegistryClient, SchemaRegistryClientFactory}
+import org.apache.avro.Schema
+import pl.touk.nussknacker.engine.avro.{AvroUtils, SchemaRegistryClient, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 object ConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[ConfluentSchemaRegistryClient] {
@@ -16,7 +17,10 @@ object ConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[
     val maxSchemaObject = config.getMaxSchemasPerSubject
     val originals = config.originalsWithPrefix("")
 
-    // It's fat object witch's not serialized
-    new CachedSchemaRegistryClient(urls, maxSchemaObject, originals) with SchemaRegistryClient
+    // It's fat object which can not be serialized
+    new CachedSchemaRegistryClient(urls, maxSchemaObject, originals) with SchemaRegistryClient {
+      override def getLatestSchema(subject: String): Schema =
+        AvroUtils.parse(getLatestSchemaMetadata(subject).getSchema)
+    }
   }
 }

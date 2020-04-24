@@ -247,7 +247,12 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
     override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[GenericData.Record] =
-      ConfluentSchemaRegistryProvider[GenericData.Record](MockConfluentSchemaRegistryClientFactory, processObjectDependencies)
+      ConfluentSchemaRegistryProvider[GenericData.Record](
+        MockConfluentSchemaRegistryClientFactory,
+        processObjectDependencies,
+        useSpecificAvroReader = false,
+        formatKey = false
+      )
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
@@ -306,7 +311,10 @@ object MockSchemaRegistry {
   val RecordSchema: Schema = parser.parse(RecordSchemaString)
 
   val Client: MockSchemaRegistryClient with SchemaRegistryClient = {
-    val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient
+    val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient {
+      override def getLatestSchema(subject: String): Schema =
+        AvroUtils.parse(getLatestSchemaMetadata(subject).getSchema)
+    }
 
     def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
       val subject = topic + "-" + (if (isKey) "key" else "value")

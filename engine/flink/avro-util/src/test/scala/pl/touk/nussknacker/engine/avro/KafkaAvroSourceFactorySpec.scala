@@ -118,7 +118,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
     val provider = ConfluentSchemaRegistryProvider[AnyRef](
       MockConfluentSchemaRegistryClientFactory,
-      kafkaConfig,
+      processObjectDependencies,
       useSpecificAvroReader,
       formatKey = false
     )
@@ -129,7 +129,8 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockConfluentSchemaRegistryClientFactory)
     val provider = ConfluentSchemaRegistryProvider(
       MockConfluentSchemaRegistryClientFactory,
-      None, Some(deserializerFactory),
+      None,
+      Some(deserializerFactory),
       kafkaConfig,
       useSpecificAvroReader = false,
       formatKey = true
@@ -194,7 +195,10 @@ object MockSchemaRegistry {
 
   object MockConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[ConfluentSchemaRegistryClient] with Serializable {
     def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient with ConfluentSchemaRegistryClient = {
-      val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient
+      val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient {
+        override def getLatestSchema(subject: String): Schema =
+          AvroUtils.parse(getLatestSchemaMetadata(subject).getSchema)
+      }
 
       def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
         val subject = topic + "-" + (if (isKey) "key" else "value")

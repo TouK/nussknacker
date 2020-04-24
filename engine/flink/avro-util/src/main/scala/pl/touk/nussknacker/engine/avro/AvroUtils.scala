@@ -16,10 +16,8 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 
   private lazy val lastestSchemaBySubjectCache = TrieMap.empty[String, Schema]
 
-  private def parser = new Schema.Parser()
-
   def record(fields: collection.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, parser.parse(schemaString))
+    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parse(schemaString))
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
@@ -28,7 +26,7 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
   }
 
   def record(fields: java.util.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, parser.parse(schemaString))
+    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parse(schemaString))
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
@@ -54,22 +52,28 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 
   private def getOrUpdateSchemaBySubjectAndVersion(subject: String, version: Int): Schema = {
     schemaBySubjectAndVersionCache.getOrElseUpdate((subject, version),
-      parser.parse(schemaRegistryClient.getSchemaMetadata(subject, version).getSchema))
+      schemaRegistryClient.getBySubjectAndId(subject, version))
   }
 
   private def getOrUpdateLatestSchema(subject: String) = {
     // maybe invalidation after some time?
     lastestSchemaBySubjectCache.getOrElseUpdate(subject,
-      parser.parse(schemaRegistryClient.getLatestSchemaMetadata(subject).getSchema))
+      schemaRegistryClient.getLatestSchema(subject))
   }
 
 }
 
 object AvroUtils extends Serializable {
 
+  private def parser = new Schema.Parser()
+
   def keySubject(topic: String): String =
     topic + "-key"
 
   def valueSubject(topic: String): String =
     topic + "-value"
+
+  def parse(schema: String): Schema =
+    parser.parse(schema)
+
 }

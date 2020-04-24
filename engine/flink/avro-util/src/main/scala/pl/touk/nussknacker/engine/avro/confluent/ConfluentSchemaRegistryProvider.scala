@@ -27,26 +27,6 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def apply[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
-                                processObjectDependencies: ProcessObjectDependencies,
-                                useSpecificAvroReader: Boolean,
-                                formatKey: Boolean): ConfluentSchemaRegistryProvider[T] = {
-    val kafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
-    ConfluentSchemaRegistryProvider[T](schemaRegistryClientFactory, None, None, kafkaConfig, useSpecificAvroReader, formatKey)
-  }
-
-  def apply[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
-                                processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
-    ConfluentSchemaRegistryProvider(schemaRegistryClientFactory, processObjectDependencies, useSpecificAvroReader = false, formatKey = false)
-
-  def apply[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies,
-                                useSpecificAvroReader: Boolean,
-                                formatKey: Boolean): ConfluentSchemaRegistryProvider[T] =
-    ConfluentSchemaRegistryProvider[T](ConfluentSchemaRegistryClientFactory, processObjectDependencies, useSpecificAvroReader, formatKey)
-
-  def apply[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
-    ConfluentSchemaRegistryProvider(processObjectDependencies, useSpecificAvroReader = false, formatKey = false)
-
-  def apply[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
                                 serializationSchemaFactory: Option[SerializationSchemaFactory[Any]],
                                 deserializationSchemaFactory: Option[DeserializationSchemaFactory[T]],
                                 kafkaConfig: KafkaConfig,
@@ -66,16 +46,25 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     )
 
   def apply[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
-                                kafkaConfig: KafkaConfig,
+                                processObjectDependencies: ProcessObjectDependencies,
                                 useSpecificAvroReader: Boolean,
-                                formatKey: Boolean): ConfluentSchemaRegistryProvider[T] =
+                                formatKey: Boolean): ConfluentSchemaRegistryProvider[T] = {
+    val kafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
     ConfluentSchemaRegistryProvider(schemaRegistryClientFactory, None, None, kafkaConfig, useSpecificAvroReader, formatKey)
+  }
+
+  def apply[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider(
+      ConfluentSchemaRegistryClientFactory,
+      processObjectDependencies,
+      useSpecificAvroReader = false,
+      formatKey = false
+    )
 
   def defaultSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient]) =
     new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
-  def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient],
-                                                                      useSpecificAvroReader: Boolean) =
-    new ConfluentAvroDeserializationSchemaFactory[T](schemaRegistryClientFactory, useSpecificAvroReader)
+  def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient], useSpecificAvroReader: Boolean) =
+    new ConfluentAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
 
 }
