@@ -95,4 +95,4 @@ Please see provided [telegraf.conf](https://github.com/touk/nussknacker/blob/mas
 Legacy mode
 ------------
 In the past we used graphite protocol to send metrics to InfluxDB. It was difficult to use and extended. The old way of sending
-metrics can be enabled by setting `globalParameters.useLegacyMetrics` to true in model configuration.
+metrics can be enabled, check [migration guide](MigrationGuide.md).

@@ -16,7 +16,7 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
   //TODO: test generated query, not just shape of output
   test("Point in time query returns correct results") {
 
-    val pointInTimeQuery = new PointInTimeQuery(_ => Future.successful(sampleInfluxOutput), "process1", "nodeCount", "test")
+    val pointInTimeQuery = new PointInTimeQuery(_ => Future.successful(sampleInfluxOutput), "process1", "test", MetricsConfig())
 
     pointInTimeQuery.query(LocalDateTime.now()).futureValue shouldBe Map(
       "start" -> (552855221L + 557871409L),
@@ -27,15 +27,15 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
   val sampleInfluxOutputRaw: String = """
     |    [
     |        {
-    |          "name": "nodeCount.count",
+    |          "name": "nodeCount",
     |          "tags": {
-    |            "action": "end",
+    |            "nodeId": "end",
     |            "slot": "0"
     |          },
     |          "columns": [
     |            "time",
-    |            "action",
-    |            "value"
+    |            "nodeId",
+    |            "count"
     |          ],
     |          "values": [
     |            [
@@ -46,15 +46,15 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
     |          ]
     |        },
     |        {
-    |          "name": "nodeCount.count",
+    |          "name": "nodeCount",
     |          "tags": {
     |            "action": "end",
     |            "slot": "1"
     |          },
     |          "columns": [
     |            "time",
-    |            "action",
-    |            "value"
+    |            "nodeId",
+    |            "count"
     |          ],
     |          "values": [
     |            [
@@ -65,15 +65,15 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
     |          ]
     |        },
     |        {
-    |          "name": "nodeCount.count",
+    |          "name": "nodeCount",
     |          "tags": {
-    |            "action": "start",
+    |            "nodeId": "start",
     |            "slot": "0"
     |          },
     |          "columns": [
     |            "time",
-    |            "action",
-    |            "value"
+    |            "nodeId",
+    |            "count"
     |          ],
     |          "values": [
     |            [
@@ -84,15 +84,15 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
     |          ]
     |        },
     |        {
-    |          "name": "nodeCount.count",
+    |          "name": "nodeCount",
     |          "tags": {
-    |            "action": "start",
+    |            "nodeId": "start",
     |            "slot": "1"
     |          },
     |          "columns": [
     |            "time",
-    |            "action",
-    |            "value"
+    |            "nodeId",
+    |            "count"
     |          ],
     |          "values": [
     |            [
