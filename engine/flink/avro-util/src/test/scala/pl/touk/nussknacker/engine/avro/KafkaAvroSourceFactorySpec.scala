@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient => ConfluentSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
@@ -16,7 +16,8 @@ import org.scalatest.{Assertion, BeforeAndAfterAll, FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClientFactory.ConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
@@ -140,7 +141,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
 
 }
 
-class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient])
+class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
                                                                (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
   extends ConfluentAvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
     createTuple2TypeInformation(keyTypInfo, valueTypInfo)
@@ -193,11 +194,11 @@ object MockSchemaRegistry {
     """.stripMargin
   )
 
-  object MockConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[ConfluentSchemaRegistryClient] with Serializable {
-    def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient with ConfluentSchemaRegistryClient = {
+  object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {
+    def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
       val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient {
         override def getLatestSchema(subject: String): Schema =
-          AvroUtils.parse(getLatestSchemaMetadata(subject).getSchema)
+          AvroUtils.createSchema(getLatestSchemaMetadata(subject).getSchema)
       }
 
       def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {

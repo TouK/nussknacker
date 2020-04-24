@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient => ConfluentSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
@@ -14,7 +14,8 @@ import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClientFactory.ConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.confluent.{ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.{SchemaRegistryClient, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
@@ -313,7 +314,7 @@ object MockSchemaRegistry {
   val Client: MockSchemaRegistryClient with SchemaRegistryClient = {
     val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient {
       override def getLatestSchema(subject: String): Schema =
-        AvroUtils.parse(getLatestSchemaMetadata(subject).getSchema)
+        AvroUtils.createSchema(getLatestSchemaMetadata(subject).getSchema)
     }
 
     def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
@@ -333,8 +334,8 @@ object MockSchemaRegistry {
     mockSchemaRegistry
   }
 
-  object MockConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory[ConfluentSchemaRegistryClient] with Serializable {
-    override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedSchemaRegistryClient =
+  object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {
+    override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =
       Client
   }
 

@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.engine.avro.confluent
 
-import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => ConfluentSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.avro.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaKeyValueSerializationSchemaFactoryBase, KafkaSerializationSchemaFactoryBase}
 
 trait ConfluentAvroSerializerFactory {
   import collection.JavaConverters._
 
-  protected def createSerializer(schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient], kafkaConfig: KafkaConfig, isKey: Boolean): KafkaAvroSerializer = {
+  protected def createSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig, isKey: Boolean): KafkaAvroSerializer = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
     val serializer = new KafkaAvroSerializer(schemaRegistryClient)
     val props = kafkaConfig.kafkaProperties.getOrElse(Map.empty)
@@ -19,14 +17,14 @@ trait ConfluentAvroSerializerFactory {
   }
 }
 
-class ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient])
+class ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaSerializationSchemaFactoryBase[Any] with ConfluentAvroSerializerFactory {
 
   override protected def createValueSerializer(topic: String, kafkaConfig: KafkaConfig): Serializer[Any] =
     createSerializer(schemaRegistryClientFactory, kafkaConfig, isKey = false).asInstanceOf[Serializer[Any]]
 }
 
-abstract class ConfluentAvroKeyValueSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistryClientFactory[ConfluentSchemaRegistryClient])
+abstract class ConfluentAvroKeyValueSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaKeyValueSerializationSchemaFactoryBase[Any] with ConfluentAvroSerializerFactory {
 
   override protected def createKeySerializer(topic: String, kafkaConfig: KafkaConfig): Serializer[K] =

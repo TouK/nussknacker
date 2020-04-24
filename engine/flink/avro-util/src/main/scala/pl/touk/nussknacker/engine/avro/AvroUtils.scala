@@ -17,7 +17,7 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
   private lazy val lastestSchemaBySubjectCache = TrieMap.empty[String, Schema]
 
   def record(fields: collection.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parse(schemaString))
+    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.createSchema(schemaString))
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
@@ -26,7 +26,7 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
   }
 
   def record(fields: java.util.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parse(schemaString))
+    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.createSchema(schemaString))
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
@@ -73,7 +73,7 @@ object AvroUtils extends Serializable {
   def valueSubject(topic: String): String =
     topic + "-value"
 
-  def parse(schema: String): Schema =
+  def createSchema(schema: String): Schema =
     parser.parse(schema)
 
 }

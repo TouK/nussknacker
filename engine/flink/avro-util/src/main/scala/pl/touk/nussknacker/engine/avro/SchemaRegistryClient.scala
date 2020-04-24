@@ -18,11 +18,6 @@ trait SchemaRegistryClient extends Serializable {
 
 }
 
-//It's only for internal providers usage..
-trait SchemaRegistryClientFactory[Client] extends Serializable {
-
-  type TypedSchemaRegistryClient = SchemaRegistryClient with Client
-
+trait SchemaRegistryClientFactory extends Serializable {
   def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient
-
 }
