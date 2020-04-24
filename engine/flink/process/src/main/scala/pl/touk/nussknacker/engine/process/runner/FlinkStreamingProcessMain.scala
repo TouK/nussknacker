@@ -19,11 +19,10 @@ object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnviron
   override protected def getConfig(env: StreamExecutionEnvironment): ExecutionConfig = env.getConfig
 
   override protected def runProcess(env: StreamExecutionEnvironment,
+
                                     modelData: ModelData,
                                     process: EspProcess,
                                     processVersion: ProcessVersion): Unit = {
-    val parameters = modelData.processConfig.as[NKGlobalParameters]("globalParameters")
-    env.getConfig.setGlobalJobParameters(parameters)
     val compiler = new FlinkProcessCompiler(modelData)
     val registrar = FlinkStreamingProcessRegistrar(compiler, modelData.processConfig)
     registrar.register(env, process, processVersion)

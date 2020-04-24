@@ -1,14 +1,28 @@
 package pl.touk.nussknacker.engine.flink.api
 
 import java.util
-import java.util.Collections
+import scala.collection.JavaConverters._
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
-case class NKGlobalParameters(useLegacyMetrics: Option[Boolean]) extends GlobalJobParameters {
-  override def toMap: util.Map[String, String] = Collections.singletonMap("useLegacyMetrics", useLegacyMetrics.map(_.toString).getOrElse("none"))
+//Also, those configuration properties will be exposed via Flienk REST API/webconsole
+//TODO: 
+case class NKGlobalParameters(buildInfo: String,
+                              versionId: Long,
+                              modelVersion: Option[Int],
+                              user: String,
+                              useLegacyMetrics: Option[Boolean]) extends GlobalJobParameters {
+
+  override def toMap: util.Map[String, String] = {
+    getClass.getDeclaredFields.map(_.getName).zip(productIterator.toList).toMap.mapValues {
+      case None => "none"
+      case Some(x) => x.toString
+      case null => "null"
+      case x => x.toString
+    }.asJava
+  }
 }
 
 object NKGlobalParameters {

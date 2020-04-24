@@ -8,6 +8,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.client.program.OptimizerPlanEnvironment.ProgramAbortException
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
+import pl.touk.nussknacker.engine.flink.api.NKGlobalParameters
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 import pl.touk.nussknacker.engine.graph.EspProcess
 
@@ -26,7 +27,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val buildInfo = if (args.length > 3) args(3) else ""
       val modelData = ModelData(config, List())
       val env = getExecutionEnvironment
-      setBuildInfo(buildInfo, processVersion, getConfig(env))
+      getConfig(env).setGlobalJobParameters(prepareGlobalParameters(buildInfo, processVersion, modelData.processConfig))
       runProcess(env, modelData, process, processVersion)
     } catch {
       // marker exception for graph optimalization
@@ -65,12 +66,9 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
         ConfigFactory.empty()
     }
 
-  private def setBuildInfo(buildInfo: String, processVersion: ProcessVersion, config: ExecutionConfig): Unit = {
-    val globalJobParams = new org.apache.flink.configuration.Configuration
-    globalJobParams.setString("buildInfo", buildInfo)
-    globalJobParams.setLong("versionId", processVersion.versionId)
-    processVersion.modelVersion.foreach(globalJobParams.setLong("modelVersion", _))
-    globalJobParams.setString("user", processVersion.user)
-    config.setGlobalJobParameters(globalJobParams)
+  protected def prepareGlobalParameters(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config): NKGlobalParameters = {
+    val useLegacyMetrics = if (modelConfig.hasPath("useLegacyMetrics")) Some(modelConfig.getBoolean("useLegacyMetrics")) else None
+    NKGlobalParameters(buildInfo, processVersion.versionId, processVersion.modelVersion, processVersion.user, useLegacyMetrics)
   }
+
 }
