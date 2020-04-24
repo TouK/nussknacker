@@ -7,6 +7,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsCompat
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 
@@ -25,7 +26,13 @@ import scala.concurrent.duration._
   * }
   * ```
   */
-object TransformStateTransformer extends CustomStreamTransformer {
+object TransformStateTransformer extends TransformStateTransformer {
+
+  override protected def explicitUidInStatefulOperators: Boolean = ExplicitUidInOperatorsCompat.DefaultExplicitUidInStatefulOperators
+
+}
+
+abstract class TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsCompat {
 
   @MethodToInvoke(returnType = classOf[AnyRef])
   def invoke(@ParamName("key") key: LazyParameter[String],
@@ -39,11 +46,12 @@ object TransformStateTransformer extends CustomStreamTransformer {
       .definedBy(_.withVariable(variableName, newValue.returnType))
       .implementedBy(
         FlinkCustomStreamTransformation { (stream, nodeContext) =>
-          stream
-            .map(nodeContext.lazyParameterHelper.lazyMapFunction(key))
-            .keyBy(_.value)
-            .process(new TransformStateFunction(
-              nodeContext.lazyParameterHelper, transformWhen, newValue, stateTimeoutSeconds.seconds))
+          setUidToNodeIdIfNeed(nodeContext)(
+            stream
+              .map(nodeContext.lazyParameterHelper.lazyMapFunction(key))
+              .keyBy(_.value)
+              .process(new TransformStateFunction(
+                nodeContext.lazyParameterHelper, transformWhen, newValue, stateTimeoutSeconds.seconds)))
         }
       )
 }

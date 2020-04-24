@@ -7,6 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 
 case class FlinkCustomNodeContext(metaData: MetaData,
+                                  // TODO: it can be used in state recovery - make sure that it won't change during renaming of nodes on gui
                                   nodeId: String,
                                   timeout: FiniteDuration,
                                   lazyParameterHelper: FlinkLazyParameterFunctionHelper,
