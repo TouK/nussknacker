@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.avro
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 
 import scala.collection.concurrent.TrieMap
 

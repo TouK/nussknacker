@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.confluent.formatter
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io._
 import java.nio.ByteBuffer
@@ -9,7 +9,7 @@ import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
-import pl.touk.nussknacker.engine.avro.confluent.formatter.ConfluentAvroToJsonFormatter._
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter._
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
 
 private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: SchemaRegistryClient,

@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.avro.confluent
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClientFactory.ConfluentSchemaRegistryClient
-import pl.touk.nussknacker.engine.avro.confluent.formatter.ConfluentAvroToJsonFormatter
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.ConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 

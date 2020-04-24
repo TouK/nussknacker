@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.confluent
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 
 import io.confluent.kafka.serializers._
 import org.apache.flink.api.common.typeinfo.TypeInformation

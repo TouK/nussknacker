@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro
+package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}

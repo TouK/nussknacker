@@ -1,10 +1,11 @@
-package pl.touk.nussknacker.engine.avro.confluent
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import org.apache.avro.Schema
-import pl.touk.nussknacker.engine.avro.confluent.ConfluentSchemaRegistryClientFactory.ConfluentSchemaRegistryClient
-import pl.touk.nussknacker.engine.avro.{AvroUtils, SchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.ConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryClient
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 object CachedConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory {

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro
+package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -19,5 +19,7 @@ trait SchemaRegistryClient extends Serializable {
 }
 
 trait SchemaRegistryClientFactory extends Serializable {
+
   def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient
+
 }
