@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
 import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, MetricUtils}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
@@ -91,6 +91,12 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
     //here we are sure the classloader is ok
     val processWithDeps = compiledProcessWithDeps(UserClassLoader.get("root"))
     val metaData = processWithDeps.metaData
+
+    def nodeContext(node: ProcessPart) = {
+      FlinkCustomNodeContext(metaData, node.id, processWithDeps.processTimeout,
+        new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
+        processWithDeps.signalSenders)
+    }
 
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
     env.setRestartStrategy(processWithDeps.exceptionHandler.restartStrategy)
@@ -151,7 +157,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
       val start = source
-          .sourceStream(env, metaData)
+          .sourceStream(env, nodeContext(part))
           .process(new EventTimeDelayMeterFunction("eventtimedelay", part.id, eventTimeMetricDuration))
           .map(new RateMeterFunction[Any]("source", part.id))
           .map(InitContextFunction(metaData.id, part.id))
@@ -188,7 +194,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
             //TODO: maybe this logic should be moved to compiler instead?
             testRunId match {
               case None =>
-                sink.registerSink(startAfterSinkEvaluated, new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)))
+                sink.registerSink(startAfterSinkEvaluated, nodeContext(part))
               case Some(runId) =>
                 val typ = part.node.data.ref.typ
                 val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
@@ -202,7 +208,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
 
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
-        case CustomNodePart(transformerObj, node, validationContext, nextParts, ends) =>
+        case part@CustomNodePart(transformerObj, node, validationContext, nextParts, ends) =>
 
           val transformer = transformerObj match {
             case t: FlinkCustomStreamTransformation => t
@@ -216,10 +222,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
             case None => ir.context
           }
 
-          val customNodeContext = FlinkCustomNodeContext(metaData,
-            node.id, processWithDeps.processTimeout,
-            new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
-            processWithDeps.signalSenders)
+          val customNodeContext = nodeContext(part)
           val newStart = transformer.transform(start.map(_.finalContext), customNodeContext)
               .map(newContextFun)
           val afterSplit = wrapAsync(newStart, node, validationContext, "customNodeInterpretation")
@@ -248,6 +251,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       checkpointConfig.flatMap(_.tolerableCheckpointFailureNumber).foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
     }
   }
+
 }
 
 

@@ -24,3 +24,5 @@ class FlinkProcessSignalSenderProvider(signalSenders: Map[SignalSenderKey, Flink
       .getOrElse(throw new IllegalArgumentException(s"Unknown signal class: ${clazz.getName}, please check ProcessConfigCreator"))._2
   }
 }
+
+case class FlinkProcessConfig()

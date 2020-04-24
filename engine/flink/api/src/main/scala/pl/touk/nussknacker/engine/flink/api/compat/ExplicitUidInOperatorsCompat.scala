@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.compat
 
-import org.apache.flink.annotation.PublicEvolving
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
+import org.apache.flink.annotation.{Public, PublicEvolving}
+import org.apache.flink.streaming.api.datastream.{DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
@@ -16,13 +16,21 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
  */
 trait ExplicitUidInOperatorsCompat {
 
-  protected def explicitUidInStatefulOperators: Boolean
+  protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStream[T]): DataStream[T] =
+    ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx)(stream)
 
-  protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext)(stream: DataStream[T]): DataStream[T] =
-    ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators, nodeCtx)(stream)
+  protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStreamSink[T]): DataStreamSink[T] =
+    ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx)(stream)
 
-  protected def setUidToNodeIdIfNeedJava[T](nodeCtx: FlinkCustomNodeContext)(stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] =
-    ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeedJava(explicitUidInStatefulOperators, nodeCtx)(stream)
+  protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] =
+    ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeedJava(explicitUidInStatefulOperators(nodeCtx), nodeCtx)(stream)
+
+  /**
+   * Rewrite it if you wan to change globally configured behaviour with local one
+   */
+  @Public
+  protected def explicitUidInStatefulOperators(nodeCtx: FlinkCustomNodeContext): Boolean =
+    ExplicitUidInOperatorsCompat.defaultExplicitUidInStatefulOperators(nodeCtx)
 
 }
 
@@ -35,6 +43,15 @@ object ExplicitUidInOperatorsCompat {
     else
       stream
   }
+
+  def setUidToNodeIdIfNeedSink[T](explicitUidInStatefulOperators: Boolean, nodeCtx: FlinkCustomNodeContext)
+                                 (stream: DataStreamSink[T]): DataStreamSink[T] = {
+    if (explicitUidInStatefulOperators)
+      stream.uid(nodeCtx.nodeId)
+    else
+      stream
+  }
+
   def setUidToNodeIdIfNeedJava[T](explicitUidInStatefulOperators: Boolean, nodeCtx: FlinkCustomNodeContext)
                                  (stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] = {
     if (explicitUidInStatefulOperators)
@@ -43,7 +60,8 @@ object ExplicitUidInOperatorsCompat {
       stream
   }
 
+  // FIXME: replace with config when it be available in FlinkCustomNodeContext
   @PublicEvolving // this field will be switched to true in some future
-  val DefaultExplicitUidInStatefulOperators = false
+  def defaultExplicitUidInStatefulOperators(nodeCtx: FlinkCustomNodeContext) = false
 
 }

@@ -29,19 +29,19 @@ object transformers {
                          windowLength: Duration,
                          variableName: String)(implicit nodeId: NodeId): ContextTransformation =
     slidingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName,
-      ExplicitUidInOperatorsCompat.DefaultExplicitUidInStatefulOperators)
+      ExplicitUidInOperatorsCompat.defaultExplicitUidInStatefulOperators)
 
   def slidingTransformer(keyBy: LazyParameter[String],
                          aggregateBy: LazyParameter[AnyRef],
                          aggregator: Aggregator,
                          windowLength: Duration,
                          variableName: String,
-                         explicitUidInStatefulOperators: Boolean
+                         explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                         )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators, ctx)(
+          ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators(ctx), ctx)(
             start
               .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
               .keyBy(_.value._1)
@@ -54,7 +54,7 @@ object transformers {
                           windowLength: Duration,
                           variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
     tumblingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName,
-      ExplicitUidInOperatorsCompat.DefaultExplicitUidInStatefulOperators)
+      ExplicitUidInOperatorsCompat.defaultExplicitUidInStatefulOperators)
   }
 
   def tumblingTransformer(keyBy: LazyParameter[String],
@@ -62,12 +62,12 @@ object transformers {
                           aggregator: Aggregator,
                           windowLength: Duration,
                           variableName: String,
-                          explicitUidInStatefulOperators: Boolean
+                          explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                          )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators, ctx)(start
+          ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators(ctx), ctx)(start
             .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
             .keyBy(_.value._1)
             .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowLength.toMillis)))

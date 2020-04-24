@@ -26,13 +26,7 @@ import scala.concurrent.duration._
   * }
   * ```
   */
-object TransformStateTransformer extends TransformStateTransformer {
-
-  override protected def explicitUidInStatefulOperators: Boolean = ExplicitUidInOperatorsCompat.DefaultExplicitUidInStatefulOperators
-
-}
-
-abstract class TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsCompat {
+object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsCompat {
 
   @MethodToInvoke(returnType = classOf[AnyRef])
   def invoke(@ParamName("key") key: LazyParameter[String],
@@ -46,7 +40,7 @@ abstract class TransformStateTransformer extends CustomStreamTransformer with Ex
       .definedBy(_.withVariable(variableName, newValue.returnType))
       .implementedBy(
         FlinkCustomStreamTransformation { (stream, nodeContext) =>
-          setUidToNodeIdIfNeed(nodeContext)(
+          setUidToNodeIdIfNeed(nodeContext,
             stream
               .map(nodeContext.lazyParameterHelper.lazyMapFunction(key))
               .keyBy(_.value)
