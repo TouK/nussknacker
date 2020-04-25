@@ -123,6 +123,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   renderSubprocess() {
+    //FIXME: adjust height of graph in some more reasonable way :|
     //we don't use _.get here, because currentNodeId can contain spaces etc...
     const subprocessCounts = (this.props.processCounts[this.state.currentNodeId] || {}).subprocessCounts || {}
     return (
@@ -186,7 +187,6 @@ class NodeDetailsModal extends React.Component {
                       )
                     }
                     {
-                      //FIXME: adjust height of modal with subprocess in some reasonable way :|
                       this.state.subprocessContent ? this.renderSubprocess() : null
                     }
                   </Scrollbars>
