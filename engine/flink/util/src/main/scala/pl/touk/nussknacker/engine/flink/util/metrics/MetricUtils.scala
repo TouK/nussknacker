@@ -43,7 +43,8 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     if (useLegacyMetricsMode) {
       groupsWithNameForLegacyMode(nameParts, tags)
     } else {
-      tagMode(nameParts, tags)
+      val namespaceTags = NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).get.toTags
+      tagMode(nameParts, tags ++ namespaceTags)
     }
   }
 

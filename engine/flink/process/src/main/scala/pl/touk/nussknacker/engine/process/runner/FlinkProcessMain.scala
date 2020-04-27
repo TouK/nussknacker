@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 import pl.touk.nussknacker.engine.graph.EspProcess
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 
 import scala.util.control.NonFatal
 
@@ -29,7 +30,9 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val buildInfo = if (args.length > 3) args(3) else ""
       val modelData = ModelData(config, List())
       val env = getExecutionEnvironment
-      NkGlobalParameters.setInContext(getConfig(env), NkGlobalParameters(buildInfo, processVersion, modelData.processConfig))
+      val namespace = modelData.objectNaming.getNamespace(modelData.processConfig, new NamingContext(FlinkUsageKey))
+      NkGlobalParameters.setInContext(getConfig(env), NkGlobalParameters(buildInfo, processVersion, process.id,
+        namespace, modelData.processConfig))
       runProcess(env, modelData, process, processVersion)
     } catch {
       // marker exception for graph optimalization

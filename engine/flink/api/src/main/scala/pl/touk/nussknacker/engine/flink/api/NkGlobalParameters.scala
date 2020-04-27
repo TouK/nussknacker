@@ -15,6 +15,8 @@ import net.ceedubs.ficus.Ficus._
 //Also, those configuration properties will be exposed via Flienk REST API/webconsole
 case class NkGlobalParameters(buildInfo: String,
                               processVersion: ProcessVersion,
+                              processOriginalName: String,
+                              namespace: Option[String],
                               configParameters: Option[ConfigGlobalParameters]) extends GlobalJobParameters {
 
   //here we decide which configuration properties should be shown in REST API etc.
@@ -28,6 +30,17 @@ case class NkGlobalParameters(buildInfo: String,
       "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
       "user" -> processVersion.user
     ).filterNot(_._2 == null).asJava)
+  }
+
+  // This function is used in (not-legacy) `MetricUtils` to add additional tags to all types of metrics.
+  // If you add new tag, remember that it will also influence the measurement name. In order to avoid it,
+  // make sure you modify `telegraf.conf` accordingly.
+  def toTags: Map[String, String] = {
+    val map = Map("processOriginalName" -> processOriginalName)
+    namespace match {
+      case Some(name) => map + ("namespace" -> name)
+      case None => map
+    }
   }
 }
 
