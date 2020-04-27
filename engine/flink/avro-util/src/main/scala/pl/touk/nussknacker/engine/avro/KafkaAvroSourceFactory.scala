@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
 import javax.validation.constraints.NotBlank
+import org.apache.avro.Schema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
@@ -8,8 +9,8 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.avro.fixed.KafkaAvroFixedSchemaProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.{KafkaAvroSchemaRegistryProvider, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.fixed.FixedKafkaAvroSchemaProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryKafkaAvroProvider, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka._
 
@@ -27,7 +28,7 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
              )
              @NotBlank
              topic: String): Source[T] with TestDataGenerator =
-    createKafkaAvroSource(processMetaData, topic, KafkaAvroSchemaRegistryProvider(schemaRegistryProvider, kafkaConfig, topic))
+    createKafkaAvroSource(processMetaData, topic, SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic))
 }
 
 object KafkaAvroSourceFactory {
@@ -52,11 +53,11 @@ class FixedKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies:
              topic: String,
              @ParamName("schema")
              @NotBlank
-             stringSchema: String): Source[T] with TestDataGenerator =
+             avroSchema: String): Source[T] with TestDataGenerator =
     createKafkaAvroSource(
       processMetaData,
       topic,
-      new KafkaAvroFixedSchemaProvider(topic, stringSchema, kafkaConfig, formatKey, useSpecificAvroReader)
+      new FixedKafkaAvroSchemaProvider(topic, avroSchema, kafkaConfig, formatKey, useSpecificAvroReader)
     )
 }
 

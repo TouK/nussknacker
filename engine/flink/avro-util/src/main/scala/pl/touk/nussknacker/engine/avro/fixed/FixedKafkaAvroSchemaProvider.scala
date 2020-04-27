@@ -19,15 +19,15 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
   *
   * @TODO: In future we should create own serializator and deserializator for FixedSchema
   */
-class KafkaAvroFixedSchemaProvider[T: TypeInformation](val topic: String,
-                                                       val stringSchema: String,
+class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
+                                                       val avroSchema: String,
                                                        val kafkaConfig: KafkaConfig,
                                                        val formatKey: Boolean,
                                                        val useSpecificAvroReader: Boolean) extends KafkaAvroSchemaProvider[T] {
 
   lazy val factory: ConfluentSchemaRegistryClientFactory = new ConfluentSchemaRegistryClientFactory {
     override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
-      val schema: Schema = AvroUtils.createSchema(stringSchema)
+      val schema: Schema = AvroUtils.createSchema(avroSchema)
       new MockSchemaRegistryClient with SchemaRegistryClient {
         override def getBySubjectAndId(subject: String, version: Int): Schema = schema
 
@@ -49,7 +49,7 @@ class KafkaAvroFixedSchemaProvider[T: TypeInformation](val topic: String,
     serializationSchemaFactory.create(topic, kafkaConfig)
 
   override def typeDefinition: typing.TypingResult =
-    AvroSchemaTypeDefinitionExtractor.typeDefinition(AvroUtils.createSchema(stringSchema))
+    AvroSchemaTypeDefinitionExtractor.typeDefinition(AvroUtils.createSchema(avroSchema))
 
   override def recordFormatter: Option[RecordFormatter] =
     Some(ConfluentAvroToJsonFormatter(factory.createSchemaRegistryClient(kafkaConfig), topic, formatKey))

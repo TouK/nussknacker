@@ -74,7 +74,7 @@ object AvroUtils extends Serializable {
   def valueSubject(topic: String): String =
     topic + "-value"
 
-  def createSchema(stringSchema: String): Schema =
-    parser.parse(stringSchema)
+  def createSchema(avroSchema: String): Schema =
+    parser.parse(avroSchema)
 
 }
