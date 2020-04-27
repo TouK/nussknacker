@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.api.compat
 import org.apache.flink.annotation.{Public, PublicEvolving}
 import org.apache.flink.streaming.api.datastream.{DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.scala.DataStream
+import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
 /**
@@ -17,13 +18,13 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 trait ExplicitUidInOperatorsCompat {
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStream[T]): DataStream[T] =
-    ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx)(stream)
+    ExplicitUidInOperatorsCompat.setUidIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStreamSink[T]): DataStreamSink[T] =
-    ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx)(stream)
+    ExplicitUidInOperatorsCompat.setUidIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] =
-    ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeedJava(explicitUidInStatefulOperators(nodeCtx), nodeCtx)(stream)
+    ExplicitUidInOperatorsCompat.setUidIfNeedJava(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
   /**
    * Rewrite it if you wan to change globally configured behaviour with local one
@@ -36,32 +37,37 @@ trait ExplicitUidInOperatorsCompat {
 
 object ExplicitUidInOperatorsCompat {
 
-  def setUidToNodeIdIfNeed[T](explicitUidInStatefulOperators: Boolean, nodeCtx: FlinkCustomNodeContext)
-                             (stream: DataStream[T]): DataStream[T] = {
+  def setUidIfNeed[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
+                     (stream: DataStream[T]): DataStream[T] = {
     if (explicitUidInStatefulOperators)
-      stream.uid(nodeCtx.nodeId)
+      stream.uid(uidValue)
     else
       stream
   }
 
-  def setUidToNodeIdIfNeedSink[T](explicitUidInStatefulOperators: Boolean, nodeCtx: FlinkCustomNodeContext)
-                                 (stream: DataStreamSink[T]): DataStreamSink[T] = {
+  def setUidIfNeedSink[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
+                         (stream: DataStreamSink[T]): DataStreamSink[T] = {
     if (explicitUidInStatefulOperators)
-      stream.uid(nodeCtx.nodeId)
+      stream.uid(uidValue)
     else
       stream
   }
 
-  def setUidToNodeIdIfNeedJava[T](explicitUidInStatefulOperators: Boolean, nodeCtx: FlinkCustomNodeContext)
-                                 (stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] = {
+  def setUidIfNeedJava[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
+                         (stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] = {
     if (explicitUidInStatefulOperators)
-      stream.uid(nodeCtx.nodeId)
+      stream.uid(uidValue)
     else
       stream
   }
 
-  // FIXME: replace with config when it be available in FlinkCustomNodeContext
-  @PublicEvolving // this field will be switched to true in some future
-  def defaultExplicitUidInStatefulOperators(nodeCtx: FlinkCustomNodeContext) = false
+  @PublicEvolving // default behaviour will be switched to true in some future
+  def defaultExplicitUidInStatefulOperators(nodeCtx: FlinkCustomNodeContext): Boolean =
+    defaultExplicitUidInStatefulOperators(nodeCtx.globalParameters)
+
+  @PublicEvolving // default behaviour will be switched to true in some future
+  def defaultExplicitUidInStatefulOperators(globalParameters: Option[NkGlobalParameters]): Boolean =
+    globalParameters.flatMap(_.configParameters).flatMap(_.explicitUidInStatefulOperators).getOrElse(false)
+
 
 }

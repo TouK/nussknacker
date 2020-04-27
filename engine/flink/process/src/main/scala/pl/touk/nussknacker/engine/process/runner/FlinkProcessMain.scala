@@ -29,7 +29,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val buildInfo = if (args.length > 3) args(3) else ""
       val modelData = ModelData(config, List())
       val env = getExecutionEnvironment
-      getConfig(env).setGlobalJobParameters(prepareGlobalParameters(buildInfo, processVersion, modelData.processConfig))
+      NkGlobalParameters.setInContext(getConfig(env), NkGlobalParameters(buildInfo, processVersion, modelData.processConfig))
       runProcess(env, modelData, process, processVersion)
     } catch {
       // marker exception for graph optimalization
@@ -67,10 +67,5 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       case None =>
         ConfigFactory.empty()
     }
-
-  protected def prepareGlobalParameters(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config): NkGlobalParameters = {
-    val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
-    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters)
-  }
 
 }

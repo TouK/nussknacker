@@ -41,7 +41,7 @@ object transformers {
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators(ctx), ctx)(
+          ExplicitUidInOperatorsCompat.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(
             start
               .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
               .keyBy(_.value._1)
@@ -67,7 +67,7 @@ object transformers {
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          ExplicitUidInOperatorsCompat.setUidToNodeIdIfNeed(explicitUidInStatefulOperators(ctx), ctx)(start
+          ExplicitUidInOperatorsCompat.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(start
             .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
             .keyBy(_.value._1)
             .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowLength.toMillis)))

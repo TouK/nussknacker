@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsCompat
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -111,23 +112,23 @@ object SampleNodes {
     }
   }
 
-  object StateCustomNode extends CustomStreamTransformer {
+  object StateCustomNode extends CustomStreamTransformer with ExplicitUidInOperatorsCompat {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("stringVal") stringVal: String,
                 @ParamName("keyBy") keyBy: LazyParameter[String]) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-      start
-        .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
-        .keyBy(_.value)
-        .mapWithState[ValueWithContext[Any], Long] {
-          case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
-            (ValueWithContext(
-              SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
-          case (SimpleFromValueWithContext(ctx, sr), None) =>
-            (ValueWithContext(
-              SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
-        }
-
+      setUidToNodeIdIfNeed(context,
+        start
+          .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
+          .keyBy(_.value)
+          .mapWithState[ValueWithContext[Any], Long] {
+            case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
+              (ValueWithContext(
+                SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
+            case (SimpleFromValueWithContext(ctx, sr), None) =>
+              (ValueWithContext(
+                SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
+          })
     })
 
     object SimpleFromValueWithContext {
