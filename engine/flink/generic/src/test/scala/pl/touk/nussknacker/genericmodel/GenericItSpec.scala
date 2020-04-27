@@ -120,7 +120,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .id("avro-typed-test")
       .parallelism(1)
       .exceptionHandler()
-      .source("start", "kafka-typed-avro",
+      .source("start", "kafka-fixed-avro",
         "topic" -> s"'$AvroTypedInTopic'",
         "schema" -> s"'$RecordSchemaString'"
       )

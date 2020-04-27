@@ -29,14 +29,14 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
-    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
-    val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+    val avroSourceFactory = KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies)
+    val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 
     Map(
       "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
       "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(processObjectDependencies)),
       "kafka-avro" -> defaultCategory(avroSourceFactory),
-      "kafka-typed-avro" -> defaultCategory(avroTypedSourceFactory)
+      "kafka-fixed-avro" -> defaultCategory(avroFixedSourceFactory)
     )
   }
 

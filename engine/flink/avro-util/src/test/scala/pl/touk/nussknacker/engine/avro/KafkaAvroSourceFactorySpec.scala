@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider}
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.schemaregistry.{KafkaAvroSchemaRegistryProvider, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
@@ -100,14 +100,14 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     readLastMessageAndVerify(createKeyValueAvroSourceFactory[Int, Int], givenObj, IntTopic)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String): Assertion = {
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], givenObj: Any, topic: String): Assertion = {
     val serializedObj = valueSerializer.serialize(topic, givenObj)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, Some(0))
 
     readLastMessageAndVerify(sourceFactory, givenObj, topic)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String): Assertion = {
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], givenObj: Any, topic: String): Assertion = {
     val source = sourceFactory.create(MetaData("", StreamMetaData()), topic)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef]]
     val bytes = source.generateTestData(1)
@@ -118,13 +118,14 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   }
 
   private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
-    val provider = ConfluentSchemaRegistryProvider[AnyRef](
+    val schemaRegistryProvider = ConfluentSchemaRegistryProvider[AnyRef](
       MockConfluentSchemaRegistryClientFactory,
       processObjectDependencies,
       useSpecificAvroReader,
       formatKey = false
     )
-    new KafkaAvroSourceFactory(provider, processObjectDependencies, None)
+
+    new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
   }
 
   private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
