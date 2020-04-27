@@ -105,7 +105,7 @@ class NodeDetailsModal extends React.Component {
         </LaddaButton>
       )        :
         null,
-    ] 
+    ]
   }
 
   renderGroupUngroup() {
@@ -123,9 +123,16 @@ class NodeDetailsModal extends React.Component {
   }
 
   renderSubprocess() {
+    //FIXME: adjust height of graph in some more reasonable way :|
     //we don't use _.get here, because currentNodeId can contain spaces etc...
     const subprocessCounts = (this.props.processCounts[this.state.currentNodeId] || {}).subprocessCounts || {}
-    return (<BareGraph processCounts={subprocessCounts} processToDisplay={this.state.subprocessContent}/>)
+    return (
+      <BareGraph
+        processCounts={subprocessCounts}
+        processToDisplay={this.state.subprocessContent}
+        height={`${parseInt(cssVariables.modalContentMaxHeight)/3}px`}
+      />
+    )
   }
 
   toogleCloseModalOnEsc = () => {
@@ -177,9 +184,9 @@ class NodeDetailsModal extends React.Component {
                           toogleCloseOnEsc={this.toogleCloseModalOnEsc}
                           testResults={nodeTestResults(this.state.currentNodeId)}
                         />
-                      )}
+                      )
+                    }
                     {
-                      //FIXME: adjust height of modal with subprocess in some reasonable way :|
                       this.state.subprocessContent ? this.renderSubprocess() : null
                     }
                   </Scrollbars>

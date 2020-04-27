@@ -28,6 +28,8 @@ class Graph extends React.Component {
     groupingState: PropTypes.array,
     loggedUser: PropTypes.object.isRequired,
     connectDropTarget: PropTypes.func,
+    width: PropTypes.string,
+    height: PropTypes.string,
   }
 
   constructor(props) {
@@ -143,11 +145,12 @@ class Graph extends React.Component {
 
   createPaper = () => {
     const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly
+    const {height = "100%", width = "100%"} = this.props
     return new joint.dia.Paper({
       el: this.getEspGraphRef(),
       gridSize: 1,
-      height: "100%",
-      width: "100%",
+      height,
+      width,
       model: this.graph,
       snapLinks: {radius: 75},
       interactive: function (cellView) {
