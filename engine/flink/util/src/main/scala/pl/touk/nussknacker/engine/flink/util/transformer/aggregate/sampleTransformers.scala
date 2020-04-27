@@ -6,13 +6,13 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsCompat
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 
 import scala.concurrent.duration.Duration
 
 object sampleTransformers {
 
-  object SimpleSlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsCompat {
+  object SimpleSlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
@@ -43,7 +43,7 @@ object sampleTransformers {
     }
   }
 
-  object SlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsCompat {
+  object SlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(@ParamName("keyBy") keyBy: LazyParameter[String],

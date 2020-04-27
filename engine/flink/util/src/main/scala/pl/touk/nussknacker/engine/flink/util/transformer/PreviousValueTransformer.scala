@@ -5,10 +5,10 @@ import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsCompat
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 
-case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsCompat {
+case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   type Value = Any
 

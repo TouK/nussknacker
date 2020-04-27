@@ -11,7 +11,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsCompat
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 
@@ -29,7 +29,7 @@ object transformers {
                          windowLength: Duration,
                          variableName: String)(implicit nodeId: NodeId): ContextTransformation =
     slidingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName,
-      ExplicitUidInOperatorsCompat.defaultExplicitUidInStatefulOperators)
+      ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
   def slidingTransformer(keyBy: LazyParameter[String],
                          aggregateBy: LazyParameter[AnyRef],
@@ -41,7 +41,7 @@ object transformers {
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          ExplicitUidInOperatorsCompat.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(
+          ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(
             start
               .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
               .keyBy(_.value._1)
@@ -54,7 +54,7 @@ object transformers {
                           windowLength: Duration,
                           variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
     tumblingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName,
-      ExplicitUidInOperatorsCompat.defaultExplicitUidInStatefulOperators)
+      ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
   }
 
   def tumblingTransformer(keyBy: LazyParameter[String],
@@ -67,7 +67,7 @@ object transformers {
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          ExplicitUidInOperatorsCompat.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(start
+          ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(start
             .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
             .keyBy(_.value._1)
             .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowLength.toMillis)))

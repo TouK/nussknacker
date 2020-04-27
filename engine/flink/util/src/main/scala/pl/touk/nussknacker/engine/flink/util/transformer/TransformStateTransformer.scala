@@ -7,7 +7,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsCompat
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 
@@ -26,7 +26,7 @@ import scala.concurrent.duration._
   * }
   * ```
   */
-object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsCompat {
+object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   @MethodToInvoke(returnType = classOf[AnyRef])
   def invoke(@ParamName("key") key: LazyParameter[String],

@@ -7,35 +7,41 @@ import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
 /**
- * This method is compatibility helper that will prepare for migration to operators with explicitly specified uids.
+ * This trait helps to explicitly set uids for Flink's stateful operators.
  * Regards to https://ci.apache.org/projects/flink/flink-docs-stable/ops/upgrading.html#matching-operator-state
  * operator with state should has specified uid. Otherwise recovery of state could fail.
  *
- * In the first step explicitUidInStatefulOperators will be set to false for generic custom transformers.
- * In your own implementations you can use this api and choose if you want to have explicit uids and avoid migration
- * of state in the future, or leave it as it was before (set to false).
+ * Currently this class doesn't set up uids until you add:
+ * ```
+ * globalParameters {
+ *   explicitUidInStatefulOperators: true
+ * }
+ * ```
+ * in your model config.
+ *
+ * In the future this behaviour will change to setting up uids by default.
  */
-trait ExplicitUidInOperatorsCompat {
+trait ExplicitUidInOperatorsSupport {
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStream[T]): DataStream[T] =
-    ExplicitUidInOperatorsCompat.setUidIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
+    ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStreamSink[T]): DataStreamSink[T] =
-    ExplicitUidInOperatorsCompat.setUidIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
+    ExplicitUidInOperatorsSupport.setUidIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] =
-    ExplicitUidInOperatorsCompat.setUidIfNeedJava(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
+    ExplicitUidInOperatorsSupport.setUidIfNeedJava(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
   /**
-   * Rewrite it if you wan to change globally configured behaviour with local one
+   * Rewrite it if you wan to change globally configured behaviour of setting uid with local one
    */
   @Public
   protected def explicitUidInStatefulOperators(nodeCtx: FlinkCustomNodeContext): Boolean =
-    ExplicitUidInOperatorsCompat.defaultExplicitUidInStatefulOperators(nodeCtx)
+    ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(nodeCtx)
 
 }
 
-object ExplicitUidInOperatorsCompat {
+object ExplicitUidInOperatorsSupport {
 
   def setUidIfNeed[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
                      (stream: DataStream[T]): DataStream[T] = {
