@@ -15,18 +15,14 @@ case class NkGlobalParameters(buildInfo: String,
 
   //here we decide which configuration properties should be shown in REST API etc.
   //For now it will be only deployment information
+  //NOTE: this information is used in FlinkRestManager - any changes here should be reflected there
   override def toMap: util.Map[String, String] = {
-    Map[String, Any](
+    Map[String, String](
       "buildInfo" -> buildInfo,
-      "versionId" -> processVersion.versionId,
-      "modelVersion" -> processVersion.modelVersion,
+      "versionId" -> processVersion.versionId.toString,
+      "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
       "user" -> processVersion.user
-    ).mapValues {
-      case None => "none"
-      case Some(x) => x.toString
-      case null => "null"
-      case x => x.toString
-    }.asJava
+    ).filterNot(_._2 == null).asJava
   }
 }
 
