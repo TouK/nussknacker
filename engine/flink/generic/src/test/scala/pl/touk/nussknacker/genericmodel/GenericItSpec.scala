@@ -180,6 +180,10 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     kafkaClient.sendMessage(topicIn1, dataJson1)
     kafkaClient.sendMessage(topicIn2, dataJson2)
 
+    val bizarreBranchName = "?branch .2-"
+    val sanitizedBizarreBranchName = "_branch__2_"
+
+
     val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "kafka-typed-json",
@@ -190,12 +194,12 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
           .source("sourceId2", "kafka-typed-json",
             "topic" -> s"'$topicIn2'",
             "type" -> """{"data2": "String"}""")
-          .branchEnd("branch2", "join1"),
+          .branchEnd(bizarreBranchName, "join1"),
         GraphBuilder
           .branch("join1", "union", Some("outPutVar"),
             List(
               "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
-              "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
+              bizarreBranchName -> List("key" -> "'key2'", "value" -> "#input.data2")
             )
           )
           .filter("always-true-filter", """#outPutVar.key != "not key1 or key2"""")
@@ -209,9 +213,9 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       logger.info("Waiting for messages")
       val processed = consumer.map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(2).toList
       processed.map(parseJson) should contain theSameElementsAs List(
-        parseJson("""{
+        parseJson(s"""{
                     |  "key" : "key2",
-                    |  "branch2" : "from source2"
+                    |  "$sanitizedBizarreBranchName" : "from source2"
                     |}""".stripMargin
         ),
         parseJson("""{

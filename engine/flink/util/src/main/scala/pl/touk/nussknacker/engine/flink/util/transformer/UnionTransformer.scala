@@ -26,6 +26,14 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
 
   override def canHaveManyInputs: Boolean = true
 
+  //we can put e.g. "? this is [my funny name]" as node name...
+  private def sanitizeBranchName(branchId: String) = branchId.toCharArray.zipWithIndex.collect {
+    case (a, 0) if Character.isJavaIdentifierStart(a) => a
+    case (a, 0) if !Character.isJavaIdentifierStart(a) => "_"
+    case (a, _) if Character.isJavaIdentifierPart(a) => a
+    case (a, _) if !Character.isJavaIdentifierPart(a) => "_"
+  }.mkString
+  
   @MethodToInvoke
   def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[String]],
               @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[Any]],
@@ -34,7 +42,7 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
       .join.definedBy { contexts =>
       val newType = TypedObjectTypingResult(contexts.map {
           case (branchId, _) =>
-            branchId -> valueByBranchId(branchId).returnType
+            sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
         } + (KeyField -> Typed[String]))
 
       Valid(ValidationContext(Map(variableName -> newType)))
@@ -55,7 +63,7 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
                   import scala.collection.JavaConverters._
                   ValueWithContext(Map(
                     KeyField -> evaluateKey(context),
-                    branchId -> evaluateValue(context)
+                    sanitizeBranchName(branchId) -> evaluateValue(context)
                   ).asJava, context)
                 }
               })
