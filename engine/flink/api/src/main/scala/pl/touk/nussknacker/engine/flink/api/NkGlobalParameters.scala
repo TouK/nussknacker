@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 //Also, those configuration properties will be exposed via Flienk REST API/webconsole
 case class NkGlobalParameters(buildInfo: String,
                               processVersion: ProcessVersion,
-                              useLegacyMetrics: Option[Boolean]) extends GlobalJobParameters {
+                              configParameters: Option[ConfigGlobalParameters]) extends GlobalJobParameters {
 
   //here we decide which configuration properties should be shown in REST API etc.
   //For now it will be only deployment information
@@ -29,6 +29,9 @@ case class NkGlobalParameters(buildInfo: String,
     }.asJava
   }
 }
+
+//this is part of global parameters that is parsed with typesafe Config (e.g. from application.conf/model.conf)
+case class ConfigGlobalParameters(useLegacyMetrics: Option[Boolean])
 
 object NkGlobalParameters {
 

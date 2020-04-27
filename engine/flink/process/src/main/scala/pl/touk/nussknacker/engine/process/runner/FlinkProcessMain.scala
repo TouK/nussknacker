@@ -8,9 +8,11 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.client.program.OptimizerPlanEnvironment.ProgramAbortException
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
-import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
+import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NkGlobalParameters}
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 import pl.touk.nussknacker.engine.graph.EspProcess
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.Ficus._
 
 import scala.util.control.NonFatal
 
@@ -67,8 +69,8 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
     }
 
   protected def prepareGlobalParameters(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config): NkGlobalParameters = {
-    val useLegacyMetrics = if (modelConfig.hasPath("useLegacyMetrics")) Some(modelConfig.getBoolean("useLegacyMetrics")) else None
-    NkGlobalParameters(buildInfo, processVersion, useLegacyMetrics)
+    val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
+    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters)
   }
 
 }
