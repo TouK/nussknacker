@@ -58,7 +58,7 @@ const periodFormatter: Formatter = {
 }
 
 //FIXME: this should not work this way. We should either provide some helper, or (even better) create mini-expression-languages for those types and do not try
-//to convert to/from spel
+//to convert to/from spel. Also: this is probably *not* performant enough to be used on per-event basis
 const spelCronFormatter: Formatter = {
   encode: (value: CronExpression) => `new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('${value}')`,
   decode: value => {

@@ -142,7 +142,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   render() {
-    const {nodeErrors, nodeToDisplay, nodeSetting, readOnly, showNodeDetailsModal, testResults} = this.props
+    const {nodeErrors, nodeToDisplay, nodeSettings, readOnly, showNodeDetailsModal, testResults} = this.props
     const isOpen = !_.isEmpty(nodeToDisplay) && showNodeDetailsModal
     const nodeTestResults = (id) => TestResultUtils.resultsForNode(testResults, id)
 
@@ -157,7 +157,7 @@ class NodeDetailsModal extends React.Component {
           <div className="draggable-container">
             <Draggable bounds="parent" handle=".modal-draggable-handle">
               <div className="espModal">
-                <NodeDetailsModalHeader node={nodeToDisplay} docsUrl={nodeSetting.docsUrl}/>
+                <NodeDetailsModalHeader node={nodeToDisplay} nodeSettings={nodeSettings}/>
                 <div className="modalContentDark" id="modal-content">
                   <Scrollbars
                     hideTracksWhenNotNeeded={true}
@@ -215,7 +215,7 @@ function mapState(state) {
 
   return {
     nodeToDisplay: nodeToDisplay,
-    nodeSetting: _.get(processDefinitionData.nodesConfig, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
+    nodeSettings: _.get(processDefinitionData.nodesConfig, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
     processId: state.graphReducer.processToDisplay.id,
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,

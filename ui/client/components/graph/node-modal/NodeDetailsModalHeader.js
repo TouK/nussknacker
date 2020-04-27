@@ -45,7 +45,7 @@ const Docs = (props) => {
 
 Docs.propTypes = {
   className: PropTypes.string.isRequired,
-  docsUrl: PropTypes.string.isRequired,
+  nodeSettings: PropTypes.object.isRequired,
   nodeClass: PropTypes.string,
 }
 
@@ -76,13 +76,15 @@ const renderNodeClassDocs = (nodeClass, docsUrl) => {
 }
 
 const NodeDetailsModalHeader = (props) => {
-  const {docsUrl, node} = props
+  const {nodeSettings, node} = props
+  const docsUrl = nodeSettings.docsUrl
+
   const attributes = getNodeAttributes(node)
   const titleStyles = EspModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
   const variableLanguage = _.get(node, "value.language")
   const header = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name
 
-  const nodeIcon = _.has(node, "type") ? getIconHref(node) : null
+  const nodeIcon = _.has(node, "type") ? getIconHref(node, nodeSettings) : null
   const nodeClass = findNodeClass(node)
 
   return (
