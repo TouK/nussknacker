@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.metrics
 import cats.data.NonEmptyList
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.metrics.{Counter, Gauge, Histogram, Meter, MetricGroup}
-import pl.touk.nussknacker.engine.flink.api.{NKGlobalParameters, RuntimeContextLifecycle}
+import pl.touk.nussknacker.engine.flink.api.{NkGlobalParameters, RuntimeContextLifecycle}
 
 /*
   IMPORTANT: PLEASE keep Metrics.md up to date
@@ -37,7 +37,7 @@ class MetricUtils(runtimeContext: RuntimeContext) {
   }
 
   private val useLegacyMetricsMode: Boolean =
-    NKGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).flatMap(_.useLegacyMetrics).getOrElse(false)
+    NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).flatMap(_.configParameters.flatMap(_.useLegacyMetrics)).getOrElse(false)
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
     if (useLegacyMetricsMode) {
