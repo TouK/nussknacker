@@ -3,39 +3,47 @@ package pl.touk.nussknacker.processCounts.influxdb
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-import sttp.client.{NothingT, SttpBackend}
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.processCounts._
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends CountsReporter {
+class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends CountsReporter with LazyLogging {
 
+  val influxGenerator = new InfluxGenerator(config, env)
   private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+  private val metricsConfig = config.metricsConfig.getOrElse(MetricsConfig())
 
-  private val influxBaseReporter = new InfluxBaseCountsReporter(env, config)
-
-  override def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]] = countsRequest match {
+  override def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]] = (countsRequest match {
     case RangeCount(fromDate, toDate) => prepareRangeCounts(processId, fromDate, toDate)
-    case ExecutionCount(pointInTime) => queryInflux(processId, None, pointInTime)
-  }
+    case ExecutionCount(pointInTime) => influxGenerator.queryBySingleDifference(processId, None, pointInTime, metricsConfig)
+  }).map(ProcessBaseCounts).map(_.getCountForNodeId)
 
-  private def prepareRangeCounts(processId: String, fromDate: LocalDateTime, toDate: LocalDateTime)(implicit ec: ExecutionContext): Future[String => Option[Long]] = {
-    influxBaseReporter.detectRestarts(processId, fromDate, toDate).flatMap {
-      case Nil => queryInflux(processId, Some(fromDate), toDate)
-      case dates => Future.failed(CannotFetchCountsError(s"Counts unavailable, as process was restarted/deployed on " +
-        s" following dates: ${dates.map(_.format(dateTimeFormatter)).mkString(", ")}"))
+  override def close(): Unit = influxGenerator.close()
+
+  private def prepareRangeCounts(processId: String, fromDate: LocalDateTime, toDate: LocalDateTime)(implicit ec: ExecutionContext): Future[Map[String, Long]] = {
+
+    influxGenerator.detectRestarts(processId, fromDate, toDate, metricsConfig).flatMap { restarts =>
+      (restarts, config.queryMode) match {
+        case (_, QueryMode.OnlyDifferential) =>
+          influxGenerator.queryByDifferential(processId, fromDate, toDate, metricsConfig)
+        case (Nil, QueryMode.DifferentialWhenRestarts) =>
+          influxGenerator.queryBySingleDifference(processId, Some(fromDate), toDate, metricsConfig)
+        case (nonEmpty, QueryMode.DifferentialWhenRestarts) =>
+          logger.debug(s"Restarts detected: ${nonEmpty.mkString(",")}, querying with differential")
+          influxGenerator.queryByDifferential(processId, fromDate, toDate, metricsConfig)
+        case (Nil, QueryMode.OnlySingleDifference) =>
+          influxGenerator.queryBySingleDifference(processId, Some(fromDate), toDate, metricsConfig)
+        case (dates, QueryMode.OnlySingleDifference) =>
+          Future.failed(CannotFetchCountsError(s"Counts unavailable, as process was restarted/deployed on " +
+          s" following dates: ${dates.map(_.format(dateTimeFormatter)).mkString(", ")}"))
+      }
     }
-
   }
-
-  private def queryInflux(processId: String, fromDate: Option[LocalDateTime], toDate: LocalDateTime)(implicit ec: ExecutionContext): Future[String => Option[Long]] = {
-    influxBaseReporter.fetchBaseProcessCounts(processId, fromDate, toDate).map(pbc => nodeId => pbc.getCountForNodeId(nodeId))
-  }
-
-  override def close(): Unit = influxBaseReporter.influxGenerator.close()
 
 }
 
@@ -43,7 +51,7 @@ class InfluxCountsReporterCreator extends CountsReporterCreator {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
+  import net.ceedubs.ficus.readers.EnumerationReader._
 
   override def createReporter(env: String, config: Config): CountsReporter = {
     //TODO: logger

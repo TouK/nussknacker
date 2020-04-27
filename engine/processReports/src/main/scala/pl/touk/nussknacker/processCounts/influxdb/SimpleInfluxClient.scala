@@ -10,8 +10,6 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-case class InfluxConfig(influxUrl: String, user: String, password: String, database: String = "esp", metricsConfig: Option[MetricsConfig])
-
 class InfluxException(cause: Throwable) extends Exception(cause)
 case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
   override def getMessage: String = s"Influx query failed with message '$message'"

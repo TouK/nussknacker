@@ -48,7 +48,7 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
     |        {
     |          "name": "nodeCount",
     |          "tags": {
-    |            "action": "end",
+    |            "nodeId": "end",
     |            "slot": "1"
     |          },
     |          "columns": [
