@@ -81,7 +81,7 @@ const NodeDetailsModalHeader = (props) => {
 
   const attributes = getNodeAttributes(node)
   const titleStyles = EspModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
-  const variableLanguage = _.get(node, "value.language")
+  const variableLanguage = node?.value?.language
   const header = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name
 
   const nodeIcon = _.has(node, "type") ? getIconHref(node, nodeSettings) : null
