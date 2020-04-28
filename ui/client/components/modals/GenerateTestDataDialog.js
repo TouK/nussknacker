@@ -24,6 +24,10 @@ class GenerateTestDataDialog extends React.Component {
     return HttpService.generateTestData(this.props.processId, this.state.testSampleSize, this.props.processToDisplay)
   }
 
+  onInputChange = (event) => {
+    this.setState({testSampleSize: event.target.value})
+  }
+
   render() {
     const validators = [literalIntegerValueValidator, mandatoryValueValidator]
     return (
@@ -38,7 +42,7 @@ class GenerateTestDataDialog extends React.Component {
           autoFocus={true}
           className="add-comment-on-save"
           value={this.state.testSampleSize}
-          onChange={(e) => { this.setState({testSampleSize: e.target.value}) } }
+          onChange={this.onInputChange}
         />
         <ValidationLabels validators={validators} values={[this.state.testSampleSize]}/>
 
