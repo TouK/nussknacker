@@ -29,8 +29,11 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: Process
     val createdDefinitions = super.definitions(processObjectDependencies)
 
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
-    //TODO JOIN: handling multiple sources?
-    val sourceType = process.roots.head.data.asInstanceOf[Source].ref.typ
+    //TODO JOIN: handling multiple sources - currently we take only first?
+    val sourceType = process.roots.toList.map(_.data).collectFirst {
+      case source: Source => source
+    }.map(_.ref.typ).getOrElse(throw new IllegalArgumentException("No source found - cannot test"))
+
     val testSource = createdDefinitions.sourceFactories.get(sourceType)
       .map(prepareSourceFactory)
       .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition"))
