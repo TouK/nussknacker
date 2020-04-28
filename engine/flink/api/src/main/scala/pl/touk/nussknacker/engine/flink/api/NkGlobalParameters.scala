@@ -15,9 +15,8 @@ import net.ceedubs.ficus.Ficus._
 //Also, those configuration properties will be exposed via Flienk REST API/webconsole
 case class NkGlobalParameters(buildInfo: String,
                               processVersion: ProcessVersion,
-                              processOriginalName: String,
-                              namespace: Option[String],
-                              configParameters: Option[ConfigGlobalParameters]) extends GlobalJobParameters {
+                              configParameters: Option[ConfigGlobalParameters],
+                              rawParameters: RawParameters) extends GlobalJobParameters {
 
   //here we decide which configuration properties should be shown in REST API etc.
   //For now it will be only deployment information
@@ -40,9 +39,9 @@ case class ConfigGlobalParameters(useLegacyMetrics: Option[Boolean],
 
 object NkGlobalParameters {
 
-  def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config): NkGlobalParameters = {
+  def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config, rawParameters: RawParameters): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
-    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters)
+    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, rawParameters)
   }
 
   def setInContext(ec: ExecutionConfig, globalParameters: NkGlobalParameters): Unit = {
@@ -52,5 +51,14 @@ object NkGlobalParameters {
   def readFromContext(ec: ExecutionConfig): Option[NkGlobalParameters] = Option(ec.getGlobalJobParameters).collect {
     case a:NkGlobalParameters => a
   }
+
+}
+
+case class RawParameters(processOriginalName: String,
+                         namespace: Option[String])
+
+object RawParameters {
+  def apply(processOriginalName: String, namespace: Option[String]): RawParameters =
+    new RawParameters(processOriginalName, namespace)
 
 }
