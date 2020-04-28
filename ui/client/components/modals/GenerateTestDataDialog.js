@@ -6,13 +6,16 @@ import HttpService from "../../http/HttpService"
 import "../../stylesheets/visualization.styl"
 import Dialogs from "./Dialogs"
 import GenericModalDialog from "./GenericModalDialog"
+import {allValid, literalIntegerValueValidator, mandatoryValueValidator} from "../graph/node-modal/editors/Validators"
+import ValidationLabels from "./ValidationLabels"
 
 class GenerateTestDataDialog extends React.Component {
 
   constructor(props) {
     super(props)
     this.initState = {
-      testSampleSize: 10,
+      //TODO: current validators work well only for string values
+      testSampleSize: "10",
     }
     this.state = this.initState
   }
@@ -22,14 +25,23 @@ class GenerateTestDataDialog extends React.Component {
   }
 
   render() {
+    const validators = [literalIntegerValueValidator, mandatoryValueValidator]
     return (
       <GenericModalDialog
         init={() => this.setState(this.initState)}
         confirm={this.confirm}
+        okBtnConfig={{disabled: !allValid(validators, [this.state.testSampleSize])}}
         type={Dialogs.types.generateTestData}
       >
         <p>Generate test data</p>
-        <input autoFocus={true} className="add-comment-on-save" value={this.state.testSampleSize} onChange={(e) => { this.setState({testSampleSize: e.target.value}) } }/>
+        <input
+          autoFocus={true}
+          className="add-comment-on-save"
+          value={this.state.testSampleSize}
+          onChange={(e) => { this.setState({testSampleSize: e.target.value}) } }
+        />
+        <ValidationLabels validators={validators} values={[this.state.testSampleSize]}/>
+
       </GenericModalDialog>
     )
   }
