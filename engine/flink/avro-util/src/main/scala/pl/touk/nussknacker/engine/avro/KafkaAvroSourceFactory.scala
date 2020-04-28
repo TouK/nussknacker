@@ -53,6 +53,9 @@ class FixedKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies:
              topic: String,
              @ParamName("schema")
              @NotBlank
+             @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+             //TODO: Create BE and FE validator for verify avro type
+             //TODO: Create Avro Editor
              avroSchema: String): Source[T] with TestDataGenerator =
     createKafkaAvroSource(
       processMetaData,

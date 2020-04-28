@@ -14,10 +14,10 @@ import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 /**
-  * This class has fake implementation of serializer and deserializer based on Confluent implementations - it's hack
-  * to serialization / deserialization schema without SchemaRegistry.
+  * This Provider based on Confluet implementation of serializer and deserializer. We use MockSchemaRegistryClient to
+  * mock fixed schema.
   *
-  * @TODO: In future we should create own serializator and deserializator for FixedSchema
+  * @TODO: In future we should create own serializator and deserializator for fixed schema
   */
 class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
                                                        val avroSchema: String,
