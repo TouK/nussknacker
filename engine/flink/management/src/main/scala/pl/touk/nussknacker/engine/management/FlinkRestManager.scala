@@ -105,6 +105,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               errors = List(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
             ))
           case jobs =>
+            logger.info(s"Found: ${jobs}")
             val job = findRunningOrFirst(jobs)
             val stateStatus = job.state match {
               case JobStatus.RUNNING => FlinkStateStatus.Running
