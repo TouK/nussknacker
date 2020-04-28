@@ -56,7 +56,8 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map("stateCustom" -> WithCategories(StateCustomNode),
     "signalReader" -> WithCategories(CustomSignalReader),
-    "transformWithTime" -> WithCategories(TransformerWithTime)
+    "transformWithTime" -> WithCategories(TransformerWithTime),
+    "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions)
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(

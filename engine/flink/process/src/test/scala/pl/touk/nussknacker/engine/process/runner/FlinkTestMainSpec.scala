@@ -2,14 +2,17 @@ package pl.touk.nussknacker.engine.process.runner
 
 import java.util.Date
 
+import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -390,6 +393,33 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     invocationResults("switch").filter(_.name == "expression").last.value shouldBe false
     // first record was filtered out
     invocationResults("out").head.contextId shouldBe "sampleProcess-id-0-1"
+  }
+
+  //TODO: in the future we should also handle multiple sources tests...
+  test("should handle joins for one input (diamond-like) ") {
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder.source("id", "input")
+        .split("split",
+          GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
+          GraphBuilder.filter("right", "#input.id != 'b'").branchEnd("end2", "join1")
+        ),
+      GraphBuilder.branch("join1", "joinBranchExpression", Some("input33"),
+        List(
+          "end1" -> List("value" -> "#input"),
+          "end2" -> List("value" -> "#input")
+        ))
+        .processorEnd("proc2", "logService", "all" -> "#input33.id")
+    ))
+
+    val recA = "a|1|2|1|4|5|6"
+    val recB = "b|1|2|2|4|5|6"
+    val recC = "c|1|2|3|4|5|6"
+
+
+    val results = FlinkTestMain.run(modelData, marshall(process), TestData(List(recA, recB, recC).mkString("\n")), FlinkTestConfiguration.configuration(), identity)
+
+    //TODO: currently e.g. invocation results will behave strangely in this test, because we duplicate inputs and this results in duplicate context ids...
+    results.mockedResults("proc2").map(_.value.asInstanceOf[String]).sorted shouldBe List("a", "b", "c", "c").map(_ + "-collectedDuringServiceInvocation")
   }
 
   def nodeResult(count: Int, vars: (String, Any)*): NodeResult[Any] =

@@ -206,10 +206,7 @@ object SampleNodes {
                 @OutputVariableName variableName: String): JoinContextTransformation =
       ContextTransformation
         .join.definedBy { contexts =>
-        val newType = TypedObjectTypingResult(contexts.toSeq.map {
-          case (branchId, _) =>
-            branchId -> valueByBranchId(branchId).returnType
-        }.toMap)
+        val newType = Typed(contexts.keys.toList.map(branchId => valueByBranchId(branchId).returnType): _*)
         Valid(ValidationContext(Map(variableName -> newType)))
       }.implementedBy(
         new FlinkCustomJoinTransformation {
