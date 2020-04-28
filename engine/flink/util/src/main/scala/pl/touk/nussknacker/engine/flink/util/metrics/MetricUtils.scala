@@ -94,7 +94,18 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     }
   }
 
-
+  implicit class ExtendedNkGlobalParameters(val parameters: NkGlobalParameters) {
+    // This function is used in the non-legacy mode to add additional tags to all types of metrics.
+    // If you add new tag, remember that it will also influence the measurement name. In order to avoid it,
+    // make sure to modify `telegraf.conf` accordingly.
+    def toTags: Map[String, String] = {
+      val map = Map("processOriginalName" -> parameters.processOriginalName)
+      parameters.namespace match {
+        case Some(name) => map + ("namespace" -> name)
+        case None => map
+      }
+    }
+  }
 }
 
 trait WithMetrics extends RuntimeContextLifecycle {

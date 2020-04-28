@@ -32,16 +32,6 @@ case class NkGlobalParameters(buildInfo: String,
     ).filterNot(_._2 == null).asJava)
   }
 
-  // This function is used in (not-legacy) `MetricUtils` to add additional tags to all types of metrics.
-  // If you add new tag, remember that it will also influence the measurement name. In order to avoid it,
-  // make sure you modify `telegraf.conf` accordingly.
-  def toTags: Map[String, String] = {
-    val map = Map("processOriginalName" -> processOriginalName)
-    namespace match {
-      case Some(name) => map + ("namespace" -> name)
-      case None => map
-    }
-  }
 }
 
 //this is part of global parameters that is parsed with typesafe Config (e.g. from application.conf/model.conf)
