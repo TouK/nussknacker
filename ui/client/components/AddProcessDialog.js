@@ -6,7 +6,7 @@ import Modal from "react-modal"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import EspModalStyles from "../common/EspModalStyles"
-import {mandatoryValueValidator} from "./graph/node-modal/editors/Validators"
+import {allValid, mandatoryValueValidator} from "./graph/node-modal/editors/Validators"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 
 import history from "../history"
@@ -52,6 +52,8 @@ class AddProcessDialog extends React.Component {
 
   render() {
     const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
+    const nameValidators = prepareNameValidators(this.props.clashedNames)
+
     return (
       <Modal
         isOpen={this.props.isOpen}
@@ -81,7 +83,7 @@ class AddProcessDialog extends React.Component {
                           value={this.state.processId}
                           onChange={(e) => this.setState({processId: e.target.value})}
                         />
-                        <ValidationLabels validators={validators()} values={[this.props.clashedNames, this.state.processId]}/>
+                        <ValidationLabels validators={nameValidators} values={[this.state.processId]}/>
                       </div>
                     </div>
                     <div className="node-row">
@@ -105,7 +107,13 @@ class AddProcessDialog extends React.Component {
                 <div className="footerButtons">
                   <button type="button" title="Cancel" className="modalButton" onClick={this.closeDialog}>Cancel
                   </button>
-                  <button type="button" title="Create" className="modalButton" onClick={this.confirm}>Create
+                  <button
+                    type="button"
+                    title="Create"
+                    className="modalButton"
+                    disabled={!allValid(nameValidators, this.state.processId)}
+                    onClick={this.confirm}
+                  >Create
                   </button>
                 </div>
               </div>
@@ -124,18 +132,15 @@ function mapState(state) {
   }
 }
 
+//TODO: move this validation to backend to simplify FE code
 const nameAlreadyExists = (clashedNames, name) => {
   return clashedNames.some(processName => processName === name)
 }
 
-const validators = () =>  [
+const prepareNameValidators = (clashedNames) =>  [
+  mandatoryValueValidator,
   {
-    isValid: (clashedNames, name) => mandatoryValueValidator.isValid(name),
-    message: mandatoryValueValidator.message,
-    description: mandatoryValueValidator.description,
-  },
-  {
-    isValid: (clashedNames, name) => !nameAlreadyExists(clashedNames, name),
+    isValid: (name) => !nameAlreadyExists(clashedNames, name),
     message: DialogMessages.valueAlreadyTaken,
     description: DialogMessages.valueAlreadyTakenDescription,
   },
