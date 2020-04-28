@@ -168,7 +168,10 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     val savepointPath = processManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
 
     eventually {
-      processManager.findJobStatus(ProcessName(processId)).futureValue.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
+      val status = processManager.findJobStatus(ProcessName(processId)).futureValue
+      //TODO: logging to debug flaky test on travis, remove after correcting...
+      logger.info(s"Status for stop process: $status")
+      status.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
     }
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
