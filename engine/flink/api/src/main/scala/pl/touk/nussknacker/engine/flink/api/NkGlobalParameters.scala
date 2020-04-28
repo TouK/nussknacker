@@ -21,12 +21,13 @@ case class NkGlobalParameters(buildInfo: String,
   //For now it will be only deployment information
   //NOTE: this information is used in FlinkRestManager - any changes here should be reflected there
   override def toMap: util.Map[String, String] = {
-    Map[String, String](
+    //we wrap in HashMap because .asJava creates not-serializable map in 2.11
+    new util.HashMap(Map[String, String](
       "buildInfo" -> buildInfo,
       "versionId" -> processVersion.versionId.toString,
       "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
       "user" -> processVersion.user
-    ).filterNot(_._2 == null).asJava
+    ).filterNot(_._2 == null).asJava)
   }
 }
 

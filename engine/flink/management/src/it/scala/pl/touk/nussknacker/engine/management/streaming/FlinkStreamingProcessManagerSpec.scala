@@ -169,8 +169,6 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
     eventually {
       val status = processManager.findJobStatus(ProcessName(processId)).futureValue
-      //TODO: logging to debug flaky test on travis, remove after correcting...
-      logger.info(s"Status for stop process: $status")
       status.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
     }
 
