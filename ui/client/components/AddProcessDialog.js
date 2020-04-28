@@ -132,6 +132,7 @@ function mapState(state) {
   }
 }
 
+//TODO: move this validation to backend to simplify FE code
 const nameAlreadyExists = (clashedNames, name) => {
   return clashedNames.some(processName => processName === name)
 }
