@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import org.apache.flink.annotation.PublicEvolving
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -10,6 +11,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 
@@ -17,39 +19,61 @@ import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.Duration
 
 //TODO: think about merging these with TransformStateFunction and/or PreviousValueFunction
+@PublicEvolving // will be only one version for each method, with explicitUidInStatefulOperators = true
+                // in the future - see ExplicitUidInOperatorsCompat for more info
 object transformers {
 
   def slidingTransformer(keyBy: LazyParameter[String],
                          aggregateBy: LazyParameter[AnyRef],
                          aggregator: Aggregator,
                          windowLength: Duration,
-                         variableName: String
+                         variableName: String)(implicit nodeId: NodeId): ContextTransformation =
+    slidingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName,
+      ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+
+  def slidingTransformer(keyBy: LazyParameter[String],
+                         aggregateBy: LazyParameter[AnyRef],
+                         aggregator: Aggregator,
+                         windowLength: Duration,
+                         variableName: String,
+                         explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                         )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          start
-            .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
-            .keyBy(_.value._1)
-            .process(new AggregatorFunction(aggregator, windowLength.toMillis, ctx.nodeId))
+          ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(
+            start
+              .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
+              .keyBy(_.value._1)
+              .process(new AggregatorFunction(aggregator, windowLength.toMillis, ctx.nodeId)))
         }))
 
   def tumblingTransformer(keyBy: LazyParameter[String],
                           aggregateBy: LazyParameter[AnyRef],
                           aggregator: Aggregator,
                           windowLength: Duration,
-                          variableName: String
+                          variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
+    tumblingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName,
+      ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+  }
+
+  def tumblingTransformer(keyBy: LazyParameter[String],
+                          aggregateBy: LazyParameter[AnyRef],
+                          aggregator: Aggregator,
+                          windowLength: Duration,
+                          variableName: String,
+                          explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                          )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          start
+          ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(start
             .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
             .keyBy(_.value._1)
             .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
             .aggregate(aggregator
               // this casting seems to be needed for Flink to infer TypeInformation correctly....
-              .asInstanceOf[org.apache.flink.api.common.functions.AggregateFunction[ValueWithContext[(String, AnyRef)], AnyRef, ValueWithContext[Any]]])
+              .asInstanceOf[org.apache.flink.api.common.functions.AggregateFunction[ValueWithContext[(String, AnyRef)], AnyRef, ValueWithContext[Any]]]))
 
         }))
 

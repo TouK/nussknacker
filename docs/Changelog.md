@@ -10,6 +10,8 @@ Nussknacker versions
 
 0.0.13 (not released)
 -------------
+* Added support for explicitly setting uids in operators - turned on by `explicitUidInStatefulOperators` model's flag.
+By default setted up to false.
 * Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed. `processTypes` 
 configuration should be used from now on.
 * Change of additional properties configuration
