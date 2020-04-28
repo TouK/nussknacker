@@ -138,7 +138,7 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         countsReporter
-          .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
+          .map(reporter => new ProcessReportResources(reporter, counter, processRepository, modelData)),
         featureTogglesConfig.attachments
           .map(path => new ProcessAttachmentService(path, processActivityRepository))
           .map(service => new AttachmentResources(service, processRepository)),

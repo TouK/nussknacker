@@ -7,6 +7,8 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, _}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext, ObjectNaming}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -14,10 +16,12 @@ import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.processCounts._
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, val processRepository: FetchingProcessRepository[Future])
+class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, val processRepository: FetchingProcessRepository[Future],
+                             modelData: ProcessingTypeDataProvider[ModelData])
                             (implicit val ec: ExecutionContext) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
@@ -54,7 +58,12 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
   }
 
   private def computeCounts(process: DisplayableProcess, countsRequest: CountsRequest): Future[ToResponseMarshallable] = {
-    countsReporter.prepareRawCounts(process.id, countsRequest)
+    val processData = modelData.forType(process.processingType)
+    val preparedName = processData match {
+      case Some(data) => data.objectNaming.prepareName(process.id, data.processConfig, new NamingContext(FlinkUsageKey))
+      case _ => process.id
+    }
+    countsReporter.prepareRawCounts(preparedName, countsRequest)
       .map(computeFinalCounts(process, _))
       .recover {
         case CannotFetchCountsError(msg) => HttpResponse(status = StatusCodes.BadRequest, entity = msg)
