@@ -80,9 +80,9 @@ object InfluxGenerator {
       val around = toEpochSeconds(date)
       for {
         valuesBefore <- retrieveOnlyResultFromActionValueQuery(s"""select action, last(value) as value from "$metricName.count" where process = '$processName' """ +
-                    s"and time <= ${around}s and time > ${around}s - 1h and env = '$env' group by slot, action")
+                    s"and time <= ${around}s and time > ${around}s - 1h and env = '$env' group by slot, action fill(0)")
         valuesAfter <- retrieveOnlyResultFromActionValueQuery(s"""select action, first(value) as value from "$metricName.count" where process = '$processName' """ +
-                    s"and time >= ${around}s and time < ${around}s + 1h and env = '$env' group by slot, action")
+                    s"and time >= ${around}s and time < ${around}s + 1h and env = '$env' group by slot, action fill(0)")
       } yield valuesBefore ++ valuesAfter
     }
 
