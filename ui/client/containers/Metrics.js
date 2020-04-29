@@ -21,7 +21,7 @@ export class Metrics extends React.Component {
   }
 
   componentDidMount() {
-    const { processId } = this.props.match.params
+    const {processId} = this.props.match.params
     if (processId) {
       HttpService.fetchProcessDetails(processId).then(response => {
         this.setState({processingType: response.data.processingType})
