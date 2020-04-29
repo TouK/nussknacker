@@ -14,8 +14,10 @@ import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 /**
-  * This Provider based on Confluet implementation of serializer and deserializer. We use MockSchemaRegistryClient to
-  * mock fixed schema.
+  * This Provider based on fixed avro raw data without schema id. It will cause changing strategy of
+  * test data generation - it should use embedded schema.
+  *
+  * We use Confluent MockSchemaRegistryClient to mock fixed schema and Confluent deserializer and serializer
   *
   * @TODO: In future we should create own serializator and deserializator for fixed schema
   */
