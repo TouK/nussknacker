@@ -27,7 +27,6 @@ class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryP
 
   override def recordFormatter: Option[RecordFormatter] =
     schemaRegistryProvider.recordFormatter(topic)
-
 }
 
 object SchemaRegistryKafkaAvroProvider {

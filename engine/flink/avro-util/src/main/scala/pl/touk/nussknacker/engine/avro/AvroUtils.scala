@@ -53,7 +53,7 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 
   private def getOrUpdateSchemaBySubjectAndVersion(subject: String, version: Int): Schema = {
     schemaBySubjectAndVersionCache.getOrElseUpdate((subject, version),
-      schemaRegistryClient.getBySubjectAndId(subject, version))
+      schemaRegistryClient.getBySubjectAndVersion(subject, version))
   }
 
   private def getOrUpdateLatestSchema(subject: String) = {

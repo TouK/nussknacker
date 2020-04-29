@@ -17,8 +17,8 @@ import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryClient
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.ConfluentSchemaRegistryClient
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.TypedConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
@@ -38,7 +38,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
 
   lazy val kafkaConfig: KafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
 
-  lazy val mockSchemaRegistryClient: SchemaRegistryClient with ConfluentSchemaRegistryClient =
+  lazy val mockSchemaRegistryClient: SchemaRegistryClient with TypedConfluentSchemaRegistryClient =
     MockConfluentSchemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
   private lazy val keySerializer: KafkaAvroSerializer = {
@@ -197,11 +197,8 @@ object MockSchemaRegistry {
   )
 
   object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {
-    def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
-      val mockSchemaRegistry = new MockSchemaRegistryClient with SchemaRegistryClient {
-        override def getLatestSchema(subject: String): Schema =
-          AvroUtils.createSchema(getLatestSchemaMetadata(subject).getSchema)
-      }
+    def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedConfluentSchemaRegistryClient = {
+      val mockSchemaRegistry = new MockSchemaRegistryClient with ConfluentSchemaRegistryClient
 
       def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
         val subject = topic + "-" + (if (isKey) "key" else "value")

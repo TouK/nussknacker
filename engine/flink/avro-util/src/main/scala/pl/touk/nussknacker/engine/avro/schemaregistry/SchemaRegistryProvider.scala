@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFact
   * @tparam T - Scheme used to deserialize
   */
 trait SchemaRegistryProvider[T] extends Serializable {
-
   def createSchemaRegistryClient: SchemaRegistryClient
 
   def deserializationSchemaFactory: DeserializationSchemaFactory[T]
@@ -15,5 +14,4 @@ trait SchemaRegistryProvider[T] extends Serializable {
   def serializationSchemaFactory: SerializationSchemaFactory[Any]
 
   def recordFormatter(topic: String): Option[RecordFormatter]
-
 }
