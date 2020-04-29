@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
+import cats.data.Validated.{Invalid, Valid}
+import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
@@ -27,7 +29,10 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
                defaultMode = DualEditorMode.RAW
              )
              @NotBlank
-             topic: String)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
+             topic: String,
+             @ParamName("Schema version")
+             @Nullable
+             version: Integer)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     createKafkaAvroSource(topic, kafkaConfig, SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic), processMetaData, nodeId)
   }
@@ -79,8 +84,15 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
 
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation
-  def createKafkaAvroSource(topic: String, kafkaConfig: KafkaConfig, kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
-                            processMetaData: MetaData, nodeId: NodeId): KafkaSource =
+  def createKafkaAvroSource(topic: String,
+                            kafkaConfig: KafkaConfig,
+                            kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
+                            processMetaData: MetaData,
+                            nodeId: NodeId): KafkaSource = {
+    val typeDefinition = kafkaAvroSchemaProvider.typeDefinition match {
+      case Valid(result) => result
+      case Invalid(e) => throw e
+    }
     new KafkaSource(
       List(topic),
       kafkaConfig,
@@ -88,7 +100,8 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
       kafkaAvroSchemaProvider.recordFormatter,
       processObjectDependencies
     ) with ReturningType {
-      override def returnType: typing.TypingResult = kafkaAvroSchemaProvider.typeDefinition
+      override def returnType: typing.TypingResult = typeDefinition
     }
+  }
 }
-
+}

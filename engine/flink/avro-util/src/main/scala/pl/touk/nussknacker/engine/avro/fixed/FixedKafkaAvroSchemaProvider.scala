@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.engine.avro.fixed
 
+import cats.data.Validated
+import cats.data.Validated.Valid
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.TypedConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroDeserializationSchemaFactory, ConfluentAvroSerializationSchemaFactory, ConfluentSchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaRegistryClientError}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
+import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroException, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 /**
@@ -31,13 +33,14 @@ class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
     override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedConfluentSchemaRegistryClient = {
       val schema: Schema = AvroUtils.createSchema(avroSchema)
       new MockSchemaRegistryClient with SchemaRegistryClient {
-        override def getBySubjectAndVersion(subject: String, version: Int): Schema = schema
+        override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryClientError, Schema] =
+          Validated.valid(schema)
 
-        override def getBySubjectAndId(subject: String, version: Int): Schema = schema
+        override def getLatestSchema(subject: String): Validated[SchemaRegistryClientError, Schema] =
+          Validated.valid(schema)
 
-        override def getLatestSchema(subject: String): Schema = schema
-
-        override def getById(id: Int): Schema = schema
+        override def getById(id: Int): Schema =
+          schema
       }
     }
   }
@@ -52,10 +55,9 @@ class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
   override def serializationSchema: KafkaSerializationSchema[Any] =
     serializationSchemaFactory.create(topic, kafkaConfig)
 
-  override def typeDefinition: typing.TypingResult =
-    AvroSchemaTypeDefinitionExtractor.typeDefinition(AvroUtils.createSchema(avroSchema))
+  override def typeDefinition: Validated[KafkaAvroException, typing.TypingResult] =
+    Valid(AvroSchemaTypeDefinitionExtractor.typeDefinition(AvroUtils.createSchema(avroSchema)))
 
   override def recordFormatter: Option[RecordFormatter] =
     Some(ConfluentAvroToJsonFormatter(factory.createSchemaRegistryClient(kafkaConfig), topic, formatKey))
-
 }

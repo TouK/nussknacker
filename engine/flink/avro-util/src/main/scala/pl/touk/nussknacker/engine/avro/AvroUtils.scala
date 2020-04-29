@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.avro
 
+import cats.data.Validated
+import cats.data.Validated.{Invalid, Valid}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClientError, SchemaRegistryProvider}
 
 import scala.collection.concurrent.TrieMap
 
@@ -53,18 +55,24 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 
   private def getOrUpdateSchemaBySubjectAndVersion(subject: String, version: Int): Schema = {
     schemaBySubjectAndVersionCache.getOrElseUpdate((subject, version),
-      schemaRegistryClient.getBySubjectAndVersion(subject, version))
+      handleClientResponse(schemaRegistryClient.getBySubjectAndVersion(subject, version)))
   }
 
   private def getOrUpdateLatestSchema(subject: String) = {
     // maybe invalidation after some time?
     lastestSchemaBySubjectCache.getOrElseUpdate(subject,
-      schemaRegistryClient.getLatestSchema(subject))
+      handleClientResponse(schemaRegistryClient.getLatestSchema(subject)))
   }
 
+  private def handleClientResponse(response: Validated[SchemaRegistryClientError, Schema]): Schema = {
+    response match {
+      case Valid(schema) => schema
+      case Invalid(error) => throw KafkaAvroException(error.message)
+    }
+  }
 }
 
-object AvroUtils extends Serializable {
+object AvroUtils {
 
   private def parser = new Schema.Parser()
 
@@ -76,5 +84,4 @@ object AvroUtils extends Serializable {
 
   def createSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
-
 }
