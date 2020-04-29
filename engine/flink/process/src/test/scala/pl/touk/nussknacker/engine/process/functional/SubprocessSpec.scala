@@ -121,7 +121,7 @@ class SubprocessSpec extends FunSuite with Matchers {
         canonicalnode.SplitNode(Split("split"),
           List(
             List(canonicalnode.FilterNode(Filter("filter2a", "true"), Nil), FlatNode(BranchEndData(BranchEndDefinition("end1", "join1")))),
-            List(canonicalnode.FilterNode(Filter("filter2b", "true"), Nil), FlatNode(BranchEndData(BranchEndDefinition("end2", "join1")))),
+            List(canonicalnode.FilterNode(Filter("filter2b", "true"), Nil), FlatNode(BranchEndData(BranchEndDefinition("end2", "join1"))))
           )
         )
       ), Some(List(

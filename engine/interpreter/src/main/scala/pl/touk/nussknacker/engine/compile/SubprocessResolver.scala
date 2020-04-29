@@ -25,11 +25,11 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
 
   type ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T]
 
-  def additionalApply[T](value: CompilationValid[T]): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](value.map((Nil, _)))
+  private def additionalApply[T](value: CompilationValid[T]): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](value.map((Nil, _)))
 
-  def validBranches[T](value: T): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](Valid(Nil, value))
+  private def validBranches[T](value: T): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](Valid(Nil, value))
 
-  def invalidBranches[T](value: ProcessCompilationError): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](Invalid(NonEmptyList.of(value)))
+  private def invalidBranches[T](value: ProcessCompilationError): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](Invalid(NonEmptyList.of(value)))
 
   private implicit class RichValidatedWithBranches[T](value: ValidatedWithBranches[T]) {
     def andThen[Y](fun: T => ValidatedWithBranches[Y]): ValidatedWithBranches[Y] = {
@@ -39,8 +39,6 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
       })
     }
   }
-
-
 
   def resolve(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessCompilationError, CanonicalProcess] = {
     val output: ValidatedWithBranches[NonEmptyList[CanonicalBranch]] = canonicalProcess.allStartNodes.map(resolveCanonical(Nil)).sequence
@@ -88,8 +86,6 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
           val nexts = (nextResolvedV, subResolvedV, additionalResolved)
             .mapN { (nodeResolved, nextResolved, additionalResolved) => (replaceCanonicalList(nodeResolved), nextResolved, additionalResolved) }
             .andThen { case (replacement, nextResolved, additionalResolved) =>
-            //println("NEXT " + nextResolved)
-            //println("ADDITIONAL " + additionalResolved)
             additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
               replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
             }

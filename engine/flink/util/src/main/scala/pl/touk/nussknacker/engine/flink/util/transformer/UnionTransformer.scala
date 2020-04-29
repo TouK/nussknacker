@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 
@@ -33,20 +35,29 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
     case (a, _) if Character.isJavaIdentifierPart(a) => a
     case (a, _) if !Character.isJavaIdentifierPart(a) => "_"
   }.mkString
-  
+
+  private def findUniqueParent(contextMap: Map[String, ValidationContext])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[ValidationContext]] = {
+    contextMap.values.toList.distinct match {
+      case Nil => Valid(None)
+      case a::Nil => Valid(Some(a))
+      case more => Invalid(NonEmptyList.of(CustomNodeError(nodeId.id, "Not consistent parent contexts", None)))
+    }
+
+  }
+
   @MethodToInvoke
   def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[String]],
               @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[Any]],
-              @OutputVariableName variableName: String): JoinContextTransformation =
+              @OutputVariableName variableName: String)(implicit nodeId: NodeId): JoinContextTransformation =
     ContextTransformation
       .join.definedBy { contexts =>
-      val parent = contexts.values.flatMap(_.parent).headOption
-      val newType = TypedObjectTypingResult(contexts.map {
+      findUniqueParent(contexts).map { parent =>
+        val newType = TypedObjectTypingResult(contexts.map {
           case (branchId, _) =>
             sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
         } + (KeyField -> Typed[String]))
-
-      Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
+        ValidationContext(Map(variableName -> newType), Map.empty, parent)
+      }
     }.implementedBy(
       new FlinkCustomJoinTransformation {
         override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
