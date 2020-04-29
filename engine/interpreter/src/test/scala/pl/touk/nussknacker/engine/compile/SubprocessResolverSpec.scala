@@ -300,7 +300,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         canonicalnode.SplitNode(Split("split"),
           List(
             List(FlatNode(Filter("filter2a", "false")), FlatNode(BranchEndData(BranchEndDefinition("join2a", "join1")))),
-            List(FlatNode(Filter("filter2b", "false")), FlatNode(BranchEndData(BranchEndDefinition("join2b", "join1")))),
+            List(FlatNode(Filter("filter2b", "false")), FlatNode(BranchEndData(BranchEndDefinition("join2b", "join1"))))
           )
         )
       ), Some(List(

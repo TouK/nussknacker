@@ -115,8 +115,7 @@ object ProcessConverter {
         val nodes = nextInner._1.flatten
         val edges = nextInner._2.flatten
         val connecting = outputs
-          .flatMap{ case (name, outputEdges) =>
-            outputEdges.headOption.map(_.id).map(displayablenode.Edge(data.id, _, Some(SubprocessOutput(name))))}.toList
+          .flatMap{ case (name, outputEdges) => createNextEdge(data.id, outputEdges, Some(SubprocessOutput(name))) }.toList
         (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
       case Nil =>
         (List(),List())

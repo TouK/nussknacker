@@ -127,7 +127,7 @@ class SubprocessSpec extends FunSuite with Matchers {
       ), Some(List(
         FlatNode(Join("join1", Some("output"), "joinBranchExpression", Nil, List(
           BranchParameters("end1", List(Parameter("value", "#ala"))),
-          BranchParameters("end2", List(Parameter("value", "#ala"))),
+          BranchParameters("end2", List(Parameter("value", "#ala")))
         ), None)),
         FlatNode(SubprocessOutputDefinition("output22", "output33", Nil, None))
       ):: Nil)
