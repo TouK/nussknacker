@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer, WriterT}
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
@@ -20,15 +19,43 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
 
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
-  def resolve(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessCompilationError, CanonicalProcess] =
-    canonicalProcess.mapAllNodesValidated(resolveCanonical(List()))
+  type CanonicalBranch = List[CanonicalNode]
 
-  private def resolveCanonical(idPrefix: List[String]) :List[CanonicalNode] => ValidatedNel[ProcessCompilationError, List[CanonicalNode]] = {
+  type WithAdditionalBranches[T] = Writer[List[CanonicalBranch], T]
+
+  type ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T]
+
+  def additionalApply[T](value: CompilationValid[T]): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](value.map((Nil, _)))
+
+  def validBranches[T](value: T): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](Valid(Nil, value))
+
+  def invalidBranches[T](value: ProcessCompilationError): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](Invalid(NonEmptyList.of(value)))
+
+  private implicit class RichValidatedWithBranches[T](value: ValidatedWithBranches[T]) {
+    def andThen[Y](fun: T => ValidatedWithBranches[Y]): ValidatedWithBranches[Y] = {
+      WriterT[CompilationValid, List[CanonicalBranch], Y](value.run.andThen { case (additional, iValue) =>
+        val result = fun(iValue)
+        result.mapWritten(additional ++ _).run
+      })
+    }
+  }
+
+
+
+  def resolve(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessCompilationError, CanonicalProcess] = {
+    val output: ValidatedWithBranches[NonEmptyList[CanonicalBranch]] = canonicalProcess.allStartNodes.map(resolveCanonical(Nil)).sequence
+    output.run.map { case (additional, original) =>
+      val allBranches = additional.foldLeft(original)(_.append(_))
+      canonicalProcess.withNodes(allBranches)
+    }
+  }
+
+  private def resolveCanonical(idPrefix: List[String]) :CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
       case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.size > 1=>
-        Invalid(NonEmptyList.of(DisablingManyOutputsSubprocess(dataId, nextNodes.keySet)))
+        invalidBranches(DisablingManyOutputsSubprocess(dataId, nextNodes.keySet))
       case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.isEmpty =>
-        Invalid(NonEmptyList.of(DisablingNoOutputsSubprocess(dataId)))
+        invalidBranches(DisablingNoOutputsSubprocess(dataId))
       case canonicalnode.Subprocess(data@SubprocessInput(_, _, _, Some(true), _), nextNodesMap) =>
         //TODO: disabling nodes should be in one place
         val output = nextNodesMap.keys.head
@@ -37,57 +64,73 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
           FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data))::FlatNode(SubprocessOutput(outputId, output, List.empty, None))::resolvedNexts
         }
       case canonicalnode.Subprocess(subprocessInput:SubprocessInput, nextNodes) =>
-        subprocesses.get(subprocessInput.ref.id) match {
-          case Some(CanonicalProcess(_, _, FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes, _)) =>
-            checkProcessParameters(subprocessInput.ref, parameters.map(_.name), subprocessInput.id).andThen { _ =>
-              val nextResolvedV = nextNodes.map { case (k, v) =>
-                resolveCanonical(idPrefix)(v).map((k, _))
-              }.toList.sequence[CompilationValid, (String, List[CanonicalNode])].map(_.toMap)
-              val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(nodes)
 
-              (nextResolvedV, subResolvedV).mapN { (nodeResolved, nextResolved) =>
-                replaceCanonicalList(nodeResolved)(nextResolved)
-              }.andThen(identity).map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(subprocessInput.copy(subprocessParams = Some(parameters)))) :: replaced)
+        additionalApply(Validated.fromOption(subprocesses.get(subprocessInput.ref.id), NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id))).andThen { subprocess =>
+          val additionalBranches = subprocess.allStartNodes.collect {
+            case a@FlatNode(_: Join)::_ => a
+          }
+          Validated.fromOption(subprocess.allStartNodes.collectFirst {
+            case FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes => (parameters, nodes, additionalBranches)
+          }, NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
+        }).andThen { case (parameters, nodes, additionalBranches) =>
+          checkProcessParameters(subprocessInput.ref, parameters.map(_.name), subprocessInput.id).map { _ =>
+            (parameters, nodes, additionalBranches)
+          }
+
+        }.andThen { case (parameters, nodes, additionalBranches) =>
+          val nextResolvedV = nextNodes.map { case (k, v) =>
+            resolveCanonical(idPrefix)(v).map((k, _))
+          }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(_.toMap)
+          val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(nodes)
+          val additionalResolved = additionalBranches.map(resolveCanonical(idPrefix :+ subprocessInput.id)).sequence
+
+
+          val nexts = (nextResolvedV, subResolvedV, additionalResolved)
+            .mapN { (nodeResolved, nextResolved, additionalResolved) => (replaceCanonicalList(nodeResolved), nextResolved, additionalResolved) }
+            .andThen { case (replacement, nextResolved, additionalResolved) =>
+            //println("NEXT " + nextResolved)
+            //println("ADDITIONAL " + additionalResolved)
+            additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
+              replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
             }
-          case Some(_) =>
-            Invalid(NonEmptyList.of(InvalidSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
-          case _ =>
-            Invalid(NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
+          }
+          nexts.map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(subprocessInput.copy(subprocessParams = Some(parameters)))) :: replaced)
         }
     }, NodeDataFun.nodeIdPrefix(idPrefix))
   }
 
-  private def checkProcessParameters(ref: SubprocessRef, parameters: List[String], nodeId: String): CompilationValid[Unit] = {
-    Validations.validateSubProcessParameters[ProcessCompilationError](parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
+  private def checkProcessParameters(ref: SubprocessRef, parameters: List[String], nodeId: String): ValidatedWithBranches[Unit] = {
+    val results = Validations.validateSubProcessParameters[ProcessCompilationError](parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
+    WriterT[CompilationValid, List[CanonicalBranch], Unit](results.map((Nil, _)))
   }
 
-  private def replaceCanonicalList(replacement: Map[String, List[CanonicalNode]]): List[CanonicalNode] => CompilationValid[List[CanonicalNode]] = {
+  private def replaceCanonicalList(replacement: Map[String, List[CanonicalNode]]): List[CanonicalNode] => ValidatedWithBranches[List[CanonicalNode]] = {
 
     iterateOverCanonicals({
       case FlatNode(SubprocessOutputDefinition(id, name, fields, add)) => replacement.get(name) match {
-        case Some(nodes) => Valid(FlatNode(SubprocessOutput(id, name, fields, add)) :: nodes)
-        case None => Invalid(NonEmptyList.of(UnknownSubprocessOutput(name, id)))
+        case Some(nodes) => validBranches(FlatNode(SubprocessOutput(id, name, fields, add)) :: nodes)
+        case None => invalidBranches(UnknownSubprocessOutput(name, id))
       }
     }, NodeDataFun.id)
   }
 
-  private def iterateOverCanonicals(action: PartialFunction[CanonicalNode, CompilationValid[List[CanonicalNode]]], dataAction: NodeDataFun)  =
-    (l:List[CanonicalNode]) => l.map(iterateOverCanonical(action, dataAction)).sequence[CompilationValid, List[CanonicalNode]].map(_.flatten)
+  private def iterateOverCanonicals(action: PartialFunction[CanonicalNode, ValidatedWithBranches[List[CanonicalNode]]], dataAction: NodeDataFun):
+    List[CanonicalNode] => ValidatedWithBranches[List[CanonicalNode]] =
+    (l:List[CanonicalNode]) => l.map(iterateOverCanonical(action, dataAction)).sequence[ValidatedWithBranches, List[CanonicalNode]].map(_.flatten)
 
-  private def iterateOverCanonical(action: PartialFunction[CanonicalNode, CompilationValid[List[CanonicalNode]]],
-                                     dataAction: NodeDataFun)
-  : (CanonicalNode => CompilationValid[List[CanonicalNode]]) = cnode => {
+  private def iterateOverCanonical(action: PartialFunction[CanonicalNode, ValidatedWithBranches[CanonicalBranch]],
+                                   dataAction: NodeDataFun): CanonicalNode => ValidatedWithBranches[CanonicalBranch] = cnode => {
     val listFun = iterateOverCanonicals(action, dataAction)
-      action.applyOrElse[CanonicalNode, CompilationValid[List[CanonicalNode]]](cnode, {
-        case FlatNode(data) => Valid(List(FlatNode(dataAction(data))))
+      action.applyOrElse[CanonicalNode, ValidatedWithBranches[CanonicalBranch]](cnode, {
+        case FlatNode(data) => validBranches(List(FlatNode(dataAction(data))))
         case canonicalnode.FilterNode(data, nextFalse) =>
           listFun(nextFalse).map(canonicalnode.FilterNode(dataAction(data), _)).map(List(_))
         case canonicalnode.SplitNode(data, nexts) =>
-          nexts.map(listFun).sequence[CompilationValid, List[CanonicalNode]]
+          nexts.map(listFun).sequence[ValidatedWithBranches, List[CanonicalNode]]
             .map(canonicalnode.SplitNode(dataAction(data), _)).map(List(_))
         case canonicalnode.SwitchNode(data, nexts, defaultNext) =>
           (
-            nexts.map(cas => listFun(cas.nodes).map(replaced => canonicalnode.Case(cas.expression, replaced))).sequence[CompilationValid, canonicalnode.Case],
+            nexts.map(cas => listFun(cas.nodes).map(replaced => canonicalnode.Case(cas.expression, replaced))).sequence[ValidatedWithBranches, canonicalnode.Case],
             listFun(defaultNext)
           ).mapN { (resolvedCases, resolvedDefault) =>
             List(canonicalnode.SwitchNode(dataAction(data), resolvedCases, resolvedDefault))
@@ -95,7 +138,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
         case canonicalnode.Subprocess(data, nodes) =>
           nodes.map { case (k, v) =>
             listFun(v).map(k -> _)
-          }.toList.sequence[CompilationValid, (String, List[CanonicalNode])].map(replaced => List(canonicalnode.Subprocess(dataAction(data), replaced.toMap)))
+          }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(replaced => List(canonicalnode.Subprocess(dataAction(data), replaced.toMap)))
       }
     )
   }
@@ -105,10 +148,10 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
   }
 
   object NodeDataFun {
-    val id = new NodeDataFun {
+    val id: NodeDataFun = new NodeDataFun {
       override def apply[T <: NodeData](n: T): T = n
     }
-    def nodeIdPrefix(prefix:List[String]) = new NodeDataFun {
+    def nodeIdPrefix(prefix:List[String]): NodeDataFun = new NodeDataFun {
       override def apply[T <: NodeData](n: T): T = {
         pl.touk.nussknacker.engine.graph.node.prefixNodeId(prefix, n)
       }

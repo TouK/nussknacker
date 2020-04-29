@@ -40,12 +40,13 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
               @OutputVariableName variableName: String): JoinContextTransformation =
     ContextTransformation
       .join.definedBy { contexts =>
+      val parent = contexts.values.flatMap(_.parent).headOption
       val newType = TypedObjectTypingResult(contexts.map {
           case (branchId, _) =>
             sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
         } + (KeyField -> Typed[String]))
 
-      Valid(ValidationContext(Map(variableName -> newType)))
+      Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
     }.implementedBy(
       new FlinkCustomJoinTransformation {
         override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
