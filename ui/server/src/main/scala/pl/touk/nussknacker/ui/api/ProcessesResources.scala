@@ -6,44 +6,42 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import cats.data.Validated.{Invalid, Valid}
-import cats.instances.future._
 import cats.data.{EitherT, Validated}
-import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager}
-import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, WriteProcessRepository}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
-import pl.touk.nussknacker.ui.util._
-import pl.touk.nussknacker.ui._
-import EspErrorToHttp._
-import cats.Monad
+import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager}
+import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
+import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessShapeFetchStrategy, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessShapeFetchStrategy, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.api.EspErrorToHttp._
+import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
+import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnCategoryChanged, _}
+import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.util._
+import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.listener.ProcessChangeListener
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          writeRepository: WriteProcessRepository,
@@ -181,6 +179,25 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           processId(processName) { processId =>
             complete {
               processRepository.fetchProcessActions(processId.id)
+            }
+          }
+        } ~ path("processes" / Segment / "preparedName") { processName =>
+          processId(processName) { processId =>
+            complete {
+              processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap {
+                case Some(process) =>
+                  process.json match {
+                    case Some(displayable) =>
+                      val processData = typeToConfig.mapValues(_.modelData).forType(displayable.processingType)
+                      val preparedName = (processData.map(_.objectNaming), processData.map(_.processConfig)) match {
+                        case (Some(naming), Some(conf)) => naming.prepareName(processName, conf, new NamingContext(FlinkUsageKey))
+                        case _ => processName
+                      }
+                      Future.successful(HttpResponse(status = StatusCodes.OK, entity = preparedName))
+                    case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Prepared name unavailable for this process"))
+                  }
+                case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+              }
             }
           }
         } ~ path("processes" / Segment) { processName =>
