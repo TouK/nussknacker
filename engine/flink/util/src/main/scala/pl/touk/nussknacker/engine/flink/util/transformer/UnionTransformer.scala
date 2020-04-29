@@ -37,10 +37,10 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
   }.mkString
 
   private def findUniqueParent(contextMap: Map[String, ValidationContext])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[ValidationContext]] = {
-    contextMap.values.toList.distinct match {
+    contextMap.values.map(_.parent).toList.distinct match {
       case Nil => Valid(None)
-      case a::Nil => Valid(Some(a))
-      case more => Invalid(NonEmptyList.of(CustomNodeError(nodeId.id, "Not consistent parent contexts", None)))
+      case a::Nil => Valid(a)
+      case more => Invalid(NonEmptyList.of(CustomNodeError(nodeId.id, s"Not consistent parent contexts: ${more}", None)))
     }
 
   }
