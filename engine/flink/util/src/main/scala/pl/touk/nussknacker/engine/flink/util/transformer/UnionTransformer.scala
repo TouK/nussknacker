@@ -9,10 +9,14 @@ import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
+import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 
-case object UnionTransformer extends UnionTransformer(None)
+case object UnionTransformer extends UnionTransformer(None) {
+
+  val KeyField = "key"
+
+}
 
 /**
  * It creates union of joined data streams. Produced variable will be a map which looks like:
@@ -33,8 +37,6 @@ case object UnionTransformer extends UnionTransformer(None)
 class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedValue[ValueWithContext[Any]]]])
   extends CustomStreamTransformer with LazyLogging {
 
-  private val KeyField = "key"
-
   override def canHaveManyInputs: Boolean = true
 
   //we can put e.g. "? this is [my funny name]" as node name...
@@ -54,7 +56,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedVa
       val newType = TypedObjectTypingResult(contexts.map {
           case (branchId, _) =>
             sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
-        } + (KeyField -> Typed[String]))
+        } + (UnionTransformer.KeyField -> Typed[String]))
 
       Valid(ValidationContext(Map(variableName -> newType)))
     }.implementedBy(
@@ -64,21 +66,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedVa
             case (branchId, stream) =>
               val keyParam = keyByBranchId(branchId)
               val valueParam = valueByBranchId(branchId)
-              stream.map(new AbstractLazyParameterInterpreterFunction(context.lazyParameterHelper)
-                with MapFunction[Context, ValueWithContext[Any]] {
-
-                private lazy val evaluateKey =  lazyParameterInterpreter.syncInterpretationFunction(keyParam)
-                private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
-
-                override def map(context: Context): ValueWithContext[Any] = {
-                  import scala.collection.JavaConverters._
-                  val keyValue = evaluateKey(context)
-                  ValueWithContext(Map(
-                    KeyField -> Option(keyValue).map(_.toString).orNull,
-                    sanitizeBranchName(branchId) -> evaluateValue(context)
-                  ).asJava, context)
-                }
-              })
+              stream.map(new UnionMapFunction(sanitizeBranchName(branchId), keyParam, valueParam, context.lazyParameterHelper))
           }
           val connectedStream = valuesWithContexts.reduce(_.connect(_).map(identity, identity))
 
@@ -88,5 +76,23 @@ class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedVa
         }
       }
     )
+
+}
+
+class UnionMapFunction(valueField: String,
+                       keyParam: LazyParameter[CharSequence], valueParam: LazyParameter[Any],
+                       lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+  extends AbstractLazyParameterInterpreterFunction(lazyParameterHelper) with MapFunction[Context, ValueWithContext[Any]] {
+
+  private lazy val evaluateKey =  lazyParameterInterpreter.syncInterpretationFunction(keyParam)
+  private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
+
+  override def map(context: Context): ValueWithContext[Any] = {
+    import scala.collection.JavaConverters._
+    ValueWithContext(Map(
+      UnionTransformer.KeyField -> Option(evaluateKey(context)).map(_.toString).orNull,
+      valueField -> evaluateValue(context)
+    ).asJava, context)
+  }
 
 }
