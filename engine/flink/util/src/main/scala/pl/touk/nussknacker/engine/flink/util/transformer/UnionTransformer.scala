@@ -12,21 +12,18 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 
-/**
-  * It creates union of joined data streams. Produced variable will be a map which looks like:
-  * ```
-  * {
-  *   key: result_of_evaluation_of_key_expression_for_branch1
-  *   branchId: result_of_evaluation_of_value_expression_for_branchId
-  * }
-  * ```
-  * `branchId` field of map will have Unknown type. If you want to specify it, you can pass type
-  * as a Map in `definition` parameter.
-  */
 case object UnionTransformer extends UnionTransformer(None)
 
 /**
- * Base implementation of `UnionTransformer`.
+ * It creates union of joined data streams. Produced variable will be a map which looks like:
+ * ```
+ * {
+ *   key: result_of_evaluation_of_key_expression_for_branch1
+ *   branchId: result_of_evaluation_of_value_expression_for_branchId
+ * }
+ * ```
+ * `branchId` field of map will have Unknown type. If you want to specify it, you can pass type
+ * as a Map in `definition` parameter.
  *
  * @param timestampAssigner Optional timestamp assigner that will be used on connected stream.
  *                          Make notice that Flink produces min watermark(left stream watermark, right stream watermark)
