@@ -11,7 +11,7 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
+import pl.touk.nussknacker.engine.flink.api.{NkGlobalParameters, RawParameters}
 import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -77,7 +77,8 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Matche
     val creator: ProcessConfigCreator = processInvoker.prepareCreator(List.empty, config)
 
     val env = StoppableExecutionEnvironment(new Configuration())
-    NkGlobalParameters.setInContext(env.getConfig, NkGlobalParameters("fooBuildInfo", ProcessVersion(1L, ProcessName("fooProcess"), "fooUser", None), config))
+    NkGlobalParameters.setInContext(env.getConfig, NkGlobalParameters("fooBuildInfo", ProcessVersion(1L, ProcessName("fooProcess"), "fooUser", None),
+      config, new RawParameters(process.id, None)))
     try {
       FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
         .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
