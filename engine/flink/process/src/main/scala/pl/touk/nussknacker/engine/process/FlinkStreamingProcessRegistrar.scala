@@ -48,6 +48,7 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 import shapeless.syntax.typeable._
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -116,20 +117,23 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       case _ => logger.debug("Using default state backend")
     }
 
-    {
-      val branchEnds = processWithDeps.sources.toList
-        .collect { case e: SourcePart => e }
-        .map(registerSourcePart).foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){ _ ++ _}
-
-      //TODO JOIN - here we need recursion for nested joins
-      branchEnds.groupBy(_._1.joinId).foreach {
+    //TODO JOIN - here we need recursion for nested joins
+    @tailrec
+    def registerBranchEnds(branchEnds: Map[BranchEndDefinition, DataStream[InterpretationResult]]): Unit = {
+      if (branchEnds.isEmpty) {
+        return
+      }
+      println(s"registering branch ends: ${branchEnds.keys}")
+      val nextParts = branchEnds.groupBy(_._1.joinId).map {
         case (joinId, inputs) =>
           val joinPart = processWithDeps.sources.toList
             .collect { case e: CustomNodePart if e.id == joinId => e } match {
-            case head::Nil => head
+            case head :: Nil => head
             case Nil => throw new IllegalArgumentException(s"Invalid process structure, no $joinId defined")
             case moreThanOne => throw new IllegalArgumentException(s"Invalid process structure, more than one $joinId defined: $moreThanOne")
           }
+          println(s"registering: ${joinId} ${joinPart}")
+
 
           val transformer = joinPart.transformer match {
             case joinTransformer: FlinkCustomJoinTransformation => joinTransformer
@@ -142,12 +146,23 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
           val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
           val newStart = transformer.transform(inputs
-              .map(kv => (kv._1.id, kv._2.map(_.finalContext))), nodeContext(joinId)).map(newContextFun)
+            .map(kv => (kv._1.id, kv._2.map(_.finalContext))), nodeContext(joinId)).map(newContextFun)
 
           val afterSplit = wrapAsync(newStart, joinPart.node, joinPart.validationContext, globalParameters, "branchInterpretation")
+          val branchEnds = joinPart.ends.flatMap(_.cast[BranchEnd]).map(be =>  be.definition ->
+            afterSplit.getSideOutput(OutputTag[InterpretationResult](be.nodeId))).toMap
 
-          registerParts(afterSplit, joinPart.nextParts, joinPart.ends)
-      }
+          registerParts(afterSplit, joinPart.nextParts, joinPart.ends) ++ branchEnds
+      }.foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){ _ ++ _}
+      println(s"next parts: ${nextParts.keys}")
+      registerBranchEnds(nextParts)
+    }
+    {
+      val branchEnds = processWithDeps.sources.toList
+        .collect { case e: SourcePart => e }
+        .map(registerSourcePart).foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){ _ ++ _}
+
+      registerBranchEnds(branchEnds)
     }
 
     def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, DataStream[InterpretationResult]] = {
@@ -225,7 +240,11 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
               .map(newContextFun)
           val afterSplit = wrapAsync(newStart, node, validationContext, globalParameters, "customNodeInterpretation")
 
-          registerParts(afterSplit, nextParts, ends)
+          val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  be.definition ->
+            afterSplit.getSideOutput(OutputTag[InterpretationResult](be.nodeId))).toMap
+          println(s"BranchEnds aftersplit: ${branchEnds}")
+
+          registerParts(afterSplit, nextParts, ends) ++ branchEnds
       }
 
     def wrapAsync(beforeAsync: DataStream[Context], node: SplittedNode[_], validationContext: ValidationContext, globalParameters: Option[NkGlobalParameters], name: String) : DataStream[Unit] = {
