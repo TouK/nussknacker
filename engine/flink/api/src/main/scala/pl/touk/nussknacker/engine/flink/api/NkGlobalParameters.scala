@@ -37,6 +37,9 @@ case class NkGlobalParameters(buildInfo: String,
 case class ConfigGlobalParameters(useLegacyMetrics: Option[Boolean],
                                   explicitUidInStatefulOperators: Option[Boolean])
 
+case class RawParameters(processOriginalName: String,
+                         namespace: Option[String])
+
 object NkGlobalParameters {
 
   def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config, rawParameters: RawParameters): NkGlobalParameters = {
@@ -54,11 +57,3 @@ object NkGlobalParameters {
 
 }
 
-case class RawParameters(processOriginalName: String,
-                         namespace: Option[String])
-
-object RawParameters {
-  def apply(processOriginalName: String, namespace: Option[String]): RawParameters =
-    new RawParameters(processOriginalName, namespace)
-
-}
