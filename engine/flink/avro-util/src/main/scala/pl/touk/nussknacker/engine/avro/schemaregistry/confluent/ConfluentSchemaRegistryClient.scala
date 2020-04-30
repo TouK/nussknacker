@@ -4,7 +4,7 @@ import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => ConfluenticSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => ConfluenticSchemaRegistryClient}
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaRegistryClientError}
@@ -16,26 +16,32 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with Confluenti
 
   override def getLatestSchema(subject: String): Validated[SchemaRegistryClientError, Schema] =
     handleClientError(subject, None) {
-      AvroUtils.createSchema(getLatestSchemaMetadata(subject).getSchema)
+      getLatestSchemaMetadata(subject)
     }
 
   override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryClientError, Schema] =
     handleClientError(subject, Some(version)) {
-      AvroUtils.createSchema(getSchemaMetadata(subject, version).getSchema)
+      getSchemaMetadata(subject, version)
     }
 
-  def handleClientError(subject: String, version: Option[Int])(createSchemaAction: => Schema): Validated[SchemaRegistryClientError, Schema] =
+  protected def handleClientError(subject: String, version: Option[Int])(schemaMetadata: => SchemaMetadata): Validated[SchemaRegistryClientError, Schema] =
     try {
-      valid(createSchemaAction)
+      val schema = schemaMetadata.getSchema
+      if (schema == null) {
+        invalid(SchemaRegistryClientError(s"Schema for subject `$subject` and version `${versionToString(version)}` doesn't exists.", None))
+      } else {
+        valid(AvroUtils.createSchema(schema))
+      }
     } catch {
-      case exc: java.io.IOException =>
-        invalid(SchemaRegistryClientError(s"Schema for subject `$subject` and version `${version.toString}` doesn't exists.", exc.getMessage))
       case exc: RestClientException if exc.getErrorCode == subjectNotFoundCode =>
-        invalid(SchemaRegistryClientError(s"Subject `$subject` doesn't exists.", exc.getMessage))
+        invalid(SchemaRegistryClientError(s"Subject `$subject` doesn't exists.", Some(exc.getMessage)))
       case exc: RestClientException if exc.getErrorCode == versionNotFoundCode =>
-        invalid(SchemaRegistryClientError(s"Version `${version.map(_.toString).getOrElse("")}` for subject `$subject` doesn't exists.", exc.getMessage))
+        invalid(SchemaRegistryClientError(s"Version `${versionToString(version)}` for subject `$subject` doesn't exists.", Some(exc.getMessage)))
       case exc: Throwable =>
         logger.warn("Unknown error with fetching schema", exc)
-        invalid(SchemaRegistryClientError("Unknown error with fetching schema.", exc.getMessage))
+        invalid(SchemaRegistryClientError("Unknown error with fetching schema.", Some(exc.getMessage)))
     }
+
+  private def versionToString(version: Option[Int]): String =
+    version.map(_.toString).getOrElse("")
 }

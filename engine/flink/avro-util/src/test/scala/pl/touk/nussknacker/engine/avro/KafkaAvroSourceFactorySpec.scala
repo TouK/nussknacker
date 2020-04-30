@@ -63,7 +63,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
       r
     }
 
-    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, RecordSchemaV2, RecordTopic)
+    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 1, RecordSchemaV1, RecordTopic)
   }
 
   it("should read generated record in v2") {
@@ -75,7 +75,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
       r
     }
 
-    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, RecordSchemaV2, RecordTopic)
+    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 2, RecordSchemaV2, RecordTopic)
   }
 
   it("should read generated record in last version") {
@@ -87,7 +87,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
       r
     }
 
-    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, RecordSchemaV2, RecordTopic)
+    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, null, RecordSchemaV2, RecordTopic)
   }
 
   it("should throw exception when schema doesn't exist") {
@@ -100,20 +100,34 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     }
 
     assertThrows[KafkaAvroException] {
-      readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, RecordSchemaV2, "fake-topic")
+      readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 1, RecordSchemaV2, "fake-topic")
+    }
+  }
+
+  it("should throw exception when schema version doesn't exist") {
+    val givenObj = {
+      val r = new GenericData.Record(RecordSchemaV2)
+      r.put("first", "Jan")
+      r.put("middle", "Maria")
+      r.put("last", "Kowalski")
+      r
+    }
+
+    assertThrows[KafkaAvroException] {
+      readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 3, RecordSchemaV2, RecordTopic)
     }
   }
 
   it("should read last generated simple object") {
     val givenObj = 123123
 
-    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, IntSchema, IntTopic)
+    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 1, IntSchema, IntTopic)
   }
 
   it("should read last generated record as a specific class") {
     val givenObj = FullName("Jan", "Maria", "Nowak")
 
-    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = true), givenObj, RecordSchemaV2, RecordTopic)
+    roundTripSingleObject(createAvroSourceFactory(useSpecificAvroReader = true), givenObj, 2, RecordSchemaV2, RecordTopic)
   }
 
   it("should read last generated key-value object") {
@@ -123,19 +137,27 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     val serializedValue = valueSerializer.serialize(IntTopic, givenObj._2)
     kafkaClient.sendRawMessage(IntTopic, serializedKey, serializedValue, Some(0))
 
-    readLastMessageAndVerify(createKeyValueAvroSourceFactory[Int, Int], givenObj, IntSchema, IntTopic)
+    readLastMessageAndVerify(createKeyValueAvroSourceFactory[Int, Int], givenObj, 1, IntSchema, IntTopic)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], givenObj: Any, exceptedSchema: Schema, topic: String): Assertion = {
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_],
+                                    givenObj: Any,
+                                    schemaVersion: Integer,
+                                    exceptedSchema: Schema,
+                                    topic: String): Assertion = {
     val serializedObj = valueSerializer.serialize(topic, givenObj)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, Some(0))
 
-    readLastMessageAndVerify(sourceFactory, givenObj, exceptedSchema, topic)
+    readLastMessageAndVerify(sourceFactory, givenObj, schemaVersion, exceptedSchema, topic)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], givenObj: Any, topic: String): Assertion = {
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_],
+                                       givenObj: Any,
+                                       schemaVersion: Integer,
+                                       exceptedSchema: Schema,
+                                       topic: String): Assertion = {
     val source = sourceFactory
-      .create(MetaData("", StreamMetaData()), topic, null)(NodeId(""))
+      .create(MetaData("", StreamMetaData()), topic, schemaVersion)(NodeId(""))
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef]]
 
     source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(exceptedSchema)
@@ -223,10 +245,10 @@ object MockSchemaRegistry {
   )
 
   val Factory: MockConfluentSchemaRegistryClientFactory = new confluent.MockConfluentSchemaRegistryClientFactoryBuilder()
-    .register(RecordTopic, RecordSchemaV1)
-    .register(RecordTopic, RecordSchemaV2)
-    .register(IntTopic, IntSchema)
-    .register(IntTopic, IntSchema, isKey = true)
+    .register(RecordTopic, RecordSchemaV1, 1, false)
+    .register(RecordTopic, RecordSchemaV2, 2, false)
+    .register(IntTopic, IntSchema, 1, false)
+    .register(IntTopic, IntSchema, 1, true)
     .build
 }
 

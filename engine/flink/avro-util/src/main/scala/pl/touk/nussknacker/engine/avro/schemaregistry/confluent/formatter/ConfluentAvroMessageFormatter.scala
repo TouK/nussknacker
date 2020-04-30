@@ -4,7 +4,7 @@ import java.io.PrintStream
 import java.nio.ByteBuffer
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import io.confluent.kafka.serializers.AbstractKafkaAvroDeserializer
+import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AvroSchemaUtils}
 import org.apache.avro.AvroRuntimeException
 import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.io.EncoderFactory
@@ -18,13 +18,14 @@ import org.apache.kafka.common.errors.SerializationException
   */
 private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: SchemaRegistryClient) extends AbstractKafkaAvroDeserializer {
 
-  schemaRegistry = schemaRegistryClient
-
   private val encoderFactory = EncoderFactory.get
 
-  def writeTo(data: Array[Byte], isKey: Boolean, output: PrintStream): Unit = {
-    val obj = deserialize(false, null, isKey, data, null)
-    val schema = getSchema(obj)
+  schemaRegistry = schemaRegistryClient
+
+  def writeTo(data: Array[Byte], output: PrintStream): Unit = {
+    val obj = deserialize(data)
+    val schema = AvroSchemaUtils.getSchema(obj)
+
     try {
       val encoder = encoderFactory.jsonEncoder(schema, output)
       val writer = new GenericDatumWriter[AnyRef](schema)
@@ -37,9 +38,7 @@ private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: Sch
       encoder.flush()
     } catch {
       case ex: AvroRuntimeException =>
-        throw new SerializationException(
-          String.format("Error serializing Avro data of schema %s to json", schema), ex)
+        throw new SerializationException(String.format("Error serializing Avro data of schema %s to json", schema), ex)
     }
   }
-
 }

@@ -15,7 +15,7 @@ trait SchemaRegistryClient extends Serializable {
       .getOrElse(getLatestSchema(subject))
 }
 
-case class SchemaRegistryClientError(message: String, description: String)
+case class SchemaRegistryClientError(message: String, description: Option[String])
 
 trait SchemaRegistryClientFactory extends Serializable {
   def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient

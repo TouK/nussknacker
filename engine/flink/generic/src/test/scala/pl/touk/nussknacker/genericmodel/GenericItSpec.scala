@@ -97,21 +97,21 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .filter("name-filter", filter)
       .sink("end", "#input","kafka-json", "topic" -> s"'$JsonOutTopic'")
 
-  private def avroProcess(version: Option[Int]) =
+  private def avroProcess(version: Integer) =
     EspProcessBuilder
       .id("avro-test")
       .parallelism(1)
       .exceptionHandler()
-      .source("start", "kafka-avro", "topic" -> s"'$AvroInTopic'", "Schema version" -> version.map(_.toString).getOrElse("").toString)
+      .source("start", "kafka-avro", "topic" -> s"'$AvroInTopic'", "Schema version" -> versionParam(version))
       .filter("name-filter", "#input.first == 'Jan'")
       .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroOutTopic'")
 
-  private def avroFromScratchProcess(version: Option[Int]) =
+  private def avroFromScratchProcess(version: Integer) =
     EspProcessBuilder
       .id("avro-from-scratch-test")
       .parallelism(1)
       .exceptionHandler()
-      .source("start", "kafka-avro", "topic" -> s"'$AvroFromScratchInTopic'", "Schema version" -> version.map(_.toString).getOrElse("").toString)
+      .source("start", "kafka-avro", "topic" -> s"'$AvroFromScratchInTopic'", "Schema version" -> versionParam(version))
       .sink("end", s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('$AvroFromScratchOutTopic'))",
         "kafka-avro", "topic" -> s"'$AvroFromScratchOutTopic'")
 
@@ -126,6 +126,9 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       )
       .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
       .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroTypedOutTopic'")
+
+  private def versionParam(version: Integer) =
+    if (null != version) version.toString else ""
 
   test("should read json object from kafka, filter and save it to kafka") {
     kafkaClient.sendMessage(JsonInTopic, givenNotMatchingJsonObj)
@@ -154,7 +157,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     send(givenNotMatchingAvroObj, AvroInTopic)
     send(givenMatchingAvroObj, AvroInTopic)
 
-    run(avroProcess(Option.empty)) {
+    run(avroProcess(1)) {
       val consumer = kafkaClient.createConsumer()
       val processed = consumeOneAvroMessage(AvroOutTopic)
       processed shouldEqual List(givenMatchingAvroObj)
@@ -164,7 +167,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   test("should read avro object from kafka and save new one created from scratch") {
     send(givenMatchingAvroObj, AvroFromScratchInTopic)
 
-    run(avroFromScratchProcess(Option.empty)) {
+    run(avroFromScratchProcess(1)) {
       val processed = consumeOneAvroMessage(AvroFromScratchOutTopic)
       processed shouldEqual List(givenMatchingAvroObj)
     }
@@ -313,12 +316,12 @@ object MockSchemaRegistry extends Serializable {
     """.stripMargin
 
   val factory: MockConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactoryBuilder()
-    .registerStringSchema(AvroInTopic, RecordSchemaString)
-    .registerStringSchema(AvroOutTopic, RecordSchemaString)
-    .registerStringSchema(AvroFromScratchInTopic, RecordSchemaString)
-    .registerStringSchema(AvroFromScratchOutTopic, RecordSchemaString)
-    .registerStringSchema(AvroTypedInTopic, RecordSchemaString)
-    .registerStringSchema(AvroTypedOutTopic, RecordSchemaString)
+    .register(AvroInTopic, RecordSchemaString, 1, false)
+    .register(AvroOutTopic, RecordSchemaString, 1, false)
+    .register(AvroFromScratchInTopic, RecordSchemaString, 1, false)
+    .register(AvroFromScratchOutTopic, RecordSchemaString, 1, false)
+    .register(AvroTypedInTopic, RecordSchemaString, 1, false)
+    .register(AvroTypedOutTopic, RecordSchemaString, 1, false)
     .build
 
   /**

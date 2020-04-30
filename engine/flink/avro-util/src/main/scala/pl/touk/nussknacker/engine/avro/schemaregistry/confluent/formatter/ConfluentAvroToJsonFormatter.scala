@@ -25,10 +25,10 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
     }
     printId(record.value(), printStream)
     if (formatKey) {
-      formatter.writeTo(record.key(), isKey = true, printStream)
+      formatter.writeTo(record.key(), printStream)
       printStream.print(Separator)
     }
-    formatter.writeTo(record.value(), isKey = false, printStream)
+    formatter.writeTo(record.value(), printStream)
     bos.toByteArray
   }
 
@@ -39,7 +39,7 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
   }
 
   // copied from AbstractKafkaAvroDeserializer.deserialize
-  private def readId(bytes: Array[Byte]) = {
+  private def readId(bytes: Array[Byte]): Int = {
     val buffer = getByteBuffer(bytes)
     buffer.getInt
   }
@@ -75,20 +75,17 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
     val remaining = if (separatorIndx + 1 > str.length) "" else str.substring(separatorIndx + 1)
     (schemaRegistryClient.getById(id), remaining)
   }
-
 }
 
 object ConfluentAvroToJsonFormatter {
 
   private val Separator = "|"
 
-  def apply(schemaRegistryClient: SchemaRegistryClient, topic: String, formatKey: Boolean): ConfluentAvroToJsonFormatter = {
+  def apply(schemaRegistryClient: SchemaRegistryClient, topic: String, formatKey: Boolean): ConfluentAvroToJsonFormatter =
     new ConfluentAvroToJsonFormatter(
       schemaRegistryClient,
       new ConfluentAvroMessageFormatter(schemaRegistryClient),
       new ConfluentAvroMessageReader(schemaRegistryClient, topic, formatKey, Separator),
       formatKey
     )
-  }
-
 }
