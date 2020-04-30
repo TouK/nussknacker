@@ -100,7 +100,7 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
       kafkaAvroSchemaProvider.recordFormatter,
       processObjectDependencies
     ) with ReturningType {
-      override def returnType: typing.TypingResult = typeDefinition
+      override def returnType: typing.TypingResult = kafkaAvroSchemaProvider.returnType
     }
   }
 }

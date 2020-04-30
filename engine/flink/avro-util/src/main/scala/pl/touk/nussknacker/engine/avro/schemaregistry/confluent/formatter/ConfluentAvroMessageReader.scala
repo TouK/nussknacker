@@ -4,7 +4,6 @@ import java.io.IOException
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerializer
-import kafka.common.KafkaException
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.io.DecoderFactory
@@ -23,16 +22,19 @@ import pl.touk.nussknacker.engine.avro.AvroUtils
   * @param parseKey if key should be parsed
   * @param keySeparator key separator
   */
-private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: SchemaRegistryClient, topic: String, parseKey: Boolean, keySeparator: String)
+private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: SchemaRegistryClient,
+                                                    topic: String,
+                                                    parseKey: Boolean,
+                                                    keySeparator: String)
   extends AbstractKafkaAvroSerializer {
 
-  private val valueSubject = AvroUtils.valueSubject(topic)
+  schemaRegistry = schemaRegistryClient
 
   private val keySubject = AvroUtils.keySubject(topic)
 
-  private val decoderFactory = DecoderFactory.get
+  private val valueSubject = AvroUtils.valueSubject(topic)
 
-  schemaRegistry = schemaRegistryClient
+  private val decoderFactory = DecoderFactory.get
 
   // TODO: This implementation won't handle separator escaping
   def readMessage(str: String, keySchema: Schema, valueSchema: Schema): ProducerRecord[Array[Byte], Array[Byte]] = {
@@ -44,7 +46,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
       } else {
         val keyIndex = str.indexOf(keySeparator)
         if (keyIndex < 0) {
-          throw new KafkaException("No key found in line " + str)
+          throw new SerializationException("No key found in line " + str)
         } else {
           val keyString = str.substring(0, keyIndex)
           val valueString = if (keyIndex + 1 > str.length) "" else str.substring(keyIndex + 1)
@@ -57,11 +59,11 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
       }
     } catch {
       case ex: IOException =>
-        throw new KafkaException("Error reading from input", ex)
+        throw new SerializationException("Error reading from input", ex)
     }
   }
 
-  private def jsonToAvro(jsonString: String, schema: Schema): AnyRef = {
+  private def jsonToAvro(jsonString: String, schema: Schema) = {
     try {
       val reader = new GenericDatumReader[AnyRef](schema)
       val obj = reader.read(null, decoderFactory.jsonDecoder(schema, jsonString))
@@ -78,4 +80,5 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
           String.format("Error deserializing json %s to Avro of schema %s", jsonString, schema), ex)
     }
   }
+
 }

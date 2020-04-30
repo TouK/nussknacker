@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated
+import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
@@ -20,6 +21,11 @@ trait KafkaAvroSchemaProvider[T] extends Serializable {
   def serializationSchema: KafkaSerializationSchema[Any]
 
   def recordFormatter: Option[RecordFormatter]
+
+  def returnType: typing.TypingResult = typeDefinition match {
+    case Valid(result) => result
+    case Invalid(e) => throw e
+  }
 }
 
 case class KafkaAvroException(message: String) extends RuntimeException(message)

@@ -15,33 +15,30 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with Confluenti
   private val versionNotFoundCode = 40402
 
   override def getLatestSchema(subject: String): Validated[SchemaRegistryClientError, Schema] =
-    handleClientError(subject, None) {
+    handleClientError {
       getLatestSchemaMetadata(subject)
     }
 
   override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryClientError, Schema] =
-    handleClientError(subject, Some(version)) {
+    handleClientError {
       getSchemaMetadata(subject, version)
     }
 
-  protected def handleClientError(subject: String, version: Option[Int])(schemaMetadata: => SchemaMetadata): Validated[SchemaRegistryClientError, Schema] =
+  protected def handleClientError(schemaMetadata: => SchemaMetadata): Validated[SchemaRegistryClientError, Schema] =
     try {
       val schema = schemaMetadata.getSchema
       if (schema == null) {
-        invalid(SchemaRegistryClientError(s"Schema for subject `$subject` and version `${versionToString(version)}` doesn't exists.", None))
+        invalid(SchemaRegistryClientError("Topic schema doesn't exist."))
       } else {
         valid(AvroUtils.createSchema(schema))
       }
     } catch {
       case exc: RestClientException if exc.getErrorCode == subjectNotFoundCode =>
-        invalid(SchemaRegistryClientError(s"Subject `$subject` doesn't exists.", Some(exc.getMessage)))
+        invalid(SchemaRegistryClientError("Topic schema doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == versionNotFoundCode =>
-        invalid(SchemaRegistryClientError(s"Version `${versionToString(version)}` for subject `$subject` doesn't exists.", Some(exc.getMessage)))
+        invalid(SchemaRegistryClientError("Invalid topic schema version."))
       case exc: Throwable =>
-        logger.warn("Unknown error with fetching schema", exc)
-        invalid(SchemaRegistryClientError("Unknown error with fetching schema.", Some(exc.getMessage)))
+        logger.error("Unknown error on fetching schema data.", exc)
+        invalid(SchemaRegistryClientError("Unknown error on fetching schema data."))
     }
-
-  private def versionToString(version: Option[Int]): String =
-    version.map(_.toString).getOrElse("")
 }
