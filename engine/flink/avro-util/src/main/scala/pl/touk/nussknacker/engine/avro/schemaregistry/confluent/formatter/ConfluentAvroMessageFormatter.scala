@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.formatter
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io.PrintStream
 import java.nio.ByteBuffer
@@ -16,8 +16,7 @@ import org.apache.kafka.common.errors.SerializationException
   *
   * @param schemaRegistryClient schema registry client
   */
-private[formatter] class AvroMessageFormatter(schemaRegistryClient: SchemaRegistryClient)
-  extends AbstractKafkaAvroDeserializer {
+private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: SchemaRegistryClient) extends AbstractKafkaAvroDeserializer {
 
   schemaRegistry = schemaRegistryClient
 

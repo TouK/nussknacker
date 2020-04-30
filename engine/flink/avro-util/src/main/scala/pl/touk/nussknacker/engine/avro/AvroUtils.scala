@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.avro
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 
 import scala.collection.concurrent.TrieMap
 
-class AvroUtils(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig) extends Serializable {
+class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Serializable {
 
-  private lazy val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+  private lazy val schemaRegistryClient = schemaRegistryProvider.createSchemaRegistryClient
 
   private lazy val parsedSchemaCache = TrieMap.empty[String, Schema]
 
@@ -17,10 +17,8 @@ class AvroUtils(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaC
 
   private lazy val lastestSchemaBySubjectCache = TrieMap.empty[String, Schema]
 
-  private def parser = new Schema.Parser()
-
   def record(fields: collection.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, parser.parse(schemaString))
+    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.createSchema(schemaString))
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
@@ -29,7 +27,7 @@ class AvroUtils(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaC
   }
 
   def record(fields: java.util.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, parser.parse(schemaString))
+    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.createSchema(schemaString))
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
@@ -38,37 +36,45 @@ class AvroUtils(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaC
   }
 
   def keySchema(topic: String, version: Int): Schema = {
-    getOrUpdateSchemaBySubjectAndVersion(keySubject(topic), version)
+    getOrUpdateSchemaBySubjectAndVersion(AvroUtils.keySubject(topic), version)
   }
 
   def valueSchema(topic: String, version: Int): Schema = {
-    getOrUpdateSchemaBySubjectAndVersion(valueSubject(topic), version)
+    getOrUpdateSchemaBySubjectAndVersion(AvroUtils.valueSubject(topic), version)
   }
 
   def latestKeySchema(topic: String): Schema = {
-    getOrUpdateLatestSchema(keySubject(topic))
+    getOrUpdateLatestSchema(AvroUtils.keySubject(topic))
   }
 
   def latestValueSchema(topic: String): Schema = {
-    getOrUpdateLatestSchema(valueSubject(topic))
+    getOrUpdateLatestSchema(AvroUtils.valueSubject(topic))
   }
 
-  private def getOrUpdateSchemaBySubjectAndVersion(subject: String, version: Int) = {
+  private def getOrUpdateSchemaBySubjectAndVersion(subject: String, version: Int): Schema = {
     schemaBySubjectAndVersionCache.getOrElseUpdate((subject, version),
-      parser.parse(schemaRegistryClient.getSchemaMetadata(subject, version).getSchema))
+      schemaRegistryClient.getBySubjectAndVersion(subject, version))
   }
 
   private def getOrUpdateLatestSchema(subject: String) = {
     // maybe invalidation after some time?
     lastestSchemaBySubjectCache.getOrElseUpdate(subject,
-      parser.parse(schemaRegistryClient.getLatestSchemaMetadata(subject).getSchema))
+      schemaRegistryClient.getLatestSchema(subject))
   }
 
-  private def keySubject(topic: String) =
+}
+
+object AvroUtils extends Serializable {
+
+  private def parser = new Schema.Parser()
+
+  def keySubject(topic: String): String =
     topic + "-key"
 
-
-  private def valueSubject(topic: String) =
+  def valueSubject(topic: String): String =
     topic + "-value"
+
+  def createSchema(avroSchema: String): Schema =
+    parser.parse(avroSchema)
 
 }

@@ -36,7 +36,7 @@ import scala.collection.JavaConverters._
   *
   * </pre>
   * */
-class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchemaFactory[T],
+class KafkaSourceFactory[T: TypeInformation](deserializationSchemaFactory: DeserializationSchemaFactory[T],
                                              timestampAssigner: Option[TimestampAssigner[T]],
                                              testPrepareInfo: TestDataSplit,
                                              processObjectDependencies: ProcessObjectDependencies)
@@ -60,7 +60,7 @@ class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchem
              )
              @NotBlank
              topic: String): Source[T] with TestDataGenerator = {
-    createSource(processMetaData, List(topic), schemaFactory.create(List(topic), kafkaConfig))
+    createSource(processMetaData, List(topic), deserializationSchemaFactory.create(List(topic), kafkaConfig))
   }
 
 }
