@@ -825,11 +825,10 @@ lazy val root = (project in file("."))
       commitReleaseVersion,
       tagRelease,
       releaseStepCommandAndRemaining("+dist/docker:publish"),
-      releaseStepCommandAndRemaining("+dist/tgz:publish"),
       releaseStepCommandAndRemaining("+publishSigned"),
+      ReleaseStep(action = Command.process("sonatypeBundleRelease", _)),
       setNextVersion,
       commitNextVersion,
-      ReleaseStep(action = Command.process("sonatypeBundleRelease", _)),
       pushChanges
     )
   )
