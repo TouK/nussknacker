@@ -67,7 +67,7 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
 
 
   def evaluateParameters(params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter], ctx: Context)
-                                  (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext) : Future[(Context, Map[String, AnyRef])] = {
+                        (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext) : Future[(Context, Map[String, AnyRef])] = {
     params.foldLeft(Future.successful((ctx, Map.empty[String, AnyRef]))) {
       case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
         evaluate[AnyRef](param.expression, param.name, nodeId.id, accCtx).map { valueWithModifiedContext =>
