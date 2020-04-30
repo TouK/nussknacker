@@ -8,7 +8,7 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.0.13 (not released)
+0.1.0
 -------------
 * Added support for explicitly setting uids in operators - turned on by `explicitUidInStatefulOperators` model's flag.
 By default setted up to false.
