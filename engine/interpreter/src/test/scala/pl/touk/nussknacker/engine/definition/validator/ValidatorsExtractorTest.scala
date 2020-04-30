@@ -69,10 +69,10 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
       .shouldBe(List(FixedValuesValidator(possibleValues)))
   }
 
-  test("determine fixed values validator when dual editor with fixed simple editor passed") {
+  test("not determine fixed values validator when dual editor was passed") {
     val possibleValues = List(FixedExpressionValue("a", "a"))
     ValidatorsExtractor(Some(DualParameterEditor(FixedValuesParameterEditor(possibleValues), DualEditorMode.SIMPLE))).extract(optionalParam)
-      .shouldBe(List(FixedValuesValidator(possibleValues)))
+      .shouldBe(empty)
   }
 
   test("extract nullable notBlank value validator when @Nullable @NotBlank annotation detected") {

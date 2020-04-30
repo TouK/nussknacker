@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.engine.process.helpers
 
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.flink.api.common.{ExecutionConfig, JobExecutionResult}
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala._
@@ -9,16 +12,15 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.process.{FlinkStreamingProcessRegistrar, SimpleJavaEnum}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.process.{FlinkStreamingProcessRegistrar, SimpleJavaEnum}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 object ProcessTestHelpers {
@@ -27,16 +29,17 @@ object ProcessTestHelpers {
 
   object processInvoker {
 
-    def invokeWithSampleData(process: EspProcess, data: List[SimpleRecord],
-                             configuration: Configuration = new Configuration(),
+    def invokeWithSampleData(process: EspProcess,
+                             data: List[SimpleRecord],
+                             flinkConfiguration: Configuration = new Configuration(),
                              processVersion: ProcessVersion = ProcessVersion.empty,
                              parallelism: Int = 1): Unit = {
+      val config = ConfigFactory.load()
+        .withValue("kafka.kafkaAddress", fromAnyRef("http://notexist.pl"))
+      val creator: ProcessConfigCreator = prepareCreator(data, config)
 
-      val creator: ProcessConfigCreator = prepareCreator(data, KafkaConfig("http://notexist.pl", None, None))
-
-      val env = StoppableExecutionEnvironment(configuration)
+      val env = StoppableExecutionEnvironment(flinkConfiguration)
       try {
-        val config = ConfigFactory.load()
         FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
           .register(new StreamExecutionEnvironment(env), process, processVersion)
 
@@ -48,13 +51,14 @@ object ProcessTestHelpers {
       }
     }
 
-    def invoke(process: EspProcess, creator: ProcessConfigCreator,
+    def invoke(process: EspProcess,
+               creator: ProcessConfigCreator,
+               config: Config,
                configuration: Configuration,
                processVersion: ProcessVersion,
                parallelism: Int, actionToInvokeWithJobRunning: => Unit): Unit = {
       val env = StoppableExecutionEnvironment(configuration)
       try {
-        val config = ConfigFactory.load()
         FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
           .register(new StreamExecutionEnvironment(env), process, processVersion)
 
@@ -66,26 +70,27 @@ object ProcessTestHelpers {
       }
     }
 
-    def prepareCreator(data: List[SimpleRecord], kafkaConfig: KafkaConfig): ProcessConfigCreator = new ProcessConfigCreator {
+    def prepareCreator(data: List[SimpleRecord], config: Config): ProcessConfigCreator = new ProcessConfigCreator {
 
-      override def services(config: Config): Map[String, WithCategories[Service with TimeMeasuringService]] = Map(
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service with TimeMeasuringService]] = Map(
         "logService" -> WithCategories(new MockService),
         "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService)
       )
 
-      override def sourceFactories(config: Config): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
+      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
         "input" -> WithCategories(SampleNodes.simpleRecordSource(data)),
         "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
-        "kafka-keyvalue" -> WithCategories(new KeyValueKafkaSourceFactory(kafkaConfig))
+        "kafka-keyvalue" -> WithCategories(new KeyValueKafkaSourceFactory(processObjectDependencies))
       )
 
-      override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
+      override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
-        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings))
+        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
+        "lazyParameterSink"-> WithCategories(LazyParameterSinkFactory)
       )
 
-      override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+      override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
         "stateCustom" -> WithCategories(StateCustomNode),
         "customFilter" -> WithCategories(CustomFilter),
         "customFilterContextTransformation" -> WithCategories(CustomFilterContextTransformation),
@@ -98,13 +103,13 @@ object ProcessTestHelpers {
         "optionalEndingCustom" -> WithCategories(OptionalEndingCustom)
       )
 
-      override def listeners(config: Config) = List()
+      override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()
 
-      override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
+      override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
         ExceptionHandlerFactory.noParams(_ => RecordingExceptionHandler)
 
 
-      override def expressionConfig(config: Config): ExpressionConfig = {
+      override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
         val dictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
         val dictDef = EmbeddedDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
         val globalProcessVariables = Map(
@@ -113,19 +118,22 @@ object ProcessTestHelpers {
         ExpressionConfig(globalProcessVariables, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
       }
 
-      override def signals(config: Config): Map[String, WithCategories[TestProcessSignalFactory]] = Map("sig1" ->
-        WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
+      override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = {
+        val kafkaConfig = config.as[KafkaConfig]("kafka")
+        Map("sig1" ->
+          WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
+      }
 
       override def buildInfo(): Map[String, String] = Map.empty
     }
 
-    def invokeWithKafka(process: EspProcess, kafkaConfig: KafkaConfig,
-                        config: Configuration = new Configuration(),
+    def invokeWithKafka(process: EspProcess,
+                        config: Config,
+                        flinkConfiguration: Configuration = new Configuration(),
                         processVersion: ProcessVersion = ProcessVersion.empty,
                         parallelism: Int = 1)(actionToInvokeWithJobRunning: => Unit): Unit = {
-
-      val creator: ProcessConfigCreator = prepareCreator(Nil, kafkaConfig)
-      invoke(process, creator, config, processVersion, parallelism, actionToInvokeWithJobRunning)
+      val creator: ProcessConfigCreator = prepareCreator(Nil, config)
+      invoke(process, creator, config, flinkConfiguration, processVersion, parallelism, actionToInvokeWithJobRunning)
     }
   }
 

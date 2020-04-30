@@ -18,7 +18,7 @@ export default function ParameterList(props) {
       .find(n => n.node.type === node.type && n.label === node.ref.id)
       .node
   }
-
+  const nodeId = props.savedNode.id
   const savedParameters = nodeDefinitionParameters(props.savedNode)
   const definitionParameters = nodeDefinitionParameters(nodeDefinitionByName(props.savedNode))
   const diffParams = {
@@ -27,34 +27,40 @@ export default function ParameterList(props) {
     unchanged: unchangedFields(savedParameters, definitionParameters),
   }
   const newParams = _.concat(diffParams.unchanged, diffParams.added)
-  if (!_.zip(newParams, nodeDefinitionParameters(props.editedNode)).reduce((acc, params) => acc && parametersEquals(params[0], params[1]), true)) {
+  const parametersChanged = !_.zip(newParams, nodeDefinitionParameters(props.editedNode)).reduce((acc, params) => acc && parametersEquals(params[0], params[1]), true)
+  //If subprocess parameters changed, we update state of parent component and will be rerendered, current node state is probably not ready to be rendered
+  //TODO: setting state in parent node is a bit nasty.
+  if (parametersChanged) {
     props.setNodeState(newParams)
+    return null
+  } else {
+    return (
+      <span>
+        {diffParams.unchanged.map((params, index) => {
+          return (
+            <div className="node-block" key={nodeId + params.name + index}>
+              {props.createListField(params, index)}
+            </div>
+          )
+        })}
+        {diffParams.added.map((params, index) => {
+          const newIndex = index + diffParams.unchanged.length
+          console.log(params)
+          return (
+            <div className="node-block added" key={nodeId + params.name + newIndex}>
+              {props.createListField(params, newIndex)}
+            </div>
+          )
+        })}
+        {diffParams.removed.map((params, index) => {
+          return (
+            <div className="node-block removed" key={nodeId + params.name + index}>
+              {props.createReadOnlyField(params)}
+            </div>
+          )
+        })}
+      </span>
+    )
   }
-  const nodeId = props.savedNode.id
-  return (
-    <span>
-      {diffParams.unchanged.map((params, index) => {
-        return (
-          <div className="node-block" key={nodeId + params.name + index}>
-            {props.createListField(params, index)}
-          </div>
-        )
-      })}
-      {diffParams.added.map((params, index) => {
-        const newIndex = index + diffParams.unchanged.length
-        return (
-          <div className="node-block added" key={nodeId + params.name + newIndex}>
-            {props.createListField(params, newIndex)}
-          </div>
-        )
-      })}
-      {diffParams.removed.map((params, index) => {
-        return (
-          <div className="node-block removed" key={nodeId + params.name + index}>
-            {props.createReadOnlyField(params)}
-          </div>
-        )
-      })}
-    </span>
-  )
+
 }

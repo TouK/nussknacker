@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.definition
 
-import com.typesafe.config.Config
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.process.{SingleNodeConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -42,7 +41,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
 
   test("should read editor from annotations") {
     val model: ModelData = LocalModelData(ConfigWithScalaVersion.streamingProcessTypeConfig, new EmptyProcessConfigCreator() {
-      override def services(config: Config): Map[String, WithCategories[Service]] =
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map("enricher" -> WithCategories(TestService))
     })
 
@@ -68,7 +67,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
 
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
     val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator() {
-      override def services(config: Config): Map[String, WithCategories[Service]] =
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map(
           "enricher" -> WithCategories(TestService),
           "hiddenEnricher" -> WithCategories(TestService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("hiddenCategory")))

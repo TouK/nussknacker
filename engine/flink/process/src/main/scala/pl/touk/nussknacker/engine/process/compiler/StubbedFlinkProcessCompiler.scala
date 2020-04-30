@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.typesafe.config.Config
+import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
-import org.apache.flink.api.common.serialization.DeserializationSchema
-import pl.touk.nussknacker.engine.{ModelConfigToLoad, ModelData}
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.ModelConfigToLoad
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -16,21 +16,24 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
-abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: ProcessConfigCreator, config: ModelConfigToLoad)
-  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport = false) {
+abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: ProcessConfigCreator, config: ModelConfigToLoad, objectNaming: ObjectNaming)
+  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport = false, objectNaming) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  override protected def signalSenders(config: Config): Map[SignalSenderKey, FlinkProcessSignalSender] =
-    super.signalSenders(config).mapValuesNow(_ => DummyFlinkSignalSender)
+  override protected def signalSenders(processObjectDependencies: ProcessObjectDependencies): Map[SignalSenderKey, FlinkProcessSignalSender] =
+    super.signalSenders(processObjectDependencies).mapValuesNow(_ => DummyFlinkSignalSender)
 
 
-  override protected def definitions(config: Config): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
-    val createdDefinitions = super.definitions(config)
+  override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
+    val createdDefinitions = super.definitions(processObjectDependencies)
 
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
-    //TODO JOIN: handling multiple sources?
-    val sourceType = process.roots.head.data.asInstanceOf[Source].ref.typ
+    //TODO JOIN: handling multiple sources - currently we take only first?
+    val sourceType = process.roots.toList.map(_.data).collectFirst {
+      case source: Source => source
+    }.map(_.ref.typ).getOrElse(throw new IllegalArgumentException("No source found - cannot test"))
+
     val testSource = createdDefinitions.sourceFactories.get(sourceType)
       .map(prepareSourceFactory)
       .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition"))

@@ -1,19 +1,17 @@
 import _ from "lodash"
 import Moment from "moment"
 import React from "react"
-import DatePicker from "react-datepicker"
-import "react-datepicker/dist/react-datepicker.css"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import {dateFormat} from "../../config"
-import "../../stylesheets/datePicker.styl"
 import "../../stylesheets/visualization.styl"
 import Dialogs from "./Dialogs"
 import GenericModalDialog from "./GenericModalDialog"
+import classNames from "classnames"
+import DateTimePicker from "react-datetime"
 
 class CalculateCountsDialog extends React.Component {
-  //React Datepicker supports different time format
-  dateFormat="yyyy-MM-dd HH:mm:ss" // eslint-disable-line i18next/no-literal-string
+  dateFormat="YYYY-MM-DD" // eslint-disable-line i18next/no-literal-string
   timeFormat="HH:mm:ss" // eslint-disable-line i18next/no-literal-string
 
   predefinedRanges = [
@@ -72,8 +70,18 @@ class CalculateCountsDialog extends React.Component {
     stateChange(Moment(date, dateFormat))
   };
 
-  setDateFrom = (date) => this.setState((state, props) => ({processCountsDateFrom: date}))
-  setDateTo = (date) => this.setState((state, props) => ({processCountsDateTo: date}))
+  setDateFrom(date) {
+    this.setState((state, props) => ({processCountsDateFrom: date}))
+  }
+  setDateTo(date) {
+    this.setState((state, props) => ({processCountsDateTo: date}))
+  }
+
+  datePickerStyle = {
+    className: classNames([
+      "node-input",
+    ]),
+  }
 
   render() {
     return (
@@ -84,26 +92,24 @@ class CalculateCountsDialog extends React.Component {
       >
         <p>Process counts from</p>
         <div className="datePickerContainer">
-          <DatePicker
-            selected={this.state.processCountsDateFrom}
-            showTimeSelect
-            timeFormat={this.timeFormat}
-            timeIntervals={15}
+          <DateTimePicker
+            onChange={this.setDateFrom.bind(this)}
             dateFormat={this.dateFormat}
-            onChange={(e) => this.setDateFrom(e)}
-            onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateFrom)}
+            timeFormat={this.timeFormat}
+            value={this.state.processCountsDateFrom}
+            inputProps={this.datePickerStyle}
           />
+          
         </div>
         <p>Process counts to</p>
         <div className="datePickerContainer">
-          <DatePicker
-            selected={this.state.processCountsDateTo}
-            showTimeSelect
-            timeFormat={this.timeFormat}
-            timeIntervals={15}
+          <DateTimePicker
+            onChange={this.setDateTo.bind(this)}
             dateFormat={this.dateFormat}
-            onChange={(e) => this.setDateTo(e)}
-            onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateTo)}
+            timeFormat={this.timeFormat}
+            value={this.state.processCountsDateTo}
+            inputProps={this.datePickerStyle}
+
           />
         </div>
         <p>Quick ranges</p>

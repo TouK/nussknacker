@@ -26,7 +26,7 @@ const getOptions = (values) => {
 
 export default class FixedValuesEditor extends React.Component<Props> {
 
-  public static switchableTo = (expressionObj: ExpressionObj, values) => values.includes(expressionObj.expression)
+  public static switchableTo = (expressionObj: ExpressionObj, values) => values.map(v => v.expression).includes(expressionObj.expression)
   public static switchableToHint = () => "Switch to basic mode"
   public static notSwitchableToHint = () => "Expression must be one of the expression possible values to switch basic mode"
 
@@ -38,13 +38,11 @@ export default class FixedValuesEditor extends React.Component<Props> {
   }
 
   currentOption = () => {
-    const {expressionObj, defaultValue, param} = this.props
-    //TODO: is it ok to put not-existing option here?
-    const defaultOption = {
-      value: _.get(_.head(_.get(param, "editor.possibleValues")), "expression") || expressionObj && expressionObj.expression || defaultValue && defaultValue.expression || "",
-      label: _.get(_.head(_.get(param, "editor.possibleValues")), "label") || expressionObj && expressionObj.expression || defaultValue && defaultValue.label || "",
-    }
-    return this.options.find((option) => expressionObj && option.value === expressionObj.expression) || defaultOption
+    const {expressionObj, param} = this.props
+
+    return expressionObj && this.options.find((option) => option.value === expressionObj.expression) ||  // current value with label taken from options
+        expressionObj && {value: expressionObj.expression, label: expressionObj.expression} ||          // current value is no longer valid option? Show it anyway, let user know. Validation should take care
+        null                                                                                            // just leave undefined and let the user explicitly select one
   }
 
   render() {
@@ -54,9 +52,8 @@ export default class FixedValuesEditor extends React.Component<Props> {
     const option = this.currentOption()
 
     return (
-      <React.Fragment>
+      <div className={`node-value-select ${className}`}>
         <Creatable
-          className={`node-value-select ${className}`}
           classNamePrefix="node-value-select"
           value={option}
           onChange={(newValue) => onValueChange(newValue.value)}
@@ -64,8 +61,8 @@ export default class FixedValuesEditor extends React.Component<Props> {
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
         />
-        {showValidation && <ValidationLabels validators={validators} values={[option.value]} additionalClassName={"fixed-values-editor"}/>}
-      </React.Fragment>
+        {showValidation && <ValidationLabels validators={validators} values={[option.value]}/>}
+      </div>
     )
   }
 }

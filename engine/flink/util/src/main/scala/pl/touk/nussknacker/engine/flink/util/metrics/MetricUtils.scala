@@ -1,15 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.metrics
 
-import java.util.ServiceLoader
-
 import cats.data.NonEmptyList
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.metrics.{Counter, Gauge, Histogram, Meter, MetricGroup}
-import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
-
-//Configure this as Service to use new reporting for Flink
-//this is a bit weird way, but it's temporary and passing configuration would be cumbersome
-trait UseNewMetrics
+import pl.touk.nussknacker.engine.flink.api.{NkGlobalParameters, RuntimeContextLifecycle}
 
 /*
   IMPORTANT: PLEASE keep Metrics.md up to date
@@ -42,14 +36,15 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     group.histogram(name, histogram)
   }
 
-  private val useNewMetricsMode: Boolean = ServiceLoader.load(classOf[UseNewMetrics], runtimeContext.getUserCodeClassLoader).iterator().hasNext
+  //for now we use legacy metrics by default
+  private val useLegacyMetricsMode: Boolean =
+    NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).flatMap(_.configParameters.flatMap(_.useLegacyMetrics)).getOrElse(true)
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
-    if (useNewMetricsMode) {
-      tagMode(nameParts, tags)
-    } else {
+    if (useLegacyMetricsMode) {
       groupsWithNameForLegacyMode(nameParts, tags)
-
+    } else {
+      tagMode(nameParts, tags)
     }
   }
 
@@ -88,8 +83,11 @@ class MetricUtils(runtimeContext: RuntimeContext) {
       case l@NonEmptyList("service", name :: "instantRate" :: Nil) => tagMode(NonEmptyList("serviceInstant",  tags("serviceName") :: name :: Nil), Map.empty)
       case l@NonEmptyList("service", name :: "histogram" :: Nil) => tagMode(NonEmptyList("serviceTimes", tags("serviceName") :: name :: Nil), Map.empty)
 
-      case l@NonEmptyList("error", List("instantRate")) => tagMode(l, Map.empty)
-      case l@NonEmptyList("error", List("instantRateByNode")) => insertNodeId(l)
+      case l@NonEmptyList("error", "instantRate" :: "instantRate" :: Nil) => tagMode(l, Map.empty)
+      case l@NonEmptyList("error", "instantRateByNode" :: "instantRate" :: Nil) => insertNodeId(l)
+
+      case l@NonEmptyList("error", "instantRate" :: "count" :: Nil) => tagMode(l, Map.empty)
+      case l@NonEmptyList("error", "instantRateByNode" :: "count" :: Nil) => insertNodeId(l)
         
       //we resort to default mode...
       case _ => tagMode(nameParts, tags)

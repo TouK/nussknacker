@@ -27,7 +27,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
                       (implicit backend: SttpBackend[Future, Nothing, NothingT])
     extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true), mainClassName) with LazyLogging {
 
-  private val flinkUrl = Uri.parse(config.restUrl).get
+  private val flinkUrl = uri"${config.restUrl}"
 
   // after job manager restart old resources are not available anymore and we have to upload jar once again
   private var jarUploadedBeforeLastRestart: Option[Future[String]] = None

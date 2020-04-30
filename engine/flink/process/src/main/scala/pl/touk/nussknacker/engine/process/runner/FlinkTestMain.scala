@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.runner
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListenerHolder
@@ -33,7 +33,9 @@ case class FlinkTestMain(modelData: ModelData, process: EspProcess, testData: Te
         modelData.processConfigFromConfiguration,
         collectingListener,
         process,
-        testData, env.getConfig), modelData.processConfig)
+        testData,
+        env.getConfig,
+        modelData.objectNaming), modelData.processConfig)
       registrar.register(env, process, processVersion, Option(collectingListener.runId))
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results

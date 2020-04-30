@@ -1,13 +1,9 @@
 package pl.touk.nussknacker.ui.db
 
-import java.io.PrintWriter
-import java.sql.Connection
-import java.util.logging.Logger
-
-import javax.sql.DataSource
+import com.typesafe.config.Config
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.internal.jdbc.DriverDataSource.DriverType
 import org.hsqldb.server.Server
-import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 object DatabaseServer {
   private[this] val i = 0
@@ -24,35 +20,30 @@ object DatabaseServer {
   case class Config(dbFilePath:String, dbName:String, user:String, password:String, port:Option[Int], enabled: Option[Boolean])
 }
 
-class DatabaseInitializer(dbConfig: DbConfig) {
-  def initDatabase(): Unit = {
-    migrateIfNeeded(dbConfig)
+object DatabaseInitializer {
+
+  def initDatabase(path: String, config: Config): Unit = {
+    import net.ceedubs.ficus.Ficus._
+    val configDb = config.getConfig(path)
+    DatabaseInitializer.initDatabase(
+      configDb.as[String]("url"),
+      configDb.as[String]("user"),
+      configDb.as[String]("password"),
+      configDb.getAs[String]("schema"))
   }
 
-  private def migrateIfNeeded(dbConfig: DbConfig) = {
-    val flyway = Flyway.configure()
-      .dataSource(new DatabaseDataSource(dbConfig.db))
+  def initDatabase(url: String, user: String, password: String, schema: Option[String] = None): Unit =
+    Flyway
+      .configure()
+      .locations(
+        (url match {
+          case hsqldbUrl if DriverType.HSQL.matches(hsqldbUrl) => Array("db/migration/hsql", "db/migration/common")
+          case postgresqlUrl if DriverType.POSTGRESQL.matches(postgresqlUrl) => Array("db/migration/postgres", "db/migration/common")
+          case _ => throw new IllegalArgumentException(s"Unsuported database url: $url . Use either PostgreSQL or HSQLDB.")
+        }): _*
+      )
+      .dataSource(url, user, password)
+      .schemas(schema.toArray: _*)
       .baselineOnMigrate(true)
-
-    val flywayWithDbProfile = dbConfig.driver match {
-      case HsqldbProfile => flyway.locations("db/migration/hsql", "db/migration/common")
-      case PostgresProfile => flyway.locations("db/migration/postgres", "db/migration/common")
-    }
-    flywayWithDbProfile.load().migrate()
-  }
-}
-
-class DatabaseDataSource(db: JdbcBackend.Database) extends DataSource {
-  private val conn = db.createSession().conn
-
-  override def getConnection: Connection = conn
-  override def getConnection(username: String, password: String): Connection = conn
-  override def unwrap[T](iface: Class[T]): T = conn.unwrap(iface)
-  override def isWrapperFor(iface: Class[_]): Boolean = conn.isWrapperFor(iface)
-
-  override def setLogWriter(out: PrintWriter): Unit = ???
-  override def getLoginTimeout: Int = ???
-  override def setLoginTimeout(seconds: Int): Unit = ???
-  override def getParentLogger: Logger = ???
-  override def getLogWriter: PrintWriter = ???
+      .load().migrate()
 }

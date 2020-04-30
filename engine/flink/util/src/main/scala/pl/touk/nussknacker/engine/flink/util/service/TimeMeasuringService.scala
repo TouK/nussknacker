@@ -23,6 +23,7 @@ trait TimeMeasuringService extends GenericTimeMeasuringService with WithMetrics 
       logger.info("open not called on TimeMeasuringService - is it ServiceQuery? Using dummy timer")
       dummyTimer
     } else {
+      // TODO: maybe we should also user here InstantRateMeterWithCount.register to have access also to counts?
       val meter = metricUtils.gauge[Double, InstantRateMeter](metricName :+ EspTimer.instantRateSuffix, tags, new InstantRateMeter)
       val histogram = new DropwizardHistogramWrapper(new Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS)))
       val registered = metricUtils.histogram(metricName :+ EspTimer.histogramSuffix, tags, histogram)

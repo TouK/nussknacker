@@ -57,6 +57,9 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
       val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.proc2.instantRateByNode")
       nodeGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
+
+      val nodeCounts = TestReporter.taskManagerReporter.testCounters("error.proc2.instantRateByNode.count")
+      nodeCounts.exists(_.getCount > 0) shouldBe true
     }
 
   }

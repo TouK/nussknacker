@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.namespaces.{DefaultObjectNaming, ObjectNaming}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -11,12 +12,14 @@ object LocalModelData {
   def apply(config: Config,
             configCreator: ProcessConfigCreator,
             migrations: ProcessMigrations = ProcessMigrations.empty,
-            modelClassLoader: ModelClassLoader = ModelClassLoader.empty): LocalModelData =
-    new LocalModelData(ModelConfigToLoad(config), configCreator, migrations, modelClassLoader)
+            modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
+            objectNaming: ObjectNaming = DefaultObjectNaming): LocalModelData =
+    new LocalModelData(ModelConfigToLoad(config), configCreator, migrations, modelClassLoader, objectNaming)
 
 }
 
 case class LocalModelData(processConfigFromConfiguration: ModelConfigToLoad,
                           configCreator: ProcessConfigCreator,
                           migrations: ProcessMigrations,
-                          modelClassLoader: ModelClassLoader) extends ModelData
+                          modelClassLoader: ModelClassLoader,
+                          objectNaming: ObjectNaming) extends ModelData

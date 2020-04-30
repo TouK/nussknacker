@@ -1,35 +1,36 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import java.nio.charset.StandardCharsets
-import java.util.{Date, UUID}
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.{Date, UUID}
 
 import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.FilterFunction
+import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.{AscendingTimestampExtractor, BoundedOutOfOrdernessTimestampExtractor}
-import org.apache.flink.streaming.api.scala.DataStream
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
+import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
+import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.collection.JavaConverters._
@@ -111,23 +112,23 @@ object SampleNodes {
     }
   }
 
-  object StateCustomNode extends CustomStreamTransformer {
+  object StateCustomNode extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("stringVal") stringVal: String,
                 @ParamName("keyBy") keyBy: LazyParameter[String]) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-      start
-        .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
-        .keyBy(_.value)
-        .mapWithState[ValueWithContext[Any], Long] {
-          case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
-            (ValueWithContext(
-              SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
-          case (SimpleFromValueWithContext(ctx, sr), None) =>
-            (ValueWithContext(
-              SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
-        }
-
+      setUidToNodeIdIfNeed(context,
+        start
+          .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
+          .keyBy(_.value)
+          .mapWithState[ValueWithContext[Any], Long] {
+            case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
+              (ValueWithContext(
+                SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
+            case (SimpleFromValueWithContext(ctx, sr), None) =>
+              (ValueWithContext(
+                SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
+          })
     })
 
     object SimpleFromValueWithContext {
@@ -205,10 +206,7 @@ object SampleNodes {
                 @OutputVariableName variableName: String): JoinContextTransformation =
       ContextTransformation
         .join.definedBy { contexts =>
-        val newType = TypedObjectTypingResult(contexts.toSeq.map {
-          case (branchId, _) =>
-            branchId -> valueByBranchId(branchId).returnType
-        }.toMap)
+        val newType = Typed(contexts.keys.toList.map(branchId => valueByBranchId(branchId).returnType): _*)
         Valid(ValidationContext(Map(variableName -> newType)))
       }.implementedBy(
         new FlinkCustomJoinTransformation {
@@ -335,10 +333,30 @@ object SampleNodes {
 
   }
 
+  object LazyParameterSinkFactory extends SinkFactory {
+
+    override def requiresOutput: Boolean = false
+
+    @MethodToInvoke
+    def createSink(@ParamName("intParam") value: LazyParameter[Int]): Sink = new FlinkSink {
+
+      override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
+        dataStream
+          .map(_.finalContext)
+          .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
+          .map(_.value.asInstanceOf[Any])
+          .addSink(SinkForInts.toFlinkFunction)
+      }
+
+      override def testDataOutput: Option[Any => String] = None
+    }
+
+  }
+
 
   object MockService extends Service with WithDataList[Any]
 
-  case object MonitorEmptySink extends FlinkSink {
+  case object MonitorEmptySink extends BasicFlinkSink {
     val invocationsCount = new AtomicInteger(0)
 
     def clear(): Unit = {
@@ -354,7 +372,7 @@ object SampleNodes {
     }
   }
 
-  case object SinkForInts extends FlinkSink with WithDataList[Int] {
+  case object SinkForInts extends BasicFlinkSink with WithDataList[Int] {
 
     override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
       override def invoke(value: Any): Unit = {
@@ -366,7 +384,7 @@ object SampleNodes {
     override def testDataOutput: Option[Any => String] = Some(_.toString.toInt.toString)
   }
 
-  case object SinkForStrings extends FlinkSink with WithDataList[String] {
+  case object SinkForStrings extends BasicFlinkSink with WithDataList[String] {
     override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
       override def invoke(value: Any): Unit = {
         add(value.toString)
@@ -443,10 +461,11 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  class KeyValueKafkaSourceFactory(kafkaConfig: KafkaConfig) extends KafkaSourceFactory[KeyValue](
-              kafkaConfig,
+  class KeyValueKafkaSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[KeyValue](
               new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e)),
-              Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)), TestParsingUtils.newLineSplit)
+              Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
+              TestParsingUtils.newLineSplit,
+              processObjectDependencies)
 
 
 }

@@ -33,9 +33,11 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCo
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies}
+import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
 import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, MetricUtils}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
@@ -91,6 +93,13 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
     //here we are sure the classloader is ok
     val processWithDeps = compiledProcessWithDeps(UserClassLoader.get("root"))
     val metaData = processWithDeps.metaData
+    val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
+
+    def nodeContext(nodeId: String): FlinkCustomNodeContext = {
+      FlinkCustomNodeContext(metaData, nodeId, processWithDeps.processTimeout,
+        new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
+        processWithDeps.signalSenders, globalParameters)
+    }
 
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
     env.setRestartStrategy(processWithDeps.exceptionHandler.restartStrategy)
@@ -128,19 +137,14 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
             case other =>
               throw new IllegalArgumentException(s"Unknown join node transformer: $other")
           }
-          val customNodeContext = FlinkCustomNodeContext(metaData,
-            joinId, processWithDeps.processTimeout,
-            new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
-            processWithDeps.signalSenders)
-
 
           val outputVar = joinPart.node.data.outputVar.get
           val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
           val newStart = transformer.transform(inputs
-              .map(kv => (kv._1.id, kv._2.map(_.finalContext))), customNodeContext).map(newContextFun)
+              .map(kv => (kv._1.id, kv._2.map(_.finalContext))), nodeContext(joinId)).map(newContextFun)
 
-          val afterSplit = wrapAsync(newStart, joinPart.node, joinPart.validationContext, "branchInterpretation")
+          val afterSplit = wrapAsync(newStart, joinPart.node, joinPart.validationContext, globalParameters, "branchInterpretation")
 
           registerParts(afterSplit, joinPart.nextParts, joinPart.ends)
       }
@@ -151,12 +155,12 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
       val start = source
-          .sourceStream(env, metaData)
+          .sourceStream(env, nodeContext(part.id))
           .process(new EventTimeDelayMeterFunction("eventtimedelay", part.id, eventTimeMetricDuration))
           .map(new RateMeterFunction[Any]("source", part.id))
           .map(InitContextFunction(metaData.id, part.id))
 
-      val asyncAssigned = wrapAsync(start, part.node, part.validationContext, "interpretation")
+      val asyncAssigned = wrapAsync(start, part.node, part.validationContext, globalParameters, "interpretation")
 
       val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  be.definition ->
         asyncAssigned.getSideOutput(OutputTag[InterpretationResult](be.nodeId))).toMap
@@ -180,7 +184,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       processPart match {
 
         case part@SinkPart(sink: FlinkSink, sinkDef, validationContext) => {
-          val startAfterSinkEvaluated = wrapAsync(start.map(_.finalContext), part.node, validationContext, "function")
+          val startAfterSinkEvaluated = wrapAsync(start.map(_.finalContext), part.node, validationContext, globalParameters, "function")
             .getSideOutput(OutputTag[InterpretationResult](EndId))
             .map(new EndRateMeterFunction(part.ends))
 
@@ -188,9 +192,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
             //TODO: maybe this logic should be moved to compiler instead?
             testRunId match {
               case None =>
-                startAfterSinkEvaluated
-                  .map(_.output)
-                  .addSink(sink.toFlinkFunction)
+                sink.registerSink(startAfterSinkEvaluated, nodeContext(part.id))
               case Some(runId) =>
                 val typ = part.node.data.ref.typ
                 val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
@@ -204,7 +206,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
 
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
-        case CustomNodePart(transformerObj, node, validationContext, nextParts, ends) =>
+        case part@CustomNodePart(transformerObj, node, validationContext, nextParts, ends) =>
 
           val transformer = transformerObj match {
             case t: FlinkCustomStreamTransformation => t
@@ -218,22 +220,20 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
             case None => ir.context
           }
 
-          val customNodeContext = FlinkCustomNodeContext(metaData,
-            node.id, processWithDeps.processTimeout,
-            new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
-            processWithDeps.signalSenders)
+          val customNodeContext = nodeContext(part.id)
           val newStart = transformer.transform(start.map(_.finalContext), customNodeContext)
               .map(newContextFun)
-          val afterSplit = wrapAsync(newStart, node, validationContext, "customNodeInterpretation")
+          val afterSplit = wrapAsync(newStart, node, validationContext, globalParameters, "customNodeInterpretation")
 
           registerParts(afterSplit, nextParts, ends)
       }
 
-    def wrapAsync(beforeAsync: DataStream[Context], node: SplittedNode[_], validationContext: ValidationContext, name: String) : DataStream[Unit] = {
+    def wrapAsync(beforeAsync: DataStream[Context], node: SplittedNode[_], validationContext: ValidationContext, globalParameters: Option[NkGlobalParameters], name: String) : DataStream[Unit] = {
       (if (streamMetaData.shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer)
-        new DataStream(datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,
-          processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize))
+        ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
+          new DataStream(datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,
+            processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
       } else {
         beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext))
       }).name(s"${metaData.id}-${node.id}-$name").process(new SplitFunction)
@@ -250,6 +250,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
       checkpointConfig.flatMap(_.tolerableCheckpointFailureNumber).foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
     }
   }
+
 }
 
 

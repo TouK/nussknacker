@@ -8,7 +8,6 @@ case class FixedValueValidatorExtractor(possibleEditor: Option[ParameterEditor])
 
   override def extract(p: Parameter): Option[ParameterValidator] = {
     possibleEditor match {
-      case Some(DualParameterEditor(FixedValuesParameterEditor(possibleValues), _)) => Some(FixedValuesValidator(possibleValues))
       case Some(FixedValuesParameterEditor(possibleValues)) => Some(FixedValuesValidator(possibleValues))
       case _ => None
     }

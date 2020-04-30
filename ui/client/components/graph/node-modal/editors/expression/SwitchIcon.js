@@ -1,6 +1,8 @@
 import PropTypes from "prop-types"
 import React from "react"
 import * as LoaderUtils from "../../../../../common/LoaderUtils"
+import classes from "../../../../../stylesheets/graph.styl"
+import cn from "classnames"
 
 export default function SwitchIcon(props) {
 
@@ -12,11 +14,12 @@ export default function SwitchIcon(props) {
     shouldShowSwitch ? (
       <button
         id={"switch-button"}
-        className={`inlined switch-icon${displayRawEditor ? " active " : ""}${readOnly ? " read-only " : ""}`}
+        className={cn("inlined", "switch-icon", displayRawEditor && classes.switchIconActive, readOnly && classes.switchIconReadOnly)}
         onClick={onClick}
         disabled={!switchable || readOnly}
         title={title()}
       >
+        {/* Keep in mind that we base on structure of given svg in related styles */}
         <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
       </button>
     ) : null

@@ -205,6 +205,8 @@ espCheckbox(checkboxWidth)
   padding-left 10px
 
 .modal-title-icon
+  width 18px
+  height 24px
   display inline-block
   float left
   padding-top 6px
@@ -609,11 +611,14 @@ espPanelButton()
   background-color modalInputBkgColor
   border none
   padding 0
-  &.active
-    .cls-switch-1
+
+:local
+  .switch-icon-active
+    path
       fill #8fad60
-  &.read-only
-    .cls-switch-1
+
+  .switch-icon-read-only
+    path
       opacity 0.3
 
 .testResultsSummary

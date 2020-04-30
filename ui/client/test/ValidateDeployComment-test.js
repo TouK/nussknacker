@@ -28,8 +28,8 @@ describe("validating comments on deploy", () => {
     expect(validated).toEqual({ isValid: true, toolTip: undefined })
   })
 
-  it("is invalid if comment matches provided pattern more than once", () => {
+  it("is valid if comment matches provided pattern more than once", () => {
     const validated = ValidateDeployComment("Some comment jira-123 jira-234", { requireComment: true, matchExpression: pattern })
-    expect(validated).toEqual({ isValid: false, toolTip: "Comment does not match required pattern." })
+    expect(validated).toEqual({ isValid: true, toolTip: undefined })
   })
 })

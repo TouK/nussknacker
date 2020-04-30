@@ -169,19 +169,16 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
 
       val editor: Json = getParamEditor("echoEnumService", "id")
 
-      editor shouldBe Json.obj(
-        "type" -> Json.fromString("FixedValuesParameterEditor"),
-        "possibleValues" -> Json.arr(
-          Json.obj(
-            "expression" -> Json.fromString("T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE"),
-            "label" -> Json.fromString("first_value")
-          ),
-          Json.obj(
-            "expression" -> Json.fromString("T(pl.touk.sample.JavaSampleEnum).SECOND_VALUE"),
-            "label" -> Json.fromString("second_value")
-          )
-        )
-      )
+      val cur = editor.hcursor
+      cur.downField("type").as[String].right.value shouldEqual "DualParameterEditor"
+      cur.downField("defaultMode").as[String].right.value shouldEqual "SIMPLE"
+
+      val simpleEditorCur = cur.downField("simpleEditor")
+      simpleEditorCur.downField("type").as[String].right.value shouldEqual "FixedValuesParameterEditor"
+      simpleEditorCur.downField("possibleValues").downN(0).downField("expression").as[String].right.value shouldEqual "T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE"
+      simpleEditorCur.downField("possibleValues").downN(0).downField("label").as[String].right.value shouldEqual "first_value"
+      simpleEditorCur.downField("possibleValues").downN(1).downField("expression").as[String].right.value shouldEqual "T(pl.touk.sample.JavaSampleEnum).SECOND_VALUE"
+      simpleEditorCur.downField("possibleValues").downN(1).downField("label").as[String].right.value shouldEqual "second_value"
     }
   }
 
@@ -318,7 +315,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
 
       val validators: Json = responseAs[Json].hcursor
         .downField("additionalPropertiesConfig")
-        .downField("fixedValueOptionalProperty")
+        .downField("numberOfThreads")
         .downField("validators")
         .focus.get
 

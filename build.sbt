@@ -159,10 +159,10 @@ val dropWizardV = "5.0.0-rc3"
 
 val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
-val slickV = "3.2.3"
-val hsqldbV = "2.3.4"
-val postgresV = "42.2.5"
-val flywayV = "5.2.4"
+val slickV = "3.3.2"
+val hsqldbV = "2.5.0"
+val postgresV = "42.2.12"
+val flywayV = "6.3.3"
 val confluentV = "4.1.2"
 val jbcryptV = "0.4"
 val cronParserV = "3.1.1"
@@ -316,8 +316,7 @@ lazy val management = (project in engine("flink/management")).
     name := "nussknacker-management",
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in managementSample,
-      (assembly in Compile) in managementJavaSample,
-      (assembly in Compile) in managementBatchSample
+      (assembly in Compile) in managementJavaSample
     ).value,
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
@@ -372,18 +371,6 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
       )
     }
   ).dependsOn(flinkUtil, process % "runtime")
-
-lazy val managementBatchSample = (project in engine("flink/management/batch_sample")).
-  settings(commonSettings).
-  settings(assemblySampleSettings("managementBatchSample.jar"): _*).
-  settings(
-    name := "nussknacker-management-batch-sample"  ,
-    libraryDependencies ++= {
-      Seq(
-        "org.apache.flink" %% "flink-scala" % flinkV % "provided",
-      )
-    }
-  ).dependsOn(flinkUtil, process % "runtime,test")
 
 lazy val demo = (project in engine("demo")).
   settings(commonSettings).
@@ -461,6 +448,14 @@ lazy val interpreter = (project in engine("interpreter")).
     buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
   ).
   dependsOn(util, testUtil % "test")
+
+lazy val benchmarks = (project in engine("benchmarks")).
+  settings(commonSettings).
+  enablePlugins(JmhPlugin).
+  settings(
+    name := "nussknacker-benchmarks",
+  ).dependsOn(interpreter)
+
 
 lazy val kafka = (project in engine("kafka")).
   settings(commonSettings).
@@ -683,7 +678,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
   settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
-      val sttpV = "2.0.0-M6"
+      val sttpV = "2.0.7"
       Seq(
         //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
         "io.circe" %% "circe-core" % circeV force(),
@@ -806,4 +801,4 @@ lazy val ui = (project in file("ui/server"))
   )
   .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
 
-addCommandAlias("assemblySamples", ";managementSample/assembly;managementBatchSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
+addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")

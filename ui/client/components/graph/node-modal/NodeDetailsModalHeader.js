@@ -5,6 +5,7 @@ import nodeAttributes from "../../../assets/json/nodeAttributes"
 import EspModalStyles from "../../../common/EspModalStyles"
 import SvgDiv from "../../SvgDiv"
 import NodeUtils from "../NodeUtils"
+import {getIconHref} from "../EspNode"
 
 const HeaderType = {
   SUBTYPE_DOCS: 1,
@@ -44,7 +45,7 @@ const Docs = (props) => {
 
 Docs.propTypes = {
   className: PropTypes.string.isRequired,
-  docsUrl: PropTypes.string.isRequired,
+  nodeSettings: PropTypes.object.isRequired,
   nodeClass: PropTypes.string,
 }
 
@@ -75,20 +76,22 @@ const renderNodeClassDocs = (nodeClass, docsUrl) => {
 }
 
 const NodeDetailsModalHeader = (props) => {
-  const {docsUrl, node} = props
+  const {nodeSettings, node} = props
+  const docsUrl = nodeSettings.docsUrl
+
   const attributes = getNodeAttributes(node)
   const titleStyles = EspModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
-  const variableLanguage = _.get(node, "value.language")
+  const variableLanguage = node?.value?.language
   const header = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name
 
-  const nodeIcon = _.has(node, "type") ? `nodes/${node.type}.svg` : null
+  const nodeIcon = _.has(node, "type") ? getIconHref(node, nodeSettings) : null
   const nodeClass = findNodeClass(node)
 
   return (
     <div className="modalHeader">
       <div className="modal-title-container modal-draggable-handle">
         <div className="modal-title" style={titleStyles}>
-          {nodeIcon ? <SvgDiv className="modal-title-icon" svgFile={nodeIcon}/> : null}
+          {nodeIcon ? <img className="modal-title-icon" src={nodeIcon}/> : null}
           <span>{header}</span>
         </div>
       </div>
