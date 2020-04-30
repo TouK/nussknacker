@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.confluent.formatter
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io.PrintStream
 import java.nio.ByteBuffer

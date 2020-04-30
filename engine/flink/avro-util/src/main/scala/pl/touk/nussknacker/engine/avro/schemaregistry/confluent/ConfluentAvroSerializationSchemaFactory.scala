@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.confluent
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.common.serialization.Serializer

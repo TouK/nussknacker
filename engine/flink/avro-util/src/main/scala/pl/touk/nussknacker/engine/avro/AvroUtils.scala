@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.avro
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 
 import scala.collection.concurrent.TrieMap
 
@@ -52,7 +53,7 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 
   private def getOrUpdateSchemaBySubjectAndVersion(subject: String, version: Int): Schema = {
     schemaBySubjectAndVersionCache.getOrElseUpdate((subject, version),
-      schemaRegistryClient.getBySubjectAndId(subject, version))
+      schemaRegistryClient.getBySubjectAndVersion(subject, version))
   }
 
   private def getOrUpdateLatestSchema(subject: String) = {
@@ -73,7 +74,7 @@ object AvroUtils extends Serializable {
   def valueSubject(topic: String): String =
     topic + "-value"
 
-  def createSchema(schema: String): Schema =
-    parser.parse(schema)
+  def createSchema(avroSchema: String): Schema =
+    parser.parse(avroSchema)
 
 }
