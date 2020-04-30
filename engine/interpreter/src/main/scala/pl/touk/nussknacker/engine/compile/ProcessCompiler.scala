@@ -142,7 +142,7 @@ protected trait ProcessCompilerBase {
     In the future we'll probably move to direct representation of process as graph and this will no longer be needed
    */
   private def compileSources(sources: NonEmptyList[SourcePart])(implicit meta: MetaData): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
-    val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), BranchEndContexts(Map(), None))
+    val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), BranchEndContexts(Map()))
     //we use fold here (and not map/sequence), because we can compile part which starts from Join only when we
     //know compilation results (stored in BranchEndContexts) of all branches that end in this join
     val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextSourcePart) =>
@@ -435,16 +435,16 @@ protected trait ProcessCompilerBase {
     }
   }
 
-  private case class BranchEndContexts(contexts: Map[String, Map[String, TypingResult]], parentContext: Option[ValidationContext]) {
+  private case class BranchEndContexts(contexts: Map[String, ValidationContext]) {
     def addPart(node: SplittedNode[_ <: NodeData], result: CompilationResult[_]): BranchEndContexts = {
       val branchEnds = SplittedNodesCollector.collectNodes(node).collect {
-        case splittednode.EndingNode(BranchEndData(definition)) => definition.id -> result.variablesInNodes(definition.artificialNodeId)
+        case splittednode.EndingNode(BranchEndData(definition)) => definition.id -> result.typing.apply(definition.artificialNodeId)
       }.toMap
-      copy(contexts = contexts ++ branchEnds)
+      copy(contexts = contexts ++ branchEnds.mapValues(_.inputValidationContext))
     }
 
     def contextForId(id: String)(implicit metaData: MetaData): ValidationContext = {
-      ValidationContext(contexts(id), contextWithOnlyGlobalVariables.globalVariables, parentContext)
+      contexts(id)
     }
   }
 
