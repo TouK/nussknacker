@@ -9,7 +9,8 @@ object ValidatorsExtractor {
       MandatoryValidatorExtractor,
       AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
       FixedValueValidatorExtractor,
-      LiteralValidatorExtractor
+      LiteralValidatorExtractor,
+      SingleValueAnnotationValidatorExtractor
     ).flatMap(_.extract(params))
   }
 

@@ -14,6 +14,7 @@ export enum HandledErrorType {
   InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
   ErrorValidator = "ErrorValidator",
   MismatchParameter = "MismatchParameter",
+  InvalidNumberParameter = "InvalidNumberParameter"
 }
 
 /* eslint-disable i18next/no-literal-string */
@@ -23,6 +24,7 @@ export enum BackendValidator {
   FixedValuesValidator = "FixedValuesValidator",
   RegExpParameterValidator = "RegExpParameterValidator",
   LiteralIntegerValidator = "LiteralIntegerValidator",
+  MinimalNumberValidator = "MinimalNumberValidator",
 }
 
 export type Validator = {
@@ -93,11 +95,20 @@ export const regExpValueValidator = (pattern: string, message: string, descripti
 export const literalIntegerValueValidator: Validator = {
   //Blank value should be not validate - we want to chain validators
   isValid: value => isEmpty(value) || literalRegExpPattern("^-?[0-9]+$").test(value),
-  message: () => i18next.t("literalIntegerValueValidator.message",  "This field value has to be an integer number"),
-  description: () => i18next.t("literalIntegerValueValidator,description", "Please fill field by proper integer type"),
+  message: () => i18next.t("literalIntegerValueValidator.message", "This field value has to be an integer number"),
+  description: () => i18next.t("literalIntegerValueValidator.description", "Please fill field by proper integer type"),
   handledErrorType: HandledErrorType.InvalidIntegerLiteralParameter,
   validatorType: ValidatorType.Frontend,
 }
+
+export const minimalValueValidator = (minimalValue: number): Validator => ({
+  //Blank value should be not validate - we want to chain validators
+  isValid: value => isEmpty(value) || (Number(value) > minimalValue),
+  message: () => i18next.t("minimalValueValidator.message", `This field value has to be an number greater than ${minimalValue}`),
+  description: () => i18next.t("minimalValueValidator.description", "Please fill field by proper number"),
+  handledErrorType: HandledErrorType.InvalidNumberParameter,
+  validatorType: ValidatorType.Frontend,
+})
 
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
   return isEmpty(validators) ? [] :
@@ -117,4 +128,5 @@ export const validators: Record<BackendValidator, (...args: any[]) => Validator>
   [BackendValidator.LiteralIntegerValidator]: () => literalIntegerValueValidator,
   [BackendValidator.FixedValuesValidator]: ({possibleValues}) => fixedValueValidator(possibleValues),
   [BackendValidator.RegExpParameterValidator]: ({pattern, message, description}) => regExpValueValidator(pattern, message, description),
+  [BackendValidator.MinimalNumberValidator]: ({minimalValue}) => minimalValueValidator(minimalValue)
 }

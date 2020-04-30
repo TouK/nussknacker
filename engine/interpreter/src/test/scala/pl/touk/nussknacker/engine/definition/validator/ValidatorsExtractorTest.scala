@@ -4,7 +4,7 @@ import java.time.LocalDate
 import java.util.Optional
 
 import javax.annotation.Nullable
-import javax.validation.constraints.NotBlank
+import javax.validation.constraints.{Min, NotBlank}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -23,6 +23,12 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private val literalIntegerParam = getFirstParam("literalIntegerAnnotatedParam", classOf[Integer])
   private val literalNullableIntegerParam = getFirstParam("literalNullableIntegerAnnotatedParam", classOf[Integer])
   private val literalStringParam = getFirstParam("literalStringAnnotatedParam", classOf[String])
+  private val minimalValueIntegerWithDefaultAnnotationMessageParam = getFirstParam("minimalValueIntegerWithDefaultAnnotationMessageAnnotatedParam", classOf[Int])
+  private val minimalValueBigDecimalWithDefaultAnnotationMessageParam = getFirstParam("minimalValueBigDecimalWithDefaultAnnotationMessageAnnotatedParam", classOf[BigDecimal])
+  private val minimalValueIntegerWithMessageParam = getFirstParam("minimalValueIntegerWithMessageAnnotatedParam", classOf[Int])
+  private val minimalValueBigDecimalWithMessageParam = getFirstParam("minimalValueBigDecimalWithMessageAnnotatedParam", classOf[BigDecimal])
+
+  private val minimalNumberValidatorDefaultAnnotationMessage: String = "{javax.validation.constraints.Min.message}"
 
   private def notAnnotated(param: String) {}
 
@@ -43,6 +49,15 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private def literalNullableIntegerAnnotatedParam(@Nullable @Literal integerParam: Integer) {}
 
   private def literalStringAnnotatedParam(@Literal stringParam: String) {}
+
+  private def minimalValueIntegerWithDefaultAnnotationMessageAnnotatedParam(@Min(value = 0) minimalValue: Int) {}
+
+  private def minimalValueBigDecimalWithDefaultAnnotationMessageAnnotatedParam(@Min(value = 0) minimalValue: BigDecimal) {}
+
+  private def minimalValueIntegerWithMessageAnnotatedParam(@Min(value = 0, message = "test") minimalValue: Int) {}
+
+  private def minimalValueBigDecimalWithMessageAnnotatedParam(@Min(value = 0, message = "test") minimalValue: BigDecimal) {}
+
 
   private def getFirstParam(name: String, params: Class[_]*) = {
     this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
@@ -100,9 +115,31 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
     ValidatorsExtractor.extract(validatorParams(literalStringParam)) shouldBe List(MandatoryParameterValidator)
   }
 
+  test("extract minimalValueIntegerWithDefaultAnnotationMessageParam value validator when @Min annotation detected") {
+    ValidatorsExtractor(None).extract(minimalValueIntegerWithDefaultAnnotationMessageParam) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0, minimalNumberValidatorDefaultAnnotationMessage))
+  }
+
+  test("extract minimalValueBigDecimalWithDefaultAnnotationMessageParam value validator when @Min annotation detected") {
+    ValidatorsExtractor(None).extract(minimalValueBigDecimalWithDefaultAnnotationMessageParam) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0, minimalNumberValidatorDefaultAnnotationMessage))
+  }
+
+  test("extract minimalValueIntegerWithMessageParam value validator when @Min annotation detected") {
+    ValidatorsExtractor(None).extract(minimalValueIntegerWithMessageParam) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0, "test"))
+  }
+
+  test("extract minimalValueBigDecimalWithMessageParam value validator when @Min annotation detected") {
+    ValidatorsExtractor(None).extract(minimalValueBigDecimalWithMessageParam) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0, "test"))
+  }
+
   private def validatorParams(rawJavaParam: java.lang.reflect.Parameter,
                               editor: Option[ParameterEditor] = None) =
     ValidatorExtractorParameters(rawJavaParam, EspTypeUtils.extractParameterType(rawJavaParam),
       classOf[Option[_]].isAssignableFrom(rawJavaParam.getType), classOf[Optional[_]].isAssignableFrom(rawJavaParam.getType), editor)
+
+}
 
 }
