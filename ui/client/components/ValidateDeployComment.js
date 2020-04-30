@@ -7,7 +7,7 @@ export default (comment, {requireComment, matchExpression}) => {
     validated = {isValid: false, toolTip: "Comment is required."}
   } else if (requireComment && !_.isEmpty(matchExpression)) {
     const match = comment.match(new RegExp(matchExpression, "g"))
-    if (!match || match.length > 1) {
+    if (!match) {
       validated = {isValid: false, toolTip: "Comment does not match required pattern."}
     }
   }
