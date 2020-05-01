@@ -195,6 +195,8 @@ object EspTypeUtils {
     val rawType = paramsType.getRawType
     if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
       Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+    } else if (classOf[java.util.Map[_, _]].isAssignableFrom(rawType)) {
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
       Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else Typed(rawType)

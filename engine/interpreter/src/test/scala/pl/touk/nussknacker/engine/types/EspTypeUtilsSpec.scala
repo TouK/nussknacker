@@ -124,6 +124,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       "string" -> MethodInfo(List(), Typed[String], None),
       "javaList" -> MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], None),
       "scalaList" -> MethodInfo(List(), Typed.fromDetailedType[List[String]], None),
+      "javaMap" -> MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], None),
       "toString" -> MethodInfo(List(), Typed[String], None)
     )))
 
@@ -176,7 +177,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     }
   }
 
-  case class TestEmbedded(string: String, javaList: java.util.List[String], scalaList: List[String])
+  case class TestEmbedded(string: String, javaList: java.util.List[String], scalaList: List[String], javaMap: java.util.Map[String, String])
 
   class Embeddable {
 
