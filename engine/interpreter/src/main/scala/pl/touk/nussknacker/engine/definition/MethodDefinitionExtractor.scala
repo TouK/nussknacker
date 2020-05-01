@@ -67,20 +67,30 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
         val name = (nodeParamNames orElse branchParamName)
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
         // TODO JOIN: for branchParams we should rather look at Map's value type
-        val paramType = extractParameterType(p)
+        val rawParamType = EspTypeUtils.getTypeForParameter(p)
+        val (paramType, isLazyParameter) = determineIfLazyParameter(rawParamType)
         val extractedEditor = EditorExtractor.extract(p)
-        val validators = tryToDetermineValidators(p, extractedEditor)
-        Parameter(name, paramType, p.getType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined)
+        val validators = tryToDetermineValidators(p, paramType, extractedEditor)
+        Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined, isLazyParameter)
       }
     }.toList
 
     new OrderedDependencies(dependencies)
   }
 
-  private def tryToDetermineValidators(param: java.lang.reflect.Parameter, extractedEditor: Option[ParameterEditor]) = {
+  private def determineIfLazyParameter(typ: TypingResult) = typ match {
+    case TypedClass(cl, genericParams) if classOf[LazyParameter[_]].isAssignableFrom(cl) =>
+      (genericParams.head, true)
+    case _ =>
+      (typ, false)
+  }
+
+  private def tryToDetermineValidators(param: java.lang.reflect.Parameter,
+                                       paramType: TypingResult,
+                                       extractedEditor: Option[ParameterEditor]) = {
     val possibleEditor: Option[ParameterEditor] = extractedEditor match {
       case Some(editor) => Some(editor)
-      case None => new ParameterTypeEditorDeterminer(param.getType).determine()
+      case None => new ParameterTypeEditorDeterminer(paramType).determine()
     }
     ValidatorsExtractor(possibleEditor).extract(param)
   }
@@ -112,8 +122,6 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
   protected def additionalDependencies: Set[Class[_]]
 
-  protected def extractParameterType(p: java.lang.reflect.Parameter): TypingResult = EspTypeUtils.extractParameterType(p, classOf[LazyParameter[_]])
-
 }
 
 
@@ -139,7 +147,7 @@ object MethodDefinitionExtractor {
       dependencies.map {
         case param: Parameter =>
           val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
-          validateType(param.name, foundParam, param.runtimeClass)
+          validateParamType(param.name, foundParam, param)
           foundParam
         case OutputVariableNameDependency =>
           outputVariableNameOpt.getOrElse(
@@ -147,14 +155,23 @@ object MethodDefinitionExtractor {
         case TypedNodeDependency(clazz) =>
           val foundParam = additionalDependencies.find(clazz.isInstance).getOrElse(
                       throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
-          validateType(clazz.getName, foundParam, clazz)
+          validateType(clazz.getName, foundParam, Typed(clazz))
           foundParam
       }
     }
 
-    private def validateType(name: String, value: AnyRef, expectedClass: Class[_]) : Unit = {
-      if (value != null && !EspTypeUtils.signatureElementMatches(expectedClass, value.getClass)) {
-        throw new IllegalArgumentException(s"Parameter $name has invalid class: ${value.getClass.getName}, should be: ${expectedClass.getName}")
+    private def validateParamType(name: String, value: AnyRef, param: Parameter): Unit = {
+      if (param.isLazyParameter) {
+        require(value.isInstanceOf[LazyParameter[_]], s"Parameter $name has invalid class: ${value.getClass.getName}, should be LazyParameter")
+      } else {
+        validateType(name, value, param.typ)
+      }
+    }
+
+    private def validateType(name: String, value: AnyRef, expectedType: TypingResult) : Unit = {
+      //TODO: what is *really* needed here?? is it performant enough?? (copied from previous version: EspTypeUtils.signatureElementMatches
+      if (value != null && !Typed(value.getClass).canBeSubclassOf(expectedType)) {
+        throw new IllegalArgumentException(s"Parameter $name has invalid type: ${value.getClass.getName}, should be: ${expectedType.display}")
       }
     }
   }

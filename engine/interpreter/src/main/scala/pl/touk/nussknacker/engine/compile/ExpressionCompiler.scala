@@ -49,7 +49,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   def compileValidatedObjectParameters(parameters: List[evaluatedparam.Parameter],
                                        ctx: ValidationContext)(implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
-    compileEagerObjectParameters(parameters.map(p => Parameter.optional(p.name, Unknown, classOf[Any])), parameters, ctx)
+    compileEagerObjectParameters(parameters.map(p => Parameter.optional(p.name, Unknown)), parameters, ctx)
 
   def compileEagerObjectParameters(parameterDefinitions: List[Parameter],
                                    parameters: List[evaluatedparam.Parameter],

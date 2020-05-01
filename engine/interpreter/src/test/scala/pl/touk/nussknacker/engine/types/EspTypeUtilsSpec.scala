@@ -19,28 +19,6 @@ import scala.reflect.runtime.universe._
 
 class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
-  val signatures = Table(("signature", "value", "matches"),
-    (java.lang.Boolean.TYPE, classOf[java.lang.Boolean], true),
-    (java.lang.Long.TYPE, classOf[java.lang.Long], true),
-    (java.lang.Integer.TYPE, classOf[java.lang.Integer], true),
-    (classOf[java.lang.Long], classOf[java.lang.Integer], true),
-    (classOf[java.lang.Long], java.lang.Integer.TYPE, true),
-    (java.lang.Long.TYPE, java.lang.Integer.TYPE, true),
-    (java.lang.Long.TYPE, classOf[java.lang.Integer], true),
-    (java.lang.Long.TYPE, classOf[java.lang.Integer], true),
-
-    (java.lang.Character.TYPE, classOf[java.lang.Character], true),
-    (classOf[java.lang.Number], classOf[java.lang.Integer], true),
-    (java.lang.Integer.TYPE, classOf[java.lang.Long], false)
-  )
-
-  test("should check if signature is possible") {
-
-    forAll(signatures) { (signature, value, matches) =>
-      EspTypeUtils.signatureElementMatches(signature, value) shouldBe matches
-    }
-  }
-
   case class SampleClass(foo: Int, bar: String) extends SampleAbstractClass with SampleInterface
 
   class Returning {

@@ -50,7 +50,6 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val definition = processDefinition.customStreamTransformers("transformerWithGenericParam")._1
 
     definition.objectDefinition.parameters should have size 1
-    definition.objectDefinition.parameters.head.runtimeClass shouldEqual classOf[List[_]]
     definition.objectDefinition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
   }
 

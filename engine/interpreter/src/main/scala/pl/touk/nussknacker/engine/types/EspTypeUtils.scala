@@ -7,8 +7,8 @@ import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Source, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{Documentation, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
@@ -18,19 +18,21 @@ object EspTypeUtils {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
+  private val GenericClassesToBeExtracted = List(
+    classOf[java.util.Collection[_]],
+    classOf[java.util.Map[_, _]],
+    classOf[scala.collection.Iterable[_]],
+    // This one is for MethodDefinitionExtractor purpose
+    classOf[LazyParameter[_]],
+    // All below are for AbstractMethodDefinitionExtractor purpose
+    classOf[Future[_]],
+    classOf[java.util.concurrent.CompletionStage[_]],
+    classOf[Source[_]]
+  )
+
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
     ClazzDefinition(Typed(clazz), getPublicMethodAndFields(clazz))
-
-  def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*): TypingResult =
-    if (classesToExtractGenericFrom.contains(p.getType)) {
-      val parameterizedType = p.getParameterizedType.asInstanceOf[ParameterizedType]
-      extractClass(parameterizedType.getActualTypeArguments.apply(0)).getOrElse {
-        throw new IllegalArgumentException("Can't extract type for parameter: " + p)
-      }
-    } else {
-      getTypeForParameter(p)
-    }
 
   def getCompanionObject[T](klazz: Class[T]): T = {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]
@@ -40,14 +42,6 @@ object EspTypeUtils {
     val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
     if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
     else None
-  }
-
-  //TODO: what is *really* needed here?? is it performant enough??
-  def signatureElementMatches(signatureType: Class[_], passedValueClass: Class[_]): Boolean = {
-    def unbox(typ: Class[_]) = if (ClassUtils.isPrimitiveWrapper(typ)) ClassUtils.wrapperToPrimitive(typ) else typ
-
-    ClassUtils.isAssignable(passedValueClass, signatureType, true) ||
-      ClassUtils.isAssignable(unbox(passedValueClass), unbox(signatureType), true)
   }
 
   private def getPublicMethodAndFields(clazz: Class[_])
@@ -148,7 +142,7 @@ object EspTypeUtils {
     } yield Parameter(name, paramType)
   }
 
-  private def getTypeForParameter(javaParam: java.lang.reflect.Parameter): TypingResult = {
+  def getTypeForParameter(javaParam: java.lang.reflect.Parameter): TypingResult = {
     extractClass(javaParam.getParameterizedType).getOrElse(Typed(javaParam.getType))
   }
 
@@ -187,20 +181,10 @@ object EspTypeUtils {
 
   private def extractGenericParams(paramsType: ParameterizedTypeImpl): TypingResult = {
     val rawType = paramsType.getRawType
-    if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
-      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    } else if (classOf[java.util.Map[_, _]].isAssignableFrom(rawType)) {
-      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
-      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    // All below are for AbstractMethodDefinitionExtractor purpose
-    } else if (classOf[scala.concurrent.Future[_]].isAssignableFrom(rawType)) {
-      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    } else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(rawType)) {
-      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    } else if (classOf[Source[_]].isAssignableFrom(rawType)) {
-      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
-    } else Typed(rawType)
+    GenericClassesToBeExtracted
+      .find(_.isAssignableFrom(rawType))
+      .map(_ => Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown))))
+      .getOrElse(Typed(rawType))
   }
 
 }
