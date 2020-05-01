@@ -160,7 +160,7 @@ object EspTypeUtils {
   }
 
   private def getReturnClassForField(field: Field): TypingResult = {
-    getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(Typed(field.getType))
+    getGenericType(field.getGenericType).orElse(extractClass(field.getGenericType)).getOrElse(Typed(field.getType))
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases

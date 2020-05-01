@@ -66,6 +66,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     )
   }
 
+  test("should extract generic field") {
+    val sampleClassInfo = singleClassDefinition[JavaClassWithGenericField]()
+
+    sampleClassInfo.value.methods("list").refClazz shouldEqual Typed.fromDetailedType[java.util.List[String]]
+  }
+
   test("shoud detect java beans and fields in java class") {
     def methods(strategy: PropertyFromGetterExtractionStrategy) =
       singleClassDefinition[JavaSampleClass](ClassExtractionSettings.Default.copy(propertyExtractionStrategy = strategy)).value.methods.keys.toSet
