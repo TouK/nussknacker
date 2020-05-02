@@ -57,8 +57,9 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
                                   (implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
     compileObjectParameters(parameterDefinitions, parameters, List.empty, ctx, Map.empty, eager = true).map(_.map {
-      case TypedParameter(name, expr: TypedExpression) => compiledgraph.evaluatedparam.Parameter(name, expr.expression, expr.returnType, expr.typingInfo)
-      case TypedParameter(name, expr: TypedExpressionMap) => throw new IllegalArgumentException("Typed expression map should not be here...")
+      case (TypedParameter(name, expr: TypedExpression), paramDef) =>
+        compiledgraph.evaluatedparam.Parameter(name, expr.expression, expr.returnType, paramDef.scalaOptionParameter, paramDef.javaOptionalParameter, expr.typingInfo)
+      case (TypedParameter(name, expr: TypedExpressionMap), paramDef) => throw new IllegalArgumentException("Typed expression map should not be here...")
     })
   }
 
@@ -67,7 +68,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
                               branchParameters: List[evaluatedparam.BranchParameters],
                               ctx: ValidationContext, branchContexts: Map[String, ValidationContext], eager: Boolean)
                              (implicit nodeId: NodeId)
-  : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.TypedParameter]] = {
+  : ValidatedNel[PartSubGraphCompilationError, List[(compiledgraph.evaluatedparam.TypedParameter, Parameter)]] = {
     val syntax = ValidatedSyntax[PartSubGraphCompilationError]
     import syntax._
 
@@ -88,6 +89,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
           compileBranchParam(branchIdAndExpressions, branchContexts, paramDefMap(paramName))
       }
       (compiledParams ++ compiledBranchParams).sequence
+        .map(typed => typed.map(t => (t, paramDefMap(t.name))))
     }
   }
 

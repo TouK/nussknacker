@@ -21,7 +21,8 @@ object Parameter {
     Parameter(name, typ, validators = List(MandatoryParameterValidator))
 
   def apply(name: String, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
-    Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty, branchParam = false, isLazyParameter = false)
+    Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty,
+      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
   @deprecated("Passing runtimeClass to Parameter.apply is deprecated in favor of passing isLazyParameter")
   def apply(name: String,
@@ -32,14 +33,18 @@ object Parameter {
             additionalVariables: Map[String, TypingResult],
             branchParam: Boolean): Parameter = {
     val isLazyParameter = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
-    Parameter(name, typ, editor, validators, additionalVariables, branchParam, isLazyParameter)
+    Parameter(name, typ, editor, validators, additionalVariables, branchParam, isLazyParameter,
+      scalaOptionParameter = false, javaOptionalParameter = false)
   }
 
   def optional[T:ClassTag](name: String): Parameter =
     Parameter.optional(name, Typed[T])
 
+  // Represents optional parameter annotated with @Nullable, if you want to emulate scala Option or java Optional,
+  // you should redefine scalaOptionParameter and javaOptionalParameter
   def optional(name: String, typ: TypingResult): Parameter =
-    Parameter(name, typ, editor = None, validators = List.empty, additionalVariables = Map.empty, branchParam = false, isLazyParameter = false)
+    Parameter(name, typ, editor = None, validators = List.empty, additionalVariables = Map.empty,
+      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
 }
 
@@ -56,4 +61,6 @@ case class Parameter(name: String,
                      validators: List[ParameterValidator],
                      additionalVariables: Map[String, TypingResult],
                      branchParam: Boolean,
-                     isLazyParameter: Boolean) extends NodeDependency
+                     isLazyParameter: Boolean,
+                     scalaOptionParameter: Boolean,
+                     javaOptionalParameter: Boolean) extends NodeDependency

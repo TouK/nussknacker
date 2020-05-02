@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.{Date, UUID}
+import java.util.{Date, Optional, UUID}
 
 import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings.add
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.collection.JavaConverters._
@@ -110,6 +111,11 @@ object SampleNodes {
         internalVar
       })
     }
+  }
+
+  object ServiceAcceptingScalaOption extends Service {
+    @MethodToInvoke
+    def invoke(@ParamName("scalaOptionParam") scalaOptionParam: Option[String]): Future[Option[String]] = Future.successful(scalaOptionParam)
   }
 
   object StateCustomNode extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
@@ -353,6 +359,30 @@ object SampleNodes {
 
   }
 
+  object EagerOptionalParameterSinkFactory extends SinkFactory with WithDataList[String] {
+
+    override def requiresOutput: Boolean = false
+
+    @MethodToInvoke
+    def createSink(@ParamName("optionalStringParam") value: Optional[String]): Sink = new FlinkSink {
+
+      val sinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
+        override def invoke(value: Any): Unit = {
+          add(value.toString)
+        }
+      }
+
+      override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
+        val serializableValue = value.orElse(null) // Java's Optional is not serializable
+        dataStream
+          .map(_ => serializableValue: Any)
+          .addSink(sinkFunction)
+      }
+
+      override def testDataOutput: Option[Any => String] = None
+    }
+
+  }
 
   object MockService extends Service with WithDataList[Any]
 
@@ -403,6 +433,10 @@ object SampleNodes {
     val constant = 4
 
     def add(a: Int, b: Int): Int =  a + b
+
+    def scalaOptionValue: Option[String] = Some("" + constant)
+
+    def javaOptionalValue: Optional[String] = Optional.of("" + constant)
 
   }
 
@@ -466,6 +500,5 @@ object SampleNodes {
               Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
               TestParsingUtils.newLineSplit,
               processObjectDependencies)
-
 
 }

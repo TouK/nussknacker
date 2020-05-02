@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
+import java.util.Optional
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor
+import pl.touk.nussknacker.engine.definition.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
@@ -68,10 +69,12 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
         // TODO JOIN: for branchParams we should rather look at Map's value type
         val rawParamType = EspTypeUtils.extractParameterType(p)
-        val (paramType, isLazyParameter) = determineIfLazyParameter(rawParamType)
+        val (paramTypeWithUnwrappedLazy, isLazyParameter) = determineIfLazyParameter(rawParamType)
+        val (paramType, isScalaOptionParameter, isJavaOptionalParameter) = determineOptionalParameter(paramTypeWithUnwrappedLazy)
         val extractedEditor = EditorExtractor.extract(p)
-        val validators = tryToDetermineValidators(p, paramType, extractedEditor)
-        Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined, isLazyParameter)
+        val validators = tryToDetermineValidators(p, paramType, isScalaOptionParameter, isJavaOptionalParameter, extractedEditor)
+        Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined,
+          isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
       }
     }.toList
 
@@ -85,14 +88,25 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       (typ, false)
   }
 
+  private def determineOptionalParameter(typ: TypingResult) = typ match {
+    case TypedClass(cl, genericParams) if classOf[Option[_]].isAssignableFrom(cl) =>
+      (genericParams.head, true, false)
+    case TypedClass(cl, genericParams) if classOf[Optional[_]].isAssignableFrom(cl) =>
+      (genericParams.head, false, true)
+    case _ =>
+      (typ, false, false)
+  }
+
   private def tryToDetermineValidators(param: java.lang.reflect.Parameter,
                                        paramType: TypingResult,
+                                       isScalaOptionParameter: Boolean,
+                                       isJavaOptionalParameter: Boolean,
                                        extractedEditor: Option[ParameterEditor]) = {
     val possibleEditor: Option[ParameterEditor] = extractedEditor match {
       case Some(editor) => Some(editor)
       case None => new ParameterTypeEditorDeterminer(paramType).determine()
     }
-    ValidatorsExtractor(possibleEditor).extract(param)
+    ValidatorsExtractor.extract(ValidatorExtractorParameters(param, paramType, isScalaOptionParameter, isJavaOptionalParameter, possibleEditor))
   }
 
   private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, TypingResult] =
@@ -164,7 +178,13 @@ object MethodDefinitionExtractor {
       if (param.isLazyParameter) {
         require(value.isInstanceOf[LazyParameter[_]], s"Parameter $name has invalid class: ${value.getClass.getName}, should be LazyParameter")
       } else {
-        validateType(name, value, param.typ)
+        val expectedType = if (param.scalaOptionParameter)
+          Typed.genericTypeClass(classOf[Option[_]], List(param.typ))
+        else if (param.javaOptionalParameter)
+          Typed.genericTypeClass(classOf[Optional[_]], List(param.typ))
+        else
+          param.typ
+        validateType(name, value, expectedType)
       }
     }
 

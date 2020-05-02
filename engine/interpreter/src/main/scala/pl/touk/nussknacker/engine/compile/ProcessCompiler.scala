@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
@@ -405,9 +406,9 @@ protected trait ProcessCompilerBase {
       parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
         createObject[T](nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
           val typingInfo = compiledParameters.flatMap {
-            case TypedParameter(name, TypedExpression(_, _, typingInfo)) =>
+            case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
               List(name -> typingInfo)
-            case TypedParameter(paramName, TypedExpressionMap(valueByBranch)) =>
+            case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
               valueByBranch.map {
                 case (branch, TypedExpression(_, _, typingInfo)) =>
                   val expressionId = NodeTypingInfo.branchParameterExpressionId(paramName, branch)
@@ -421,7 +422,7 @@ protected trait ProcessCompilerBase {
   }
 
 
-  private def createObject[T](nodeDefinition: ObjectWithMethodDef, outputVariableNameOpt: Option[String], compiledParameters: List[TypedParameter])
+  private def createObject[T](nodeDefinition: ObjectWithMethodDef, outputVariableNameOpt: Option[String], compiledParameters: List[(TypedParameter, Parameter)])
                              (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     try {
       Valid(factory.create[T](nodeDefinition, compiledParameters, outputVariableNameOpt))

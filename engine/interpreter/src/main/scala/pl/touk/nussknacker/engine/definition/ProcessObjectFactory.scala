@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDef}
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
@@ -26,17 +27,14 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def create[T](objectWithMethodDef: ObjectWithMethodDef,
-                params: List[evaluatedparam.TypedParameter],
+                params: List[(evaluatedparam.TypedParameter, ParameterDef)],
                 outputVariableNameOpt: Option[String])(implicit processMetaData: MetaData, nodeId: NodeId): T = {
-
-    val withDefs = params.sortBy(_.name).zip(objectWithMethodDef.parameters.sortBy(_.name))
-
     // TODO JOIN: Handle not lazy evaluated branch params
-    val (lazyInterpreterParameters, paramsToEvaluate) = withDefs.partition(p => p._2.isLazyParameter || p._2.branchParam)
+    val (lazyInterpreterParameters, paramsToEvaluate) = params.sortBy(_._1.name).partition(p => p._2.isLazyParameter || p._2.branchParam)
 
     val evaluatedParameters = paramsToEvaluate.map {
       case (TypedParameter(name, TypedExpression(expr, returnType, typingInfo)), paramDef) =>
-        evaluatedparam.Parameter(name, expr, returnType, typingInfo)
+        evaluatedparam.Parameter(name, expr, returnType, paramDef.scalaOptionParameter, paramDef.javaOptionalParameter, typingInfo)
     }
 
     //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter

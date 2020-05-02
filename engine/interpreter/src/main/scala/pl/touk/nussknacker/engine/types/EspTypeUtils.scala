@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.types
 
 import java.lang.reflect._
+import java.util.Optional
 
 import cats.data.StateT
 import cats.effect.IO
@@ -21,7 +22,9 @@ object EspTypeUtils {
   private val GenericClassesToBeExtracted = List(
     classOf[java.util.Collection[_]],
     classOf[java.util.Map[_, _]],
+    classOf[java.util.Optional[_]],
     classOf[scala.collection.Iterable[_]],
+    classOf[scala.Option[_]],
     // This one is for MethodDefinitionExtractor purpose
     classOf[LazyParameter[_]],
     // All below are for AbstractMethodDefinitionExtractor purpose
@@ -166,6 +169,11 @@ object EspTypeUtils {
     else if (classOf[Option[_]].isAssignableFrom(rawType)) {
       val optionGenericType = genericReturnType.getActualTypeArguments.apply(0)
       extractClass(optionGenericType)
+    }
+    // see JavaOptionalOrNullPropertyAccessor
+    else if (classOf[Optional[_]].isAssignableFrom(rawType)) {
+      val optionalGenericType = genericReturnType.getActualTypeArguments.apply(0)
+      extractClass(optionalGenericType)
     }
     else None
   }

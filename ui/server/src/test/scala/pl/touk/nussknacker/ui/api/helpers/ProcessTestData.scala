@@ -72,14 +72,9 @@ object ProcessTestData {
     .withService(otherExistingServiceId2, Parameter("expression"))
     .withService(otherExistingServiceId3, Parameter[String]("expression"))
     .withService(notBlankExistingServiceId, NotBlankParameter("expression", Typed.typedClass(classOf[String])))
-    .withService(otherExistingServiceId4, Parameter(
-      "expression",
-      Typed.typedClass(classOf[JavaSampleEnum]),
-      Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
-      List(FixedValuesValidator(List(FixedExpressionValue("a", "a")))),
-      Map.empty,
-      branchParam = false,
-      isLazyParameter = false)
+    .withService(otherExistingServiceId4, Parameter[JavaSampleEnum]("expression").copy(
+      editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
+      validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a")))))
     )
     .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
       clearsContext = false, manyInputs = false, canBeEnding = false))
