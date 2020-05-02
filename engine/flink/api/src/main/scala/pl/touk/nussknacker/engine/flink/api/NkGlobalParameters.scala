@@ -12,11 +12,11 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
 
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
-//Also, those configuration properties will be exposed via Flienk REST API/webconsole
+//Also, those configuration properties will be exposed via Flink REST API/webconsole
 case class NkGlobalParameters(buildInfo: String,
                               processVersion: ProcessVersion,
                               configParameters: Option[ConfigGlobalParameters],
-                              rawParameters: RawParameters) extends GlobalJobParameters {
+                              namingParameters: NamingParameters) extends GlobalJobParameters {
 
   //here we decide which configuration properties should be shown in REST API etc.
   //For now it will be only deployment information
@@ -37,14 +37,13 @@ case class NkGlobalParameters(buildInfo: String,
 case class ConfigGlobalParameters(useLegacyMetrics: Option[Boolean],
                                   explicitUidInStatefulOperators: Option[Boolean])
 
-case class RawParameters(processOriginalName: String,
-                         namespace: Option[String])
+case class NamingParameters(tags: Map[String, String])
 
 object NkGlobalParameters {
 
-  def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config, rawParameters: RawParameters): NkGlobalParameters = {
+  def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config, namingParameters: NamingParameters): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
-    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, rawParameters)
+    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namingParameters)
   }
 
   def setInContext(ec: ExecutionConfig, globalParameters: NkGlobalParameters): Unit = {

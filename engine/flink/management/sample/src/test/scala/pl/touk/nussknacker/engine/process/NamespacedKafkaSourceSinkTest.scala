@@ -8,7 +8,7 @@ import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming}
+import pl.touk.nussknacker.engine.api.namespaces.{DefaultObjectNamingParameters, KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
@@ -85,6 +85,8 @@ case class TestObjectNaming() extends ObjectNaming {
     case _ => originalName
   }
 
+  override def objectNamingParameters(originalName: String, config: Config, namingContext: NamingContext): ObjectNamingParameters =
+    DefaultObjectNamingParameters()
 }
 
 class TestProcessConfig extends DevProcessConfigCreator {

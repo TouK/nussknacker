@@ -43,7 +43,7 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     if (useLegacyMetricsMode) {
       groupsWithNameForLegacyMode(nameParts, tags)
     } else {
-      val namespaceTags = extractTags(NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).get)
+      val namespaceTags = NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).get.namingParameters.tags
       tagMode(nameParts, tags ++ namespaceTags)
     }
   }
@@ -91,17 +91,6 @@ class MetricUtils(runtimeContext: RuntimeContext) {
         
       //we resort to default mode...
       case _ => tagMode(nameParts, tags)
-    }
-  }
-
-  // This function is used in the non-legacy mode to add additional tags to all types of metrics.
-  // If you add new tag, remember that it will also influence the measurement name. In order to avoid it,
-  // make sure to modify `telegraf.conf` accordingly.
-  def extractTags(globalParameters: NkGlobalParameters): Map[String, String] = {
-    val map = Map("processOriginalName" -> globalParameters.rawParameters.processOriginalName)
-    globalParameters.rawParameters.namespace match {
-      case Some(name) => map + ("namespace" -> name)
-      case None => map
     }
   }
 
