@@ -29,7 +29,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val method = classOf[Returning].getMethod("futureOfList")
 
-    val extractedType = EspTypeUtils.getReturnClassForMethod(method)
+    val extractedType = EspTypeUtils.extractMethodReturnType(method)
 
     extractedType shouldBe Typed.fromDetailedType[Future[java.util.List[SampleClass]]]
   }

@@ -32,28 +32,18 @@ object EspTypeUtils {
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(Typed(clazz), getPublicMethodAndFields(clazz))
+    ClazzDefinition(Typed(clazz), extractPublicMethodAndFields(clazz))
 
-  def getCompanionObject[T](klazz: Class[T]): T = {
-    klazz.getField("MODULE$").get(null).asInstanceOf[T]
-  }
-
-  def getGenericType(genericReturnType: Type): Option[TypingResult] = {
-    val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
-    if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
-    else None
-  }
-
-  private def getPublicMethodAndFields(clazz: Class[_])
-                                      (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+  private def extractPublicMethodAndFields(clazz: Class[_])
+                                          (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
-    val methods = publicMethods(clazz, membersPredicate)
-    val fields = publicFields(clazz, membersPredicate).mapValuesNow(List(_))
+    val methods = extractPublicMethods(clazz, membersPredicate)
+    val fields = extractPublicFields(clazz, membersPredicate).mapValuesNow(List(_))
     methods ++ fields
   }
 
-  private def publicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
-                           (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+  private def extractPublicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
+                                  (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
            does not contain any implicitly declared methods from {@code Object}.
            The same for primitives - we assume that languages like SpEL will be able to do boxing
@@ -71,7 +61,8 @@ object EspTypeUtils {
     val filteredMethods = publicMethods.filter(membersPredicate.shouldBeVisible)
 
     val methodNameAndInfoList = filteredMethods.flatMap { method =>
-      methodAccessMethods(method).map(_ -> toMethodInfo(method))
+      val extractedMethod = extractMethod(method)
+      collectMethodNames(method).map(_ -> extractedMethod)
     }
 
     deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
@@ -103,11 +94,9 @@ object EspTypeUtils {
     }.toGroupedMap
   }
 
-  private def toMethodInfo(method: Method)
-    = MethodInfo(getParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
-
-  private def methodAccessMethods(method: Method)
-                                 (implicit settings: ClassExtractionSettings): List[String] = {
+  // SpEL is able to access getters using property name so you can write `obj.foo` instead of `obj.getFoo`
+  private def collectMethodNames(method: Method)
+                                (implicit settings: ClassExtractionSettings): List[String] = {
     val isGetter = method.getName.matches("^(get|is).+") && method.getParameterCount == 0
     if (isGetter) {
       val propertyMethod = StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))
@@ -121,58 +110,70 @@ object EspTypeUtils {
     }
   }
 
-  private def publicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
-                          (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
+  private def extractMethod(method: Method)
+    = MethodInfo(extractParameters(method), extractMethodReturnType(method), extractNussknackerDocs(method))
+
+  private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
+                                 (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     interestingFields.map { field =>
-      field.getName -> MethodInfo(List.empty, getReturnClassForField(field), getNussknackerDocs(field))
+      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), extractNussknackerDocs(field))
     }.toMap
   }
 
-  def getReturnClassForMethod(method: Method): TypingResult = {
-    getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(Typed(method.getReturnType))
+  private def extractNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
+    Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
   }
 
-  private def getParameters(method: Method): List[Parameter] = {
+  private def extractParameters(method: Method): List[Parameter] = {
     for {
       param <- method.getParameters.toList
       annotationOption = Option(param.getAnnotation(classOf[ParamName]))
       name = annotationOption.map(_.value).getOrElse(param.getName)
-      paramType = getTypeForParameter(param)
+      paramType = extractParameterType(param)
     } yield Parameter(name, paramType)
   }
 
-  def getTypeForParameter(javaParam: java.lang.reflect.Parameter): TypingResult = {
+  def extractParameterType(javaParam: java.lang.reflect.Parameter): TypingResult = {
     extractClass(javaParam.getParameterizedType).getOrElse(Typed(javaParam.getType))
   }
 
-  private def getNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
-    Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
+  private def extractFieldReturnType(field: Field): TypingResult = {
+    extractGenericReturnType(field.getGenericType).orElse(extractClass(field.getGenericType)).getOrElse(Typed(field.getType))
   }
 
-  private def getReturnClassForField(field: Field): TypingResult = {
-    getGenericType(field.getGenericType).orElse(extractClass(field.getGenericType)).getOrElse(Typed(field.getType))
+  def extractMethodReturnType(method: Method): TypingResult = {
+    extractGenericReturnType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(Typed(method.getReturnType))
   }
 
-  //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
-  //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
-  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[TypingResult] = {
-    val rawType = genericMethodType.getRawType
+  private def extractGenericReturnType(typ: Type): Option[TypingResult] = {
+    typ match {
+      case t: ParameterizedTypeImpl => extractGenericMonadReturnType(t)
+      case t => None
+    }
+  }
+
+  // This method should be used only for method's and field's return type - for method's parameters such unwrapping has no sense
+  private def extractGenericMonadReturnType(genericReturnType: ParameterizedTypeImpl): Option[TypingResult] = {
+    val rawType = genericReturnType.getRawType
 
     // see ScalaLazyPropertyAccessor
     if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
-      val returnType = genericMethodType.getActualTypeArguments.apply(3) // it's IndexedStateT[IO, ContextWithLazyValuesProvider, ContextWithLazyValuesProvider, A]
+      val returnType = genericReturnType.getActualTypeArguments.apply(3) // it's IndexedStateT[IO, ContextWithLazyValuesProvider, ContextWithLazyValuesProvider, A]
       extractClass(returnType)
     }
+    // see ScalaOptionOrNullPropertyAccessor
     else if (classOf[Option[_]].isAssignableFrom(rawType)) {
-      val optionGenericType = genericMethodType.getActualTypeArguments.apply(0)
+      val optionGenericType = genericReturnType.getActualTypeArguments.apply(0)
       extractClass(optionGenericType)
     }
     else None
   }
 
-  private def extractClass(futureGenericType: Type): Option[TypingResult] = {
-    futureGenericType match {
+  //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
+  //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
+  private def extractClass(typ: Type): Option[TypingResult] = {
+    typ match {
       case t: Class[_] => Some(Typed(t))
       case t: ParameterizedTypeImpl => Some(extractGenericParams(t))
       case t => None
@@ -185,6 +186,10 @@ object EspTypeUtils {
       .find(_.isAssignableFrom(rawType))
       .map(_ => Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown))))
       .getOrElse(Typed(rawType))
+  }
+
+  def companionObject[T](klazz: Class[T]): T = {
+    klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
 }

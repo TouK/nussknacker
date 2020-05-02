@@ -67,7 +67,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
         val name = (nodeParamNames orElse branchParamName)
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
         // TODO JOIN: for branchParams we should rather look at Map's value type
-        val rawParamType = EspTypeUtils.getTypeForParameter(p)
+        val rawParamType = EspTypeUtils.extractParameterType(p)
         val (paramType, isLazyParameter) = determineIfLazyParameter(rawParamType)
         val extractedEditor = EditorExtractor.extract(p)
         val validators = tryToDetermineValidators(p, paramType, extractedEditor)
@@ -107,7 +107,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       .filterNot(_ == classOf[Object])
       .map[TypingResult](Typed(_))
     val typeFromSignature = {
-      val rawType = EspTypeUtils.getReturnClassForMethod(method)
+      val rawType = EspTypeUtils.extractMethodReturnType(method)
       (expectedReturnType, rawType) match {
         // uwrap Future, Source and so on
         case (Some(monadGenericType), TypedClass(cl, genericParam :: Nil)) if monadGenericType.isAssignableFrom(cl) => Some(genericParam)
