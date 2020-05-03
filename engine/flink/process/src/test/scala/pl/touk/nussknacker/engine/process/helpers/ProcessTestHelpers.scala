@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.execution.ExecutionState
@@ -119,7 +117,7 @@ object ProcessTestHelpers {
       }
 
       override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = {
-        val kafkaConfig = config.as[KafkaConfig]("kafka")
+        val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
         Map("sig1" ->
           WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
       }

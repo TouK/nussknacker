@@ -2,6 +2,12 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
+## In version 0.1.1 (not released yet)
+
+* [#920](https://github.com/TouK/nussknacker/pull/920) `KafkaSource` constructor now takes `KafkaConfig` instead of using one
+ that was parsed by `BaseKafkaSourceFactory.kafkaConfig`. Also if you parse Typesafe Config to `KafkaSource` on your own, now you should
+ use dedicated method `KafkaConfig.parseConfig` to avoid further problems when parsing strategy will be changed.
+
 ## In version 0.1.0
 
 * [#755](https://github.com/TouK/nussknacker/pull/755) Default async execution context does not depend on parallelism.

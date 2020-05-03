@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
 import javax.validation.constraints.NotBlank
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
@@ -60,7 +58,8 @@ class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchem
              )
              @NotBlank
              topic: String): Source[T] with TestDataGenerator = {
-    createSource(processMetaData, List(topic), schemaFactory.create(List(topic), kafkaConfig))
+    val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
+    createSource(processMetaData, List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig))
   }
 
 }
@@ -68,6 +67,9 @@ class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchem
 object KafkaSourceFactory {
 
   final val TopicParamName = "topic"
+
+  def parseKafkaConfig(processObjectDependencies: ProcessObjectDependencies): KafkaConfig =
+    KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
 
 }
 
@@ -91,7 +93,8 @@ class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
 
   @MethodToInvoke
   def create(processMetaData: MetaData): Source[T] with TestDataGenerator = {
-    createSource(processMetaData, List(topic), schemaFactory.create(List(topic), kafkaConfig))
+    val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
+    createSource(processMetaData, List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig))
   }
 
 }
@@ -103,13 +106,17 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
 
   protected def createSource(processMetaData: MetaData, topics: List[String],
                              schema: KafkaDeserializationSchema[T]): KafkaSource = {
-    new KafkaSource(consumerGroupId = processMetaData.id, topics = topics, schema, None, processObjectDependencies)
+    createSource(processMetaData, topics, KafkaSourceFactory.parseKafkaConfig(processObjectDependencies), schema)
   }
 
-  val kafkaConfig: KafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
+  protected def createSource(processMetaData: MetaData, topics: List[String],
+                             kafkaConfig: KafkaConfig, schema: KafkaDeserializationSchema[T]): KafkaSource = {
+    new KafkaSource(consumerGroupId = processMetaData.id, topics = topics, kafkaConfig, schema, None, processObjectDependencies)
+  }
 
   class KafkaSource(consumerGroupId: String,
                     topics: List[String],
+                    kafkaConfig: KafkaConfig,
                     schema: KafkaDeserializationSchema[T],
                     recordFormatterOpt: Option[RecordFormatter],
                     processObjectDependencies: ProcessObjectDependencies)
