@@ -417,9 +417,10 @@ class Graph extends React.Component {
         return
       }
 
-      const nodeData = cellView.model.attributes.nodeData
-      if (nodeData) {
-        const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeData.id
+      const nodeDataId = cellView.model.attributes.nodeData?.id
+      if (nodeDataId) {
+        const nodeData = this.props.processToDisplay.nodes.find(n => n.id === nodeDataId)
+        const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
         this.props.actions.displayModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
 
@@ -431,27 +432,27 @@ class Graph extends React.Component {
     if (this.props.singleClickNodeDetailsEnabled) {
       this.processGraphPaper.on("cell:pointerclick", (cellView, evt, x, y) => {
 
-        const nodeData = cellView.model.attributes.nodeData
-        if (!nodeData) {
+        const nodeDataId = cellView.model.attributes.nodeData?.id
+        if (!nodeDataId) {
           return
         }
 
-        this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
+        this.props.actions.displayNodeDetails(this.props.processToDisplay.nodes.find(n => n.id === nodeDataId))
 
         if (evt.ctrlKey || evt.metaKey) {
-          this.props.actions.expandSelection(nodeData.id)
+          this.props.actions.expandSelection(nodeDataId)
         } else {
-          this.props.actions.resetSelection(nodeData.id)
+          this.props.actions.resetSelection(nodeDataId)
         }
 
         //TODO: is this the best place for this? if no, where should it be?
         const targetClass = _.get(evt, "originalEvent.target.className.baseVal")
-        if (targetClass.includes("collapseIcon") && nodeData) {
-          this.props.actions.collapseGroup(nodeData.id)
+        if (targetClass.includes("collapseIcon") && nodeDataId) {
+          this.props.actions.collapseGroup(nodeDataId)
         }
 
-        if (targetClass.includes("expandIcon") && nodeData) {
-          this.props.actions.expandGroup(nodeData.id)
+        if (targetClass.includes("expandIcon") && nodeDataId) {
+          this.props.actions.expandGroup(nodeDataId)
         }
       })
     }

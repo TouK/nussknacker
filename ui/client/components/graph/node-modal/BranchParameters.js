@@ -7,7 +7,7 @@ const BranchParameters = (props) => {
   const {node, joinDef, onChange, isMarked, readOnly, showValidation, errors, showSwitch} = props
 
   return (
-    joinDef.branchParameters.map((param, paramIndex) => {
+    joinDef.branchParameters?.map((param, paramIndex) => {
       return (
         <div className="node-row" key={param.name}>
           <div className="node-label" title={param.name}>{param.name}:</div>
@@ -18,9 +18,8 @@ const BranchParameters = (props) => {
                   // It could be tricky - we assume that node data is filled by template (or actual values)
                   // in the same order as here, but it is true because for filling is used the same JoinDef
                   const path = `branchParameters[${edgeIndex}].parameters[${paramIndex}]`
-                  const paramValue = node.branchParameters[edgeIndex].parameters[paramIndex]
-                  const fieldName = `value-${param.name}-${edge.from}`
-                  return (
+                  const paramValue = node?.branchParameters[edgeIndex]?.parameters[paramIndex]
+                  return paramValue ? (
                     <div className="branch-parameter-row" key={`${param.name}-${edge.from}`}>
                       <div className={"branch-param-label"}>{edge.from}</div>
                       <div className={"branch-parameter-expr-container"}>
@@ -40,7 +39,7 @@ const BranchParameters = (props) => {
                         />
                       </div>
                     </div>
-                  )
+                  ) : null
                 })
               }
             </div>
