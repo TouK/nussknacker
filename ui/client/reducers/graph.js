@@ -2,6 +2,8 @@ import _ from "lodash"
 
 import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
+import ProcessUtils from "../common/ProcessUtils"
+import JoinDef from "../components/graph/node-modal/JoinDef"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -162,20 +164,25 @@ export function reducer(state, action) {
     }
     case "NODES_CONNECTED": {
       const edge = createEdge(action.fromNode, action.toNode, action.edgeType, state.processToDisplay.edges, action.processDefinitionData)
+      const newEdges = _.concat(state.processToDisplay.edges, edge)
       return {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          edges: _.concat(state.processToDisplay.edges, edge),
+          nodes: state.processToDisplay.nodes.map(n => action.toNode.id === n.id ?
+            enrichNodeWithProcessDependentData(action.toNode, action.processDefinitionData, newEdges) : n),
+          edges: newEdges,
         },
       }
     }
     case "NODES_DISCONNECTED": {
+      const nodesToSet = adjustBranchParametersAfterDisconnect(state.processToDisplay.nodes, action.from, action.to)
       return {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
           edges: _.reject(state.processToDisplay.edges, (e) => e.from === action.from && e.to === action.to),
+          nodes: nodesToSet,
         },
       }
     }
@@ -413,4 +420,55 @@ function createEdge(fromNode, toNode, edgeType, allEdges, processDefinitionData)
   const baseEdge = {from: fromNode.id, to: toNode.id}
   const adjustedEdgeType = edgeType || NodeUtils.edgeType(allEdges, fromNode, processDefinitionData)
   return adjustedEdgeType ? {...baseEdge, edgeType: adjustedEdgeType} : baseEdge
+}
+
+function adjustBranchParametersAfterDisconnect(nodes, removedEdgeFrom, removedEdgeTo) {
+  const node = nodes.find(n => n.id === removedEdgeTo)
+  if (NodeUtils.nodeIsJoin(node)) {
+    const newToNode = removeBranchParameter(node, removedEdgeFrom)
+    return _.map(nodes, (n) => { return n.id === removedEdgeTo ? newToNode : n })
+  } else {
+    return nodes
+  }
+
+}
+
+function removeBranchParameter(node, branchId) {
+  const clone = _.cloneDeep(node)
+  clone.branchParameters = _.reject(clone.branchParameters, parameter => parameter.branchId === branchId)
+  return clone
+}
+
+function enrichNodeWithProcessDependentData(originalNode, processDefinitionData, edges) {
+  const node = _.cloneDeepWith(originalNode)
+  if (NodeUtils.nodeIsJoin(node)) {
+    const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
+    const declaredBranchParameters = nodeObjectDetails.parameters.filter(p => p.branchParam)
+    const incomingEdges = edges.filter(e => e.to === node.id)
+
+    node.branchParameters = incomingEdges.map((edge) => {
+      let branchId = edge.from
+      let existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
+      let newBranchParams = declaredBranchParameters.map((branchParamDef) => {
+        let existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
+        let templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
+        return existingParamValue || _.cloneDeep(templateParamValue) ||
+            // We need to have this fallback to some template for situation when it is existing node and it has't got
+            // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
+            _.cloneDeep({
+              name: branchParamDef.name,
+              expression: {
+                expression: `#${branchParamDef.name}`,
+                language: "spel",
+              },
+            })
+      })
+      return {
+        branchId: branchId,
+        parameters: newBranchParams,
+      }
+    })
+    delete node["branchParametersTemplate"]
+  }
+  return node
 }

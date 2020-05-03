@@ -26,6 +26,10 @@ class NodeUtils {
     return node && this.nodeType(node) === "_group"
   }
 
+  nodeIsJoin = (node) => {
+    return this.nodeType(node) === "Join"
+  }
+
   nodesFromProcess = (process, expandedGroups) => {
     let nodes = process.nodes
     const groups = this.getCollapsedGroups(process, expandedGroups)
