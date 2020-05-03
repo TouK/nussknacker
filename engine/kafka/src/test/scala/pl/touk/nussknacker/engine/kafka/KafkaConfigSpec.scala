@@ -15,7 +15,8 @@ class KafkaConfigSpec extends FunSuite with Matchers {
         |}""".stripMargin)
     val expectedConfig = KafkaConfig(
       "localhost:9092",
-      Some(Map("auto.offset.reset" -> "latest")), None)
+      Some(Map("auto.offset.reset" -> "latest")),
+      None, None)
     KafkaConfig.parseConfig(typesafeConfig, "kafka") shouldEqual expectedConfig
   }
 
