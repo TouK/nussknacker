@@ -105,7 +105,7 @@ class NodeDetailsModal extends React.Component {
         </LaddaButton>
       )        :
         null,
-    ] 
+    ]
   }
 
   renderGroupUngroup() {
@@ -123,9 +123,16 @@ class NodeDetailsModal extends React.Component {
   }
 
   renderSubprocess() {
+    //FIXME: adjust height of graph in some more reasonable way :|
     //we don't use _.get here, because currentNodeId can contain spaces etc...
     const subprocessCounts = (this.props.processCounts[this.state.currentNodeId] || {}).subprocessCounts || {}
-    return (<BareGraph processCounts={subprocessCounts} processToDisplay={this.state.subprocessContent}/>)
+    return (
+      <BareGraph
+        processCounts={subprocessCounts}
+        processToDisplay={this.state.subprocessContent}
+        height={`${parseInt(cssVariables.modalContentMaxHeight)/3}px`}
+      />
+    )
   }
 
   toogleCloseModalOnEsc = () => {
@@ -135,7 +142,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   render() {
-    const {nodeErrors, nodeToDisplay, nodeSetting, readOnly, showNodeDetailsModal, testResults} = this.props
+    const {nodeErrors, nodeToDisplay, nodeSettings, readOnly, showNodeDetailsModal, testResults} = this.props
     const isOpen = !_.isEmpty(nodeToDisplay) && showNodeDetailsModal
     const nodeTestResults = (id) => TestResultUtils.resultsForNode(testResults, id)
 
@@ -150,7 +157,7 @@ class NodeDetailsModal extends React.Component {
           <div className="draggable-container">
             <Draggable bounds="parent" handle=".modal-draggable-handle">
               <div className="espModal">
-                <NodeDetailsModalHeader node={nodeToDisplay} docsUrl={nodeSetting.docsUrl}/>
+                <NodeDetailsModalHeader node={nodeToDisplay} nodeSettings={nodeSettings}/>
                 <div className="modalContentDark" id="modal-content">
                   <Scrollbars
                     hideTracksWhenNotNeeded={true}
@@ -177,9 +184,9 @@ class NodeDetailsModal extends React.Component {
                           toogleCloseOnEsc={this.toogleCloseModalOnEsc}
                           testResults={nodeTestResults(this.state.currentNodeId)}
                         />
-                      )}
+                      )
+                    }
                     {
-                      //FIXME: adjust height of modal with subprocess in some reasonable way :|
                       this.state.subprocessContent ? this.renderSubprocess() : null
                     }
                   </Scrollbars>
@@ -208,7 +215,7 @@ function mapState(state) {
 
   return {
     nodeToDisplay: nodeToDisplay,
-    nodeSetting: _.get(processDefinitionData.nodesConfig, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
+    nodeSettings: _.get(processDefinitionData.nodesConfig, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
     processId: state.graphReducer.processToDisplay.id,
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,

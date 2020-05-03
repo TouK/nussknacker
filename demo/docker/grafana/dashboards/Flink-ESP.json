@@ -186,6 +186,8 @@
       "legend": {
         "avg": false,
         "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
         "max": false,
         "min": false,
         "show": true,
@@ -337,6 +339,8 @@
       "legend": {
         "avg": false,
         "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
         "max": false,
         "min": false,
         "show": true,
@@ -1296,6 +1300,8 @@
       "legend": {
         "avg": false,
         "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
         "max": false,
         "min": false,
         "show": true,
@@ -1319,7 +1325,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_process]]",
+          "alias": "[[tag_process]] - [[tag_action]]",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -1341,10 +1347,10 @@
               "type": "fill"
             }
           ],
-          "measurement": "error.instantRate",
+          "measurement": "error.instantRateByNode.count.count",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"error_instantRate_count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"error_instantRateByNode_count\"\n  WHERE process =~ /^$processName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), process, slot\n)\nGROUP BY time($__interval), process, nodeId\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -2177,7 +2183,6 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
           "text": "demo",
           "value": "demo"
         },

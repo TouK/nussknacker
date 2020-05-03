@@ -2,16 +2,17 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import java.util.concurrent.TimeUnit
 
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 
 import scala.concurrent.duration.Duration
 
 object sampleTransformers {
 
-  object SimpleSlidingAggregateTransformer extends CustomStreamTransformer {
+  object SimpleSlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
@@ -29,7 +30,7 @@ object sampleTransformers {
                 @ParamName("windowLengthInSeconds") length: Long,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length, TimeUnit.SECONDS)
-      transformers.slidingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName)
+      transformers.slidingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName, explicitUidInStatefulOperators)
     }
 
     private def toAggregator(aggregatorType: String) = aggregatorType match {
@@ -42,7 +43,7 @@ object sampleTransformers {
     }
   }
 
-  object SlidingAggregateTransformer extends CustomStreamTransformer {
+  object SlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
@@ -51,7 +52,7 @@ object sampleTransformers {
                 @ParamName("windowLengthInSeconds") length: Long,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length, TimeUnit.SECONDS)
-      transformers.slidingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName)
+      transformers.slidingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName, explicitUidInStatefulOperators)
     }
   }
 }

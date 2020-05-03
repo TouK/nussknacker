@@ -8,13 +8,20 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.0.13 (not released)
+0.1.1 (not released yet)
+------------------------
+* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider
+* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider
+* [#879](https://github.com/TouK/nussknacker/pull/879) Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
+
+0.1.0
 -------------
+* Added support for explicitly setting uids in operators - turned on by `explicitUidInStatefulOperators` model's flag.
+By default setted up to false.
 * Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed. `processTypes` 
 configuration should be used from now on.
 * Change of additional properties configuration
-* Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
-   
+
 0.0.12 (26 Oct 2019)
 --------------------
 * Cross builds with Scala 2.11 and 2.12

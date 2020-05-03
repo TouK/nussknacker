@@ -80,7 +80,7 @@ object InfluxGenerator {
       def query(timeCondition: String) =
         s"""select ${config.nodeIdTag} as nodeId, last(${config.countField}) as count
            | from "${config.nodeCountMetric}" where ${config.processTag} = '$processName'
-           | and ${timeCondition} and ${config.envTag} = '$env' group by ${config.slotTag}, ${config.nodeIdTag}""".stripMargin
+           | and ${timeCondition} and ${config.envTag} = '$env' group by ${config.slotTag}, ${config.nodeIdTag} fill(0)""".stripMargin
 
       val around = toEpochSeconds(date)
       for {

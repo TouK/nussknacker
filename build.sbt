@@ -4,6 +4,7 @@ import sbt.Keys._
 import sbt.{Def, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
+import ReleaseTransformations._
 
 val scala211 = "2.11.12"
 val scala212 = "2.12.10"
@@ -800,5 +801,36 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
+
+
+lazy val root = (project in file("."))
+  .aggregate(
+    // TODO: get rid of this duplication
+    engineStandalone, standaloneApp, management, standaloneSample, managementSample, managementJavaSample, demo, generic,
+    process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil,
+    flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
+    restmodel, listenerApi, ui,
+  )
+  .settings(commonSettings)
+  .settings(
+    // crossScalaVersions must be set to Nil on the aggregating project
+    releaseCrossBuild := true,
+    skip in publish := true,
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runClean,
+      releaseStepCommandAndRemaining("+test"),
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      releaseStepCommandAndRemaining("+dist/docker:publish"),
+      releaseStepCommandAndRemaining("+publishSigned"),
+      ReleaseStep(action = Command.process("sonatypeBundleRelease", _)),
+      setNextVersion,
+      commitNextVersion,
+      pushChanges
+    )
+  )
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")

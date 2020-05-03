@@ -2,7 +2,7 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
-## In version 0.0.13 (not released)
+## In version 0.1.0
 
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics use variables by default, see [docs](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md) 
   to enable old mode, suitable for graphite protocol. To use old way of sending:
@@ -73,10 +73,38 @@ To see biggest differences please consult the [changelog](Changelog.md).
       }
     }
     ```  
-* [#839](https://github.com/TouK/nussknacker/pull/839) `FlinkSink` API changed, current implementation is now `BasicFlinkSink`
+* [#588](https://github.com/TouK/nussknacker/pull/588) [#882](https://github.com/TouK/nussknacker/pull/882) `FlinkSource` API changed, current implementation is now `BasicFlinkSource`
+* [#839](https://github.com/TouK/nussknacker/pull/839) [#882](https://github.com/TouK/nussknacker/pull/882) `FlinkSink` API changed, current implementation is now `BasicFlinkSink`
 * [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed. `Config` is available as property of `ProcessObjectDependencies` instance.
 * [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
 * Rename `grafanaSettings` to `metricsSettings` in configuration.
+* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider. 
+* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider.
+
+API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (In [#871] and [#881]):
+
+`KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` old way:
+```
+val clientFactory = new SchemaRegistryClientFactory
+val source = new KafkaAvroSourceFactory(
+  new AvroDeserializationSchemaFactory[GenericData.Record](clientFactory, useSpecificAvroReader = false),
+  clientFactory, 
+  None, 
+  processObjectDependencies = processObjectDependencies
+)
+
+```
+
+`KafkaAvroSourceFactory` new way :
+```
+val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
+val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+```
+
+`KafkaTypedAvroSourceFactory` (*class name changed*) new way:
+```
+val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
+```
 
 ## In version 0.0.12
 

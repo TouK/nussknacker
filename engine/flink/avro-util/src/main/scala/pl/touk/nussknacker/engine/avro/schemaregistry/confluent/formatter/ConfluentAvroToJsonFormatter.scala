@@ -1,21 +1,21 @@
-package pl.touk.nussknacker.engine.avro.formatter
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io._
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.util.Properties
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
-import pl.touk.nussknacker.engine.avro.formatter.AvroToJsonFormatter._
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter._
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
 
-class AvroToJsonFormatter(schemaRegistryClient: SchemaRegistryClient,
-                          formatter: AvroMessageFormatter,
-                          reader: AvroMessageReader,
-                          formatKey: Boolean) extends RecordFormatter {
+private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: SchemaRegistryClient,
+                                                      formatter: ConfluentAvroMessageFormatter,
+                                                      reader: ConfluentAvroMessageReader,
+                                                      formatKey: Boolean) extends RecordFormatter {
 
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
     val bos = new ByteArrayOutputStream()
@@ -51,6 +51,7 @@ class AvroToJsonFormatter(schemaRegistryClient: SchemaRegistryClient,
     else
       buffer
   }
+
   // end of copy-paste
 
   override def parseRecord(formatted: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
@@ -66,7 +67,7 @@ class AvroToJsonFormatter(schemaRegistryClient: SchemaRegistryClient,
     reader.readMessage(remainingString, keySchema, valueSchema)
   }
 
-  private def readSchemaId(str: String) = {
+  private def readSchemaId(str: String): (Schema, String) = {
     val separatorIndx = str.indexOf(Separator)
     if (separatorIndx < 1)
       throw new IllegalStateException(s"Cannot find schema id separtor: $Separator in text: $str")
@@ -77,16 +78,17 @@ class AvroToJsonFormatter(schemaRegistryClient: SchemaRegistryClient,
 
 }
 
-object AvroToJsonFormatter {
+object ConfluentAvroToJsonFormatter {
 
   private val Separator = "|"
 
-  def apply(schemaRegistryClient: SchemaRegistryClient, topic: String, formatKey: Boolean): AvroToJsonFormatter = {
-    new AvroToJsonFormatter(
+  def apply(schemaRegistryClient: SchemaRegistryClient, topic: String, formatKey: Boolean): ConfluentAvroToJsonFormatter = {
+    new ConfluentAvroToJsonFormatter(
       schemaRegistryClient,
-      new AvroMessageFormatter(schemaRegistryClient),
-      new AvroMessageReader(schemaRegistryClient, topic, formatKey, Separator),
-      formatKey)
+      new ConfluentAvroMessageFormatter(schemaRegistryClient),
+      new ConfluentAvroMessageReader(schemaRegistryClient, topic, formatKey, Separator),
+      formatKey
+    )
   }
 
 }

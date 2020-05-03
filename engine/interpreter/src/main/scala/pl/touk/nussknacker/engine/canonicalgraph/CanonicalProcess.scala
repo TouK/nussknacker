@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
@@ -74,17 +75,12 @@ case class CanonicalProcess(metaData: MetaData,
 
   def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches.getOrElse(Nil))
 
-  def mapAllNodes(action: List[CanonicalNode] => List[CanonicalNode]): CanonicalProcess = copy(
-      nodes = action(nodes), additionalBranches = additionalBranches.map(_.map(action)))
+  def mapAllNodes(action: List[CanonicalNode] => List[CanonicalNode]): CanonicalProcess = withNodes(allStartNodes.map(action))
 
-  def mapAllNodesValidated[T](action: List[CanonicalNode] => ValidatedNel[T, List[CanonicalNode]]): Validated[NonEmptyList[T], CanonicalProcess] = {
-    val syntax = ValidatedSyntax[T]
-    import syntax._
-    allStartNodes.map(action).sequence.map {
-      case NonEmptyList(head, tail) => copy(nodes = head, additionalBranches = Some(tail))
-    }
+  def withNodes(nodes: NonEmptyList[List[CanonicalNode]]): CanonicalProcess = {
+    val NonEmptyList(head, tail) = nodes
+    copy(nodes = head, additionalBranches = Some(tail))
   }
-
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
 

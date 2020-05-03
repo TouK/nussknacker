@@ -5,22 +5,26 @@ import java.nio.charset.StandardCharsets
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
+import org.scalatest.{Assertion, BeforeAndAfterAll, FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, process}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.TypedConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider, MockConfluentSchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, confluent}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
   import MockSchemaRegistry._
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   import collection.JavaConverters._
 
@@ -29,13 +33,20 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
 
-  private lazy val keySerializer = {
-    val serializer = new KafkaAvroSerializer(MockSchemaRegistry.Registry)
+  lazy val processObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
+
+  lazy val kafkaConfig: KafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
+
+  lazy val mockSchemaRegistryClient: SchemaRegistryClient with TypedConfluentSchemaRegistryClient =
+    MockSchemaRegistry.Factory.createSchemaRegistryClient(kafkaConfig)
+
+  private lazy val keySerializer: KafkaAvroSerializer = {
+    val serializer = new KafkaAvroSerializer(mockSchemaRegistryClient)
     serializer.configure(Map[String, AnyRef]("schema.registry.url" -> "not_used").asJava, true)
     serializer
   }
 
-  private lazy val valueSerializer = new KafkaAvroSerializer(MockSchemaRegistry.Registry)
+  private lazy val valueSerializer = new KafkaAvroSerializer(mockSchemaRegistryClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -88,14 +99,14 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     readLastMessageAndVerify(createKeyValueAvroSourceFactory[Int, Int], givenObj, IntTopic)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String) = {
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], givenObj: Any, topic: String): Assertion = {
     val serializedObj = valueSerializer.serialize(topic, givenObj)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, Some(0))
 
     readLastMessageAndVerify(sourceFactory, givenObj, topic)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String) = {
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], givenObj: Any, topic: String): Assertion = {
     val source = sourceFactory.create(MetaData("", StreamMetaData()), topic)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef]]
     val bytes = source.generateTestData(1)
@@ -105,23 +116,35 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     deserializedObj shouldEqual List(givenObj)
   }
 
-  private def createAvroSourceFactory(useSpecificAvroReader: Boolean) = {
-    new KafkaAvroSourceFactory[AnyRef](new AvroDeserializationSchemaFactory(MockSchemaRegistryClientFactory, useSpecificAvroReader),
-      MockSchemaRegistryClientFactory, None, processObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming))
+  private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
+    val schemaRegistryProvider = ConfluentSchemaRegistryProvider[AnyRef](
+      MockSchemaRegistry.Factory,
+      processObjectDependencies,
+      useSpecificAvroReader,
+      formatKey = false
+    )
+    new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
   }
 
-  private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation] = {
-    new KafkaAvroSourceFactory(new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockSchemaRegistryClientFactory),
-      MockSchemaRegistryClientFactory, None, formatKey = true, process.ProcessObjectDependencies(config, DefaultObjectNaming))
+  private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
+    val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockSchemaRegistry.Factory)
+    val provider = ConfluentSchemaRegistryProvider(
+      MockSchemaRegistry.Factory,
+      None,
+      Some(deserializerFactory),
+      kafkaConfig,
+      useSpecificAvroReader = false,
+      formatKey = true
+    )
+    new KafkaAvroSourceFactory(provider, processObjectDependencies, None)
   }
-
 }
 
-class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClientFactory: SchemaRegistryClientFactory)
-                                                               (implicit keyTypInfo: TypeInformation[Key],
-                                                                valueTypInfo: TypeInformation[Value])
-  extends AvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
-    createTuple2TypeInformation(keyTypInfo, valueTypInfo)) {
+class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+                                                               (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
+  extends ConfluentAvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
+    createTuple2TypeInformation(keyTypInfo, valueTypInfo)
+  ) {
 
   override protected type K = Key
   override protected type V = Value
@@ -129,24 +152,13 @@ class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryCl
   override protected def createObject(key: Key, value: Value, topic: String): (Key, Value) = {
     (key, value)
   }
-
-}
-
-object MockSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
-
-  override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
-    MockSchemaRegistry.Registry
-
 }
 
 object MockSchemaRegistry {
-
   val RecordTopic: String = "testAvroRecordTopic1"
   val IntTopic: String = "testAvroIntTopic1"
 
-  private def parser = new Schema.Parser()
-
-  val RecordSchemaV1: Schema = parser.parse(
+  val RecordSchemaV1: Schema = AvroUtils.createSchema(
     """{
       |  "type": "record",
       |  "namespace": "pl.touk.nussknacker.engine.avro",
@@ -158,7 +170,7 @@ object MockSchemaRegistry {
       |}
     """.stripMargin)
 
-  val RecordSchemaV2: Schema = parser.parse(
+  val RecordSchemaV2: Schema = AvroUtils.createSchema(
     """{
       |  "type": "record",
       |  "namespace": "pl.touk.nussknacker.engine.avro",
@@ -171,30 +183,22 @@ object MockSchemaRegistry {
       |}
     """.stripMargin)
 
-  val IntSchema: Schema = parser.parse(
+  val IntSchema: Schema = AvroUtils.createSchema(
     """{
       |  "type": "int"
       |}
     """.stripMargin
   )
 
-  val Registry: MockSchemaRegistryClient = {
-    val mockSchemaRegistry = new MockSchemaRegistryClient
-    def registerSchema(topic: String, isKey: Boolean, schema: Schema): Unit = {
-      val subject = topic + "-" + (if (isKey) "key" else "value")
-      mockSchemaRegistry.register(subject, schema)
-    }
-    registerSchema(RecordTopic, isKey = false, RecordSchemaV1)
-    registerSchema(RecordTopic, isKey = false, RecordSchemaV2)
-    registerSchema(IntTopic, isKey = true, IntSchema)
-    registerSchema(IntTopic, isKey = false, IntSchema)
-    mockSchemaRegistry
-  }
-
+  val Factory: MockConfluentSchemaRegistryClientFactory = new confluent.MockConfluentSchemaRegistryClientFactoryBuilder()
+    .register(RecordTopic, RecordSchemaV1)
+    .register(RecordTopic, RecordSchemaV2)
+    .register(IntTopic, IntSchema)
+    .register(IntTopic, IntSchema, isKey = true)
+    .build
 }
 
 case class FullNameV1(var first: CharSequence, var last: CharSequence) extends SpecificRecordBase {
-
   def this() = this(null, null)
 
   override def getSchema: Schema = MockSchemaRegistry.RecordSchemaV1
@@ -212,11 +216,9 @@ case class FullNameV1(var first: CharSequence, var last: CharSequence) extends S
       case 1 => last = value.asInstanceOf[CharSequence]
       case _ => throw new AvroRuntimeException("Bad index")
     }
-
 }
 
 case class FullName(var first: CharSequence, var middle: CharSequence, var last: CharSequence) extends SpecificRecordBase {
-
   def this() = this(null, null, null)
 
   override def getSchema: Schema = MockSchemaRegistry.RecordSchemaV2
@@ -236,5 +238,4 @@ case class FullName(var first: CharSequence, var middle: CharSequence, var last:
       case 2 => last = value.asInstanceOf[CharSequence]
       case _ => throw new AvroRuntimeException("Bad index")
     }
-
 }

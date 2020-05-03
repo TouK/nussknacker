@@ -6,13 +6,14 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.avro.AvroUtils
 
 object AvroSchemaTypeDefinitionExtractor {
 
   import collection.JavaConverters._
 
   def typeDefinition(schemaString: String): TypingResult =
-    typeDefinition(new Schema.Parser().parse(schemaString))
+    typeDefinition(AvroUtils.createSchema(schemaString))
 
   // see BestEffortAvroEncoder for underlying avro types
   def typeDefinition(schema: Schema): TypingResult = {

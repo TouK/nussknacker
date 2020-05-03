@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -111,23 +112,23 @@ object SampleNodes {
     }
   }
 
-  object StateCustomNode extends CustomStreamTransformer {
+  object StateCustomNode extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("stringVal") stringVal: String,
                 @ParamName("keyBy") keyBy: LazyParameter[String]) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-      start
-        .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
-        .keyBy(_.value)
-        .mapWithState[ValueWithContext[Any], Long] {
-          case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
-            (ValueWithContext(
-              SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
-          case (SimpleFromValueWithContext(ctx, sr), None) =>
-            (ValueWithContext(
-              SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
-        }
-
+      setUidToNodeIdIfNeed(context,
+        start
+          .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
+          .keyBy(_.value)
+          .mapWithState[ValueWithContext[Any], Long] {
+            case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
+              (ValueWithContext(
+                SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
+            case (SimpleFromValueWithContext(ctx, sr), None) =>
+              (ValueWithContext(
+                SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
+          })
     })
 
     object SimpleFromValueWithContext {
@@ -205,11 +206,9 @@ object SampleNodes {
                 @OutputVariableName variableName: String): JoinContextTransformation =
       ContextTransformation
         .join.definedBy { contexts =>
-        val newType = TypedObjectTypingResult(contexts.toSeq.map {
-          case (branchId, _) =>
-            branchId -> valueByBranchId(branchId).returnType
-        }.toMap)
-        Valid(ValidationContext(Map(variableName -> newType)))
+        val newType = Typed(contexts.keys.toList.map(branchId => valueByBranchId(branchId).returnType): _*)
+        val parent = contexts.values.flatMap(_.parent).headOption
+        Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
       }.implementedBy(
         new FlinkCustomJoinTransformation {
           override def transform(inputs: Map[String, DataStream[Context]],
@@ -342,10 +341,10 @@ object SampleNodes {
     @MethodToInvoke
     def createSink(@ParamName("intParam") value: LazyParameter[Int]): Sink = new FlinkSink {
 
-      override def registerSink(dataStream: DataStream[InterpretationResult], lazyParameterFunctionHelper: FlinkLazyParameterFunctionHelper): DataStreamSink[_] = {
+      override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
         dataStream
           .map(_.finalContext)
-          .map(lazyParameterFunctionHelper.lazyMapFunction(value))
+          .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
           .map(_.value.asInstanceOf[Any])
           .addSink(SinkForInts.toFlinkFunction)
       }
