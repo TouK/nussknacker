@@ -53,12 +53,28 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     definition.objectDefinition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
   }
 
+  test("extract definition with branch params") {
+    val definition = processDefinition.customStreamTransformers("transformerWithBranchParam")._1
+
+    definition.objectDefinition.parameters should have size 2
+
+    val lazyParam = definition.objectDefinition.parameters.head
+    lazyParam.branchParam shouldBe true
+    lazyParam.isLazyParameter shouldBe true
+    lazyParam.typ shouldEqual Typed[Integer]
+
+    val eagerParam = definition.objectDefinition.parameters.apply(1)
+    eagerParam.branchParam shouldBe true
+    eagerParam.isLazyParameter shouldBe false
+    eagerParam.typ shouldEqual Typed[Integer]
+  }
+
   object TestCreator extends ProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "transformer1" -> WithCategories(Transformer1, "cat"),
-        "transformerWithGenericParam" -> WithCategories(TransformerWithGenericParam, "cat")
-      )
+        "transformerWithGenericParam" -> WithCategories(TransformerWithGenericParam, "cat"),
+        "transformerWithBranchParam" -> WithCategories(TransformerWithBranchParam, "cat"))
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter[Int]("param1")), Typed[String]), "cat")
@@ -96,6 +112,15 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
     @MethodToInvoke
     def invoke(@ParamName("foo") foo: List[String]): Unit = {
+    }
+
+  }
+
+  object TransformerWithBranchParam extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def invoke(@BranchParamName("lazyParam") lazyParam: Map[String, LazyParameter[Integer]],
+               @BranchParamName("eagerParam") eagerParam: Map[String, Integer]): Unit = {
     }
 
   }

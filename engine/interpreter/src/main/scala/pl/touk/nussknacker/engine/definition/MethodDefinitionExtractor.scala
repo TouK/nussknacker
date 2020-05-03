@@ -67,9 +67,9 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .map(_.value())
         val name = (nodeParamNames orElse branchParamName)
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
-        // TODO JOIN: for branchParams we should rather look at Map's value type
         val rawParamType = EspTypeUtils.extractParameterType(p)
-        val (paramTypeWithUnwrappedLazy, isLazyParameter) = determineIfLazyParameter(rawParamType)
+        val paramWithUnwrappedBranch = if (branchParamName.isDefined) extractBranchParamType(rawParamType)(p, obj, method) else rawParamType
+        val (paramTypeWithUnwrappedLazy, isLazyParameter) = determineIfLazyParameter(paramWithUnwrappedBranch)
         val (paramType, isScalaOptionParameter, isJavaOptionalParameter) = determineOptionalParameter(paramTypeWithUnwrappedLazy)
         val extractedEditor = EditorExtractor.extract(p)
         val validators = tryToDetermineValidators(p, paramType, isScalaOptionParameter, isJavaOptionalParameter, extractedEditor)
@@ -79,6 +79,14 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     }.toList
 
     new OrderedDependencies(dependencies)
+  }
+
+  private def extractBranchParamType(typ: TypingResult)
+                                    (p: java.lang.reflect.Parameter, obj: T, method: Method) = typ match {
+    case TypedClass(cl, TypedClass(keyClass, _) :: valueType :: Nil) if classOf[Map[_, _]].isAssignableFrom(cl) && classOf[String].isAssignableFrom(keyClass) =>
+      valueType
+    case _ =>
+      throw new IllegalArgumentException(s"Branch parameter $p of $obj and method : ${method.getName} has invalid type: should be Map[String, T]")
   }
 
   private def determineIfLazyParameter(typ: TypingResult) = typ match {
@@ -174,22 +182,30 @@ object MethodDefinitionExtractor {
       }
     }
 
+    //TODO: what is *really* needed here?? is it performant enough?? (copied from previous version: EspTypeUtils.signatureElementMatches
     private def validateParamType(name: String, value: AnyRef, param: Parameter): Unit = {
-      if (param.isLazyParameter) {
-        require(value.isInstanceOf[LazyParameter[_]], s"Parameter $name has invalid class: ${value.getClass.getName}, should be LazyParameter")
+      // The order of wrapping should be reversed to order of unwrapping - see extractParameters
+      val typeWrappedWithOption = if (param.scalaOptionParameter) {
+        Typed.genericTypeClass(classOf[Option[_]], List(param.typ))
+      } else if (param.javaOptionalParameter) {
+        Typed.genericTypeClass(classOf[Optional[_]], List(param.typ))
       } else {
-        val expectedType = if (param.scalaOptionParameter)
-          Typed.genericTypeClass(classOf[Option[_]], List(param.typ))
-        else if (param.javaOptionalParameter)
-          Typed.genericTypeClass(classOf[Optional[_]], List(param.typ))
-        else
-          param.typ
-        validateType(name, value, expectedType)
+        param.typ
       }
+      val typeWrappedWithLazy = if (param.isLazyParameter) {
+        Typed.genericTypeClass(classOf[LazyParameter[_]], typeWrappedWithOption :: Nil)
+      } else {
+        typeWrappedWithOption
+      }
+      val typeWrappedWithBranch = if (param.branchParam) {
+        Typed.genericTypeClass(classOf[Map[_, _]], Typed[String] :: typeWrappedWithLazy :: Nil)
+      } else {
+        typeWrappedWithLazy
+      }
+      validateType(name, value, typeWrappedWithBranch)
     }
 
     private def validateType(name: String, value: AnyRef, expectedType: TypingResult) : Unit = {
-      //TODO: what is *really* needed here?? is it performant enough?? (copied from previous version: EspTypeUtils.signatureElementMatches
       if (value != null && !Typed(value.getClass).canBeSubclassOf(expectedType)) {
         throw new IllegalArgumentException(s"Parameter $name has invalid type: ${value.getClass.getName}, should be: ${expectedType.display}")
       }
