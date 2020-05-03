@@ -29,17 +29,13 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
   def create[T](objectWithMethodDef: ObjectWithMethodDef,
                 params: List[(evaluatedparam.TypedParameter, ParameterDef)],
                 outputVariableNameOpt: Option[String])(implicit processMetaData: MetaData, nodeId: NodeId): T = {
-    // TODO JOIN: Handle not lazy evaluated branch params
-    val (lazyInterpreterParameters, paramsToEvaluate) = params.sortBy(_._1.name).partition(p => p._2.isLazyParameter || p._2.branchParam)
+    val (lazyInterpreterParameters, paramsToEvaluate) = params.sortBy(_._1.name).partition(p => p._2.isLazyParameter)
 
-    val evaluatedParameters = paramsToEvaluate.map {
-      case (TypedParameter(name, TypedExpression(expr, returnType, typingInfo)), paramDef) =>
-        evaluatedparam.Parameter(name, expr, returnType, paramDef.scalaOptionParameter, paramDef.javaOptionalParameter, typingInfo)
-    }
+    val (branchParamsToEvaluate, nonBranchParamsToEvaluate) = paramsToEvaluate.partition(p => p._2.branchParam)
 
-    //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter
-    import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
-    val evaluatedParamsMap = Await.result(expressionEvaluator.evaluateParameters(evaluatedParameters, Context("objectCreate")).map(_._2), 10 seconds)
+    val evaluatedNotBranchParamsMap = evaluateParams(nonBranchParamsToEvaluate)
+
+    val evaluatedBranchParamsMap = evaluateBranchParameters(branchParamsToEvaluate)
 
     val lazyInterpreterParamsMap = lazyInterpreterParameters.map {
       case (param, definition) =>
@@ -58,11 +54,47 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
         param.name -> value
     }
 
-    val paramsMap = evaluatedParamsMap ++ lazyInterpreterParamsMap
+    val paramsMap = evaluatedNotBranchParamsMap ++ evaluatedBranchParamsMap ++ lazyInterpreterParamsMap
 
     objectWithMethodDef.invokeMethod(paramsMap.get, outputVariableNameOpt, Seq(processMetaData, nodeId)).asInstanceOf[T]
   }
 
+  private def evaluateBranchParameters(branchParamsToEvaluate: List[(TypedParameter, ParameterDef)])
+                                      (implicit processMetaData: MetaData, nodeId: NodeId): Map[String, Map[String, AnyRef]] = {
+    val paramsByBranchId = branchParamsToEvaluate.flatMap {
+      case (TypedParameter(paramName, TypedExpressionMap(valueByKey)), paramDef) =>
+        valueByKey.toList.map {
+          case (branchId, TypedExpression(expr, returnType, typingInfo)) =>
+            branchId -> evaluatedparam.Parameter(paramName, expr, returnType, paramDef.scalaOptionParameter, paramDef.javaOptionalParameter, typingInfo)
+        }
+    }.toGroupedMap
+
+    val evaluationResultsByBranchId = paramsByBranchId.mapValuesNow { perBranchParams =>
+      //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter
+      import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
+      Await.result(expressionEvaluator.evaluateParameters(perBranchParams, Context("objectCreate")).map(_._2), 10 seconds)
+    }
+
+    evaluationResultsByBranchId.toList.flatMap {
+      case (branchId, resultByParam) =>
+        resultByParam.toList.map { case (paramName, evaluationResult) =>
+          paramName -> (branchId -> evaluationResult)
+        }
+    }.toGroupedMap.mapValuesNow(_.toMap)
+  }
+
+  private def evaluateParams[T](paramsToEvaluate: List[(TypedParameter, ParameterDef)])
+                               (implicit processMetaData: MetaData, nodeId: NodeId) = {
+    val evaluatedParameters = paramsToEvaluate.map {
+      case (TypedParameter(name, TypedExpression(expr, returnType, typingInfo)), paramDef) =>
+        evaluatedparam.Parameter(name, expr, returnType, paramDef.scalaOptionParameter, paramDef.javaOptionalParameter, typingInfo)
+    }
+
+    //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter
+    import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
+    val evaluatedParamsMap = Await.result(expressionEvaluator.evaluateParameters(evaluatedParameters, Context("objectCreate")).map(_._2), 10 seconds)
+    evaluatedParamsMap
+  }
 
 }
 

@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidTailOfBranch, MissingParameters, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, FatalUnknownError, InvalidTailOfBranch, MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -37,6 +37,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "clearingContextStreamTransformer" -> WithCategories(ClearingContextStreamTransformer),
       "producingTupleTransformer" -> WithCategories(ProducingTupleTransformer),
       "unionTransformer" -> WithCategories(UnionTransformer),
+      "unionTransformerWithMainBranch" -> WithCategories(UnionTransformerWithMainBranch),
       "nonEndingCustomNodeReturningTransformation" -> WithCategories(NonEndingCustomNodeReturningTransformation),
       "nonEndingCustomNodeReturningUnit" -> WithCategories(NonEndingCustomNodeReturningUnit),
       "addingVariableOptionalEndingCustomNode" -> WithCategories(AddingVariableOptionalEndingStreamTransformer),
@@ -135,6 +136,37 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
               branchId -> valueByBranchId(branchId).returnType
           }.toMap)
           Valid(ValidationContext(Map(variableName -> newType)))
+        }
+        .implementedBy(null)
+    }
+
+  }
+
+  object UnionTransformerWithMainBranch extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[_]], // key is only for runtime purpose
+                @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[_]],
+                @BranchParamName("mainBranch") mainBranch: Map[String, Boolean],
+                @OutputVariableName variableName: String)(implicit nodeId: NodeId): JoinContextTransformation = {
+      ContextTransformation
+        .join
+        .definedBy { contexts =>
+          val (mainBranches, joinedBranches) = contexts.partition {
+            case (branchId, _) => mainBranch(branchId)
+          }
+          if (mainBranches.size != 1) {
+            Invalid(FatalUnknownError("Should be exact one main branch")).toValidatedNel
+          } else {
+            val mainBranchContext = mainBranches.head._2
+
+            val newType = TypedObjectTypingResult(joinedBranches.toSeq.map {
+              case (branchId, _) =>
+                branchId -> valueByBranchId(branchId).returnType
+            }.toMap)
+
+            mainBranchContext.withVariable(variableName, newType)
+          }
         }
         .implementedBy(null)
     }
@@ -488,5 +520,29 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
+  test("eager params in joins") {
+    val process =
+      EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "mySource")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .source("sourceId2", "mySource")
+          .branchEnd("branch2", "join1"),
+        GraphBuilder
+          .branch("join1", "unionTransformerWithMainBranch", Some("outPutVar"),
+            List(
+              "branch1" -> List("key" -> "'key1'", "value" -> "'ala'", "mainBranch" -> "true"),
+              "branch2" -> List("key" -> "'key2'", "value" -> "123", "mainBranch" -> "false")
+            )
+          )
+          .sink("sink", "#input" , "dummySink")
+      ))
+
+    val validationResult = validator.validate(process)
+    validationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+  }
 
 }
