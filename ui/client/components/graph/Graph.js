@@ -16,7 +16,7 @@ import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
-import NodeUtils from "./NodeUtils.js"
+import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
 
 class Graph extends React.Component {

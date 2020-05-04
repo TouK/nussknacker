@@ -1,44 +1,46 @@
+/* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
 import fp from "lodash/fp"
 import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils"
 import ProcessUtils from "../../common/ProcessUtils.js"
+import {Edge, GroupId, GroupNodeType, GroupType, NodeId, NodeType, Process} from "../../types"
 
 class NodeUtils {
 
-  isNode = (obj) => {
+  isNode = (obj: {}): obj is NodeType => {
     return !_.isEmpty(obj) && _.has(obj, "id") && _.has(obj, "type")
   }
 
-  nodeType = (node) => {
+  nodeType = (node: NodeType) => {
     return node.type ? node.type : "Properties"
   }
 
-  nodeIsProperties = (node) => {
+  nodeIsProperties = (node: NodeType): boolean => {
     const type = node && this.nodeType(node)
     return type === "Properties"
   }
 
-  isPlainNode = (node) => {
+  isPlainNode = (node: NodeType): boolean => {
     return !_.isEmpty(node) && !this.nodeIsProperties(node)
   }
 
-  nodeIsGroup = (node) => {
+  nodeIsGroup = (node: NodeType): boolean => {
     return node && this.nodeType(node) === "_group"
   }
 
-  nodesFromProcess = (process, expandedGroups) => {
+  nodesFromProcess = (process: Process, expandedGroups?: GroupId[]): NodeType[] => {
     let nodes = process.nodes
     const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
-      nodes = nodes.filter(node => !_.includes(group.nodes, node.id))
+      nodes = nodes.filter(node => !group.nodes.includes(node.id))
       nodes = nodes.concat([this.createGroupNode(process.nodes, group)])
     })
     return nodes
   }
 
-  createGroupNode = (nodes, group) => {
+  createGroupNode = (nodes: NodeType[], group: GroupType): GroupNodeType => {
     const groupId = group.id
-    const groupNodes = nodes.filter(node => _.includes(group.nodes, node.id))
+    const groupNodes = nodes.filter(node => group.nodes.includes(node.id))
     return {
       id: groupId,
       type: "_group",
@@ -47,7 +49,7 @@ class NodeUtils {
     }
   }
 
-  edgesFromProcess = (process, expandedGroups) => {
+  edgesFromProcess = (process: Process, expandedGroups?: GroupId[]) => {
     let edges = process.edges
     const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
@@ -61,40 +63,40 @@ class NodeUtils {
     return edges
   }
 
-  getNodeById = (nodeId, process) => this.nodesFromProcess(process).find(n => n.id === nodeId)
+  getNodeById = (nodeId: NodeId, process: Process) => this.nodesFromProcess(process).find(n => n.id === nodeId)
 
-  getEdgeById = (edgeId, process) => this.edgesFromProcess(process).find(e => this.edgeId(e) === edgeId)
+  getEdgeById = (edgeId: NodeId, process: Process) => this.edgesFromProcess(process).find(e => this.edgeId(e) === edgeId)
 
-  getAllNodesById = (nodeIds, process) => this.nodesFromProcess(process).filter(node => _.includes(nodeIds, node.id))
+  getAllNodesById = (nodeIds: NodeId[], process: Process) => this.nodesFromProcess(process).filter(node => _.includes(nodeIds, node.id))
 
-  containsOnlyPlainNodesWithoutGroups = (nodeIds, process) => {
+  containsOnlyPlainNodesWithoutGroups = (nodeIds: NodeId[], process: Process): boolean => {
     return _.every(nodeIds, nodeId => {
       const node = this.getNodeById(nodeId, process)
       return this.isPlainNode(node) && !this.nodeIsGroup(node)
     })
   }
 
-  isAvailable = (node, processDefinitionData, category) => {
+  isAvailable = (node: NodeType, processDefinitionData, category): boolean => {
     const availableIdsInCategory = ProcessDefinitionUtils.getFlatNodesToAddInCategory(processDefinitionData, category)
       .map(nodeToAdd => ProcessUtils.findNodeDefinitionIdOrType(nodeToAdd.node))
     const nodeDefinitionId = ProcessUtils.findNodeDefinitionIdOrType(node)
     return availableIdsInCategory.includes(nodeDefinitionId)
   }
 
-  getIncomingEdges = (nodeId, process) => this.edgesFromProcess(process).filter(e => e.to === nodeId)
+  getIncomingEdges = (nodeId: NodeId, process: Process): Edge[] => this.edgesFromProcess(process).filter(e => e.to === nodeId)
 
-  getEdgesForConnectedNodes = (nodeIds, process) => this.edgesFromProcess(process)
+  getEdgesForConnectedNodes = (nodeIds: NodeId[], process: Process): Edge[] => this.edgesFromProcess(process)
     .filter(edge => nodeIds.includes(edge.from) && nodeIds.includes(edge.to))
 
-  getAllGroups = (process) => _.get(process, "properties.additionalFields.groups", [])
+  getAllGroups = (process: Process): GroupType[] => process?.properties?.additionalFields?.groups || []
 
-  getCollapsedGroups = (process, expandedGroups) => this.getAllGroups(process)
+  getCollapsedGroups = (process: Process, expandedGroups: GroupId[]) => this.getAllGroups(process)
     .filter(g => !_.includes(expandedGroups, g.id))
 
-  getExpandedGroups = (process, expandedGroups) => this.getAllGroups(process)
+  getExpandedGroups = (process: Process, expandedGroups: GroupId[]) => this.getAllGroups(process)
     .filter(g => _.includes(expandedGroups, g.id))
 
-  edgeType = (allEdges, node, processDefinitionData) => {
+  edgeType = (allEdges, node: NodeType, processDefinitionData) => {
     const edgesForNode = this.edgesForNode(node, processDefinitionData)
 
     if (edgesForNode.canChooseNodes) {
@@ -105,56 +107,62 @@ class NodeUtils {
     }
   }
 
-  createGroup = (process, newGroup) => {
+  createGroup = (process: Process, newGroup: NodeId[]) => {
     const groupId = newGroup.join("-")
-    return this._update("properties.additionalFields.groups",
+    return this._update(
+      "properties.additionalFields.groups",
       (groups) => _.concat(groups || [], [{id: groupId, nodes: newGroup}]),
-      process)
+      process,
+    )
   }
 
-  ungroup = (process, groupToDeleteId) => {
-    return this._update("properties.additionalFields.groups",
+  ungroup = (process: Process, groupToDeleteId) => {
+    return this._update(
+      "properties.additionalFields.groups",
       (groups) => groups.filter(e => !_.isEqual(e.id, groupToDeleteId)),
-      process)
+      process,
+    )
   }
 
-  editGroup = (process, oldGroupId, newGroup) => {
+  editGroup = (process: Process, oldGroupId, newGroup) => {
     const groupForState = {id: newGroup.id, nodes: newGroup.ids}
-    return this._update("properties.additionalFields.groups",
+    return this._update(
+      "properties.additionalFields.groups",
       (groups) => _.concat(groups.filter(g => g.id !== oldGroupId), [groupForState]),
-      process)
+      process,
+    )
   }
 
-  updateGroupsAfterNodeIdChange = (process, oldNodeId, newNodeId) => {
+  updateGroupsAfterNodeIdChange = (process: Process, oldNodeId: NodeId, newNodeId: NodeId) => {
     return this._changeGroupNodes(process, (nodes) => nodes.map((n) => n === oldNodeId ? newNodeId : n))
   }
 
-  updateGroupsAfterNodeDelete = (process, idToDelete) => {
+  updateGroupsAfterNodeDelete = (process: Process, idToDelete: NodeId) => {
     return this._changeGroupNodes(process, (nodes) => nodes.filter((n) => n !== idToDelete))
   }
 
-  edgesForNode = (node, processDefinitionData, forInput) => {
+  edgesForNode = (node: NodeType, processDefinitionData, forInput?) => {
     const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node)
     //TODO: when we add more configuration for joins, probably more complex logic will be needed
-    const data =  processDefinitionData.edgesForNodes
+    const data = processDefinitionData.edgesForNodes
       .filter(e => !forInput || e.isForInputDefinition === forInput)
       //here we use == in second comparison, as we sometimes compare null to undefined :|
       .find(e => e.nodeId.type === _.get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition)
     return data || {edges: [null], canChooseNodes: false}
   }
 
-  edgeLabel = (edge) => {
-    const edgeType = _.get(edge, "edgeType.type")
+  edgeLabel = (edge: Edge) => {
+    const edgeType = edge?.edgeType
 
     //TODO: should this map be here??
     const edgeTypeToLabel = {
       FilterFalse: "false",
       FilterTrue: "true",
       SwitchDefault: "default",
-      SubprocessOutput: _.get(edge, "edgeType.name"),
-      NextSwitch: _.get(edge, "edgeType.condition.expression"),
+      SubprocessOutput: edgeType?.name,
+      NextSwitch: edgeType?.condition?.expression,
     }
-    return edgeTypeToLabel[edgeType] || ""
+    return edgeTypeToLabel[edgeType?.type] || ""
   }
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
@@ -165,7 +173,9 @@ class NodeUtils {
 
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)
-    return fromId !== toId && this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
+    return fromId !== toId &&
+      this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) &&
+      this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
   }
 
   //TODO: this function should already exists in lodash?
@@ -173,13 +183,15 @@ class NodeUtils {
     return fp.set(path, fun(_.get(object, path)), object)
   }
 
-  _changeGroupNodes = (processToDisplay, nodeOperation) => {
-    return this._update("properties.additionalFields.groups",
+  _changeGroupNodes = (processToDisplay: Process, nodeOperation) => {
+    return this._update(
+      "properties.additionalFields.groups",
       (groups) => (groups || []).map(group => ({
         ...group,
         nodes: nodeOperation(group.nodes),
       })),
-      processToDisplay)
+      processToDisplay,
+    )
   }
 
   _canHaveMoreInputs = (nodeTo, nodeInputs, processDefinitionData) => {
@@ -194,32 +206,41 @@ class NodeUtils {
     return this.hasOutputs(node) && (edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode)
   }
 
-  _nodeInputs = (nodeId, process) => {
+  _nodeInputs = (nodeId: NodeId, process: Process) => {
     return this.edgesFromProcess(process).filter(e => e.to == nodeId)
   }
 
-  _nodeOutputs = (nodeId, process) => {
+  _nodeOutputs = (nodeId: NodeId, process: Process) => {
     return this.edgesFromProcess(process).filter(e => e.from == nodeId)
   }
 
-  edgeId = (edge) => {
+  edgeId = (edge: Edge): string => {
     return `${edge.from}-${edge.to}`
   }
 
-  groupIncludesOneOfNodes = (nodeGroup, nodeIds)  => _.some(nodeGroup.nodes, (node) => _.includes(nodeIds, _.get(node, "id") || node))
+  groupIncludesOneOfNodes = (nodeGroup, nodeIds: NodeId[]) => _.some(
+    nodeGroup.nodes,
+    (node) => _.includes(nodeIds, node?.id || node),
+  )
 
-  groupIncludesAllOfNodes = (nodeGroup, nodeIds) => _.every(nodeGroup.nodes, (node) => _.includes(nodeIds, _.get(node, "id") || node))
+  groupIncludesAllOfNodes = (nodeGroup, nodeIds: NodeId[]) => _.every(
+    nodeGroup.nodes,
+    (node) => _.includes(nodeIds, node?.id || node),
+  )
 
-  nodesAreInOneGroup = (process, nodeIds) => _.some(this.getAllGroups(process), (group) => this.groupIncludesAllOfNodes(group, nodeIds))
+  nodesAreInOneGroup = (process: Process, nodeIds: NodeId[]) => _.some(
+    this.getAllGroups(process),
+    (group) => this.groupIncludesAllOfNodes(group, nodeIds),
+  )
 
   noInputNodeTypes = ["Source", "SubprocessInputDefinition"]
 
   noOutputNodeTypes = ["Sink", "SubprocessOutputDefinition"]
 
   //TODO: methods below should be based on backend data, e.g. Subprocess can have outputs or not - based on individual subprocess...
-  hasInputs = (node) => !_.some(this.noInputNodeTypes, (nodeType) => _.isEqual(nodeType, _.get(node, "type")))
+  hasInputs = (node: NodeType) => !this.noInputNodeTypes.some((nodeType) => _.isEqual(nodeType, node?.type))
 
-  hasOutputs = (node) => !_.some(this.noOutputNodeTypes, (nodeType) => _.isEqual(nodeType, _.get(node, "type")))
+  hasOutputs = (node: NodeType) => !this.noOutputNodeTypes.some((nodeType) => _.isEqual(nodeType, node?.type))
 
 }
 
