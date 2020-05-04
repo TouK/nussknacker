@@ -3,7 +3,7 @@ import _ from "lodash"
 import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
 import ProcessUtils from "../common/ProcessUtils"
-import JoinDef from "../components/graph/node-modal/JoinDef"
+import * as LayoutUtils from "./layoutUtils"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -25,7 +25,8 @@ const emptyGraphState = {
 }
 
 const STATE_PROPERTY_NAME = "groupingState"
-export function reducer(state, action) {
+
+export function reducer(state = emptyGraphState, action) {
   switch (action.type) {
     case "PROCESS_LOADING": {
       return {
@@ -59,13 +60,15 @@ export function reducer(state, action) {
       }
     }
     case "DISPLAY_PROCESS": {
+      const {fetchedProcessDetails} = action
+      const nodeToDisplay = fetchedProcessDetails.json.properties
       return {
         ...state,
-        processToDisplay: action.fetchedProcessDetails.json,
-        fetchedProcessDetails: action.fetchedProcessDetails,
+        processToDisplay: fetchedProcessDetails.json,
+        fetchedProcessDetails,
         graphLoading: false,
-        nodeToDisplay: action.fetchedProcessDetails.json.properties,
-        layout: [], //needed for displaying historical version
+        nodeToDisplay: nodeToDisplay,
+        layout: LayoutUtils.fromString(nodeToDisplay.additionalFields?.properties?.layout),
       }
     }
     case "LOADING_FAILED": {
@@ -223,6 +226,12 @@ export function reducer(state, action) {
           ...state.processToDisplay,
           validationResult: action.validationResult,
         },
+      }
+    }
+    case "APPEND_METADATA": {
+      return {
+        ...state,
+        processToDisplay: LayoutUtils.appendToProcess(state.layout)(state.processToDisplay),
       }
     }
     //TODO: handle it differently?
@@ -454,15 +463,15 @@ function enrichNodeWithProcessDependentData(originalNode, processDefinitionData,
         let existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
         let templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
         return existingParamValue || _.cloneDeep(templateParamValue) ||
-            // We need to have this fallback to some template for situation when it is existing node and it has't got
-            // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-            _.cloneDeep({
-              name: branchParamDef.name,
-              expression: {
-                expression: `#${branchParamDef.name}`,
-                language: "spel",
-              },
-            })
+          // We need to have this fallback to some template for situation when it is existing node and it has't got
+          // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
+          _.cloneDeep({
+            name: branchParamDef.name,
+            expression: {
+              expression: `#${branchParamDef.name}`,
+              language: "spel",
+            },
+          })
       })
       return {
         branchId: branchId,
