@@ -64,12 +64,8 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
       handleClientResponse(schemaRegistryClient.getLatestSchema(subject)))
   }
 
-  private def handleClientResponse(response: Validated[SchemaRegistryClientError, Schema]): Schema = {
-    response match {
-      case Valid(schema) => schema
-      case Invalid(error) => throw KafkaAvroException(error.message)
-    }
-  }
+  private def handleClientResponse(response: Validated[SchemaRegistryClientError, Schema]): Schema =
+    response.valueOr(ex => throw ex)
 }
 
 object AvroUtils {

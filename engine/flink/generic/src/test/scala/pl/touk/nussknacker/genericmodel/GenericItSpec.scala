@@ -316,12 +316,12 @@ object MockSchemaRegistry extends Serializable {
     """.stripMargin
 
   val factory: MockConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactoryBuilder()
-    .register(AvroInTopic, RecordSchemaString, 1, false)
-    .register(AvroOutTopic, RecordSchemaString, 1, false)
-    .register(AvroFromScratchInTopic, RecordSchemaString, 1, false)
-    .register(AvroFromScratchOutTopic, RecordSchemaString, 1, false)
-    .register(AvroTypedInTopic, RecordSchemaString, 1, false)
-    .register(AvroTypedOutTopic, RecordSchemaString, 1, false)
+    .register(AvroInTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroOutTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroFromScratchInTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroFromScratchOutTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroTypedInTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroTypedOutTopic, RecordSchemaString, 1, isKey = false)
     .build
 
   /**

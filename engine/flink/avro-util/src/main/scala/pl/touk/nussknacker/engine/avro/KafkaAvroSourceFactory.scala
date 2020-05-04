@@ -89,10 +89,8 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
                             kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
                             processMetaData: MetaData,
                             nodeId: NodeId): KafkaSource = {
-    val typeDefinition = kafkaAvroSchemaProvider.typeDefinition match {
-      case Valid(result) => result
-      case Invalid(e) => throw e
-    }
+    val returnTypeDefinition = kafkaAvroSchemaProvider.returnType
+
     new KafkaSource(
       List(topic),
       kafkaConfig,
@@ -100,8 +98,7 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
       kafkaAvroSchemaProvider.recordFormatter,
       processObjectDependencies
     ) with ReturningType {
-      override def returnType: typing.TypingResult = kafkaAvroSchemaProvider.returnType
+      override def returnType: typing.TypingResult = returnTypeDefinition
     }
   }
-}
 }

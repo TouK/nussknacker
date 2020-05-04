@@ -5,7 +5,7 @@ import javax.annotation.Nullable
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroException, KafkaAvroSchemaProvider}
+import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryProvider[T],
@@ -13,11 +13,10 @@ class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryP
                                          topic: String,
                                          version: Option[Int]) extends KafkaAvroSchemaProvider[T] {
 
-  override def typeDefinition: Validated[KafkaAvroException, typing.TypingResult] =
+  override def typeDefinition: Validated[SchemaRegistryClientError, typing.TypingResult] =
     schemaRegistryProvider
       .createSchemaRegistryClient
       .getSchema(AvroUtils.valueSubject(topic), version)
-      .leftMap(clientError => KafkaAvroException(clientError.message))
       .map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
 
   override def deserializationSchema: KafkaDeserializationSchema[T] =

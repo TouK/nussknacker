@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryClientError
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
 
 /**
@@ -14,7 +14,7 @@ trait KafkaAvroSchemaProvider[T] extends Serializable {
   /**
     * TODO: Create mechanism which one allows to throw exception per Node and Param
     */
-  def typeDefinition: Validated[KafkaAvroException, typing.TypingResult]
+  def typeDefinition: Validated[SchemaRegistryClientError, typing.TypingResult]
 
   def deserializationSchema: KafkaDeserializationSchema[T]
 
@@ -22,10 +22,5 @@ trait KafkaAvroSchemaProvider[T] extends Serializable {
 
   def recordFormatter: Option[RecordFormatter]
 
-  def returnType: typing.TypingResult = typeDefinition match {
-    case Valid(result) => result
-    case Invalid(e) => throw e
-  }
+  def returnType: typing.TypingResult = typeDefinition.valueOr(ex => throw ex)
 }
-
-case class KafkaAvroException(message: String) extends RuntimeException(message)

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.Conflu
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroDeserializationSchemaFactory, ConfluentAvroSerializationSchemaFactory, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaRegistryClientError}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroException, KafkaAvroSchemaProvider}
+import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 /**
@@ -55,7 +55,7 @@ class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
   override def serializationSchema: KafkaSerializationSchema[Any] =
     serializationSchemaFactory.create(topic, kafkaConfig)
 
-  override def typeDefinition: Validated[KafkaAvroException, typing.TypingResult] =
+  override def typeDefinition: Validated[SchemaRegistryClientError, typing.TypingResult] =
     Valid(AvroSchemaTypeDefinitionExtractor.typeDefinition(AvroUtils.createSchema(avroSchema)))
 
   override def recordFormatter: Option[RecordFormatter] =
