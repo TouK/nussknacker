@@ -201,4 +201,15 @@ object ProcessCompilationError {
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
+  case class CustomParameterValidationError(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError with InASingleNode
+
+  object CustomParameterValidationError{
+    def apply (message: String, description: String, paramName: String)(implicit nodeId: NodeId): CustomParameterValidationError = CustomParameterValidationError(message, description, paramName, nodeId.id)
+  }
+
+  case class CustomServiceValidationError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  object CustomServiceValidationError {
+    def apply (message: String)(implicit nodeId: NodeId): CustomServiceValidationError = CustomServiceValidationError(message, nodeId.id)
+  }
 }

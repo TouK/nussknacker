@@ -5,16 +5,15 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
-import javax.annotation.Nullable
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, MandatoryParameterValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, NotBlankParameter, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
-import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -796,6 +795,41 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
+
+  test("should be able to run custom validation using ServiceReturningType") {
+    val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
+    val withServiceRef = base.copy(services = base.services + ("withCustomValidation" ->
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceWithCustomValidation), SingleNodeConfig.zero)))
+
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .enricher("service-1", "output-1", "withCustomValidation",
+          "map" -> "{param1: 'String', param2: 'Integer'}",
+          "string" -> "#input.toString()",
+          "id" -> "9")
+        .enricher("service-2", "output-2", "withCustomValidation",
+          "map" -> "{invalid: 'Invalid param'}",
+          "string" -> "#input.toString()",
+          "id" -> "12")
+        .enricher("service-3", "output-3", "withCustomValidation",
+          "map" -> "{param1: 'String', param2: 12L}",
+          "string" -> "#input.toString()",
+          "id" -> "12")
+        .sink("id2", "''", "sink")
+
+    val result = validateWithDef(process, withServiceRef)
+
+    result.result shouldBe Invalid(NonEmptyList.of(
+      CustomParameterValidationError("Id too low: 9", "", "id", "service-1"),
+      CustomServiceValidationError("Parameter map contains invalid field", "service-2"),
+      CustomServiceValidationError("All values of map must be strings", "service-3")
+    ))
+  }
+
+
   test("not allows local variables in eager custom node parameter") {
     val processWithLocalVarInEagerParam =
       EspProcessBuilder
@@ -1018,4 +1052,31 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  object ServiceWithCustomValidation extends Service with ServiceReturningType {
+
+    @MethodToInvoke
+    def invoke(@ParamName("map") map: java.util.Map[String, _],
+               @ParamName("string") string: String,
+               @ParamName("id") id: Int): Future[AnyRef] = Future.successful(null)
+
+    def returnType(params: Map[String, (TypingResult, Option[Any])]): TypingResult = {
+      val id = params("id")._2
+        .map(_.asInstanceOf[Int])
+        .getOrElse(throw CustomParameterValidationException("Invalid value", "Failed to evaluate id parameter, integer expected", "id"))
+      if (id < 10) {
+        throw CustomParameterValidationException(s"Id too low: $id", "", "id")
+      }
+      val (mapType, _) = params("map")
+      mapType match {
+        case TypedObjectTypingResult(fields, _) if fields.contains("invalid") =>
+          throw CustomServiceValidationException("Parameter map contains invalid field")
+        case TypedObjectTypingResult(fields, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+          throw CustomServiceValidationException("All values of map must be strings")
+        case TypedObjectTypingResult(_, _) =>
+          Typed.typedClass[String]
+        case _ =>
+          throw new IllegalArgumentException(s"Map is of unexpected type: $mapType")
+      }
+    }
+  }
 }
