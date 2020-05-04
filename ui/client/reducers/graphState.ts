@@ -1,6 +1,6 @@
 import {Layout} from "../actions/nk"
 import {ProcessStateType, ProcessType} from "../components/Process/types"
-import {NodeType, GroupId} from "../types"
+import {NodeType} from "../types"
 
 type GraphHistoryAction = $TodoType
 

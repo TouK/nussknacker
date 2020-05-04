@@ -1,6 +1,8 @@
 import {ProcessId, GroupId} from "../types"
 import {Reducer} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"
+import {reducer as groupsReducer} from "./groups"
+import reduceReducers from "reduce-reducers"
 
 export type UiState = {
   leftPanelIsOpened: boolean,
@@ -43,7 +45,7 @@ function withAllModalsClosed(newState: UiState): UiState {
   return {...newState, allModalsClosed}
 }
 
-export const reducer: Reducer<UiState> = (state = emptyUiState, action) => {
+const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
   switch (action.type) {
     case "TOGGLE_LEFT_PANEL": {
       return withAllModalsClosed({
@@ -129,25 +131,14 @@ export const reducer: Reducer<UiState> = (state = emptyUiState, action) => {
         },
       })
     }
-    case "EXPAND_GROUP": {
-      return {
-        ...state,
-        expandedGroups: [...state.expandedGroups, action.id],
-      }
-    }
-    case "COLLAPSE_GROUP": {
-      return {
-        ...state,
-        expandedGroups: state.expandedGroups.filter(id => id !== action.id),
-      }
-    }
-    case "EDIT_GROUP": {
-      return {
-        ...state,
-        expandedGroups: state.expandedGroups.map(id => id === action.oldGroupId ? action.newGroup.id : id),
-      }
-    }
+
     default:
       return withAllModalsClosed(state)
   }
 }
+
+export const reducer = reduceReducers<UiState>(
+  emptyUiState,
+  uiReducer,
+  groupsReducer,
+)

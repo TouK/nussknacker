@@ -280,6 +280,7 @@ export function reducer(state, action) {
       }
     }
     case "EXPAND_GROUP":
+    case "COLLAPSE_ALL_GROUPS":
     case "COLLAPSE_GROUP": {
       return {
         ...state,
