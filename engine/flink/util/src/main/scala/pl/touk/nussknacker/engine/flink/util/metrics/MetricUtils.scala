@@ -97,7 +97,7 @@ class MetricUtils(runtimeContext: RuntimeContext) {
   private def extractTags(nkGlobalParameters: Option[NkGlobalParameters]): Map[String, String] = {
     nkGlobalParameters.map(_.namingParameters) match {
       case Some(Some(params)) => params.tags
-      case None => Map()
+      case _ => Map()
     }
   }
 
