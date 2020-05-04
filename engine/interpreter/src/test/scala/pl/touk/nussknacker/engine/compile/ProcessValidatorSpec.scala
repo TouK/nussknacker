@@ -807,25 +807,22 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .enricher("service-1", "output-1", "withCustomValidation",
-          "map" -> "{param1: 'String', param2: 'Integer'}",
-          "string" -> "#input.toString()",
-          "id" -> "9")
+          "age" -> "12",
+          "fields" -> "{:}")
         .enricher("service-2", "output-2", "withCustomValidation",
-          "map" -> "{invalid: 'Invalid param'}",
-          "string" -> "#input.toString()",
-          "id" -> "12")
+          "age" -> "30",
+          "fields" -> "{invalid: 'yes'}")
         .enricher("service-3", "output-3", "withCustomValidation",
-          "map" -> "{param1: 'String', param2: 12L}",
-          "string" -> "#input.toString()",
-          "id" -> "12")
+          "age" -> "30",
+          "fields" -> "{name: 12}")
         .sink("id2", "''", "sink")
 
     val result = validateWithDef(process, withServiceRef)
 
     result.result shouldBe Invalid(NonEmptyList.of(
-      CustomParameterValidationError("Id too low: 9", "", "id", "service-1"),
-      CustomServiceValidationError("Parameter map contains invalid field", "service-2"),
-      CustomServiceValidationError("All values of map must be strings", "service-3")
+      CustomNodeError("service-1", "Too young", Some("age")),
+      CustomNodeError("service-2", "Service is invalid", None),
+      CustomNodeError("service-3", "All values should be strings", Some("fields"))
     ))
   }
 
@@ -1055,27 +1052,21 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   object ServiceWithCustomValidation extends Service with ServiceReturningType {
 
     @MethodToInvoke
-    def invoke(@ParamName("map") map: java.util.Map[String, _],
-               @ParamName("string") string: String,
-               @ParamName("id") id: Int): Future[AnyRef] = Future.successful(null)
+    def invoke(@ParamName("age") age: Int,
+               @ParamName("fields") fields: java.util.Map[String, String]): Future[String] = {
+      Future.successful(s"name: ${fields.get("name")}, age: $age")
+    }
 
     def returnType(params: Map[String, (TypingResult, Option[Any])]): TypingResult = {
-      val id = params("id")._2
-        .map(_.asInstanceOf[Int])
-        .getOrElse(throw CustomParameterValidationException("Invalid value", "Failed to evaluate id parameter, integer expected", "id"))
-      if (id < 10) {
-        throw CustomParameterValidationException(s"Id too low: $id", "", "id")
+      if (params("age")._2.get.asInstanceOf[Int] < 18) {
+        throw CustomNodeValidationException("Too young", Some("age"))
       }
-      val (mapType, _) = params("map")
-      mapType match {
+      params("fields")._1 match {
         case TypedObjectTypingResult(fields, _) if fields.contains("invalid") =>
-          throw CustomServiceValidationException("Parameter map contains invalid field")
+          throw CustomNodeValidationException("Service is invalid", None)
         case TypedObjectTypingResult(fields, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
-          throw CustomServiceValidationException("All values of map must be strings")
-        case TypedObjectTypingResult(_, _) =>
-          Typed.typedClass[String]
-        case _ =>
-          throw new IllegalArgumentException(s"Map is of unexpected type: $mapType")
+          throw CustomNodeValidationException("All values should be strings", Some("fields"))
+        case _ => Typed.typedClass[String]
       }
     }
   }

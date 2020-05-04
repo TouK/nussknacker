@@ -195,21 +195,13 @@ object ProcessCompilationError {
 
   case class CustomNodeError(nodeId: String, message: String, paramName: Option[String]) extends ProcessCompilationError with InASingleNode
 
+  object CustomNodeError {
+    def apply(message: String, paramName: Option[String])(implicit nodeId: NodeId): CustomNodeError = CustomNodeError(nodeId.id, message, paramName)
+  }
+
   case class FatalUnknownError(message: String) extends ProcessCompilationError {
     override def nodeIds: Set[String] = Set()
   }
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
-
-  case class CustomParameterValidationError(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError with InASingleNode
-
-  object CustomParameterValidationError{
-    def apply (message: String, description: String, paramName: String)(implicit nodeId: NodeId): CustomParameterValidationError = CustomParameterValidationError(message, description, paramName, nodeId.id)
-  }
-
-  case class CustomServiceValidationError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
-
-  object CustomServiceValidationError {
-    def apply (message: String)(implicit nodeId: NodeId): CustomServiceValidationError = CustomServiceValidationError(message, nodeId.id)
-  }
 }

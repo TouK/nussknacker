@@ -37,6 +37,4 @@ trait ServiceReturningType {
 
 }
 
-case class CustomParameterValidationException(message: String, description: String, paramName: String) extends Exception(message)
-
-case class CustomServiceValidationException(message: String) extends Exception(message)
+case class CustomNodeValidationException(message: String, paramName: Option[String]) extends Exception(message)

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.api.typed.{CustomParameterValidationException, CustomServiceValidationException, ServiceReturningType}
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ServiceReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.compiledgraph.node
@@ -250,10 +250,8 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
       expressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx).andThen { params =>
         (Try(computeReturnType(objWithMethod, params)) match {
           case Success(returnType) => valid((params, returnType))
-          case Failure(CustomParameterValidationException(message, description, paramName)) =>
-            invalid(CustomParameterValidationError(message, description, paramName))
-          case Failure(CustomServiceValidationException(message)) =>
-            invalid(CustomServiceValidationError(message))
+          case Failure(CustomNodeValidationException(message, paramName)) =>
+            invalid(CustomNodeError(message, paramName))
           case Failure(NonFatal(exception)) =>
             invalid(FatalUnknownError(exception.getMessage))
         }).toValidatedNel
