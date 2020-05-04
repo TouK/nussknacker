@@ -51,9 +51,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val method = classOf[Returning].getMethod("futureOfList")
 
-    val extractedType = EspTypeUtils.getGenericType(method.getGenericReturnType).get
+    val extractedType = EspTypeUtils.getReturnClassForMethod(method)
 
-    extractedType shouldBe Typed.genericTypeClass[java.util.List[_]](List(Typed[SampleClass]))
+    extractedType shouldBe Typed.fromDetailedType[Future[java.util.List[SampleClass]]]
   }
 
   test("should extract public fields from scala case class") {

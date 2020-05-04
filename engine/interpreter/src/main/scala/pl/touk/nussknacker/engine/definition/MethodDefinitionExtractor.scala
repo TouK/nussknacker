@@ -6,7 +6,7 @@ import java.lang.reflect.Method
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -96,7 +96,14 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       Option(method.getAnnotation(classOf[MethodToInvoke])).map(_.returnType())
       .filterNot(_ == classOf[Object])
       .map[TypingResult](Typed(_))
-    val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType).map(Typed(_))
+    val typeFromSignature = {
+      val rawType = EspTypeUtils.getReturnClassForMethod(method)
+      (expectedReturnType, rawType) match {
+        // uwrap Future, Source and so on
+        case (Some(monadGenericType), TypedClass(cl, genericParam :: Nil)) if monadGenericType.isAssignableFrom(cl) => Some(genericParam)
+        case _ => None
+      }
+    }
 
     typeFromAnnotation.orElse(typeFromSignature).getOrElse(Unknown)
   }

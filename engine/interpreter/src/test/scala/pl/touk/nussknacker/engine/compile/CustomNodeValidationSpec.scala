@@ -52,7 +52,8 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       })))
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-      "stringService" -> WithCategories(SimpleStringService)
+      "stringService" -> WithCategories(SimpleStringService),
+      "enricher" -> WithCategories(Enricher)
     )
   }
 
@@ -73,6 +74,11 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   object SimpleStringService extends Service {
     @MethodToInvoke
     def invoke(@ParamName("stringParam") param: String): Future[Unit] = ???
+  }
+
+  object Enricher extends Service {
+    @MethodToInvoke
+    def invoke(): Future[String] = ???
   }
 
   object AddingVariableStreamTransformer extends CustomStreamTransformer {
@@ -460,5 +466,27 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "stringService" -> Map("stringParam" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String])))
     )
   }
-  
+
+  test("process with enricher") {
+    val validProcess = processBase
+      .enricher("enricher", "outPutVar", "enricher")
+      .sink("out", "''", "dummySink")
+
+    val validationResult = validator.validate(validProcess)
+    validationResult.result.isValid shouldBe true
+    validationResult.variablesInNodes.get("sourceId").value shouldBe Map(
+      "meta" -> MetaVariables.typingResult(validProcess.metaData)
+    )
+    validationResult.variablesInNodes.get("enricher").value shouldBe Map(
+      "input" -> Typed[String],
+      "meta" -> MetaVariables.typingResult(validProcess.metaData)
+    )
+    validationResult.variablesInNodes.get("out").value shouldBe Map(
+      "input" -> Typed[String],
+      "outPutVar" -> Typed[String],
+      "meta" -> MetaVariables.typingResult(validProcess.metaData)
+    )
+  }
+
+
 }

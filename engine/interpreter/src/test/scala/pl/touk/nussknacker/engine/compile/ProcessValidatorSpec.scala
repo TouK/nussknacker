@@ -966,6 +966,21 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     )
   }
 
+  test("validation of method returning future values") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "source")
+      .buildSimpleVariable("sampleVar", "var", "#processHelper.futureValue")
+      .buildSimpleVariable("sampleVar2", "var2", "#processHelper.identity(#var)")
+      .emptySink("sink", "sink")
+
+    val compilationResult = validate(process, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(scala.concurrent.Future[java.lang.String]). Required: identity(java.lang.String)", _, _, _), Nil)) =>
+    }
+  }
+
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
     validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
   }
@@ -1000,6 +1015,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   object ProcessHelper {
     def add(a: Int, b: Int) = a + b
+
+    def identity(@Nullable nullableVal: String): String = nullableVal
+
+    def futureValue: Future[String] = Future.successful("123")
   }
 
   object ServiceReturningTypeSample extends Service with ServiceReturningType {

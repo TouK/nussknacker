@@ -6,7 +6,7 @@ import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Source, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
@@ -135,7 +135,7 @@ object EspTypeUtils {
     }.toMap
   }
 
-  private def getReturnClassForMethod(method: Method): TypingResult = {
+  def getReturnClassForMethod(method: Method): TypingResult = {
     getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(Typed(method.getReturnType))
   }
 
@@ -165,13 +165,10 @@ object EspTypeUtils {
   private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[TypingResult] = {
     val rawType = genericMethodType.getRawType
 
+    // see ScalaLazyPropertyAccessor
     if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
       val returnType = genericMethodType.getActualTypeArguments.apply(3) // it's IndexedStateT[IO, ContextWithLazyValuesProvider, ContextWithLazyValuesProvider, A]
       extractClass(returnType)
-    }
-    else if (classOf[Future[_]].isAssignableFrom(rawType)) {
-      val futureGenericType = genericMethodType.getActualTypeArguments.apply(0)
-      extractClass(futureGenericType)
     }
     else if (classOf[Option[_]].isAssignableFrom(rawType)) {
       val optionGenericType = genericMethodType.getActualTypeArguments.apply(0)
@@ -195,6 +192,13 @@ object EspTypeUtils {
     } else if (classOf[java.util.Map[_, _]].isAssignableFrom(rawType)) {
       Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+    // All below are for AbstractMethodDefinitionExtractor purpose
+    } else if (classOf[scala.concurrent.Future[_]].isAssignableFrom(rawType)) {
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+    } else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(rawType)) {
+      Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+    } else if (classOf[Source[_]].isAssignableFrom(rawType)) {
       Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
     } else Typed(rawType)
   }

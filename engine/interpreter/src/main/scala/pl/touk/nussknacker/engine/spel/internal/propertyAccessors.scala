@@ -99,6 +99,8 @@ object propertyAccessors {
 
   class ScalaLazyPropertyAccessor(lazyValuesTimeout: Duration) extends PropertyAccessor with ReadOnly with Caching {
 
+    // TODO: handle methods with multiple args or at least validate that they can't be called
+    //       - see test for similar case for Futures: "usage of methods with some argument returning future"
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
       target.getMethods.find(
         m => m.getParameterCount == 0 &&
