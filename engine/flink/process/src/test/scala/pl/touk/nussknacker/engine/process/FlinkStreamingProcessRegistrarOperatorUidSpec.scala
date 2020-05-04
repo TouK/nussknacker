@@ -78,7 +78,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Matche
 
     val env = StoppableExecutionEnvironment(new Configuration())
     NkGlobalParameters.setInContext(env.getConfig, NkGlobalParameters("fooBuildInfo",
-      ProcessVersion(1L, ProcessName("fooProcess"), "fooUser", None), config, NamingParameters(Map())))
+      ProcessVersion(1L, ProcessName("fooProcess"), "fooUser", None), config))
     try {
       FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
         .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)

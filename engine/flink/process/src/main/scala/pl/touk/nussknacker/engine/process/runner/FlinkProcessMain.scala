@@ -28,8 +28,8 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val buildInfo = if (args.length > 3) args(3) else ""
       val modelData = ModelData(config, List())
       val env = getExecutionEnvironment
-      NkGlobalParameters.setInContext(getConfig(env), NkGlobalParameters(buildInfo, processVersion, modelData.processConfig,
-        NamingParameters(modelData.objectNaming.objectNamingParameters(process.id, modelData.processConfig, new NamingContext(FlinkUsageKey)).toTags)))
+      val tags = modelData.objectNaming.objectNamingParameters(process.id, modelData.processConfig, new NamingContext(FlinkUsageKey)).toTags
+      NkGlobalParameters.setInContext(getConfig(env), NkGlobalParameters(buildInfo, processVersion, modelData.processConfig, Some(NamingParameters(tags))))
       runProcess(env, modelData, process, processVersion)
     } catch {
       // marker exception for graph optimalization

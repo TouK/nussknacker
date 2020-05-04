@@ -16,7 +16,7 @@ import net.ceedubs.ficus.Ficus._
 case class NkGlobalParameters(buildInfo: String,
                               processVersion: ProcessVersion,
                               configParameters: Option[ConfigGlobalParameters],
-                              namingParameters: NamingParameters) extends GlobalJobParameters {
+                              namingParameters: Option[NamingParameters]) extends GlobalJobParameters {
 
   //here we decide which configuration properties should be shown in REST API etc.
   //For now it will be only deployment information
@@ -41,7 +41,7 @@ case class NamingParameters(tags: Map[String, String])
 
 object NkGlobalParameters {
 
-  def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config, namingParameters: NamingParameters): NkGlobalParameters = {
+  def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config, namingParameters: Option[NamingParameters] = None): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
     NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namingParameters)
   }
