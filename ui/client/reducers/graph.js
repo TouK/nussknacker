@@ -424,7 +424,7 @@ function createEdge(fromNode, toNode, edgeType, allEdges, processDefinitionData)
 
 function adjustBranchParametersAfterDisconnect(nodes, removedEdgeFrom, removedEdgeTo) {
   const node = nodes.find(n => n.id === removedEdgeTo)
-  if (NodeUtils.nodeIsJoin(node)) {
+  if (node && NodeUtils.nodeIsJoin(node)) {
     const newToNode = removeBranchParameter(node, removedEdgeFrom)
     return _.map(nodes, (n) => { return n.id === removedEdgeTo ? newToNode : n })
   } else {
