@@ -17,6 +17,11 @@ object UtilProcessHelper extends HideToString {
   @Documentation(description = "Get random number")
   def random(@ParamName("To (exclusive)") to: Int): Unit = {
     Random.nextInt(to)
-
   }
+
+  @Documentation(description = "Wrap param in Unknown type to make it usable in places where type checking is too much restrictive")
+  def toUnknown(@ParamName("value") value: Any): Any = {
+    value
+  }
+
 }

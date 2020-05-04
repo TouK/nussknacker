@@ -177,6 +177,14 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   }
 
+  test("validate MethodReference parameter types") {
+    val parsed = parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal)
+    parsed.isValid shouldBe true
+
+    val invalid = parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Mismatch parameter types. Found: add(java.lang.String, java.lang.Integer). Required: add(int, int)")))
+  }
+
   test("skip MethodReference validation without strictMethodsChecking") {
     val parsed = parseWithoutStrictMethodsChecking[Any]("#processHelper.notExistent(1, 1)", ctxWithGlobal)
     parsed.isValid shouldBe true
@@ -305,7 +313,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("not allow access to variables without hash in methods") {
     val withNum = ctx.withVariable("a", 5).withVariable("processHelper", SampleGlobalObject)
     parse[Any]("#processHelper.add(a, 1)", withNum) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Non reference 'a' occurred. Maybe you missed '#' in front of it?"), Nil)) =>
+      case Invalid(l: NonEmptyList[_]) if l.toList.contains(ExpressionParseError("Non reference 'a' occurred. Maybe you missed '#' in front of it?")) =>
     }
   }
 

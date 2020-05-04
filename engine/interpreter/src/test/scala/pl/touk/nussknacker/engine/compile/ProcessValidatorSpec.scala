@@ -94,7 +94,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
         "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
-      .sink("id2", "#processHelper.add(#processHelper, 2)", "sink")
+      .sink("id2", "#processHelper.add(1, 2)", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
