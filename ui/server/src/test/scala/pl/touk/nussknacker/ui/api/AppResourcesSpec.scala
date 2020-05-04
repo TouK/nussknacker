@@ -46,7 +46,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     createDeployedProcess("id2")
     createDeployedProcess("id3")
 
-    val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
+    val result = Get("/app/processHealthCheck") ~> withPermissions(resources, testPermissionRead)
 
     val first = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(akka.actor.Status.Failure(new Exception("Failed to check status")))
@@ -70,7 +70,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     createDeployedCanceledProcess(ProcessName("id1"),  isSubprocess = false)
     createDeployedProcess(ProcessName("id2"),  isSubprocess = false)
 
-    val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
+    val result = Get("/app/processHealthCheck") ~> withPermissions(resources, testPermissionRead)
 
     val second = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(None)
@@ -88,7 +88,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     createDeployedProcess("id1")
     createDeployedProcess("id2")
 
-    val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
+    val result = Get("/app/processHealthCheck") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(Some(processStatus(None, SimpleStateStatus.Running)))
@@ -106,7 +106,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
     createDeployedProcess("id1")
 
-    val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
+    val result = Get("/app/processHealthCheck") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(Some(processStatus(None, SimpleStateStatus.Running)))

@@ -60,7 +60,7 @@ export default {
   },
 
   fetchHealthCheck() {
-    return api.get("/app/healthCheck")
+    return api.get("/app/processHealthCheck")
       .then(() => ({state: "ok"}))
       .catch((error) => ({state: "error", error: error.response.data}))
   },

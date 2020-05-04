@@ -50,6 +50,12 @@ class AppResources(config: Config,
       path("healthCheck") {
         get {
           complete {
+            HttpResponse(status = StatusCodes.OK)
+          }
+        }
+      } ~ path("processHealthCheck") {
+        get {
+          complete {
             notRunningProcessesThatShouldRun.map[HttpResponse] { set =>
               if (set.isEmpty) {
                 HttpResponse(status = StatusCodes.OK)
