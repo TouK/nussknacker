@@ -1,4 +1,4 @@
 import {createSelector} from "reselect"
-import {getUi} from "./ui"
+import {getGraph} from "./graph"
 
-export const getExpandedGroups = createSelector(getUi, g => g.expandedGroups)
+export const getExpandedGroups = createSelector(getGraph, g => g.expandedGroups)

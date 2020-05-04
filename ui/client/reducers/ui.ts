@@ -1,7 +1,6 @@
-import {ProcessId, GroupId} from "../types"
+import {ProcessId} from "../types"
 import {Reducer} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"
-import {reducer as expandedGroups} from "./groups"
 import {mergeReducers} from "./mergeReducers"
 
 export type UiState = {
@@ -23,7 +22,6 @@ export type UiState = {
     displayWarnings: boolean,
     text: string,
   }>,
-  expandedGroups: GroupId[],
   allModalsClosed: boolean,
   isToolTipsHighlighted: boolean,
 }
@@ -37,7 +35,6 @@ const emptyUiState: UiState = {
   isToolTipsHighlighted: false,
   confirmDialog: {},
   modalDialog: {},
-  expandedGroups: [],
 }
 
 function withAllModalsClosed(newState: UiState): UiState {
@@ -140,5 +137,4 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
 export const reducer = mergeReducers<UiState>(
   uiReducer,
   withAllModalsClosed,
-  {expandedGroups},
 )

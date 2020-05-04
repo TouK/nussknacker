@@ -1,9 +1,12 @@
 import _ from "lodash"
-
+import {compose} from "redux"
 import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import * as LayoutUtils from "./layoutUtils"
+import * as GroupsUtils from "./groupsUtils"
+import {mergeReducers} from "./mergeReducers"
+import {reducer as expandedGroups} from "./groups"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -22,11 +25,12 @@ const emptyGraphState = {
   businessView: false,
   processState: null,
   processStateLoaded: false,
+  expandedGroups: [],
 }
 
 const STATE_PROPERTY_NAME = "groupingState"
 
-export function reducer(state = emptyGraphState, action) {
+function graphReducer(state = emptyGraphState, action) {
   switch (action.type) {
     case "PROCESS_LOADING": {
       return {
@@ -69,6 +73,7 @@ export function reducer(state = emptyGraphState, action) {
         graphLoading: false,
         nodeToDisplay: nodeToDisplay,
         layout: LayoutUtils.fromString(nodeToDisplay.additionalFields?.properties?.layout),
+        expandedGroups: GroupsUtils.fromString(nodeToDisplay.additionalFields?.properties?.expandedGroups),
       }
     }
     case "LOADING_FAILED": {
@@ -229,9 +234,13 @@ export function reducer(state = emptyGraphState, action) {
       }
     }
     case "APPEND_METADATA": {
+      const withMetadata = compose(
+        LayoutUtils.appendToProcess(state.layout),
+        GroupsUtils.appendToProcess(state.expandedGroups),
+      )
       return {
         ...state,
-        processToDisplay: LayoutUtils.appendToProcess(state.layout)(state.processToDisplay),
+        processToDisplay: withMetadata(state.processToDisplay),
       }
     }
     //TODO: handle it differently?
@@ -481,3 +490,8 @@ function enrichNodeWithProcessDependentData(originalNode, processDefinitionData,
   }
   return node
 }
+
+export const reducer = mergeReducers(
+  graphReducer,
+  {expandedGroups},
+)
