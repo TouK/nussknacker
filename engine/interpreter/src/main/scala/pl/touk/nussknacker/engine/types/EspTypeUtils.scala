@@ -16,6 +16,8 @@ import scala.concurrent.Future
 
 object EspTypeUtils {
 
+  import pl.touk.nussknacker.engine.util.Implicits._
+
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
     ClazzDefinition(Typed(clazz), getPublicMethodAndFields(clazz))
@@ -49,15 +51,15 @@ object EspTypeUtils {
   }
 
   private def getPublicMethodAndFields(clazz: Class[_])
-                                      (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
+                                      (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods = publicMethods(clazz, membersPredicate)
-    val fields = publicFields(clazz, membersPredicate)
+    val fields = publicFields(clazz, membersPredicate).mapValuesNow(List(_))
     methods ++ fields
   }
 
   private def publicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
-                           (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
+                           (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
            does not contain any implicitly declared methods from {@code Object}.
            The same for primitives - we assume that languages like SpEL will be able to do boxing
@@ -78,14 +80,7 @@ object EspTypeUtils {
       methodAccessMethods(method).map(_ -> toMethodInfo(method))
     }
 
-    val genericReturnTypeDeduplicated = deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
-
-    val sortedByArityDesc = genericReturnTypeDeduplicated.sortBy(- _._2.parameters.size)
-
-    // Currently SpEL methods are naively and optimistically type checked. This is, for overloaded methods with
-    // different arity, validation is successful when SpEL MethodReference provides the number of parameters greater
-    // or equal to method with the smallest arity.
-    sortedByArityDesc.toMap
+    deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
   }
 
   /*
@@ -99,17 +94,19 @@ object EspTypeUtils {
     In our case the second one is correct
    */
   private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
-    methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.parameters)).toList.map {
+    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.parameters))
+    groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
         /*
           we want to find "most specific" class, however suprisingly it's not always possible, because we treat e.g. isLeft and left methods
           as equal (for javabean-like access) and e.g. in scala Either this is perfectly possible. In case we cannot find most specific
           class we pick arbitrary one (we sort to avoid randomness)
          */
+
         methodsForParams.find { case (_, MethodInfo(_, ret, _)) =>
           methodsForParams.forall(mi => ret.canBeSubclassOf(mi._2.refClazz))
         }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
-    }
+    }.toGroupedMap
   }
 
   private def toMethodInfo(method: Method)
