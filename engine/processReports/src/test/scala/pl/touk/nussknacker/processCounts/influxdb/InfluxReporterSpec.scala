@@ -7,7 +7,7 @@ class InfluxReporterSpec extends FunSuite with Matchers {
 
   test("correctly handle whitespaces when whitespaces are mapped to dashes") {
 
-    val counts = ProcessBaseCounts(100, nodes = Map(
+    val counts = ProcessBaseCounts(nodes = Map(
       "a" -> 10,
       "a-b" -> 20,
       "a-b-c" -> 30,
@@ -23,7 +23,7 @@ class InfluxReporterSpec extends FunSuite with Matchers {
 
   test("correctly handle whitespaces when whitespaces are just regular whitespaces") {
 
-    val counts = ProcessBaseCounts(100, nodes = Map(
+    val counts = ProcessBaseCounts(nodes = Map(
       "a" -> 10,
       "a b" -> 20,
       "a b c" -> 30,

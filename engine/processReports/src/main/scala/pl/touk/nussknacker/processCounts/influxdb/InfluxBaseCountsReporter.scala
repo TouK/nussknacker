@@ -15,9 +15,8 @@ private[influxdb] class InfluxBaseCountsReporter(env: String, config: InfluxConf
   def fetchBaseProcessCounts(processId: String, dateFrom: Option[LocalDateTime], dateTo: LocalDateTime): Future[ProcessBaseCounts] = {
 
     val reportData = for {
-      allCount <- influxGenerator.query(processId, "source", dateFrom, dateTo).map(_.getOrElse("count", 0L))
-      nodes <- influxGenerator.query(processId, "nodeCount", dateFrom, dateTo)
-    } yield ProcessBaseCounts(all = allCount, nodes = nodes)
+      nodes <- influxGenerator.query(processId, dateFrom, dateTo, config.metricsConfig.getOrElse(MetricsConfig()))
+    } yield ProcessBaseCounts(nodes = nodes)
     reportData.failed.foreach {
       ex => logger.error("Failed to generate", ex)
     }
@@ -25,11 +24,20 @@ private[influxdb] class InfluxBaseCountsReporter(env: String, config: InfluxConf
   }
 
   def detectRestarts(processName: String, dateFrom: LocalDateTime, dateTo: LocalDateTime) : Future[List[LocalDateTime]]
-    = influxGenerator.detectRestarts(processName, dateFrom, dateTo)
+    = influxGenerator.detectRestarts(processName, dateFrom, dateTo, config.metricsConfig.getOrElse(MetricsConfig()))
 
 }
 
-case class ProcessBaseCounts(all: Long, nodes: Map[String, Long]) {
+case class MetricsConfig(sourceCountMetric: String = "source_count",
+                         nodeCountMetric: String = "nodeCount",
+                         nodeIdTag: String = "nodeId",
+                         slotTag: String = "slot",
+                         processTag: String = "process",
+                         countField: String = "count",
+                         envTag: String = "env")
+
+
+case class ProcessBaseCounts(nodes: Map[String, Long]) {
 
   //node ids in influx are different than original ones, i.e influx converts spaces and dots to dashes '-'
   //that's wy we need reverse transformation

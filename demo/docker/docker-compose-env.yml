@@ -10,6 +10,13 @@ services:
       - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
       - nussknacker_storage_influxdb:/var/lib/influxdb
 
+  telegraf:
+    container_name: nussknacker_telegraf
+    image: telegraf:${TELEGRAF_VERSION-1.14.1-alpine}
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+
+
   zookeeper:
     container_name: nussknacker_zookeeper
     image: zookeeper:${ZOOKEEPER_VERSION-3.5}
