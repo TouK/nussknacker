@@ -1,10 +1,13 @@
 import {events} from "../../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../../common/VisualizationUrl"
 import history from "../../../history"
-import {ThunkAction} from "../../reduxTypes"
+import {NodeId} from "../../../types"
 import {reportEvent} from "../reportEvent"
+import {ThunkAction} from "../../reduxTypes"
 
-export type Layout = $TodoType
+export type Position = { x: number, y: number }
+export type NodePosition = { id: NodeId, position: Position }
+export type Layout = NodePosition[]
 export type GraphLayoutFunction = () => void
 export type BusinessView = $TodoType
 

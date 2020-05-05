@@ -1,12 +1,14 @@
 import HttpService from "../../http/HttpService"
 import {ThunkAction} from "../reduxTypes"
 
+type AvailableQueryableStates = $TodoType
+
 export type AvailableQueryStatesAction = {
   type: "AVAILABLE_QUERY_STATES",
-  availableQueryableStates: $TodoType,
+  availableQueryableStates: AvailableQueryableStates,
 }
 
-export function availableQueryStates(data: $TodoType): AvailableQueryStatesAction {
+export function availableQueryStates(data: AvailableQueryableStates): AvailableQueryStatesAction {
   return {
     type: "AVAILABLE_QUERY_STATES",
     availableQueryableStates: data,

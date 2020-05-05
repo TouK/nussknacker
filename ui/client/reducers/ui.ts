@@ -1,5 +1,5 @@
-import {GroupId, ProcessId} from "../actions/nk/models"
-import {Action} from "../actions/reduxTypes"
+import {ProcessId, GroupId} from "../types"
+import {Reducer} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"
 
 export type UiState = {
@@ -43,7 +43,7 @@ function withAllModalsClosed(newState: UiState): UiState {
   return {...newState, allModalsClosed}
 }
 
-export function reducer(state: UiState = emptyUiState, action: Action): UiState {
+export const reducer: Reducer<UiState> = (state = emptyUiState, action) => {
   switch (action.type) {
     case "TOGGLE_LEFT_PANEL": {
       return withAllModalsClosed({

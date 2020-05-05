@@ -16,7 +16,7 @@ import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
-import NodeUtils from "./NodeUtils.js"
+import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
 
 class Graph extends React.Component {
@@ -56,7 +56,6 @@ class Graph extends React.Component {
     this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, this.props.expandedGroups)
     this._prepareContentForExport()
     this.panAndZoom = this.enablePanZoom()
-    this.processGraphPaper.scaleContentToFit({padding: 75, maxScale: 1.25})
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
     this.cursorBehaviour()
@@ -123,6 +122,7 @@ class Graph extends React.Component {
       rankDir: "TB",
     })
     this.changeLayoutIfNeeded()
+    this.fitSmallAndLargeGraphs(this.panAndZoom)
   }
 
   zoomIn() {
@@ -380,24 +380,25 @@ class Graph extends React.Component {
   }
 
   enablePanZoom() {
-    const svgElement = this.getEspGraphRef().getElementsByTagName("svg").item(0)
+    const paper = this.processGraphPaper
 
-    const panAndZoom = svgPanZoom(svgElement, {
+    const panAndZoom = svgPanZoom(paper.svg, {
       viewportSelector: ".svg-pan-zoom_viewport",
-      fit: this.props.processToDisplay.nodes.length > 1,
+      fit: false,
+      contain: false,
       zoomScaleSensitivity: 0.4,
       controlIconsEnabled: false,
       panEnabled: false,
       dblClickZoomEnabled: false,
-      minZoom: 0.2,
-      maxZoom: 10,
+      minZoom: 0.05,
+      maxZoom: 5,
     })
 
-    this.processGraphPaper.on("blank:pointerdown", (evt, x, y) => {
+    paper.on("blank:pointerdown", () => {
       panAndZoom.enablePan()
     })
 
-    this.processGraphPaper.on("cell:pointerup blank:pointerup", (cellView, event) => {
+    paper.on("cell:pointerup blank:pointerup", () => {
       panAndZoom.disablePan()
     })
 
@@ -406,9 +407,15 @@ class Graph extends React.Component {
   }
 
   fitSmallAndLargeGraphs = (panAndZoom) => {
+    if (!panAndZoom) {
+      return
+    }
+
+    panAndZoom.fit()
     const realZoom = panAndZoom.getSizes().realZoom
     const toZoomBy = realZoom > 1 ? 1 / realZoom : 0.90 //the bigger zoom, the further we get
     panAndZoom.zoomBy(toZoomBy)
+    panAndZoom.center()
   }
 
   changeNodeDetailsOnClick() {
@@ -533,8 +540,7 @@ class Graph extends React.Component {
     const paddingLeft = cssVariables.svgGraphPaddingLeft
     const paddingTop = cssVariables.svgGraphPaddingTop
 
-    const element = document.getElementById(this.props.divId)
-    const svg = element.getElementsByTagName("svg").item(0)
+    const {svg} = this.processGraphPaper
     const graphPosition = svg.getBoundingClientRect()
 
     return {

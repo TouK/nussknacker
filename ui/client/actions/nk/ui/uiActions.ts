@@ -1,5 +1,5 @@
 import {CloseModalsAction} from "../closeModals"
-import {AddNodeToGroupAction, EditGroupAction, ToggleGroupAction, UnGroupAction} from "../groups"
+import {AddNodeToGroupAction, EditGroupAction, ToggleGroupAction, UnGroupAction, FinishGroupingAction} from "../groups"
 import {DisplayModalEdgeDetailsAction, DisplayModalNodeDetailsAction, ToggleInfoModalAction, ToggleModalDialogAction} from "../modal"
 import {ToggleProcessActionModalAction} from "../toggleProcessActionDialog"
 import {SwitchToolTipsHighlightAction} from "../tooltips"
@@ -8,6 +8,7 @@ import {ToggleConfirmDialogAction} from "./toggleConfirmDialog"
 
 export type UiActions =
     | AddNodeToGroupAction
+    | FinishGroupingAction
     | CloseModalsAction
     | DisplayModalEdgeDetailsAction
     | DisplayModalNodeDetailsAction
