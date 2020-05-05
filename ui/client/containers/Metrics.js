@@ -41,16 +41,16 @@ export class Metrics extends React.Component {
     const finalIframeUrl = url.replace("$dashboard", dashboard).replace("$process", processName)
 
     return (
-        <div className="Page">
+      <div className="Page">
         <iframe
-    ref="metricsFrame"
-    src={finalIframeUrl}
-    width="100%"
-    height={window.innerHeight}
-    frameBorder="0"
+          ref="metricsFrame"
+          src={finalIframeUrl}
+          width="100%"
+          height={window.innerHeight}
+          frameBorder="0"
         />
-        </div>
-  )
+      </div>
+    )
   }
 
   getDashboardName() {
