@@ -23,12 +23,11 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaFactory: DeserializationS
   extends KafkaSourceFactory[T](schemaFactory, timestampAssigner,
     TestParsingUtils.newLineSplit, processObjectDependencies) {
 
-  override protected def createSource(processMetaData: MetaData,
-                                      topics: List[String],
+  override protected def createSource(topics: List[String],
                                       kafkaConfig: KafkaConfig,
                                       schema: KafkaDeserializationSchema[T]): KafkaSource = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
-    new KafkaSource(consumerGroupId = processMetaData.id, topics, kafkaConfig, schema,
+    new KafkaSource(topics, kafkaConfig, schema,
       Some(AvroToJsonFormatter(schemaRegistryClient, topics.head, formatKey)), processObjectDependencies)
   }
 
@@ -42,8 +41,7 @@ class KafkaTypedAvroSourceFactory[T: TypeInformation](schemaFactory: Deserializa
   extends BaseKafkaSourceFactory[T](timestampAssigner, TestParsingUtils.newLineSplit, processObjectDependencies) {
 
   @MethodToInvoke
-  def create(processMetaData: MetaData,
-             @ParamName(`TopicParamName`)
+  def create(@ParamName(`TopicParamName`)
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.RAW
@@ -56,7 +54,7 @@ class KafkaTypedAvroSourceFactory[T: TypeInformation](schemaFactory: Deserializa
              avroSchema: String): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
-    new KafkaSource(consumerGroupId = processMetaData.id, List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig),
+    new KafkaSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig),
       Some(AvroToJsonFormatter(schemaRegistryClient, topic, formatKey)), processObjectDependencies) with ReturningType {
       override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(avroSchema)
     }
