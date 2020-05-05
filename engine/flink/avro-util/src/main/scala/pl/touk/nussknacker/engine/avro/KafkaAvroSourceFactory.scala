@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, Simple
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.avro.formatter.AvroToJsonFormatter
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
@@ -23,7 +23,8 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaFactory: DeserializationS
   extends KafkaSourceFactory[T](schemaFactory, timestampAssigner,
     TestParsingUtils.newLineSplit, processObjectDependencies) {
 
-  override protected def createSource(topics: List[String],
+  override protected def createSource(processMetaData: MetaData,
+                                      topics: List[String],
                                       kafkaConfig: KafkaConfig,
                                       schema: KafkaDeserializationSchema[T]): KafkaSource = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)

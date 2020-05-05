@@ -15,7 +15,7 @@ import org.apache.flink.api.scala._
 import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
-import pl.touk.nussknacker.engine.api.process
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, process}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaSpec}
 
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
@@ -96,7 +96,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   }
 
   private def readLastMessageAndVerify(sourceFactory: KafkaSourceFactory[_], givenObj: Any, topic: String) = {
-    val source = sourceFactory.create(topic)
+    val source = sourceFactory.create(MetaData("", StreamMetaData()), topic)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef]]
     val bytes = source.generateTestData(1)
     info("test object: " + new String(bytes, StandardCharsets.UTF_8))
