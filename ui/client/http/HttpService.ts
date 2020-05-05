@@ -132,10 +132,6 @@ export default {
       .catch(error => this.addError("Cannot fetch status", error))
   },
 
-  fetchProcessPreparedName(processId) {
-    return api.get(`/processes/${processId}/preparedName`)
-  },
-
   deploy(processId, comment) {
     return api.post(`/processManagement/deploy/${processId}`, comment).then(() => {
       this.addInfo(`Process ${processId} was deployed`)

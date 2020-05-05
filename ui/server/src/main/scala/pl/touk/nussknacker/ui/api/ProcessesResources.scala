@@ -24,7 +24,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -182,25 +181,6 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           processId(processName) { processId =>
             complete {
               processRepository.fetchProcessActions(processId.id)
-            }
-          }
-        } ~ path("processes" / Segment / "preparedName") { processName =>
-          processId(processName) { processId =>
-            complete {
-              processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap {
-                case Some(process) =>
-                  process.json match {
-                    case Some(displayable) =>
-                      val processData = typeToConfig.mapValues(_.modelData).forType(displayable.processingType)
-                      val preparedName = (processData.map(_.objectNaming), processData.map(_.processConfig)) match {
-                        case (Some(naming), Some(conf)) => naming.prepareName(processName, conf, new NamingContext(FlinkUsageKey))
-                        case _ => processName
-                      }
-                      Future.successful(HttpResponse(status = StatusCodes.OK, entity = preparedName))
-                    case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Prepared name unavailable for this process"))
-                  }
-                case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
-              }
             }
           }
         } ~ path("processes" / Segment) { processName =>

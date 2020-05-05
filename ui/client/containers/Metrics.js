@@ -16,18 +16,13 @@ export class Metrics extends React.Component {
 
     this.state = {
       processingType: null,
-      preparedName: props.match.params.processId
     }
   }
 
   componentDidMount() {
-    const {processId} = this.props.match.params
-    if (processId) {
-      HttpService.fetchProcessDetails(processId).then(response => {
+    if (this.props.match.params.processId) {
+      HttpService.fetchProcessDetails(this.props.match.params.processId).then(response => {
         this.setState({processingType: response.data.processingType})
-      })
-      HttpService.fetchProcessPreparedName(processId).then(response => {
-        this.setState({preparedName: response.data})
       })
     } else {
       this.setState({processingType: ""})
@@ -42,20 +37,20 @@ export class Metrics extends React.Component {
     const url = this.props.settings.url
     //TODO: this is still a bit grafana specific...
     const dashboard = this.getDashboardName()
-    const processName = this.state.preparedName || "All"
+    const processName = this.props.match.params.processId || "All"
     const finalIframeUrl = url.replace("$dashboard", dashboard).replace("$process", processName)
 
     return (
-      <div className="Page">
+        <div className="Page">
         <iframe
-          ref="metricsFrame"
-          src={finalIframeUrl}
-          width="100%"
-          height={window.innerHeight}
-          frameBorder="0"
+    ref="metricsFrame"
+    src={finalIframeUrl}
+    width="100%"
+    height={window.innerHeight}
+    frameBorder="0"
         />
-      </div>
-    )
+        </div>
+  )
   }
 
   getDashboardName() {
