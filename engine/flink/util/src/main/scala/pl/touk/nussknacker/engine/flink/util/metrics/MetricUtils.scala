@@ -43,7 +43,8 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     if (useLegacyMetricsMode) {
       groupsWithNameForLegacyMode(nameParts, tags)
     } else {
-      tagMode(nameParts, tags)
+      val namespaceTags = extractTags(NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig))
+      tagMode(nameParts, tags ++ namespaceTags)
     }
   }
 
@@ -93,6 +94,12 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     }
   }
 
+  private def extractTags(nkGlobalParameters: Option[NkGlobalParameters]): Map[String, String] = {
+    nkGlobalParameters.map(_.namingParameters) match {
+      case Some(Some(params)) => params.tags
+      case _ => Map()
+    }
+  }
 
 }
 

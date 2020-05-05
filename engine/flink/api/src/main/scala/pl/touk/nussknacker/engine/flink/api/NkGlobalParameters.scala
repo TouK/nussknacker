@@ -12,10 +12,11 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
 
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
-//Also, those configuration properties will be exposed via Flienk REST API/webconsole
+//Also, those configuration properties will be exposed via Flink REST API/webconsole
 case class NkGlobalParameters(buildInfo: String,
                               processVersion: ProcessVersion,
-                              configParameters: Option[ConfigGlobalParameters]) extends GlobalJobParameters {
+                              configParameters: Option[ConfigGlobalParameters],
+                              namingParameters: Option[NamingParameters]) extends GlobalJobParameters {
 
   //here we decide which configuration properties should be shown in REST API etc.
   //For now it will be only deployment information
@@ -29,17 +30,20 @@ case class NkGlobalParameters(buildInfo: String,
       "user" -> processVersion.user
     ).filterNot(_._2 == null).asJava)
   }
+
 }
 
 //this is part of global parameters that is parsed with typesafe Config (e.g. from application.conf/model.conf)
 case class ConfigGlobalParameters(useLegacyMetrics: Option[Boolean],
                                   explicitUidInStatefulOperators: Option[Boolean])
 
+case class NamingParameters(tags: Map[String, String])
+
 object NkGlobalParameters {
 
-  def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config): NkGlobalParameters = {
+  def apply(buildInfo: String, processVersion: ProcessVersion, modelConfig: Config, namingParameters: Option[NamingParameters] = None): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
-    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters)
+    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namingParameters)
   }
 
   def setInContext(ec: ExecutionConfig, globalParameters: NkGlobalParameters): Unit = {
@@ -51,3 +55,4 @@ object NkGlobalParameters {
   }
 
 }
+
