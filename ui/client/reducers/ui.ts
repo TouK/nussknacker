@@ -1,8 +1,8 @@
 import {ProcessId, GroupId} from "../types"
 import {Reducer} from "../actions/reduxTypes"
 import {DialogType, types} from "../components/modals/Dialogs"
-import {reducer as groupsReducer} from "./groups"
-import reduceReducers from "reduce-reducers"
+import {reducer as expandedGroups} from "./groups"
+import {mergeReducers} from "./mergeReducers"
 
 export type UiState = {
   leftPanelIsOpened: boolean,
@@ -48,51 +48,51 @@ function withAllModalsClosed(newState: UiState): UiState {
 const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
   switch (action.type) {
     case "TOGGLE_LEFT_PANEL": {
-      return withAllModalsClosed({
+      return {
         ...state,
         leftPanelIsOpened: !state.leftPanelIsOpened,
-      })
+      }
     }
     case "TOGGLE_RIGHT_PANEL": {
-      return withAllModalsClosed({
+      return {
         ...state,
         rightPanelIsOpened: !state.rightPanelIsOpened,
-      })
+      }
     }
     case "RESET_TOOLBARS": {
-      return withAllModalsClosed({
+      return {
         ...state,
         leftPanelIsOpened: true,
         rightPanelIsOpened: true,
-      })
+      }
     }
     case "SWITCH_TOOL_TIPS_HIGHLIGHT": {
-      return withAllModalsClosed({
+      return {
         ...state,
         isToolTipsHighlighted: action.isHighlighted,
-      })
+      }
     }
     case "CLOSE_MODALS": {
-      return withAllModalsClosed({
+      return {
         ...state,
         showNodeDetailsModal: false,
         showEdgeDetailsModal: false,
-      })
+      }
     }
     case "DISPLAY_MODAL_NODE_DETAILS": {
-      return withAllModalsClosed({
+      return {
         ...state,
         showNodeDetailsModal: true,
-      })
+      }
     }
     case "DISPLAY_MODAL_EDGE_DETAILS": {
-      return withAllModalsClosed({
+      return {
         ...state,
         showEdgeDetailsModal: true,
-      })
+      }
     }
     case "TOGGLE_CONFIRM_DIALOG": {
-      return withAllModalsClosed({
+      return {
         ...state,
         confirmDialog: {
           isOpen: action.isOpen,
@@ -101,27 +101,27 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
           denyText: action.denyText,
           onConfirmCallback: action.onConfirmCallback,
         },
-      })
+      }
     }
     case "TOGGLE_MODAL_DIALOG": {
-      return withAllModalsClosed({
+      return {
         ...state,
         modalDialog: {
           openDialog: action.openDialog,
         },
-      })
+      }
     }
     case "TOGGLE_INFO_MODAL": {
-      return withAllModalsClosed({
+      return {
         ...state,
         modalDialog: {
           openDialog: action.openDialog,
           text: action.text,
         },
-      })
+      }
     }
     case "TOGGLE_PROCESS_ACTION_MODAL": {
-      return withAllModalsClosed({
+      return {
         ...state,
         modalDialog: {
           openDialog: types.processAction,
@@ -129,16 +129,16 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
           action: action.action,
           displayWarnings: action.displayWarnings,
         },
-      })
+      }
     }
 
     default:
-      return withAllModalsClosed(state)
+      return state
   }
 }
 
-export const reducer = reduceReducers<UiState>(
-  emptyUiState,
+export const reducer = mergeReducers<UiState>(
   uiReducer,
-  groupsReducer,
+  withAllModalsClosed,
+  {expandedGroups},
 )

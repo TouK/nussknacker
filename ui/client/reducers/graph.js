@@ -136,7 +136,7 @@ export function reducer(state, action) {
       }
     }
     case "DELETE_NODES": {
-      const stateAfterDelete =_.reduce(action.ids, (state, idToDelete) => {
+      const stateAfterDelete = _.reduce(action.ids, (state, idToDelete) => {
         const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete)
         const newSubprocessVersions = removeSubprocessVersionForLastSubprocess(stateAfterNodeDelete.processToDisplay, idToDelete)
         const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete)
@@ -189,7 +189,7 @@ export function reducer(state, action) {
     case "NODE_ADDED": {
       return addNodes(
         state,
-        prepareNewNodesWithLayout(state,[{
+        prepareNewNodesWithLayout(state, [{
           node: action.node,
           position: action.position,
         }], false),
@@ -265,7 +265,7 @@ export function reducer(state, action) {
           ...state,
           processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.groupingState),
           layout: [],
-        } :  state
+        } : state
       return _.omit(withUpdatedGroups, STATE_PROPERTY_NAME)
     }
     case "CANCEL_GROUPING": {
@@ -326,7 +326,7 @@ function canGroup(state, newNode) {
   const newNodeId = newNode.id
   const currentGrouping = state.groupingState
   return !NodeUtils.nodeIsGroup(newNode) && currentGrouping.length == 0 ||
-    currentGrouping.find(nodeId => state.processToDisplay.edges.find(edge => edge.from == nodeId && edge.to == newNodeId ||  edge.to == nodeId && edge.from == newNodeId))
+    currentGrouping.find(nodeId => state.processToDisplay.edges.find(edge => edge.from == nodeId && edge.to == newNodeId || edge.to == nodeId && edge.from == newNodeId))
 }
 
 function updateAfterNodeIdChange(layout, process, oldId, newId) {
@@ -367,7 +367,7 @@ function createUniqueNodeId(initialId, usedIds, isCopy) {
 
 function generateUniqueNodeId(initialId, usedIds, nodeCounter, isCopy) {
   const newId = isCopy ? `${initialId} (copy ${nodeCounter})` : `${initialId} ${nodeCounter}`
-  return _.includes(usedIds, newId) ? generateUniqueNodeId(initialId ,usedIds, nodeCounter + 1, isCopy) : newId
+  return _.includes(usedIds, newId) ? generateUniqueNodeId(initialId, usedIds, nodeCounter + 1, isCopy) : newId
 }
 
 function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) {
