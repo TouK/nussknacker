@@ -94,7 +94,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
         jobsForName match {
           case Nil => Future.successful(None)
-          case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
+          case duplicates if duplicates.count(isNotFinished) > 1 =>
             Future.successful(Some(ProcessState(
               DeploymentId(duplicates.head.jid),
               FlinkStateStatus.Failed,
@@ -136,7 +136,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       }
   }
 
-  private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(_.state == JobStatus.RUNNING).getOrElse(jobOverviews.head)
+  private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(isNotFinished).getOrElse(jobOverviews.head)
+
+  private def isNotFinished(overview: JobOverview): Boolean = !overview.state.isGloballyTerminalState
 
   //TODO: cache by jobId?
   private def withVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
