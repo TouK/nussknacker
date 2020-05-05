@@ -11,6 +11,7 @@ import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializatio
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
@@ -60,9 +61,9 @@ class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchem
                defaultMode = DualEditorMode.RAW
              )
              @NotBlank
-             topic: String): Source[T] with TestDataGenerator = {
+             topic: String)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
-    createSource(processMetaData, List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig))
+    createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig), processMetaData, nodeId)
   }
 
 }
@@ -95,9 +96,9 @@ class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
                                                           processObjectDependencies)
 
   @MethodToInvoke
-  def create(processMetaData: MetaData): Source[T] with TestDataGenerator = {
+  def create(processMetaData: MetaData)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
-    createSource(processMetaData, List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig))
+    createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig), processMetaData, nodeId)
   }
 
 }
@@ -107,15 +108,20 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
                                                           processObjectDependencies: ProcessObjectDependencies)
   extends FlinkSourceFactory[T] with Serializable {
 
+  @deprecated("Should be used version without process MetaData", "0.1.1")
   protected def createSource(processMetaData: MetaData, topics: List[String],
                              schema: KafkaDeserializationSchema[T]): KafkaSource = {
-    createSource(processMetaData, topics, KafkaSourceFactory.parseKafkaConfig(processObjectDependencies), schema)
+    createSource(topics, KafkaSourceFactory.parseKafkaConfig(processObjectDependencies), schema)
   }
 
-  // We currently not using processMetaData but it is here in case if someone want to use e.g. some additional fields
+  // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation
-  protected def createSource(processMetaData: MetaData, topics: List[String], kafkaConfig: KafkaConfig,
-                             schema: KafkaDeserializationSchema[T]): KafkaSource = {
+  protected def createSource(topics: List[String], kafkaConfig: KafkaConfig, schema: KafkaDeserializationSchema[T],
+                             processMetaData: MetaData, nodeId: NodeId): KafkaSource = {
+    createSource(topics, kafkaConfig, schema)
+  }
+
+  protected def createSource(topics: List[String], kafkaConfig: KafkaConfig, schema: KafkaDeserializationSchema[T]): KafkaSource = {
     new KafkaSource(topics = topics, kafkaConfig, schema, None, processObjectDependencies)
   }
 
