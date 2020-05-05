@@ -10,7 +10,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
 import org.scalatest.{EitherValues, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, ParamName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.types.JavaClassWithVarargs
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
@@ -52,7 +52,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   private val ctx = Context("abc").withVariables(
     Map("obj" -> testValue,"strVal" -> "","mapValue" -> Map("foo" -> "bar").asJava)
   )
-  private val ctxWithGlobal : Context = ctx.withVariable("processHelper", SampleGlobalObject)
+  private val ctxWithGlobal : Context = ctx
+    .withVariable("processHelper", SampleGlobalObject)
+    .withVariable("javaClassWithVarargs", new JavaClassWithVarargs)
 
   private def dumbLazyProvider: LazyValuesProvider = new LazyValuesProvider {
     override def apply[T](ctx: LazyContext, serviceId: String, params: Seq[(String, Any)]) = throw new IllegalStateException("Shouln't be invoked")
@@ -177,6 +179,27 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   }
 
+  test("validate MethodReference parameter types") {
+    parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#processHelper.add(1L, 1)", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#processHelper.addLongs(1L, 1L)", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#processHelper.addLongs(1, 1L)", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#processHelper.add(#processHelper.toUnknown('1'), 1)", ctxWithGlobal) shouldBe 'valid
+
+    val invalid = parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Mismatch parameter types. Found: add(java.lang.String, java.lang.Integer). Required: add(int, int)")))
+  }
+
+  // TODO handle scala varargs
+  ignore("validate MethodReference for scala varargs") {
+    parse[Any]("#processHelper.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
+  }
+
+  // TODO handle java varargs
+  ignore("validate MethodReference for java varargs") {
+    parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
+  }
+
   test("skip MethodReference validation without strictMethodsChecking") {
     val parsed = parseWithoutStrictMethodsChecking[Any]("#processHelper.notExistent(1, 1)", ctxWithGlobal)
     parsed.isValid shouldBe true
@@ -184,21 +207,16 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("return invalid type for MethodReference with invalid arity ") {
     val parsed = parse[Any]("#processHelper.add(1)", ctxWithGlobal)
-    val expectedValidation = Invalid("Invalid arity for 'add'")
+    val expectedValidation = Invalid("Mismatch parameter types. Found: add(java.lang.Integer). Required: add(int, int)")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
 
   test("return invalid type for MethodReference with missing arguments") {
     val parsed = parse[Any]("#processHelper.add()", ctxWithGlobal)
-    val expectedValidation = Invalid("Invalid arity for 'add'")
+    val expectedValidation = Invalid("Mismatch parameter types. Found: add(). Required: add(int, int)")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
-  }
-
-  test("type optimistically MethodReference") {
-    val parsed = parse[Any]("#processHelper.add(1, 1, 1)", ctxWithGlobal)
-    parsed.isValid shouldBe true
   }
 
   test("return invalid type if PropertyOrFieldReference does not exists") {
@@ -305,7 +323,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("not allow access to variables without hash in methods") {
     val withNum = ctx.withVariable("a", 5).withVariable("processHelper", SampleGlobalObject)
     parse[Any]("#processHelper.add(a, 1)", withNum) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Non reference 'a' occurred. Maybe you missed '#' in front of it?"), Nil)) =>
+      case Invalid(l: NonEmptyList[_]) if l.toList.contains(ExpressionParseError("Non reference 'a' occurred. Maybe you missed '#' in front of it?")) =>
     }
   }
 
@@ -609,9 +627,12 @@ object SimpleEnum extends Enumeration {
 object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
+  def addLongs(a: Long, b: Long) = a + b
+  def addAll(a: Int*) = a.sum
   def one() = 1
   def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
+  def toUnknown(value: Any): Any = value
 }
 
 class SampleObjectWithGetMethod(map: Map[String, Any]) {
