@@ -30,8 +30,8 @@ class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaS
     val sourceFactory = new KafkaSourceFactory[String](new SimpleStringSchema, None,
       TestParsingUtils.newLineSplit, ProcessObjectDependencies(config, DefaultObjectNaming))
 
-    val dataFor3 = sourceFactory.create(MetaData("", StreamMetaData()), topic).generateTestData(3)
-    val dataFor5 = sourceFactory.create(MetaData("", StreamMetaData()), topic).generateTestData(5)
+    val dataFor3 = sourceFactory.create(topic).generateTestData(3)
+    val dataFor5 = sourceFactory.create(topic).generateTestData(5)
 
     checkOutput(dataFor3, 3)
     checkOutput(dataFor5, 4)

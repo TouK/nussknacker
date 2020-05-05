@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.genericmodel
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
@@ -67,7 +65,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   import pl.touk.nussknacker.engine.util.functions._
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val kafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
+    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     val schemaRegistryClientFactory = createSchemaRegistryClientFactory
     ExpressionConfig(
       Map(
