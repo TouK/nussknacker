@@ -170,7 +170,7 @@ export function reducer(state, action) {
         processToDisplay: {
           ...state.processToDisplay,
           nodes: state.processToDisplay.nodes.map(n => action.toNode.id === n.id ?
-            enrichNodeWithProcessDependentData(action.toNode, action.processDefinitionData, newEdges) : n),
+            enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges) : n),
           edges: newEdges,
         },
       }

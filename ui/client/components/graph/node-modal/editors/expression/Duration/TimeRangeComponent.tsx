@@ -58,7 +58,7 @@ export default function TimeRangeComponent(props: Props) {
     <div className={"time-range-component"}>
       <input
         readOnly={readOnly}
-        value={value[component.fieldName]}
+        value={value[component.fieldName] || ""}
         onChange={(event) => onChange(component.fieldName, parseInt(event.target.value))}
         className={classNames([
           "time-range-input",

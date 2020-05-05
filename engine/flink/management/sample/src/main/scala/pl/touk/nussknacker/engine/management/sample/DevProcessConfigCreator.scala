@@ -120,6 +120,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "aggregate" -> categories(SlidingAggregateTransformer),
     "union" -> categories(UnionTransformer),
     "state" -> all(TransformStateTransformer),
+    "unionWithEditors" -> all(JoinTransformerWithEditors),
     // types
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types")))
   )

@@ -111,7 +111,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   customNode = (fieldErrors) => {
-    const {showValidation, showSwitch} = this.props
+    const {showValidation, showSwitch, isEditMode} = this.props
 
     switch (NodeUtils.nodeType(this.props.node)) {
       case "Source":
@@ -256,13 +256,18 @@ export class NodeDetailsContent extends React.Component {
             }
             {NodeUtils.nodeIsJoin(this.state.editedNode) && (
               <BranchParameters
-                onChange={this.setNodeDataAt}
                 node={this.state.editedNode}
                 joinDef={this.nodeDef}
                 isMarked={this.isMarked}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
+                isEditMode={isEditMode}
                 errors={fieldErrors}
+                nodeObjectDetails={this.nodeObjectDetails}
+                setNodeDataAt={this.setNodeDataAt}
+                testResultsToShow={this.state.testResultsToShow}
+                testResultsToHide={this.state.testResultsToHide}
+                toggleTestResult={this.toggleTestResult}
               />
             )}
             {this.state.editedNode.parameters.map((param, index) => {
