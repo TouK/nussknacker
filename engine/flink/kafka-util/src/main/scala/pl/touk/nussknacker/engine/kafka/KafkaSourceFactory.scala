@@ -53,7 +53,8 @@ class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchem
                                                     processObjectDependencies)
 
   @MethodToInvoke
-  def create(@ParamName(`TopicParamName`)
+  def create(processMetaData: MetaData,
+             @ParamName(`TopicParamName`)
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.RAW
@@ -61,7 +62,7 @@ class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchem
              @NotBlank
              topic: String): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
-    createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig))
+    createSource(processMetaData, List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig))
   }
 
 }
@@ -94,9 +95,9 @@ class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
                                                           processObjectDependencies)
 
   @MethodToInvoke
-  def create(): Source[T] with TestDataGenerator = {
+  def create(processMetaData: MetaData): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
-    createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig))
+    createSource(processMetaData, List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig))
   }
 
 }
@@ -106,13 +107,15 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
                                                           processObjectDependencies: ProcessObjectDependencies)
   extends FlinkSourceFactory[T] with Serializable {
 
-  @deprecated("Should be used version without process MetaData", "0.1.1")
   protected def createSource(processMetaData: MetaData, topics: List[String],
                              schema: KafkaDeserializationSchema[T]): KafkaSource = {
-    createSource(topics, KafkaSourceFactory.parseKafkaConfig(processObjectDependencies), schema)
+    createSource(processMetaData, topics, KafkaSourceFactory.parseKafkaConfig(processObjectDependencies), schema)
   }
 
-  protected def createSource(topics: List[String], kafkaConfig: KafkaConfig, schema: KafkaDeserializationSchema[T]): KafkaSource = {
+  // We currently not using processMetaData but it is here in case if someone want to use e.g. some additional fields
+  // in their own concrete implementation
+  protected def createSource(processMetaData: MetaData, topics: List[String], kafkaConfig: KafkaConfig,
+                             schema: KafkaDeserializationSchema[T]): KafkaSource = {
     new KafkaSource(topics = topics, kafkaConfig, schema, None, processObjectDependencies)
   }
 
