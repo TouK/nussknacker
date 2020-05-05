@@ -468,7 +468,6 @@ function enrichNodeWithProcessDependentData(originalNode, processDefinitionData,
         parameters: newBranchParams,
       }
     })
-    delete node["branchParametersTemplate"]
   }
   return node
 }
