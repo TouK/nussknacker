@@ -18,13 +18,13 @@ class MockConfluentSchemaRegistryClientFactory(data: List[RegistryItem]) extends
       override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] =
         handleClientError {
           validate(subject, Option.empty)
-          getLatestSchemaMetadata(subject)
+          AvroUtils.parseSchema(getLatestSchemaMetadata(subject).getSchema)
         }
 
       override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema] =
         handleClientError {
           validate(subject, Some(version))
-          getSchemaMetadata(subject, version)
+          AvroUtils.parseSchema(getSchemaMetadata(subject, version).getSchema)
         }
 
       /**

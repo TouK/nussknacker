@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
@@ -14,10 +14,6 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
   private lazy val schemaRegistryClient = schemaRegistryProvider.createSchemaRegistryClient
 
   private lazy val parsedSchemaCache = TrieMap.empty[String, Schema]
-
-  private lazy val schemaBySubjectAndVersionCache = TrieMap.empty[(String, Int), Schema]
-
-  private lazy val lastestSchemaBySubjectCache = TrieMap.empty[String, Schema]
 
   def record(fields: collection.Map[String, _], schemaString: String): GenericData.Record = {
     val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parseSchema(schemaString))
@@ -37,34 +33,27 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
-  def keySchema(topic: String, version: Int): Schema = {
-    getOrUpdateSchemaBySubjectAndVersion(AvroUtils.keySubject(topic), version)
-  }
+  def keySchema(topic: String, version: Int): Schema =
+    handleClientResponse {
+      schemaRegistryClient.getBySubjectAndVersion(AvroUtils.keySubject(topic), version)
+    }
 
-  def valueSchema(topic: String, version: Int): Schema = {
-    getOrUpdateSchemaBySubjectAndVersion(AvroUtils.valueSubject(topic), version)
-  }
+  def valueSchema(topic: String, version: Int): Schema =
+    handleClientResponse {
+      schemaRegistryClient.getBySubjectAndVersion(AvroUtils.valueSubject(topic), version)
+    }
 
-  def latestKeySchema(topic: String): Schema = {
-    getOrUpdateLatestSchema(AvroUtils.keySubject(topic))
-  }
+  def latestKeySchema(topic: String): Schema =
+    handleClientResponse {
+      schemaRegistryClient.getLatestSchema(AvroUtils.keySubject(topic))
+    }
 
-  def latestValueSchema(topic: String): Schema = {
-    getOrUpdateLatestSchema(AvroUtils.valueSubject(topic))
-  }
+  def latestValueSchema(topic: String): Schema =
+    handleClientResponse {
+      schemaRegistryClient.getLatestSchema(AvroUtils.valueSubject(topic))
+    }
 
-  private def getOrUpdateSchemaBySubjectAndVersion(subject: String, version: Int): Schema = {
-    schemaBySubjectAndVersionCache.getOrElseUpdate((subject, version),
-      handleClientResponse(schemaRegistryClient.getBySubjectAndVersion(subject, version)))
-  }
-
-  private def getOrUpdateLatestSchema(subject: String) = {
-    // maybe invalidation after some time?
-    lastestSchemaBySubjectCache.getOrElseUpdate(subject,
-      handleClientResponse(schemaRegistryClient.getLatestSchema(subject)))
-  }
-
-  private def handleClientResponse(response: Validated[SchemaRegistryError, Schema]): Schema =
+  private def handleClientResponse(response: => Validated[SchemaRegistryError, Schema]): Schema =
     response.valueOr(ex => throw ex)
 }
 
@@ -80,4 +69,7 @@ object AvroUtils {
 
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
+
+  def parseSchema(schemaMetadata: SchemaMetadata): Schema =
+    parseSchema(schemaMetadata.getSchema)
 }
