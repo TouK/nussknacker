@@ -7,31 +7,15 @@ import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Source, VisibleMembersPredicate}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Documentation, LazyParameter, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
-
-import scala.concurrent.Future
 
 object EspTypeUtils {
 
   import pl.touk.nussknacker.engine.util.Implicits._
-
-  private val GenericClassesToBeExtracted = List(
-    classOf[java.util.Collection[_]],
-    classOf[java.util.Map[_, _]],
-    classOf[java.util.Optional[_]],
-    classOf[scala.collection.Iterable[_]],
-    classOf[scala.Option[_]],
-    // This one is for MethodDefinitionExtractor purpose
-    classOf[LazyParameter[_]],
-    // All below are for AbstractMethodDefinitionExtractor purpose
-    classOf[Future[_]],
-    classOf[java.util.concurrent.CompletionStage[_]],
-    classOf[Source[_]]
-  )
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
@@ -190,10 +174,7 @@ object EspTypeUtils {
 
   private def extractGenericParams(paramsType: ParameterizedTypeImpl): TypingResult = {
     val rawType = paramsType.getRawType
-    GenericClassesToBeExtracted
-      .find(_.isAssignableFrom(rawType))
-      .map(_ => Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown))))
-      .getOrElse(Typed(rawType))
+    Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown)))
   }
 
   def companionObject[T](klazz: Class[T]): T = {
