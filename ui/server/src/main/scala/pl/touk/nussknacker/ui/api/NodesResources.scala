@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
 import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
@@ -101,6 +101,9 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[Processing
 
 @JsonCodec case class NodeValidationRequest(nodeData: NodeData, variableTypes: Map[String, TypingResult])
 
+//EXTRACT CODE BELOW:
+
+
 trait NodeDataValidator[T<:NodeData] {
 
   def compile(nodeData: T, validationContext: ValidationContext): (Option[List[Parameter]], ValidatedNel[ProcessCompilationError, _])
@@ -117,7 +120,7 @@ class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
     )
 
   override def compile(nodeData: Filter, validationContext: ValidationContext): (Option[List[Parameter]], ValidatedNel[ProcessCompilationError, _]) = {
-    val validation: ValidatedNel[ProcessCompilationError, _] = expressionCompiler.compile(nodeData.expression, None, validationContext, Typed[Boolean])(NodeId(nodeData.id))
+    val validation: ValidatedNel[ProcessCompilationError, _] = expressionCompiler.compile(nodeData.expression, Some(NodeTypingInfo.DefaultExpressionId), validationContext, Typed[Boolean])(NodeId(nodeData.id))
     (Some(List(Parameter[Boolean]("expression"))), validation)
   }
 }

@@ -231,10 +231,9 @@ export default {
   },
 
   validateNode(processId, node) {
-    console.log("TERERFER", processId, node)
-    const that= this
+    console.log("Validating node", processId, node)
     return api.post(`/nodes/${processId}/validation`, node)
-      .catch(error => that.addError("Failed to get node validation", error, true))
+      .catch(error => this.addError("Failed to get node validation", error, true))
   },
 
   getNodeAdditionalData(processId, node) {

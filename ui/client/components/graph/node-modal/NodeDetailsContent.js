@@ -58,11 +58,12 @@ export class NodeDetailsContent extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (!_.isEqual(this.props.node, nextProps.node)) {
+    if (!_.isEqual(this.props.node, nextProps.node) || !_.isEqual(this.props.nodeValidationErrors, nextProps.nodeValidationErrors)) {
       this.initalizeWithProps(nextProps)
       this.setState({editedNode: nextProps.node})
       this.props.actions.updateNodeData(this.props.processToDisplay.id,
-        this.props.processToDisplay.validationResult.variableTypes[this.state.editedNode.id], this.state.editedNode)
+        this.props.processToDisplay.validationResult.variableTypes[this.state.editedNode.id],
+        this.state.editedNode)
     }
   }
 
@@ -72,7 +73,8 @@ export class NodeDetailsContent extends React.Component {
     }
     if (!_.isEqual(prevState.editedNode, this.state.editedNode)) {
       this.props.actions.updateNodeData(this.props.processToDisplay.id,
-        this.props.processToDisplay.validationResult.variableTypes[this.state.editedNode.id], this.state.editedNode)
+        this.props.processToDisplay.validationResult.variableTypes[this.state.editedNode.id],
+        this.state.editedNode)
     }
   }
 
@@ -687,7 +689,7 @@ export class NodeDetailsContent extends React.Component {
 
   render() {
     const nodeClass = classNames("node-table", {"node-editable": this.props.isEditMode})
-    const fieldErrors = this.fieldErrors(this.props.nodeErrors || [])
+    const fieldErrors = this.fieldErrors(this.props.nodeErrors?.concat(this.props.nodeValidationErrors || []) || [])
     const otherErrors = this.props.nodeErrors ? this.props.nodeErrors.filter(error => !fieldErrors.includes(error)) : []
     return (
       <div className={nodeClass}>
@@ -714,6 +716,7 @@ function mapState(state) {
     //TODO: get rid of this. We should not rely on process from graphReducer, as we may display subprocess node!
     //currently it's used only to figure out processingType, so it's not so harmful
     processId: state.graphReducer.processToDisplay.id,
+    nodeValidationErrors: state.nodeDetails.validationErrors,
   }
 }
 
