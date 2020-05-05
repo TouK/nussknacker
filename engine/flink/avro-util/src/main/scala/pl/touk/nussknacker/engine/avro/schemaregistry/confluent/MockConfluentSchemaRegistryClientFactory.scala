@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 
+import cats.data.Validated
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.TypedConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
@@ -10,14 +13,41 @@ import scala.collection.mutable.ListBuffer
 
 class MockConfluentSchemaRegistryClientFactory(data: List[RegistryItem]) extends ConfluentSchemaRegistryClientFactory {
   def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedConfluentSchemaRegistryClient = {
-    val mockSchemaRegistryClient = new MockSchemaRegistryClient with ConfluentSchemaRegistryClient
+    val mockSchemaRegistryClient: MockSchemaRegistryClient with ConfluentSchemaRegistryClient =
+      new MockSchemaRegistryClient with ConfluentSchemaRegistryClient {
+      override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] =
+        handleClientError {
+          validate(subject, Option.empty)
+          getLatestSchemaMetadata(subject)
+        }
+
+      override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema] =
+        handleClientError {
+          validate(subject, Some(version))
+          getSchemaMetadata(subject, version)
+        }
+
+      /**
+        * MockSchemaRegistryClient doesn't throw right exception if subject or version doesn't exist
+        */
+      private def validate(subject: String, version: Option[Int]): Unit = {
+        if (!getAllSubjects.contains(subject)) {
+          throw new RestClientException("Subject not found", 404, subjectNotFoundCode)
+        }
+
+        if (!version.forall(getAllVersions(subject).contains(_))) {
+          throw new RestClientException("Version not found", 404, versionNotFoundCode)
+        }
+      }
+    }
+
     data.foreach(item => register(mockSchemaRegistryClient, item))
     mockSchemaRegistryClient
   }
 
   private def register(mockSchemaRegistry: MockSchemaRegistryClient, item: RegistryItem): MockSchemaRegistryClient = {
     val subject = item.topic + "-" + (if (item.isKey) "key" else "value")
-    mockSchemaRegistry.register(subject, item.schema, item.version, -1)
+    mockSchemaRegistry.register(subject, item.schema, item.version, item.id)
     mockSchemaRegistry
   }
 }
@@ -42,12 +72,10 @@ class MockConfluentSchemaRegistryClientFactoryBuilder {
 case class RegistryItem(topic: String, schema: Schema, version: Int, isKey: Boolean, id: Int)
 
 object RegistryItem {
+
   def apply(topic: String, schema: String, version: Int, isKey: Boolean): RegistryItem =
-    new RegistryItem(topic, AvroUtils.createSchema(schema), version, isKey, -1)
+    new RegistryItem(topic, AvroUtils.parseSchema(schema), version, isKey, -1)
 
   def apply(topic: String, schema: Schema, version: Int, isKey: Boolean): RegistryItem =
     new RegistryItem(topic, schema, version, isKey, -1)
-
-  def apply(topic: String, schema: Schema, version: Int): RegistryItem =
-    new RegistryItem(topic, schema, version, false, -1)
 }

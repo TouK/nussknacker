@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, con
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 
+
 class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
   import MockSchemaRegistry._
@@ -97,7 +98,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
       r
     }
 
-    assertThrows[SchemaRegistryClientError] {
+    assertThrows[InvalidSchema] {
       readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 1, RecordSchemaV2, "fake-topic")
     }
   }
@@ -111,7 +112,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
       r
     }
 
-    assertThrows[SchemaRegistryClientError] {
+    assertThrows[InvalidSchemaVersion] {
       readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 3, RecordSchemaV2, RecordTopic)
     }
   }
@@ -210,7 +211,7 @@ object MockSchemaRegistry {
   val RecordTopic: String = "testAvroRecordTopic1"
   val IntTopic: String = "testAvroIntTopic1"
 
-  val RecordSchemaV1: Schema = AvroUtils.createSchema(
+  val RecordSchemaV1: Schema = AvroUtils.parseSchema(
     """{
       |  "type": "record",
       |  "namespace": "pl.touk.nussknacker.engine.avro",
@@ -222,7 +223,7 @@ object MockSchemaRegistry {
       |}
     """.stripMargin)
 
-  val RecordSchemaV2: Schema = AvroUtils.createSchema(
+  val RecordSchemaV2: Schema = AvroUtils.parseSchema(
     """{
       |  "type": "record",
       |  "namespace": "pl.touk.nussknacker.engine.avro",
@@ -235,7 +236,7 @@ object MockSchemaRegistry {
       |}
     """.stripMargin)
 
-  val IntSchema: Schema = AvroUtils.createSchema(
+  val IntSchema: Schema = AvroUtils.parseSchema(
     """{
       |  "type": "int"
       |}

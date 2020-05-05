@@ -46,7 +46,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
-  val RecordSchema: Schema = AvroUtils.createSchema(RecordSchemaString)
+  val RecordSchema: Schema = AvroUtils.parseSchema(RecordSchemaString)
 
   private val givenNotMatchingJsonObj =
     """{

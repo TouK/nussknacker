@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.TypedConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroDeserializationSchemaFactory, ConfluentAvroSerializationSchemaFactory, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaRegistryClientError}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
@@ -31,12 +31,12 @@ class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
 
   lazy val factory: ConfluentSchemaRegistryClientFactory = new ConfluentSchemaRegistryClientFactory {
     override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedConfluentSchemaRegistryClient = {
-      val schema: Schema = AvroUtils.createSchema(avroSchema)
+      val schema: Schema = AvroUtils.parseSchema(avroSchema)
       new MockSchemaRegistryClient with SchemaRegistryClient {
-        override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryClientError, Schema] =
+        override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema] =
           Validated.valid(schema)
 
-        override def getLatestSchema(subject: String): Validated[SchemaRegistryClientError, Schema] =
+        override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] =
           Validated.valid(schema)
 
         override def getById(id: Int): Schema =
@@ -55,8 +55,8 @@ class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
   override def serializationSchema: KafkaSerializationSchema[Any] =
     serializationSchemaFactory.create(topic, kafkaConfig)
 
-  override def typeDefinition: Validated[SchemaRegistryClientError, typing.TypingResult] =
-    Valid(AvroSchemaTypeDefinitionExtractor.typeDefinition(AvroUtils.createSchema(avroSchema)))
+  override def typeDefinition: Validated[SchemaRegistryError, typing.TypingResult] =
+    Valid(AvroSchemaTypeDefinitionExtractor.typeDefinition(AvroUtils.parseSchema(avroSchema)))
 
   override def recordFormatter: Option[RecordFormatter] =
     Some(ConfluentAvroToJsonFormatter(factory.createSchemaRegistryClient(kafkaConfig), topic, formatKey))

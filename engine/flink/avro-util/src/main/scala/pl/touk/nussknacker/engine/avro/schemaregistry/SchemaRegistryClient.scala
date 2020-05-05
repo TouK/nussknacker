@@ -6,17 +6,15 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 trait SchemaRegistryClient extends Serializable {
 
-  def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryClientError, Schema]
+  def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema]
 
-  def getLatestSchema(subject: String): Validated[SchemaRegistryClientError, Schema]
+  def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema]
 
-  def getSchema(subject: String, version: Option[Int]): Validated[SchemaRegistryClientError, Schema] =
+  def getSchema(subject: String, version: Option[Int]): Validated[SchemaRegistryError, Schema] =
     version
       .map(ver => getBySubjectAndVersion(subject, ver))
       .getOrElse(getLatestSchema(subject))
 }
-
-case class SchemaRegistryClientError(message: String) extends RuntimeException(message)
 
 trait SchemaRegistryClientFactory extends Serializable {
   def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient

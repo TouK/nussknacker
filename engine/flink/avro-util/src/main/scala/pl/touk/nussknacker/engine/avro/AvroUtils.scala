@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClientError, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaRegistryProvider}
 
 import scala.collection.concurrent.TrieMap
 
@@ -20,7 +20,7 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
   private lazy val lastestSchemaBySubjectCache = TrieMap.empty[String, Schema]
 
   def record(fields: collection.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.createSchema(schemaString))
+    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parseSchema(schemaString))
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
@@ -29,7 +29,7 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
   }
 
   def record(fields: java.util.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.createSchema(schemaString))
+    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parseSchema(schemaString))
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
@@ -64,7 +64,7 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
       handleClientResponse(schemaRegistryClient.getLatestSchema(subject)))
   }
 
-  private def handleClientResponse(response: Validated[SchemaRegistryClientError, Schema]): Schema =
+  private def handleClientResponse(response: Validated[SchemaRegistryError, Schema]): Schema =
     response.valueOr(ex => throw ex)
 }
 
@@ -78,6 +78,6 @@ object AvroUtils {
   def valueSubject(topic: String): String =
     topic + "-value"
 
-  def createSchema(avroSchema: String): Schema =
+  def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
 }

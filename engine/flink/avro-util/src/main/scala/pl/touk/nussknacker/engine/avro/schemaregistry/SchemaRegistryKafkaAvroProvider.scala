@@ -13,7 +13,7 @@ class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryP
                                          topic: String,
                                          version: Option[Int]) extends KafkaAvroSchemaProvider[T] {
 
-  override def typeDefinition: Validated[SchemaRegistryClientError, typing.TypingResult] =
+  override def typeDefinition: Validated[SchemaRegistryError, typing.TypingResult] =
     schemaRegistryProvider
       .createSchemaRegistryClient
       .getSchema(AvroUtils.valueSubject(topic), version)

@@ -23,18 +23,15 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
 
   @MethodToInvoke
   def create(processMetaData: MetaData,
-             @ParamName(`TopicParamName`)
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.RAW
              )
-             @NotBlank
-             topic: String,
-             @ParamName("Schema version")
-             @Nullable
-             version: Integer)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
+             @ParamName(`TopicParamName`) @NotBlank topic: String,
+             @ParamName("Schema version") @Nullable version: Integer
+              )(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
-    createKafkaAvroSource(topic, kafkaConfig, SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic), processMetaData, nodeId)
+    createKafkaAvroSource(topic, kafkaConfig, SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, version), processMetaData, nodeId)
   }
 }
 
@@ -51,19 +48,16 @@ class FixedKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies:
 
   @MethodToInvoke
   def create(processMetaData: MetaData,
-             @ParamName(`TopicParamName`)
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.RAW
              )
-             @NotBlank
-             topic: String,
-             @ParamName("schema")
-             @NotBlank
+             @ParamName(`TopicParamName`) @NotBlank topic: String,
              @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
              //TODO: Create BE and FE validator for verify avro type
              //TODO: Create Avro Editor
-             avroSchema: String)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
+             @ParamName("schema") @NotBlank avroSchema: String
+            )(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     createKafkaAvroSource(
       topic,

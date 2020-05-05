@@ -13,7 +13,7 @@ object AvroSchemaTypeDefinitionExtractor {
   import collection.JavaConverters._
 
   def typeDefinition(schemaString: String): TypingResult =
-    typeDefinition(AvroUtils.createSchema(schemaString))
+    typeDefinition(AvroUtils.parseSchema(schemaString))
 
   // see BestEffortAvroEncoder for underlying avro types
   def typeDefinition(schema: Schema): TypingResult = {
