@@ -17,10 +17,9 @@ import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, confluent}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaSubjectNotFound, SchemaVersionFound, confluent}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
-
 
 class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
@@ -98,7 +97,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
       r
     }
 
-    assertThrows[InvalidSchema] {
+    assertThrows[SchemaSubjectNotFound] {
       readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 1, RecordSchemaV2, "fake-topic")
     }
   }
@@ -112,7 +111,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
       r
     }
 
-    assertThrows[InvalidSchemaVersion] {
+    assertThrows[SchemaVersionFound] {
       readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 3, RecordSchemaV2, RecordTopic)
     }
   }

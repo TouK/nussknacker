@@ -72,10 +72,12 @@ class MockConfluentSchemaRegistryClientFactoryBuilder {
 case class RegistryItem(topic: String, schema: Schema, version: Int, isKey: Boolean, id: Int)
 
 object RegistryItem {
+  //Default value for autoincrement mock id
+  private val AutoIncId = -1
 
   def apply(topic: String, schema: String, version: Int, isKey: Boolean): RegistryItem =
-    new RegistryItem(topic, AvroUtils.parseSchema(schema), version, isKey, -1)
+    new RegistryItem(topic, AvroUtils.parseSchema(schema), version, isKey, AutoIncId)
 
   def apply(topic: String, schema: Schema, version: Int, isKey: Boolean): RegistryItem =
-    new RegistryItem(topic, schema, version, isKey, -1)
+    new RegistryItem(topic, schema, version, isKey, AutoIncId)
 }

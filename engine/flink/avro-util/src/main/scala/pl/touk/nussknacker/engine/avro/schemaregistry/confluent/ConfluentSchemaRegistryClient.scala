@@ -18,9 +18,9 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with CSchemaReg
       valid(schema)
     } catch {
       case exc: RestClientException if exc.getErrorCode == subjectNotFoundCode =>
-        invalid(InvalidSchema("Topic schema doesn't exist."))
+        invalid(SchemaSubjectNotFound("Schema subject doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == versionNotFoundCode =>
-        invalid(InvalidSchemaVersion("Invalid topic schema version."))
+        invalid(SchemaVersionFound("Schema version doesn't exist."))
       case exc: Throwable =>
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data."))

@@ -25,30 +25,27 @@ object CachedConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistr
     val urls = config.getSchemaRegistryUrls
     val maxSchemaObject = config.getMaxSchemasPerSubject
     val originals = config.originalsWithPrefix("")
-    
+
     // It's fat object which can not be serialized
     new CachedSchemaRegistryClient(urls, maxSchemaObject, originals) with ConfluentSchemaRegistryClient with LazyLogging {
 
-      override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] =
-        synchronized {
-          val latestSchemaMetadata = getLatestSchemaMetadata(subject)
-          handleClientError {
-            schemaSubjectVersionCache.getOrElseUpdate((subject, latestSchemaMetadata.getVersion), {
-              logger.debug(s"Cached latest schema for subject: $subject and version: ${latestSchemaMetadata.getVersion}.")
-              AvroUtils.parseSchema(latestSchemaMetadata.getSchema)
-            })
-          }
+      override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] = {
+        val latestSchemaMetadata = getLatestSchemaMetadata(subject)
+        handleClientError {
+          schemaSubjectVersionCache.getOrElseUpdate((subject, latestSchemaMetadata.getVersion), {
+            logger.debug(s"Cached latest schema for subject: $subject and version: ${latestSchemaMetadata.getVersion}.")
+            AvroUtils.parseSchema(latestSchemaMetadata.getSchema)
+          })
         }
+      }
 
       override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema] =
-        synchronized {
-          handleClientError {
-            schemaSubjectVersionCache.getOrElseUpdate((subject, version), {
-              val schemaMetadata = getSchemaMetadata(subject, version)
-              logger.debug(s"Cached schema for subject: $subject and version: ${schemaMetadata.getVersion}.")
-              AvroUtils.parseSchema(schemaMetadata.getSchema)
-            })
-          }
+        handleClientError {
+          schemaSubjectVersionCache.getOrElseUpdate((subject, version), {
+            val schemaMetadata = getSchemaMetadata(subject, version)
+            logger.debug(s"Cached schema for subject: $subject and version: ${schemaMetadata.getVersion}.")
+            AvroUtils.parseSchema(schemaMetadata.getSchema)
+          })
         }
     }
   }

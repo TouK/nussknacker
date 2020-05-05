@@ -7,31 +7,15 @@ import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaRegistryProvider}
 
-import scala.collection.concurrent.TrieMap
-
 class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Serializable {
 
   private lazy val schemaRegistryClient = schemaRegistryProvider.createSchemaRegistryClient
 
-  private lazy val parsedSchemaCache = TrieMap.empty[String, Schema]
-
-  def record(fields: collection.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parseSchema(schemaString))
+  def record(fields: collection.Map[String, _], schema: Schema): GenericData.Record =
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
-  }
 
-  def record(fields: collection.Map[String, _], schema: Schema): GenericData.Record = {
+  def record(fields: java.util.Map[String, _], schema: Schema): GenericData.Record =
     BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
-  }
-
-  def record(fields: java.util.Map[String, _], schemaString: String): GenericData.Record = {
-    val schema = parsedSchemaCache.getOrElseUpdate(schemaString, AvroUtils.parseSchema(schemaString))
-    BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
-  }
-
-  def record(fields: java.util.Map[String, _], schema: Schema): GenericData.Record = {
-    BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
-  }
 
   def keySchema(topic: String, version: Int): Schema =
     handleClientResponse {
@@ -70,6 +54,6 @@ object AvroUtils {
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
 
-  def parseSchema(schemaMetadata: SchemaMetadata): Schema =
+  def extractSchema(schemaMetadata: SchemaMetadata): Schema =
     parseSchema(schemaMetadata.getSchema)
 }
