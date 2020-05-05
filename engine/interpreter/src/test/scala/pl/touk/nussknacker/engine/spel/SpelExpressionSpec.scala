@@ -126,6 +126,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[String]("4 + ''") shouldBe 'valid
   }
 
+  test("subtraction of non numeric types") {
+    parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Operator '-' used with mismatch types: java.lang.String and java.lang.Integer")))
+  }
 
   test("null properly") {
     parse[String]("null") shouldBe 'valid
