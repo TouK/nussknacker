@@ -820,13 +820,20 @@ lazy val root = (project in file("."))
       checkSnapshotDependencies,
       inquireVersions,
       runClean,
-      releaseStepCommandAndRemaining("+test"),
+      ReleaseStep { st: State =>
+        if (!st.get(ReleaseKeys.skipTests).getOrElse(false)) {
+          releaseStepCommandAndRemaining("+test")(st)
+        } else {
+          st
+        }
+      },
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-      releaseStepCommandAndRemaining("+dist/docker:publish"),
+      releaseStepCommand("dist/universal:packageZipTarball"),
       releaseStepCommandAndRemaining("+publishSigned"),
-      ReleaseStep(action = Command.process("sonatypeBundleRelease", _)),
+      releaseStepCommand("dist/docker:publish"),
+      releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
       pushChanges

@@ -8,6 +8,13 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
+0.1.1
+------------
+* Branch parameters now can be eager (computed during process compilation)
+* More restrictive type checking in SpEL - mainly added verification of types of method's paramaters
+* Added support for Kafka consumer group strategies - setted up by `kafka.consumerGroupNamingStrategy` configuraton option
+* Bugfixes for joins
+
 0.1.0
 -------------
 * Added support for explicitly setting uids in operators - turned on by `explicitUidInStatefulOperators` model's flag.
