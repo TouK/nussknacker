@@ -23,7 +23,7 @@ import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import AdditionalProperty from "./AdditionalProperty"
-import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
+import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 
 //move state to redux?
@@ -34,16 +34,14 @@ export class NodeDetailsContent extends React.Component {
     super(props)
 
     this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
-
     this.nodeDef = this.prepareNodeDef(props.node, this.nodeObjectDetails, props.processToDisplay)
 
     this.state = {
       ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
-      editedNode: this.enrichNodeWithProcessDependentData(_.cloneDeep(props.node)),
+      editedNode: props.node,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
-
     let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || hasNoReturn === true && this.state.editedNode.outputVar
 
@@ -51,41 +49,11 @@ export class NodeDetailsContent extends React.Component {
   }
 
   prepareNodeDef(node, nodeObjectDetails, processToDisplay) {
-    if (NodeUtils.nodeType(node) === "Join") {
+    if (NodeUtils.nodeIsJoin(node)) {
       return new JoinDef(node, nodeObjectDetails, processToDisplay)
     } else {
       return null
     }
-  }
-
-  // should it be here or somewhere else (in the reducer?)
-  enrichNodeWithProcessDependentData(node) {
-    if (NodeUtils.nodeType(node) === "Join") {
-      node.branchParameters = this.nodeDef.incomingEdges.map((edge) => {
-        let branchId = edge.from
-        let existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
-        let newBranchParams = this.nodeDef.branchParameters.map((branchParamDef) => {
-          let existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
-          let templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
-          return existingParamValue || _.cloneDeep(templateParamValue) ||
-              // We need to have this fallback to some template for situation when it is existing node and it has't got
-              // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-              _.cloneDeep({
-                name: branchParamDef.name,
-                expression: {
-                  expression: `#${branchParamDef.name}`,
-                  language: "spel",
-                },
-              })
-        })
-        return {
-          branchId: branchId,
-          parameters: newBranchParams,
-        }
-      })
-      delete node["branchParametersTemplate"]
-    }
-    return node
   }
 
   generateUUID(...properties) {
@@ -143,7 +111,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   customNode = (fieldErrors) => {
-    const {showValidation, showSwitch} = this.props
+    const {showValidation, showSwitch, isEditMode} = this.props
 
     switch (NodeUtils.nodeType(this.props.node)) {
       case "Source":
@@ -286,15 +254,20 @@ export class NodeDetailsContent extends React.Component {
                 null,
               )
             }
-            {NodeUtils.nodeType(this.props.node) === "Join" && (
+            {NodeUtils.nodeIsJoin(this.state.editedNode) && (
               <BranchParameters
-                onChange={this.setNodeDataAt}
                 node={this.state.editedNode}
                 joinDef={this.nodeDef}
                 isMarked={this.isMarked}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
+                isEditMode={isEditMode}
                 errors={fieldErrors}
+                nodeObjectDetails={this.nodeObjectDetails}
+                setNodeDataAt={this.setNodeDataAt}
+                testResultsToShow={this.state.testResultsToShow}
+                testResultsToHide={this.state.testResultsToHide}
+                toggleTestResult={this.toggleTestResult}
               />
             )}
             {this.state.editedNode.parameters.map((param, index) => {
