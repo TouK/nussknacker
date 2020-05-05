@@ -2,6 +2,12 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
+## In version 0.1.1 (not released yet)
+
+* [#914](https://github.com/TouK/nussknacker/pull/914) `pl.touk.nussknacker.engine.api.definition.Parameter` has deprecated
+ main factory method with `runtimeClass` parameter. Now should be passed `isLazyParameter` instead. Also were removed `runtimeClass`
+ from variances of factory methods prepared for easy testing (`optional` method and so on).
+
 ## In version 0.1.0
 
 * [#755](https://github.com/TouK/nussknacker/pull/755) Default async execution context does not depend on parallelism.

@@ -19,28 +19,6 @@ import scala.reflect.runtime.universe._
 
 class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
-  val signatures = Table(("signature", "value", "matches"),
-    (java.lang.Boolean.TYPE, classOf[java.lang.Boolean], true),
-    (java.lang.Long.TYPE, classOf[java.lang.Long], true),
-    (java.lang.Integer.TYPE, classOf[java.lang.Integer], true),
-    (classOf[java.lang.Long], classOf[java.lang.Integer], true),
-    (classOf[java.lang.Long], java.lang.Integer.TYPE, true),
-    (java.lang.Long.TYPE, java.lang.Integer.TYPE, true),
-    (java.lang.Long.TYPE, classOf[java.lang.Integer], true),
-    (java.lang.Long.TYPE, classOf[java.lang.Integer], true),
-
-    (java.lang.Character.TYPE, classOf[java.lang.Character], true),
-    (classOf[java.lang.Number], classOf[java.lang.Integer], true),
-    (java.lang.Integer.TYPE, classOf[java.lang.Long], false)
-  )
-
-  test("should check if signature is possible") {
-
-    forAll(signatures) { (signature, value, matches) =>
-      EspTypeUtils.signatureElementMatches(signature, value) shouldBe matches
-    }
-  }
-
   case class SampleClass(foo: Int, bar: String) extends SampleAbstractClass with SampleInterface
 
   class Returning {
@@ -51,25 +29,25 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val method = classOf[Returning].getMethod("futureOfList")
 
-    val extractedType = EspTypeUtils.getGenericType(method.getGenericReturnType).get
+    val extractedType = EspTypeUtils.extractMethodReturnType(method)
 
-    extractedType shouldBe Typed.genericTypeClass[java.util.List[_]](List(Typed[SampleClass]))
+    extractedType shouldBe Typed.fromDetailedType[Future[java.util.List[SampleClass]]]
   }
 
   test("should extract public fields from scala case class") {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
     sampleClassInfo.value.methods shouldBe Map(
-      "foo" -> MethodInfo(List.empty, Typed(Integer.TYPE), None),
-      "bar" -> MethodInfo(List.empty, Typed[String], None),
-      "toString" -> MethodInfo(List(), Typed[String], None)
+      "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), None)),
+      "bar" -> List(MethodInfo(List.empty, Typed[String], None)),
+      "toString" -> List(MethodInfo(List(), Typed[String], None))
     )
   }
 
   test("should extract generic field") {
     val sampleClassInfo = singleClassDefinition[JavaClassWithGenericField]()
 
-    sampleClassInfo.value.methods("list").refClazz shouldEqual Typed.fromDetailedType[java.util.List[String]]
+    sampleClassInfo.value.methods("list").head.refClazz shouldEqual Typed.fromDetailedType[java.util.List[String]]
   }
 
   test("shoud detect java beans and fields in java class") {
@@ -109,8 +87,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         val sampleClassInfo = infos.find(_.clazzName.asInstanceOf[TypedClass].klass.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
-          "toString" -> MethodInfo(List(), Typed[String], None),
-          "foo" -> MethodInfo(List.empty, Typed(Integer.TYPE), None)
+          "toString" -> List(MethodInfo(List(), Typed[String], None)),
+          "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), None))
         )
       }
     }
@@ -121,11 +99,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
     typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed[TestEmbedded], Map(
-      "string" -> MethodInfo(List(), Typed[String], None),
-      "javaList" -> MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], None),
-      "scalaList" -> MethodInfo(List(), Typed.fromDetailedType[List[String]], None),
-      "javaMap" -> MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], None),
-      "toString" -> MethodInfo(List(), Typed[String], None)
+      "string" -> List(MethodInfo(List(), Typed[String], None)),
+      "javaList" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], None)),
+      "scalaList" -> List(MethodInfo(List(), Typed.fromDetailedType[List[String]], None)),
+      "javaMap" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], None)),
+      "toString" -> List(MethodInfo(List(), Typed[String], None))
     )))
 
   }
@@ -134,9 +112,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
     typeUtils shouldBe Some(ClazzDefinition(Typed[ClassWithHiddenFields], Map(
-      "normalField" -> MethodInfo(List(), Typed[String], None),
-      "normalParam" -> MethodInfo(List(), Typed[String], None),
-      "toString" -> MethodInfo(List(), Typed[String], None)
+      "normalField" -> List(MethodInfo(List(), Typed[String], None)),
+      "normalParam" -> List(MethodInfo(List(), Typed[String], None)),
+      "toString" -> List(MethodInfo(List(), Typed[String], None))
     )))
   }
 
@@ -211,12 +189,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       ("method", "methodInfo"),
       //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
       //("foo", MethodInfo(parameters = List(param[String]("fooParam1")), refClazz = Typed[Long], description = None)),
-      ("bar", MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = Typed[String], description = None)),
-      ("baz", MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.bazDocs))),
+      ("bar", List(MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = Typed[String], description = None))),
+      ("baz", List(MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.bazDocs)))),
       //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
       //("qux", MethodInfo(parameters = List(param[String]("quxParam1")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
-      ("field1", MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = None)),
-      ("field2", MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.field2Docs)))
+      ("field1", List(MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = None))),
+      ("field2", List(MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.field2Docs))))
     )
     forAll(table){ case (method, methodInfo) =>
         scalaClazzInfo.methods(method) shouldBe methodInfo
@@ -229,6 +207,13 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     // We want to use boxed primitive classes even if they wont be discovered in any place
     val boxedIntDef = emptyDef.find(_.clazzName == Typed[Integer])
     boxedIntDef shouldBe defined
+  }
+
+  test("extract overloaded methods") {
+    val cl = singleClassDefinition[ClassWithOverloadedMethods]().value
+    val methods = cl.methods("method")
+    methods should have size 3
+    methods.map(_.parameters.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
   }
 
   test("hidden by default classes") {
@@ -279,6 +264,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     def methodReturningArray: Array[Int] = ???
     def methodWithDollar$: String = ???
     def normalMethod: String = ???
+  }
+
+  class ClassWithOverloadedMethods {
+    def method(i: Int): String = ???
+    def method(i: String): String = ???
+    def method(i: Boolean): String = ???
   }
 
   class ServiceWithMetaSpelParam {

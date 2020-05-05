@@ -126,8 +126,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: InlineList => withTypedChildren { children =>
         val childrenTypes = children.toSet
-        val genericType = if (childrenTypes.contains(Unknown) || childrenTypes.size != 1) Unknown else childrenTypes.head
-        Valid(Typed.genericTypeClass[java.util.List[_]](List(genericType)))
+        Valid(Typed.genericTypeClass[java.util.List[_]](List(Typed(childrenTypes))))
       }
 
       case e: InlineMap =>
@@ -151,11 +150,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         }
 
-      case e: MethodReference =>
-        TypeMethodReference(e, current.stack) match {
-          case Right(typingResult) => fixedWithNewCurrent(current.popStack)(typingResult)
-          case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else fixedWithNewCurrent(current.popStack)(Unknown)
+      case e: MethodReference => typeChildren(validationContext, node, current.popStack) { typedParams =>
+        TypeMethodReference(e.getName, current.stack, typedParams) match {
+          case Right(typingResult) => Valid(typingResult)
+          case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
         }
+      }
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)

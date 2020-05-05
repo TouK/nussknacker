@@ -7,6 +7,8 @@ object evaluatedparam {
 
   case class TypedParameter(name: String, typedValue: TypedValue)
 
-  case class Parameter(name: String, expression: Expression, returnType: TypingResult, typingInfo: ExpressionTypingInfo)
+  case class Parameter(name: String, expression: Expression, returnType: TypingResult,
+                       shouldBeWrappedWithScalaOption: Boolean, shouldBeWrappedWithJavaOptional: Boolean,
+                       typingInfo: ExpressionTypingInfo)
 
 }

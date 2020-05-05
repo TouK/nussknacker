@@ -51,25 +51,29 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
     ),
     Map("sink" -> (ObjectDefinition.noParam, SinkAdditionalData(true)),
-      "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]))), SinkAdditionalData(true))),
+      "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter[String]("lazyString").copy(isLazyParameter = true))), SinkAdditionalData(true))),
 
     Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "manyParams" -> (ObjectDefinition(List(
-                Parameter("par1", Typed[String], classOf[LazyParameter[_]]),
+                Parameter[String]("par1").copy(isLazyParameter = true),
                 Parameter[String]("par2"),
-                Parameter("par3", Typed[String], classOf[LazyParameter[_]]),
+                Parameter[String]("par3").copy(isLazyParameter = true),
                 Parameter[String]("par4")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
-        Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]), Parameter("lazyInt", Typed[Integer], classOf[LazyParameter[_]]),
+        Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
         Parameter[Long]("long"))
       , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
-      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
-      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
-      "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(Parameter("nullableLiteralIntegerParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.integerValidator)))), emptyQueryNamesData()),
-      "withRegExpParam" -> (ObjectDefinition.withParams(List(Parameter("regExpParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.numberValidator)))), emptyQueryNamesData())
+      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter[String]("mandatoryParam"))), emptyQueryNamesData()),
+      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String])))), emptyQueryNamesData()),
+      "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(
+        Parameter[Integer]("nullableLiteralIntegerParam").copy(validators = List(LiteralParameterValidator.integerValidator))
+      )), emptyQueryNamesData()),
+      "withRegExpParam" -> (ObjectDefinition.withParams(List(
+        Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
+      )), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -94,7 +98,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
         "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
-      .sink("id2", "#processHelper.add(#processHelper, 2)", "sink")
+      .sink("id2", "#processHelper.add(1, 2)", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -966,6 +970,21 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     )
   }
 
+  test("validation of method returning future values") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "source")
+      .buildSimpleVariable("sampleVar", "var", "#processHelper.futureValue")
+      .buildSimpleVariable("sampleVar2", "var2", "#processHelper.identity(#var)")
+      .emptySink("sink", "sink")
+
+    val compilationResult = validate(process, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(scala.concurrent.Future[java.lang.String]). Required: identity(java.lang.String)", _, _, _), Nil)) =>
+    }
+  }
+
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
     validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
   }
@@ -1000,6 +1019,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   object ProcessHelper {
     def add(a: Int, b: Int) = a + b
+
+    def identity(@Nullable nullableVal: String): String = nullableVal
+
+    def futureValue: Future[String] = Future.successful("123")
   }
 
   object ServiceReturningTypeSample extends Service with ServiceReturningType {

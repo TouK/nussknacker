@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, SinkAdditionalData}
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
@@ -42,7 +42,7 @@ object UIProcessObjects {
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
-    val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions)
+    val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition))
 
     val sinkAdditionalData = chosenProcessDefinition.sinkFactories.map(e => (e._1, e._2._2))
     val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.map(e => (e._1, e._2._2))
@@ -81,6 +81,12 @@ object UIProcessObjects {
         subprocessesDetails = subprocessesDetails))
   }
 
+  private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
+    // TODO: present all overloaded methods on FE
+    val methodsWithHighestArity = definition.methods.mapValues(_.maxBy(_.parameters.size))
+    UIClazzDefinition(definition.clazzName, methodsWithHighestArity)
+  }
+
   private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
                                     classLoader: ClassLoader,
                                     fixedNodesConfig: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
@@ -97,7 +103,7 @@ object UIProcessObjects {
     //TODO: currently if we cannot parse parameter class we assume it's unknown
     val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
     //subprocess parameter name, editor and validators yet can not be configured via annotation or process creator
-    definition.Parameter.optional(p.name, typ, runtimeClass.toOption.getOrElse(classOf[Any]))
+    definition.Parameter.optional(p.name, typ)
   }
 }
 
@@ -114,7 +120,7 @@ object UIProcessObjects {
                                signalsWithTransformers: Map[String, UIObjectDefinition],
                                exceptionHandlerFactory: UIObjectDefinition,
                                globalVariables: Map[String, UIObjectDefinition],
-                               typesInformation: Set[ClazzDefinition],
+                               typesInformation: Set[UIClazzDefinition],
                                subprocessInputs: Map[String, UIObjectDefinition]) {
   // skipping exceptionHandlerFactory
   val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
@@ -142,6 +148,8 @@ object UIObjectDefinition {
   }
 }
 
+@JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo])
+
 @JsonCodec(encodeOnly = true) case class UIParameter(name: String,
                                                      typ: TypingResult,
                                                      editor: ParameterEditor,
@@ -167,7 +175,7 @@ object UIParameter {
 }
 
 object UIProcessDefinition {
-  def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition], types: Set[TypeInfos.ClazzDefinition]): UIProcessDefinition = {
+  def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition], types: Set[UIClazzDefinition]): UIProcessDefinition = {
     val uiProcessDefinition = UIProcessDefinition(
       services = processDefinition.services.mapValues(UIObjectDefinition(_)),
       sourceFactories = processDefinition.sourceFactories.mapValues(UIObjectDefinition(_)),

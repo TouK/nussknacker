@@ -1,11 +1,16 @@
 package pl.touk.nussknacker.engine.definition.validator
 
-import java.lang.reflect.Parameter
-
-import pl.touk.nussknacker.engine.api.definition.ParameterValidator
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 trait ValidatorExtractor {
 
-  def extract(p: Parameter): Option[ParameterValidator]
+  def extract(params: ValidatorExtractorParameters): Option[ParameterValidator]
 
 }
+
+case class ValidatorExtractorParameters(rawJavaParam: java.lang.reflect.Parameter,
+                                        paramType: TypingResult,
+                                        isScalaOptionParameter: Boolean,
+                                        isJavaOptionalParameter: Boolean,
+                                        extractedEditor: Option[ParameterEditor])
