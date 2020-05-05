@@ -184,7 +184,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[Any]("#processHelper.add(1L, 1)", ctxWithGlobal) shouldBe 'valid
     parse[Any]("#processHelper.addLongs(1L, 1L)", ctxWithGlobal) shouldBe 'valid
     parse[Any]("#processHelper.addLongs(1, 1L)", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#processHelper.add(#processHelper.toUnknown('1'), 1)", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe 'valid
 
     val invalid = parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)
     invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Mismatch parameter types. Found: add(java.lang.String, java.lang.Integer). Required: add(int, int)")))
@@ -632,7 +632,7 @@ object SampleGlobalObject {
   def one() = 1
   def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
-  def toUnknown(value: Any): Any = value
+  def toAny(value: Any): Any = value
 }
 
 class SampleObjectWithGetMethod(map: Map[String, Any]) {
