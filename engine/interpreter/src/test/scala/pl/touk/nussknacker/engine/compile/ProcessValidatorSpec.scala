@@ -5,7 +5,6 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
-import javax.annotation.Nullable
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
@@ -1020,7 +1019,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   object ProcessHelper {
     def add(a: Int, b: Int) = a + b
 
-    def identity(@Nullable nullableVal: String): String = nullableVal
+    def identity(nullableVal: String): String = nullableVal
 
     def futureValue: Future[String] = Future.successful("123")
   }
