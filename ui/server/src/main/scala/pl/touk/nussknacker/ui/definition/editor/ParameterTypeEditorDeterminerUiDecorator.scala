@@ -14,7 +14,7 @@ protected class ParameterTypeEditorDeterminerUiDecorator(determiner: ParameterTy
   override def determine(): Option[ParameterEditor] = {
     determiner.determine() match {
       case Some(editor) => Some(editor)
-      case None if determiner.typ.canBeSubclassOf(Typed[com.cronutils.model.Cron]) => Some(DualParameterEditor(
+      case None if determiner.typ == Typed[com.cronutils.model.Cron] => Some(DualParameterEditor(
         simpleEditor = CronParameterEditor,
         defaultMode = DualEditorMode.SIMPLE
       ))
