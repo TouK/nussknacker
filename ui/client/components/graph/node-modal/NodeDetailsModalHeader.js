@@ -45,7 +45,7 @@ const Docs = (props) => {
 
 Docs.propTypes = {
   className: PropTypes.string.isRequired,
-  nodeSettings: PropTypes.object.isRequired,
+  nodeSettings: PropTypes.object,
   nodeClass: PropTypes.string,
 }
 

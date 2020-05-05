@@ -1,10 +1,12 @@
 import PropTypes from "prop-types"
 import React from "react"
 import EditableEditor from "./editors/EditableEditor"
+import ExpressionField from "./editors/expression/ExpressionField"
 
 const BranchParameters = (props) => {
 
-  const {node, joinDef, onChange, isMarked, readOnly, showValidation, errors, showSwitch} = props
+  const {node, joinDef, isMarked, showValidation, errors, showSwitch, isEditMode,
+    nodeObjectDetails, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult} = props
 
   return (
     joinDef.branchParameters?.map((param, paramIndex) => {
@@ -23,18 +25,22 @@ const BranchParameters = (props) => {
                     <div className="branch-parameter-row" key={`${param.name}-${edge.from}`}>
                       <div className={"branch-param-label"}>{edge.from}</div>
                       <div className={"branch-parameter-expr-container"}>
-                        <EditableEditor
-                          fieldType={"expression"}
-                          fieldName={branchErrorFieldName(param.name, edge.from)}
-                          fieldLabel={null}
-                          onValueChange={((value) => onChange(`${path}.expression.expression`, value))}
-                          expressionObj={paramValue.expression}
-                          readOnly={readOnly}
-                          isMarked={isMarked(path)}
+                        <ExpressionField
+                          fieldName={null}
+                          fieldLabel={param.name}
+                          fieldType={null}
+                          exprPath={`${path}.expression`}
+                          isEditMode={isEditMode}
+                          editedNode={node}
+                          isMarked={isMarked}
                           showValidation={showValidation}
-                          rowClassName={"branch-parameter-expr"}
-                          valueClassName={"branch-parameter-expr-value"}
                           showSwitch={showSwitch}
+                          nodeObjectDetails={nodeObjectDetails}
+                          setNodeDataAt={setNodeDataAt}
+                          testResultsToShow={testResultsToShow}
+                          testResultsToHide={testResultsToHide}
+                          toggleTestResult={toggleTestResult}
+                          renderFieldLabel={() => false}
                           errors={errors}
                         />
                       </div>
@@ -52,11 +58,15 @@ const BranchParameters = (props) => {
 BranchParameters.propTypes = {
   node: PropTypes.object.isRequired,
   joinDef: PropTypes.object.isRequired,
-  onChange: PropTypes.func.isRequired,
   isMarked: PropTypes.func.isRequired,
-  readOnly: PropTypes.bool,
+  isEditMode: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
   showSwitch: PropTypes.bool,
+  nodeObjectDetails: PropTypes.any,
+  setNodeDataAt: PropTypes.func.isRequired,
+  testResultsToShow: PropTypes.any,
+  testResultsToHide: PropTypes.any,
+  toggleTestResult: PropTypes.func.isRequired,
 }
 
 BranchParameters.defaultProps = {
