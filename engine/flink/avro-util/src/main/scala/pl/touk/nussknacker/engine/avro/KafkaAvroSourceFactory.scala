@@ -23,8 +23,7 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaFactory: DeserializationS
   extends KafkaSourceFactory[T](schemaFactory, timestampAssigner,
     TestParsingUtils.newLineSplit, processObjectDependencies) {
 
-  override protected def createSource(processMetaData: MetaData,
-                                      topics: List[String],
+  override protected def createSource(topics: List[String],
                                       kafkaConfig: KafkaConfig,
                                       schema: KafkaDeserializationSchema[T]): KafkaSource = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
