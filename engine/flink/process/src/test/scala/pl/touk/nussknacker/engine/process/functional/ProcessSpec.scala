@@ -168,4 +168,36 @@ class ProcessSpec extends FunSuite with Matchers {
     MockService.data.sortBy(_.asInstanceOf[SimpleRecord].date) shouldBe List(recA, recB, recC, recC)
   }
 
+  test("usage of scala option parameters in services") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("sampleVar", "var", "#processHelper.scalaOptionValue")
+      .enricher("enrich", "enriched", "serviceAcceptingOptionalValue", "scalaOptionParam" -> "#var")
+      .processorEnd("proc2", "logService", "all" -> "#enriched")
+
+    val data = List(
+      SimpleRecord("a", 3, "3", new Date(1))
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    MockService.data shouldBe List(Some("" + ProcessHelper.constant))
+  }
+
+  test("usage of java optional parameters in eager parameters") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .emptySink("sink", "eagerOptionalParameterSink", "optionalStringParam" -> "#processHelper.javaOptionalValue")
+
+    val data = List(
+      SimpleRecord("a", 3, "3", new Date(1))
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    EagerOptionalParameterSinkFactory.data shouldBe List("" + ProcessHelper.constant)
+  }
+
 }

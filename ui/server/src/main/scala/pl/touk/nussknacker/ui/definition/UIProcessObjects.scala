@@ -103,7 +103,7 @@ object UIProcessObjects {
     //TODO: currently if we cannot parse parameter class we assume it's unknown
     val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
     //subprocess parameter name, editor and validators yet can not be configured via annotation or process creator
-    definition.Parameter.optional(p.name, typ, runtimeClass.toOption.getOrElse(classOf[Any]))
+    definition.Parameter.optional(p.name, typ)
   }
 }
 

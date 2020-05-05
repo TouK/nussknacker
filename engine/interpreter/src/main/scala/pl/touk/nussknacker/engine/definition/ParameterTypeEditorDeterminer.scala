@@ -4,55 +4,50 @@ import java.time.temporal.ChronoUnit
 
 import pl.touk.nussknacker.engine.api.definition.{DateParameterEditor, DateTimeParameterEditor, DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, ParameterEditor, PeriodParameterEditor, StringParameterEditor, TimeParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 
-class ParameterTypeEditorDeterminer(val runtimeClass: Class[_]) extends ParameterEditorDeterminer {
+class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEditorDeterminer {
 
   override def determine(): Option[ParameterEditor] = {
-    runtimeClass match {
-      case klazz if klazz.isEnum => Some(
+    Option(typ).collect {
+      case s: SingleTypingResult => s.objType
+    }.map(_.klass).collect {
+      case klazz if klazz.isEnum =>
         // We can pick here simple editor, but for compatibility reasons we choose dual editor instead
         // - to be able to provide some other expression
         DualParameterEditor(FixedValuesParameterEditor(
-          possibleValues = runtimeClass.getEnumConstants.toList.map(extractEnumValue(runtimeClass))
+          possibleValues = klazz.getEnumConstants.toList.map(extractEnumValue(klazz))
         ), DualEditorMode.SIMPLE)
-      )
-      case klazz if klazz == classOf[java.lang.String] => Some(
+      case klazz if klazz == classOf[java.lang.String] =>
         DualParameterEditor(
           simpleEditor = StringParameterEditor,
           defaultMode = DualEditorMode.RAW
         )
-      )
-      case klazz if klazz == classOf[java.time.LocalDateTime] => Some(
+      case klazz if klazz == classOf[java.time.LocalDateTime] =>
         DualParameterEditor(
           simpleEditor = DateTimeParameterEditor,
           defaultMode = DualEditorMode.SIMPLE
         )
-      )
-      case klazz if klazz == classOf[java.time.LocalTime] => Some(
+      case klazz if klazz == classOf[java.time.LocalTime] =>
         DualParameterEditor(
           simpleEditor = TimeParameterEditor,
           defaultMode = DualEditorMode.SIMPLE
         )
-      )
-      case klazz if klazz == classOf[java.time.LocalDate] => Some(
+      case klazz if klazz == classOf[java.time.LocalDate] =>
         DualParameterEditor(
           simpleEditor = DateParameterEditor,
           defaultMode = DualEditorMode.SIMPLE
         )
-      )
-      case klazz if klazz == classOf[java.time.Duration] => Some(
+      case klazz if klazz == classOf[java.time.Duration] =>
         DualParameterEditor(
           simpleEditor = DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
           defaultMode = DualEditorMode.SIMPLE
         )
-      )
-      case klazz if klazz == classOf[java.time.Period] => Some(
+      case klazz if klazz == classOf[java.time.Period] =>
         DualParameterEditor(
           simpleEditor = PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
           defaultMode = DualEditorMode.SIMPLE
         )
-      )
-      case _ => None
     }
   }
 
