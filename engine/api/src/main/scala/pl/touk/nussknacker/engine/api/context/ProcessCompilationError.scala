@@ -193,10 +193,15 @@ object ProcessCompilationError {
 
   case class InvalidSubprocess(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
+  case class CustomNodeError(nodeId: String, message: String, paramName: Option[String]) extends ProcessCompilationError with InASingleNode
+
+  object CustomNodeError {
+    def apply(message: String, paramName: Option[String])(implicit nodeId: NodeId): CustomNodeError = CustomNodeError(nodeId.id, message, paramName)
+  }
+
   case class FatalUnknownError(message: String) extends ProcessCompilationError {
     override def nodeIds: Set[String] = Set()
   }
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
-
 }

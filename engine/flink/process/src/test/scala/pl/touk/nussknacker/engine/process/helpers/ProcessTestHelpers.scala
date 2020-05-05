@@ -70,9 +70,10 @@ object ProcessTestHelpers {
 
     def prepareCreator(data: List[SimpleRecord], config: Config): ProcessConfigCreator = new ProcessConfigCreator {
 
-      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service with TimeMeasuringService]] = Map(
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
         "logService" -> WithCategories(new MockService),
-        "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService)
+        "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
+        "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption)
       )
 
       override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
@@ -85,7 +86,8 @@ object ProcessTestHelpers {
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
         "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
-        "lazyParameterSink"-> WithCategories(LazyParameterSinkFactory)
+        "lazyParameterSink"-> WithCategories(LazyParameterSinkFactory),
+        "eagerOptionalParameterSink"-> WithCategories(EagerOptionalParameterSinkFactory)
       )
 
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(

@@ -41,7 +41,7 @@ object typing {
       TypedObjectTypingResult(definition.fields.map { case (k, v) => (k, Typed(v))})
 
     def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, Typed.typedClass[java.util.Map[_, _]])
+      TypedObjectTypingResult(fields, TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)))
 
   }
 

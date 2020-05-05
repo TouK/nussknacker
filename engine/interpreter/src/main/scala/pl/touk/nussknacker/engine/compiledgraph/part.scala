@@ -14,6 +14,7 @@ object part {
     def node: SplittedNode[T]
     def validationContext: ValidationContext
     def id: String = node.id
+    def ends: List[End]
   }
 
   sealed trait PotentiallyStartPart extends ProcessPart {

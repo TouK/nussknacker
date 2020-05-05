@@ -103,7 +103,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "campaignService" -> features(CampaignService),
     "configuratorService" -> features(ConfiguratorService),
     "meetingService" -> features(MeetingService),
-    "dynamicService" -> categories(new DynamicService)
+    "dynamicService" -> categories(new DynamicService),
+    "customValidatedService" -> categories(new CustomValidatedService)
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(

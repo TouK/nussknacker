@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.api.typed.ServiceReturningType
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ServiceReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.compiledgraph.node
@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
 import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
 import PartSubGraphCompiler._
 import NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -246,9 +247,16 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     val service = services.get(n.id).map(Valid(_)).getOrElse(invalid(MissingService(n.id))).toValidatedNel
 
     val validatedServiceWithTypingResult = service.andThen { objWithMethod =>
-      expressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx).map { params =>
+      expressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx).andThen { params =>
+        (Try(computeReturnType(objWithMethod, params)) match {
+          case Success(returnType) => valid((params, returnType))
+          case Failure(CustomNodeValidationException(message, paramName)) =>
+            invalid(CustomNodeError(message, paramName))
+          case Failure(NonFatal(exception)) =>
+            invalid(FatalUnknownError(exception.getMessage))
+        }).toValidatedNel
+      }.map { case (params, returnType) =>
         val invoker = createServiceInvoker(objWithMethod)
-        val returnType = computeReturnType(objWithMethod, params)
         val typingResult = ServiceTypingResult(returnType, params.map(p => p.name -> p.typingInfo).toMap)
         (compiledgraph.service.ServiceRef(n.id, invoker, params), typingResult)
       }
@@ -319,7 +327,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
     subParam.typ.toRuntimeClass(classLoader) match {
       case Success(runtimeClass) =>
-        valid(Parameter.optional(paramName, Typed(runtimeClass), runtimeClass))
+        valid(Parameter.optional(paramName, Typed(runtimeClass)))
       case Failure(_) =>
         invalid(
           SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)

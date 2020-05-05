@@ -113,16 +113,25 @@ class ProcessSpec extends FunSuite with Matchers {
 
   test("should do join with branch expressions") {
     val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
-      GraphBuilder.source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
+      GraphBuilder.source("idInt", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
         .branchEnd("end1", "join1"),
-      GraphBuilder.source("id2", "input")
+      GraphBuilder.source("idOtherInt", "intInputWithParam", "param" -> "15")
         .branchEnd("end2", "join1"),
-      GraphBuilder.branch("join1", "joinBranchExpression", Some("input33"),
+      
+      GraphBuilder.source("id2", "input")
+        .branchEnd("end1", "join2"),
+      GraphBuilder.branch("join1", "joinBranchExpression", Some("input2"),
         List(
           "end1" -> List("value" -> "#input"),
           "end2" -> List("value" -> "#input")
+        )).branchEnd("end2", "join2"),
+
+      GraphBuilder.branch("join2", "joinBranchExpression", Some("input3"),
+        List(
+          "end1" -> List("value" -> "#input"),
+          "end2" -> List("value" -> "#input2")
         ))
-        .processorEnd("proc2", "logService", "all" -> "#input33")
+        .processorEnd("proc2", "logService", "all" -> "#input3")
     ))
 
     val rec = SimpleRecord("1", 3, "a", new Date(0))
@@ -130,7 +139,7 @@ class ProcessSpec extends FunSuite with Matchers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data.toSet shouldBe Set(5, rec)
+    MockService.data.toSet shouldBe Set(5, 15, rec)
   }
 
   test("should handle diamond-like process") {
@@ -157,6 +166,38 @@ class ProcessSpec extends FunSuite with Matchers {
     processInvoker.invokeWithSampleData(process, data)
 
     MockService.data.sortBy(_.asInstanceOf[SimpleRecord].date) shouldBe List(recA, recB, recC, recC)
+  }
+
+  test("usage of scala option parameters in services") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("sampleVar", "var", "#processHelper.scalaOptionValue")
+      .enricher("enrich", "enriched", "serviceAcceptingOptionalValue", "scalaOptionParam" -> "#var")
+      .processorEnd("proc2", "logService", "all" -> "#enriched")
+
+    val data = List(
+      SimpleRecord("a", 3, "3", new Date(1))
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    MockService.data shouldBe List(Some("" + ProcessHelper.constant))
+  }
+
+  test("usage of java optional parameters in eager parameters") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .emptySink("sink", "eagerOptionalParameterSink", "optionalStringParam" -> "#processHelper.javaOptionalValue")
+
+    val data = List(
+      SimpleRecord("a", 3, "3", new Date(1))
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    EagerOptionalParameterSinkFactory.data shouldBe List("" + ProcessHelper.constant)
   }
 
 }

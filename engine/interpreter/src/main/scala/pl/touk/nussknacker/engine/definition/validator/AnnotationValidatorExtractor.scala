@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.engine.definition.validator
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.Parameter
 
-import pl.touk.nussknacker.engine.api.definition.ParameterValidator
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.reflect.ClassTag
+
 class AnnotationValidatorExtractor(annotationClass: Class[_ <: Annotation], parameterValidator: ParameterValidator) extends ValidatorExtractor {
-  override def extract(param: Parameter): Option[ParameterValidator] = {
-    param match {
-      case param if param.getAnnotation(annotationClass) != null => Some(parameterValidator)
-      case _ => None
-    }
+  override def extract(params: ValidatorExtractorParameters): Option[ParameterValidator] = {
+    if (params.rawJavaParam.getAnnotation(annotationClass) != null)
+      Some(parameterValidator)
+    else
+      None
   }
 }
 
