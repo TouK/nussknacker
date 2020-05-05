@@ -5,16 +5,15 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
-import javax.annotation.Nullable
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, MandatoryParameterValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, NotBlankParameter, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
-import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -796,6 +795,38 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
+
+  test("should be able to run custom validation using ServiceReturningType") {
+    val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
+    val withServiceRef = base.copy(services = base.services + ("withCustomValidation" ->
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceWithCustomValidation), SingleNodeConfig.zero)))
+
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .enricher("service-1", "output-1", "withCustomValidation",
+          "age" -> "12",
+          "fields" -> "{:}")
+        .enricher("service-2", "output-2", "withCustomValidation",
+          "age" -> "30",
+          "fields" -> "{invalid: 'yes'}")
+        .enricher("service-3", "output-3", "withCustomValidation",
+          "age" -> "30",
+          "fields" -> "{name: 12}")
+        .sink("id2", "''", "sink")
+
+    val result = validateWithDef(process, withServiceRef)
+
+    result.result shouldBe Invalid(NonEmptyList.of(
+      CustomNodeError("service-1", "Too young", Some("age")),
+      CustomNodeError("service-2", "Service is invalid", None),
+      CustomNodeError("service-3", "All values should be strings", Some("fields"))
+    ))
+  }
+
+
   test("not allows local variables in eager custom node parameter") {
     val processWithLocalVarInEagerParam =
       EspProcessBuilder
@@ -1018,4 +1049,25 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  object ServiceWithCustomValidation extends Service with ServiceReturningType {
+
+    @MethodToInvoke
+    def invoke(@ParamName("age") age: Int,
+               @ParamName("fields") fields: java.util.Map[String, String]): Future[String] = {
+      Future.successful(s"name: ${fields.get("name")}, age: $age")
+    }
+
+    def returnType(params: Map[String, (TypingResult, Option[Any])]): TypingResult = {
+      if (params("age")._2.get.asInstanceOf[Int] < 18) {
+        throw CustomNodeValidationException("Too young", Some("age"))
+      }
+      params("fields")._1 match {
+        case TypedObjectTypingResult(fields, _) if fields.contains("invalid") =>
+          throw CustomNodeValidationException("Service is invalid", None)
+        case TypedObjectTypingResult(fields, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+          throw CustomNodeValidationException("All values should be strings", Some("fields"))
+        case _ => Typed.typedClass[String]
+      }
+    }
+  }
 }

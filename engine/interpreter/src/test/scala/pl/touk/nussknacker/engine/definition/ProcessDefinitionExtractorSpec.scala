@@ -46,10 +46,19 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     definition.parameters shouldBe List(Parameter[Int]("param1"))
   }
 
+  test("extract definition with generic params") {
+    val definition = processDefinition.customStreamTransformers("transformerWithGenericParam")._1
+
+    definition.objectDefinition.parameters should have size 1
+    definition.objectDefinition.parameters.head.runtimeClass shouldEqual classOf[List[_]]
+    definition.objectDefinition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
+  }
+
   object TestCreator extends ProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
-        "transformer1" -> WithCategories(Transformer1, "cat")
+        "transformer1" -> WithCategories(Transformer1, "cat"),
+        "transformerWithGenericParam" -> WithCategories(TransformerWithGenericParam, "cat")
       )
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -82,6 +91,14 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       @ParamName("param1")
       @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[OnlyUsedInAdditionalVariable])))
       param1: String) : Unit = {}
+  }
+
+  object TransformerWithGenericParam extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def invoke(@ParamName("foo") foo: List[String]): Unit = {
+    }
+
   }
 
   class Signal1 extends ProcessSignalSender {

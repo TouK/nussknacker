@@ -20,15 +20,14 @@ object EspTypeUtils {
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
     ClazzDefinition(Typed(clazz), getPublicMethodAndFields(clazz))
 
-  def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*): Class[_] =
+  def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*): TypingResult =
     if (classesToExtractGenericFrom.contains(p.getType)) {
       val parameterizedType = p.getParameterizedType.asInstanceOf[ParameterizedType]
-      parameterizedType.getActualTypeArguments.apply(0) match {
-        case a: Class[_] => a
-        case b: ParameterizedType => b.getRawType.asInstanceOf[Class[_]]
+      extractClass(parameterizedType.getActualTypeArguments.apply(0)).getOrElse {
+        throw new IllegalArgumentException("Can't extract type for parameter: " + p)
       }
     } else {
-      p.getType
+      getTypeForParameter(p)
     }
 
   def getCompanionObject[T](klazz: Class[T]): T = {
@@ -148,8 +147,12 @@ object EspTypeUtils {
       param <- method.getParameters.toList
       annotationOption = Option(param.getAnnotation(classOf[ParamName]))
       name = annotationOption.map(_.value).getOrElse(param.getName)
-      paramType = Typed(param.getType)
+      paramType = getTypeForParameter(param)
     } yield Parameter(name, paramType)
+  }
+
+  private def getTypeForParameter(javaParam: java.lang.reflect.Parameter): TypingResult = {
+    extractClass(javaParam.getParameterizedType).getOrElse(Typed(javaParam.getType))
   }
 
   private def getNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {

@@ -5,7 +5,7 @@ import NodeUtils from "../../components/graph/NodeUtils"
 import {DialogType} from "../../components/modals/Dialogs"
 import history from "../../history"
 import {ThunkAction} from "../reduxTypes"
-import {Edge, NodeType} from "./models"
+import {Edge, NodeType} from "../../types"
 import {EventInfo, reportEvent} from "./reportEvent"
 
 export type DisplayModalNodeDetailsAction = {

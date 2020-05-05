@@ -7,6 +7,7 @@
     "module": "ESNext",
     "target": "ESNext",
     "jsx": "preserve",
+    "resolveJsonModule": true,
     "lib": [
       "dom",
       "ESNext"

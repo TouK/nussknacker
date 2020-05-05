@@ -4,6 +4,23 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.1.0
 
+* [#879](https://github.com/TouK/nussknacker/pull/879) Metrics use variables by default, see [docs](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md) 
+  to enable old mode, suitable for graphite protocol. To use old way of sending:
+    - put `globalParameters.useLegacyMetrics = true` in each model configuration (to configure metrics sending in Flink)
+    - put: ```
+    countsSettings {
+      user: ...
+      password: ...
+      influxUrl: ...
+      metricsConfig {
+        nodeCountMetric: "nodeCount.count"
+        sourceCountMetric: "source.count"
+        nodeIdTag: "action"
+        countField: "value"
+        
+      }
+    } 
+  ```
 * [#755](https://github.com/TouK/nussknacker/pull/755) Default async execution context does not depend on parallelism.
  `asyncExecutionConfig.parallelismMultiplier` has been deprecated and should be replaced with `asyncExecutionConfig.workers`.
  8 should be sane default value.

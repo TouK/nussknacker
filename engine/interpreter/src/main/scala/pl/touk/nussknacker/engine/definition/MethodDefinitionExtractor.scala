@@ -70,7 +70,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
         val paramType = extractParameterType(p)
         val extractedEditor = EditorExtractor.extract(p)
         val validators = tryToDetermineValidators(p, extractedEditor)
-        Parameter(name, Typed(paramType), p.getType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined)
+        Parameter(name, paramType, p.getType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined)
       }
     }.toList
 
@@ -105,7 +105,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
   protected def additionalDependencies: Set[Class[_]]
 
-  protected def extractParameterType(p: java.lang.reflect.Parameter): Class[_] = EspTypeUtils.extractParameterType(p, classOf[LazyParameter[_]])
+  protected def extractParameterType(p: java.lang.reflect.Parameter): TypingResult = EspTypeUtils.extractParameterType(p, classOf[LazyParameter[_]])
 
 }
 

@@ -36,9 +36,8 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     group.histogram(name, histogram)
   }
 
-  //for now we use legacy metrics by default
   private val useLegacyMetricsMode: Boolean =
-    NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).flatMap(_.configParameters.flatMap(_.useLegacyMetrics)).getOrElse(true)
+    NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig).flatMap(_.configParameters.flatMap(_.useLegacyMetrics)).getOrElse(false)
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
     if (useLegacyMetricsMode) {
