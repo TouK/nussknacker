@@ -55,8 +55,6 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   import pl.touk.nussknacker.engine.util.functions._
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
-    // FIXME
     val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
 
     ExpressionConfig(

@@ -38,7 +38,6 @@ import scala.collection.JavaConverters._
   *
   * </pre>
   * */
-// FIXME
 class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchemaFactory[T],
                                              timestampAssigner: Option[TimestampAssigner[T]],
                                              testPrepareInfo: TestDataSplit,
