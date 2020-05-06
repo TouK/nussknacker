@@ -97,12 +97,23 @@ object ProcessorService {
   def clear() = invocationsCount.set(0)
 }
 
-class ProcessorService extends Service {
+class ProcessorService extends Service with Lifecycle {
+
+  private var initialized = false
+
+  override def open(jobData: JobData): Unit = {
+    initialized = true
+  }
+
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Unit] = {
-    collector.collect("processor service invoked", Option(())) {
-      ProcessorService.invocationsCount.getAndIncrement()
-      Future.successful(())
+    if (!initialized) {
+      Future.failed(new IllegalArgumentException("I was not initialized!"))
+    } else {
+      collector.collect("processor service invoked", Option(())) {
+        ProcessorService.invocationsCount.getAndIncrement()
+        Future.successful(())
+      }
     }
   }
 
