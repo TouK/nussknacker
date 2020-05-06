@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.management
 
+import java.net.NoRouteToHostException
+import java.util.concurrent.TimeoutException
+
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.Json.fromString
@@ -12,10 +15,10 @@ import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, Ge
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{NothingT, Response, SttpBackend}
+import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
@@ -35,7 +38,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
                             acceptSavepoint: Boolean = false,
                             acceptDeploy: Boolean = false,
                             acceptStop: Boolean = false,
-                            statusCode: StatusCode = StatusCode.Ok)
+                            statusCode: StatusCode = StatusCode.Ok, exceptionOnDeploy: Option[Exception] = None)
     = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
     val toReturn = (req.uri.path, req.method) match {
       case (List("jobs", "overview"), Method.GET) =>
@@ -52,6 +55,11 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
         SavepointTriggerResponse(`request-id` = savepointRequestId)
 
       case (List("jars", `uploadedJarPath`, "run"), Method.POST) if acceptDeploy  =>
+        exceptionOnDeploy
+          //see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
+          //TODO: can be make behaviour more robust?
+          .flatMap(SttpClientException.defaultExceptionToSttpClientException)
+          .foreach(throw _)
         ()
       case (List("jars", "upload"), Method.POST) if acceptDeploy =>
         UploadJarResponse(uploadedJarPath)
@@ -78,13 +86,25 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   test("continue on timeout exception") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED))
 
-    createManager(statuses, acceptDeploy = true, statusCode = StatusCode.RequestTimeout)
+    createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new TimeoutException("tooo looong")))
       .deploy(
         ProcessVersion(1, ProcessName("p1"), "user", None),
         CustomProcess("nothing"),
         None,
         user = User("user1", "User 1")
       ).futureValue shouldBe (())
+  }
+
+  test("not continue on random exception exception") {
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED))
+    val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
+
+    Await.ready(manager.deploy(
+        ProcessVersion(1, ProcessName("p1"), "user", None),
+        CustomProcess("nothing"),
+        None,
+        user = User("user1", "User 1")
+      ), 1 second).eitherValue.flatMap(_.left.toOption) shouldBe 'defined
   }
 
   test("refuse to deploy if process is failing") {
