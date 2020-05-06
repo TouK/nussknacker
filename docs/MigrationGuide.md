@@ -2,8 +2,10 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
-## In version 0.1.1 (not released yet)
+## In version 0.1.1
 
+* [#930](https://github.com/TouK/nussknacker/pull/930) `DeeplyCheckingExceptionExtractor` was moved from `nussknacker-flink-util`
+  module to `nussknacker-util` module.
 * [#919](https://github.com/TouK/nussknacker/pull/919) `KafkaSource` constructor now doesn't take `consumerGroup`. Instead of this
  it computes `consumerGroup` on their own based on `kafka.consumerGroupNamingStrategy` in `modelConfig` (default set to `processId`).
  You can also override it by `overriddenConsumerGroup` optional parameter.
