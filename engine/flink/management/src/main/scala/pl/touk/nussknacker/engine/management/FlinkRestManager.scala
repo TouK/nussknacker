@@ -81,6 +81,11 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     uploadedJar
   }
 
+  /*
+    It's ok to have many jobs with same name, however:
+    - there MUST be at most 1 job in *non-terminal* state with given name
+    - deployment is possible IFF there is NO job in *non-terminal* state with given name
+   */
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     val preparedName = modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
     basicRequest
@@ -97,10 +102,11 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
         jobsForName match {
           case Nil => Future.successful(None)
-          case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
+          case duplicates if duplicates.count(isNotFinished) > 1 =>
             Future.successful(Some(ProcessState(
               DeploymentId(duplicates.head.jid),
-              FlinkStateStatus.Failed,
+              //we cannot have e.g. Failed here as we don't want to allow more jobs
+              FlinkStateStatus.MultipleJobsRunning,
               definitionManager = processStateDefinitionManager,
               version = Option.empty,
               attributes = Option.empty,
@@ -115,7 +121,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               case JobStatus.RESTARTING => FlinkStateStatus.Restarting
               case JobStatus.CANCELED => FlinkStateStatus.Canceled
               case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
-              case _ => FlinkStateStatus.Failed
+              //The job is not technically running, but should be in a moment
+              case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
+              case JobStatus.FAILING => FlinkStateStatus.Failing
+              case JobStatus.FAILED => FlinkStateStatus.Failed
             }
             withVersion(job.jid, name).map { version =>
               //TODO: return error when there's no correct version in process
@@ -139,7 +148,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       }
   }
 
-  private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(_.state == JobStatus.RUNNING).getOrElse(jobOverviews.head)
+  private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(isNotFinished).getOrElse(jobOverviews.head)
+
+  private def isNotFinished(overview: JobOverview): Boolean = !overview.state.isGloballyTerminalState
 
   //TODO: cache by jobId?
   private def withVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
