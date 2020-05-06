@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientE
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
 import pl.touk.nussknacker.engine.util.ReflectUtils
+import pl.touk.nussknacker.engine.util.exception.{DeeplyCheckingExceptionExtractor, ExceptionExtractor}
 import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 
 import scala.concurrent.duration._
