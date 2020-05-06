@@ -8,11 +8,18 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.1.1 (not released yet)
+0.2.0 (not released yet)
 ------------------------
 * [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider
 * [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
+
+0.1.1
+------------
+* Branch parameters now can be eager (computed during process compilation)
+* More restrictive type checking in SpEL - mainly added verification of types of method's paramaters
+* Added support for Kafka consumer group strategies - setted up by `kafka.consumerGroupNamingStrategy` configuraton option
+* Bugfixes for joins
 
 0.1.0
 -------------

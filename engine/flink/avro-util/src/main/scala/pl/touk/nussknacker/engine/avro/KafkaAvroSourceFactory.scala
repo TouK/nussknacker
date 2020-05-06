@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryKafkaAvroPr
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka._
 
+// FIXME
 class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaRegistryProvider[T],
                                                  processObjectDependencies: ProcessObjectDependencies,
                                                  timestampAssigner: Option[TimestampAssigner[T]])

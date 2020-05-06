@@ -49,10 +49,20 @@ val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDep
 val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 ```
 
-## In version 0.1.1 (not released yet)
+## In version 0.1.1
 
 * [#930](https://github.com/TouK/nussknacker/pull/930) `DeeplyCheckingExceptionExtractor` was moved from `nussknacker-flink-util`
   module to `nussknacker-util` module.
+* [#919](https://github.com/TouK/nussknacker/pull/919) `KafkaSource` constructor now doesn't take `consumerGroup`. Instead of this
+ it computes `consumerGroup` on their own based on `kafka.consumerGroupNamingStrategy` in `modelConfig` (default set to `processId`).
+ You can also override it by `overriddenConsumerGroup` optional parameter.
+ Regards to this changes, `KafkaConfig` has new, optional parameter `consumerGroupNamingStrategy`.
+* [#920](https://github.com/TouK/nussknacker/pull/920) `KafkaSource` constructor now takes `KafkaConfig` instead of using one
+ that was parsed by `BaseKafkaSourceFactory.kafkaConfig`. Also if you parse Typesafe Config to `KafkaSource` on your own, now you should
+ use dedicated method `KafkaConfig.parseConfig` to avoid further problems when parsing strategy will be changed.
+* [#914](https://github.com/TouK/nussknacker/pull/914) `pl.touk.nussknacker.engine.api.definition.Parameter` has deprecated
+ main factory method with `runtimeClass` parameter. Now should be passed `isLazyParameter` instead. Also were removed `runtimeClass`
+ from variances of factory methods prepared for easy testing (`optional` method and so on).
 
 ## In version 0.1.0
 

@@ -12,6 +12,8 @@ import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSpec, Matchers}
+import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -106,6 +108,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
     readLastMessageAndVerify(sourceFactory, givenObj, topic)
   }
 
+  // FIXME
   private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], givenObj: Any, topic: String): Assertion = {
     val source = sourceFactory.create(MetaData("", StreamMetaData()), topic)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef]]

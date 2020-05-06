@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.expression
 
+import java.util.Optional
+
 import cats.effect.IO
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.Expression
@@ -67,11 +69,19 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
 
 
   def evaluateParameters(params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter], ctx: Context)
-                                  (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext) : Future[(Context, Map[String, AnyRef])] = {
+                        (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext) : Future[(Context, Map[String, AnyRef])] = {
     params.foldLeft(Future.successful((ctx, Map.empty[String, AnyRef]))) {
       case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
         evaluate[AnyRef](param.expression, param.name, nodeId.id, accCtx).map { valueWithModifiedContext =>
-          val newAccParams = accParams + (param.name -> valueWithModifiedContext.value)
+          val evaluatedValue = valueWithModifiedContext.value
+          val potentiallyWrappedInScalaOptionValue =
+            if (param.shouldBeWrappedWithScalaOption)
+              Option(evaluatedValue)
+            else if (param.shouldBeWrappedWithJavaOptional)
+              Optional.ofNullable(evaluatedValue)
+            else
+              evaluatedValue
+          val newAccParams = accParams + (param.name -> potentiallyWrappedInScalaOptionValue)
           (valueWithModifiedContext.context, newAccParams)
         }
       }

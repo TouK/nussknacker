@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
@@ -30,8 +31,8 @@ class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaS
     val sourceFactory = new KafkaSourceFactory[String](new SimpleStringSchema, None,
       TestParsingUtils.newLineSplit, ProcessObjectDependencies(config, DefaultObjectNaming))
 
-    val dataFor3 = sourceFactory.create(MetaData("", StreamMetaData()), topic).generateTestData(3)
-    val dataFor5 = sourceFactory.create(MetaData("", StreamMetaData()), topic).generateTestData(5)
+    val dataFor3 = sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId("")).generateTestData(3)
+    val dataFor5 = sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId("")).generateTestData(5)
 
     checkOutput(dataFor3, 3)
     checkOutput(dataFor5, 4)

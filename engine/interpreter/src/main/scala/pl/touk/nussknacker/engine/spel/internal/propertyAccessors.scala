@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.spel.internal
 
 import java.lang.reflect.{Method, Modifier}
+import java.util.Optional
 import java.util.concurrent.TimeoutException
 
 import cats.data.{State, StateT}
@@ -26,7 +27,8 @@ object propertyAccessors {
       new ReflectivePropertyAccessor(),
       NullPropertyAccessor, //must come before other non-standard ones
       new ScalaLazyPropertyAccessor(lazyValuesTimeout), // must be before scalaPropertyAccessor
-      ScalaOptionOrNullPropertyAccessor, // // must be before scalaPropertyAccessor
+      ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
+      JavaOptionalOrNullPropertyAccessor,
       ScalaPropertyAccessor,
       StaticPropertyAccessor,
       MapPropertyAccessor,
@@ -83,6 +85,8 @@ object propertyAccessors {
     override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
+  // TODO: handle methods with multiple args or at least validate that they can't be called
+  //       - see test for similar case for Futures: "usage of methods with some argument returning future"
   object ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
@@ -96,9 +100,26 @@ object propertyAccessors {
     override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
+  // TODO: handle methods with multiple args or at least validate that they can't be called
+  //       - see test for similar case for Futures: "usage of methods with some argument returning future"
+  object JavaOptionalOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+
+    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
+      target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Optional[_]].isAssignableFrom(m.getReturnType))
+    }
+
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
+      method.invoke(target).asInstanceOf[Optional[Any]].orElse(null)
+    }
+
+    override def getSpecificTargetClasses: Array[Class[_]] = null
+  }
+
 
   class ScalaLazyPropertyAccessor(lazyValuesTimeout: Duration) extends PropertyAccessor with ReadOnly with Caching {
 
+    // TODO: handle methods with multiple args or at least validate that they can't be called
+    //       - see test for similar case for Futures: "usage of methods with some argument returning future"
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
       target.getMethods.find(
         m => m.getParameterCount == 0 &&
