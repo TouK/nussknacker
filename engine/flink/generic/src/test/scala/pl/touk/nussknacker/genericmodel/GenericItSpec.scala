@@ -30,8 +30,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   import KafkaUtils._
   import MockSchemaRegistry._
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
 
@@ -41,7 +39,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
 
-  lazy val kafkaConfig: KafkaConfig = mockProcessObjectDependencies.config.as[KafkaConfig]("kafka")
+  lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
 
   lazy val client: TypedConfluentSchemaRegistryClient = factory.createSchemaRegistryClient(kafkaConfig)
 

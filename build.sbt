@@ -14,9 +14,9 @@ lazy val supportedScalaVersions = List(scala212, scala211)
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
-val nexusUrl = Option(System.getProperty("nexusUrl"))
+val nexusUrlFromProps = Option(System.getProperty("nexusUrl"))
 //TODO: this is pretty clunky, but works so far for our case...
-val nexusHost = nexusUrl.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
+val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
 val dockerTagName = Option(System.getProperty("dockerTagName"))
@@ -32,16 +32,26 @@ val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
 
-
 //have some problems with force() - e.g. with forcing circe version in httpUtils...
 ThisBuild / useCoursier := false
 
-val publishSettings = Seq(
+lazy val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishTo := {
-    nexusUrl.map(url =>
-      (if (isSnapshot.value) "snapshots" else "releases") at url)
+    if (!isSnapshot.value) { // can't find any better solution how to pass it from release pipeline
+      sonatypePublishToBundle.value
+    } else {
+      nexusUrlFromProps.map { url =>
+        (if (isSnapshot.value) "snapshots" else "releases") at url
+      }.orElse {
+        val defaultNexusUrl = "https://oss.sonatype.org/"
+        if (isSnapshot.value)
+          Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
+        else
+          Some("releases" at defaultNexusUrl + "service/local/staging/deploy/maven2")
+      }
+    }
   },
   publishArtifact in Test := false,
   //We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm
@@ -57,8 +67,9 @@ val publishSettings = Seq(
   },
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
-  credentials := nexusHost.map(host => Credentials("Sonatype Nexus Repository Manager",
+  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
     host, System.getProperty("nexusUser", "touk"), System.getProperty("nexusPassword"))
+    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
   ).toSeq
 )
 
@@ -85,7 +96,7 @@ val slowTestsSettings =
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
 
-val commonSettings =
+lazy val commonSettings =
   publishSettings ++
     Seq(
       test in assembly := {},
@@ -820,13 +831,20 @@ lazy val root = (project in file("."))
       checkSnapshotDependencies,
       inquireVersions,
       runClean,
-      releaseStepCommandAndRemaining("+test"),
+      ReleaseStep { st: State =>
+        if (!st.get(ReleaseKeys.skipTests).getOrElse(false)) {
+          releaseStepCommandAndRemaining("+test")(st)
+        } else {
+          st
+        }
+      },
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-      releaseStepCommandAndRemaining("+dist/docker:publish"),
       releaseStepCommandAndRemaining("+publishSigned"),
-      ReleaseStep(action = Command.process("sonatypeBundleRelease", _)),
+      releaseStepCommand("dist/universal:packageZipTarball"),
+      releaseStepCommand("dist/docker:publish"),
+      releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
       pushChanges

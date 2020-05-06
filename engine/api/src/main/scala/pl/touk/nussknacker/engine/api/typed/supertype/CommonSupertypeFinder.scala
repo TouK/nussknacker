@@ -11,9 +11,9 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   *
-  * TODO: strictTypeChecking was added as quickFix for compare Type with TaggedType. We should remove it after we will support creating model with TaggedType field
+  * TODO: strictTaggedTypesChecking was added as quickFix for compare Type with TaggedType. We should remove it after we will support creating model with TaggedType field
   */
-class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStrategy, strictTypeChecking: Boolean) {
+class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStrategy, strictTaggedTypesChecking: Boolean) {
 
   def commonSupertype(left: TypingResult, right: TypingResult)
                      (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingResult =
@@ -60,10 +60,10 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
             }
             .getOrElse(Typed.empty)
         }
-      case (TypedTaggedValue(leftType, _), notTaggedRightType) if !strictTypeChecking =>
+      case (TypedTaggedValue(leftType, _), notTaggedRightType) if !strictTaggedTypesChecking =>
         singleCommonSupertype(leftType, notTaggedRightType)
       case (_: TypedTaggedValue, _) => Typed.empty
-      case (notTaggedLeftType, TypedTaggedValue(rightType, _)) if !strictTypeChecking =>
+      case (notTaggedLeftType, TypedTaggedValue(rightType, _)) if !strictTaggedTypesChecking =>
         singleCommonSupertype(notTaggedLeftType, rightType)
       case (_, _: TypedTaggedValue) => Typed.empty
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
@@ -105,7 +105,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
         case _ => None // empty e.g. conflicting simple types
       }
     } else {
-      val forComplexTypes = commonSuperTypeForComplexTypes(boxedLeftClass, boxedRightClass)
+      val forComplexTypes = commonSuperTypeForComplexTypes(boxedLeftClass, left.params, boxedRightClass, right.params)
       forComplexTypes match {
         case tc: TypedClass => Some(tc)
         case _ => None // empty, union and so on
@@ -120,7 +120,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     if (List(boxedLeftClass, boxedRightClass).forall(isSimpleType)) {
       commonSuperTypeForSimpleTypes(boxedLeftClass, boxedRightClass)
     } else {
-      commonSuperTypeForComplexTypes(boxedLeftClass, boxedRightClass)
+      commonSuperTypeForComplexTypes(boxedLeftClass, left.params, boxedRightClass, right.params)
     }
   }
 
@@ -134,15 +134,21 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
       Typed.empty
   }
 
-  private def commonSuperTypeForComplexTypes(left: Class[_], right: Class[_]) = {
+  private def commonSuperTypeForComplexTypes(left: Class[_], leftParams: List[TypingResult], right: Class[_], rightParams: List[TypingResult])
+                                            (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
     if (left.isAssignableFrom(right)) {
-      Typed(left)
+      Typed.genericTypeClass(left, commonSuperTypesForGenericParams(leftParams, rightParams))
     } else if (right.isAssignableFrom(left)) {
-      Typed(right)
+      Typed.genericTypeClass(right, commonSuperTypesForGenericParams(leftParams, rightParams))
     } else {
       // until here things are rather simple
       Typed(commonSuperTypeForClassesNotInSameInheritanceLine(left, right).map(Typed(_)))
     }
+  }
+
+  private def commonSuperTypesForGenericParams(leftParams: List[TypingResult], rightParams: List[TypingResult])
+                                              (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
+    leftParams.zip(rightParams).map { case (l, p) => commonSupertype(l, p) }
   }
 
   private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[Class[_]] = {

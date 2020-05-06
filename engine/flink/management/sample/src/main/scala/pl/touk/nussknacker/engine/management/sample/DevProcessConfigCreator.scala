@@ -4,8 +4,6 @@ import java.time.LocalDateTime
 
 import com.typesafe.config.Config
 import io.circe.Encoder
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
@@ -47,7 +45,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT")
 
-  private def kafkaConfig(config: Config) = config.as[KafkaConfig]("kafka")
+  private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config, "kafka")
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),

@@ -12,6 +12,7 @@ import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSpec, Matchers}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -23,8 +24,6 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
   import MockSchemaRegistry._
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   import collection.JavaConverters._
 
@@ -35,7 +34,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
 
   lazy val processObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
 
-  lazy val kafkaConfig: KafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
+  lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
 
   lazy val mockSchemaRegistryClient: SchemaRegistryClient with TypedConfluentSchemaRegistryClient =
     MockSchemaRegistry.Factory.createSchemaRegistryClient(kafkaConfig)
@@ -107,7 +106,7 @@ class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with Kaf
   }
 
   private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], givenObj: Any, topic: String): Assertion = {
-    val source = sourceFactory.create(MetaData("", StreamMetaData()), topic)
+    val source = sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId(""))
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef]]
     val bytes = source.generateTestData(1)
     info("test object: " + new String(bytes, StandardCharsets.UTF_8))

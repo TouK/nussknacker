@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.TypedConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
@@ -21,9 +21,6 @@ class ConfluentSchemaRegistryProvider[T: TypeInformation](val schemaRegistryClie
 }
 
 object ConfluentSchemaRegistryProvider extends Serializable {
-
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def apply[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                 serializationSchemaFactory: Option[SerializationSchemaFactory[Any]],
@@ -48,7 +45,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
                                 processObjectDependencies: ProcessObjectDependencies,
                                 useSpecificAvroReader: Boolean,
                                 formatKey: Boolean): ConfluentSchemaRegistryProvider[T] = {
-    val kafkaConfig = processObjectDependencies.config.as[KafkaConfig]("kafka")
+    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     ConfluentSchemaRegistryProvider(schemaRegistryClientFactory, None, None, kafkaConfig, useSpecificAvroReader, formatKey)
   }
 

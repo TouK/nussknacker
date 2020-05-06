@@ -47,8 +47,8 @@ object StandaloneProcessInterpreter {
     val creator = modelData.configCreator
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
-    val definitions = definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator,
-      processObjectDependencies))
+    val extractedDefinitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
+    val definitions = definitionsPostProcessor(extractedDefinitions)
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners
 
     CompiledProcess.compile(process,

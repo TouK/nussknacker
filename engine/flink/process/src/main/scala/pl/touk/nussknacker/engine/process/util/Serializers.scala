@@ -58,7 +58,7 @@ object Serializers extends LazyLogging {
 
       //TODO: what about case class without parameters??
       if (arity == 0 && constructors.isEmpty) {
-        Try(EspTypeUtils.getCompanionObject(obj)).recover {
+        Try(EspTypeUtils.companionObject(obj)).recover {
           case e => logger.error(s"Failed to load companion for ${obj.getClass}"); Failure(e)
         }.get
       } else {

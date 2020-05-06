@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import java.util.Optional
 import java.util.regex.Pattern
 
 import cats.data.Validated
@@ -9,8 +8,8 @@ import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
-import scala.reflect.ClassTag
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
@@ -109,17 +108,10 @@ case object LiteralParameterValidator {
     "Please fill field by proper number type"
   )
 
-  /**
-    * A now we support only simple literals like: Int / Integer.
-    * Option / Optional / LazyParam are not allowed.
-    */
-  def apply(clazz: Class[_]): Option[ParameterValidator] =
-    clazz match {
-      case clazz if clazz == classOf[Int] => Some(integerValidator)
-      case clazz if clazz == classOf[Integer] => Some(integerValidator)
+  def apply(typ: TypingResult): Option[ParameterValidator] =
+    typ match {
+      case clazz if typ.canBeSubclassOf(Typed[Int]) => Some(integerValidator)
       case _ => None
     }
 
-  def apply[T: ClassTag]: Option[ParameterValidator] =
-    LiteralParameterValidator(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 }
