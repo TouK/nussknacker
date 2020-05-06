@@ -21,6 +21,33 @@ To see biggest differences please consult the [changelog](Changelog.md).
       }
     } 
   ```
+* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider. 
+* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider.
+
+API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (In [#871] and [#881]):
+
+`KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` old way:
+```
+val clientFactory = new SchemaRegistryClientFactory
+val source = new KafkaAvroSourceFactory(
+  new AvroDeserializationSchemaFactory[GenericData.Record](clientFactory, useSpecificAvroReader = false),
+  clientFactory, 
+  None, 
+  processObjectDependencies = processObjectDependencies
+)
+
+```
+
+`KafkaAvroSourceFactory` new way :
+```
+val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
+val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+```
+
+`KafkaTypedAvroSourceFactory` (*class name changed*) new way:
+```
+val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
+```
 
 ## In version 0.1.1 (not released yet)
 
@@ -86,33 +113,6 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed. `Config` is available as property of `ProcessObjectDependencies` instance.
 * [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
 * Rename `grafanaSettings` to `metricsSettings` in configuration.
-* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider. 
-* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider.
-
-API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (In [#871] and [#881]):
-
-`KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` old way:
-```
-val clientFactory = new SchemaRegistryClientFactory
-val source = new KafkaAvroSourceFactory(
-  new AvroDeserializationSchemaFactory[GenericData.Record](clientFactory, useSpecificAvroReader = false),
-  clientFactory, 
-  None, 
-  processObjectDependencies = processObjectDependencies
-)
-
-```
-
-`KafkaAvroSourceFactory` new way :
-```
-val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
-val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
-```
-
-`KafkaTypedAvroSourceFactory` (*class name changed*) new way:
-```
-val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
-```
 
 ## In version 0.0.12
 
