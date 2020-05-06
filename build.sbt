@@ -14,9 +14,9 @@ lazy val supportedScalaVersions = List(scala212, scala211)
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
-val nexusUrl = Option(System.getProperty("nexusUrl"))
+val nexusUrlFromProps = Option(System.getProperty("nexusUrl"))
 //TODO: this is pretty clunky, but works so far for our case...
-val nexusHost = nexusUrl.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
+val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
 val dockerTagName = Option(System.getProperty("dockerTagName"))
@@ -40,8 +40,15 @@ val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishTo := {
-    nexusUrl.map(url =>
-      (if (isSnapshot.value) "snapshots" else "releases") at url)
+    nexusUrlFromProps.map { url =>
+      (if (isSnapshot.value) "snapshots" else "releases") at url
+    }.orElse {
+      val defaultNexusUrl = "https://oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
+      else
+        Some("releases"  at defaultNexusUrl + "service/local/staging/deploy/maven2")
+    }
   },
   publishArtifact in Test := false,
   //We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm
@@ -57,8 +64,9 @@ val publishSettings = Seq(
   },
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
-  credentials := nexusHost.map(host => Credentials("Sonatype Nexus Repository Manager",
+  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
     host, System.getProperty("nexusUser", "touk"), System.getProperty("nexusPassword"))
+    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
   ).toSeq
 )
 
@@ -830,8 +838,8 @@ lazy val root = (project in file("."))
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-      releaseStepCommand("dist/universal:packageZipTarball"),
       releaseStepCommandAndRemaining("+publishSigned"),
+      releaseStepCommand("dist/universal:packageZipTarball"),
       releaseStepCommand("dist/docker:publish"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
