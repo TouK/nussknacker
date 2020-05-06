@@ -11,10 +11,13 @@ object FlinkStateStatus  {
   val DuringDeploy: StateStatus = SimpleStateStatus.DuringDeploy
   val Running: StateStatus = SimpleStateStatus.Running
   val Finished: StateStatus = SimpleStateStatus.Finished
-  val Restarting: StateStatus = NotEstablishedStateStatus("RESTARTING")
+  val Restarting: StateStatus = NotEstablishedStateStatus("Restarting")
   val DuringCancel: StateStatus = SimpleStateStatus.DuringCancel
   val Canceled: StateStatus = SimpleStateStatus.Canceled
   val Failed: StateStatus = SimpleStateStatus.Failed
   val Error: StateStatus = SimpleStateStatus.Error
   val Warning: StateStatus = SimpleStateStatus.Warning
+  val Failing: StateStatus =  NotEstablishedStateStatus("Failing")
+  val MultipleJobsRunning: StateStatus = NotEstablishedStateStatus("More than one job running")
+
 }

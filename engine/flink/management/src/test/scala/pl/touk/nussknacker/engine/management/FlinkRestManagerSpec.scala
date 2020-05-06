@@ -91,7 +91,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING))
 
     createManager(statuses).deploy(ProcessVersion(1, ProcessName("p1"), "user", None),
-      CustomProcess("nothing"), None, user = User("user1", "User 1")).failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: RESTARTING"
+      CustomProcess("nothing"), None, user = User("user1", "User 1")).failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: Restarting"
   }
 
   test("allow deploy if process is failed") {
@@ -129,7 +129,16 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
     val manager = createManager(statuses)
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
-      manager, DeploymentId("1111"), FlinkStateStatus.Failed, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
+      manager, DeploymentId("1111"), FlinkStateStatus.MultipleJobsRunning, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
+    ))
+  }
+
+  test("return failed status if two in non-terminal state") {
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING), JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING))
+
+    val manager = createManager(statuses)
+    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+      manager, DeploymentId("1111"), FlinkStateStatus.MultipleJobsRunning, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
     ))
   }
 
@@ -148,6 +157,16 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     val manager = createManager(statuses)
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, DeploymentId("2343"), FlinkStateStatus.Finished, startTime = Some(10L)
+    ))
+
+  }
+
+  test("return non-terminal state if not running") {
+    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED), JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING))
+
+    val manager = createManager(statuses)
+    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+      manager, DeploymentId("1111"), FlinkStateStatus.Restarting, startTime = Some(30L)
     ))
   }
 
