@@ -8,4 +8,6 @@ if [ -f ~/.sbt/1.0/docker.sh ]; then
 fi
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
 
+cd ui/client && npm ci && cd -
+
 ./ciRunSbt.sh "release $*"

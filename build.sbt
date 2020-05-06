@@ -32,22 +32,25 @@ val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
 
-
 //have some problems with force() - e.g. with forcing circe version in httpUtils...
 ThisBuild / useCoursier := false
 
-val publishSettings = Seq(
+lazy val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishTo := {
-    nexusUrlFromProps.map { url =>
-      (if (isSnapshot.value) "snapshots" else "releases") at url
-    }.orElse {
-      val defaultNexusUrl = "https://oss.sonatype.org/"
-      if (isSnapshot.value)
-        Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
-      else
-        Some("releases"  at defaultNexusUrl + "service/local/staging/deploy/maven2")
+    if (!isSnapshot.value) { // can't find any better solution how to pass it from release pipeline
+      sonatypePublishToBundle.value
+    } else {
+      nexusUrlFromProps.map { url =>
+        (if (isSnapshot.value) "snapshots" else "releases") at url
+      }.orElse {
+        val defaultNexusUrl = "https://oss.sonatype.org/"
+        if (isSnapshot.value)
+          Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
+        else
+          Some("releases" at defaultNexusUrl + "service/local/staging/deploy/maven2")
+      }
     }
   },
   publishArtifact in Test := false,
@@ -93,7 +96,7 @@ val slowTestsSettings =
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
 
-val commonSettings =
+lazy val commonSettings =
   publishSettings ++
     Seq(
       test in assembly := {},
