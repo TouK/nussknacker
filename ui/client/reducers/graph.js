@@ -3,7 +3,6 @@ import _ from "lodash"
 import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
 import ProcessUtils from "../common/ProcessUtils"
-import JoinDef from "../components/graph/node-modal/JoinDef"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
