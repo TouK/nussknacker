@@ -2,24 +2,14 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient, SchemaMetadata}
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
+import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
 
 import scala.collection.concurrent.TrieMap
 
-class CachedConfluentSchemaRegistryClient(val config: KafkaAvroDeserializerConfig) extends ConfluentSchemaRegistryClient with LazyLogging {
-
-  lazy val client: CachedSchemaRegistryClient = {
-    logger.debug(s"Create MockSchemaRegistryClient with data: $config.")
-    new CachedSchemaRegistryClient(
-      config.getSchemaRegistryUrls,
-      config.getMaxSchemasPerSubject,
-      config.originalsWithPrefix("")
-    )
-  }
+class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient) extends ConfluentSchemaRegistryClient with LazyLogging {
 
   override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] = {
     val latestSchemaMetadata = client.getLatestSchemaMetadata(subject)
