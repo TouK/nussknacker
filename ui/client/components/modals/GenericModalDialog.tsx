@@ -1,5 +1,4 @@
 import "ladda/dist/ladda.min.css"
-import PropTypes from "prop-types"
 import React from "react"
 import Draggable from "react-draggable"
 import LaddaButton from "react-ladda"
@@ -7,14 +6,26 @@ import Modal from "react-modal"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import "../../stylesheets/visualization.styl"
+import {getOpenDialog} from "../../reducers/selectors/ui"
+import {RootState} from "../../reducers"
+import {DialogType} from "./Dialogs"
 
-class GenericModalDialog extends React.Component {
+type OwnProps = {
+  okBtnConfig?: $TodoType,
+  style?: string,
+  header?: string,
+  confirm?: (close: () => void) => Promise<void>,
+  type: DialogType,
+  init?: () => void,
+}
 
-  constructor(props) {
-    super(props)
-    this.state = {
-      pendingRequest: false,
-    }
+type State = {
+  pendingRequest: boolean,
+}
+
+class GenericModalDialog extends React.Component<Props, State> {
+  state = {
+    pendingRequest: false,
   }
 
   closeDialog = () => {
@@ -29,47 +40,46 @@ class GenericModalDialog extends React.Component {
 
   onOk = () => {
     this.setState({pendingRequest: true})
-    this.props.confirm(this.closeDialog)
-      .then(this.closeDialog, this.removePending)
+    this.props.confirm(this.closeDialog).then(
+      this.closeDialog,
+      this.removePending,
+    )
   }
 
   renderOkBtn = () => {
-    return(
+    const STYLE = "zoom-in"
+    return (
       <LaddaButton
         key="1"
         title="OK"
         className="modalButton modalConfirmButton"
-        data-style="zoom-in"
+        data-style={STYLE}
         loading={this.state.pendingRequest}
         onClick={() => this.onOk()}
         {...this.props.okBtnConfig}
-      >
-        OK
-      </LaddaButton>
+      >OK</LaddaButton>
     )
   }
 
   render() {
-    const style = `espModal ${  this.props.style || "confirmationModal"}`
     return (
       <Modal
-        isOpen={this.props.modalDialog.openDialog === this.props.type}
+        isOpen={this.props.isOpen}
         shouldCloseOnOverlayClick={false}
         onRequestClose={this.closeDialog}
       >
         <div className="draggable-container">
           <Draggable bounds="parent" handle=".modal-draggable-handle">
-            <div className={style}>
+            <div className={`espModal ${this.props.style || "confirmationModal"}`}>
               {this.props.header ? (
-                <div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70c6ce"}}>
+                <div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70C6CE"}}>
                   <span>{this.props.header}</span>
                 </div>
               ) : null}
               <div className="modalContentDark">
                 {this.props.children}
                 <div className="confirmationButtons">
-                  <button type="button" title="CANCEL" className="modalButton" onClick={this.closeDialog}>CANCEL
-                  </button>
+                  <button type="button" title="CANCEL" className="modalButton" onClick={this.closeDialog}>CANCEL</button>
                   {this.props.confirm ? this.renderOkBtn() : null}
                 </div>
               </div>
@@ -81,15 +91,13 @@ class GenericModalDialog extends React.Component {
   }
 }
 
-GenericModalDialog.propTypes = {
-  okBtnConfig: PropTypes.object,
-}
+const mapState = (state: RootState, props: OwnProps) => ({
+  isOpen: getOpenDialog(state) === props.type,
+})
 
-function mapState(state) {
-  return {
-    modalDialog: state.ui.modalDialog || {},
-  }
-}
+const mapDispatch = ActionsUtils.mapDispatchWithEspActions
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(GenericModalDialog)
+type Props = OwnProps & ReturnType<typeof mapState> & ReturnType<typeof mapDispatch>
+
+export default connect(mapState, mapDispatch)(GenericModalDialog)
 
