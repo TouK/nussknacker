@@ -13,6 +13,7 @@ Nussknacker versions
 * [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider
 * [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
+* [#903](https://github.com/TouK/nussknacker/pull/903) Update Confluent version to 5.4.1
 
 0.1.1
 ------------
