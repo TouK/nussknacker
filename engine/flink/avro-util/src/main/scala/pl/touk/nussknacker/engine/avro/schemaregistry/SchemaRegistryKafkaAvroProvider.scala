@@ -24,18 +24,14 @@ class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryP
 
   override def serializationSchema: KafkaSerializationSchema[Any] =
     schemaRegistryProvider.serializationSchemaFactory.create(topic, kafkaConfig)
-
+``
   override def recordFormatter: Option[RecordFormatter] =
     schemaRegistryProvider.recordFormatter(topic)
 }
 
 object SchemaRegistryKafkaAvroProvider {
-  def apply[T](schemaRegistryProvider: SchemaRegistryProvider[T], kafkaConfig: KafkaConfig, topic: String): SchemaRegistryKafkaAvroProvider[T] =
-    new SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, Option.empty)
 
-  def apply[T](schemaRegistryProvider: SchemaRegistryProvider[T], kafkaConfig: KafkaConfig, topic: String, version: Int): SchemaRegistryKafkaAvroProvider[T] =
-    new SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, Some(version))
-
+  // We try to cast Java Nullable Integer to Scala Int, so we can't do Option(version)
   def apply[T](schemaRegistryProvider: SchemaRegistryProvider[T], kafkaConfig: KafkaConfig, topic: String, @Nullable version: Integer): SchemaRegistryKafkaAvroProvider[T] =
     new SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, if (version == null) Option.empty else Some(version))
 }
