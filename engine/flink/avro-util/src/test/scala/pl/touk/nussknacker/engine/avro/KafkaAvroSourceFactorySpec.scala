@@ -16,8 +16,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactoryBuilder}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaSubjectNotFound, SchemaVersionFound, confluent}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaSubjectNotFound, SchemaVersionFound}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 
@@ -36,16 +37,16 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
 
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
 
-  lazy val mockSchemaRegistryClient: SchemaRegistryClient with TypedConfluentSchemaRegistryClient =
+  lazy val mockSchemaRegistryClient: SchemaRegistryClient with ConfluentSchemaRegistryClient =
     MockSchemaRegistry.Factory.createSchemaRegistryClient(kafkaConfig)
 
   private lazy val keySerializer: KafkaAvroSerializer = {
-    val serializer = new KafkaAvroSerializer(mockSchemaRegistryClient)
+    val serializer = new KafkaAvroSerializer(mockSchemaRegistryClient.client)
     serializer.configure(Map[String, AnyRef]("schema.registry.url" -> "not_used").asJava, true)
     serializer
   }
 
-  private lazy val valueSerializer = new KafkaAvroSerializer(mockSchemaRegistryClient)
+  private lazy val valueSerializer = new KafkaAvroSerializer(mockSchemaRegistryClient.client)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -242,7 +243,7 @@ object MockSchemaRegistry {
     """.stripMargin
   )
 
-  val Factory: MockConfluentSchemaRegistryClientFactory = new confluent.MockConfluentSchemaRegistryClientFactoryBuilder()
+  val Factory: MockConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactoryBuilder()
     .register(RecordTopic, RecordSchemaV1, 1, isKey = false)
     .register(RecordTopic, RecordSchemaV2, 2, isKey = false)
     .register(IntTopic, IntSchema, 1, isKey = false)

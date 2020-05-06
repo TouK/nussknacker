@@ -2,15 +2,13 @@ package pl.touk.nussknacker.engine.avro.fixed
 
 import cats.data.Validated
 import cats.data.Validated.Valid
-import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient
-import org.apache.avro.Schema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.TypedConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroDeserializationSchemaFactory, ConfluentAvroSerializationSchemaFactory, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroDeserializationSchemaFactory, ConfluentAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
@@ -30,19 +28,8 @@ class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
                                                        val useSpecificAvroReader: Boolean) extends KafkaAvroSchemaProvider[T] {
 
   lazy val factory: ConfluentSchemaRegistryClientFactory = new ConfluentSchemaRegistryClientFactory {
-    override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedConfluentSchemaRegistryClient = {
-      val schema: Schema = AvroUtils.parseSchema(avroSchema)
-      new MockSchemaRegistryClient with SchemaRegistryClient {
-        override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema] =
-          Validated.valid(schema)
-
-        override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] =
-          Validated.valid(schema)
-
-        override def getById(id: Int): Schema =
-          schema
-      }
-    }
+    override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =
+      new FixedConfluentSchemaRegistryClient(avroSchema)
   }
 
   lazy val deserializationSchemaFactory = new ConfluentAvroDeserializationSchemaFactory(factory, useSpecificAvroReader)
