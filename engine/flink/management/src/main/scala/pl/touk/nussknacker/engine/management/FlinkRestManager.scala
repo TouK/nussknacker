@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import sttp.client._
 import sttp.client.circe._
 import sttp.model.Uri
@@ -217,6 +218,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       }
   }
 
+  private val timeoutExtractor = DeeplyCheckingExceptionExtractor.forClass[TimeoutException]
+
   override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
     val program =
       DeployProcessRequest(
@@ -236,8 +239,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         .recover({
           //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           //workaround for now, not the best solution though
-          //TODO: we should change logic of ManagementActor to always save action deploy
-          case e: TimeoutException => {
+          //TODO: we should change logic of ManagementActor to mark process deployed for *some* exceptions (like Timeout here)
+          case timeoutExtractor(e) => {
             logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
             Future.successful(Unit)
           }
