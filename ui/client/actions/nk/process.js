@@ -9,7 +9,6 @@ import {displayProcessActivity} from "./displayProcessActivity"
 import {fetchProcessDefinition} from "./processDefinitionData"
 import {reportEvent} from "./reportEvent"
 import {getProcessToDisplay, getProcessId} from "../../reducers/selectors/graph"
-import {collapseAllGroups} from "./groups"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -53,7 +52,6 @@ export function displayCurrentProcessVersion(processId) {
 
 export function saveProcess(comment) {
   return (dispatch, getState) => {
-    dispatch(collapseAllGroups())
     dispatch({type: "APPEND_METADATA"})
     const state = getState()
     const processId = getProcessId(state)
