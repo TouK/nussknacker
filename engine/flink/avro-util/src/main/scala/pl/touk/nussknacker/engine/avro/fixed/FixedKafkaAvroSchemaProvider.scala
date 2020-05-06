@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.fixed
 
 import cats.data.Validated
-import cats.data.Validated.Valid
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -43,8 +42,15 @@ class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
     serializationSchemaFactory.create(topic, kafkaConfig)
 
   override def typeDefinition: Validated[SchemaRegistryError, typing.TypingResult] =
-    Valid(AvroSchemaTypeDefinitionExtractor.typeDefinition(AvroUtils.parseSchema(avroSchema)))
+   factory
+     .createSchemaRegistryClient(kafkaConfig)
+     .getSchema(AvroUtils.valueSubject(topic), None)
+     .map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
 
   override def recordFormatter: Option[RecordFormatter] =
-    Some(ConfluentAvroToJsonFormatter(factory.createSchemaRegistryClient(kafkaConfig), topic, formatKey))
+    Some(ConfluentAvroToJsonFormatter(
+      factory.createSchemaRegistryClient(kafkaConfig),
+      AvroUtils.valueSubject(topic),
+      formatKey
+    ))
 }
