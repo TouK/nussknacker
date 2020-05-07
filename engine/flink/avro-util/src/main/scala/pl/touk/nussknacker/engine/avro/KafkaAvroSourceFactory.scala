@@ -29,7 +29,7 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
              @ParamName("Schema version") @Nullable version: Integer
-              )(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
+              )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     createKafkaAvroSource(topic, kafkaConfig, SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, version), processMetaData, nodeId)
   }
@@ -57,7 +57,7 @@ class FixedKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies:
              //TODO: Create BE and FE validator for verify avro type
              //TODO: Create Avro Editor
              @ParamName("schema") @NotBlank avroSchema: String
-            )(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
+            )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     createKafkaAvroSource(
       topic,
@@ -82,7 +82,7 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
                             kafkaConfig: KafkaConfig,
                             kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
                             processMetaData: MetaData,
-                            nodeId: NodeId): KafkaSource = {
+                            nodeId: NodeId): KafkaSource with ReturningType = {
     val returnTypeDefinition = kafkaAvroSchemaProvider.returnType
 
     new KafkaSource(

@@ -15,6 +15,7 @@ import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactoryBuilder}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
@@ -157,7 +158,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
                                        topic: String): Assertion = {
     val source = sourceFactory
       .create(MetaData("", StreamMetaData()), topic, schemaVersion)(NodeId(""))
-      .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef]]
+      .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 
     source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(exceptedSchema)
 
