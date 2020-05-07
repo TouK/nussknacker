@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedSerializationSchemaFactory, SerializationSchemaFactory}
 
-class KafkaSinkFactory(schemaFactory: SerializationSchemaFactory[Any],
+  class KafkaSinkFactory(schemaFactory: SerializationSchemaFactory[Any],
                        processObjectDependencies: ProcessObjectDependencies) extends SinkFactory {
 
   def this(schema: String => KafkaSerializationSchema[Any],
