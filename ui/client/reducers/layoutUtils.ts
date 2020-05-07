@@ -1,6 +1,8 @@
 import {defaultsDeep, isString} from "lodash"
 import {GraphState, ProcessToDisplayState} from "./graphState"
 import {Layout} from "../actions/nk"
+import {NodeType} from "../types"
+import {Reducer} from "../actions/reduxTypes"
 
 function toString(layout: Layout): string {
   return layout.map(({id, position: {x, y}}) => `"${id}",${x},${y}`).join(";")
@@ -28,3 +30,15 @@ export const appendToProcess = (layout: Layout) => (state: ProcessToDisplayState
   },
   state,
 )
+
+export const nodes: Reducer<NodeType[]> = (nodes, action) => {
+  switch (action.type) {
+    case "LAYOUT_CHANGED":
+      return nodes.map(node => {
+        const layoutData = action.layout.find(({id}) => id === node.id)?.position || null
+        return defaultsDeep({additionalFields: {layoutData}}, node)
+      })
+    default:
+      return nodes
+  }
+}

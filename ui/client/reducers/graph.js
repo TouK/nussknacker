@@ -4,7 +4,9 @@ import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import * as LayoutUtils from "./layoutUtils"
+import {nodes} from "./layoutUtils"
 import * as GroupsUtils from "./groupsUtils"
+import {groups} from "./groupsUtils"
 import {mergeReducers} from "./mergeReducers"
 import {reducer as expandedGroups} from "./groups"
 
@@ -493,5 +495,13 @@ function enrichNodeWithProcessDependentData(originalNode, processDefinitionData,
 
 export const reducer = mergeReducers(
   graphReducer,
-  {expandedGroups},
+  {
+    expandedGroups,
+    processToDisplay: {
+      nodes,
+      properties: {
+        additionalFields: {groups},
+      },
+    },
+  },
 )
