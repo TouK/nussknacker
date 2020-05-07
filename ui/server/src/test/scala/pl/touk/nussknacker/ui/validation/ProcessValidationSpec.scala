@@ -80,7 +80,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         Edge("in", "var", None),
         Edge("var", "out", None)
       ),
-      groups = Set(Group("in", Set("in", "var1")))
+      groups = Set(Group("in", Set("in", "var1"), None, None))
     )
 
 

@@ -79,7 +79,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
       .source("source1", "")
       .filter("filter1", "")
       .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), isSubprocess = false,
-        Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11"))), Map.empty))))
+        Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11"), None, None)), Map.empty))))
     val processCounter = new ProcessCounter(subprocessRepository(Set()))
 
     val computed = processCounter.computeCounts(process, Map("source1" -> RawCount(50, 0L),
