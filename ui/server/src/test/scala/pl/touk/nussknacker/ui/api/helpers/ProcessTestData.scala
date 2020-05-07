@@ -253,7 +253,7 @@ object ProcessTestData {
         node.Source(
           id = "sourceId",
           ref = SourceRef(existingSourceFactory, List.empty),
-          additionalFields = Some(UserDefinedAdditionalNodeFields(Some("node description")))
+          additionalFields = Some(UserDefinedAdditionalNodeFields(Some("node description"), None))
         ),
         node.Sink(
           id = "sinkId",
