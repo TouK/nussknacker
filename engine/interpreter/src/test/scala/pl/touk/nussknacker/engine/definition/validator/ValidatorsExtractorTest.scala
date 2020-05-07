@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.validation.Literal
 import pl.touk.nussknacker.engine.types.EspTypeUtils
-import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 class ValidatorsExtractorTest extends FunSuite with Matchers {
 
@@ -141,50 +140,49 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
 
 
   test("extract minimalValueIntegerWithDefaultAnnotationMessageParam value validator when @Min annotation detected") {
-    ValidatorsExtractor(None).extract(minimalValueIntegerWithDefaultAnnotationMessageParam) shouldBe
+    ValidatorsExtractor.extract(validatorParams(minimalValueIntegerWithDefaultAnnotationMessageParam)) shouldBe
       List(MandatoryParameterValidator, MinimalNumberValidator(0, minimalNumberValidatorDefaultAnnotationMessage))
   }
 
   test("extract minimalValueBigDecimalWithDefaultAnnotationMessageParam value validator when @Min annotation detected") {
-    ValidatorsExtractor(None).extract(minimalValueBigDecimalWithDefaultAnnotationMessageParam) shouldBe
+    ValidatorsExtractor.extract(validatorParams(minimalValueBigDecimalWithDefaultAnnotationMessageParam)) shouldBe
       List(MandatoryParameterValidator, MinimalNumberValidator(0, minimalNumberValidatorDefaultAnnotationMessage))
   }
 
   test("extract minimalValueIntegerWithMessageParam value validator when @Min annotation detected") {
-    ValidatorsExtractor(None).extract(minimalValueIntegerWithMessageParam) shouldBe
+    ValidatorsExtractor.extract(validatorParams(minimalValueIntegerWithMessageParam)) shouldBe
       List(MandatoryParameterValidator, MinimalNumberValidator(0, "test"))
   }
 
   test("extract minimalValueBigDecimalWithMessageParam value validator when @Min annotation detected") {
-    ValidatorsExtractor(None).extract(minimalValueBigDecimalWithMessageParam) shouldBe
+    ValidatorsExtractor.extract(validatorParams(minimalValueBigDecimalWithMessageParam)) shouldBe
       List(MandatoryParameterValidator, MinimalNumberValidator(0, "test"))
   }
 
 
   test("extract maximalValueIntegerWithDefaultAnnotationMessageParam value validator when @Max annotation detected") {
-    ValidatorsExtractor(None).extract(maximalValueIntegerWithDefaultAnnotationMessageParam) shouldBe
+    ValidatorsExtractor.extract(validatorParams(maximalValueIntegerWithDefaultAnnotationMessageParam)) shouldBe
       List(MandatoryParameterValidator, MaximalNumberValidator(0, maximalNumberValidatorDefaultAnnotationMessage))
   }
 
   test("extract maximalValueBigDecimalWithDefaultAnnotationMessageParam value validator when @Max annotation detected") {
-    ValidatorsExtractor(None).extract(maximalValueBigDecimalWithDefaultAnnotationMessageParam) shouldBe
+    ValidatorsExtractor.extract(validatorParams(maximalValueBigDecimalWithDefaultAnnotationMessageParam)) shouldBe
       List(MandatoryParameterValidator, MaximalNumberValidator(0, maximalNumberValidatorDefaultAnnotationMessage))
   }
 
   test("extract maximalValueIntegerWithMessageParam value validator when @Max annotation detected") {
-    ValidatorsExtractor(None).extract(maximalValueIntegerWithMessageParam) shouldBe
+    ValidatorsExtractor.extract(validatorParams(maximalValueIntegerWithMessageParam)) shouldBe
       List(MandatoryParameterValidator, MaximalNumberValidator(0, "test"))
   }
 
   test("extract maximalValueBigDecimalWithMessageParam value validator when @Max annotation detected") {
-    ValidatorsExtractor(None).extract(maximalValueBigDecimalWithMessageParam) shouldBe
+    ValidatorsExtractor.extract(validatorParams(maximalValueBigDecimalWithMessageParam)) shouldBe
       List(MandatoryParameterValidator, MaximalNumberValidator(0, "test"))
   }
 
-    private def validatorParams(rawJavaParam: java.lang.reflect.Parameter,
-                                editor: Option[ParameterEditor] = None) =
-      ValidatorExtractorParameters(rawJavaParam, EspTypeUtils.extractParameterType(rawJavaParam),
-        classOf[Option[_]].isAssignableFrom(rawJavaParam.getType), classOf[Optional[_]].isAssignableFrom(rawJavaParam.getType), editor)
+  private def validatorParams(rawJavaParam: java.lang.reflect.Parameter,
+                              editor: Option[ParameterEditor] = None) =
+    ValidatorExtractorParameters(rawJavaParam, EspTypeUtils.extractParameterType(rawJavaParam),
+      classOf[Option[_]].isAssignableFrom(rawJavaParam.getType), classOf[Optional[_]].isAssignableFrom(rawJavaParam.getType), editor)
 
-  }
 }
