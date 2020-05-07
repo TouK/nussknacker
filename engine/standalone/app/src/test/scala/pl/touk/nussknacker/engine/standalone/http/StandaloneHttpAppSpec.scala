@@ -50,6 +50,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processJson = processToJson(StandaloneProcessBuilder
     .id(procId)
+    .path(None)
     .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
@@ -58,6 +59,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processJsonWithGet = processToJson(StandaloneProcessBuilder
     .id(procId)
+    .path(None)
     .exceptionHandler()
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
@@ -65,6 +67,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processWithGenericGet = processToJson(StandaloneProcessBuilder
     .id(procId)
+    .path(None)
     .exceptionHandler()
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
@@ -73,26 +76,31 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processWithPathJson = processToJson(StandaloneProcessBuilder
     .id(procId)
-      .path(Some("customPath1"))
+    .path(Some("customPath1"))
     .exceptionHandler()
     .source("start", "request1-post-source")
+    //we use it to check if opened
+    .processor("lifecycleService", "lifecycleService")
     .filter("filter1", "#input.field1() == 'a'")
     .sink("endNodeIID", "#input.field2", "response-sink"))
 
   def noFilterProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
+    .path(None)
     .exceptionHandler()
     .source("start", "request1-post-source")
     .sink("endNodeIID", "#input.field2", "response-sink"))
 
   def invalidProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
+    .path(None)
     .exceptionHandler()
     .source("start", "request1-post-source")
     .sink("endNodeIID", "#var1", "response-sink"))
 
   def failingProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
+    .path(None)
     .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")

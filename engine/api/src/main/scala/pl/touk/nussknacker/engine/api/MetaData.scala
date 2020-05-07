@@ -40,6 +40,7 @@ object ProcessAdditionalFields {
                     subprocessVersions: Map[String, Long] = Map.empty)
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
+  //LazyVars are deprecated and discouraged, we keep them only for legacy reasons
   def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue) : Boolean
 }
 
@@ -68,5 +69,5 @@ object StreamMetaData {
 }
 
 case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData {
-  override def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): Boolean = true
+  override def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): Boolean = false
 }

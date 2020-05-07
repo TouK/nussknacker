@@ -10,6 +10,7 @@ Nussknacker versions
 
 0.3.0 (not released yet)
 ------------------------
+* [#938](https://github.com/TouK/nussknacker/pull/938) If lazy vals are not used open only services/enrichers that are *really* used in process
 * [#1261](https://github.com/TouK/nussknacker/pull/1261) Fix: Access to `map.missingKey` caused `Property or field cannot be found on object`
 * [#1244](https://github.com/TouK/nussknacker/pull/1244) Ability to define `variablesToHide` in `Parameter`
 * [#1165](https://github.com/TouK/nussknacker/pull/1165) Typed global variables

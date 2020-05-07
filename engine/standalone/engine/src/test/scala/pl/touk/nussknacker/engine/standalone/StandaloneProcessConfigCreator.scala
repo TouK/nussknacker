@@ -42,6 +42,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "enricherService" -> WithCategories(new EnricherService),
     "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
+    "failingOenProcessor" -> WithCategories(new FailingOnOpenService),
     "processorService" -> WithCategories(processorService)
   )
 
@@ -163,6 +164,17 @@ object ParameterResponseSinkFactory extends SinkFactory {
 
     override def testDataOutput: Option[Any => String] = Some(_.toString)
   }
+
+}
+
+class FailingOnOpenService extends Service {
+
+  override def open(jobData: JobData): Unit = {
+    throw new IllegalArgumentException("I should not be called!")
+  }
+
+  @MethodToInvoke
+  def invoke(): Future[Unit] = ???
 
 }
 

@@ -99,7 +99,7 @@ object ProcessorService {
 
 class ProcessorService extends Service with Lifecycle {
 
-  private val initialized = new AtomicBoolean(false)
+  val initialized = new AtomicBoolean(false)
 
   override def open(jobData: JobData): Unit = {
     initialized.set(true)

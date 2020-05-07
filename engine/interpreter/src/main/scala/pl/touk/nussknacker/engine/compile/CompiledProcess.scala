@@ -15,8 +15,12 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.{Enricher, Processor}
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
+import scala.collection.immutable
 import scala.concurrent.duration.FiniteDuration
 
 object CompiledProcess {
@@ -40,8 +44,11 @@ object CompiledProcess {
     processCompiler.compile(process).result.map { compiledProcess =>
       val globalVariablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
 
-      val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData, servicesDefs)
+      //when using lazyVals we're not sure what services will be used, if we don't use them
+      //we can open/close only ones that will be used
+      val servicesToUse = if (process.metaData.typeSpecificData.allowLazyVars) servicesDefs else servicesDefs.filterKeys(findUsedServices(process).contains)
 
+      val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData, servicesToUse)
       val interpreter = Interpreter(listeners, expressionEvaluator)
 
       CompiledProcess(
@@ -49,10 +56,19 @@ object CompiledProcess {
         subCompiler,
         LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
         interpreter,
-        listeners ++ servicesDefs.values.map(_.obj.asInstanceOf[Lifecycle]) :+ compiledProcess.exceptionHandler
+        listeners ++ servicesToUse.values.map(_.obj.asInstanceOf[Lifecycle]) :+ compiledProcess.exceptionHandler
       )
 
     }
+  }
+
+  private def findUsedServices(process: EspProcess): immutable.Seq[String] = {
+    val nodes = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources)
+    val serviceIds = nodes.map(_.data).collect {
+      case Enricher(_, ServiceRef(id, _), _, _) => id
+      case Processor(_, ServiceRef(id, _), _, _) => id
+    }
+    serviceIds
   }
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {

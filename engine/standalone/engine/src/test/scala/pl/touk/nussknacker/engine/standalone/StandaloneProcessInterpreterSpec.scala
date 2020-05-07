@@ -29,6 +29,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
@@ -47,6 +48,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
   test("collect results after split") {
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
         .split("split",
@@ -63,6 +65,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
@@ -94,6 +97,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
   test("collect results after element split") {
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
       .customNode("split", "outPart", "splitter", "parts" -> "#input.toList()")
@@ -108,6 +112,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
   test("init call open method for service") {
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
@@ -121,6 +126,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
   test("collect metrics for individual services") {
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
@@ -150,6 +156,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
   test("run process using custom node with ContextTransformation API") {
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
       .customNode("extract", "extracted", "extractor", "expression" -> "#input.field2")
@@ -163,6 +170,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
   test("collects answers from parameters") {
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
@@ -176,6 +184,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val process = EspProcessBuilder
       .id("proc1")
+      .path(None)
       .exceptionHandler()
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
