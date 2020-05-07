@@ -48,3 +48,7 @@ export const getShowRunProcessDetails = createSelector(
 export const isRunning = createSelector(getFetchedProcessState, state => ProcessStateUtils.isRunning(state))
 export const hasOneVersion = createSelector(getFetchedProcessDetails, details => (details?.history || []).length <= 1)
 export const getAdditionalFields = createSelector(getProcessToDisplay, p => p.properties?.additionalFields)
+
+export const getEdgeToDisplay = createSelector(getGraph, state => state.edgeToDisplay)
+export const getLayout = createSelector(getGraph, state => state.layout || [])
+export const getNodeId = createSelector(getNodeToDisplay, node => node.id)

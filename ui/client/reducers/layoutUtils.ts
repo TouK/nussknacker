@@ -1,13 +1,13 @@
 import {defaultsDeep} from "lodash"
 import {Layout} from "../actions/nk"
-import {NodeType, GroupType} from "../types"
+import {NodeType, Process} from "../types"
 import {Reducer} from "../actions/reduxTypes"
 
-export function fromMeta(nodes: NodeType[], groups: GroupType[] = []): Layout {
-  const nodesLayout = nodes
+export function fromMeta(process: Process): Layout {
+  const nodesLayout = process.nodes
     .filter(({additionalFields}) => additionalFields?.layoutData)
     .map(({id, additionalFields}) => ({id, position: additionalFields.layoutData}))
-  const groupsLayout = groups
+  const groupsLayout = (process.properties?.additionalFields?.groups || [])
     .filter(g => g?.layoutData)
     .map(({id, layoutData}) => ({id, position: layoutData}))
   return [...nodesLayout, ...groupsLayout]

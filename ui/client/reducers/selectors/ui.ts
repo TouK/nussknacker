@@ -9,3 +9,5 @@ export const isLeftPanelOpened = createSelector(getUi, ui => ui.leftPanelIsOpene
 export const isRightPanelOpened = createSelector(getUi, ui => ui.rightPanelIsOpened)
 export const getModalDialog = createSelector(getUi, ui => ui.modalDialog || {})
 export const getOpenDialog = createSelector(getModalDialog, m => m.openDialog)
+
+export const getShowNodeDetailsModal = createSelector(getUi, ui => ui.showNodeDetailsModal)

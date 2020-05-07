@@ -4,11 +4,10 @@ import "jointjs/dist/joint.css"
 import _, {cloneDeep} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
-import {DropTarget} from "react-dnd"
-import {connect} from "react-redux"
 import svgPanZoom from "svg-pan-zoom"
-import ActionsUtils from "../../actions/ActionsUtils"
 import cssVariables from "../../stylesheets/_variables.styl"
+import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
+import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import "./svg-export/export.styl"
 import EspNode from "./EspNode"
@@ -18,12 +17,8 @@ import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
-import {getExpandedGroups} from "../../reducers/selectors/groups"
-import {getLayout} from "../../reducers/selectors/layout"
-import {isBusinessView} from "../../reducers/selectors/graph"
-import {DndTypes} from "../Tool"
 
-class Graph extends React.Component {
+export class Graph extends React.Component {
 
   redrawing = false
 
@@ -592,65 +587,14 @@ class Graph extends React.Component {
   }
 }
 
-const spec = {
-  drop: (props, monitor, component) => {
-    const relOffset = component.computeRelOffset(monitor.getClientOffset())
-    component.addNode(monitor.getItem(), relOffset)
-
-  },
-}
-
-function mapState(state, props) {
+export function commonState(state) {
   return {
-    divId: "esp-graph",
-    parent: "working-area",
-    padding: 0,
-    readonly: isBusinessView(state),
-    singleClickNodeDetailsEnabled: true,
-    nodeIdPrefixForSubprocessTests: "",
-    processToDisplay: state.graphReducer.processToDisplay,
-    fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
-    processCounts: state.graphReducer.processCounts || {},
-    nodeToDisplay: state.graphReducer.nodeToDisplay,
-    edgeToDisplay: state.graphReducer.edgeToDisplay,
-    groupingState: state.graphReducer.groupingState,
-    expandedGroups: getExpandedGroups(state),
-    layout: getLayout(state),
-    showNodeDetailsModal: state.ui.showNodeDetailsModal,
-    ...commonState(state),
+    layout: [],
+    processCategory: getProcessCategory(state),
+    loggedUser: getLoggedUser(state),
+    processDefinitionData: getProcessDefinitionData(state),
+    selectionState: getSelectionState(state),
   }
 }
 
-function mapSubprocessState(state, props) {
-  return {
-    divId: "esp-graph-subprocess",
-    parent: subprocessParent,
-    padding: 30,
-    readonly: true,
-    singleClickNodeDetailsEnabled: false,
-    nodeIdPrefixForSubprocessTests: `${state.graphReducer.nodeToDisplay.id}-`, //TODO where should it be?
-    processToDisplay: props.processToDisplay,
-    processCounts: props.processCounts,
-    ...commonState(state),
-  }
-}
-
-function commonState(state) {
-  return {
-    processCategory: state.graphReducer.fetchedProcessDetails.processCategory,
-    loggedUser: state.settings.loggedUser,
-    processDefinitionData: state.settings.processDefinitionData || {},
-    selectionState: state.graphReducer.selectionState,
-  }
-}
-
-const subprocessParent = "modal-content"
-
-export let BareGraph = connect(mapSubprocessState, ActionsUtils.mapDispatchWithEspActions)(Graph)
-
-Graph = DropTarget(DndTypes.ELEMENT, spec, (connect) => ({connectDropTarget: connect.dropTarget()}))(Graph)
-
-//withRef is here so that parent can access methods in graph
-Graph = connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true})(Graph)
-
-export default Graph
+export const subprocessParent = "modal-content"
