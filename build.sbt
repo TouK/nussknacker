@@ -6,6 +6,8 @@ import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 import ReleaseTransformations._
 
+import scala.util.Try
+
 val scala211 = "2.11.12"
 val scala212 = "2.12.10"
 lazy val supportedScalaVersions = List(scala212, scala211)
@@ -23,7 +25,7 @@ val dockerTagName = Option(System.getProperty("dockerTagName"))
 val dockerPort = System.getProperty("dockerPort", "8080").toInt
 val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
 val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
-val dockerUpLatestFromProp = Option(System.getProperty("dockerUpLatest")).map(_.toBoolean)
+val dockerUpLatestFromProp = Option(System.getProperty("dockerUpLatest")).flatMap(p => Try(p.toBoolean).toOption)
 val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
