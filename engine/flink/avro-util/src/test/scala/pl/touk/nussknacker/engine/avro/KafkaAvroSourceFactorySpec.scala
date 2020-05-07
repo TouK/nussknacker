@@ -15,11 +15,10 @@ import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
-import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionFound}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 
@@ -96,7 +95,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
       r
     }
 
-    assertThrows[SchemaSubjectNotFound] {
+    assertThrows[CustomNodeValidationException] {
       readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 1, RecordSchemaV2, "fake-topic")
     }
   }
@@ -110,7 +109,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
       r
     }
 
-    assertThrows[SchemaVersionFound] {
+    assertThrows[CustomNodeValidationException] {
       readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 3, RecordSchemaV2, RecordTopic)
     }
   }
@@ -247,7 +246,6 @@ object MockSchemaRegistry {
     .register(IntTopic, IntSchema, 1, isKey = false)
     .register(IntTopic, IntSchema, 1, isKey = true)
     .build
-
 
   object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {
     override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =
