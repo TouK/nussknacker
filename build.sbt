@@ -23,7 +23,7 @@ val dockerTagName = Option(System.getProperty("dockerTagName"))
 val dockerPort = System.getProperty("dockerPort", "8080").toInt
 val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
 val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
-val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
+val dockerUpLatestFromProp = Option(System.getProperty("dockerUpLatest")).map(_.toBoolean)
 val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
@@ -39,18 +39,14 @@ lazy val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishTo := {
-    if (!isSnapshot.value) { // can't find any better solution how to pass it from release pipeline
-      sonatypePublishToBundle.value
-    } else {
-      nexusUrlFromProps.map { url =>
-        (if (isSnapshot.value) "snapshots" else "releases") at url
-      }.orElse {
-        val defaultNexusUrl = "https://oss.sonatype.org/"
-        if (isSnapshot.value)
-          Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
-        else
-          Some("releases" at defaultNexusUrl + "service/local/staging/deploy/maven2")
-      }
+    nexusUrlFromProps.map { url =>
+      (if (isSnapshot.value) "snapshots" else "releases") at url
+    }.orElse {
+      val defaultNexusUrl = "https://oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
+      else
+        sonatypePublishToBundle.value
     }
   },
   publishArtifact in Test := false,
@@ -191,7 +187,7 @@ lazy val dockerSettings = {
     dockerBaseImage := "openjdk:8-jdk",
     dockerUsername := dockerUserName,
     packageName := dockerPackageName,
-    dockerUpdateLatest := dockerUpLatest,
+    dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerLabels := Map(
       "tag" -> dockerTagName.getOrElse(version.value),
       "version" -> version.value,

@@ -1,6 +1,14 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -e
+
+if [[ "$BACKPORT" == "true" ]]; then
+  echo "Backport release - 'latest' tag won't be updated on docker"
+  dockerUpdateLatest="false"
+else
+  echo "Normal release - 'latest' tag will be updated on docker"
+  dockerUpdateLatest="true"
+fi
 
 # Login can't be done in release pipeline - see: https://github.com/sbt/sbt-native-packager/issues/654
 if [ -f ~/.sbt/1.0/docker.sh ]; then
@@ -14,4 +22,4 @@ cd ui/client && npm ci && cd -
 ARGS="release *@"
 JAVA_OPTS_VAL="-Xmx2G -XX:ReservedCodeCacheSize=256M -Xss6M -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
 echo "Executing: JAVA_OPTS=\"$JAVA_OPTS_VAL\" sbt \"$ARGS\""
-JAVA_OPTS="$JAVA_OPTS_VAL" sbt "$ARGS"
+JAVA_OPTS="$JAVA_OPTS_VAL" ./sbtwrapper -DdockerUpLatest=${dockerUpdateLatest} "$ARGS"
