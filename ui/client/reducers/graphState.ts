@@ -31,5 +31,4 @@ export type GraphState = {
   testResults: $TodoType,
   edgeToDisplay: $TodoType,
   processCounts: $TodoType,
-  expandedGroups: GroupId[],
 }

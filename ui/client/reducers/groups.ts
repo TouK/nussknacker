@@ -1,19 +1,21 @@
+import {GroupType} from "../types"
+import {defaultsDeep} from "lodash"
 import {Reducer} from "../actions/reduxTypes"
-import {GroupId} from "../types"
 
-export type GroupsState = GroupId[]
-
-export const reducer: Reducer<GroupsState> = (state = [], action) => {
+export const reducer: Reducer<GroupType[]> = (groups, action) => {
   switch (action.type) {
+    case "LAYOUT_CHANGED":
+      return groups.map(g => {
+        const layoutData = action.layout.find(({id}) => id === g.id)?.position || null
+        return defaultsDeep({layoutData}, g)
+      })
     case "EXPAND_GROUP":
-      return [...state, action.id]
+      return groups.map(g => action.id === g.id ? {...g, expanded: true} : g)
     case "COLLAPSE_GROUP":
-      return state.filter(id => id !== action.id)
+      return groups.map(g => action.id === g.id ? {...g, expanded: false} : g)
     case "COLLAPSE_ALL_GROUPS":
-      return []
-    case "EDIT_GROUP":
-      return state.map(id => id === action.oldGroupId ? action.newGroup.id : id)
+      return groups.map(g => ({...g, expanded: false}))
     default:
-      return state
+      return groups
   }
 }

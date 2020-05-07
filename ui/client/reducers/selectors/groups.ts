@@ -1,4 +1,5 @@
 import {createSelector} from "reselect"
-import {getGraph} from "./graph"
+import {getAdditionalFields} from "./graph"
 
-export const getExpandedGroups = createSelector(getGraph, g => g.expandedGroups)
+export const getGroups = createSelector(getAdditionalFields, f => f?.groups || [])
+export const getExpandedGroups = createSelector(getGroups, g => g.filter(g => g.expanded).map(g => g.id))
