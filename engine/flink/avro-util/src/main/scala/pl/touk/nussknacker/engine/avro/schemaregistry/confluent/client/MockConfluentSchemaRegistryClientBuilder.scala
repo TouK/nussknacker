@@ -24,10 +24,10 @@ class MockConfluentSchemaRegistryClientBuilder {
     mockSchemaRegistry.register(subject, item.schema, item.version, item.id)
   }
 
-  def build: ConfluentSchemaRegistryClient = {
+  def build: CachedConfluentSchemaRegistryClient = {
     val client = new MockSchemaRegistryClient
     registry.foreach(reg => register(client, reg))
-    new DefaultConfluentSchemaRegistryClient(client)
+    new CachedConfluentSchemaRegistryClient(client)
   }
 }
 
@@ -44,3 +44,4 @@ private[client] object RegistryItem {
   def apply(topic: String, schema: Schema, version: Int, isKey: Boolean): RegistryItem =
     new RegistryItem(topic, schema, version, isKey, AutoIncId)
 }
+

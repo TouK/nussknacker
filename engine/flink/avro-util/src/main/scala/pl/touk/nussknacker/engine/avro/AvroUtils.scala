@@ -53,7 +53,4 @@ object AvroUtils {
 
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
-
-  def extractSchema(schemaMetadata: SchemaMetadata): Schema =
-    parseSchema(schemaMetadata.getSchema)
 }

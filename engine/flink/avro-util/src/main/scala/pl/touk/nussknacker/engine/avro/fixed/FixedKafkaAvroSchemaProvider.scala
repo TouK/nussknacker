@@ -5,7 +5,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, DefaultConfluentSchemaRegistryClient, FixedSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, FixedConfluentSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroDeserializationSchemaFactory, ConfluentAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
@@ -21,16 +21,14 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
   * @TODO: In future we should create own serializator and deserializator for fixed schema
   */
 class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
-                                                       val avroSchema: String,
+                                                       val avroSchemaString: String,
                                                        val kafkaConfig: KafkaConfig,
                                                        val formatKey: Boolean,
                                                        val useSpecificAvroReader: Boolean) extends KafkaAvroSchemaProvider[T] {
 
   lazy val factory: ConfluentSchemaRegistryClientFactory = new ConfluentSchemaRegistryClientFactory {
     override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =
-      DefaultConfluentSchemaRegistryClient.createSchemaRegistryClient(
-        new FixedSchemaRegistryClient(AvroUtils.valueSubject(topic), avroSchema)
-      )
+      new FixedConfluentSchemaRegistryClient(AvroUtils.valueSubject(topic), avroSchemaString)
   }
 
   lazy val deserializationSchemaFactory = new ConfluentAvroDeserializationSchemaFactory(factory, useSpecificAvroReader)

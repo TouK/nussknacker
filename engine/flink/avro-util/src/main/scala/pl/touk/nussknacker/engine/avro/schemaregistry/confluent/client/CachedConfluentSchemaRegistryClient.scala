@@ -10,10 +10,11 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 
-private[confluent] class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient) extends ConfluentSchemaRegistryClient with LazyLogging {
+class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient) extends ConfluentSchemaRegistryClient with LazyLogging {
 
-  private val schemaCache = TrieMap.empty[String, Schema]
+  private val schemaCache: mutable.Map[String, Schema] = TrieMap.empty[String, Schema]
 
   //At now we cache only parsing schemaString to Schema
   //@TODO: Use for example caffeine cache
@@ -36,7 +37,9 @@ private[confluent] class CachedConfluentSchemaRegistryClient(val client: CSchema
     }
 
   private def getOrCreate(subject: String, version: Int, opSchemaMetadata: => SchemaMetadata): Schema =
-    schemaCache.getOrElseUpdate(s"$subject-$version", AvroUtils.extractSchema(opSchemaMetadata))
+    schemaCache.getOrElseUpdate(s"$subject-$version", {
+      AvroUtils.parseSchema(opSchemaMetadata.getSchema)
+    })
 }
 
 
