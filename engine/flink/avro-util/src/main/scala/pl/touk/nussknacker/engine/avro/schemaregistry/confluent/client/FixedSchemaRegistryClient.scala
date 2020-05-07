@@ -1,32 +1,35 @@
-package pl.touk.nussknacker.engine.avro.fixed
+package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import java.util
 
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaMetadata}
+import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, MockSchemaRegistryClient => CMockSchemaRegistryClient}
 import org.apache.avro.Schema
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.AvroUtils
 
 /**
   * This class is kind of wrap on mock. This class always returns only one fixed schema for each request
   */
-class FixedSchemaRegistryClient(subject: String, avroSchema: String) extends MockSchemaRegistryClient with LazyLogging {
+class FixedSchemaRegistryClient(subject: String, avroSchema: String) extends CMockSchemaRegistryClient with LazyLogging {
 
   import collection.JavaConverters._
+
+  //It's fake id - not important
+  val schemaId = 0
 
   //Version depends on schema hash code
   lazy val version: Int = avroSchema.hashCode
 
   lazy val key: String = s"$subject-$version"
 
-  //It's fake id - not important
-  val schemaId = 0
+  //Some cache for schema
+  lazy val schema: Schema = AvroUtils.parseSchema(avroSchema)
 
   override def getById(id: Int): Schema =
-    CachedConfluentSchemaRegistryClient.getOrCreate(key, avroSchema)
+    schema
 
   override def getBySubjectAndId(subject: String, id: Int): Schema =
-    CachedConfluentSchemaRegistryClient.getOrCreate(key, avroSchema)
+    schema
 
   override def getSchemaMetadata(subject: String, version: Int): SchemaMetadata =
     new SchemaMetadata(schemaId, avroSchema.hashCode, avroSchema)

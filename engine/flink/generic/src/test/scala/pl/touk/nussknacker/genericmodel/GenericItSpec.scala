@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactoryBuilder}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -41,8 +41,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
 
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
-
-  lazy val confluentSchemaRegistryClient: ConfluentSchemaRegistryClient = factory.createSchemaRegistryClient(kafkaConfig)
 
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
@@ -173,7 +171,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     }
   }
 
-  test("should read avro typed object from kafka and save it to kafka") {
+  test("should read fixed avro typed object from kafka and save it to kafka") {
     send(givenNotMatchingAvroObj, AvroTypedInTopic)
     send(givenMatchingAvroObj, AvroTypedInTopic)
 
@@ -267,8 +265,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
-  private lazy val valueSerializer = new KafkaAvroSerializer(confluentSchemaRegistryClient.client)
-  private lazy val valueDeserializer = new KafkaAvroDeserializer(confluentSchemaRegistryClient.client)
+  private lazy val valueSerializer = new KafkaAvroSerializer(confluentSchemaRegistryMockClient.client)
+  private lazy val valueDeserializer = new KafkaAvroDeserializer(confluentSchemaRegistryMockClient.client)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -315,7 +313,7 @@ object MockSchemaRegistry extends Serializable {
       |}
     """.stripMargin
 
-  val factory: MockConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactoryBuilder()
+  val confluentSchemaRegistryMockClient: ConfluentSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
     .register(AvroInTopic, RecordSchemaString, 1, isKey = false)
     .register(AvroOutTopic, RecordSchemaString, 1, isKey = false)
     .register(AvroFromScratchInTopic, RecordSchemaString, 1, isKey = false)
@@ -324,11 +322,8 @@ object MockSchemaRegistry extends Serializable {
     .register(AvroTypedOutTopic, RecordSchemaString, 1, isKey = false)
     .build
 
-  /**
-    * This is some hack for Serialization object in Flink.. We can't pass factory val
-    */
   object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {
     override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =
-      factory.createSchemaRegistryClient(kafkaConfig)
+      confluentSchemaRegistryMockClient
   }
 }

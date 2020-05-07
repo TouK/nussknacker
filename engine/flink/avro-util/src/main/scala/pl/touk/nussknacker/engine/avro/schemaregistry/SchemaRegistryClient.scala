@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import cats.data.Validated
 import org.apache.avro.Schema
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 trait SchemaRegistryClient extends Serializable {
 
@@ -14,8 +13,4 @@ trait SchemaRegistryClient extends Serializable {
     version
       .map(ver => getBySubjectAndVersion(subject, ver))
       .getOrElse(getLatestSchema(subject))
-}
-
-trait SchemaRegistryClientFactory extends Serializable {
-  def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient
 }
