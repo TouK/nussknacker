@@ -15,7 +15,6 @@ import Variable from "./../node-modal/Variable"
 import BranchParameters, {branchErrorFieldName} from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
-import JoinDef from "./JoinDef"
 import NodeErrors from "./NodeErrors"
 import ParameterList from "./ParameterList"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
@@ -33,27 +32,20 @@ export class NodeDetailsContent extends React.Component {
   constructor(props) {
     super(props)
 
-    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
-    this.nodeDef = this.prepareNodeDef(props.node, this.nodeObjectDetails, props.processToDisplay)
-
     this.state = {
       ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
       editedNode: props.node,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
-    let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
-    this.showOutputVar = hasNoReturn === false || hasNoReturn === true && this.state.editedNode.outputVar
-
+    this.initalizeWithProps(props)
     this.generateUUID("fields", "parameters")
   }
 
-  prepareNodeDef(node, nodeObjectDetails, processToDisplay) {
-    if (NodeUtils.nodeIsJoin(node)) {
-      return new JoinDef(node, nodeObjectDetails, processToDisplay)
-    } else {
-      return null
-    }
+  initalizeWithProps(props) {
+    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(props.node, props.processDefinitionData.processDefinition)
+    let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
+    this.showOutputVar = hasNoReturn === false || hasNoReturn === true && this.state.editedNode.outputVar
   }
 
   generateUUID(...properties) {
@@ -67,7 +59,7 @@ export class NodeDetailsContent extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (!_.isEqual(this.props.node, nextProps.node)) {
-      this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(nextProps.node, nextProps.processDefinitionData.processDefinition)
+      this.initalizeWithProps(nextProps)
       this.setState({editedNode: nextProps.node})
     }
   }
@@ -257,7 +249,6 @@ export class NodeDetailsContent extends React.Component {
             {NodeUtils.nodeIsJoin(this.state.editedNode) && (
               <BranchParameters
                 node={this.state.editedNode}
-                joinDef={this.nodeDef}
                 isMarked={this.isMarked}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
@@ -703,7 +694,8 @@ export class NodeDetailsContent extends React.Component {
         <TestErrors resultsToShow={this.state.testResultsToShow}/>
         {this.customNode(fieldErrors)}
         <TestResults nodeId={this.props.node.id} resultsToShow={this.state.testResultsToShow}/>
-        <NodeAdditionalInfoBox node={this.state.editedNode} processId={this.props.processToDisplay.id}/>
+
+        <NodeAdditionalInfoBox node={this.state.editedNode} processId={this.props.processId}/>
       </div>
     )
   }
@@ -713,7 +705,9 @@ function mapState(state) {
   return {
     additionalPropertiesConfig: _.get(state.settings, "processDefinitionData.additionalPropertiesConfig") || {},
     processDefinitionData: state.settings.processDefinitionData || {},
-    processToDisplay: state.graphReducer.processToDisplay,
+    //TODO: get rid of this. We should not rely on process from graphReducer, as we may display subprocess node!
+    //currently it's used only to figure out processingType, so it's not so harmful
+    processId: state.graphReducer.processToDisplay.id,
   }
 }
 
