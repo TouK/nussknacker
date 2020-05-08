@@ -37,4 +37,10 @@ trait ServiceReturningType {
 
 }
 
-case class CustomNodeValidationException(message: String, paramName: Option[String]) extends Exception(message)
+case class CustomNodeValidationException(message: String, paramName: Option[String], parent: Exception)
+  extends RuntimeException(message, parent)
+
+object CustomNodeValidationException {
+  def apply(message: String, paramName: Option[String]): CustomNodeValidationException =
+    new CustomNodeValidationException(message, paramName, new IllegalArgumentException)
+}

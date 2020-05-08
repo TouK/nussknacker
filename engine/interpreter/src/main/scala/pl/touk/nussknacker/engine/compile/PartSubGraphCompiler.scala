@@ -250,7 +250,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
       expressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx).andThen { params =>
         (Try(computeReturnType(objWithMethod, params)) match {
           case Success(returnType) => valid((params, returnType))
-          case Failure(CustomNodeValidationException(message, paramName)) =>
+          case Failure(CustomNodeValidationException(message, paramName, _)) =>
             invalid(CustomNodeError(message, paramName))
           case Failure(NonFatal(exception)) =>
             invalid(FatalUnknownError(exception.getMessage))

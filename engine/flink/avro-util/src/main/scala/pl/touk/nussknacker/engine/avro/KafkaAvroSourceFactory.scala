@@ -104,6 +104,6 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
       case _ => None
     }
 
-    throw CustomNodeValidationException(exc.getMessage, parameter)
+    throw CustomNodeValidationException(exc.getMessage, parameter, exc)
   }
 }
