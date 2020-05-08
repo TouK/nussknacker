@@ -11,9 +11,6 @@ import pl.touk.nussknacker.engine.kafka.RecordFormatter
   */
 trait KafkaAvroSchemaProvider[T] extends Serializable {
 
-  /**
-    * TODO: Create mechanism which one allows to throw exception per Node and Param
-    */
   def typeDefinition: Validated[SchemaRegistryError, typing.TypingResult]
 
   def deserializationSchema: KafkaDeserializationSchema[T]
@@ -22,5 +19,6 @@ trait KafkaAvroSchemaProvider[T] extends Serializable {
 
   def recordFormatter: Option[RecordFormatter]
 
-  def returnType: typing.TypingResult = typeDefinition.valueOr(ex => throw ex)
+  def returnType(f: SchemaRegistryError => typing.TypingResult): typing.TypingResult =
+    typeDefinition.valueOr(f)
 }

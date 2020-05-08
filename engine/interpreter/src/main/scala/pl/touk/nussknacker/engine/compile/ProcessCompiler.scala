@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -430,6 +430,8 @@ protected trait ProcessCompilerBase {
       // TODO: using Validated in nested invocations
       case _: MissingOutputVariableException =>
         Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"), nodeId.id)))
+      case exc: CustomNodeValidationException =>
+        Invalid(NonEmptyList.of(CustomNodeError(exc.message, exc.paramName)))
       case NonFatal(e) =>
         //TODO: better message?
         Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))

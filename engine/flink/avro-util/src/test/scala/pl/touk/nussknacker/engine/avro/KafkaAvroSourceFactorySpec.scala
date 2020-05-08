@@ -22,8 +22,9 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKe
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionFound}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
+import pl.touk.nussknacker.test.NussknackerAssertions
 
-class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
+class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
 
   import MockSchemaRegistry._
 
@@ -96,7 +97,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
       r
     }
 
-    assertThrows[SchemaSubjectNotFound] {
+    assertThrowsWithParent[SchemaSubjectNotFound] {
       readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 1, RecordSchemaV2, "fake-topic")
     }
   }
@@ -110,7 +111,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
       r
     }
 
-    assertThrows[SchemaVersionFound] {
+    assertThrowsWithParent[SchemaVersionFound]{
       readLastMessageAndVerify(createAvroSourceFactory(useSpecificAvroReader = false), givenObj, 3, RecordSchemaV2, RecordTopic)
     }
   }
@@ -247,7 +248,6 @@ object MockSchemaRegistry {
     .register(IntTopic, IntSchema, 1, isKey = false)
     .register(IntTopic, IntSchema, 1, isKey = true)
     .build
-
 
   object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {
     override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.avro
 
-import cats.data.Validated.{Invalid, Valid}
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -9,10 +8,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.avro.fixed.FixedKafkaAvroSchemaProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryKafkaAvroProvider, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka._
 
@@ -28,7 +27,7 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @ParamName("Schema version") @Nullable version: Integer
+             @ParamName(`VersionParamName`) @Nullable version: Integer
               )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     createKafkaAvroSource(topic, kafkaConfig, SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, version), processMetaData, nodeId)
@@ -56,16 +55,15 @@ class FixedKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies:
              @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
              //TODO: Create BE and FE validator for verify avro type
              //TODO: Create Avro Editor
-             @ParamName("schema") @NotBlank avroSchema: String
+             @ParamName("schema") @NotBlank avroSchemaString: String
             )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     createKafkaAvroSource(
       topic,
       kafkaConfig,
-      new FixedKafkaAvroSchemaProvider(topic, avroSchema, kafkaConfig, formatKey, useSpecificAvroReader),
+      new FixedKafkaAvroSchemaProvider(topic, avroSchemaString, kafkaConfig, formatKey, useSpecificAvroReader),
       processMetaData, nodeId)
   }
-
 }
 
 object FixedKafkaAvroSourceFactory {
@@ -76,6 +74,8 @@ object FixedKafkaAvroSourceFactory {
 abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
   extends BaseKafkaSourceFactory(timestampAssigner, TestParsingUtils.newLineSplit, processObjectDependencies) {
 
+  final val VersionParamName = "Schema version"
+
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation
   def createKafkaAvroSource(topic: String,
@@ -83,7 +83,8 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
                             kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
                             processMetaData: MetaData,
                             nodeId: NodeId): KafkaSource with ReturningType = {
-    val returnTypeDefinition = kafkaAvroSchemaProvider.returnType
+
+    val returnTypeDefinition = kafkaAvroSchemaProvider.returnType(handleSchemaRegistryError)
 
     new KafkaSource(
       List(topic),
@@ -94,5 +95,15 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
     ) with ReturningType {
       override def returnType: typing.TypingResult = returnTypeDefinition
     }
+  }
+
+  private def handleSchemaRegistryError(exc: SchemaRegistryError): Nothing = {
+    val parameter = exc match {
+      case _: SchemaSubjectNotFound => Some(`TopicParamName`)
+      case _: SchemaVersionFound => Some(`VersionParamName`)
+      case _ => None
+    }
+
+    throw CustomNodeValidationException(exc, parameter)
   }
 }
