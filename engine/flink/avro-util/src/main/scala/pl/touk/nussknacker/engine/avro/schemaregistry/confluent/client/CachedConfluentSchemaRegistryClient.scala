@@ -34,6 +34,10 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, sch
         AvroUtils.parseSchema(schemaMetadata.getSchema)
       })
     }
+
+  override def close(): Unit =
+    schemaCache.close()
+    client.reset()
 }
 
 object CachedConfluentSchemaRegistryClient extends ConfluentSchemaRegistryClientFactory {

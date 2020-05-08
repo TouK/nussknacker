@@ -27,7 +27,8 @@ class DefaultSchemaCache extends SchemaCache {
     schema
   }
 
-  override def close(): Unit =
+  override def close(): Unit = {
     caffeineClientCache.cleanUp()
     cache.removeAll()
+  }
 }
