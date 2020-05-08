@@ -41,6 +41,10 @@ case class CustomNodeValidationException(message: String, paramName: Option[Stri
   extends RuntimeException(message, parent)
 
 object CustomNodeValidationException {
+  
   def apply(message: String, paramName: Option[String]): CustomNodeValidationException =
-    new CustomNodeValidationException(message, paramName, new IllegalArgumentException)
+    CustomNodeValidationException(message, paramName, null)
+
+  def apply(exc: Exception, paramName: Option[String]): CustomNodeValidationException =
+    CustomNodeValidationException(exc.getMessage, paramName, exc)
 }
