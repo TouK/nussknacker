@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.cache.DefaultSchemaCache
 
 import scala.collection.mutable.ListBuffer
 
@@ -27,7 +28,7 @@ class MockConfluentSchemaRegistryClientBuilder {
   def build: CachedConfluentSchemaRegistryClient = {
     val client = new MockSchemaRegistryClient
     registry.foreach(reg => register(client, reg))
-    new CachedConfluentSchemaRegistryClient(client)
+    new CachedConfluentSchemaRegistryClient(client, new DefaultSchemaCache, None)
   }
 }
 

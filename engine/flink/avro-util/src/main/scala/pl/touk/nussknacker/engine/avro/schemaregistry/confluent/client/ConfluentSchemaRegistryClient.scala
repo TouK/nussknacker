@@ -26,6 +26,9 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data."))
     }
+
+  override def close(): Unit =
+    client.reset()
 }
 
 object ConfluentSchemaRegistryClient {

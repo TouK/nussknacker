@@ -178,6 +178,7 @@ val confluentV = "5.4.1"
 val jbcryptV = "0.4"
 val cronParserV = "3.1.1"
 val javaxValidationApiV = "2.0.1.Final"
+val scalaCaffeineV = "0.28.0"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -499,6 +500,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "com.github.cb372" %% "scalacache-caffeine" % scalaCaffeineV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
         "org.apache.flink" %% s"flink-connector-kafka" % flinkV % "test",
@@ -807,7 +809,9 @@ lazy val ui = (project in file("ui/server"))
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test"
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test",
+
+        "com.github.cb372" %% "scalacache-caffeine" % scalaCaffeineV
       )
     }
   )

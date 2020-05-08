@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry
 
+import java.io.Closeable
+
 import cats.data.Validated
 import org.apache.avro.Schema
 
-trait SchemaRegistryClient extends Serializable {
+trait SchemaRegistryClient extends Serializable with Closeable {
 
   def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema]
 
