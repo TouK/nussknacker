@@ -5,7 +5,7 @@ set -e
 version=`echo ${APPLICATION_VERSION} | sed 's/[^a-zA-Z0-9-]/\_/g' | awk '{print tolower($0)}'`
 dockerTagName=`echo ${DOCKER_TAG_NAME} | sed 's/[^a-zA-Z0-9-]/\_/g' | awk '{print tolower($0)}'`
 dockerPackageName=${DOCKER_PACKAGENAME-"nussknacker"}
-dockerUpdateLatest=${DOCKER_UPDATE_LATEST-"true"}
+dockerUpdateLatest=${DOCKER_UPDATE_LATEST} # It shouldn't have default because update latest is ok only for release, not backport builds
 dockerUsername=${DOCKER_PACKAGE_USERNAME-"touk"}
 dockerPort=${DOCKER_PORT-"8080"}
 dockerPublishType=${DOCKER_PUBLISH_TYPE-"publish"}
