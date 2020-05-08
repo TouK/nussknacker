@@ -102,24 +102,23 @@ export const literalIntegerValueValidator: Validator = {
   validatorType: ValidatorType.Frontend,
 }
 
-export const minimalValueValidator = (minimalValue: number): Validator => ({
+export const minimalNumberValidator = (minimalNumber: number): Validator => ({
   //Blank value should be not validate - we want to chain validators
-  isValid: value => isEmpty(value) || (Number(value) >= minimalValue),
-  message: () => i18next.t("minimalValueValidator.message", `This field value has to be an number greater than or equal to ${minimalValue}`),
-  description: () => i18next.t("minimalValueValidator.description", "Please fill field by proper number"),
+  isValid: value => isEmpty(value) || Number(value) >= minimalNumber,
+  message: () => i18next.t("minimalNumberValidator.message", `This field value has to be a number greater than or equal to ${minimalNumber}`),
+  description: () => i18next.t("minimalNumberValidator.description", "Please fill field by proper number"),
   handledErrorType: HandledErrorType.InvalidNumberParameter,
   validatorType: ValidatorType.Frontend,
 })
 
-export const maximalValueValidator = (maximalValue: number): Validator => ({
+export const maximalNumberValidator = (maximalNumber: number): Validator => ({
   //Blank value should be not validate - we want to chain validators
-  isValid: value => isEmpty(value) || (Number(value) <= maximalValue),
-  message: () => i18next.t("maximalValueValidator.message", `This field value has to be an number less than or equal to ${maximalValue}`),
-  description: () => i18next.t("maximalValueValidator.description", "Please fill field by proper number"),
+  isValid: value => isEmpty(value) || Number(value) <= maximalNumber,
+  message: () => i18next.t("maximalNumberValidator.message", `This field value has to be a number less than or equal to ${maximalNumber}`),
+  description: () => i18next.t("maximalNumberValidator.description", "Please fill field by proper number"),
   handledErrorType: HandledErrorType.InvalidNumberParameter,
   validatorType: ValidatorType.Frontend,
 })
-
 
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
   return isEmpty(validators) ? [] :
@@ -139,6 +138,6 @@ export const validators: Record<BackendValidator, (...args: any[]) => Validator>
   [BackendValidator.LiteralIntegerValidator]: () => literalIntegerValueValidator,
   [BackendValidator.FixedValuesValidator]: ({possibleValues}) => fixedValueValidator(possibleValues),
   [BackendValidator.RegExpParameterValidator]: ({pattern, message, description}) => regExpValueValidator(pattern, message, description),
-  [BackendValidator.MinimalNumberValidator]: ({minimalValue}) => minimalValueValidator(minimalValue),
-  [BackendValidator.MaximalNumberValidator]: ({maximalValue}) => maximalValueValidator(maximalValue)
+  [BackendValidator.MinimalNumberValidator]: ({minimalNumber}) => minimalNumberValidator(minimalNumber),
+  [BackendValidator.MaximalNumberValidator]: ({maximalNumber}) => maximalNumberValidator(maximalNumber),
 }

@@ -98,15 +98,15 @@ case object LiteralIntegerValidator extends ParameterValidator {
   )
 }
 
-case class MinimalNumberValidator(minimalValue: BigDecimal, annotationMessage: String) extends ParameterValidator {
+case class MinimalNumberValidator(minimalNumber: BigDecimal, annotationMessage: String) extends ParameterValidator {
 
   private lazy val minAnnotationDefaultMessage: String = "{javax.validation.constraints.Min.message}"
   private lazy val minAnnotationDefaultMessageRegex: String = s"^${minAnnotationDefaultMessage}" + "$"
-  private lazy val defaultValidatorMessage: String = s"This field value has to be an number greater than or equal to $minimalValue"
+  private lazy val defaultValidatorMessage: String = s"This field value has to be a number greater than or equal to $minimalNumber"
 
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ >= minimalValue).isSuccess)
+    if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ >= minimalNumber).isSuccess)
       valid(Unit)
     else
       invalid(error(paramName, nodeId.id))
@@ -123,15 +123,15 @@ case class MinimalNumberValidator(minimalValue: BigDecimal, annotationMessage: S
   }
 }
 
-case class MaximalNumberValidator(maximalValue: BigDecimal, annotationMessage: String) extends ParameterValidator {
+case class MaximalNumberValidator(maximalNumber: BigDecimal, annotationMessage: String) extends ParameterValidator {
 
   private lazy val maxAnnotationDefaultMessage: String = "{javax.validation.constraints.Max.message}"
   private lazy val maxAnnotationDefaultMessageRegex: String = s"^${maxAnnotationDefaultMessage}" + "$"
-  private lazy val defaultValidatorMessage: String = s"This field value has to be an number less than or equal to $maximalValue"
+  private lazy val defaultValidatorMessage: String = s"This field value has to be a number less than or equal to $maximalNumber"
 
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ <= maximalValue).isSuccess)
+    if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ <= maximalNumber).isSuccess)
       valid(Unit)
     else
       invalid(error(paramName, nodeId.id))
