@@ -150,7 +150,7 @@ protected trait ProcessCompilerBase {
         val compiledPart = compile(nextSourcePart, branchContexts)
         //we don't use andThen on CompilationResult, since we don't want to stop if there are errors in part
         val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
-        (nextResult, branchContexts.addPart(nextSourcePart.node, compiledPart))
+        (nextResult, branchContexts.addPart(nextSourcePart, compiledPart))
     }
     result.map(NonEmptyList.fromListUnsafe)
   }
@@ -437,8 +437,9 @@ protected trait ProcessCompilerBase {
   }
 
   private case class BranchEndContexts(contexts: Map[String, ValidationContext]) {
-    def addPart(node: SplittedNode[_ <: NodeData], result: CompilationResult[_]): BranchEndContexts = {
-      val branchEnds = SplittedNodesCollector.collectNodes(node).collect {
+
+    def addPart(part: ProcessPart, result: CompilationResult[_]): BranchEndContexts = {
+      val branchEnds = NodesCollector.collectNodesInAllParts(part).collect {
         case splittednode.EndingNode(BranchEndData(definition)) => definition.id -> result.typing.apply(definition.artificialNodeId)
       }.toMap
       copy(contexts = contexts ++ branchEnds.mapValues(_.inputValidationContext))
