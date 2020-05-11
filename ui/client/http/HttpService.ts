@@ -13,6 +13,12 @@ type Error = {
   message: string,
 }
 
+type HealthCheckProcessDeployedType = {
+  status: string,
+  message?: string,
+  processes?: Array<string>,
+}
+
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
 export default {
   setNotificationActions(na) {
@@ -59,10 +65,14 @@ export default {
       .catch(error => this.addError("Cannot fetch state", error))
   },
 
-  fetchHealthCheck() {
-    return api.get("/app/processHealthCheck")
+  fetchHealthCheckProcessDeployed() {
+    return api.get("/app/healthCheck/process/deployed")
       .then(() => ({state: "ok"}))
-      .catch((error) => ({state: "error", error: error.response.data}))
+      .catch((error) => {
+        const errorObj: HealthCheckProcessDeployedType = error.response.data
+        const errorMessage: string = errorObj.processes ? `${errorObj.message}: ${errorObj.processes.join(",")}` : errorObj.message
+        return {state: "error", error: errorMessage}
+      })
   },
 
   fetchSettings() {

@@ -25,7 +25,7 @@ class HealthCheck extends PeriodicallyReloadingComponent<Props, State> {
   getIntervalTime = () => this.props.healthCheckInterval
 
   reload = () => {
-    HttpService.fetchHealthCheck().then((check: HealthCheckResponse) => this.setState({healthCheck: check}))
+    HttpService.fetchHealthCheckProcessDeployed().then((check: HealthCheckResponse) => this.setState({healthCheck: check}))
   }
 
   render() {

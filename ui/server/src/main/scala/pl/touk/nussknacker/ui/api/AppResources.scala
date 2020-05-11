@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes, ResponseEntity, HttpEntity, ContentTypes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Printer
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -45,41 +46,53 @@ class AppResources(config: Config,
     }
   }
 
+  private def toEntity(healthCheckProcessResponse: HealthCheckProcessResponse): ResponseEntity = {
+    val printer = Printer.noSpaces.copy(dropNullValues = true)
+    HttpEntity(
+      ContentTypes.`application/json`,
+      printer.pretty(healthCheckProcessResponse.asJson)
+    )
+  }
+
   def securedRoute(implicit user: LoggedUser): Route =
     pathPrefix("app") {
       path("healthCheck") {
         get {
           complete {
-            HttpResponse(status = StatusCodes.OK)
+            HttpResponse(status = StatusCodes.OK, entity = toEntity(HealthCheckProcessResponse(OK)))
           }
         }
-      } ~ path("processHealthCheck") {
+      } ~ path("healthCheck" / "process" / "deployed") {
         get {
           complete {
             notRunningProcessesThatShouldRun.map[HttpResponse] { set =>
               if (set.isEmpty) {
-                HttpResponse(status = StatusCodes.OK)
+                val respEntity = toEntity(HealthCheckProcessResponse(OK))
+                HttpResponse(status = StatusCodes.OK, entity = respEntity)
               } else {
                 logger.warn(s"Processes not running: ${set.keys}")
                 logger.debug(s"Processes not running - more details: $set")
-                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.keys.mkString(", ")}")
+                val respEntity = toEntity(HealthCheckProcessResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet)))
+                HttpResponse(status = StatusCodes.InternalServerError, entity = respEntity)
               }
             }.recover[HttpResponse] {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                HttpResponse(status = StatusCodes.InternalServerError, entity = "Failed to retrieve job statuses")
+                val respEntity = toEntity(HealthCheckProcessResponse(ERROR, Some("Failed to retrieve job statuses")))
+                HttpResponse(status = StatusCodes.InternalServerError, entity = respEntity)
             }
           }
         }
-      } ~ path("sanityCheck")  {
+      } ~ path("healthCheck" / "process" / "validation")  {
         get {
           complete {
             processesWithValidationErrors.map[HttpResponse] { processes =>
               if (processes.isEmpty) {
-                HttpResponse(status = StatusCodes.OK)
+                val respEntity = toEntity(HealthCheckProcessResponse(OK))
+                HttpResponse(status = StatusCodes.OK, entity = respEntity)
               } else {
-                val message = s"Processes with validation errors: \n${processes.mkString(", ")}"
-                HttpResponse(status = StatusCodes.InternalServerError, entity = message)
+                val respEntity = toEntity(HealthCheckProcessResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet)))
+                HttpResponse(status = StatusCodes.InternalServerError, entity = respEntity)
               }
             }
           }
