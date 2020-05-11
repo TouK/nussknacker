@@ -14,7 +14,6 @@ export enum HandledErrorType {
   InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
   ErrorValidator = "ErrorValidator",
   MismatchParameter = "MismatchParameter",
-  InvalidNumberParameter = "InvalidNumberParameter"
 }
 
 /* eslint-disable i18next/no-literal-string */
@@ -107,7 +106,7 @@ export const minimalNumberValidator = (minimalNumber: number): Validator => ({
   isValid: value => isEmpty(value) || Number(value) >= minimalNumber,
   message: () => i18next.t("minimalNumberValidator.message", `This field value has to be a number greater than or equal to ${minimalNumber}`),
   description: () => i18next.t("minimalNumberValidator.description", "Please fill field by proper number"),
-  handledErrorType: HandledErrorType.InvalidNumberParameter,
+  handledErrorType: HandledErrorType.InvalidPropertyFixedValue,
   validatorType: ValidatorType.Frontend,
 })
 
@@ -116,7 +115,7 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
   isValid: value => isEmpty(value) || Number(value) <= maximalNumber,
   message: () => i18next.t("maximalNumberValidator.message", `This field value has to be a number less than or equal to ${maximalNumber}`),
   description: () => i18next.t("maximalNumberValidator.description", "Please fill field by proper number"),
-  handledErrorType: HandledErrorType.InvalidNumberParameter,
+  handledErrorType: HandledErrorType.InvalidPropertyFixedValue,
   validatorType: ValidatorType.Frontend,
 })
 
