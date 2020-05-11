@@ -52,7 +52,6 @@ export function displayCurrentProcessVersion(processId) {
 
 export function saveProcess(comment) {
   return (dispatch, getState) => {
-    dispatch({type: "APPEND_METADATA"})
     const state = getState()
     const processId = getProcessId(state)
     const processJson = getProcessToDisplay(state)

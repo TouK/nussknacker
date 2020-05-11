@@ -1,35 +1,17 @@
-import {defaultsDeep, isString} from "lodash"
-import {GraphState, ProcessToDisplayState} from "./graphState"
+import {defaultsDeep} from "lodash"
 import {Layout} from "../actions/nk"
-import {NodeType} from "../types"
+import {NodeType, GroupType} from "../types"
 import {Reducer} from "../actions/reduxTypes"
 
-function toString(layout: Layout): string {
-  return layout.map(({id, position: {x, y}}) => `"${id}",${x},${y}`).join(";")
+export function fromMeta(nodes: NodeType[], groups: GroupType[]): Layout {
+  const nodesLayout = nodes
+    .filter(({additionalFields}) => additionalFields.layoutData)
+    .map(({id, additionalFields}) => ({id, position: additionalFields.layoutData}))
+  const groupsLayout = groups
+    .filter(({layoutData}) => layoutData)
+    .map(({id, layoutData}) => ({id, position: layoutData}))
+  return [...nodesLayout, ...groupsLayout]
 }
-
-export function fromString(layoutStr: string): Layout {
-  if (!layoutStr || !isString(layoutStr)) {
-    return []
-  }
-  return layoutStr.split(/;/).map(l => {
-    const [_, id, x, y] = l.split(/^"(.*)",([0-9\-]+),([0-9\-]+)/)
-    return {id, position: {x: parseFloat(x), y: parseFloat(y)}}
-  })
-}
-
-export const appendToProcess = (layout: Layout) => (state: ProcessToDisplayState): GraphState => defaultsDeep(
-  {
-    properties: {
-      additionalFields: {
-        properties: {
-          layout: toString(layout),
-        },
-      },
-    },
-  },
-  state,
-)
 
 export const nodes: Reducer<NodeType[]> = (nodes, action) => {
   switch (action.type) {

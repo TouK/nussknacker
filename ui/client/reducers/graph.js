@@ -1,5 +1,4 @@
 import _ from "lodash"
-import {compose} from "redux"
 import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
 import ProcessUtils from "../common/ProcessUtils"
@@ -64,14 +63,14 @@ function graphReducer(state = emptyGraphState, action) {
     }
     case "DISPLAY_PROCESS": {
       const {fetchedProcessDetails} = action
-      const nodeToDisplay = fetchedProcessDetails.json.properties
+      const processToDisplay = fetchedProcessDetails.json
       return {
         ...state,
-        processToDisplay: fetchedProcessDetails.json,
+        processToDisplay,
         fetchedProcessDetails,
         graphLoading: false,
-        nodeToDisplay: nodeToDisplay,
-        layout: LayoutUtils.fromString(nodeToDisplay.additionalFields?.properties?.layout),
+        nodeToDisplay: processToDisplay.properties,
+        layout: LayoutUtils.fromMeta(processToDisplay.nodes, processToDisplay.properties.additionalFields.groups),
       }
     }
     case "LOADING_FAILED": {
@@ -229,15 +228,6 @@ function graphReducer(state = emptyGraphState, action) {
           ...state.processToDisplay,
           validationResult: action.validationResult,
         },
-      }
-    }
-    case "APPEND_METADATA": {
-      const withMetadata = compose(
-        LayoutUtils.appendToProcess(state.layout),
-      )
-      return {
-        ...state,
-        processToDisplay: withMetadata(state.processToDisplay),
       }
     }
     //TODO: handle it differently?

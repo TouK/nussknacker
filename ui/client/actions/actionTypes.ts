@@ -62,4 +62,3 @@ export type ActionTypes =
     | "UNDO"
     | "REDO"
     | "CLEAR"
-    | "APPEND_METADATA"

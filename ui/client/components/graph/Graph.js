@@ -19,6 +19,7 @@ import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
 import {getExpandedGroups} from "../../reducers/selectors/groups"
+import {getLayout} from "../../reducers/selectors/layout"
 
 class Graph extends React.Component {
 
@@ -607,7 +608,7 @@ function mapState(state, props) {
     edgeToDisplay: state.graphReducer.edgeToDisplay,
     groupingState: state.graphReducer.groupingState,
     expandedGroups: getExpandedGroups(state),
-    layout: state.graphReducer.layout,
+    layout: getLayout(state),
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     ...commonState(state),
   }
