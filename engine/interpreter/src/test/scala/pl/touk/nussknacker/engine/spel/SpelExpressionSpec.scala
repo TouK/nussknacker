@@ -607,6 +607,30 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseWithDicts[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe 'invalid
   }
 
+  test("invokes methods on primitives correctly") {
+    def invokeAndCheck[T:TypeTag](expr: String, result: T): Unit = {
+      val parsed = parseOrFail[T](expr)
+      //Bytecode generation happens only after successful invoke at times. To be sure we're there we round it up to 5 ;)
+      (1 to 5).foreach { _ =>
+        parsed.evaluateSyncToValue[T](ctx) shouldBe result
+      }
+    }
+
+    invokeAndCheck("1.toString", "1")
+    invokeAndCheck("1.toString()", "1")
+    invokeAndCheck("1.doubleValue", 1d)
+    invokeAndCheck("1.doubleValue()", 1d)
+
+    invokeAndCheck("false.toString", "false")
+    invokeAndCheck("false.toString()", "false")
+    invokeAndCheck("false.booleanValue", false)
+    invokeAndCheck("false.booleanValue()", false)
+
+    //not primitives, just to make sure toString works on other objects...
+    invokeAndCheck("{}.toString", "[]")
+    invokeAndCheck("#obj.id.toString", "1")
+  }
+
 }
 
 case class SampleObject(list: List[SampleValue])
