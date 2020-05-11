@@ -610,6 +610,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("invokes methods on primitives correctly") {
     def invokeAndCheck[T:TypeTag](expr: String, result: T): Unit = {
       val parsed = parseOrFail[T](expr)
+      //Bytecode generation happens only after successful invoke at times. To be sure we're there we round it up to 5 ;)
       (1 to 5).foreach { _ =>
         parsed.evaluateSyncToValue[T](ctx) shouldBe result
       }
