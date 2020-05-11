@@ -1,17 +1,17 @@
 import * as GraphUtils from "../../components/graph/GraphUtils"
 import HttpService from "../../http/HttpService"
-import {NodeType} from "../../types"
+import {NodeType, Process} from "../../types"
 import {ThunkAction} from "../reduxTypes"
-import {ProcessToDisplayState} from "../../reducers/graphState"
+import {ValidationResult} from "./node"
 
 export type EditEdgeAction = {
   type: "EDIT_EDGE",
   before: NodeType,
   after: NodeType,
-  validationResult: $TodoType,
+  validationResult: ValidationResult,
 }
 
-export function editEdge(process: ProcessToDisplayState, before: NodeType, after: NodeType): ThunkAction {
+export function editEdge(process: Process, before: NodeType, after: NodeType): ThunkAction {
   return (dispatch) => {
     const changedProcess = GraphUtils.mapProcessWithNewEdge(process, before, after)
     return HttpService.validateProcess(changedProcess).then((response) => {

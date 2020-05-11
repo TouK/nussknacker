@@ -3,7 +3,7 @@ import reduceReducers from "reduce-reducers"
 import {isFunction} from "lodash"
 
 export type ReducersMapObject<S> = {
-  [K in keyof S]: Reducer<S[K]> | ReducersMapObject<S[K]>
+  [K in keyof S]: Reducer<S[K]> | ReducersObj<S[K]>
 }
 
 type ReducersObj<S extends {}> = ReducersMapObject<Partial<S>>

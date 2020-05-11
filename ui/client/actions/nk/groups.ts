@@ -4,6 +4,7 @@ import HttpService from "../../http/HttpService"
 import {ThunkAction, Action} from "../reduxTypes"
 import {GroupId, GroupType, NodeId, NodeType, Process} from "../../types"
 import {reportEvent} from "./reportEvent"
+import {ValidationResult} from "./node"
 
 export function startGrouping(): ThunkAction {
   return (dispatch) => {
@@ -91,7 +92,7 @@ export type EditGroupAction = {
   type: "EDIT_GROUP",
   oldGroupId: GroupId,
   newGroup: GroupType,
-  validationResult: $TodoType,
+  validationResult: ValidationResult,
 }
 
 export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupType): ThunkAction {

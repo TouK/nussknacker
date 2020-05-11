@@ -1,6 +1,6 @@
 import {Layout} from "../actions/nk"
 import {ProcessStateType, ProcessType} from "../components/Process/types"
-import {NodeType, GroupId} from "../types"
+import {NodeType, Process, GroupType, NodeId} from "../types"
 
 type GraphHistoryAction = $TodoType
 
@@ -9,20 +9,17 @@ type GraphHistory = {
   future: GraphHistoryAction[],
 }
 
-export type ProcessToDisplayState = {
-  properties?: NodeType,
-  nodes: NodeType[],
-}
-
-export type GroupingState = $TodoType[]
+export type GroupingState = NodeId[]
 
 export type GraphState = {
+  graphLoading: boolean,
   processState: ProcessStateType,
   processStateLoaded: boolean,
   fetchedProcessDetails?: ProcessType,
-  processToDisplay?: ProcessToDisplayState,
+  processToDisplay?: Process,
   businessView: boolean,
-  nodeToDisplay: NodeType,
+  nodeToDisplay?: NodeType | GroupType,
+  nodeToDisplayReadonly?: boolean,
   selectionState?: string[],
   groupingState?: GroupingState,
   history: GraphHistory,

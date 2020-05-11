@@ -1,19 +1,32 @@
-import _ from "lodash"
+import {concat, sortBy, isEqual, reject, zipObject, omit, uniq} from "lodash"
 import * as GraphUtils from "../components/graph/GraphUtils"
 import NodeUtils from "../components/graph/NodeUtils"
-import ProcessUtils from "../common/ProcessUtils"
 import * as LayoutUtils from "./layoutUtils"
 import {nodes} from "./layoutUtils"
 import {mergeReducers} from "./mergeReducers"
 import {reducer as groups} from "./groups"
+import {Reducer} from "../actions/reduxTypes"
+import {GraphState} from "./graphState"
+import {
+  displayOrGroup,
+  updateLayoutAfterNodeIdChange,
+  addNodes,
+  prepareNewNodesWithLayout,
+  updateAfterNodeIdChange,
+  updateAfterNodeDelete,
+  removeSubprocessVersionForLastSubprocess,
+  createEdge,
+  adjustBranchParametersAfterDisconnect,
+  enrichNodeWithProcessDependentData,
+} from "./graphReducerhUtils"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
-const emptyGraphState = {
+const emptyGraphState: GraphState = {
   graphLoading: false,
-  processToDisplay: {},
-  fetchedProcessDetails: {},
-  nodeToDisplay: {},
+  processToDisplay: null,
+  fetchedProcessDetails: null,
+  nodeToDisplay: null,
   edgeToDisplay: {},
   layout: [],
   testCapabilities: {},
@@ -24,11 +37,15 @@ const emptyGraphState = {
   businessView: false,
   processState: null,
   processStateLoaded: false,
+  history: {
+    future: [],
+    past: [],
+  },
 }
 
 const STATE_PROPERTY_NAME = "groupingState"
 
-function graphReducer(state = emptyGraphState, action) {
+const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
   switch (action.type) {
     case "PROCESS_LOADING": {
       return {
@@ -44,9 +61,9 @@ function graphReducer(state = emptyGraphState, action) {
       }
     }
     case "UPDATE_IMPORTED_PROCESS": {
-      const oldNodeIds = _.sortBy(state.processToDisplay.nodes.map((n) => n.id))
-      const newNodeids = _.sortBy(action.processJson.nodes.map((n) => n.id))
-      const newLayout = _.isEqual(oldNodeIds, newNodeids) ? state.layout : null
+      const oldNodeIds = sortBy(state.processToDisplay.nodes.map((n) => n.id))
+      const newNodeids = sortBy(action.processJson.nodes.map((n) => n.id))
+      const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null
 
       return {
         ...state,
@@ -84,27 +101,16 @@ function graphReducer(state = emptyGraphState, action) {
     case "CLEAR_PROCESS": {
       return {
         ...state,
-        processToDisplay: {},
-        fetchedProcessDetails: {},
+        processToDisplay: null,
+        fetchedProcessDetails: null,
         testResults: null,
       }
     }
+
     case "DISPLAY_MODAL_NODE_DETAILS":
+      return displayOrGroup(state, action.nodeToDisplay, action.nodeToDisplayReadonly)
     case "DISPLAY_NODE_DETAILS":
-      if (state.groupingState) {
-        const newNodeId = action.nodeToDisplay.id
-        return {
-          ...state,
-          groupingState: canGroup(state, action.nodeToDisplay) ?
-            _.concat(state.groupingState, newNodeId) : state.groupingState,
-        }
-      } else {
-        return {
-          ...state,
-          nodeToDisplay: action.nodeToDisplay,
-          nodeToDisplayReadonly: action.nodeToDisplayReadonly,
-        }
-      }
+      return displayOrGroup(state, action.nodeToDisplay)
 
     case "DISPLAY_MODAL_EDGE_DETAILS": {
       return {
@@ -143,7 +149,7 @@ function graphReducer(state = emptyGraphState, action) {
       }
     }
     case "DELETE_NODES": {
-      const stateAfterDelete = _.reduce(action.ids, (state, idToDelete) => {
+      const stateAfterDelete = action.ids.reduce((state, idToDelete) => {
         const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete)
         const newSubprocessVersions = removeSubprocessVersionForLastSubprocess(stateAfterNodeDelete.processToDisplay, idToDelete)
         const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete)
@@ -171,13 +177,16 @@ function graphReducer(state = emptyGraphState, action) {
     }
     case "NODES_CONNECTED": {
       const edge = createEdge(action.fromNode, action.toNode, action.edgeType, state.processToDisplay.edges, action.processDefinitionData)
-      const newEdges = _.concat(state.processToDisplay.edges, edge)
+      const newEdges = concat(state.processToDisplay.edges, edge)
       return {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          nodes: state.processToDisplay.nodes.map(n => action.toNode.id === n.id ?
-            enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges) : n),
+          nodes: state.processToDisplay.nodes.map(n => action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(
+            n,
+            action.processDefinitionData,
+            newEdges,
+          )),
           edges: newEdges,
         },
       }
@@ -188,7 +197,7 @@ function graphReducer(state = emptyGraphState, action) {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          edges: _.reject(state.processToDisplay.edges, (e) => e.from === action.from && e.to === action.to),
+          edges: reject(state.processToDisplay.edges, (e) => e.from === action.from && e.to === action.to),
           nodes: nodesToSet,
         },
       }
@@ -205,9 +214,9 @@ function graphReducer(state = emptyGraphState, action) {
     case "NODES_WITH_EDGES_ADDED": {
       const {nodes, layout, uniqueIds} = prepareNewNodesWithLayout(state, action.nodesWithPositions, true)
 
-      const idToUniqueId = _.zipObject(action.nodesWithPositions.map(n => n.node.id), uniqueIds)
+      const idToUniqueId = zipObject(action.nodesWithPositions.map(n => n.node.id), uniqueIds)
       const edgesWithValidIds = action.edges.map(edge => ({...edge, from: idToUniqueId[edge.from], to: idToUniqueId[edge.to]}))
-      const updatedEdges = _.reduce(edgesWithValidIds, (edges, edge) => {
+      const updatedEdges = edgesWithValidIds.reduce((edges, edge) => {
         const fromNode = nodes.find(n => n.id === edge.from)
         const toNode = nodes.find(n => n.id === edge.to)
         const newEdge = createEdge(fromNode, toNode, edge.edgeType, edges, action.processDefinitionData)
@@ -273,10 +282,10 @@ function graphReducer(state = emptyGraphState, action) {
           processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.groupingState),
           layout: [],
         } : state
-      return _.omit(withUpdatedGroups, STATE_PROPERTY_NAME)
+      return omit(withUpdatedGroups, STATE_PROPERTY_NAME)
     }
     case "CANCEL_GROUPING": {
-      return _.omit(state, STATE_PROPERTY_NAME)
+      return omit(state, STATE_PROPERTY_NAME)
     }
     case "UNGROUP": {
       return {
@@ -308,7 +317,7 @@ function graphReducer(state = emptyGraphState, action) {
     case "EXPAND_SELECTION": {
       return {
         ...state,
-        selectionState: _.uniq(_.concat(state.selectionState, action.nodeId)),
+        selectionState: uniq([...state.selectionState, action.nodeId]),
       }
     }
     case "RESET_SELECTION": {
@@ -327,157 +336,6 @@ function graphReducer(state = emptyGraphState, action) {
     default:
       return state
   }
-}
-
-function canGroup(state, newNode) {
-  const newNodeId = newNode.id
-  const currentGrouping = state.groupingState
-  return !NodeUtils.nodeIsGroup(newNode) && currentGrouping.length == 0 ||
-    currentGrouping.find(nodeId => state.processToDisplay.edges.find(edge => edge.from == nodeId && edge.to == newNodeId || edge.to == nodeId && edge.from == newNodeId))
-}
-
-function updateAfterNodeIdChange(layout, process, oldId, newId) {
-  const newLayout = updateLayoutAfterNodeIdChange(layout, oldId, newId)
-  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeIdChange(process, oldId, newId)
-  return {
-    processToDisplay: withGroupsUpdated,
-    layout: newLayout,
-  }
-}
-
-function updateLayoutAfterNodeIdChange(layout, oldId, newId) {
-  return _.map(layout, (n) => {
-    if (oldId === n.id) {
-      return {
-        ...n,
-        id: newId,
-      }
-    } else return n
-  })
-}
-
-function updateAfterNodeDelete(state, idToDelete) {
-  const layoutWithoutNode = _.filter(state.layout, (n) => n.id !== idToDelete)
-  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeDelete(state.processToDisplay, idToDelete)
-  return {
-    ...state,
-    processToDisplay: withGroupsUpdated,
-    layout: layoutWithoutNode,
-  }
-}
-
-function createUniqueNodeId(initialId, usedIds, isCopy) {
-  return initialId && !_.includes(usedIds, initialId) ?
-    initialId :
-    generateUniqueNodeId(initialId, usedIds, 1, isCopy)
-}
-
-function generateUniqueNodeId(initialId, usedIds, nodeCounter, isCopy) {
-  const newId = isCopy ? `${initialId} (copy ${nodeCounter})` : `${initialId} ${nodeCounter}`
-  return _.includes(usedIds, newId) ? generateUniqueNodeId(initialId, usedIds, nodeCounter + 1, isCopy) : newId
-}
-
-function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) {
-  const subprocessVersions = processToDisplay.properties.subprocessVersions
-  const nodeToDelete = processToDisplay.nodes.find((n) => n.id === idToDelete)
-  if (nodeToDelete.type === "SubprocessInput") {
-    const subprocessId = nodeToDelete.ref.id
-    const allSubprocessNodes = processToDisplay.nodes.filter((n) => _.get(n, "ref.id") === subprocessId)
-    const isLastOne = allSubprocessNodes.length === 1
-    return isLastOne ? _.omit(subprocessVersions, subprocessId) : subprocessVersions
-  } else {
-    return subprocessVersions
-  }
-}
-
-function prepareNewNodesWithLayout(state, nodesWithPositions, isCopy) {
-  const alreadyUsedIds = state.processToDisplay.nodes.map(node => node.id)
-  const initialIds = nodesWithPositions.map(nodeWithPosition => nodeWithPosition.node.id)
-  const uniqueIds = _.reduce(initialIds, (uniqueIds, initialId) => {
-    const reservedIds = alreadyUsedIds.concat(uniqueIds)
-    const uniqueId = createUniqueNodeId(initialId, reservedIds, isCopy)
-    return uniqueIds.concat(uniqueId)
-  }, [])
-
-  const updatedNodes = _.zipWith(nodesWithPositions, uniqueIds, (nodeWithPosition, uniqueId) => {
-    return {...nodeWithPosition.node, id: uniqueId}
-  })
-  const updatedLayout = _.zipWith(nodesWithPositions, uniqueIds, (nodeWithPosition, uniqueId) => {
-    return {id: uniqueId, position: nodeWithPosition.position}
-  })
-
-  return {
-    nodes: state.processToDisplay.nodes.concat(updatedNodes),
-    layout: state.layout.concat(updatedLayout),
-    uniqueIds,
-  }
-}
-
-function addNodes(state, {nodes, layout}) {
-  return {
-    ...state,
-    processToDisplay: {
-      ...state.processToDisplay,
-      nodes: nodes,
-    },
-    layout: layout,
-  }
-}
-
-function createEdge(fromNode, toNode, edgeType, allEdges, processDefinitionData) {
-  const baseEdge = {from: fromNode.id, to: toNode.id}
-  const adjustedEdgeType = edgeType || NodeUtils.edgeType(allEdges, fromNode, processDefinitionData)
-  return adjustedEdgeType ? {...baseEdge, edgeType: adjustedEdgeType} : baseEdge
-}
-
-function adjustBranchParametersAfterDisconnect(nodes, removedEdgeFrom, removedEdgeTo) {
-  const node = nodes.find(n => n.id === removedEdgeTo)
-  if (node && NodeUtils.nodeIsJoin(node)) {
-    const newToNode = removeBranchParameter(node, removedEdgeFrom)
-    return _.map(nodes, (n) => { return n.id === removedEdgeTo ? newToNode : n })
-  } else {
-    return nodes
-  }
-
-}
-
-function removeBranchParameter(node, branchId) {
-  const clone = _.cloneDeep(node)
-  clone.branchParameters = _.reject(clone.branchParameters, parameter => parameter.branchId === branchId)
-  return clone
-}
-
-function enrichNodeWithProcessDependentData(originalNode, processDefinitionData, edges) {
-  const node = _.cloneDeepWith(originalNode)
-  if (NodeUtils.nodeIsJoin(node)) {
-    const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
-    const declaredBranchParameters = nodeObjectDetails.parameters.filter(p => p.branchParam)
-    const incomingEdges = edges.filter(e => e.to === node.id)
-
-    node.branchParameters = incomingEdges.map((edge) => {
-      let branchId = edge.from
-      let existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
-      let newBranchParams = declaredBranchParameters.map((branchParamDef) => {
-        let existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
-        let templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
-        return existingParamValue || _.cloneDeep(templateParamValue) ||
-          // We need to have this fallback to some template for situation when it is existing node and it has't got
-          // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-          _.cloneDeep({
-            name: branchParamDef.name,
-            expression: {
-              expression: `#${branchParamDef.name}`,
-              language: "spel",
-            },
-          })
-      })
-      return {
-        branchId: branchId,
-        parameters: newBranchParams,
-      }
-    })
-  }
-  return node
 }
 
 export const reducer = mergeReducers(

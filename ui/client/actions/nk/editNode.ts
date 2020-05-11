@@ -1,18 +1,18 @@
 import HttpService from "../../http/HttpService"
 import {calculateProcessAfterChange} from "./process"
-import {NodeType} from "../../types"
+import {NodeType, Process} from "../../types"
 import {ThunkAction} from "../reduxTypes"
-import {ProcessToDisplayState} from "../../reducers/graphState"
+import {ValidationResult} from "./node"
 
 export type EditNodeAction = {
   type: "EDIT_NODE",
   before: NodeType,
   after: NodeType,
-  validationResult: $TodoType,
+  validationResult: ValidationResult,
   processAfterChange: $TodoType,
 }
 
-export function editNode(process: ProcessToDisplayState, before: NodeType, after: NodeType): ThunkAction {
+export function editNode(process: Process, before: NodeType, after: NodeType): ThunkAction {
   return (dispatch) => {
     const processAfterChange = calculateProcessAfterChange(process, before, after, dispatch)
     return processAfterChange.then((process) => {

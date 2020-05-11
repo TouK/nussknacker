@@ -119,7 +119,8 @@ describe("edges grouped", () => {
     expect(NodeUtils.editGroup(process, "bigGroup", {id: "bigGroupNew", ids: ["node4", "node5"]}).properties.additionalFields.groups).toEqual([
       {
         "id": "bigGroupNew",
-        "nodes": ["node4", "node5"]
+        "nodes": ["node4", "node5"],
+        "type": "_group"
       }
     ])
   })

@@ -7,6 +7,7 @@ export type GroupNodeType = NodeType & {
 
 export type GroupType = {
   id: string,
+  type: "_group",
   nodes: NodeId[],
   layoutData?: LayoutData,
   expanded?: boolean,
