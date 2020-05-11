@@ -545,4 +545,32 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
 
+  test("validate union using variables in branches with custom nodes") {
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "mySource")
+        .buildSimpleVariable("variable1", "variable1", "42")
+        .customNode("custom", "unusedVariable", "addingVariableStreamTransformer")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .source("sourceId2", "mySource")
+        .customNode("custom2", "unusedVariable2", "addingVariableStreamTransformer")
+        .customNode("custom3", "unusedVariable3", "addingVariableStreamTransformer")
+        .buildSimpleVariable("variable2", "variable2", "42")
+        .branchEnd("branch2", "join2"),
+      GraphBuilder
+        .branch("join1", "unionTransformer", Some("unionVariable"),
+          List(
+            "branch1" -> List("key" -> "'key1'", "value" -> "#variable1"),
+            "branch2" -> List("key" -> "'key2'", "value" -> "#variable2")
+          )
+        )
+        .processorEnd("stringService", "stringService" , "stringParam" -> "''")
+    ))
+
+    val validationResult = validator.validate(process)
+
+    validationResult.result.isValid shouldBe true
+  }
+
 }
