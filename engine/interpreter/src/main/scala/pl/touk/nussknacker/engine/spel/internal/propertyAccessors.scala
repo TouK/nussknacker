@@ -6,6 +6,7 @@ import java.util.concurrent.TimeoutException
 
 import cats.data.{State, StateT}
 import cats.effect.IO
+import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import pl.touk.nussknacker.engine.api.dict.DictInstance
@@ -29,7 +30,8 @@ object propertyAccessors {
       new ScalaLazyPropertyAccessor(lazyValuesTimeout), // must be before scalaPropertyAccessor
       ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
       JavaOptionalOrNullPropertyAccessor,
-      ScalaPropertyAccessor,
+      NoParamMethodPropertyAccessor,
+      PrimitiveOrWrappersPropertyAccessor,
       StaticPropertyAccessor,
       MapPropertyAccessor,
       TypedMapPropertyAccessor,
@@ -50,24 +52,43 @@ object propertyAccessors {
       throw NonTransientException(name, s"Cannot invoke method/property $name on null object")
   }
 
-  /* PropertyAccessor for case classes
+  /* PropertyAccessor for methods without parameters - e.g. parameters in case classes
+    TODO: is it ok to treat all methods without parameters as properties?
+    We have to handle Primitives/Wrappers differently, as they have problems with bytecode generation (@see PrimitiveOrWrappersPropertyAccessor)
+
     This one is a bit tricky. We extend ReflectivePropertyAccessor, as it's the only sensible way to make it compilable,
     however it's not so easy to extend and in interpreted mode we skip original implementation
    */
-  object ScalaPropertyAccessor extends ReflectivePropertyAccessor with ReadOnly with Caching {
+  object NoParamMethodPropertyAccessor extends ReflectivePropertyAccessor with ReadOnly with Caching {
 
     override def findGetterForProperty(propertyName: String, clazz: Class[_], mustBeStatic: Boolean): Method = {
       findMethodFromClass(propertyName, clazz).orNull
     }
 
-    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
-      target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name)
+    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
+      target.getMethods.find(m => !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name)
+    }
 
     override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): AnyRef = {
       method.invoke(target)
     }
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
+  }
+
+  //Spring bytecode generation fails when we try to invoke methods on primitives, so we
+  //*do not* extend ReflectivePropertyAccessor and we force interpreted mode
+  //TODO: figure out how to make bytecode generation work also in this case
+  object PrimitiveOrWrappersPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+
+    override def getSpecificTargetClasses: Array[Class[_]] = null
+
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any
+      = method.invoke(target)
+
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
+      target.getMethods.find(m => ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name)
+    }
   }
 
   object StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
