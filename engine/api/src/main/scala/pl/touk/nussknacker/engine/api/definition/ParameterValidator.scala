@@ -100,52 +100,24 @@ case object LiteralIntegerValidator extends ParameterValidator {
 
 case class MinimalNumberValidator(minimalNumber: BigDecimal, annotationMessage: String) extends ParameterValidator {
 
-  private lazy val minAnnotationDefaultMessage: String = "{javax.validation.constraints.Min.message}"
-  private lazy val minAnnotationDefaultMessageRegex: String = s"^${minAnnotationDefaultMessage}" + "$"
-  private lazy val defaultValidatorMessage: String = s"This field value has to be a number greater than or equal to $minimalNumber"
-
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ >= minimalNumber).isSuccess)
       valid(Unit)
     else
-      invalid(error(paramName, nodeId.id))
+      invalid(InvalidPropertyFixedValue(paramName, label, value, List(minimalNumber.toString())))
 
-  private def error(paramName: String, nodeId: String): InvalidNumberParameter = InvalidNumberParameter(
-    getErrorMessageOrDefault(),
-    "Please fill field by proper number",
-    paramName,
-    nodeId
-  )
-
-  private def getErrorMessageOrDefault() = {
-    annotationMessage.replace(minAnnotationDefaultMessageRegex, defaultValidatorMessage)
-  }
 }
 
 case class MaximalNumberValidator(maximalNumber: BigDecimal, annotationMessage: String) extends ParameterValidator {
-
-  private lazy val maxAnnotationDefaultMessage: String = "{javax.validation.constraints.Max.message}"
-  private lazy val maxAnnotationDefaultMessageRegex: String = s"^${maxAnnotationDefaultMessage}" + "$"
-  private lazy val defaultValidatorMessage: String = s"This field value has to be a number less than or equal to $maximalNumber"
 
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ <= maximalNumber).isSuccess)
       valid(Unit)
     else
-      invalid(error(paramName, nodeId.id))
+      invalid(InvalidPropertyFixedValue(paramName, label, value, List(maximalNumber.toString())))
 
-  private def error(paramName: String, nodeId: String): InvalidNumberParameter = InvalidNumberParameter(
-    getErrorMessageOrDefault(),
-    "Please fill field by proper number",
-    paramName,
-    nodeId
-  )
-
-  private def getErrorMessageOrDefault() = {
-    annotationMessage.replace(maxAnnotationDefaultMessageRegex, defaultValidatorMessage)
-  }
 }
 
 case object LiteralParameterValidator {

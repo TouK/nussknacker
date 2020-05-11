@@ -148,8 +148,6 @@ object ProcessCompilationError {
 
   case class MismatchParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
-  case class InvalidNumberParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
-
   case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
