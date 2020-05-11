@@ -17,6 +17,7 @@ import org.scalatest.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 
@@ -37,6 +38,7 @@ object StoppableExecutionEnvironment {
 
 }
 
+@nowarn("deprecated")
 abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment
   with LazyLogging with PatientScalaFutures with Matchers {
 
@@ -129,6 +131,7 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
 
 }
 
+@nowarn("deprecated")
 trait MiniClusterResourceFlink_1_7 extends StoppableExecutionEnvironment {
 
   override def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterResource = {
