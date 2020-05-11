@@ -27,18 +27,14 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private val literalNullableIntegerParam = getFirstParam("literalNullableIntegerAnnotatedParam", classOf[Integer])
   private val literalStringParam = getFirstParam("literalStringAnnotatedParam", classOf[String])
 
-  private val minimalValueIntegerWithDefaultAnnotationMessageParam = getFirstParam("minimalValueIntegerWithDefaultAnnotationMessageAnnotatedParam", classOf[Int])
-  private val minimalValueBigDecimalWithDefaultAnnotationMessageParam = getFirstParam("minimalValueBigDecimalWithDefaultAnnotationMessageAnnotatedParam", classOf[BigDecimal])
-  private val minimalValueIntegerWithMessageParam = getFirstParam("minimalValueIntegerWithMessageAnnotatedParam", classOf[Int])
-  private val minimalValueBigDecimalWithMessageParam = getFirstParam("minimalValueBigDecimalWithMessageAnnotatedParam", classOf[BigDecimal])
+  private val minimalValueIntegerParam = getFirstParam("minimalValueIntegerAnnotatedParam", classOf[Int])
+  private val minimalValueBigDecimalParam = getFirstParam("minimalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
 
-  private val maximalValueIntegerWithDefaultAnnotationMessageParam = getFirstParam("maximalValueIntegerWithDefaultAnnotationMessageAnnotatedParam", classOf[Int])
-  private val maximalValueBigDecimalWithDefaultAnnotationMessageParam = getFirstParam("maximalValueBigDecimalWithDefaultAnnotationMessageAnnotatedParam", classOf[BigDecimal])
-  private val maximalValueIntegerWithMessageParam = getFirstParam("maximalValueIntegerWithMessageAnnotatedParam", classOf[Int])
-  private val maximalValueBigDecimalWithMessageParam = getFirstParam("maximalValueBigDecimalWithMessageAnnotatedParam", classOf[BigDecimal])
+  private val maximalValueIntegerParam = getFirstParam("maximalValueIntegerAnnotatedParam", classOf[Int])
+  private val maximalValueBigDecimalParam = getFirstParam("maximalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
 
-  private val minimalNumberValidatorDefaultAnnotationMessage: String = "{javax.validation.constraints.Min.message}"
-  private val maximalNumberValidatorDefaultAnnotationMessage: String = "{javax.validation.constraints.Max.message}"
+  private val minimalAndMaximalValueIntegerParam = getFirstParam("minimalAndMaximalValueIntegerAnnotatedParam", classOf[Int])
+  private val minimalAndMaximalValueBigDecimalParam = getFirstParam("minimalAndMaximalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
 
   private def notAnnotated(param: String) {}
 
@@ -64,22 +60,19 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private def literalStringAnnotatedParam(@Literal stringParam: String) {}
 
 
-  private def minimalValueIntegerWithDefaultAnnotationMessageAnnotatedParam(@Min(value = 0) minimalValue: Int) {}
+  private def minimalValueIntegerAnnotatedParam(@Min(value = 0) minimalValue: Int) {}
 
-  private def minimalValueBigDecimalWithDefaultAnnotationMessageAnnotatedParam(@Min(value = 0) minimalValue: BigDecimal) {}
-
-  private def minimalValueIntegerWithMessageAnnotatedParam(@Min(value = 0, message = "test") minimalValue: Int) {}
-
-  private def minimalValueBigDecimalWithMessageAnnotatedParam(@Min(value = 0, message = "test") minimalValue: BigDecimal) {}
+  private def minimalValueBigDecimalAnnotatedParam(@Min(value = 0) minimalValue: BigDecimal) {}
 
 
-  private def maximalValueIntegerWithDefaultAnnotationMessageAnnotatedParam(@Max(value = 0) maximalValue: Int) {}
+  private def maximalValueIntegerAnnotatedParam(@Max(value = 0) maximalValue: Int) {}
 
-  private def maximalValueBigDecimalWithDefaultAnnotationMessageAnnotatedParam(@Max(value = 0) maximalValue: BigDecimal) {}
+  private def maximalValueBigDecimalAnnotatedParam(@Max(value = 0) maximalValue: BigDecimal) {}
 
-  private def maximalValueIntegerWithMessageAnnotatedParam(@Max(value = 0, message = "test") maximalValue: Int) {}
 
-  private def maximalValueBigDecimalWithMessageAnnotatedParam(@Max(value = 0, message = "test") maximalValue: BigDecimal) {}
+  private def minimalAndMaximalValueIntegerAnnotatedParam(@Min(value = 0) @Max(value = 1) value: Int) {}
+
+  private def minimalAndMaximalValueBigDecimalAnnotatedParam(@Min(value = 0) @Max(value = 1) value: BigDecimal) {}
 
 
   private def getFirstParam(name: String, params: Class[_]*) = {
@@ -139,46 +132,38 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   }
 
 
-  test("extract minimalValueIntegerWithDefaultAnnotationMessageParam value validator when @Min annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(minimalValueIntegerWithDefaultAnnotationMessageParam)) shouldBe
-      List(MandatoryParameterValidator, MinimalNumberValidator(0, minimalNumberValidatorDefaultAnnotationMessage))
+  test("extract minimalValueIntegerParam value validator when @Min annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(minimalValueIntegerParam)) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0))
   }
 
-  test("extract minimalValueBigDecimalWithDefaultAnnotationMessageParam value validator when @Min annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(minimalValueBigDecimalWithDefaultAnnotationMessageParam)) shouldBe
-      List(MandatoryParameterValidator, MinimalNumberValidator(0, minimalNumberValidatorDefaultAnnotationMessage))
-  }
-
-  test("extract minimalValueIntegerWithMessageParam value validator when @Min annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(minimalValueIntegerWithMessageParam)) shouldBe
-      List(MandatoryParameterValidator, MinimalNumberValidator(0, "test"))
-  }
-
-  test("extract minimalValueBigDecimalWithMessageParam value validator when @Min annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(minimalValueBigDecimalWithMessageParam)) shouldBe
-      List(MandatoryParameterValidator, MinimalNumberValidator(0, "test"))
+  test("extract minimalValueBigDecimalParam value validator when @Min annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(minimalValueBigDecimalParam)) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0))
   }
 
 
-  test("extract maximalValueIntegerWithDefaultAnnotationMessageParam value validator when @Max annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(maximalValueIntegerWithDefaultAnnotationMessageParam)) shouldBe
-      List(MandatoryParameterValidator, MaximalNumberValidator(0, maximalNumberValidatorDefaultAnnotationMessage))
+  test("extract maximalValueIntegerParam value validator when @Max annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(maximalValueIntegerParam)) shouldBe
+      List(MandatoryParameterValidator, MaximalNumberValidator(0))
   }
 
-  test("extract maximalValueBigDecimalWithDefaultAnnotationMessageParam value validator when @Max annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(maximalValueBigDecimalWithDefaultAnnotationMessageParam)) shouldBe
-      List(MandatoryParameterValidator, MaximalNumberValidator(0, maximalNumberValidatorDefaultAnnotationMessage))
+  test("extract maximalValueBigDecimalParam value validator when @Max annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(maximalValueBigDecimalParam)) shouldBe
+      List(MandatoryParameterValidator, MaximalNumberValidator(0))
   }
 
-  test("extract maximalValueIntegerWithMessageParam value validator when @Max annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(maximalValueIntegerWithMessageParam)) shouldBe
-      List(MandatoryParameterValidator, MaximalNumberValidator(0, "test"))
+
+  test("extract minimalAndMaximalValueIntegerParam value validator when @Min and @Max annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(minimalAndMaximalValueIntegerParam)) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
   }
 
-  test("extract maximalValueBigDecimalWithMessageParam value validator when @Max annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(maximalValueBigDecimalWithMessageParam)) shouldBe
-      List(MandatoryParameterValidator, MaximalNumberValidator(0, "test"))
+  test("extract minimalAndMaximalValueBigDecimalParam value validator when @Min and @Max annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(minimalAndMaximalValueBigDecimalParam)) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
   }
+
 
   private def validatorParams(rawJavaParam: java.lang.reflect.Parameter,
                               editor: Option[ParameterEditor] = None) =

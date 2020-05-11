@@ -98,7 +98,7 @@ case object LiteralIntegerValidator extends ParameterValidator {
   )
 }
 
-case class MinimalNumberValidator(minimalNumber: BigDecimal, annotationMessage: String) extends ParameterValidator {
+case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterValidator {
 
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
@@ -109,7 +109,7 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal, annotationMessage: 
 
 }
 
-case class MaximalNumberValidator(maximalNumber: BigDecimal, annotationMessage: String) extends ParameterValidator {
+case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterValidator {
 
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
