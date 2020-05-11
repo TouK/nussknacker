@@ -46,6 +46,8 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
         queryStateProxyPortLow = head
         stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled(configuration, queryStateProxyPortLow, taskManagersCount)
         stoppableEnv.start()
+      case other => throw new AssertionError(s"Failed to generate port, received: $other")
+
     }
     env = new StreamExecutionEnvironment(stoppableEnv)
     val testConfig = TestConfig(kafkaZookeeperServer)

@@ -9,7 +9,7 @@ import ReleaseTransformations._
 import scala.util.Try
 
 val scala211 = "2.11.12"
-val scala212 = "2.12.10"
+val scala212 = "2.12.11"
 lazy val supportedScalaVersions = List(scala212, scala211)
 
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
@@ -106,13 +106,13 @@ lazy val commonSettings =
       ),
       testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
       testOptions in IntegrationTest += scalaTestReports,
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+      addCompilerPlugin("com.github.ghik" % "silencer-plugin" % silencerV cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
         "-deprecation",
         "-encoding", "utf8",
-        // TODO: Turn it on back when we break compatibility with Flink 1.6: see comments in StoppableExecutionEnvironment.prepareMiniClusterResource
-//        "-Xfatal-warnings",
+        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
@@ -129,7 +129,11 @@ lazy val commonSettings =
       coverageMinimum := 60,
       coverageFailOnMinimum := false,
       //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
-      scalacOptions in (Compile, doc) -= "-Xfatal-warnings"
+      scalacOptions in (Compile, doc) -= "-Xfatal-warnings",
+      libraryDependencies ++= Seq(
+        "com.github.ghik" % "silencer-lib" % silencerV % Provided cross CrossVersion.full,
+        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
+      )
     )
 
 val forkSettings = Seq(
@@ -167,6 +171,8 @@ val commonsTextV = "1.8"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
+val silencerV = "1.7.0"
+val scalaCollectionsCompatV = "2.1.6"
 
 val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
