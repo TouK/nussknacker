@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.common.serialization.Serializer
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaKeyValueSerializationSchemaFactoryBase, KafkaSerializationSchemaFactoryBase}
 
@@ -10,7 +11,7 @@ trait ConfluentAvroSerializerFactory {
 
   protected def createSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig, isKey: Boolean): KafkaAvroSerializer = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
-    val serializer = new KafkaAvroSerializer(schemaRegistryClient)
+    val serializer = new KafkaAvroSerializer(schemaRegistryClient.client)
     val props = kafkaConfig.kafkaProperties.getOrElse(Map.empty)
     serializer.configure(props.asJava, isKey)
     serializer

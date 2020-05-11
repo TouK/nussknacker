@@ -11,9 +11,6 @@ import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecordBuilder}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
-import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-
-import scala.util.control.Exception.catching
 
 object BestEffortAvroEncoder {
 

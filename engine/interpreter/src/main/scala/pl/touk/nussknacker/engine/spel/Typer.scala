@@ -126,8 +126,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: InlineList => withTypedChildren { children =>
         val childrenTypes = children.toSet
-        val genericType = if (childrenTypes.contains(Unknown) || childrenTypes.size != 1) Unknown else childrenTypes.head
-        Valid(Typed.genericTypeClass[java.util.List[_]](List(genericType)))
+        Valid(Typed.genericTypeClass[java.util.List[_]](List(Typed(childrenTypes))))
       }
 
       case e: InlineMap =>
@@ -151,11 +150,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         }
 
-      case e: MethodReference =>
-        TypeMethodReference(e, current.stack) match {
-          case Right(typingResult) => fixedWithNewCurrent(current.popStack)(typingResult)
-          case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else fixedWithNewCurrent(current.popStack)(Unknown)
+      case e: MethodReference => typeChildren(validationContext, node, current.popStack) { typedParams =>
+        TypeMethodReference(e.getName, current.stack, typedParams) match {
+          case Right(typingResult) => Valid(typingResult)
+          case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
         }
+      }
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
@@ -171,10 +171,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)
 
       case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
-      case e: OpMinus =>
-        checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType).orElse(
-          checkSingleOperandArithmeticOperation(validationContext, e, current)
-        )
+      case e: OpMinus => withTypedChildren {
+        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToCommonWidestType))
+        case left :: right :: Nil => invalid(s"Operator '${e.getOperatorName}' used with mismatch types: ${left.display} and ${right.display}")
+        case left :: Nil if left.canBeSubclassOf(Typed[Number]) => Valid(left)
+        case left :: Nil => invalid(s"Operator '${e.getOperatorName}' used with non numeric type: ${left.display}")
+        case Nil => invalid("Empty minus")
+      }
       case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
       case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
       case e: OperatorPower => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForPowerOperation)
@@ -184,7 +187,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case left :: right :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
         case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToCommonWidestType))
         case left :: right :: Nil => invalid(s"Operator '${e.getOperatorName}' used with mismatch types: ${left.display} and ${right.display}")
-        case left :: Nil => Valid(left)
+        case left :: Nil if left.canBeSubclassOf(Typed[Number]) => Valid(left)
+        case left :: Nil => invalid(s"Operator '${e.getOperatorName}' used with non numeric type: ${left.display}")
         case Nil => invalid("Empty plus")
       }
       case e: OperatorBetween => fixed(Typed[Boolean])
@@ -255,7 +259,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext)
                                                  (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
-      case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right))
+      case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right))
       case left :: right :: Nil => invalid(s"Operator '${node.getOperatorName}' used with mismatch types: ${left.display} and ${right.display}")
       case _ => invalid(s"Bad '${node.getOperatorName}' operator construction") // shouldn't happen
     }

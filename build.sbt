@@ -6,6 +6,8 @@ import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 import ReleaseTransformations._
 
+import scala.util.Try
+
 val scala211 = "2.11.12"
 val scala212 = "2.12.10"
 lazy val supportedScalaVersions = List(scala212, scala211)
@@ -14,16 +16,16 @@ lazy val supportedScalaVersions = List(scala212, scala211)
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
-val nexusUrl = Option(System.getProperty("nexusUrl"))
+val nexusUrlFromProps = Option(System.getProperty("nexusUrl"))
 //TODO: this is pretty clunky, but works so far for our case...
-val nexusHost = nexusUrl.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
+val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
 val dockerTagName = Option(System.getProperty("dockerTagName"))
 val dockerPort = System.getProperty("dockerPort", "8080").toInt
 val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
 val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
-val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
+val dockerUpLatestFromProp = Option(System.getProperty("dockerUpLatest")).flatMap(p => Try(p.toBoolean).toOption)
 val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
@@ -32,16 +34,22 @@ val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
 
-
 //have some problems with force() - e.g. with forcing circe version in httpUtils...
 ThisBuild / useCoursier := false
 
-val publishSettings = Seq(
+lazy val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishTo := {
-    nexusUrl.map(url =>
-      (if (isSnapshot.value) "snapshots" else "releases") at url)
+    nexusUrlFromProps.map { url =>
+      (if (isSnapshot.value) "snapshots" else "releases") at url
+    }.orElse {
+      val defaultNexusUrl = "https://oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
+      else
+        sonatypePublishToBundle.value
+    }
   },
   publishArtifact in Test := false,
   //We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm
@@ -57,8 +65,9 @@ val publishSettings = Seq(
   },
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
-  credentials := nexusHost.map(host => Credentials("Sonatype Nexus Repository Manager",
+  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
     host, System.getProperty("nexusUser", "touk"), System.getProperty("nexusPassword"))
+    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
   ).toSeq
 )
 
@@ -85,7 +94,7 @@ val slowTestsSettings =
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
 
-val commonSettings =
+lazy val commonSettings =
   publishSettings ++
     Seq(
       test in assembly := {},
@@ -164,7 +173,7 @@ val slickV = "3.3.2"
 val hsqldbV = "2.5.0"
 val postgresV = "42.2.12"
 val flywayV = "6.3.3"
-val confluentV = "4.1.2"
+val confluentV = "5.4.1"
 val jbcryptV = "0.4"
 val cronParserV = "3.1.1"
 val javaxValidationApiV = "2.0.1.Final"
@@ -180,7 +189,7 @@ lazy val dockerSettings = {
     dockerBaseImage := "openjdk:8-jdk",
     dockerUsername := dockerUserName,
     packageName := dockerPackageName,
-    dockerUpdateLatest := dockerUpLatest,
+    dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerLabels := Map(
       "tag" -> dockerTagName.getOrElse(version.value),
       "version" -> version.value,
@@ -820,13 +829,20 @@ lazy val root = (project in file("."))
       checkSnapshotDependencies,
       inquireVersions,
       runClean,
-      releaseStepCommandAndRemaining("+test"),
+      ReleaseStep { st: State =>
+        if (!st.get(ReleaseKeys.skipTests).getOrElse(false)) {
+          releaseStepCommandAndRemaining("+test")(st)
+        } else {
+          st
+        }
+      },
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-      releaseStepCommandAndRemaining("+dist/docker:publish"),
       releaseStepCommandAndRemaining("+publishSigned"),
-      ReleaseStep(action = Command.process("sonatypeBundleRelease", _)),
+      releaseStepCommand("dist/universal:packageZipTarball"),
+      releaseStepCommand("dist/docker:publish"),
+      releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
       pushChanges

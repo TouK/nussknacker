@@ -10,7 +10,7 @@ object ParameterEditorDeterminerChain {
     val strategies = Seq(
       new ParameterConfigEditorDeterminer(parameterConfig),
       new ParameterBasedEditorDeterminer(param),
-      new ParameterTypeEditorDeterminerUiDecorator(new ParameterTypeEditorDeterminer(param.runtimeClass))
+      new ParameterTypeEditorDeterminerUiDecorator(new ParameterTypeEditorDeterminer(param.typ))
     )
     new ParameterEditorDeterminerChain(strategies)
   }

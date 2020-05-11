@@ -1,29 +1,23 @@
 package pl.touk.nussknacker.engine.spel
 
-import java.lang.reflect.{Method, Modifier}
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.concurrent.TimeoutException
 
 import cats.data.Validated.Valid
-import cats.data.{NonEmptyList, State, StateT, Validated}
-import cats.effect.IO
+import cats.data.{NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast.SpelNodeImpl
-import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.dict.{DictInstance, DictRegistry}
-import pl.touk.nussknacker.engine.api.exception.NonTransientException
+import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
+import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
@@ -32,9 +26,7 @@ import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
-import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 /**
@@ -134,8 +126,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
 
   override def parseWithoutContextValidation(original: String): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
     if (shouldUseNullExpression(original)) {
-      // This will work only with @Nullable for now because for Option/Optional is needed expectedType
-      Valid(NullExpression(original, Unknown, flavour))
+      Valid(NullExpression(original, flavour))
     } else {
       baseParse(original).map { parsed =>
         expression(ParsedSpelExpression(original, () => baseParse(original), parsed), Unknown)
@@ -146,10 +137,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
     if (shouldUseNullExpression(original)) {
       Valid(TypedExpression(
-        NullExpression(original, expectedType, flavour),
-        expectedType,
-        SpelExpressionTypingInfo(Map.empty)
-      ))
+        NullExpression(original, flavour), expectedType, SpelExpressionTypingInfo(Map.empty)))
     } else {
       baseParse(original).andThen { parsed =>
         validator.validate(parsed, ctx, expectedType).map((_, parsed))

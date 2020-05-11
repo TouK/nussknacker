@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.execution.ExecutionState
@@ -72,9 +70,10 @@ object ProcessTestHelpers {
 
     def prepareCreator(data: List[SimpleRecord], config: Config): ProcessConfigCreator = new ProcessConfigCreator {
 
-      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service with TimeMeasuringService]] = Map(
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
         "logService" -> WithCategories(new MockService),
-        "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService)
+        "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
+        "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption)
       )
 
       override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
@@ -87,7 +86,8 @@ object ProcessTestHelpers {
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
         "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
-        "lazyParameterSink"-> WithCategories(LazyParameterSinkFactory)
+        "lazyParameterSink"-> WithCategories(LazyParameterSinkFactory),
+        "eagerOptionalParameterSink"-> WithCategories(EagerOptionalParameterSinkFactory)
       )
 
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
@@ -119,7 +119,7 @@ object ProcessTestHelpers {
       }
 
       override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = {
-        val kafkaConfig = config.as[KafkaConfig]("kafka")
+        val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
         Map("sig1" ->
           WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
       }

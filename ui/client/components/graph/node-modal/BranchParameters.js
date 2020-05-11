@@ -1,35 +1,39 @@
 import PropTypes from "prop-types"
 import React from "react"
-import EditableEditor from "./editors/EditableEditor"
 import ExpressionField from "./editors/expression/ExpressionField"
 
 const BranchParameters = (props) => {
 
-  const {node, joinDef, isMarked, showValidation, errors, showSwitch, isEditMode,
+  const {node, isMarked, showValidation, errors, showSwitch, isEditMode,
     nodeObjectDetails, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult} = props
 
+  //TODO: maybe we can rely only on node?
+  const branchParameters = nodeObjectDetails?.parameters.filter(p => p.branchParam)
   return (
-    joinDef.branchParameters?.map((param, paramIndex) => {
+    branchParameters?.map((param) => {
+      const paramName = param.name
       return (
-        <div className="node-row" key={param.name}>
-          <div className="node-label" title={param.name}>{param.name}:</div>
+        <div className="node-row" key={paramName}>
+          <div className="node-label" title={paramName}>{paramName}:</div>
           <div className="node-value">
             <div className="fieldsControl">
               {
-                joinDef.incomingEdges.map((edge, edgeIndex) => {
-                  // It could be tricky - we assume that node data is filled by template (or actual values)
-                  // in the same order as here, but it is true because for filling is used the same JoinDef
-                  const path = `branchParameters[${edgeIndex}].parameters[${paramIndex}]`
-                  const paramValue = node?.branchParameters[edgeIndex]?.parameters[paramIndex]
+                node.branchParameters.map((branchParameter, branchIndex) => {
+                  const branchId = branchParameter.branchId
+                  //here we assume the parameters are correct wrt branch definition. If this is not the case,
+                  //differences should be handled on other level, e.g. using reducers etc.
+                  const paramIndex = branchParameter.parameters.findIndex(paramInBranch => paramInBranch.name === paramName)
+                  const paramValue = branchParameter.parameters[paramIndex]
+                  const expressionPath = `branchParameters[${branchIndex}].parameters[${paramIndex}].expression`
                   return paramValue ? (
-                    <div className="branch-parameter-row" key={`${param.name}-${edge.from}`}>
-                      <div className={"branch-param-label"}>{edge.from}</div>
+                    <div className="branch-parameter-row" key={`${paramName}-${branchId}`}>
+                      <div className={"branch-param-label"}>{branchId}</div>
                       <div className={"branch-parameter-expr-container"}>
                         <ExpressionField
                           fieldName={null}
-                          fieldLabel={param.name}
+                          fieldLabel={paramName}
                           fieldType={null}
-                          exprPath={`${path}.expression`}
+                          exprPath={expressionPath}
                           isEditMode={isEditMode}
                           editedNode={node}
                           isMarked={isMarked}
@@ -57,7 +61,6 @@ const BranchParameters = (props) => {
 
 BranchParameters.propTypes = {
   node: PropTypes.object.isRequired,
-  joinDef: PropTypes.object.isRequired,
   isMarked: PropTypes.func.isRequired,
   isEditMode: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,

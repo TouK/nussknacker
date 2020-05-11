@@ -7,15 +7,16 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
+import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryClientFactory.TypedConfluentSchemaRegistryClient
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryProvider, MockConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactoryBuilder}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -30,8 +31,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   import KafkaUtils._
   import MockSchemaRegistry._
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
 
@@ -41,13 +40,11 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
 
-  lazy val kafkaConfig: KafkaConfig = mockProcessObjectDependencies.config.as[KafkaConfig]("kafka")
-
-  lazy val client: TypedConfluentSchemaRegistryClient = factory.createSchemaRegistryClient(kafkaConfig)
+  lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
 
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
-  val RecordSchema = AvroUtils.createSchema(RecordSchemaString)
+  val RecordSchema: Schema = AvroUtils.parseSchema(RecordSchemaString)
 
   private val givenNotMatchingJsonObj =
     """{
@@ -98,21 +95,21 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .filter("name-filter", filter)
       .sink("end", "#input","kafka-json", "topic" -> s"'$JsonOutTopic'")
 
-  private val avroProcess =
+  private def avroProcess(version: Integer) =
     EspProcessBuilder
       .id("avro-test")
       .parallelism(1)
       .exceptionHandler()
-      .source("start", "kafka-avro", "topic" -> s"'$AvroInTopic'")
+      .source("start", "kafka-avro", "topic" -> s"'$AvroInTopic'", "Schema version" -> versionParam(version))
       .filter("name-filter", "#input.first == 'Jan'")
       .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroOutTopic'")
 
-  private val avroFromScratchProcess =
+  private def avroFromScratchProcess(version: Integer) =
     EspProcessBuilder
       .id("avro-from-scratch-test")
       .parallelism(1)
       .exceptionHandler()
-      .source("start", "kafka-avro", "topic" -> s"'$AvroFromScratchInTopic'")
+      .source("start", "kafka-avro", "topic" -> s"'$AvroFromScratchInTopic'", "Schema version" -> versionParam(version))
       .sink("end", s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('$AvroFromScratchOutTopic'))",
         "kafka-avro", "topic" -> s"'$AvroFromScratchOutTopic'")
 
@@ -127,6 +124,9 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       )
       .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
       .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroTypedOutTopic'")
+
+  private def versionParam(version: Integer) =
+    if (null != version) version.toString else ""
 
   test("should read json object from kafka, filter and save it to kafka") {
     kafkaClient.sendMessage(JsonInTopic, givenNotMatchingJsonObj)
@@ -155,7 +155,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     send(givenNotMatchingAvroObj, AvroInTopic)
     send(givenMatchingAvroObj, AvroInTopic)
 
-    run(avroProcess) {
+    run(avroProcess(1)) {
       val consumer = kafkaClient.createConsumer()
       val processed = consumeOneAvroMessage(AvroOutTopic)
       processed shouldEqual List(givenMatchingAvroObj)
@@ -165,13 +165,13 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   test("should read avro object from kafka and save new one created from scratch") {
     send(givenMatchingAvroObj, AvroFromScratchInTopic)
 
-    run(avroFromScratchProcess) {
+    run(avroFromScratchProcess(1)) {
       val processed = consumeOneAvroMessage(AvroFromScratchOutTopic)
       processed shouldEqual List(givenMatchingAvroObj)
     }
   }
 
-  test("should read avro typed object from kafka and save it to kafka") {
+  test("should read fixed avro typed object from kafka and save it to kafka") {
     send(givenNotMatchingAvroObj, AvroTypedInTopic)
     send(givenMatchingAvroObj, AvroTypedInTopic)
 
@@ -265,8 +265,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
-  private lazy val valueSerializer = new KafkaAvroSerializer(client)
-  private lazy val valueDeserializer = new KafkaAvroDeserializer(client)
+  private lazy val valueSerializer = new KafkaAvroSerializer(confluentSchemaRegistryMockClient.client)
+  private lazy val valueDeserializer = new KafkaAvroDeserializer(confluentSchemaRegistryMockClient.client)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -313,20 +313,17 @@ object MockSchemaRegistry extends Serializable {
       |}
     """.stripMargin
 
-  val factory: MockConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactoryBuilder()
-    .registerStringSchema(AvroInTopic, RecordSchemaString)
-    .registerStringSchema(AvroOutTopic, RecordSchemaString)
-    .registerStringSchema(AvroFromScratchInTopic, RecordSchemaString)
-    .registerStringSchema(AvroFromScratchOutTopic, RecordSchemaString)
-    .registerStringSchema(AvroTypedInTopic, RecordSchemaString)
-    .registerStringSchema(AvroTypedOutTopic, RecordSchemaString)
+  val confluentSchemaRegistryMockClient: ConfluentSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
+    .register(AvroInTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroOutTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroFromScratchInTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroFromScratchOutTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroTypedInTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroTypedOutTopic, RecordSchemaString, 1, isKey = false)
     .build
 
-  /**
-    * This is some hack for Serialization object in Flink.. We can't pass factory val
-    */
   object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {
-    override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): TypedConfluentSchemaRegistryClient =
-      factory.createSchemaRegistryClient(kafkaConfig)
+    override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =
+      confluentSchemaRegistryMockClient
   }
 }

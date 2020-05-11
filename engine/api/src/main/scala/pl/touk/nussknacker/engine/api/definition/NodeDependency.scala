@@ -14,37 +14,53 @@ case object OutputVariableNameDependency extends NodeDependency
 
 object Parameter {
 
-  def apply[T: ClassTag](name: String): Parameter = Parameter(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
-
-  def apply(name: String, typ: TypingResult, runtimeClass: Class[_], validators: List[ParameterValidator]): Parameter =
-    Parameter(name, typ, runtimeClass, editor = None, validators = validators, additionalVariables = Map.empty, branchParam = false)
+  def apply[T: ClassTag](name: String): Parameter = Parameter(name, Typed[T])
 
   // we want to have mandatory parameters by default because it can protect us from NPE in some cases)
-  def apply(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
-    Parameter(name, typ, runtimeClass, validators = List(MandatoryParameterValidator))
+  def apply(name: String, typ: TypingResult): Parameter =
+    Parameter(name, typ, validators = List(MandatoryParameterValidator))
+
+  def apply(name: String, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
+    Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty,
+      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
+
+  @deprecated("Passing runtimeClass to Parameter.apply is deprecated in favor of passing isLazyParameter")
+  def apply(name: String,
+            typ: TypingResult,
+            runtimeClass: Class[_],
+            editor: Option[ParameterEditor],
+            validators: List[ParameterValidator],
+            additionalVariables: Map[String, TypingResult],
+            branchParam: Boolean): Parameter = {
+    val isLazyParameter = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
+    Parameter(name, typ, editor, validators, additionalVariables, branchParam, isLazyParameter,
+      scalaOptionParameter = false, javaOptionalParameter = false)
+  }
 
   def optional[T:ClassTag](name: String): Parameter =
-    Parameter.optional(name, Typed[T], implicitly[ClassTag[T]].runtimeClass)
+    Parameter.optional(name, Typed[T])
 
-  def optional(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
-    Parameter(name, typ, runtimeClass, editor = None, validators = List.empty, additionalVariables = Map.empty, branchParam = false)
+  // Represents optional parameter annotated with @Nullable, if you want to emulate scala Option or java Optional,
+  // you should redefine scalaOptionParameter and javaOptionalParameter
+  def optional(name: String, typ: TypingResult): Parameter =
+    Parameter(name, typ, editor = None, validators = List.empty, additionalVariables = Map.empty,
+      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
 }
 
 object NotBlankParameter {
 
-  def apply(name: String, typ: TypingResult, runtimeClass: Class[_]): Parameter =
-    Parameter(name, typ, runtimeClass, validators = List(NotBlankParameterValidator))
+  def apply(name: String, typ: TypingResult): Parameter =
+    Parameter(name, typ, validators = List(NotBlankParameterValidator))
 
 }
 
 case class Parameter(name: String,
                      typ: TypingResult,
-                     runtimeClass: Class[_],
                      editor: Option[ParameterEditor],
                      validators: List[ParameterValidator],
                      additionalVariables: Map[String, TypingResult],
-                     branchParam: Boolean) extends NodeDependency {
-
-  def isLazyParameter: Boolean = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
-}
+                     branchParam: Boolean,
+                     isLazyParameter: Boolean,
+                     scalaOptionParameter: Boolean,
+                     javaOptionalParameter: Boolean) extends NodeDependency

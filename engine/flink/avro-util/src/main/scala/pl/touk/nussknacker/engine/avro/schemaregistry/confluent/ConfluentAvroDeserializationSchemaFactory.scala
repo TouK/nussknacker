@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 import io.confluent.kafka.serializers._
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchemaFactoryBase, KafkaKeyValueDeserializationSchemaFactoryBase}
 
@@ -11,7 +12,7 @@ trait ConfluentAvroDeserializerFactory {
 
   protected def createDeserializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig, isKey: Boolean, useSpecificAvroReader: Boolean): KafkaAvroDeserializer = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
-    val deserializer = new KafkaAvroDeserializer(schemaRegistryClient)
+    val deserializer = new KafkaAvroDeserializer(schemaRegistryClient.client)
     val props = kafkaConfig.kafkaProperties.getOrElse(Map.empty) + (
       KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG -> useSpecificAvroReader
     )

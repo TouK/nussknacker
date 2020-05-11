@@ -428,7 +428,7 @@ class Graph extends React.Component {
 
       const nodeDataId = cellView.model.attributes.nodeData?.id
       if (nodeDataId) {
-        const nodeData = this.props.processToDisplay.nodes.find(n => n.id === nodeDataId)
+        const nodeData = this.findNodeById(nodeDataId)
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
         this.props.actions.displayModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
@@ -446,7 +446,7 @@ class Graph extends React.Component {
           return
         }
 
-        this.props.actions.displayNodeDetails(this.props.processToDisplay.nodes.find(n => n.id === nodeDataId))
+        this.props.actions.displayNodeDetails(this.findNodeById(nodeDataId))
 
         if (evt.ctrlKey || evt.metaKey) {
           this.props.actions.expandSelection(nodeDataId)
@@ -483,6 +483,11 @@ class Graph extends React.Component {
     this.processGraphPaper.on("cell:mouseout", (cellView, evt) => {
       this.hideBackgroundIcon(cellView.model, evt)
     })
+  }
+
+  findNodeById(nodeId) {
+    const nodes = NodeUtils.nodesFromProcess(this.props.processToDisplay, this.props.expandedGroups)
+    return nodes.find(n => n.id === nodeId)
   }
 
   //needed for proper switch/filter label handling

@@ -25,7 +25,7 @@ class PdfExporterSpec extends FlatSpec {
   it should "export process to " in {
     val process: DisplayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process), TestProcessingTypes.Streaming)
     val displayable = process.copy(nodes = process.nodes.map {
-        case a:Filter => a.copy(additionalFields = Some(UserDefinedAdditionalNodeFields(Some("mój wnikliwy komętaż"))))
+        case a:Filter => a.copy(additionalFields = Some(UserDefinedAdditionalNodeFields(Some("mój wnikliwy komętaż"), None)))
         case a => a
     })
 

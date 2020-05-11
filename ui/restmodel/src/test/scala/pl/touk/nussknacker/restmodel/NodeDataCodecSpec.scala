@@ -22,7 +22,7 @@ class NodeDataCodecSpec extends FunSuite with Matchers {
     ), List(
       SubprocessInputDefinition("proc1", List(SubprocessParameter("param1", SubprocessClazzRef[String]))),
       CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression("spel", "11"))),
-        Some(UserDefinedAdditionalNodeFields(Some("desc"))))
+        Some(UserDefinedAdditionalNodeFields(Some("desc"), None)))
     ), List(
       Edge("from1", "to1", None)
     ), "")
