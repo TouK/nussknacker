@@ -5,10 +5,10 @@ import {Reducer} from "../actions/reduxTypes"
 
 export function fromMeta(nodes: NodeType[], groups: GroupType[]): Layout {
   const nodesLayout = nodes
-    .filter(({additionalFields}) => additionalFields.layoutData)
+    .filter(({additionalFields}) => additionalFields?.layoutData)
     .map(({id, additionalFields}) => ({id, position: additionalFields.layoutData}))
   const groupsLayout = groups
-    .filter(({layoutData}) => layoutData)
+    .filter(g => g?.layoutData)
     .map(({id, layoutData}) => ({id, position: layoutData}))
   return [...nodesLayout, ...groupsLayout]
 }
