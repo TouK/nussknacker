@@ -81,7 +81,9 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
       }
       //TODO: we do not check var arg parameter types
       if (nonVarArgMatching) Some(method.refClazz) else None
-    } else None
+    } else {
+      None
+    }
   }
 
 }
