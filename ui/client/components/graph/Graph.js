@@ -16,8 +16,11 @@ import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
-import NodeUtils from "./NodeUtils.js"
+import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
+import {getExpandedGroups} from "../../reducers/selectors/groups"
+import {getLayout} from "../../reducers/selectors/layout"
+import {isBusinessView} from "../../reducers/selectors/graph"
 
 class Graph extends React.Component {
 
@@ -56,7 +59,6 @@ class Graph extends React.Component {
     this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, this.props.expandedGroups)
     this._prepareContentForExport()
     this.panAndZoom = this.enablePanZoom()
-    this.processGraphPaper.scaleContentToFit({padding: 75, maxScale: 1.25})
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
     this.cursorBehaviour()
@@ -123,6 +125,7 @@ class Graph extends React.Component {
       rankDir: "TB",
     })
     this.changeLayoutIfNeeded()
+    this.fitSmallAndLargeGraphs(this.panAndZoom)
   }
 
   zoomIn() {
@@ -380,24 +383,25 @@ class Graph extends React.Component {
   }
 
   enablePanZoom() {
-    const svgElement = this.getEspGraphRef().getElementsByTagName("svg").item(0)
+    const paper = this.processGraphPaper
 
-    const panAndZoom = svgPanZoom(svgElement, {
+    const panAndZoom = svgPanZoom(paper.svg, {
       viewportSelector: ".svg-pan-zoom_viewport",
-      fit: this.props.processToDisplay.nodes.length > 1,
+      fit: false,
+      contain: false,
       zoomScaleSensitivity: 0.4,
       controlIconsEnabled: false,
       panEnabled: false,
       dblClickZoomEnabled: false,
-      minZoom: 0.2,
-      maxZoom: 10,
+      minZoom: 0.05,
+      maxZoom: 5,
     })
 
-    this.processGraphPaper.on("blank:pointerdown", (evt, x, y) => {
+    paper.on("blank:pointerdown", () => {
       panAndZoom.enablePan()
     })
 
-    this.processGraphPaper.on("cell:pointerup blank:pointerup", (cellView, event) => {
+    paper.on("cell:pointerup blank:pointerup", () => {
       panAndZoom.disablePan()
     })
 
@@ -406,9 +410,15 @@ class Graph extends React.Component {
   }
 
   fitSmallAndLargeGraphs = (panAndZoom) => {
+    if (!panAndZoom) {
+      return
+    }
+
+    panAndZoom.fit()
     const realZoom = panAndZoom.getSizes().realZoom
     const toZoomBy = realZoom > 1 ? 1 / realZoom : 0.90 //the bigger zoom, the further we get
     panAndZoom.zoomBy(toZoomBy)
+    panAndZoom.center()
   }
 
   changeNodeDetailsOnClick() {
@@ -417,9 +427,10 @@ class Graph extends React.Component {
         return
       }
 
-      const nodeData = cellView.model.attributes.nodeData
-      if (nodeData) {
-        const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeData.id
+      const nodeDataId = cellView.model.attributes.nodeData?.id
+      if (nodeDataId) {
+        const nodeData = this.findNodeById(nodeDataId)
+        const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
         this.props.actions.displayModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
 
@@ -431,27 +442,27 @@ class Graph extends React.Component {
     if (this.props.singleClickNodeDetailsEnabled) {
       this.processGraphPaper.on("cell:pointerclick", (cellView, evt, x, y) => {
 
-        const nodeData = cellView.model.attributes.nodeData
-        if (!nodeData) {
+        const nodeDataId = cellView.model.attributes.nodeData?.id
+        if (!nodeDataId) {
           return
         }
 
-        this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
+        this.props.actions.displayNodeDetails(this.findNodeById(nodeDataId))
 
         if (evt.ctrlKey || evt.metaKey) {
-          this.props.actions.expandSelection(nodeData.id)
+          this.props.actions.expandSelection(nodeDataId)
         } else {
-          this.props.actions.resetSelection(nodeData.id)
+          this.props.actions.resetSelection(nodeDataId)
         }
 
         //TODO: is this the best place for this? if no, where should it be?
         const targetClass = _.get(evt, "originalEvent.target.className.baseVal")
-        if (targetClass.includes("collapseIcon") && nodeData) {
-          this.props.actions.collapseGroup(nodeData.id)
+        if (targetClass.includes("collapseIcon") && nodeDataId) {
+          this.props.actions.collapseGroup(nodeDataId)
         }
 
-        if (targetClass.includes("expandIcon") && nodeData) {
-          this.props.actions.expandGroup(nodeData.id)
+        if (targetClass.includes("expandIcon") && nodeDataId) {
+          this.props.actions.expandGroup(nodeDataId)
         }
       })
     }
@@ -473,6 +484,11 @@ class Graph extends React.Component {
     this.processGraphPaper.on("cell:mouseout", (cellView, evt) => {
       this.hideBackgroundIcon(cellView.model, evt)
     })
+  }
+
+  findNodeById(nodeId) {
+    const nodes = NodeUtils.nodesFromProcess(this.props.processToDisplay, this.props.expandedGroups)
+    return nodes.find(n => n.id === nodeId)
   }
 
   //needed for proper switch/filter label handling
@@ -533,8 +549,7 @@ class Graph extends React.Component {
     const paddingLeft = cssVariables.svgGraphPaddingLeft
     const paddingTop = cssVariables.svgGraphPaddingTop
 
-    const element = document.getElementById(this.props.divId)
-    const svg = element.getElementsByTagName("svg").item(0)
+    const {svg} = this.processGraphPaper
     const graphPosition = svg.getBoundingClientRect()
 
     return {
@@ -589,7 +604,7 @@ function mapState(state, props) {
     divId: "esp-graph",
     parent: "working-area",
     padding: 0,
-    readonly: state.graphReducer.businessView,
+    readonly: isBusinessView(state),
     singleClickNodeDetailsEnabled: true,
     nodeIdPrefixForSubprocessTests: "",
     processToDisplay: state.graphReducer.processToDisplay,
@@ -598,8 +613,8 @@ function mapState(state, props) {
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     edgeToDisplay: state.graphReducer.edgeToDisplay,
     groupingState: state.graphReducer.groupingState,
-    expandedGroups: state.ui.expandedGroups,
-    layout: state.graphReducer.layout,
+    expandedGroups: getExpandedGroups(state),
+    layout: getLayout(state),
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     ...commonState(state),
   }

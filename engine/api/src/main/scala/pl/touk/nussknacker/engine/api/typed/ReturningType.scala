@@ -20,6 +20,9 @@ trait ReturningType {
   * depending on input (as in dependent types in CS).
   * @see ReturningDependentTypeService in tests
   *
+  * You can implement custom validation at parameter or service level by throwing
+  * CustomParameterValidationException or CustomServiceValidationException respectively
+  *
   * This trait is more complex, as Service is not factory but is invoked directly
   */
 // TODO: Replace with EagerService with LazyParameter's and ContextTransformation API
@@ -32,4 +35,16 @@ trait ServiceReturningType {
     */
   def returnType(parameters: Map[String, (TypingResult, Option[Any])]): TypingResult
 
+}
+
+case class CustomNodeValidationException(message: String, paramName: Option[String], parent: Exception)
+  extends RuntimeException(message, parent)
+
+object CustomNodeValidationException {
+  
+  def apply(message: String, paramName: Option[String]): CustomNodeValidationException =
+    CustomNodeValidationException(message, paramName, null)
+
+  def apply(exc: Exception, paramName: Option[String]): CustomNodeValidationException =
+    CustomNodeValidationException(exc.getMessage, paramName, exc)
 }

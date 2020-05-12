@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
@@ -97,12 +97,23 @@ object ProcessorService {
   def clear() = invocationsCount.set(0)
 }
 
-class ProcessorService extends Service {
+class ProcessorService extends Service with Lifecycle {
+
+  private val initialized = new AtomicBoolean(false)
+
+  override def open(jobData: JobData): Unit = {
+    initialized.set(true)
+  }
+
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Unit] = {
-    collector.collect("processor service invoked", Option(())) {
-      ProcessorService.invocationsCount.getAndIncrement()
-      Future.successful(())
+    if (!initialized.get()) {
+      Future.failed(new IllegalArgumentException("I was not initialized!"))
+    } else {
+      collector.collect("processor service invoked", Option(())) {
+        ProcessorService.invocationsCount.getAndIncrement()
+        Future.successful(())
+      }
     }
   }
 

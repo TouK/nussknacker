@@ -16,7 +16,7 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
   private val stringEditor = StringParameterEditor
 
   test("determine editor by config") {
-    val param = new Parameter("param", Typed[String], classOf[String], Some(stringEditor), validators = List.empty, additionalVariables = Map.empty, branchParam = false)
+    val param = Parameter.optional[String]("param").copy(editor = Some(stringEditor))
     val config = ParameterConfig(None, Some(fixedValuesEditor), None, None)
 
     val determiner = ParameterEditorDeterminerChain(param, config)
@@ -25,7 +25,7 @@ class ParameterBasedEditorDeterminerChainTest extends FunSuite with Matchers {
   }
 
   test("determine editor by param") {
-    val param = new Parameter("param", Typed[String], classOf[String], Some(stringEditor), validators = List.empty, additionalVariables = Map.empty, branchParam = false)
+    val param = Parameter.optional[String]("param").copy(editor = Some(stringEditor))
     val config = ParameterConfig.empty
 
     val determiner = ParameterEditorDeterminerChain(param, config)

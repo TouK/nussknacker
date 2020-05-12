@@ -4,7 +4,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.Configuration
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference}
+import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -54,7 +54,7 @@ object node {
 
   case class BranchEnd(data: BranchEndData) extends SubsequentNode
 
-  @JsonCodec case class UserDefinedAdditionalNodeFields(description: Option[String])
+  @JsonCodec case class UserDefinedAdditionalNodeFields(description: Option[String], layoutData: Option[LayoutData])
 
   sealed trait NodeData {
     def id: String

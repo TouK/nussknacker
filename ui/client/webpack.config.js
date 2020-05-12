@@ -142,6 +142,15 @@ module.exports = {
   module: {
     rules: [
       {
+        test: require.resolve("jointjs"),
+        use: [
+          {
+            loader: "expose-loader",
+            options: "joint",
+          },
+        ],
+      },
+      {
         test: /\.html$/,
         loader: "html-loader?minimize=false",
       },

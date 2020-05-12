@@ -2,14 +2,12 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
-## In version 0.2.0
+## In version 0.2.0 (not released yet)
 
 * [#922](https://github.com/TouK/nussknacker/pull/922) HealthCheck API has new structure, naming and json responses:
   - old `/healthCheck` is moved to `/healthCheck/process/deployment`
   - old `/sanityCheck` is moved to `/healthCheck/process/validation`
   - top level `/healthCheck` indicates general "app-is-running" state
-
-## In version 0.1.0
 
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics use variables by default, see [docs](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md) 
   to enable old mode, suitable for graphite protocol. To use old way of sending:
@@ -28,6 +26,51 @@ To see biggest differences please consult the [changelog](Changelog.md).
       }
     } 
   ```
+* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider. 
+* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider.
+
+API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (In [#871] and [#881]):
+
+`KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` old way:
+```
+val clientFactory = new SchemaRegistryClientFactory
+val source = new KafkaAvroSourceFactory(
+  new AvroDeserializationSchemaFactory[GenericData.Record](clientFactory, useSpecificAvroReader = false),
+  clientFactory, 
+  None, 
+  processObjectDependencies = processObjectDependencies
+)
+
+```
+
+`KafkaAvroSourceFactory` new way :
+```
+val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
+val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+```
+
+`KafkaTypedAvroSourceFactory` (*class name changed*) new way:
+```
+val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
+```
+
+## In version 0.1.1
+
+* [#930](https://github.com/TouK/nussknacker/pull/930) `DeeplyCheckingExceptionExtractor` was moved from `nussknacker-flink-util`
+  module to `nussknacker-util` module.
+* [#919](https://github.com/TouK/nussknacker/pull/919) `KafkaSource` constructor now doesn't take `consumerGroup`. Instead of this
+ it computes `consumerGroup` on their own based on `kafka.consumerGroupNamingStrategy` in `modelConfig` (default set to `processId`).
+ You can also override it by `overriddenConsumerGroup` optional parameter.
+ Regards to this changes, `KafkaConfig` has new, optional parameter `consumerGroupNamingStrategy`.
+* [#920](https://github.com/TouK/nussknacker/pull/920) `KafkaSource` constructor now takes `KafkaConfig` instead of using one
+ that was parsed by `BaseKafkaSourceFactory.kafkaConfig`. Also if you parse Typesafe Config to `KafkaSource` on your own, now you should
+ use dedicated method `KafkaConfig.parseConfig` to avoid further problems when parsing strategy will be changed.
+* [#914](https://github.com/TouK/nussknacker/pull/914) `pl.touk.nussknacker.engine.api.definition.Parameter` has deprecated
+ main factory method with `runtimeClass` parameter. Now should be passed `isLazyParameter` instead. Also were removed `runtimeClass`
+ from variances of factory methods prepared for easy testing (`optional` method and so on).
+
+## In version 0.1.0
+
 * [#755](https://github.com/TouK/nussknacker/pull/755) Default async execution context does not depend on parallelism.
  `asyncExecutionConfig.parallelismMultiplier` has been deprecated and should be replaced with `asyncExecutionConfig.workers`.
  8 should be sane default value.
@@ -85,33 +128,6 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed. `Config` is available as property of `ProcessObjectDependencies` instance.
 * [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
 * Rename `grafanaSettings` to `metricsSettings` in configuration.
-* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider. 
-* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider.
-
-API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (In [#871] and [#881]):
-
-`KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` old way:
-```
-val clientFactory = new SchemaRegistryClientFactory
-val source = new KafkaAvroSourceFactory(
-  new AvroDeserializationSchemaFactory[GenericData.Record](clientFactory, useSpecificAvroReader = false),
-  clientFactory, 
-  None, 
-  processObjectDependencies = processObjectDependencies
-)
-
-```
-
-`KafkaAvroSourceFactory` new way :
-```
-val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
-val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
-```
-
-`KafkaTypedAvroSourceFactory` (*class name changed*) new way:
-```
-val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
-```
 
 ## In version 0.0.12
 

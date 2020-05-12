@@ -5,16 +5,15 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
-import javax.annotation.Nullable
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, MandatoryParameterValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, NotBlankParameter, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
-import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -51,25 +50,29 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
     ),
     Map("sink" -> (ObjectDefinition.noParam, SinkAdditionalData(true)),
-      "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]))), SinkAdditionalData(true))),
+      "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter[String]("lazyString").copy(isLazyParameter = true))), SinkAdditionalData(true))),
 
     Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "manyParams" -> (ObjectDefinition(List(
-                Parameter("par1", Typed[String], classOf[LazyParameter[_]]),
+                Parameter[String]("par1").copy(isLazyParameter = true),
                 Parameter[String]("par2"),
-                Parameter("par3", Typed[String], classOf[LazyParameter[_]]),
+                Parameter[String]("par3").copy(isLazyParameter = true),
                 Parameter[String]("par4")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
-        Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]), Parameter("lazyInt", Typed[Integer], classOf[LazyParameter[_]]),
+        Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
         Parameter[Long]("long"))
       , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
-      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter("mandatoryParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
-      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String]), classOf[String]))), emptyQueryNamesData()),
-      "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(Parameter("nullableLiteralIntegerParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.integerValidator)))), emptyQueryNamesData()),
-      "withRegExpParam" -> (ObjectDefinition.withParams(List(Parameter("regExpParam", Typed.typedClass(classOf[Integer]), classOf[Integer], validators = List(LiteralParameterValidator.numberValidator)))), emptyQueryNamesData())
+      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter[String]("mandatoryParam"))), emptyQueryNamesData()),
+      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String])))), emptyQueryNamesData()),
+      "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(
+        Parameter[Integer]("nullableLiteralIntegerParam").copy(validators = List(LiteralParameterValidator.integerValidator))
+      )), emptyQueryNamesData()),
+      "withRegExpParam" -> (ObjectDefinition.withParams(List(
+        Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
+      )), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -94,7 +97,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
         "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
-      .sink("id2", "#processHelper.add(#processHelper, 2)", "sink")
+      .sink("id2", "#processHelper.add(1, 2)", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -796,6 +799,38 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
+
+  test("should be able to run custom validation using ServiceReturningType") {
+    val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
+    val withServiceRef = base.copy(services = base.services + ("withCustomValidation" ->
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceWithCustomValidation), SingleNodeConfig.zero)))
+
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .enricher("service-1", "output-1", "withCustomValidation",
+          "age" -> "12",
+          "fields" -> "{:}")
+        .enricher("service-2", "output-2", "withCustomValidation",
+          "age" -> "30",
+          "fields" -> "{invalid: 'yes'}")
+        .enricher("service-3", "output-3", "withCustomValidation",
+          "age" -> "30",
+          "fields" -> "{name: 12}")
+        .sink("id2", "''", "sink")
+
+    val result = validateWithDef(process, withServiceRef)
+
+    result.result shouldBe Invalid(NonEmptyList.of(
+      CustomNodeError("service-1", "Too young", Some("age")),
+      CustomNodeError("service-2", "Service is invalid", None),
+      CustomNodeError("service-3", "All values should be strings", Some("fields"))
+    ))
+  }
+
+
   test("not allows local variables in eager custom node parameter") {
     val processWithLocalVarInEagerParam =
       EspProcessBuilder
@@ -966,6 +1001,21 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     )
   }
 
+  test("validation of method returning future values") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "source")
+      .buildSimpleVariable("sampleVar", "var", "#processHelper.futureValue")
+      .buildSimpleVariable("sampleVar2", "var2", "#processHelper.identity(#var)")
+      .emptySink("sink", "sink")
+
+    val compilationResult = validate(process, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(scala.concurrent.Future[java.lang.String]). Required: identity(java.lang.String)", _, _, _), Nil)) =>
+    }
+  }
+
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
     validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
   }
@@ -1000,6 +1050,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   object ProcessHelper {
     def add(a: Int, b: Int) = a + b
+
+    def identity(nullableVal: String): String = nullableVal
+
+    def futureValue: Future[String] = Future.successful("123")
   }
 
   object ServiceReturningTypeSample extends Service with ServiceReturningType {
@@ -1018,4 +1072,25 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  object ServiceWithCustomValidation extends Service with ServiceReturningType {
+
+    @MethodToInvoke
+    def invoke(@ParamName("age") age: Int,
+               @ParamName("fields") fields: java.util.Map[String, String]): Future[String] = {
+      Future.successful(s"name: ${fields.get("name")}, age: $age")
+    }
+
+    def returnType(params: Map[String, (TypingResult, Option[Any])]): TypingResult = {
+      if (params("age")._2.get.asInstanceOf[Int] < 18) {
+        throw CustomNodeValidationException("Too young", Some("age"))
+      }
+      params("fields")._1 match {
+        case TypedObjectTypingResult(fields, _) if fields.contains("invalid") =>
+          throw CustomNodeValidationException("Service is invalid", None)
+        case TypedObjectTypingResult(fields, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+          throw CustomNodeValidationException("All values should be strings", Some("fields"))
+        case _ => Typed.typedClass[String]
+      }
+    }
+  }
 }

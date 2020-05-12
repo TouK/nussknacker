@@ -6,6 +6,8 @@ import {analyticsMiddleware} from "../analytics/AnalyticsMiddleware"
 import {persistReducer, persistStore} from "redux-persist"
 import storage from "redux-persist/lib/storage" // defaults to localStorage for web
 import {reducer} from "../reducers"
+import {ThunkDispatch} from "../actions/reduxTypes"
+import {useDispatch} from "react-redux"
 
 const persistConfig = {
   key: "ROOT",
@@ -31,4 +33,8 @@ export default function configureStore() {
   }
 
   return {store, persistor}
+}
+
+export function useThunkDispatch() {
+  return useDispatch<ThunkDispatch>()
 }

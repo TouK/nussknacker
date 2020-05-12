@@ -1,8 +1,8 @@
 import {events} from "../../analytics/TrackingEvents"
 import NodeUtils from "../../components/graph/NodeUtils"
 import HttpService from "../../http/HttpService"
-import {ThunkAction} from "../reduxTypes"
-import {GroupId, GroupType, NodeId, NodeType, Process} from "./models"
+import {ThunkAction, Action} from "../reduxTypes"
+import {GroupId, GroupType, NodeId, NodeType, Process} from "../../types"
 import {reportEvent} from "./reportEvent"
 
 export function startGrouping(): ThunkAction {
@@ -47,6 +47,7 @@ export function finishGrouping(): ThunkAction {
   }
 }
 
+export type FinishGroupingAction = { type: "FINISH_GROUPING" }
 export type AddNodeToGroupAction = { type: "ADD_NODE_TO_GROUP", nodeId: NodeId }
 export type UnGroupAction = { type: "UNGROUP", groupToRemove: NodeId }
 
@@ -74,12 +75,16 @@ export type ToggleGroupAction = {
   id: GroupId,
 }
 
-export function expandGroup(id: GroupId) {
+export function expandGroup(id: GroupId): Action {
   return {type: "EXPAND_GROUP", id}
 }
 
-export function collapseGroup(id: GroupId) {
+export function collapseGroup(id: GroupId): Action {
   return {type: "COLLAPSE_GROUP", id}
+}
+
+export function collapseAllGroups(): Action {
+  return {type: "COLLAPSE_ALL_GROUPS"}
 }
 
 export type EditGroupAction = {

@@ -5,10 +5,12 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData}
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
+import pl.touk.nussknacker.engine.graph.node.{Processor, Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -25,11 +27,13 @@ class StandaloneProcessManagerSpec extends FunSuite with VeryPatientScalaFutures
 
     val manager = new StandaloneProcessManager(modelData, null)
 
-    val process = ProcessMarshaller.toJson(CanonicalProcess(MetaData("t1", StandaloneMetaData(None)), ExceptionHandlerRef(List()),
-      List(
-        FlatNode(Source("source", SourceRef("request1-source", List()))),
-        FlatNode(Sink("sink", SinkRef("response-sink", List())))
-      ), None)).noSpaces
+    val process = ProcessMarshaller.toJson(ProcessCanonizer.canonize(EspProcessBuilder
+        .id("")
+        .path(None)
+        .exceptionHandlerNoParams()
+        .source("source", "request1-source")
+        .processor("processor", "processorService")
+        .emptySink("sink", "response-sink"))).noSpaces
 
     val results = manager.test(ProcessName("test1"), process, TestData("{\"field1\": \"a\", \"field2\": \"b\"}"), _ => null).futureValue
 

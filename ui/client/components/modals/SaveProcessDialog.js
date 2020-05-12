@@ -18,7 +18,7 @@ class SaveProcessDialog extends React.Component {
   }
 
   confirm = () => {
-    return this.props.actions.saveProcess(this.props.processId, this.props.processToDisplay, this.state.comment)
+    return this.props.actions.saveProcess(this.state.comment)
   }
 
   onInputChange = (e) => {

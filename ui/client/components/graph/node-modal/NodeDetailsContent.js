@@ -15,7 +15,6 @@ import Variable from "./../node-modal/Variable"
 import BranchParameters, {branchErrorFieldName} from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
-import JoinDef from "./JoinDef"
 import NodeErrors from "./NodeErrors"
 import ParameterList from "./ParameterList"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
@@ -23,7 +22,7 @@ import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import AdditionalProperty from "./AdditionalProperty"
-import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
+import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 
 //move state to redux?
@@ -33,59 +32,20 @@ export class NodeDetailsContent extends React.Component {
   constructor(props) {
     super(props)
 
-    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
-
-    this.nodeDef = this.prepareNodeDef(props.node, this.nodeObjectDetails, props.processToDisplay)
-
     this.state = {
       ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
-      editedNode: this.enrichNodeWithProcessDependentData(_.cloneDeep(props.node)),
+      editedNode: props.node,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
-
-    let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
-    this.showOutputVar = hasNoReturn === false || hasNoReturn === true && this.state.editedNode.outputVar
-
+    this.initalizeWithProps(props)
     this.generateUUID("fields", "parameters")
   }
 
-  prepareNodeDef(node, nodeObjectDetails, processToDisplay) {
-    if (NodeUtils.nodeType(node) === "Join") {
-      return new JoinDef(node, nodeObjectDetails, processToDisplay)
-    } else {
-      return null
-    }
-  }
-
-  // should it be here or somewhere else (in the reducer?)
-  enrichNodeWithProcessDependentData(node) {
-    if (NodeUtils.nodeType(node) === "Join") {
-      node.branchParameters = this.nodeDef.incomingEdges.map((edge) => {
-        let branchId = edge.from
-        let existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
-        let newBranchParams = this.nodeDef.branchParameters.map((branchParamDef) => {
-          let existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
-          let templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
-          return existingParamValue || _.cloneDeep(templateParamValue) ||
-              // We need to have this fallback to some template for situation when it is existing node and it has't got
-              // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-              _.cloneDeep({
-                name: branchParamDef.name,
-                expression: {
-                  expression: `#${branchParamDef.name}`,
-                  language: "spel",
-                },
-              })
-        })
-        return {
-          branchId: branchId,
-          parameters: newBranchParams,
-        }
-      })
-      delete node["branchParametersTemplate"]
-    }
-    return node
+  initalizeWithProps(props) {
+    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(props.node, props.processDefinitionData.processDefinition)
+    let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
+    this.showOutputVar = hasNoReturn === false || hasNoReturn === true && this.state.editedNode.outputVar
   }
 
   generateUUID(...properties) {
@@ -99,7 +59,7 @@ export class NodeDetailsContent extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (!_.isEqual(this.props.node, nextProps.node)) {
-      this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(nextProps.node, nextProps.processDefinitionData.processDefinition)
+      this.initalizeWithProps(nextProps)
       this.setState({editedNode: nextProps.node})
     }
   }
@@ -143,7 +103,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   customNode = (fieldErrors) => {
-    const {showValidation, showSwitch} = this.props
+    const {showValidation, showSwitch, isEditMode} = this.props
 
     switch (NodeUtils.nodeType(this.props.node)) {
       case "Source":
@@ -286,15 +246,19 @@ export class NodeDetailsContent extends React.Component {
                 null,
               )
             }
-            {NodeUtils.nodeType(this.props.node) === "Join" && (
+            {NodeUtils.nodeIsJoin(this.state.editedNode) && (
               <BranchParameters
-                onChange={this.setNodeDataAt}
                 node={this.state.editedNode}
-                joinDef={this.nodeDef}
                 isMarked={this.isMarked}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
+                isEditMode={isEditMode}
                 errors={fieldErrors}
+                nodeObjectDetails={this.nodeObjectDetails}
+                setNodeDataAt={this.setNodeDataAt}
+                testResultsToShow={this.state.testResultsToShow}
+                testResultsToHide={this.state.testResultsToHide}
+                toggleTestResult={this.toggleTestResult}
               />
             )}
             {this.state.editedNode.parameters.map((param, index) => {
@@ -730,7 +694,8 @@ export class NodeDetailsContent extends React.Component {
         <TestErrors resultsToShow={this.state.testResultsToShow}/>
         {this.customNode(fieldErrors)}
         <TestResults nodeId={this.props.node.id} resultsToShow={this.state.testResultsToShow}/>
-        <NodeAdditionalInfoBox node={this.state.editedNode} processId={this.props.processToDisplay.id}/>
+
+        <NodeAdditionalInfoBox node={this.state.editedNode} processId={this.props.processId}/>
       </div>
     )
   }
@@ -740,7 +705,9 @@ function mapState(state) {
   return {
     additionalPropertiesConfig: _.get(state.settings, "processDefinitionData.additionalPropertiesConfig") || {},
     processDefinitionData: state.settings.processDefinitionData || {},
-    processToDisplay: state.graphReducer.processToDisplay,
+    //TODO: get rid of this. We should not rely on process from graphReducer, as we may display subprocess node!
+    //currently it's used only to figure out processingType, so it's not so harmful
+    processId: state.graphReducer.processToDisplay.id,
   }
 }
 

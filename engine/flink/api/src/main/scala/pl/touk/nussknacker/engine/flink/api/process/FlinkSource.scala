@@ -47,7 +47,7 @@ trait BasicFlinkSource[T] extends FlinkSource[T] with ExplicitUidInOperatorsSupp
     val newStart = setUidToNodeIdIfNeed(flinkNodeContext,
       env
         .addSource[T](flinkSourceFunction)(typeInformation)
-        .name(s"${flinkNodeContext.metaData.id}-source"))
+        .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source"))
 
     timestampAssigner.map {
       case periodic: AssignerWithPeriodicWatermarks[T@unchecked] =>

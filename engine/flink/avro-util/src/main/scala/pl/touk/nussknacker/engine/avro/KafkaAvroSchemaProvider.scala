@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.avro
 
+import cats.data.Validated
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
 
 /**
@@ -9,7 +11,7 @@ import pl.touk.nussknacker.engine.kafka.RecordFormatter
   */
 trait KafkaAvroSchemaProvider[T] extends Serializable {
 
-  def typeDefinition: typing.TypingResult
+  def typeDefinition: Validated[SchemaRegistryError, typing.TypingResult]
 
   def deserializationSchema: KafkaDeserializationSchema[T]
 
@@ -17,4 +19,6 @@ trait KafkaAvroSchemaProvider[T] extends Serializable {
 
   def recordFormatter: Option[RecordFormatter]
 
+  def returnType(f: SchemaRegistryError => typing.TypingResult): typing.TypingResult =
+    typeDefinition.valueOr(f)
 }

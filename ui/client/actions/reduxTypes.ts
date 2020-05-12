@@ -1,26 +1,31 @@
-import {Reducer as ReduxReducer, Store as ReduxStore} from "redux"
+import {Reducer as ReduxReducer, AnyAction} from "redux"
+import {ThunkAction as TA,ThunkDispatch as TD} from "redux-thunk"
+
 import {ActionTypes} from "./actionTypes"
-import {DisplayProcessActivityAction} from "./nk/displayProcessActivity"
-import {ReportEventAction} from "./nk/reportEvent"
+import {DisplayProcessActivityAction, ReportEventAction, NodeActions} from "./nk"
 import {UiActions} from "./nk/ui/uiActions"
 import {SettingsActions} from "./settingsActions"
 import {ToolbarActions} from "./nk/toolbars"
+import {RootState} from "../reducers"
+import {UndoRedoActions} from "./undoRedoActions"
 
-export type Action =
+type TypedAction =
   | ReportEventAction
   | UiActions
   | SettingsActions
   | DisplayProcessActivityAction
+  | NodeActions
   | ToolbarActions
+  | UndoRedoActions
 
-type A = { type: ActionTypes } | Action
+interface UntypedAction extends AnyAction {
+  type: Exclude<ActionTypes, TypedAction["type"]>,
+}
 
-type State = $TodoType
-type Store = ReduxStore<State, Action>
+export type Action = UntypedAction | TypedAction
 
-type GetState<S> = () => S
-type PromiseAction = Promise<A>
-type Dispatch = (action: A | ThunkAction | PromiseAction) => $TodoType
+type State = RootState
 
-export type ThunkAction<S = State> = (dispatch: Dispatch, getState: GetState<S>) => $TodoType
-export type Reducer<S> = ReduxReducer<S, A>
+export type ThunkAction<R = void, S = State> = TA<R, S, undefined, Action>
+export type ThunkDispatch<S = State> = TD<S, undefined, Action>
+export type Reducer<S> = ReduxReducer<S, Action>

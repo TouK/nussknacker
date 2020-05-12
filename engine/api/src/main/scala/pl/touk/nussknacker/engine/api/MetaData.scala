@@ -27,7 +27,9 @@ object ProcessAdditionalFields {
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveEncoder
 }
 
-@JsonCodec case class Group(id: String, nodes: Set[String])
+@JsonCodec case class Group(id: String, nodes: Set[String], expanded: Option[Boolean], layoutData: Option[LayoutData])
+
+@JsonCodec case class LayoutData(x: Long, y: Long)
 
 // todo: MetaData should hold ProcessName as id
 @ConfiguredJsonCodec case class MetaData(id: String,

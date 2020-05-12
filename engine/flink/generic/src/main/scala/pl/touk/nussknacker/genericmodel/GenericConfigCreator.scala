@@ -61,6 +61,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
       Map(
         "GEO" -> defaultCategory(geo),
         "NUMERIC" -> defaultCategory(numeric),
+        "CONV" -> defaultCategory(conversion),
         "DATE" -> defaultCategory(date),
         "AVRO" -> defaultCategory(new AvroUtils(schemaRegistryProvider))
       ),

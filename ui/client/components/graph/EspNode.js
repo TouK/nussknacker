@@ -230,8 +230,10 @@ export function makeElement(node, processCounts, nodesSettings) {
     attrs: attrs,
     rankDir: "R",
     nodeData: node,
+    //This is used by jointjs to handle callbacks/changes
+    //TODO: figure out what should be here?
     definitionToCompare: {
-      node: node,
+      node: _.cloneDeepWith(node, (val, key) => ["branchParameters", "parameters"].indexOf(key) > -1 ? null : undefined),
       processCounts: processCounts,
     },
   })

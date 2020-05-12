@@ -1,5 +1,5 @@
 import React from "react"
-import {RootState} from "../../../../reducers/index"
+import {RootState} from "../../../../reducers"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import {connect} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"

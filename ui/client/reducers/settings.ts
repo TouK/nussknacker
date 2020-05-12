@@ -1,12 +1,13 @@
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
+import {ProcessDefinitionData} from "../types"
 
 export type SettingsState = {
   loggedUser: Partial<User>,
   featuresSettings: $TodoType,
   authenticationSettings: $TodoType,
   analyticsSettings: $TodoType,
-  processDefinitionData: $TodoType,
+  processDefinitionData: ProcessDefinitionData,
   availableQueryableStates: $TodoType,
 }
 

@@ -40,14 +40,13 @@ env:
     - CROSS_BUILD=`( [[ "${SOURCE_BRANCH}" == "staging" ]] || [[ "${SOURCE_BRANCH}" == "master" ]] || [[ "${SOURCE_BRANCH}" =~ ^preview/.*$ ]] ) && echo "true" || echo "false"`
     - ADD_DEV_MODEL=`[[ "${SOURCE_BRANCH}" =~ "staging" ]] && echo "true" || echo "false"`
     - FE_ONLY=$(source .travis/diff_files.sh)
+    - SBT_SNAPSHOT=$(source .travis/check_sbt_snapshot_version.sh)
 
 before_script:
+  # We want to be sure that only snapshot builds are going through travis pipeline to avoid situation when someone override released version
+  - if [[ "$SBT_SNAPSHOT" == "false" ]]; then travis_terminate 0; fi
   # We have to terminate jobs here because "if" checks before git checkout & before env is set.
   - if [[ "$FE_ONLY" == "true" ]]; then travis_terminate 0; fi
-  # We override maven central by google cloud because travis workers are blacklisted by maven central (Server returned HTTP response code: 403...)
-  # It must be done in both ivy and maven settings, because we download deps using ivy during compile and using maven during publish (publishMavenStyle := true)
-  - cp .travis.sbt.repositories $HOME/.sbt/repositories
-  - cp .travis.m2.settings.xml $HOME/.m2/settings.xml
 
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
@@ -87,6 +86,8 @@ jobs:
       if: type = pull_request
     - name: "Frontend tests"
       before_script:
+        # We want to be sure that only snapshot builds are going through travis pipeline to avoid situation when someone override released version
+        - if [[ "$SBT_SNAPSHOT" == "false" ]]; then travis_terminate 0; fi
         - nvm install $(cat .nvmrc)
         - npm install -g npm
         - node -v
@@ -95,6 +96,8 @@ jobs:
     - stage: releases
       name: "Release sonatype packages"
       before_script:
+        # We want to be sure that only snapshot builds are going through travis pipeline to avoid situation when someone override released version
+        - if [[ "$SBT_SNAPSHOT" == "false" ]]; then travis_terminate 0; fi
         - nvm install $(cat .nvmrc)
         - npm install -g npm
         - node -v
@@ -102,6 +105,8 @@ jobs:
       script: ./ciPublish.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER}
     - name: "Push Docker Image"
       before_script:
+        # We want to be sure that only snapshot builds are going through travis pipeline to avoid situation when someone override released version
+        - if [[ "$SBT_SNAPSHOT" == "false" ]]; then travis_terminate 0; fi
         - nvm install $(cat .nvmrc)
         - npm install -g npm
         - node -v
@@ -111,8 +116,10 @@ jobs:
         - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal --add-dev-model=$ADD_DEV_MODEL
         - cd ./demo/docker && echo "NUSSKNACKER_VERSION=$BUILD_VERSION" > .env && ./testQuickstart.sh
         - docker push ${DOCKER_SOURCE_TAG}
-        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:latest; fi
-        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker push ${DOCKER_REPOSITORY}:latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:master-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker push ${DOCKER_REPOSITORY}:master-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
         - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:staging-latest; fi

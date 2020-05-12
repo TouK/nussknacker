@@ -1,4 +1,5 @@
 import NodeUtils from "./NodeUtils"
+import _ from "lodash"
 
 export function mapProcessWithNewNode(process, before, after) {
   return {
@@ -12,8 +13,22 @@ export function mapProcessWithNewNode(process, before, after) {
         return e
       }
     }),
-    nodes: _.map(process.nodes, (n) => { return _.isEqual(n, before) ? after : n }),
+    nodes: _.map(process.nodes, (n) => { return _.isEqual(n, before) ? after : mapBranchParametersWithNewNode(before.id, after.id, n) }),
     properties: NodeUtils.nodeIsProperties(before) ? after : process.properties,
+  }
+}
+
+//we do mapping here, because we validate changed process before closing modal, and before applying state change in reducer.
+function mapBranchParametersWithNewNode(beforeId, afterId, node) {
+  if (beforeId !== afterId && node.branchParameters?.find(bp => bp.branchId === beforeId)) {
+    const newNode = _.cloneDeep(node)
+    const branchParameter = newNode.branchParameters.find(bp => bp.branchId === beforeId)
+    if (branchParameter) {
+      branchParameter.branchId = afterId
+    }
+    return newNode
+  } else {
+    return node
   }
 }
 

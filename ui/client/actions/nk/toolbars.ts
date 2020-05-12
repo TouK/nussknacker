@@ -1,6 +1,5 @@
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {ThunkAction} from "../reduxTypes"
-import {RootState} from "../../reducers/index"
 import {Toolbar} from "../../components/toolbarComponents/toolbar"
 
 export type ToolbarPosition = [ToolbarsSide | string, number]
@@ -14,7 +13,7 @@ type ToggleAllToolbarsAction = { type: "TOGGLE_ALL_TOOLBARS", isCollapsed: boole
 
 export const toggleAllToolbars = (isCollapsed: boolean): ToggleAllToolbarsAction => ({type: "TOGGLE_ALL_TOOLBARS", isCollapsed})
 
-export const resetToolbars = (): ThunkAction<RootState> => {
+export const resetToolbars = (): ThunkAction => {
   return (dispatch, getState) => {
     const toolbars = getState().toolbars?.initData
     dispatch({type: "RESET_TOOLBARS", toolbars})

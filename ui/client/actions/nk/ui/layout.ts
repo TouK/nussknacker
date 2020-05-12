@@ -1,13 +1,14 @@
 import {events} from "../../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../../common/VisualizationUrl"
 import history from "../../../history"
-import {ThunkAction} from "../../reduxTypes"
+import {NodeId} from "../../../types"
 import {reportEvent} from "../reportEvent"
+import {ThunkAction} from "../../reduxTypes"
 
-export type Layout = $TodoType
+export type Position = { x: number, y: number }
+export type NodePosition = { id: NodeId, position: Position }
+export type Layout = NodePosition[]
 export type GraphLayoutFunction = () => void
-export type BusinessView = $TodoType
-
 export type LayoutChangedAction = { layout: Layout, type: "LAYOUT_CHANGED" }
 export type TogglePanelAction = { type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL" }
 
@@ -54,7 +55,7 @@ export function layout(graphLayoutFunction: GraphLayoutFunction): ThunkAction {
   }
 }
 
-export function businessViewChanged(value: BusinessView) {
+export function businessViewChanged(value: boolean) {
   history.replace({
     pathname: window.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({

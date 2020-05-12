@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
-import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion, StandaloneMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{EndingReference, JobData, ProcessVersion, StandaloneMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -123,17 +123,23 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
       definitionsPostProcessor = prepareMocksForTest(collectingListener),
       additionalListeners = List(collectingListener)
-    ).toOption.get
+    ) match {
+      case Valid(interpreter) => interpreter
+      case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
+    }
 
     val parsedTestData = readTestData(definitions, standaloneInterpreter.source)
 
     try {
+      val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
+      standaloneInterpreter.open(JobData(process.metaData, processVersion))
       val results = Await.result(Future.sequence(parsedTestData.map(standaloneInterpreter.invokeToResult)), timeout)
       collectSinkResults(collectingListener.runId, results)
       collectExceptions(collectingListener, results)
       collectingListener.results
     } finally {
       collectingListener.clean()
+      standaloneInterpreter.close()
     }
 
   }

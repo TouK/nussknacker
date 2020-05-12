@@ -220,9 +220,14 @@ export default {
       .catch(error => this.addError("Failed to export", error))
   },
 
+  //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
+  //to prevent closing edit node modal and corrupting graph display
   validateProcess(process) {
     return api.post("/processValidation", process)
-      .catch(error => this.addError("Fatal validation error, cannot save", error, true))
+      .catch(error => {
+        this.addError("Fatal validation error, cannot save", error, true)
+        return Promise.reject(error)
+      })
   },
 
   getNodeAdditionalData(processId, node) {
@@ -248,11 +253,16 @@ export default {
       .catch(error => this.addError("Cannot fetch process counts", error, true))
   },
 
+  //This method will return *FAILED* promise if save/validation fails with e.g. 400 (fatal validation error)
+  //to prevent closing edit node modal and corrupting graph display
   saveProcess(processId, processJson, comment) {
     const data = {process: processJson, comment: comment}
     return api.put(`/processes/${processId}`, data)
       .then(() => this.addInfo(`Process ${processId} was saved`))
-      .catch(error => this.addError("Failed to save", error, true))
+      .catch(error => {
+        this.addError("Failed to save", error, true)
+        return Promise.reject(error)
+      })
   },
 
   archiveProcess(processId) {

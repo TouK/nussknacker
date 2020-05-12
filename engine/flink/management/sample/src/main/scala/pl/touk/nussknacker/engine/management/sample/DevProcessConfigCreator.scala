@@ -4,8 +4,6 @@ import java.time.LocalDateTime
 
 import com.typesafe.config.Config
 import io.circe.Encoder
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
@@ -47,7 +45,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT")
 
-  private def kafkaConfig(config: Config) = config.as[KafkaConfig]("kafka")
+  private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config, "kafka")
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
@@ -105,7 +103,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "campaignService" -> features(CampaignService),
     "configuratorService" -> features(ConfiguratorService),
     "meetingService" -> features(MeetingService),
-    "dynamicService" -> categories(new DynamicService)
+    "dynamicService" -> categories(new DynamicService),
+    "customValidatedService" -> categories(new CustomValidatedService)
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
@@ -119,6 +118,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "aggregate" -> categories(SlidingAggregateTransformer),
     "union" -> categories(UnionTransformer),
     "state" -> all(TransformStateTransformer),
+    "unionWithEditors" -> all(JoinTransformerWithEditors),
     // types
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types")))
   )

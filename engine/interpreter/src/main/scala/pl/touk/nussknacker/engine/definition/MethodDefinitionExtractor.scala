@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
+import java.util.Optional
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.validator.ValidatorsExtractor
+import pl.touk.nussknacker.engine.definition.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
@@ -66,23 +67,54 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .map(_.value())
         val name = (nodeParamNames orElse branchParamName)
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
-        // TODO JOIN: for branchParams we should rather look at Map's value type
-        val paramType = extractParameterType(p)
+        val rawParamType = EspTypeUtils.extractParameterType(p)
+        val paramWithUnwrappedBranch = if (branchParamName.isDefined) extractBranchParamType(rawParamType)(p, obj, method) else rawParamType
+        val (paramTypeWithUnwrappedLazy, isLazyParameter) = determineIfLazyParameter(paramWithUnwrappedBranch)
+        val (paramType, isScalaOptionParameter, isJavaOptionalParameter) = determineOptionalParameter(paramTypeWithUnwrappedLazy)
         val extractedEditor = EditorExtractor.extract(p)
-        val validators = tryToDetermineValidators(p, extractedEditor)
-        Parameter(name, Typed(paramType), p.getType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined)
+        val validators = tryToDetermineValidators(p, paramType, isScalaOptionParameter, isJavaOptionalParameter, extractedEditor)
+        Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined,
+          isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
       }
     }.toList
 
     new OrderedDependencies(dependencies)
   }
 
-  private def tryToDetermineValidators(param: java.lang.reflect.Parameter, extractedEditor: Option[ParameterEditor]) = {
+  private def extractBranchParamType(typ: TypingResult)
+                                    (p: java.lang.reflect.Parameter, obj: T, method: Method) = typ match {
+    case TypedClass(cl, TypedClass(keyClass, _) :: valueType :: Nil) if classOf[Map[_, _]].isAssignableFrom(cl) && classOf[String].isAssignableFrom(keyClass) =>
+      valueType
+    case _ =>
+      throw new IllegalArgumentException(s"Branch parameter $p of $obj and method : ${method.getName} has invalid type: should be Map[String, T]")
+  }
+
+  private def determineIfLazyParameter(typ: TypingResult) = typ match {
+    case TypedClass(cl, genericParams) if classOf[LazyParameter[_]].isAssignableFrom(cl) =>
+      (genericParams.head, true)
+    case _ =>
+      (typ, false)
+  }
+
+  private def determineOptionalParameter(typ: TypingResult) = typ match {
+    case TypedClass(cl, genericParams) if classOf[Option[_]].isAssignableFrom(cl) =>
+      (genericParams.head, true, false)
+    case TypedClass(cl, genericParams) if classOf[Optional[_]].isAssignableFrom(cl) =>
+      (genericParams.head, false, true)
+    case _ =>
+      (typ, false, false)
+  }
+
+  private def tryToDetermineValidators(param: java.lang.reflect.Parameter,
+                                       paramType: TypingResult,
+                                       isScalaOptionParameter: Boolean,
+                                       isJavaOptionalParameter: Boolean,
+                                       extractedEditor: Option[ParameterEditor]) = {
     val possibleEditor: Option[ParameterEditor] = extractedEditor match {
       case Some(editor) => Some(editor)
-      case None => new ParameterTypeEditorDeterminer(param.getType).determine()
+      case None => new ParameterTypeEditorDeterminer(paramType).determine()
     }
-    ValidatorsExtractor(possibleEditor).extract(param)
+    ValidatorsExtractor.extract(ValidatorExtractorParameters(param, paramType, isScalaOptionParameter, isJavaOptionalParameter, possibleEditor))
   }
 
   private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, TypingResult] =
@@ -96,7 +128,14 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       Option(method.getAnnotation(classOf[MethodToInvoke])).map(_.returnType())
       .filterNot(_ == classOf[Object])
       .map[TypingResult](Typed(_))
-    val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType).map(Typed(_))
+    val typeFromSignature = {
+      val rawType = EspTypeUtils.extractMethodReturnType(method)
+      (expectedReturnType, rawType) match {
+        // uwrap Future, Source and so on
+        case (Some(monadGenericType), TypedClass(cl, genericParam :: Nil)) if monadGenericType.isAssignableFrom(cl) => Some(genericParam)
+        case _ => None
+      }
+    }
 
     typeFromAnnotation.orElse(typeFromSignature).getOrElse(Unknown)
   }
@@ -104,8 +143,6 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   protected def expectedReturnType: Option[Class[_]]
 
   protected def additionalDependencies: Set[Class[_]]
-
-  protected def extractParameterType(p: java.lang.reflect.Parameter): Class[_] = EspTypeUtils.extractParameterType(p, classOf[LazyParameter[_]])
 
 }
 
@@ -132,7 +169,7 @@ object MethodDefinitionExtractor {
       dependencies.map {
         case param: Parameter =>
           val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
-          validateType(param.name, foundParam, param.runtimeClass)
+          validateParamType(param.name, foundParam, param)
           foundParam
         case OutputVariableNameDependency =>
           outputVariableNameOpt.getOrElse(
@@ -140,14 +177,37 @@ object MethodDefinitionExtractor {
         case TypedNodeDependency(clazz) =>
           val foundParam = additionalDependencies.find(clazz.isInstance).getOrElse(
                       throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
-          validateType(clazz.getName, foundParam, clazz)
+          validateType(clazz.getName, foundParam, Typed(clazz))
           foundParam
       }
     }
 
-    private def validateType(name: String, value: AnyRef, expectedClass: Class[_]) : Unit = {
-      if (value != null && !EspTypeUtils.signatureElementMatches(expectedClass, value.getClass)) {
-        throw new IllegalArgumentException(s"Parameter $name has invalid class: ${value.getClass.getName}, should be: ${expectedClass.getName}")
+    //TODO: what is *really* needed here?? is it performant enough?? (copied from previous version: EspTypeUtils.signatureElementMatches
+    private def validateParamType(name: String, value: AnyRef, param: Parameter): Unit = {
+      // The order of wrapping should be reversed to order of unwrapping - see extractParameters
+      val typeWrappedWithOption = if (param.scalaOptionParameter) {
+        Typed.genericTypeClass(classOf[Option[_]], List(param.typ))
+      } else if (param.javaOptionalParameter) {
+        Typed.genericTypeClass(classOf[Optional[_]], List(param.typ))
+      } else {
+        param.typ
+      }
+      val typeWrappedWithLazy = if (param.isLazyParameter) {
+        Typed.genericTypeClass(classOf[LazyParameter[_]], typeWrappedWithOption :: Nil)
+      } else {
+        typeWrappedWithOption
+      }
+      val typeWrappedWithBranch = if (param.branchParam) {
+        Typed.genericTypeClass(classOf[Map[_, _]], Typed[String] :: typeWrappedWithLazy :: Nil)
+      } else {
+        typeWrappedWithLazy
+      }
+      validateType(name, value, typeWrappedWithBranch)
+    }
+
+    private def validateType(name: String, value: AnyRef, expectedType: TypingResult) : Unit = {
+      if (value != null && !Typed(value.getClass).canBeSubclassOf(expectedType)) {
+        throw new IllegalArgumentException(s"Parameter $name has invalid type: ${value.getClass.getName}, should be: ${expectedType.display}")
       }
     }
   }

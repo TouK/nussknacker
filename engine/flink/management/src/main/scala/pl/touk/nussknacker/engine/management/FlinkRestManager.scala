@@ -11,9 +11,11 @@ import org.apache.flink.runtime.jobgraph.JobStatus
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointTriggerRequest, SavepointTriggerResponse, StopRequest, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import sttp.client._
 import sttp.client.circe._
 import sttp.model.Uri
@@ -79,7 +81,13 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     uploadedJar
   }
 
+  /*
+    It's ok to have many jobs with same name, however:
+    - there MUST be at most 1 job in *non-terminal* state with given name
+    - deployment is possible IFF there is NO job in *non-terminal* state with given name
+   */
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+    val preparedName = modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
     basicRequest
       .get(flinkUrl.path("jobs", "overview"))
       .response(asJson[JobsResponse])
@@ -88,16 +96,17 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .flatMap { jobs =>
 
         val jobsForName = jobs.jobs
-          .filter(_.name == name.value)
+          .filter(_.name == preparedName)
           .sortBy(_.`last-modification`)
           .reverse
 
         jobsForName match {
           case Nil => Future.successful(None)
-          case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
+          case duplicates if duplicates.count(isNotFinished) > 1 =>
             Future.successful(Some(ProcessState(
               DeploymentId(duplicates.head.jid),
-              FlinkStateStatus.Failed,
+              //we cannot have e.g. Failed here as we don't want to allow more jobs
+              FlinkStateStatus.MultipleJobsRunning,
               definitionManager = processStateDefinitionManager,
               version = Option.empty,
               attributes = Option.empty,
@@ -112,7 +121,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               case JobStatus.RESTARTING => FlinkStateStatus.Restarting
               case JobStatus.CANCELED => FlinkStateStatus.Canceled
               case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
-              case _ => FlinkStateStatus.Failed
+              //The job is not technically running, but should be in a moment
+              case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
+              case JobStatus.FAILING => FlinkStateStatus.Failing
+              case JobStatus.FAILED => FlinkStateStatus.Failed
             }
             withVersion(job.jid, name).map { version =>
               //TODO: return error when there's no correct version in process
@@ -136,7 +148,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       }
   }
 
-  private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(_.state == JobStatus.RUNNING).getOrElse(jobOverviews.head)
+  private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(isNotFinished).getOrElse(jobOverviews.head)
+
+  private def isNotFinished(overview: JobOverview): Boolean = !overview.state.isGloballyTerminalState
 
   //TODO: cache by jobId?
   private def withVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
@@ -215,6 +229,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       }
   }
 
+  private val timeoutExtractor = DeeplyCheckingExceptionExtractor.forClass[TimeoutException]
+
   override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
     val program =
       DeployProcessRequest(
@@ -234,8 +250,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         .recover({
           //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           //workaround for now, not the best solution though
-          //TODO: we should change logic of ManagementActor to always save action deploy
-          case e: TimeoutException => {
+          //TODO: we should change logic of ManagementActor to mark process deployed for *some* exceptions (like Timeout here)
+          case timeoutExtractor(e) => {
             logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
             Future.successful(Unit)
           }
