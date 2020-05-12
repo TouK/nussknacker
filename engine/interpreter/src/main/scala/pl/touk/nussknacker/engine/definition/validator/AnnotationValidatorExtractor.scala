@@ -19,7 +19,11 @@ class AnnotationValidatorExtractor[T <: Annotation : ClassTag](parameterValidato
 }
 
 object AnnotationValidatorExtractor {
-  def apply[T <: Annotation : ClassTag](parameterValidatorProvider: T => ParameterValidator): AnnotationValidatorExtractor[T] = {
+
+  def apply[T <: Annotation : ClassTag](parameterValidatorProvider: T => ParameterValidator): AnnotationValidatorExtractor[T] =
     new AnnotationValidatorExtractor[T](parameterValidatorProvider)
-  }
+
+  def apply[T <: Annotation : ClassTag](parameterValidator: ParameterValidator): AnnotationValidatorExtractor[T] =
+    apply[T]((_: T) => parameterValidator)
+
 }

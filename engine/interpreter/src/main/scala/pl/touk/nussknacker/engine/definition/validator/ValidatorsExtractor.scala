@@ -7,11 +7,11 @@ object ValidatorsExtractor {
   def extract(params: ValidatorExtractorParameters): List[ParameterValidator] = {
     List(
       MandatoryValidatorExtractor,
-      AnnotationValidatorExtractor[NotBlank](_ => NotBlankParameterValidator),
+      AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
       FixedValueValidatorExtractor,
       LiteralValidatorExtractor,
-      AnnotationValidatorExtractor[Min](annotation => MinimalNumberValidator(annotation.value())),
-      AnnotationValidatorExtractor[Max](annotation => MaximalNumberValidator(annotation.value()))
+      AnnotationValidatorExtractor[Min]((annotation: Min) => MinimalNumberValidator(annotation.value())),
+      AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value()))
     ).flatMap(_.extract(params))
   }
 }
