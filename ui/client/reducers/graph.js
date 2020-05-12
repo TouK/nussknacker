@@ -70,7 +70,9 @@ function graphReducer(state = emptyGraphState, action) {
         fetchedProcessDetails,
         graphLoading: false,
         nodeToDisplay: processToDisplay.properties,
-        layout: LayoutUtils.fromMeta(processToDisplay.nodes, processToDisplay.properties.additionalFields.groups),
+        layout: !state.businessView ?
+          LayoutUtils.fromMeta(processToDisplay.nodes, processToDisplay.properties.additionalFields.groups):
+          [],
       }
     }
     case "LOADING_FAILED": {
