@@ -50,5 +50,5 @@ if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo "Nussknacker up and running"
 else
   echo "Runnig: java -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp \"$CLASSPATH\" pl.touk.nussknacker.ui.NussknackerApp"
-  exec java -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
+  exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
 fi

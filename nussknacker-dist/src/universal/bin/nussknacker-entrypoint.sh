@@ -24,6 +24,6 @@ echo "Nussknacker up and running with" \
      "USER: $USER," \
      "GROUP: $GROUP."
 
-exec java -Dlogback.configurationFile="$LOG_FILE" \
+exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOG_FILE" \
           -Dconfig.file="$CONFIG_FILE" \
           -cp "$LIB_DIR/*" "$APPLICATION_APP"
