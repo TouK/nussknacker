@@ -178,7 +178,6 @@ val confluentV = "5.4.1"
 val jbcryptV = "0.4"
 val cronParserV = "3.1.1"
 val javaxValidationApiV = "2.0.1.Final"
-val scalaCacheCaffeineV = "0.28.0"
 val caffeineCacheV = "2.8.2"
 
 lazy val dockerSettings = {
