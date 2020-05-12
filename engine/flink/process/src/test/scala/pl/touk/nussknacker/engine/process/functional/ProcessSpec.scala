@@ -200,4 +200,20 @@ class ProcessSpec extends FunSuite with Matchers {
     EagerOptionalParameterSinkFactory.data shouldBe List("" + ProcessHelper.constant)
   }
 
+  test("usage of TypedMap in method parameters") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("extractedVar", "extractedVar", "#processHelper.extractProperty(#typedMap, 'aField')")
+      .processorEnd("proc2", "logService", "all" -> "#extractedVar")
+
+    val data = List(
+      SimpleRecord("a", 3, "3", new Date(1))
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    MockService.data shouldBe List("123")
+  }
+
 }
