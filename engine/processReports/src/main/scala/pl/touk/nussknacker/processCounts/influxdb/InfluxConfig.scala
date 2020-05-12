@@ -15,5 +15,5 @@ case class MetricsConfig(sourceCountMetric: String = "source_count",
 
 object QueryMode extends Enumeration {
   type QueryMode = Value
-  val OnlySingleDifference, OnlyDifferential, DifferentialWhenRestarts = Value
+  val OnlySingleDifference, OnlySumOfDifferences, SumOfDifferencesForRestarts = Value
 }

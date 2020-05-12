@@ -28,7 +28,7 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String = "tes
     }
   }
 
-  def queryByDifferential(processName: String, dateFrom: LocalDateTime, dateTo: LocalDateTime, config: MetricsConfig): Future[Map[String, Long]] = {
+  def queryBySumOfDifferences(processName: String, dateFrom: LocalDateTime, dateTo: LocalDateTime, config: MetricsConfig): Future[Map[String, Long]] = {
     val query = s"""select sum(diff) as count from (SELECT non_negative_difference("${config.countField}") AS diff
      FROM "${config.nodeCountMetric}"
      WHERE ${config.envTag} = '$env' AND ${config.processTag} = '$processName'

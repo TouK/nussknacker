@@ -12,6 +12,9 @@ import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+/*
+  Base
+ */
 class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends CountsReporter with LazyLogging {
 
   val influxGenerator = new InfluxGenerator(config, env)
@@ -29,13 +32,13 @@ class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: 
 
     influxGenerator.detectRestarts(processId, fromDate, toDate, metricsConfig).flatMap { restarts =>
       (restarts, config.queryMode) match {
-        case (_, QueryMode.OnlyDifferential) =>
-          influxGenerator.queryByDifferential(processId, fromDate, toDate, metricsConfig)
-        case (Nil, QueryMode.DifferentialWhenRestarts) =>
+        case (_, QueryMode.OnlySumOfDifferences) =>
+          influxGenerator.queryBySumOfDifferences(processId, fromDate, toDate, metricsConfig)
+        case (Nil, QueryMode.SumOfDifferencesForRestarts) =>
           influxGenerator.queryBySingleDifference(processId, Some(fromDate), toDate, metricsConfig)
-        case (nonEmpty, QueryMode.DifferentialWhenRestarts) =>
+        case (nonEmpty, QueryMode.SumOfDifferencesForRestarts) =>
           logger.debug(s"Restarts detected: ${nonEmpty.mkString(",")}, querying with differential")
-          influxGenerator.queryByDifferential(processId, fromDate, toDate, metricsConfig)
+          influxGenerator.queryBySumOfDifferences(processId, fromDate, toDate, metricsConfig)
         case (Nil, QueryMode.OnlySingleDifference) =>
           influxGenerator.queryBySingleDifference(processId, Some(fromDate), toDate, metricsConfig)
         case (dates, QueryMode.OnlySingleDifference) =>

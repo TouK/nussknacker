@@ -96,3 +96,19 @@ Legacy mode
 ------------
 In the past we used graphite protocol to send metrics to InfluxDB. It was difficult to use and extended. The old way of sending
 metrics can be enabled, check [migration guide](MigrationGuide.md).
+
+Counts
+======
+When process is running it's often useful to be able to analyze how many events passed through each node
+in the given time. This can be done with Counts functionality. The `nodeCount` metric is displayed by each node. 
+
+Of course, retrieving the results depends on metric setup. Results are retrieved using `CountsReporterCreator` trait.
+Nussknacker provides `InfluxCountsReporterCreator` (details below), different implementation may be provided
+via ServiceLoader mechanism. It's important to remember that implementation has to be on main Nussknacker classpath 
+(not in model jars).
+
+Please note that in most cases results will not be exact. 
+
+InfluxCountsReporter
+--------------------
+Default `CountsReporter` implementation is based on 
