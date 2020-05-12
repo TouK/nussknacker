@@ -9,6 +9,7 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
+import org.apache.avro.generic.GenericData
 import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{Context, ParamName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.types.JavaClassWithVarargs
+import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
@@ -147,8 +148,6 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     expr.evaluateSyncToValue[Any](contextWithList(new util.ArrayList[String]()))
     //third run - expression is compiled as ArrayList and we fail :(
     expr.evaluateSyncToValue[Any](contextWithList(Collections.emptyList()))
-
-
   }
 
   // TODO: fixme
@@ -281,7 +280,11 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
     parseOrFail[String]("#map.key1", withMapVar).evaluateSyncToValue[String](withMapVar) should equal("value1")
     parseOrFail[Integer]("#map.key2", withMapVar).evaluateSyncToValue[Integer](withMapVar) should equal(20)
+  }
 
+  test("check return type for map property accessed in dot notation") {
+    parse[String]("#processHelper.stringOnStringMap.key1", ctxWithGlobal) shouldBe 'valid
+    parse[Integer]("#processHelper.stringOnStringMap.key1", ctxWithGlobal) shouldBe 'invalid
   }
 
   test("allow access to objects with get method in dot notation") {
@@ -289,6 +292,28 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
     parseOrFail[String]("#obj.key1", withObjVar).evaluateSyncToValue[String](withObjVar) should equal("value1")
     parseOrFail[Integer]("#obj.key2", withObjVar).evaluateSyncToValue[Integer](withObjVar) should equal(20)
+  }
+
+  test("check property if is defined even if class has get method") {
+    val withObjVar = ctx.withVariable("obj", new SampleObjectWithGetMethod(Map.empty))
+
+    parse[Boolean]("#obj.definedProperty == 123", withObjVar) shouldBe 'invalid
+    parseOrFail[Boolean]("#obj.definedProperty == '123'", withObjVar).evaluateSyncToValue[Boolean](withObjVar) shouldBe true
+  }
+
+  test("check property if is defined even if class has get method - avro generic record") {
+    val record = new GenericData.Record(GeneratedAvroClass.SCHEMA$)
+    record.put("text", "foo")
+    val withObjVar = ctx.withVariable("obj", record)
+
+    parseOrFail[String]("#obj.text", withObjVar).evaluateSyncToValue[String](withObjVar) shouldEqual "foo"
+  }
+
+  test("exact check properties in generated avro classes") {
+    val withObjVar = ctx.withVariable("obj", GeneratedAvroClass.newBuilder().setText("123").build())
+
+    parse[Boolean]("#obj.notExistingProperty == 123", withObjVar) shouldBe 'invalid
+    parseOrFail[Boolean]("#obj.getText == '123'", withObjVar).evaluateSyncToValue[Boolean](withObjVar) shouldBe true
   }
 
   test("allow access to statics") {
@@ -660,10 +685,13 @@ object SampleGlobalObject {
   def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
   def toAny(value: Any): Any = value
+  def stringOnStringMap: java.util.Map[String, String] = Map("key1" -> "value1", "key2" -> "value2").asJava
 }
 
 class SampleObjectWithGetMethod(map: Map[String, Any]) {
 
   def get(field: String): Any = map.getOrElse(field, throw new IllegalArgumentException(s"No such field: $field"))
+
+  def definedProperty: String = "123"
 
 }
