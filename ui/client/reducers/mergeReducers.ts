@@ -23,7 +23,7 @@ function combineReducers<S extends {}>(reducers: ReducersObj<S>, initialState = 
     .keys(reducers)
     .reduce((nextState, key) => {
       const reducer = getter(reducers[key])
-      const newValue = reducer(nextState[key], action)
+      const newValue = reducer(nextState?.[key], action)
       return {...nextState, [key]: newValue}
     }, state)
 }
