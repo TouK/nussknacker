@@ -92,7 +92,10 @@ class NodeUtils {
   getEdgesForConnectedNodes = (nodeIds: NodeId[], process: Process): Edge[] => this.edgesFromProcess(process)
     .filter(edge => nodeIds.includes(edge.from) && nodeIds.includes(edge.to))
 
-  getAllGroups = (process: Process): GroupType[] => process?.properties?.additionalFields?.groups || []
+  getAllGroups = (process: Process): GroupType[] => {
+    const groups: GroupType[] = process?.properties?.additionalFields?.groups || []
+    return groups.filter(g => g.nodes.some(n => process.nodes.find(({id}) => id == n)))
+  }
 
   getCollapsedGroups = (process: Process, expandedGroups: GroupId[]) => this.getAllGroups(process)
     .filter(g => !_.includes(expandedGroups, g.id))
