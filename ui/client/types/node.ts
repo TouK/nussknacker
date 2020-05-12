@@ -1,4 +1,8 @@
+import {GroupType} from "./groups"
+
 type Type = "Properties" | "_group" | string
+
+export type LayoutData = { x: number, y: number }
 
 export type NodeType = {
   id: string,
@@ -7,9 +11,10 @@ export type NodeType = {
   isDisabled?: boolean,
   additionalFields?: {
     description: $TodoType,
+    layoutData?: LayoutData,
+    groups?: GroupType[],
     properties: {
       layout?: string,
-      expandedGroups?: string,
     },
   },
 }

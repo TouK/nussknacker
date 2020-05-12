@@ -46,3 +46,4 @@ export const getShowRunProcessDetails = createSelector(
 )
 export const isRunning = createSelector(getFetchedProcessState, state => ProcessStateUtils.isRunning(state))
 export const hasOneVersion = createSelector(getFetchedProcessDetails, details => (details?.history || []).length <= 1)
+export const getAdditionalFields = createSelector(getProcessToDisplay, p => p.properties?.additionalFields)

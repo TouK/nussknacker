@@ -83,6 +83,10 @@ export function collapseGroup(id: GroupId): Action {
   return {type: "COLLAPSE_GROUP", id}
 }
 
+export function collapseAllGroups(): Action {
+  return {type: "COLLAPSE_ALL_GROUPS"}
+}
+
 export type EditGroupAction = {
   type: "EDIT_GROUP",
   oldGroupId: GroupId,

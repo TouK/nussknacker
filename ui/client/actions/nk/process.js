@@ -8,6 +8,7 @@ import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
 import {fetchProcessDefinition} from "./processDefinitionData"
 import {reportEvent} from "./reportEvent"
+import {getProcessToDisplay, getProcessId} from "../../reducers/selectors/graph"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -49,12 +50,15 @@ export function displayCurrentProcessVersion(processId) {
   return fetchProcessToDisplay(processId)
 }
 
-export function saveProcess(processId, processJson, comment) {
-  return (dispatch) => {
+export function saveProcess(comment) {
+  return (dispatch, getState) => {
+    const state = getState()
+    const processId = getProcessId(state)
+    const processJson = getProcessToDisplay(state)
     return HttpService.saveProcess(processId, processJson, comment)
-      .then((response) => dispatch(displayCurrentProcessVersion(processId)))
-      .then((response) => dispatch(displayProcessActivity(processId)))
-      .then((response) => dispatch(UndoRedoActions.clear()))
+      .then(() => dispatch(displayCurrentProcessVersion(processId)))
+      .then(() => dispatch(displayProcessActivity(processId)))
+      .then(() => dispatch(UndoRedoActions.clear()))
   }
 }
 
