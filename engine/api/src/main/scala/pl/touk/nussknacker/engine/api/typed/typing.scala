@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import java.util
-
-import cats.data.NonEmptyList
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 
@@ -16,8 +13,6 @@ object typing {
   }
 
   sealed trait TypingResult {
-
-    def canHasAnyPropertyOrField: Boolean
 
     final def canBeSubclassOf(typingResult: TypingResult): Boolean =
       CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult)
@@ -47,8 +42,6 @@ object typing {
 
   case class TypedObjectTypingResult(fields: Map[String, TypingResult], objType: TypedClass) extends SingleTypingResult {
 
-    override def canHasAnyPropertyOrField: Boolean = false
-
     override def display: String = fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString("object with fields: ", ", ", "")
 
   }
@@ -57,8 +50,6 @@ object typing {
 
     type ValueType = SingleTypingResult
 
-    override def canHasAnyPropertyOrField: Boolean = false
-
     override def objType: TypedClass = valueType.objType
 
     override def display: String = s"dict with id: '$dictId'"
@@ -66,8 +57,6 @@ object typing {
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends SingleTypingResult {
-
-    override def canHasAnyPropertyOrField: Boolean = underlying.canHasAnyPropertyOrField
 
     override def objType: TypedClass = underlying.objType
 
@@ -78,8 +67,6 @@ object typing {
   // Unknown is representation of TypedUnion of all possible types
   case object Unknown extends TypingResult {
 
-    override def canHasAnyPropertyOrField: Boolean = true
-
     override val display = "unknown"
 
   }
@@ -88,10 +75,6 @@ object typing {
   case class TypedUnion private[typing](possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
 
     assert(possibleTypes.size != 1, "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
-
-    override def canHasAnyPropertyOrField: Boolean = {
-      possibleTypes.exists(_.canHasAnyPropertyOrField)
-    }
 
     override val display : String = possibleTypes.toList match {
       case Nil => "empty"
@@ -102,12 +85,6 @@ object typing {
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
-
-    override def canHasAnyPropertyOrField: Boolean =
-      CanBeSubclassDeterminer.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
-
-    private def hasGetFieldByNameMethod =
-      klass.getMethods.exists(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
 
     //TODO: should we use simple name here?
     override def display: String = {
