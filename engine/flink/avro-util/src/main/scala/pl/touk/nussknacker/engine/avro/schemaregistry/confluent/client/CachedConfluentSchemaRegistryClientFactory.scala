@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.cache.DefaultCache
 import scala.concurrent.duration.Duration
 
 class CachedConfluentSchemaRegistryClientFactory(maximumSize: Long, latestSchemaTtl: Option[Duration], expireAfterAccess: Option[Duration])
-  extends ConfluentSchemaRegistryClientFactory {
+  extends ConfluentSchemaRegistryClientFactory with Serializable {
 
   //Cache engine is shared by many of CachedConfluentSchemaRegistryClient
   lazy private val schemaCache = DefaultCache[Schema](maximumSize, expireAfterAccess)
