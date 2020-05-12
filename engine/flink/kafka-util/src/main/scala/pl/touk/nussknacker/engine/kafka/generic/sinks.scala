@@ -16,14 +16,10 @@ object sinks {
     extends KafkaSinkFactory(GenericJsonSerialization, processObjectDependencies)
 
   case class GenericJsonSerialization(topic: String) extends SimpleSerializationSchema[Any](topic, element => {
-      val objToEncode = element match {
-        // TODO: would be safer if will be added expected type in Sink and during expression evaluation,
-        // would be performed conversion to it
-        case TypedMap(fields) => fields
-        case other => other
-      }
-      encoder.encode(objToEncode).spaces2
+    // TODO: would be safer if will be added expected type in Sink and during expression evaluation,
+    //       would be performed conversion to it
+    encoder.encode(element).spaces2
     //UUID is *not* performant enough when volume is high...
-    }, _ => UUID.randomUUID().toString)
+  }, _ => UUID.randomUUID().toString)
 
 }

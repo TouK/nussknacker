@@ -49,6 +49,11 @@ val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDep
 val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 ```
 
+## In version 0.1.2 (not released yet)
+
+* [#954](https://github.com/TouK/nussknacker/pull/954) `TypedMap` is not a case class wrapping scala Map anymore. If you have
+ done some pattern matching on it, you should use `case typedMap: TypedMap => typedMap.typedMap.asScala` instead.
+
 ## In version 0.1.1
 
 * [#930](https://github.com/TouK/nussknacker/pull/930) `DeeplyCheckingExceptionExtractor` was moved from `nussknacker-flink-util`
