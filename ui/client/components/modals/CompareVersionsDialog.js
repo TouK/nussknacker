@@ -11,6 +11,7 @@ import EdgeDetailsContent from "../graph/node-modal/EdgeDetailsContent"
 import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent"
 import Dialogs from "./Dialogs"
 import GenericModalDialog from "./GenericModalDialog"
+import {isBusinessView} from "../../reducers/selectors/graph"
 
 //TODO: handle displaying groups
 //TODO: handle different textarea heights
@@ -218,7 +219,7 @@ function mapState(state) {
     processDefinitionData: state.settings.processDefinitionData,
     otherEnvironment: _.get(state.settings, "featuresSettings.remoteEnvironment.targetEnvironmentId"),
     versions: _.get(state.graphReducer, "fetchedProcessDetails.history", []),
-    businessView: state.graphReducer.businessView,
+    businessView: isBusinessView(state),
   }
 }
 

@@ -10,6 +10,7 @@ import {compose} from "redux"
 import {WithTranslation} from "react-i18next/src"
 import {withTranslation} from "react-i18next"
 import {ProcessVersionType} from "./Process/types"
+import {isBusinessView} from "../reducers/selectors/graph"
 
 type OwnProps = {}
 
@@ -96,7 +97,7 @@ function mapState(state) {
     history: state?.graphReducer?.fetchedProcessDetails?.history || [],
     lastDeployedAction: state?.graphReducer?.fetchedProcessDetails?.lastDeployedAction || null,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    businessView: state?.graphReducer?.businessView || false,
+    businessView: isBusinessView(state),
   }
 }
 
