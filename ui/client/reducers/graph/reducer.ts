@@ -1,12 +1,12 @@
 import {concat, sortBy, isEqual, reject, zipObject, omit, uniq} from "lodash"
-import * as GraphUtils from "../components/graph/GraphUtils"
-import NodeUtils from "../components/graph/NodeUtils"
-import * as LayoutUtils from "./layoutUtils"
-import {nodes} from "./layoutUtils"
-import {mergeReducers} from "./mergeReducers"
-import {reducer as groups} from "./groups"
-import {Reducer} from "../actions/reduxTypes"
-import {GraphState} from "./graphState"
+import * as GraphUtils from "../../components/graph/GraphUtils"
+import NodeUtils from "../../components/graph/NodeUtils"
+import * as LayoutUtils from "../layoutUtils"
+import {nodes} from "../layoutUtils"
+import {mergeReducers} from "../mergeReducers"
+import {reducer as groups} from "../groups"
+import {Reducer} from "../../actions/reduxTypes"
+import {GraphState} from "./types"
 import {
   displayOrGroup,
   updateLayoutAfterNodeIdChange,
@@ -18,7 +18,7 @@ import {
   createEdge,
   adjustBranchParametersAfterDisconnect,
   enrichNodeWithProcessDependentData,
-} from "./graphReducerhUtils"
+} from "./utils"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 

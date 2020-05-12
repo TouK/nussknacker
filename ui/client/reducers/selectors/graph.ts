@@ -2,7 +2,7 @@ import {RootState} from "../index"
 import {createSelector} from "reselect"
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import ProcessUtils from "../../common/ProcessUtils"
-import {GraphState} from "../graphState"
+import {GraphState} from "../graph"
 import {Process} from "../../types"
 
 export const getGraph = (state: RootState): GraphState => state.graphReducer

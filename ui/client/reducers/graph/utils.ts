@@ -1,9 +1,9 @@
-import {GraphState} from "./graphState"
-import {NodeType, NodeId, Process, GroupType, Edge, EdgeType, ProcessDefinitionData} from "../types"
-import NodeUtils from "../components/graph/NodeUtils"
+import {GraphState} from "./types"
+import {NodeType, NodeId, Process, GroupType, Edge, EdgeType, ProcessDefinitionData} from "../../types"
+import NodeUtils from "../../components/graph/NodeUtils"
 import {map, zipWith, omit, cloneDeep, reject} from "lodash"
-import {Layout, NodesWithPositions, NodePosition} from "../actions/nk"
-import ProcessUtils from "../common/ProcessUtils"
+import {Layout, NodesWithPositions, NodePosition} from "../../actions/nk"
+import ProcessUtils from "../../common/ProcessUtils"
 
 function isBetween(id1: NodeId, id2: NodeId): (e: Edge) => boolean {
   return ({from, to}) => from == id1 && to == id2 || from == id2 && to == id1
@@ -15,18 +15,21 @@ function canGroup(state: GraphState, newNode: NodeType | GroupType): boolean {
   return !isGroup && groupingState.length === 0 || !!groupingState.find(id => edges.find(isBetween(id, newNode.id)))
 }
 
-export const displayOrGroup = (state: GraphState, node: NodeType, readonly = false): GraphState => state.groupingState ?
-  {
-    ...state,
-    groupingState: canGroup(state, node) ?
-      state.groupingState.concat(node.id) :
-      state.groupingState,
-  } :
-  {
+export function displayOrGroup(state: GraphState, node: NodeType, readonly = false): GraphState {
+  if (state.groupingState) {
+    return {
+      ...state,
+      groupingState: canGroup(state, node) ?
+        state.groupingState.concat(node.id) :
+        state.groupingState,
+    }
+  }
+  return {
     ...state,
     nodeToDisplay: node,
     nodeToDisplayReadonly: readonly,
   }
+}
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
   return map(layout, (n) => oldId === n.id ? {...n, id: newId} : n)
