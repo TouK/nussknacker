@@ -20,6 +20,7 @@ import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
 import {getExpandedGroups} from "../../reducers/selectors/groups"
 import {getLayout} from "../../reducers/selectors/layout"
+import {isBusinessView} from "../../reducers/selectors/graph"
 
 class Graph extends React.Component {
 
@@ -603,7 +604,7 @@ function mapState(state, props) {
     divId: "esp-graph",
     parent: "working-area",
     padding: 0,
-    readonly: state.graphReducer.businessView,
+    readonly: isBusinessView(state),
     singleClickNodeDetailsEnabled: true,
     nodeIdPrefixForSubprocessTests: "",
     processToDisplay: state.graphReducer.processToDisplay,

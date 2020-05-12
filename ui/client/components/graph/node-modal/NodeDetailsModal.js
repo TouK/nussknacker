@@ -18,6 +18,7 @@ import NodeDetailsContent from "./NodeDetailsContent"
 import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
 import {getExpandedGroups} from "../../../reducers/selectors/groups"
+import {isBusinessView} from "../../../reducers/selectors/graph"
 
 class NodeDetailsModal extends React.Component {
 
@@ -222,7 +223,7 @@ function mapState(state) {
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
     readOnly: !state.settings.loggedUser.canWrite(processCategory) ||
-      state.graphReducer.businessView ||
+      isBusinessView(state) ||
       state.graphReducer.nodeToDisplayReadonly ||
       _.get(state, "graphReducer.fetchedProcessDetails.isArchived") ||
       false,
@@ -231,7 +232,7 @@ function mapState(state) {
     processDefinitionData: processDefinitionData,
     expandedGroups: getExpandedGroups(state),
     processCounts: state.graphReducer.processCounts || {},
-    businessView: state.graphReducer.businessView,
+    businessView: isBusinessView(state),
 
   }
 }
