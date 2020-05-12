@@ -10,18 +10,17 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.cache.Cache
 
-import scala.concurrent.duration.Duration
-
 /**
   * We use there own cache engine because ConfluentCachedClient doesn't cache getLatestSchemaMetadata and getSchemaMetadata
   */
-class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, schemaCache: Cache[Schema], latestSchemaTtl: Option[Duration]) extends ConfluentSchemaRegistryClient with LazyLogging {
+class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, schemaCache: Cache[Schema], latestSchemaCache: Cache[Schema])
+  extends ConfluentSchemaRegistryClient with LazyLogging {
 
   private val latestCacheNamespace = "latest"
 
   override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] = {
     handleClientError {
-      schemaCache.getOrCreate(s"$subject-$latestCacheNamespace", latestSchemaTtl) {
+      latestSchemaCache.getOrCreate(s"$subject-$latestCacheNamespace") {
         logger.debug(s"Cached latest schema for subject: $subject.")
         val schemaMetadata = client.getLatestSchemaMetadata(subject)
         AvroUtils.parseSchema(schemaMetadata.getSchema)
@@ -31,7 +30,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, sch
 
   override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema] =
     handleClientError {
-      schemaCache.getOrCreate(s"$subject-$version", None) {
+      schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cached schema for subject: $subject and version: $version.")
         val schemaMetadata = client.getSchemaMetadata(subject, version)
         AvroUtils.parseSchema(schemaMetadata.getSchema)

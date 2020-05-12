@@ -26,9 +26,10 @@ class MockConfluentSchemaRegistryClientBuilder {
   }
 
   def build: CachedConfluentSchemaRegistryClient = {
+    val cache = DefaultCache[Schema]()
     val client = new MockSchemaRegistryClient
     registry.foreach(reg => register(client, reg))
-    new CachedConfluentSchemaRegistryClient(client, DefaultCache[Schema](), None)
+    new CachedConfluentSchemaRegistryClient(client, cache, cache)
   }
 }
 

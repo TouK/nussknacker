@@ -6,15 +6,16 @@ import pl.touk.nussknacker.engine.util.cache.DefaultCache
 
 import scala.concurrent.duration.Duration
 
-class CachedConfluentSchemaRegistryClientFactory(maximumSize: Long, latestSchemaTtl: Option[Duration], expireAfterAccess: Option[Duration])
+class CachedConfluentSchemaRegistryClientFactory(maximumSize: Long, latestSchemaExpirationTime: Option[Duration], schemaExpirationTime: Option[Duration])
   extends ConfluentSchemaRegistryClientFactory with Serializable {
 
-  //Cache engine is shared by many of CachedConfluentSchemaRegistryClient
-  lazy private val schemaCache = DefaultCache[Schema](maximumSize, expireAfterAccess)
+  //Cache engines are shared by many of CachedConfluentSchemaRegistryClient
+  lazy private val schemaCache = new DefaultCache[Schema](maximumSize, schemaExpirationTime)
+  lazy private val latestSchemaCache = new DefaultCache[Schema](maximumSize, latestSchemaExpirationTime)
 
   override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
     val client = CachedSchemaRegistryClient(kafkaConfig)
-    new CachedConfluentSchemaRegistryClient(client, schemaCache, latestSchemaTtl)
+    new CachedConfluentSchemaRegistryClient(client, schemaCache, latestSchemaCache)
   }
 }
 
@@ -22,10 +23,10 @@ object CachedConfluentSchemaRegistryClientFactory {
 
   import scala.concurrent.duration._
 
-  private val defaultExpireAfterAccess: Option[FiniteDuration] = Some(120.minutes)
-  private val defaultLatestTtl: Option[FiniteDuration] = Some(5.minutes)
+  private val latestSchemaExpirationTime: Option[FiniteDuration] = Some(5.minutes)
+  private val schemaExpirationTime: Option[FiniteDuration] = Some(120.minutes)
   private val defaultMaximumSize: Long = DefaultCache.defaultMaximumSize
 
   def apply(): CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(defaultMaximumSize, defaultLatestTtl, defaultExpireAfterAccess)
+    new CachedConfluentSchemaRegistryClientFactory(defaultMaximumSize, latestSchemaExpirationTime, schemaExpirationTime)
 }

@@ -547,7 +547,7 @@ lazy val util = (project in engine("util")).
     libraryDependencies ++= {
       Seq(
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
-        "com.github.cb372" %% "scalacache-caffeine" % scalaCacheCaffeineV,
+        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
         "io.circe" %% "circe-java8" % circeV
       )
