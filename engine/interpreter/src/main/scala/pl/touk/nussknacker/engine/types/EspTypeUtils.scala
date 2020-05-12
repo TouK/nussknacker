@@ -75,7 +75,7 @@ object EspTypeUtils {
           class we pick arbitrary one (we sort to avoid randomness)
          */
 
-        methodsForParams.find { case (_, MethodInfo(_, ret, _)) =>
+        methodsForParams.find { case (_, MethodInfo(_, ret, _, _)) =>
           methodsForParams.forall(mi => ret.canBeSubclassOf(mi._2.refClazz))
         }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
     }.toGroupedMap
@@ -98,13 +98,13 @@ object EspTypeUtils {
   }
 
   private def extractMethod(method: Method)
-    = MethodInfo(extractParameters(method), extractMethodReturnType(method), extractNussknackerDocs(method))
+    = MethodInfo(extractParameters(method), extractMethodReturnType(method), extractNussknackerDocs(method), method.isVarArgs)
 
   private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
                                  (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     interestingFields.map { field =>
-      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), extractNussknackerDocs(field))
+      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), extractNussknackerDocs(field), varArgs = false)
     }.toMap
   }
 
