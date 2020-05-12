@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes, ResponseEntity, HttpEntity, ContentTypes}
+import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.{HttpResponse, ResponseEntity, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Printer
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
@@ -46,53 +46,52 @@ class AppResources(config: Config,
     }
   }
 
-  private def toEntity(healthCheckProcessResponse: HealthCheckProcessResponse): ResponseEntity = {
-    val printer = Printer.noSpaces.copy(dropNullValues = true)
-    HttpEntity(
-      ContentTypes.`application/json`,
-      printer.pretty(healthCheckProcessResponse.asJson)
-    )
-  }
-
   def securedRoute(implicit user: LoggedUser): Route =
     pathPrefix("app") {
       path("healthCheck") {
         get {
           complete {
-            HttpResponse(status = StatusCodes.OK, entity = toEntity(HealthCheckProcessResponse(OK)))
+            Marshal(HealthCheckProcessResponse(OK))
+              .to[ResponseEntity]
+              .map(res => HttpResponse(status = StatusCodes.OK, entity = res))
           }
         }
-      } ~ path("healthCheck" / "process" / "deployed") {
+      } ~ path("healthCheck" / "process" / "deployment") {
         get {
           complete {
-            notRunningProcessesThatShouldRun.map[HttpResponse] { set =>
+            notRunningProcessesThatShouldRun.map[Future[HttpResponse]] { set =>
               if (set.isEmpty) {
-                val respEntity = toEntity(HealthCheckProcessResponse(OK))
-                HttpResponse(status = StatusCodes.OK, entity = respEntity)
+                Marshal(HealthCheckProcessResponse(OK))
+                  .to[ResponseEntity]
+                  .map(res => HttpResponse(status = StatusCodes.OK, entity = res))
               } else {
                 logger.warn(s"Processes not running: ${set.keys}")
                 logger.debug(s"Processes not running - more details: $set")
-                val respEntity = toEntity(HealthCheckProcessResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet)))
-                HttpResponse(status = StatusCodes.InternalServerError, entity = respEntity)
+                Marshal(HealthCheckProcessResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet)))
+                  .to[ResponseEntity]
+                  .map(res => HttpResponse(status = StatusCodes.InternalServerError, entity = res))
               }
-            }.recover[HttpResponse] {
+            }.recover[Future[HttpResponse]] {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                val respEntity = toEntity(HealthCheckProcessResponse(ERROR, Some("Failed to retrieve job statuses")))
-                HttpResponse(status = StatusCodes.InternalServerError, entity = respEntity)
+                Marshal(HealthCheckProcessResponse(ERROR, Some("Failed to retrieve job statuses")))
+                  .to[ResponseEntity]
+                  .map(res => HttpResponse(status = StatusCodes.InternalServerError, entity = res))
             }
           }
         }
       } ~ path("healthCheck" / "process" / "validation")  {
         get {
           complete {
-            processesWithValidationErrors.map[HttpResponse] { processes =>
+            processesWithValidationErrors.map[Future[HttpResponse]] { processes =>
               if (processes.isEmpty) {
-                val respEntity = toEntity(HealthCheckProcessResponse(OK))
-                HttpResponse(status = StatusCodes.OK, entity = respEntity)
+                Marshal(HealthCheckProcessResponse(OK))
+                  .to[ResponseEntity]
+                  .map(res => HttpResponse(status = StatusCodes.OK, entity = res))
               } else {
-                val respEntity = toEntity(HealthCheckProcessResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet)))
-                HttpResponse(status = StatusCodes.InternalServerError, entity = respEntity)
+                Marshal(HealthCheckProcessResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet)))
+                  .to[ResponseEntity]
+                  .map(res => HttpResponse(status = StatusCodes.InternalServerError, entity = res))
               }
             }
           }

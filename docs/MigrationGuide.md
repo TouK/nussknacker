@@ -2,6 +2,13 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
+## In version 0.2.0
+
+* [#922](https://github.com/TouK/nussknacker/pull/922) HealthCheck API has new structure, naming and json responses:
+  - old `/healthCheck` is moved to `/healthCheck/process/deployment`
+  - old `/sanityCheck` is moved to `/healthCheck/process/validation`
+  - top level `/healthCheck` indicates general "app-is-running" state
+
 ## In version 0.1.0
 
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics use variables by default, see [docs](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md) 
