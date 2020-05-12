@@ -546,6 +546,7 @@ lazy val util = (project in engine("util")).
     name := "nussknacker-util",
     libraryDependencies ++= {
       Seq(
+        "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "com.github.cb372" %% "scalacache-caffeine" % scalaCacheCaffeineV,
         "com.iheart" %% "ficus" % ficusV,
         "io.circe" %% "circe-java8" % circeV
@@ -810,9 +811,7 @@ lazy val ui = (project in file("ui/server"))
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test",
-
-        "com.github.cb372" %% "scalacache-caffeine" % scalaCacheCaffeineV
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test"
       )
     }
   )

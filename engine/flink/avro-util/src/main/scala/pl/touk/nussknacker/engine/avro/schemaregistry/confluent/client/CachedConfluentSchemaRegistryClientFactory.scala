@@ -22,7 +22,7 @@ object CachedConfluentSchemaRegistryClientFactory {
 
   import scala.concurrent.duration._
 
-  private val defaultExpireAfterAccess: Option[FiniteDuration] = Some(1.minutes)
+  private val defaultExpireAfterAccess: Option[FiniteDuration] = Some(120.minutes)
   private val defaultLatestTtl: Option[FiniteDuration] = Some(5.minutes)
   private val defaultMaximumSize: Long = DefaultCache.defaultMaximumSize
 
