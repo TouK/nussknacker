@@ -15,7 +15,6 @@ import org.springframework.expression.spel.{SpelNode, standard}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.MapLikePropertyTypeDeterminer
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
@@ -23,7 +22,7 @@ import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
-import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
+import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, TypeMethodReference}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.annotation.tailrec
@@ -296,7 +295,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case typedClass: TypedClass =>
         val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)
         val propertyTypeBasedOnMethod = clazzDefinition.getPropertyOrFieldType(e.getName)
-        propertyTypeBasedOnMethod.orElse(MapLikePropertyTypeDeterminer.mapLikePropertyType(typedClass))
+        propertyTypeBasedOnMethod.orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
           .map(Valid(_))
           .getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
       case typed: TypedObjectTypingResult =>
