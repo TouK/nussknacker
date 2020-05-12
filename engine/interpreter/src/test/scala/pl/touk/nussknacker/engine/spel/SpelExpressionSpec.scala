@@ -198,8 +198,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[Any]("#processHelper.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
   }
 
-  // TODO handle java varargs
-  ignore("validate MethodReference for java varargs") {
+  test("validate MethodReference for java varargs") {
     parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
   }
 

@@ -158,7 +158,7 @@ object TypeInfos {
   
   @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypingResult)
 
-  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String])
+  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String], varArgs: Boolean)
 
   case class ClazzDefinition(clazzName: TypingResult, methods: Map[String, List[MethodInfo]]) {
 
