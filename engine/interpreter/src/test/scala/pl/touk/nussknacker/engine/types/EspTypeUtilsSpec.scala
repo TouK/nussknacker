@@ -38,9 +38,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
     sampleClassInfo.value.methods shouldBe Map(
-      "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), None)),
-      "bar" -> List(MethodInfo(List.empty, Typed[String], None)),
-      "toString" -> List(MethodInfo(List(), Typed[String], None))
+      "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), None, varArgs = false)),
+      "bar" -> List(MethodInfo(List.empty, Typed[String], None, varArgs = false)),
+      "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false))
     )
   }
 
@@ -87,8 +87,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         val sampleClassInfo = infos.find(_.clazzName.asInstanceOf[TypedClass].klass.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
-          "toString" -> List(MethodInfo(List(), Typed[String], None)),
-          "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), None))
+          "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
+          "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), None, varArgs = false))
         )
       }
     }
@@ -99,11 +99,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
     typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed[TestEmbedded], Map(
-      "string" -> List(MethodInfo(List(), Typed[String], None)),
-      "javaList" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], None)),
-      "scalaList" -> List(MethodInfo(List(), Typed.fromDetailedType[List[String]], None)),
-      "javaMap" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], None)),
-      "toString" -> List(MethodInfo(List(), Typed[String], None))
+      "string" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
+      "javaList" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], None, varArgs = false)),
+      "scalaList" -> List(MethodInfo(List(), Typed.fromDetailedType[List[String]], None, varArgs = false)),
+      "javaMap" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], None, varArgs = false)),
+      "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false))
     )))
 
   }
@@ -112,9 +112,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
     typeUtils shouldBe Some(ClazzDefinition(Typed[ClassWithHiddenFields], Map(
-      "normalField" -> List(MethodInfo(List(), Typed[String], None)),
-      "normalParam" -> List(MethodInfo(List(), Typed[String], None)),
-      "toString" -> List(MethodInfo(List(), Typed[String], None))
+      "normalField" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
+      "normalParam" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
+      "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false))
     )))
   }
 
@@ -189,12 +189,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       ("method", "methodInfo"),
       //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
       //("foo", MethodInfo(parameters = List(param[String]("fooParam1")), refClazz = Typed[Long], description = None)),
-      ("bar", List(MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = Typed[String], description = None))),
-      ("baz", List(MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.bazDocs)))),
+      ("bar", List(MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = Typed[String], description = None, varArgs = false))),
+      ("baz", List(MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.bazDocs), varArgs = false))),
       //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
       //("qux", MethodInfo(parameters = List(param[String]("quxParam1")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
-      ("field1", List(MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = None))),
-      ("field2", List(MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.field2Docs))))
+      ("field1", List(MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = None, varArgs = false))),
+      ("field2", List(MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.field2Docs), varArgs = false)))
     )
     forAll(table){ case (method, methodInfo) =>
         scalaClazzInfo.methods(method) shouldBe methodInfo

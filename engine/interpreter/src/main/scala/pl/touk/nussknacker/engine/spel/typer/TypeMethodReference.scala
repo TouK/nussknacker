@@ -59,7 +59,7 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
       lazy val allMatching = m.parameters.map(_.refClazz).zip(calledParams).forall {
         case (declaredType, passedType) => passedType.canBeSubclassOf(declaredType)
       }
-      if (m.parameters.size == calledParams.size && allMatching) Some(m.refClazz) else None
+      if (m.parameters.size == calledParams.size && allMatching) Some(m.refClazz) else checkForVarArgs(m)
     }
     returnTypesForMatchingMethods match {
       case Nil =>
@@ -69,6 +69,19 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
       case nonEmpty =>
         Right(nonEmpty)
     }
+  }
+
+  private def checkForVarArgs(method: MethodInfo): Option[TypingResult] = {
+    val nonVarArgSize = method.parameters.size - 1
+    if (method.varArgs && calledParams.size >= nonVarArgSize) {
+      val nonVarArgParams = method.parameters.take(nonVarArgSize)
+      val nonVarArgCalledParams = calledParams.take(nonVarArgSize)
+      val nonVarArgMatching = nonVarArgParams.map(_.refClazz).zip(nonVarArgCalledParams).forall {
+        case (declaredType, passedType) => passedType.canBeSubclassOf(declaredType)
+      }
+      //TODO: we do not check var arg parameter types
+      if (nonVarArgMatching) Some(method.refClazz) else None
+    } else None
   }
 
 }
