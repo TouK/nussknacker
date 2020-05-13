@@ -114,6 +114,7 @@ object typing {
 
     def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypingResult = TypedClass(toRuntime[T], params)
 
+    //Typed.empty is our Nothing type
     def empty: TypedUnion = TypedUnion(Set.empty)
 
     def apply[T: ClassTag]: TypingResult = apply(toRuntime[T])
