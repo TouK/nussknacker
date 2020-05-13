@@ -16,7 +16,7 @@ Nussknacker versions
 * [#903](https://github.com/TouK/nussknacker/pull/903) Update Confluent version to 5.4.1
 * [#940](https://github.com/TouK/nussknacker/pull/940) More detailed node errors 
 * [#949](https://github.com/TouK/nussknacker/pull/949) JVM options can be configured via JDK_JAVA_OPTIONS env variable (in docker and standalone distribution) 
-* [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of Typed.empty as Nothing type (e.g. in empty inline lists) 
+* [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
 
 0.1.1
 ------------

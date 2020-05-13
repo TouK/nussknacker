@@ -126,7 +126,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
 
       case e: InlineList => withTypedChildren { children =>
-        val elementType = Typed(children.toSet)
+        //We don't want Typed.empty here, as currently it means it won't validate for any signature
+        val elementType = if (children.isEmpty) Unknown else Typed(children.toSet)
         Valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
       }
 
