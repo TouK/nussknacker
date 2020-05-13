@@ -509,7 +509,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
     parseOrFail[String]("#input.str", valCtxWithMap).evaluateSyncToValue[String](ctx) shouldBe "aaa"
     parseOrFail[Long]("#input.lon", valCtxWithMap).evaluateSyncToValue[Long](ctx) shouldBe 3444
-
+    parse[Any]("#input.notExisting", valCtxWithMap) shouldBe 'invalid
+    parseOrFail[Boolean]("#input.containsValue('aaa')", valCtxWithMap).evaluateSyncToValue[Boolean](ctx) shouldBe true
+    parseOrFail[Int]("#input.size", valCtxWithMap).evaluateSyncToValue[Int](ctx) shouldBe 2
+    parseOrFail[Boolean]("#input == {str: 'aaa', lon: 3444}", valCtxWithMap).evaluateSyncToValue[Boolean](ctx) shouldBe true
   }
 
   test("be able to type toString()") {

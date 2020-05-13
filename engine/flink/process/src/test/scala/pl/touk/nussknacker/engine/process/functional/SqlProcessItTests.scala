@@ -40,7 +40,7 @@ class SqlProcessItTests extends FunSuite with BeforeAndAfterAll with Matchers {
     processInvoker.invokeWithSampleData(process, List(SimpleRecord("1", 12, "a", new Date(1))))
 
     val list = MockService.data.asInstanceOf[List[java.util.List[TypedMap]]]
-    val result = list.flatMap(_.asScala.toList).flatMap(_.fields.mapValues(parseNumber))
+    val result = list.flatMap(_.asScala.toList).flatMap(_.asScala.mapValues(parseNumber))
     val pair = ("VALUE1", BigDecimal(12))
     result shouldEqual List(pair, pair, pair)
   }
@@ -70,7 +70,7 @@ class SqlProcessItTests extends FunSuite with BeforeAndAfterAll with Matchers {
     processInvoker.invokeWithSampleData(process, List(SimpleRecord(id = "1", value1 = 12, value2 = "a", date = new Date(1), value3 = BigDecimal(1.51))))
 
     val list = MockService.data.asInstanceOf[List[java.util.List[TypedMap]]]
-    val result = list.flatMap(_.asScala.toList).flatMap(_.fields).toMap.mapValues(parseNumber)
+    val result = list.flatMap(_.asScala.toList).flatMap(_.asScala).toMap.mapValues(parseNumber)
     result shouldBe Map(
       "ONE" -> BigDecimal(1),
       "SUM_VALUE" -> BigDecimal(2),

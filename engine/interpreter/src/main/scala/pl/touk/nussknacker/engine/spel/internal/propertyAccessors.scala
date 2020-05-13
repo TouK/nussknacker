@@ -7,12 +7,11 @@ import java.util.concurrent.TimeoutException
 import cats.data.{State, StateT}
 import cats.effect.IO
 import org.apache.commons.lang3.ClassUtils
-import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
+import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{LazyContextVariableName, LazyValuesProviderVariableName}
 
 import scala.collection.concurrent.TrieMap
@@ -34,7 +33,6 @@ object propertyAccessors {
       PrimitiveOrWrappersPropertyAccessor,
       StaticPropertyAccessor,
       MapPropertyAccessor,
-      TypedMapPropertyAccessor,
       TypedDictInstancePropertyAccessor,
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor
@@ -175,17 +173,6 @@ object propertyAccessors {
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
 
     override def getSpecificTargetClasses: Array[Class[_]] = Array(classOf[java.util.Map[_, _]])
-  }
-
-  object TypedMapPropertyAccessor extends PropertyAccessor with ReadOnly {
-    //in theory this always happends, because we typed it properly ;)
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
-      target.asInstanceOf[TypedMap].fields.contains(name)
-
-    override def read(context: EvaluationContext, target: scala.Any, name: String) =
-      new TypedValue(target.asInstanceOf[TypedMap].fields(name))
-
-    override def getSpecificTargetClasses: Array[Class[_]] = Array(classOf[TypedMap])
   }
 
   object TypedDictInstancePropertyAccessor extends PropertyAccessor with ReadOnly {
