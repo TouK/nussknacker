@@ -126,8 +126,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
 
       case e: InlineList => withTypedChildren { children =>
-        val childrenTypes = children.toSet
-        Valid(Typed.genericTypeClass[java.util.List[_]](List(Typed(childrenTypes))))
+        val elementType = Typed(children.toSet)
+        Valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
       }
 
       case e: InlineMap =>

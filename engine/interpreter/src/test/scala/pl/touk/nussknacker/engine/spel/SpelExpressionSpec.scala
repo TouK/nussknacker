@@ -421,6 +421,12 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[Any]("{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.value }", ctxWithInput) shouldBe 'valid
   }
 
+  test("validate list literals") {
+    parse[Int]("#processHelper.stringList({})", ctxWithGlobal) shouldBe 'valid
+    parse[Int]("#processHelper.stringList({'aa'})", ctxWithGlobal) shouldBe 'valid
+    parse[Int]("#processHelper.stringList({333})", ctxWithGlobal) shouldNot be ('valid)
+  }
+
   test("type map literals") {
     val ctxWithInput = ctx.withVariable("input", SampleValue(444))
     parse[Any]("{ Field1: 'Field1Value', Field2: #input.value }.Field1", ctxWithInput) shouldBe 'valid
@@ -683,6 +689,7 @@ object SampleGlobalObject {
   def one() = 1
   def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
+  def stringList(arg: java.util.List[String]): Int = arg.size()
   def toAny(value: Any): Any = value
   def stringOnStringMap: java.util.Map[String, String] = Map("key1" -> "value1", "key2" -> "value2").asJava
 }
