@@ -10,8 +10,8 @@ class CachedConfluentSchemaRegistryClientFactory(maximumSize: Long, latestSchema
   extends ConfluentSchemaRegistryClientFactory with Serializable {
 
   //Cache engines are shared by many of CachedConfluentSchemaRegistryClient
-  lazy private val schemaCache = new DefaultCache[Schema](maximumSize, schemaExpirationTime)
-  lazy private val latestSchemaCache = new DefaultCache[Schema](maximumSize, latestSchemaExpirationTime)
+  lazy private val schemaCache = new DefaultCache[Schema](maximumSize, schemaExpirationTime, Option.empty)
+  lazy private val latestSchemaCache = new DefaultCache[Schema](maximumSize, Option.empty, latestSchemaExpirationTime)
 
   override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
     val client = CachedSchemaRegistryClient(kafkaConfig)

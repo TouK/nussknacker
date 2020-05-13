@@ -16,11 +16,9 @@ import pl.touk.nussknacker.engine.util.cache.Cache
 class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, schemaCache: Cache[Schema], latestSchemaCache: Cache[Schema])
   extends ConfluentSchemaRegistryClient with LazyLogging {
 
-  private val latestCacheNamespace = "latest"
-
   override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] = {
     handleClientError {
-      latestSchemaCache.getOrCreate(s"$subject-$latestCacheNamespace") {
+      latestSchemaCache.getOrCreate(subject) {
         logger.debug(s"Cached latest schema for subject: $subject.")
         val schemaMetadata = client.getLatestSchemaMetadata(subject)
         AvroUtils.parseSchema(schemaMetadata.getSchema)

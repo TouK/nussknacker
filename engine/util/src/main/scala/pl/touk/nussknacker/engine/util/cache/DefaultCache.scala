@@ -8,9 +8,10 @@ import scala.concurrent.duration.Duration
 /**
   * @param maximumSize the maximum elements number can contain cache
   * @param expireAfterAccess the expiration time from last action (read / write)
+  * @param expireAfterWrite the expiration time 
   * @tparam T
   */
-class DefaultCache[T](maximumSize: Long, expireAfterAccess: Option[Duration]) extends Cache[T] {
+class DefaultCache[T](maximumSize: Long, expireAfterAccess: Option[Duration], expireAfterWrite: Option[Duration]) extends Cache[T] {
 
   import scala.compat.java8.FunctionConverters._
 
@@ -26,6 +27,9 @@ class DefaultCache[T](maximumSize: Long, expireAfterAccess: Option[Duration]) ex
     expireAfterAccess
       .foreach(expire => builder.expireAfterAccess(java.time.Duration.ofMillis(expire.toMillis)))
 
+    expireAfterWrite
+      .foreach(expire => builder.expireAfterWrite(java.time.Duration.ofMillis(expire.toMillis)))
+
     builder
       .build[String, T]
   }
@@ -39,8 +43,8 @@ object DefaultCache {
   val defaultMaximumSize: Long = 10000L
 
   def apply[T](): DefaultCache[T] =
-    new DefaultCache(defaultMaximumSize, Option.empty)
+    new DefaultCache(defaultMaximumSize, Option.empty, Option.empty)
 
-  def apply[T](expireAfterAccess: Option[Duration]): DefaultCache[T] =
-    new DefaultCache(defaultMaximumSize, expireAfterAccess)
+  def apply[T](expireAfterAccess: Option[Duration], expireAfterWrite: Option[Duration]): DefaultCache[T] =
+    new DefaultCache(defaultMaximumSize, expireAfterAccess, expireAfterWrite)
 }
