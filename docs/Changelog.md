@@ -18,6 +18,11 @@ Nussknacker versions
 * [#949](https://github.com/TouK/nussknacker/pull/949) JVM options can be configured via JDK_JAVA_OPTIONS env variable (in docker and standalone distribution) 
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
 
+0.1.2 (not released yet)
+------------------------
+* [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` has now additional aggregation function `Sum`.
+ Also was changed parameter from `windowLengthInSeconds` to `windowLength` with human friendly duration input.  
+
 0.1.1
 ------------
 * Branch parameters now can be eager (computed during process compilation)

@@ -49,6 +49,7 @@ for aggregate node with length of 10 minutes and aggregation max, following even
 Currently we support following aggregations:
 - Max - computes maximal value
 - Min - computes minimal value
+- Sum - computes sum of values
 - Set - the result is set of incoming elements (can be v. ineffective for large sets, try to use ApproximateSetCardinality in this case )
 - ApproximateSetCardinality - computes approximate cardinality of set using [HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog) algorithm.
 
