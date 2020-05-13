@@ -46,14 +46,22 @@ class AppResources(config: Config,
     }
   }
 
+  private def createHealthCheckHttpResponse(healthCheckResponse: HealthCheckProcessResponse): Future[HttpResponse] =
+    Marshal(healthCheckResponse)
+      .to[ResponseEntity]
+      .map(res => HttpResponse(
+        status = healthCheckResponse.status match {
+          case OK => StatusCodes.OK
+          case ERROR => StatusCodes.InternalServerError
+        },
+        entity = res))
+
   def securedRoute(implicit user: LoggedUser): Route =
     pathPrefix("app") {
       path("healthCheck") {
         get {
           complete {
-            Marshal(HealthCheckProcessResponse(OK))
-              .to[ResponseEntity]
-              .map(res => HttpResponse(status = StatusCodes.OK, entity = res))
+            createHealthCheckHttpResponse(HealthCheckProcessResponse(OK))
           }
         }
       } ~ path("healthCheck" / "process" / "deployment") {
@@ -61,22 +69,16 @@ class AppResources(config: Config,
           complete {
             notRunningProcessesThatShouldRun.map[Future[HttpResponse]] { set =>
               if (set.isEmpty) {
-                Marshal(HealthCheckProcessResponse(OK))
-                  .to[ResponseEntity]
-                  .map(res => HttpResponse(status = StatusCodes.OK, entity = res))
+                createHealthCheckHttpResponse(HealthCheckProcessResponse(OK))
               } else {
                 logger.warn(s"Processes not running: ${set.keys}")
                 logger.debug(s"Processes not running - more details: $set")
-                Marshal(HealthCheckProcessResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet)))
-                  .to[ResponseEntity]
-                  .map(res => HttpResponse(status = StatusCodes.InternalServerError, entity = res))
+                createHealthCheckHttpResponse(HealthCheckProcessResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet)))
               }
             }.recover[Future[HttpResponse]] {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                Marshal(HealthCheckProcessResponse(ERROR, Some("Failed to retrieve job statuses")))
-                  .to[ResponseEntity]
-                  .map(res => HttpResponse(status = StatusCodes.InternalServerError, entity = res))
+                createHealthCheckHttpResponse(HealthCheckProcessResponse(ERROR, Some("Failed to retrieve job statuses")))
             }
           }
         }
@@ -85,13 +87,9 @@ class AppResources(config: Config,
           complete {
             processesWithValidationErrors.map[Future[HttpResponse]] { processes =>
               if (processes.isEmpty) {
-                Marshal(HealthCheckProcessResponse(OK))
-                  .to[ResponseEntity]
-                  .map(res => HttpResponse(status = StatusCodes.OK, entity = res))
+                createHealthCheckHttpResponse(HealthCheckProcessResponse(OK))
               } else {
-                Marshal(HealthCheckProcessResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet)))
-                  .to[ResponseEntity]
-                  .map(res => HttpResponse(status = StatusCodes.InternalServerError, entity = res))
+                createHealthCheckHttpResponse(HealthCheckProcessResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet)))
               }
             }
           }
