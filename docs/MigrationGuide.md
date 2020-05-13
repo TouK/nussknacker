@@ -52,7 +52,7 @@ val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](pro
 ## In version 0.1.2 (not released yet)
 
 * [#954](https://github.com/TouK/nussknacker/pull/954) `TypedMap` is not a case class wrapping scala Map anymore. If you have
- done some pattern matching on it, you should use `case typedMap: TypedMap => typedMap.typedMap.asScala` instead.
+ done some pattern matching on it, you should use `case typedMap: TypedMap => typedMap.asScala` instead.
 
 ## In version 0.1.1
 
