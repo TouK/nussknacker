@@ -8,7 +8,7 @@ import scala.concurrent.duration.Duration
 /**
   * @param maximumSize the maximum elements number can contain cache
   * @param expireAfterAccess the expiration time from last action (read / write)
-  * @param expireAfterWrite the expiration time 
+  * @param expireAfterWrite the expiration time after cache was created
   * @tparam T
   */
 class DefaultCache[T](maximumSize: Long, expireAfterAccess: Option[Duration], expireAfterWrite: Option[Duration]) extends Cache[T] {
