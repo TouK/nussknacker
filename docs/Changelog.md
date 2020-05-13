@@ -14,6 +14,7 @@ Nussknacker versions
 * More restrictive type checking in SpEL - mainly added verification of types of method's paramaters
 * Added support for Kafka consumer group strategies - setted up by `kafka.consumerGroupNamingStrategy` configuraton option
 * Bugfixes for joins
+* [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of Typed.empty as Nothing type (e.g. in empty inline lists) 
 
 0.1.0
 -------------
