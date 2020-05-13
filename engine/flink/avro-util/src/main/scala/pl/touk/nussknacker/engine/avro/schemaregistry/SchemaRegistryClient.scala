@@ -16,7 +16,7 @@ trait SchemaRegistryClient extends Serializable {
   def getLatestFreshSchema(subject: String): Validated[SchemaRegistryError, Schema]
 
   /**
-    * Latest schema by subject - we assume there can be so latency
+    * Latest schema by subject - we assume there can be some latency
     *
     * @param subject
     * @return
