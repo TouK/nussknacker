@@ -16,24 +16,36 @@ import pl.touk.nussknacker.engine.util.cache.Cache
 class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, schemaCache: Cache[Schema], latestSchemaCache: Cache[Schema])
   extends ConfluentSchemaRegistryClient with LazyLogging {
 
-  override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] = {
+  override def getLatestFreshSchema(subject: String): Validated[SchemaRegistryError, Schema] =
+    handleClientError {
+      latestSchemaRequest(subject)
+    }
+
+  override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] =
     handleClientError {
       latestSchemaCache.getOrCreate(subject) {
-        logger.debug(s"Cached latest schema for subject: $subject.")
-        val schemaMetadata = client.getLatestSchemaMetadata(subject)
-        AvroUtils.parseSchema(schemaMetadata.getSchema)
+        logger.debug(s"Cache latest schema for subject: $subject.")
+        latestSchemaRequest(subject)
       }
     }
-  }
 
   override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema] =
     handleClientError {
       schemaCache.getOrCreate(s"$subject-$version") {
-        logger.debug(s"Cached schema for subject: $subject and version: $version.")
+        logger.debug(s"Cache schema for subject: $subject and version: $version.")
         val schemaMetadata = client.getSchemaMetadata(subject, version)
         AvroUtils.parseSchema(schemaMetadata.getSchema)
       }
     }
+
+  private def latestSchemaRequest(subject: String): Schema = {
+    val schemaMetadata = client.getLatestSchemaMetadata(subject)
+
+    schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
+      logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
+      AvroUtils.parseSchema(schemaMetadata.getSchema)
+    }
+  }
 }
 
 private[client] object CachedSchemaRegistryClient {

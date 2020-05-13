@@ -12,6 +12,9 @@ class FixedConfluentSchemaRegistryClient(subject: String, avroSchemaString: Stri
 
   private lazy val schema = AvroUtils.parseSchema(avroSchemaString)
 
+  override def getLatestFreshSchema(subject: String): Validated[SchemaRegistryError, Schema] =
+    Valid(schema)
+
   override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] =
     Valid(schema)
 
