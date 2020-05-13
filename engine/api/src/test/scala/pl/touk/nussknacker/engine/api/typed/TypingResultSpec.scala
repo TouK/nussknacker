@@ -186,12 +186,6 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     }
   }
 
-  test("should handle Typed.empty") {
-    CanBeSubclassDeterminer.canBeSubclassOf(Typed.empty, Typed[String]) shouldBe true
-    CanBeSubclassDeterminer.canBeSubclassOf(Typed.empty, Typed[Long]) shouldBe true
-    CanBeSubclassDeterminer.canBeSubclassOf(Typed.empty, Typed[ClassHierarchy.Pet]) shouldBe true
-  }
-
   object ClassHierarchy {
 
     class Animal extends Serializable
