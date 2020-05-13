@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -114,7 +115,8 @@ object ProcessTestHelpers {
         val dictDef = EmbeddedDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
         val globalProcessVariables = Map(
           "processHelper" -> WithCategories(ProcessHelper),
-          "enum" -> WithCategories(DictInstance(dictId, dictDef)))
+          "enum" -> WithCategories(DictInstance(dictId, dictDef)),
+          "typedMap" -> WithCategories(TypedMap(Map("aField" -> "123"))))
         ExpressionConfig(globalProcessVariables, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
       }
 

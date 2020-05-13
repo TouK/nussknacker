@@ -439,6 +439,8 @@ object SampleNodes {
 
     def javaOptionalValue: Optional[String] = Optional.of("" + constant)
 
+    def extractProperty(map: java.util.Map[String, _], property: String): Any = map.get(property)
+
   }
 
   private val ascendingTimestampExtractor = new AscendingTimestampExtractor[SimpleRecord] {

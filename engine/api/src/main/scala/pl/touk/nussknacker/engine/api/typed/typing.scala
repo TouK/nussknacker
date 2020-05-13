@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.dict.DictInstance
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
+import scala.collection.JavaConverters._
 
 object typing {
 
@@ -114,7 +115,6 @@ object typing {
 
     def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypingResult = TypedClass(toRuntime[T], params)
 
-    //Typed.empty is our Nothing type
     def empty: TypedUnion = TypedUnion(Set.empty)
 
     def apply[T: ClassTag]: TypingResult = apply(toRuntime[T])
@@ -149,11 +149,11 @@ object typing {
       obj match {
         case null =>
           Typed.empty
-        case TypedMap(fields) =>
-          val fieldTypes = fields.map {
+        case typedMap: TypedMap =>
+          val fieldTypes = typedMap.asScala.map {
             case (k, v) => k -> fromInstance(v)
-          }
-          TypedObjectTypingResult(fieldTypes, TypedClass(classOf[TypedMap], Nil))
+          }.toMap
+          TypedObjectTypingResult(fieldTypes)
         case dict: DictInstance =>
           TypedDict(dict.dictId, dict.valueType)
         case other =>

@@ -126,7 +126,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
 
       case e: InlineList => withTypedChildren { children =>
-        val elementType = Typed(children.toSet)
+        //We don't want Typed.empty here, as currently it means it won't validate for any signature
+        val elementType = if (children.isEmpty) Unknown else Typed(children.toSet)
         Valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
       }
 
@@ -293,16 +294,22 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case tagged: TypedTaggedValue =>
         extractSingleProperty(e)(tagged.objType)
       case typedClass: TypedClass =>
-        val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)
-        val propertyTypeBasedOnMethod = clazzDefinition.getPropertyOrFieldType(e.getName)
-        propertyTypeBasedOnMethod.orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
+        propertyTypeBasedOnMethod(e)(typedClass).orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
           .map(Valid(_))
           .getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
-      case typed: TypedObjectTypingResult =>
-        typed.fields.get(e.getName).map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
+      case TypedObjectTypingResult(fields, objType) =>
+        val typeBasedOnFields = fields.get(e.getName)
+        typeBasedOnFields.orElse(propertyTypeBasedOnMethod(e)(objType))
+          .map(Valid(_))
+          .getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
       case dict: TypedDict =>
         dictTyper.typeDictValue(dict, e)
     }
+  }
+
+  private def propertyTypeBasedOnMethod(e: PropertyOrFieldReference)(typedClass: TypedClass) = {
+    val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)
+    clazzDefinition.getPropertyOrFieldType(e.getName)
   }
 
   private def extractListType(parent: TypingResult): TypingResult = parent match {

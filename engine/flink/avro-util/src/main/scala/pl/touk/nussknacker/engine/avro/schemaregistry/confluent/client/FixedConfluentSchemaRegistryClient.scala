@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
-import java.util
-
 import cats.data.Validated
 import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError

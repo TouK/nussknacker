@@ -159,7 +159,7 @@ val scalaParsersV = "1.0.4"
 val dispatchV = "1.0.1"
 val slf4jV = "1.7.21"
 val scalaLoggingV = "3.9.0"
-val scalaCompatV = "0.8.0"
+val scalaCompatV = "0.9.0"
 val ficusV = "1.4.1"
 val configV = "1.3.0"
 val commonsLangV = "3.3.2"
@@ -178,6 +178,7 @@ val confluentV = "5.4.1"
 val jbcryptV = "0.4"
 val cronParserV = "3.1.1"
 val javaxValidationApiV = "2.0.1.Final"
+val caffeineCacheV = "2.8.2"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -377,7 +378,7 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
     name := "nussknacker-management-java-sample"  ,
     libraryDependencies ++= {
       Seq(
-        "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
+        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
@@ -396,7 +397,7 @@ lazy val demo = (project in engine("demo")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
+        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
       )
     }
@@ -544,6 +545,8 @@ lazy val util = (project in engine("util")).
     name := "nussknacker-util",
     libraryDependencies ++= {
       Seq(
+        "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
+        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
         "io.circe" %% "circe-java8" % circeV
       )

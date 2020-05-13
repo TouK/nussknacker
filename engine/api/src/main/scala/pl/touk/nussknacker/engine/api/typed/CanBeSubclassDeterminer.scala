@@ -31,8 +31,6 @@ private[typed] object CanBeSubclassDeterminer {
     (givenType, superclassCandidate) match {
       case (_, Unknown) => true
       case (Unknown, _) => true
-      //Typed.empty is our Nothing type
-      case (empty, _) if empty == Typed.empty => true
       case (given: SingleTypingResult, superclass: TypedUnion) => canBeSubclassOf(Set(given), superclass.possibleTypes)
       case (given: TypedUnion, superclass: SingleTypingResult) => canBeSubclassOf(given.possibleTypes, Set(superclass))
       case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
