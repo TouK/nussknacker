@@ -43,7 +43,7 @@ val source = new KafkaAvroSourceFactory(
 val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
 val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 ```
-
+__
 `KafkaTypedAvroSourceFactory` (*class name changed*) new way:
 ```
 val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
@@ -51,6 +51,9 @@ val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](pro
 
 ## In version 0.1.2 (not released yet)
 
+* [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` from `generic` model has changed parameter 
+ from `windowLengthInSeconds` to `windowLength` with human friendly duration input. If you have used it in process, you need
+ to insert correct value again.
 * [#954](https://github.com/TouK/nussknacker/pull/954) `TypedMap` is not a case class wrapping scala Map anymore. If you have
  done some pattern matching on it, you should use `case typedMap: TypedMap => typedMap.asScala` instead.
 
