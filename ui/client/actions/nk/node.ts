@@ -9,7 +9,7 @@ import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 
 //TODO: identify
 type Edges = $TodoType[]
-type ValidationResult = $TodoType
+export type ValidationResult = $TodoType
 type EdgeType = $TodoType
 
 export type NodesWithPositions = { node: NodeType, position: Position }[]

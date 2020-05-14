@@ -3,7 +3,7 @@ import reduceReducers from "reduce-reducers"
 import {isFunction} from "lodash"
 
 export type ReducersMapObject<S> = {
-  [K in keyof S]: Reducer<S[K]> | ReducersMapObject<S[K]>
+  [K in keyof S]: Reducer<S[K]> | ReducersObj<S[K]>
 }
 
 type ReducersObj<S extends {}> = ReducersMapObject<Partial<S>>
@@ -23,7 +23,7 @@ function combineReducers<S extends {}>(reducers: ReducersObj<S>, initialState = 
     .keys(reducers)
     .reduce((nextState, key) => {
       const reducer = getter(reducers[key])
-      const newValue = reducer(nextState[key], action)
+      const newValue = reducer(nextState?.[key], action)
       return {...nextState, [key]: newValue}
     }, state)
 }

@@ -22,8 +22,9 @@ describe("Reducer suite", () => {
     expect(NodeUtils.getAllGroups(result.graphReducer.processToDisplay)).toEqual(
       [{
         id: "abcde",
-        nodes: ["kafka-transaction", "filter"]
-      }]
+        nodes: ["kafka-transaction", "filter"],
+        type: "_group"
+      }],
     )
   })
 
@@ -52,7 +53,7 @@ describe("Reducer suite", () => {
       [{
         id: "acdc",
         nodes: ["kafka-transaction", "filter"]
-      },{
+      }, {
         id: "paramService-sendSms",
         nodes: ["paramService", "sendSms"]
       }
@@ -85,7 +86,7 @@ describe("Nodes added", () => {
             }
           }
         ]
-      },
+          },
       "output": "output"
     }
     position = {x: 10, y: 20}
@@ -244,7 +245,7 @@ const baseProcessState = {
               }
             }
           ]
-        },
+            },
         "output": "output"
       },
       {
@@ -278,12 +279,12 @@ const baseProcessState = {
       }
     ],
     "validationResult": {
-      "errors" : {
+      "errors": {
         "invalidNodes": {},
         "processPropertiesErrors": [],
         "globalErrors": []
       }
     }
-  },
+    },
   "history": []
 }

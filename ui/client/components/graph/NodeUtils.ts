@@ -3,7 +3,18 @@ import _ from "lodash"
 import fp from "lodash/fp"
 import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils"
 import ProcessUtils from "../../common/ProcessUtils.js"
-import {Edge, GroupId, GroupNodeType, GroupType, NodeId, NodeType, Process} from "../../types"
+import {
+  Edge,
+  GroupId,
+  GroupNodeType,
+  GroupType,
+  NodeId,
+  NodeType,
+  Process,
+  PropertiesType,
+  ProcessDefinitionData,
+  EdgeType, UINodeType,
+} from "../../types"
 
 class NodeUtils {
 
@@ -15,16 +26,16 @@ class NodeUtils {
     return node.type ? node.type : "Properties"
   }
 
-  nodeIsProperties = (node: NodeType): boolean => {
+  nodeIsProperties = (node: UINodeType): node is PropertiesType => {
     const type = node && this.nodeType(node)
     return type === "Properties"
   }
 
-  isPlainNode = (node: NodeType): boolean => {
+  isPlainNode = (node: UINodeType) => {
     return !_.isEmpty(node) && !this.nodeIsProperties(node)
   }
 
-  nodeIsGroup = (node: NodeType): boolean => {
+  nodeIsGroup = (node: UINodeType): node is GroupType => {
     return node && this.nodeType(node) === "_group"
   }
 
@@ -103,7 +114,7 @@ class NodeUtils {
   getExpandedGroups = (process: Process, expandedGroups: GroupId[]) => this.getAllGroups(process)
     .filter(g => _.includes(expandedGroups, g.id))
 
-  edgeType = (allEdges, node: NodeType, processDefinitionData) => {
+  edgeType = (allEdges: Edge[], node: NodeType, processDefinitionData: ProcessDefinitionData): EdgeType => {
     const edgesForNode = this.edgesForNode(node, processDefinitionData)
 
     if (edgesForNode.canChooseNodes) {
@@ -123,17 +134,17 @@ class NodeUtils {
     )
   }
 
-  ungroup = (process: Process, groupToDeleteId) => {
-    return this._update(
+  ungroup = (process: Process, groupToDeleteId: NodeId) => {
+    return this._update<Process, GroupType[]>(
       "properties.additionalFields.groups",
       (groups) => groups.filter(e => !_.isEqual(e.id, groupToDeleteId)),
       process,
     )
   }
 
-  editGroup = (process: Process, oldGroupId, newGroup) => {
-    const groupForState = {id: newGroup.id, nodes: newGroup.ids}
-    return this._update(
+  editGroup = (process: Process, oldGroupId: NodeId, newGroup) => {
+    const groupForState: GroupType = {id: newGroup.id, nodes: newGroup.ids, type: "_group"}
+    return this._update<Process, GroupType[]>(
       "properties.additionalFields.groups",
       (groups) => _.concat(groups.filter(g => g.id !== oldGroupId), [groupForState]),
       process,
@@ -186,12 +197,12 @@ class NodeUtils {
   }
 
   //TODO: this function should already exists in lodash?
-  _update = (path, fun, object) => {
+  _update = <T extends {}, U>(path: string, fun: (u: U) => U, object: T): T => {
     return fp.set(path, fun(_.get(object, path)), object)
   }
 
   _changeGroupNodes = (processToDisplay: Process, nodeOperation) => {
-    return this._update(
+    return this._update<Process, GroupType[]>(
       "properties.additionalFields.groups",
       (groups) => (groups || []).map(group => ({
         ...group,
