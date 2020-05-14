@@ -13,7 +13,7 @@ import {
   Process,
   PropertiesType,
   ProcessDefinitionData,
-  EdgeType,
+  EdgeType, UINodeType,
 } from "../../types"
 
 class NodeUtils {
@@ -26,16 +26,16 @@ class NodeUtils {
     return node.type ? node.type : "Properties"
   }
 
-  nodeIsProperties = (node: NodeType | GroupType): node is PropertiesType => {
+  nodeIsProperties = (node: UINodeType): node is PropertiesType => {
     const type = node && this.nodeType(node)
     return type === "Properties"
   }
 
-  isPlainNode = (node: NodeType | GroupType) => {
+  isPlainNode = (node: UINodeType) => {
     return !_.isEmpty(node) && !this.nodeIsProperties(node)
   }
 
-  nodeIsGroup = (node: NodeType | GroupType): node is GroupType => {
+  nodeIsGroup = (node: UINodeType): node is GroupType => {
     return node && this.nodeType(node) === "_group"
   }
 

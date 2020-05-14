@@ -28,3 +28,5 @@ export type PropertiesType = NodeType & {
 }
 
 export type NodeId = NodeType["id"]
+
+export type UINodeType = NodeType | GroupType
