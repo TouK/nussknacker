@@ -13,6 +13,7 @@
     "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
     "start": "BACKEND_DOMAIN=http://localhost:8080 webpack-dev-server",
     "start-backend-demo": "BACKEND_DOMAIN=https://staging.nussknacker.io webpack-dev-server",
+    "start-carpinion-demo": "BACKEND_DOMAIN=https://default-nussknacker.carpinion.touk.pl webpack-dev-server",
     "pretest": "npm run check",
     "test": "./node_modules/karma/bin/karma start --single-run"
   },
@@ -116,7 +117,7 @@
     "@types/backbone": "^1.4.1",
     "@types/classnames": "^2.2.10",
     "@types/i18next-xhr-backend": "^1.4.2",
-    "@types/lodash": "^4.14.150",
+    "@types/lodash": "^4.14.149",
     "@types/react": "^16.9.23",
     "@types/react-beautiful-dnd": "^12.1.1",
     "@types/react-bootstrap": "^0.32.20",
