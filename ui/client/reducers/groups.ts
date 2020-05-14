@@ -2,7 +2,7 @@ import {GroupType} from "../types"
 import {defaultsDeep} from "lodash"
 import {Reducer} from "../actions/reduxTypes"
 
-export const reducer: Reducer<GroupType[]> = (groups, action) => {
+export const reducer: Reducer<GroupType[]> = (groups = [], action) => {
   switch (action.type) {
     case "LAYOUT_CHANGED":
       return groups.map(g => {
