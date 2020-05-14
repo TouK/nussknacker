@@ -88,7 +88,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         graphLoading: false,
         nodeToDisplay: processToDisplay.properties,
         layout: !state.businessView ?
-          LayoutUtils.fromMeta(processToDisplay.nodes, processToDisplay.properties.additionalFields.groups):
+          LayoutUtils.fromMeta(processToDisplay.nodes, processToDisplay.properties?.additionalFields?.groups):
           [],
       }
     }

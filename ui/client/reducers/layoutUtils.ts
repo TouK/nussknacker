@@ -3,7 +3,7 @@ import {Layout} from "../actions/nk"
 import {NodeType, GroupType} from "../types"
 import {Reducer} from "../actions/reduxTypes"
 
-export function fromMeta(nodes: NodeType[], groups: GroupType[]): Layout {
+export function fromMeta(nodes: NodeType[], groups: GroupType[] = []): Layout {
   const nodesLayout = nodes
     .filter(({additionalFields}) => additionalFields?.layoutData)
     .map(({id, additionalFields}) => ({id, position: additionalFields.layoutData}))
