@@ -176,16 +176,6 @@ object ProcessCompilationError {
       InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)
   }
 
-
-  case class InvalidPropertyFixedValue1(paramName: String, label: Option[String], value: String, values: List[String], nodeId: String)
-    extends PartSubGraphCompilationError with InASingleNode
-
-  object InvalidPropertyFixedValue1 {
-    def apply(paramName: String, label: Option[String], value: String, values: List[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      InvalidPropertyFixedValue1(paramName, label, value, values, nodeId.id)
-  }
-
-
   case class OverwrittenVariable(variableName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
