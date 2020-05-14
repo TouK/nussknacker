@@ -148,6 +148,10 @@ object ProcessCompilationError {
 
   case class MismatchParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
+  case class SmallerThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
+  case class GreaterThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
   case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
@@ -171,6 +175,16 @@ object ProcessCompilationError {
     def apply(paramName: String, label: Option[String], value: String, values: List[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)
   }
+
+
+  case class InvalidPropertyFixedValue1(paramName: String, label: Option[String], value: String, values: List[String], nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object InvalidPropertyFixedValue1 {
+    def apply(paramName: String, label: Option[String], value: String, values: List[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      InvalidPropertyFixedValue1(paramName, label, value, values, nodeId.id)
+  }
+
 
   case class OverwrittenVariable(variableName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode

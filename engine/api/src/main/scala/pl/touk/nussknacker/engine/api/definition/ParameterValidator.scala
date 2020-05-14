@@ -105,8 +105,14 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
     if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ >= minimalNumber).isSuccess)
       valid(Unit)
     else
-      invalid(InvalidPropertyFixedValue(paramName, label, value, List(minimalNumber.toString())))
+      invalid(error(paramName, nodeId.id))
 
+  private def error(paramName: String, nodeId: String): SmallerThanRequiredParameter = SmallerThanRequiredParameter(
+    s"This field value has to be a number greater than or equal to ${minimalNumber}",
+    "Please fill field with proper number",
+    paramName,
+    nodeId
+  )
 }
 
 case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterValidator {
@@ -116,8 +122,14 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
     if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ <= maximalNumber).isSuccess)
       valid(Unit)
     else
-      invalid(InvalidPropertyFixedValue(paramName, label, value, List(maximalNumber.toString())))
+      invalid(error(paramName, nodeId.id))
 
+  private def error(paramName: String, nodeId: String): GreaterThanRequiredParameter = GreaterThanRequiredParameter(
+    s"This field value has to be a number less than or equal to ${maximalNumber}",
+    "Please fill field with proper number",
+    paramName,
+    nodeId
+  )
 }
 
 case object LiteralParameterValidator {
