@@ -17,8 +17,7 @@ Nussknacker versions
 * [#940](https://github.com/TouK/nussknacker/pull/940) More detailed node errors 
 * [#949](https://github.com/TouK/nussknacker/pull/949) JVM options can be configured via JDK_JAVA_OPTIONS env variable (in docker and standalone distribution) 
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
-* [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache 
-* [#958](https://github.com/TouK/nussknacker/pull/958) Avro cache improvements
+* [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache
 
 0.1.1
 ------------
