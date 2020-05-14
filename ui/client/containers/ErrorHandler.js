@@ -12,6 +12,10 @@ class ErrorHandler extends React.Component {
 
     const {config, isAxiosError, request, response, toJSON} = this.props.error
 
+    if (!response) {
+      throw this.props.error
+    }
+
     if (response.status === 404) {
       return <NotFound message={response.data}/>
     }
