@@ -18,7 +18,7 @@ class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryP
   override def typeDefinition: Validated[SchemaRegistryError, typing.TypingResult] =
     schemaRegistryProvider
       .createSchemaRegistryClient
-      .getSchema(AvroUtils.valueSubject(topic), version)
+      .getFreshSchema(AvroUtils.valueSubject(topic), version)
       .map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
 
   override def deserializationSchema: KafkaDeserializationSchema[T] =
