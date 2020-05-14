@@ -44,7 +44,7 @@ class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
   override def typeDefinition: Validated[SchemaRegistryError, typing.TypingResult] =
    factory
      .createSchemaRegistryClient(kafkaConfig)
-     .getSchema(AvroUtils.valueSubject(topic), None)
+     .getFreshSchema(AvroUtils.valueSubject(topic), None)
      .map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
 
   override def recordFormatter: Option[RecordFormatter] =

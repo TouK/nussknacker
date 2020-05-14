@@ -26,5 +26,10 @@ trait SchemaRegistryClient extends Serializable {
   def getSchema(subject: String, version: Option[Int]): Validated[SchemaRegistryError, Schema] =
     version
       .map(ver => getBySubjectAndVersion(subject, ver))
+      .getOrElse(getLatestSchema(subject))
+
+  def getFreshSchema(subject: String, version: Option[Int]): Validated[SchemaRegistryError, Schema] =
+    version
+      .map(ver => getBySubjectAndVersion(subject, ver))
       .getOrElse(getLatestFreshSchema(subject))
 }

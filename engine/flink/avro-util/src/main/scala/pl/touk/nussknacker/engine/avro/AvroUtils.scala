@@ -29,12 +29,12 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 
   def latestKeySchema(topic: String): Schema =
     handleClientResponse {
-      schemaRegistryClient.getLatestFreshSchema(AvroUtils.keySubject(topic))
+      schemaRegistryClient.getLatestSchema(AvroUtils.keySubject(topic))
     }
 
   def latestValueSchema(topic: String): Schema =
     handleClientResponse {
-      schemaRegistryClient.getLatestFreshSchema(AvroUtils.valueSubject(topic))
+      schemaRegistryClient.getLatestSchema(AvroUtils.valueSubject(topic))
     }
 
   private def handleClientResponse(response: => Validated[SchemaRegistryError, Schema]): Schema =
