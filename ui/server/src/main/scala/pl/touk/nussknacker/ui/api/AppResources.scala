@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.{HttpResponse, ResponseEntity, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import com.typesafe.config.{Config, ConfigRenderOptions}
@@ -8,7 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -45,35 +46,50 @@ class AppResources(config: Config,
     }
   }
 
+  private def createHealthCheckHttpResponse(status: HealthCheckProcessResponseStatus, message: Option[String] = None, processes: Option[Set[String]] = None): Future[HttpResponse] =
+    Marshal(HealthCheckProcessResponse(status, message, processes))
+      .to[ResponseEntity]
+      .map(res => HttpResponse(
+        status = status match {
+          case OK => StatusCodes.OK
+          case ERROR => StatusCodes.InternalServerError
+        },
+        entity = res))
+
   def securedRoute(implicit user: LoggedUser): Route =
     pathPrefix("app") {
       path("healthCheck") {
         get {
           complete {
-            notRunningProcessesThatShouldRun.map[HttpResponse] { set =>
+            createHealthCheckHttpResponse(OK)
+          }
+        }
+      } ~ path("healthCheck" / "process" / "deployment") {
+        get {
+          complete {
+            notRunningProcessesThatShouldRun.map[Future[HttpResponse]] { set =>
               if (set.isEmpty) {
-                HttpResponse(status = StatusCodes.OK)
+                createHealthCheckHttpResponse(OK)
               } else {
                 logger.warn(s"Processes not running: ${set.keys}")
                 logger.debug(s"Processes not running - more details: $set")
-                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.keys.mkString(", ")}")
+                createHealthCheckHttpResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet))
               }
-            }.recover[HttpResponse] {
+            }.recover[Future[HttpResponse]] {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                HttpResponse(status = StatusCodes.InternalServerError, entity = "Failed to retrieve job statuses")
+                createHealthCheckHttpResponse(ERROR, Some("Failed to retrieve job statuses"))
             }
           }
         }
-      } ~ path("sanityCheck")  {
+      } ~ path("healthCheck" / "process" / "validation")  {
         get {
           complete {
-            processesWithValidationErrors.map[HttpResponse] { processes =>
+            processesWithValidationErrors.map[Future[HttpResponse]] { processes =>
               if (processes.isEmpty) {
-                HttpResponse(status = StatusCodes.OK)
+                createHealthCheckHttpResponse(OK)
               } else {
-                val message = s"Processes with validation errors: \n${processes.mkString(", ")}"
-                HttpResponse(status = StatusCodes.InternalServerError, entity = message)
+                createHealthCheckHttpResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet))
               }
             }
           }
