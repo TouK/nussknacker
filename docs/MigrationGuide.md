@@ -10,7 +10,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - old `/sanityCheck` is moved to `/healthCheck/process/validation`
   - top level `/healthCheck` indicates general "app-is-running" state
 
-* [#879](https://github.com/TouK/nussknacker/pull/879) Metrics use variables by default, see [docs](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md) 
+* [#879](https://github.com/TouK/nussknacker/pull/879) Metrics use variables by default, see [docs](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md)
   to enable old mode, suitable for graphite protocol. To use old way of sending:
     - put `globalParameters.useLegacyMetrics = true` in each model configuration (to configure metrics sending in Flink)
     - put: ```
@@ -23,11 +23,11 @@ To see biggest differences please consult the [changelog](Changelog.md).
         sourceCountMetric: "source.count"
         nodeIdTag: "action"
         countField: "value"
-        
+
       }
-    } 
+    }
   ```
-* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider. 
+* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider.
 * [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider.
 
 API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (In [#871] and [#881]):
@@ -37,8 +37,8 @@ API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (
 val clientFactory = new SchemaRegistryClientFactory
 val source = new KafkaAvroSourceFactory(
   new AvroDeserializationSchemaFactory[GenericData.Record](clientFactory, useSpecificAvroReader = false),
-  clientFactory, 
-  None, 
+  clientFactory,
+  None,
   processObjectDependencies = processObjectDependencies
 )
 
@@ -55,7 +55,7 @@ __
 val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 ```
 
-## In version 0.1.2 (not released yet)
+## In version 0.1.2
 
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` from `generic` model has changed parameter 
  from `windowLengthInSeconds` to `windowLength` with human friendly duration input. If you have used it in process, you need

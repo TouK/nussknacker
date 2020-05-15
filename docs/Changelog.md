@@ -19,7 +19,7 @@ Nussknacker versions
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
 * [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache
 
-0.1.2 (not released yet)
+0.1.2
 ------------------------
 * [#965](https://github.com/TouK/nussknacker/pull/965) Added new, 'aggregate-tumbling' node.
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` has now additional aggregation function `Sum`.
