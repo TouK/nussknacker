@@ -26,7 +26,7 @@ is defined by 'Output' parameter, it's value is:
 ```  
 Currently branches are identified by id of last node in this branch before union.
 
-## Aggregate
+## AggregateSliding
 
 ![aggregate_window](../img/aggregate_window.png)
 
@@ -36,7 +36,7 @@ This element defines generic aggregation of values in sliding time window of giv
 - aggregateBy - value which will be aggregated (e.g. `#input.callDuration`, `#input.productId`)
 - windowLength - length of time window
 
-For each event additional variable will be added. For example: for aggregate node with length of 10 minutes, aggregation max and input events:
+For each event additional variable will be added. For example: for aggregate-sliding node with length of 10 minutes, aggregation max and input events:
 - `{userId: 1, callDuration: 1, hour: 10:10}`
 - `{userId: 1, callDuration: 5, hour: 10:10}`
 - `{userId: 2, callDuration: 4, hour: 10:15}`

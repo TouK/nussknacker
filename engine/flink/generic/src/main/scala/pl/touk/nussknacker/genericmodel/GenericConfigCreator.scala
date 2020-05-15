@@ -23,7 +23,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "previousValue" -> defaultCategory(PreviousValueTransformer),
-    "aggregate" -> defaultCategory(SimpleSlidingAggregateTransformerV2),
+    "aggregate-sliding" -> defaultCategory(SimpleSlidingAggregateTransformerV2),
     "aggregate-tumbling" -> defaultCategory(SimpleTumblingAggregateTransformer),
     "union" -> defaultCategory(UnionTransformer)
   )
