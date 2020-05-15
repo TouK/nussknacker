@@ -36,8 +36,14 @@ This element defines generic aggregation of values in sliding time window of giv
 - aggregateBy - value which will be aggregated (e.g. `#input.callDuration`, `#input.productId`)
 - windowLength - length of time window
 
-For each event additional variable will be added. For example, 
-for aggregate node with length of 10 minutes and aggregation max, following events will be emitted:
+For each event additional variable will be added. For example: for aggregate node with length of 10 minutes, aggregation max and input events:
+- `{userId: 1, callDuration: 1, hour: 10:10}`
+- `{userId: 1, callDuration: 5, hour: 10:10}`
+- `{userId: 2, callDuration: 4, hour: 10:15}`
+- `{userId: 1, callDuration: 4, hour: 10:15}`
+- `{userId: 1, callDuration: 3, hour: 10:23}`
+
+Following events will be emitted:
 - `{userId: 1, callDuration: 1, hour: 10:10, aggregate: 1}` - first event
 - `{userId: 1, callDuration: 5, hour: 10:10, aggregate: 5}` - higher duration
 - `{userId: 2, callDuration: 4, hour: 10:15, aggregate: 4}` - user with different id
@@ -52,10 +58,10 @@ Currently we support following aggregations:
 - Set - the result is set of incoming elements (can be v. ineffective for large sets, try to use ApproximateSetCardinality in this case )
 - ApproximateSetCardinality - computes approximate cardinality of set using [HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog) algorithm.
 
-### TumblingAggregate
+## AggregateTumbling
 
 This aggregation in contrary to Aggregate uses tumbling window. All parameters are the same.
-For example, for aggregate-tumbling node with length of 10 minutes and aggregation max, with input events from previous example, will be emitted output events:
+For example, for aggregate-tumbling node with length of 10 minutes, aggregation max and input events from previous example, will be emitted output events:
 - `{userId: 1, callDuration: 5, hour: 10:20, aggregate: 5}` - highest duration during first ten minutes for userId: 1
 - `{userId: 2, callDuration: 4, hour: 10:20, aggregate: 4}` - highest duration during first ten minutes for userId: 2
 - `{userId: 1, callDuration: 3, hour: 10:30, aggregate: 4}` - highest duration during second ten minutes for userId: 1
