@@ -27,7 +27,7 @@ class NodeUtils {
   }
 
   nodeIsJoin = (node) => {
-    return this.nodeType(node) === "Join"
+    return node && this.nodeType(node) === "Join"
   }
 
   nodesFromProcess = (process, expandedGroups) => {
