@@ -184,9 +184,11 @@ function mapState(state, props) {
   const typesInformation = processDefinitionData.processDefinition.typesInformation
   const variablesForNode = state.graphReducer.nodeToDisplay.id || _.get(state.graphReducer, ".edgeToDisplay.to") || null
 
-  const variablesFromValidation = state.nodeDetails?.parameters?.[props.fieldName]
+  //FIXME: probably validation should return all variables in given param??
+  const additionalVariablesFromValidation = state.nodeDetails?.parameters?.find(p => p.name === props.fieldName)?.additionalVariables || {}
+
   const baseVariables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition, props.fieldName, processCategory)
-  const variables = variablesFromValidation || baseVariables
+  const variables = _.assign(baseVariables, additionalVariablesFromValidation)
 
   return {
     typesInformation: typesInformation,

@@ -60,10 +60,11 @@ export class NodeDetailsContent extends React.Component {
   componentWillReceiveProps(nextProps) {
     if (!_.isEqual(this.props.node, nextProps.node) || !_.isEqual(this.props.nodeValidationErrors, nextProps.nodeValidationErrors)) {
       this.initalizeWithProps(nextProps)
-      this.setState({editedNode: nextProps.node})
-      this.props.actions.updateNodeData(this.props.processToDisplay.id,
-        this.props.processToDisplay.validationResult.variableTypes[this.state.editedNode.id],
-        this.state.editedNode)
+      let nextPropsNode = nextProps.node
+      this.setState({editedNode: nextPropsNode})
+      this.props.actions.updateNodeData(this.props.processId,
+        this.props.variableTypes[this.state.editedNode.id],
+        nextPropsNode)
     }
   }
 
@@ -72,8 +73,8 @@ export class NodeDetailsContent extends React.Component {
       this.selectTestResults()
     }
     if (!_.isEqual(prevState.editedNode, this.state.editedNode)) {
-      this.props.actions.updateNodeData(this.props.processToDisplay.id,
-        this.props.processToDisplay.validationResult.variableTypes[this.state.editedNode.id],
+      this.props.actions.updateNodeData(this.props.processId,
+        this.props.variableTypes[this.state.editedNode.id],
         this.state.editedNode)
     }
   }
@@ -716,6 +717,7 @@ function mapState(state) {
     //TODO: get rid of this. We should not rely on process from graphReducer, as we may display subprocess node!
     //currently it's used only to figure out processingType, so it's not so harmful
     processId: state.graphReducer.processToDisplay.id,
+    variableTypes: state.graphReducer.processToDisplay.validationResult.variableTypes,
     nodeValidationErrors: state.nodeDetails.validationErrors,
   }
 }

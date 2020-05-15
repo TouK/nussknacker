@@ -22,6 +22,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.reflect.ClassTag
 
+//TODO: in fact this class prepares parameters and object creation is only simple invocation, should be renamed
 class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -29,6 +30,12 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
   def create[T](objectWithMethodDef: ObjectWithMethodDef,
                 params: List[(evaluatedparam.TypedParameter, ParameterDef)],
                 outputVariableNameOpt: Option[String])(implicit processMetaData: MetaData, nodeId: NodeId): T = {
+    val paramsMap: Map[String, AnyRef] = prepareParameters(params)
+
+    objectWithMethodDef.invokeMethod(paramsMap.get, outputVariableNameOpt, Seq(processMetaData, nodeId)).asInstanceOf[T]
+  }
+
+  def prepareParameters[T](params: List[(TypedParameter, ParameterDef)])(implicit processMetaData: MetaData, nodeId: NodeId): Map[String, AnyRef] = {
     val (lazyInterpreterParameters, paramsToEvaluate) = params.sortBy(_._1.name).partition(p => p._2.isLazyParameter)
 
     val (branchParamsToEvaluate, nonBranchParamsToEvaluate) = paramsToEvaluate.partition(p => p._2.branchParam)
@@ -39,24 +46,27 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
 
     val lazyInterpreterParamsMap = lazyInterpreterParameters.map {
       case (param, definition) =>
-        val value = if (definition.branchParam) {
-          param.typedValue.asInstanceOf[TypedExpressionMap].valueByKey.mapValuesNow {
-            case TypedExpression(expr, returnType, typingInfo) =>
-              ExpressionLazyParameter(nodeId, Parameter(
-                param.name,
-                graph.expression.Expression(expr.language, expr.original)), returnType)
-          }
-        } else {
-          val exprValue = param.typedValue.asInstanceOf[TypedExpression]
-          ExpressionLazyParameter(nodeId, Parameter(param.name,
-            graph.expression.Expression(exprValue.expression.language, exprValue.expression.original)), exprValue.returnType)
-        }
-        param.name -> value
+        param.name -> prepareLazyParameter(nodeId, param, definition)
     }
 
     val paramsMap = evaluatedNotBranchParamsMap ++ evaluatedBranchParamsMap ++ lazyInterpreterParamsMap
+    paramsMap
+  }
 
-    objectWithMethodDef.invokeMethod(paramsMap.get, outputVariableNameOpt, Seq(processMetaData, nodeId)).asInstanceOf[T]
+  private def prepareLazyParameter[T](nodeId: NodeId, param: TypedParameter, definition: ParameterDef): AnyRef = {
+    val value = if (definition.branchParam) {
+      param.typedValue.asInstanceOf[TypedExpressionMap].valueByKey.mapValuesNow {
+        case TypedExpression(expr, returnType, typingInfo) =>
+          ExpressionLazyParameter(nodeId, Parameter(
+            param.name,
+            graph.expression.Expression(expr.language, expr.original)), returnType)
+      }
+    } else {
+      val exprValue = param.typedValue.asInstanceOf[TypedExpression]
+      ExpressionLazyParameter(nodeId, Parameter(param.name,
+        graph.expression.Expression(exprValue.expression.language, exprValue.expression.original)), exprValue.returnType)
+    }
+    value
   }
 
   private def evaluateBranchParameters(branchParamsToEvaluate: List[(TypedParameter, ParameterDef)])
