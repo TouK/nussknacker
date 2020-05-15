@@ -55,6 +55,8 @@ __
 val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 ```
 
+Also, path to classes AvroSourceFactory was changed from avro.KafkaAvroSourceFactory to avro.source.* 
+
 ## In version 0.1.2
 
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` from `generic` model has changed parameter 
