@@ -20,8 +20,9 @@ Nussknacker versions
 
 0.1.2 (not released yet)
 ------------------------
+* [#965](https://github.com/TouK/nussknacker/pull/965) Added new, 'aggregate-tumbling' node.
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` has now additional aggregation function `Sum`.
- Also was changed parameter from `windowLengthInSeconds` to `windowLength` with human friendly duration input.  
+ Also was changed parameter from `windowLengthInSeconds` to `windowLength` with human friendly duration input.
 
 0.1.1
 ------------
