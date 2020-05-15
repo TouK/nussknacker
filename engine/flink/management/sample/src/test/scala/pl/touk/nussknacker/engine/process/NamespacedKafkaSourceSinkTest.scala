@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers {
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
-  import KafkaUtils._
+  import KafkaZookeeperUtils._
   import spel.Implicits._
 
   private val namespaceName: String = "ns"

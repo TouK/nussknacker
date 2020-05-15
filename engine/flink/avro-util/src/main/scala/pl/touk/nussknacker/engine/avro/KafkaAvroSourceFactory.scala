@@ -12,7 +12,8 @@ import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, Retu
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.avro.fixed.FixedKafkaAvroSchemaProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry._
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
+import pl.touk.nussknacker.engine.avro.BaseKafkaAvroSourceFactory._
+import pl.touk.nussknacker.engine.kafka.BaseKafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka._
 
 class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaRegistryProvider[T],
@@ -71,10 +72,14 @@ object FixedKafkaAvroSourceFactory {
     new FixedKafkaAvroSourceFactory(processObjectDependencies, formatKey = false, useSpecificAvroReader = false, timestampAssigner = None)
 }
 
+object BaseKafkaAvroSourceFactory {
+  final val VersionParamName = "Schema version"
+}
+
 abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
   extends BaseKafkaSourceFactory(timestampAssigner, TestParsingUtils.newLineSplit, processObjectDependencies) {
 
-  final val VersionParamName = "Schema version"
+
 
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation

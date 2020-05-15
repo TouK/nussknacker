@@ -4,7 +4,7 @@ import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.IngestionTimeExtractor
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 
 trait KafkaSignalStreamConnector {
@@ -13,7 +13,7 @@ trait KafkaSignalStreamConnector {
 
   def connectWithSignals[A, B: TypeInformation](start: DataStream[A], processId: String, nodeId: String, schema: DeserializationSchema[B]): ConnectedStreams[A, B] = {
     val signalsSource = new FlinkKafkaConsumer[B](signalsTopic, schema,
-      KafkaEspUtils.toProperties(kafkaConfig, Some(s"$processId-$nodeId-signal")))
+      KafkaUtils.toProperties(kafkaConfig, Some(s"$processId-$nodeId-signal")))
     val signalsStream = start.executionEnvironment
       .addSource(signalsSource).name(s"signals-$processId-$nodeId")
     val withTimestamps = assignTimestampsAndWatermarks(signalsStream)

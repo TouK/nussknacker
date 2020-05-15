@@ -14,8 +14,8 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
-  val rawProducer = KafkaUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
-  val producer = KafkaUtils.createKafkaProducer(kafkaAddress, id)
+  val rawProducer = KafkaZookeeperUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
+  val producer = KafkaZookeeperUtils.createKafkaProducer(kafkaAddress, id)
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
@@ -84,7 +84,7 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
   }
 
   def createConsumer(consumerTimeout: Long = 10000): KafkaConsumer[Array[Byte], Array[Byte]] = {
-    val props = KafkaUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout)
+    val props = KafkaZookeeperUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer

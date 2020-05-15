@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
-  import KafkaUtils._
+  import KafkaZookeeperUtils._
   import MockSchemaRegistry._
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
