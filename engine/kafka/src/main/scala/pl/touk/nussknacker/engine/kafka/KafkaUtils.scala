@@ -9,6 +9,8 @@ import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
+import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.collection.JavaConverters._
@@ -17,16 +19,23 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Failure, Success}
 
-object KafkaEspUtils extends LazyLogging {
+object KafkaUtils extends LazyLogging {
 
   import scala.collection.JavaConverters._
   import scala.concurrent.ExecutionContext.Implicits.global
 
   val defaultTimeoutMillis = 10000
 
+  private val kafkaTopicUsageKey = new NamingContext(KafkaUsageKey)
+
   def setClientId(props: Properties, id: String): Unit = {
     props.setProperty("client.id", sanitizeClientId(id))
   }
+
+  def prepareTopicName(topic :String, processObjectDependencies: ProcessObjectDependencies): String =
+    processObjectDependencies
+      .objectNaming
+      .prepareName(topic, processObjectDependencies.config, kafkaTopicUsageKey)
 
   def sanitizeClientId(originalId: String): String =
     //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
@@ -36,7 +45,7 @@ object KafkaEspUtils extends LazyLogging {
     val setToLatestOffset =
       config.kafkaEspProperties.flatMap(_.get("forceLatestRead")).exists(java.lang.Boolean.parseBoolean)
     if (setToLatestOffset) {
-      KafkaEspUtils.setOffsetToLatest(topic, consumerGroupId, config)
+      KafkaUtils.setOffsetToLatest(topic, consumerGroupId, config)
     }
   }
 
@@ -160,12 +169,12 @@ object KafkaEspUtils extends LazyLogging {
 
   def sendToKafka[K, V](topic: String, key: K, value: V)(producer: KafkaProducer[K, V]): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
-    producer.send(new ProducerRecord(topic, key, value), KafkaEspUtils.producerCallback(promise))
+    producer.send(new ProducerRecord(topic, key, value), KafkaUtils.producerCallback(promise))
     promise.future
   }
 
   def createProducer(kafkaConfig: KafkaConfig, clientId: String): KafkaProducer[Array[Byte], Array[Byte]] = {
-    new KafkaProducer[Array[Byte], Array[Byte]](KafkaEspUtils.toProducerProperties(kafkaConfig, clientId))
+    new KafkaProducer[Array[Byte], Array[Byte]](KafkaUtils.toProducerProperties(kafkaConfig, clientId))
   }
 
   def producerCallback(promise: Promise[RecordMetadata]): Callback =

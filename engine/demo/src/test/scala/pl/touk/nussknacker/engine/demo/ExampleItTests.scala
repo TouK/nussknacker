@@ -8,7 +8,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, Outcome, fixture}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.KafkaUtils
+import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils
 import pl.touk.nussknacker.engine.spel
 
 import scala.concurrent.Future
@@ -16,7 +16,7 @@ import scala.concurrent.Future
 //TODO: do we currently need these tests?
 trait ExampleItTests extends fixture.FunSuite with BeforeAndAfterAll with Matchers { self: BaseITest =>
 
-  import KafkaUtils._
+  import KafkaZookeeperUtils._
   import spel.Implicits._
 
   override type FixtureParam = String

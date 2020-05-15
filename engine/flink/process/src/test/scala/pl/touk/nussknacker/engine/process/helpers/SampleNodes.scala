@@ -29,9 +29,8 @@ import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings.add
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.collection.JavaConverters._
@@ -335,7 +334,7 @@ object SampleNodes {
 
     @MethodToInvoke
     def sendSignal()(processId: String): Unit = {
-      KafkaEspUtils.sendToKafkaWithTempProducer(signalsTopic, Array.empty[Byte], "".getBytes(StandardCharsets.UTF_8))(kafkaConfig)
+      KafkaUtils.sendToKafkaWithTempProducer(signalsTopic, Array.empty[Byte], "".getBytes(StandardCharsets.UTF_8))(kafkaConfig)
     }
 
   }

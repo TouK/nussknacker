@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.{BaseKafkaSourceFactory, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.{BaseKafkaSourceFactory, KafkaConfig, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
@@ -30,7 +30,7 @@ object sources {
     @MethodToInvoke
     def create(@ParamName("topic") topic: String,
                @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
-      val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
+      val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
       val schema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
       new KafkaSource(List(topic), kafkaConfig, schema, None, processObjectDependencies) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)

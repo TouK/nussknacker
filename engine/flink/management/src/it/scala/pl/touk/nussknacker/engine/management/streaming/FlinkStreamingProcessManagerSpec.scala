@@ -25,7 +25,7 @@ import scala.concurrent.duration._
 //TODO: get rid of at least some Thread.sleep
 class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
 
-  import pl.touk.nussknacker.engine.kafka.KafkaUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 
   override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
