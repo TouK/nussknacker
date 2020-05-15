@@ -145,7 +145,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
       }.getOrElse(newStart)
     }
 
-    def preparedTopics: List[String] = topics.map(KafkaUtils.prepareTopic(_, processObjectDependencies))
+    def preparedTopics: List[String] = topics.map(KafkaUtils.prepareTopicName(_, processObjectDependencies))
 
     protected val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 

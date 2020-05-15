@@ -32,7 +32,7 @@ object KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def prepareTopic(topic :String, processObjectDependencies: ProcessObjectDependencies): String =
+  def prepareTopicName(topic :String, processObjectDependencies: ProcessObjectDependencies): String =
     processObjectDependencies
       .objectNaming
       .prepareName(topic, processObjectDependencies.config, kafkaTopicUsageKey)

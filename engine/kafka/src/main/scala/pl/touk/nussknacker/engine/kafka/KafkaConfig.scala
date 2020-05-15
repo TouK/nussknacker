@@ -19,10 +19,12 @@ object KafkaConfig {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
+  private val defaultKafkaConfigPath = "kafka"
+
   def parseConfig(config: Config, path: String): KafkaConfig = {
     config.as[KafkaConfig](path)
   }
 
   def parseProcessObjectDependencies(processObjectDependencies: ProcessObjectDependencies): KafkaConfig =
-    parseConfig(processObjectDependencies.config, "kafka")
+    parseConfig(processObjectDependencies.config, defaultKafkaConfigPath)
 }
