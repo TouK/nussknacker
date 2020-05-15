@@ -2,7 +2,7 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
-## In version 0.1.2 (not released yet)
+## In version 0.1.2
 
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` from `generic` model has changed parameter 
  from `windowLengthInSeconds` to `windowLength` with human friendly duration input. If you have used it in process, you need

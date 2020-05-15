@@ -18,7 +18,7 @@ Nussknacker versions
 * [#949](https://github.com/TouK/nussknacker/pull/949) JVM options can be configured via JDK_JAVA_OPTIONS env variable (in docker and standalone distribution) 
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
 
-0.1.2 (not released yet)
+0.1.2
 ------------------------
 * [#965](https://github.com/TouK/nussknacker/pull/965) Added new, 'aggregate-tumbling' node.
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` has now additional aggregation function `Sum`.
