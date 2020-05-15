@@ -46,11 +46,11 @@ class AppResources(config: Config,
     }
   }
 
-  private def createHealthCheckHttpResponse(healthCheckResponse: HealthCheckProcessResponse): Future[HttpResponse] =
-    Marshal(healthCheckResponse)
+  private def createHealthCheckHttpResponse(status: HealthCheckProcessResponseStatus, message: Option[String] = None, processes: Option[Set[String]] = None): Future[HttpResponse] =
+    Marshal(HealthCheckProcessResponse(status, message, processes))
       .to[ResponseEntity]
       .map(res => HttpResponse(
-        status = healthCheckResponse.status match {
+        status = status match {
           case OK => StatusCodes.OK
           case ERROR => StatusCodes.InternalServerError
         },
@@ -61,7 +61,7 @@ class AppResources(config: Config,
       path("healthCheck") {
         get {
           complete {
-            createHealthCheckHttpResponse(HealthCheckProcessResponse(OK))
+            createHealthCheckHttpResponse(OK)
           }
         }
       } ~ path("healthCheck" / "process" / "deployment") {
@@ -69,16 +69,16 @@ class AppResources(config: Config,
           complete {
             notRunningProcessesThatShouldRun.map[Future[HttpResponse]] { set =>
               if (set.isEmpty) {
-                createHealthCheckHttpResponse(HealthCheckProcessResponse(OK))
+                createHealthCheckHttpResponse(OK)
               } else {
                 logger.warn(s"Processes not running: ${set.keys}")
                 logger.debug(s"Processes not running - more details: $set")
-                createHealthCheckHttpResponse(HealthCheckProcessResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet)))
+                createHealthCheckHttpResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet))
               }
             }.recover[Future[HttpResponse]] {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                createHealthCheckHttpResponse(HealthCheckProcessResponse(ERROR, Some("Failed to retrieve job statuses")))
+                createHealthCheckHttpResponse(ERROR, Some("Failed to retrieve job statuses"))
             }
           }
         }
@@ -87,9 +87,9 @@ class AppResources(config: Config,
           complete {
             processesWithValidationErrors.map[Future[HttpResponse]] { processes =>
               if (processes.isEmpty) {
-                createHealthCheckHttpResponse(HealthCheckProcessResponse(OK))
+                createHealthCheckHttpResponse(OK)
               } else {
-                createHealthCheckHttpResponse(HealthCheckProcessResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet)))
+                createHealthCheckHttpResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet))
               }
             }
           }

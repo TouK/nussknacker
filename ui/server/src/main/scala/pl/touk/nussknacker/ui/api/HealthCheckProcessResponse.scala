@@ -13,4 +13,4 @@ object HealthCheckProcessResponseStatus {
   implicit val decoder: Decoder[HealthCheckProcessResponseStatus] = deriveEnumerationDecoder[HealthCheckProcessResponseStatus]
 }
 
-@JsonCodec case class HealthCheckProcessResponse(status: HealthCheckProcessResponseStatus, message: Option[String] = None, processes: Option[Set[String]] = None)
+@JsonCodec case class HealthCheckProcessResponse(status: HealthCheckProcessResponseStatus, message: Option[String], processes: Option[Set[String]])
