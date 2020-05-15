@@ -4,6 +4,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.2.0 (not released yet)
 
+* [#965](https://github.com/TouK/nussknacker/pull/965) 'aggregate' node in generic model was renamed to 'aggregate-sliding'
 * [#922](https://github.com/TouK/nussknacker/pull/922) HealthCheck API has new structure, naming and json responses:
   - old `/healthCheck` is moved to `/healthCheck/process/deployment`
   - old `/sanityCheck` is moved to `/healthCheck/process/validation`
