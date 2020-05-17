@@ -7,7 +7,7 @@ import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils"
 import "react-treeview/react-treeview.css"
 import "../stylesheets/toolBox.styl"
 
-import Tool from "./Tool"
+import Tool, {useToolIcon} from "./Tool"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
 import {getProcessCategory} from "../reducers/selectors/graph"
 import {toggleToolboxGroup} from "../actions/nk/toolbars"
@@ -39,8 +39,7 @@ export default function ToolBox() {
     <div id="toolbox">
       <div>
         {nodesToAdd.map(nodeGroup => {
-          const label =
-            <span className={"group-label"} onClick={() => toggleGroup(nodeGroup)}>{nodeGroup.name}</span>
+          const label = <span className={"group-label"} onClick={() => toggleGroup(nodeGroup)}>{nodeGroup.name}</span>
           return (
             <TreeView
               itemClassName={cn(nodeGroupIsEmpty(nodeGroup) && "disabled")}
@@ -49,14 +48,17 @@ export default function ToolBox() {
               collapsed={!openedNodeGroups[nodeGroup.name]}
               onClick={() => toggleGroup(nodeGroup)}
             >
-              {nodeGroup.possibleNodes.map(node => (
-                <Tool
-                  nodeModel={node.node}
-                  label={node.label}
-                  key={node.type + node.label}
-                  processDefinitionData={processDefinitionData}
-                />
-              ))}
+              {nodeGroup.possibleNodes.map(node => {
+                const icon = useToolIcon(node)
+                return (
+                  <Tool
+                    nodeModel={node.node}
+                    label={node.label}
+                    key={node.type + node.label}
+                    icon={icon}
+                  />
+                )
+              })}
             </TreeView>
           )
         })}

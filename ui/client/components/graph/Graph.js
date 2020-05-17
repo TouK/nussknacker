@@ -21,6 +21,7 @@ import {prepareSvg} from "./svg-export/prepareSvg"
 import {getExpandedGroups} from "../../reducers/selectors/groups"
 import {getLayout} from "../../reducers/selectors/layout"
 import {isBusinessView} from "../../reducers/selectors/graph"
+import {DndTypes} from "../Tool"
 
 class Graph extends React.Component {
 
@@ -647,7 +648,7 @@ const subprocessParent = "modal-content"
 
 export let BareGraph = connect(mapSubprocessState, ActionsUtils.mapDispatchWithEspActions)(Graph)
 
-Graph = DropTarget("element", spec, (connect) => ({connectDropTarget: connect.dropTarget()}))(Graph)
+Graph = DropTarget(DndTypes.ELEMENT, spec, (connect) => ({connectDropTarget: connect.dropTarget()}))(Graph)
 
 //withRef is here so that parent can access methods in graph
 Graph = connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true})(Graph)

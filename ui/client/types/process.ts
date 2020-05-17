@@ -11,7 +11,22 @@ export type Process = {
 
 export type ProcessId = string
 
+export type NodeCategory = string
+
+export type PossibleNode = {
+  categories: NodeCategory[],
+  node: NodeType,
+  label: string,
+  type: string,
+}
+
+export type NodesGroup = {
+  possibleNodes: PossibleNode[],
+  name: string,
+}
+
 export type ProcessDefinitionData = {
   nodesConfig?: $TodoType,
+  nodesToAdd?: NodesGroup[],
   processDefinition?: $TodoType,
 }
