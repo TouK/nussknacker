@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.source
 
 import javax.annotation.Nullable
-import javax.validation.constraints.NotBlank
+import javax.validation.constraints.{Min, NotBlank}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -25,7 +25,7 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @ParamName(`VersionParamName`) @Nullable version: Integer
+             @ParamName(`VersionParamName`) @Min(value = 1) @Nullable version: Integer
               )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     createKafkaAvroSource(topic, kafkaConfig, SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, version), processMetaData, nodeId)
