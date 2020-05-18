@@ -115,7 +115,7 @@ export const minimalNumberValidator = (minimalNumber: number): Validator => ({
 export const maximalNumberValidator = (maximalNumber: number): Validator => ({
   //Blank value should be not validate - we want to chain validators
   isValid: value => isEmpty(value) || Number(value) <= maximalNumber,
-  message: () => i18next.t("maximalNumberValidator.message", `This field value has to be a number less than or equal to ${maximalNumber}`),
+  message: () => i18next.t("maximalNumberValidator.message", `This field value has to be a number lower than or equal to ${maximalNumber}`),
   description: () => i18next.t("maximalNumberValidator.description", "Please fill field by proper number"),
   handledErrorType: HandledErrorType.GreaterThanRequiredParameter,
   validatorType: ValidatorType.Frontend,

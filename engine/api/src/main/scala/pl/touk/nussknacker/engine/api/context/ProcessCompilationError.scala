@@ -148,7 +148,7 @@ object ProcessCompilationError {
 
   case class MismatchParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
-  case class SmallerThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+  case class LowerThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
   case class GreaterThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 

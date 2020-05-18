@@ -107,7 +107,7 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
     else
       invalid(error(paramName, nodeId.id))
 
-  private def error(paramName: String, nodeId: String): SmallerThanRequiredParameter = SmallerThanRequiredParameter(
+  private def error(paramName: String, nodeId: String): LowerThanRequiredParameter = LowerThanRequiredParameter(
     s"This field value has to be a number greater than or equal to ${minimalNumber}",
     "Please fill field with proper number",
     paramName,
@@ -125,7 +125,7 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
       invalid(error(paramName, nodeId.id))
 
   private def error(paramName: String, nodeId: String): GreaterThanRequiredParameter = GreaterThanRequiredParameter(
-    s"This field value has to be a number less than or equal to ${maximalNumber}",
+    s"This field value has to be a number lower than or equal to ${maximalNumber}",
     "Please fill field with proper number",
     paramName,
     nodeId
