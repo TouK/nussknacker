@@ -2,7 +2,7 @@ import HttpService from "../../http/HttpService"
 import {NodeType, NodeId, ProcessDefinitionData} from "../../types"
 import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
-import {Position} from "./ui/layout"
+import {Position, layoutChanged} from "./ui/layout"
 import {EditEdgeAction} from "./editEdge"
 import {EditNodeAction} from "./editNode"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
@@ -122,8 +122,11 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeT
   ])
 }
 
-export function nodeAdded(node: NodeType, position: Position): NodeActions {
-  return {type: "NODE_ADDED", node, position}
+export function nodeAdded(node: NodeType, position: Position): ThunkAction {
+  return dispatch => {
+    dispatch({type: "NODE_ADDED", node, position})
+    dispatch(layoutChanged())
+  }
 }
 
 export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edges): ThunkAction {
@@ -134,6 +137,7 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
       edges,
       processDefinitionData: getProcessDefinitionData(getState()),
     })
+    dispatch(layoutChanged())
   }
 }
 
