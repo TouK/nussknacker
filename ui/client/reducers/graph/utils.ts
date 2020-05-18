@@ -63,34 +63,36 @@ function createUniqueNodeId(initialId: NodeId, usedIds: NodeId[], isCopy: boolea
     generateUniqueNodeId(initialId, usedIds, 1, isCopy)
 }
 
+function getUniqueIds(initialIds: string[], alreadyUsedIds: string[], isCopy: boolean) {
+  return initialIds.reduce((uniqueIds, initialId) => {
+    const reservedIds = alreadyUsedIds.concat(uniqueIds)
+    const uniqueId = createUniqueNodeId(initialId, reservedIds, isCopy)
+    return uniqueIds.concat(uniqueId)
+  }, [])
+}
+
 export function prepareNewNodesWithLayout(
   state: GraphState,
   nodesWithPositions: NodesWithPositions,
   isCopy: boolean,
 ): { layout: NodePosition[], nodes: NodeType[], uniqueIds?: NodeId[] } {
-  const alreadyUsedIds = state.processToDisplay.nodes.map(node => node.id)
-  const initialIds = nodesWithPositions.map(nodeWithPosition => nodeWithPosition.node.id)
-  const uniqueIds = initialIds.reduce((uniqueIds, initialId) => {
-    const reservedIds = alreadyUsedIds.concat(uniqueIds)
-    const uniqueId = createUniqueNodeId(initialId, reservedIds, isCopy)
-    return uniqueIds.concat(uniqueId)
-  }, [])
+  const {layout, processToDisplay: {nodes}} = state
 
-  const updatedNodes = zipWith(nodesWithPositions, uniqueIds, (nodeWithPosition, uniqueId) => {
-    return {...nodeWithPosition.node, id: uniqueId}
-  })
-  const updatedLayout = zipWith(nodesWithPositions, uniqueIds, (nodeWithPosition, uniqueId) => {
-    return {id: uniqueId, position: nodeWithPosition.position}
-  })
+  const alreadyUsedIds = nodes.map(node => node.id)
+  const initialIds = nodesWithPositions.map(nodeWithPosition => nodeWithPosition.node.id)
+  const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy)
+
+  const updatedNodes = zipWith(nodesWithPositions, uniqueIds, ({node}, id) => ({...node, id}))
+  const updatedLayout = zipWith(nodesWithPositions, uniqueIds, ({position}, id) => ({id, position}))
 
   return {
-    nodes: state.processToDisplay.nodes.concat(updatedNodes),
-    layout: state.layout.concat(updatedLayout),
+    nodes: [...nodes, ...updatedNodes],
+    layout: [...layout, ...updatedLayout],
     uniqueIds,
   }
 }
 
-export function addNodes(state: GraphState, {nodes, layout}: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
+export function addNodesWithLayout(state: GraphState, {nodes, layout}: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
   return {
     ...state,
     processToDisplay: {
