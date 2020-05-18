@@ -29,7 +29,7 @@ import scala.concurrent.duration._
 object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   @MethodToInvoke(returnType = classOf[AnyRef])
-  def invoke(@ParamName("key") key: LazyParameter[String],
+  def invoke(@ParamName("key") key: LazyParameter[CharSequence],
              @ParamName("transformWhen") transformWhen: LazyParameter[Boolean],
              @AdditionalVariables(Array(new AdditionalVariable(name = "previous", clazz = classOf[AnyRef])))
              @ParamName("newValue") newValue: LazyParameter[Any],
@@ -43,7 +43,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
           setUidToNodeIdIfNeed(nodeContext,
             stream
               .map(nodeContext.lazyParameterHelper.lazyMapFunction(key))
-              .keyBy(_.value)
+              .keyBy(vCtx => Option(vCtx.value).map(_.toString).orNull)
               .process(new TransformStateFunction(
                 nodeContext.lazyParameterHelper, transformWhen, newValue, stateTimeoutSeconds.seconds)))
         }
@@ -55,7 +55,7 @@ class TransformStateFunction(protected val lazyParameterHelper: FlinkLazyParamet
                              transformWhenParam: LazyParameter[Boolean],
                              newValueParam: LazyParameter[Any],
                              stateTimeout: FiniteDuration)
-  extends LatelyEvictableStateFunction[ValueWithContext[String], ValueWithContext[Any], GenericState]
+  extends LatelyEvictableStateFunction[ValueWithContext[CharSequence], ValueWithContext[Any], GenericState]
   with LazyParameterInterpreterFunction {
 
   override protected def stateDescriptor: ValueStateDescriptor[GenericState] =
@@ -65,8 +65,8 @@ class TransformStateFunction(protected val lazyParameterHelper: FlinkLazyParamet
 
   private lazy val evaluateNewValue = lazyParameterInterpreter.syncInterpretationFunction(newValueParam)
 
-  override def processElement(keyWithContext: ValueWithContext[String],
-                              ctx: KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[Any]]#Context,
+  override def processElement(keyWithContext: ValueWithContext[CharSequence],
+                              ctx: KeyedProcessFunction[String, ValueWithContext[CharSequence], ValueWithContext[Any]]#Context,
                               out: Collector[ValueWithContext[Any]]): Unit = {
     val previousValue = Option(state.value()).map(_.value).orNull
     val newValue = if (evaluateTransformWhen(keyWithContext.context)) {

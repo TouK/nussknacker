@@ -6,7 +6,7 @@ object numeric {
 
   @Documentation(description = "Parse string to number")
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number = stringOrNumber match {
-    case s: String => new java.math.BigDecimal(s)
+    case s: CharSequence => new java.math.BigDecimal(s.toString)
     case n: java.lang.Number => n
   }
 
