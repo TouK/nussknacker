@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.additionalInfo.{NodeAdditionalInfo, NodeAdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.{GenericTransformation, ParameterEvaluation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{DefinitionContext, ParameterEvaluation, ProcessCompilationError, SingleInputGenericNodeTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -149,7 +149,7 @@ class CustomNodeValidator(modelData: ModelData) extends NodeDataValidator[Custom
   override def compile(nodeData: CustomNode, validationContext: ValidationContext): (Option[List[Parameter]], List[ProcessCompilationError]) = {
     val transformer = modelData.processWithObjectsDefinition.customStreamTransformers(nodeData.nodeType)._1.obj
     transformer match {
-      case a:GenericTransformation[_] =>
+      case a:SingleInputGenericNodeTransformation[_] =>
         val evaluations = nodeData.parameters.map { parameter =>
             parameter.name -> new ParameterEvaluation {
               override def determine(definition: Parameter): ValidatedNel[ProcessCompilationError, Any] = {
@@ -162,7 +162,7 @@ class CustomNodeValidator(modelData: ModelData) extends NodeDataValidator[Custom
               }
             }
         }.toMap
-        val result = a.definition(validationContext, evaluations, Nil)
+        val result = a.contextTransformation(Some(DefinitionContext(validationContext, evaluations, Nil)))
         (Some(result.parameters), result.errors)
       case _ =>(None, Nil)
     }
