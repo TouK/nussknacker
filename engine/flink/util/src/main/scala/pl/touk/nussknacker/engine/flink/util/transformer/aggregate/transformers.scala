@@ -23,7 +23,7 @@ import scala.concurrent.duration.Duration
                 // in the future - see ExplicitUidInOperatorsCompat for more info
 object transformers {
 
-  def slidingTransformer(keyBy: LazyParameter[String],
+  def slidingTransformer(keyBy: LazyParameter[CharSequence],
                          aggregateBy: LazyParameter[AnyRef],
                          aggregator: Aggregator,
                          windowLength: Duration,
@@ -31,7 +31,7 @@ object transformers {
     slidingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName,
       ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
-  def slidingTransformer(keyBy: LazyParameter[String],
+  def slidingTransformer(keyBy: LazyParameter[CharSequence],
                          aggregateBy: LazyParameter[AnyRef],
                          aggregator: Aggregator,
                          windowLength: Duration,
@@ -48,7 +48,7 @@ object transformers {
               .process(new AggregatorFunction(aggregator, windowLength.toMillis, ctx.nodeId)))
         }))
 
-  def tumblingTransformer(keyBy: LazyParameter[String],
+  def tumblingTransformer(keyBy: LazyParameter[CharSequence],
                           aggregateBy: LazyParameter[AnyRef],
                           aggregator: Aggregator,
                           windowLength: Duration,
@@ -57,7 +57,7 @@ object transformers {
       ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
   }
 
-  def tumblingTransformer(keyBy: LazyParameter[String],
+  def tumblingTransformer(keyBy: LazyParameter[CharSequence],
                           aggregateBy: LazyParameter[AnyRef],
                           aggregator: Aggregator,
                           windowLength: Duration,
@@ -80,10 +80,14 @@ object transformers {
 }
 
 //TODO: how to handle keyBy in more elegant way?
-class KeyWithValueMapper(val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[String], value: LazyParameter[AnyRef])
+class KeyWithValueMapper(val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[CharSequence], value: LazyParameter[AnyRef])
   extends RichMapFunction[NkContext, ValueWithContext[(String, AnyRef)]] with LazyParameterInterpreterFunction {
 
-  private lazy val interpreter = lazyParameterInterpreter.syncInterpretationFunction(key.product(value)(lazyParameterInterpreter))
+  implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
+
+  private lazy val interpreter = lazyParameterInterpreter.syncInterpretationFunction(key
+    .map[String](Option(_: CharSequence).map(_.toString).orNull)
+    .product(value))
 
   override def map(ctx: NkContext): ValueWithContext[(String, AnyRef)] = ValueWithContext(interpreter(ctx), ctx)
 }

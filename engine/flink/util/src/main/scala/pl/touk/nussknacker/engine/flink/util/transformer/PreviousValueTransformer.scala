@@ -13,17 +13,17 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
   type Value = Any
 
   @MethodToInvoke(returnType = classOf[Value])
-  def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+  def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
               @ParamName("value") value: LazyParameter[Value])
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
     setUidToNodeIdIfNeed(ctx,
       start
         .map(ctx.lazyParameterHelper.lazyMapFunction(keyBy))
-        .keyBy(_.value)
+        .keyBy(vCtx => Option(vCtx.value).map(_.toString).orNull)
         .map(new PreviousValueFunction(value, ctx.lazyParameterHelper))), value.returnType)
 
   class PreviousValueFunction(val parameter: LazyParameter[Value],
-                              val lazyParameterHelper: FlinkLazyParameterFunctionHelper) extends RichMapFunction[ValueWithContext[String], ValueWithContext[Any]]
+                              val lazyParameterHelper: FlinkLazyParameterFunctionHelper) extends RichMapFunction[ValueWithContext[CharSequence], ValueWithContext[Any]]
     with OneParamLazyParameterFunction[Any] {
 
     private[this] var state: ValueState[Value] = _
@@ -34,7 +34,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
       state = getRuntimeContext.getState(info)
     }
 
-    override def map(valueWithContext: ValueWithContext[String]): ValueWithContext[Any] = {
+    override def map(valueWithContext: ValueWithContext[CharSequence]): ValueWithContext[Any] = {
       val currentValue = evaluateParameter(valueWithContext.context)
       val toReturn = Option(state.value()).getOrElse(currentValue)
       state.update(currentValue)

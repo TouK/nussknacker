@@ -16,7 +16,7 @@ object sampleTransformers {
   object SimpleSlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
                 @SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
@@ -39,7 +39,7 @@ object sampleTransformers {
   object SimpleSlidingAggregateTransformerV2 extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
                 @SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
@@ -62,7 +62,7 @@ object sampleTransformers {
   object SimpleTumblingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
                 @SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
@@ -95,7 +95,7 @@ object sampleTransformers {
   object SlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
                 @ParamName("aggregator") aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("windowLengthInSeconds") length: Long,
