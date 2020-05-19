@@ -19,6 +19,7 @@ Nussknacker versions
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
 * [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache
 * [#943](https://github.com/TouK/nussknacker/pull/943) Literal min / max validators
+* [#973](https://github.com/TouK/nussknacker/pull/973) Textarea editor
 
 0.1.2
 ------------------------
