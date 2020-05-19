@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka
 import java.util.Properties
 
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaProducer, KafkaSerializationSchema}
-import pl.touk.nussknacker.engine.kafka.KafkaEspUtils.withPropertiesFromConfig
+import pl.touk.nussknacker.engine.kafka.KafkaUtils.withPropertiesFromConfig
 
 object PartitionByKeyFlinkKafkaProducer {
 

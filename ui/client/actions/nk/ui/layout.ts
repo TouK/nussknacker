@@ -4,6 +4,7 @@ import history from "../../../history"
 import {NodeId} from "../../../types"
 import {reportEvent} from "../reportEvent"
 import {ThunkAction} from "../../reduxTypes"
+import {getLayout} from "../../../reducers/selectors/layout"
 
 export type Position = { x: number, y: number }
 export type NodePosition = { id: NodeId, position: Position }
@@ -12,11 +13,11 @@ export type GraphLayoutFunction = () => void
 export type LayoutChangedAction = { layout: Layout, type: "LAYOUT_CHANGED" }
 export type TogglePanelAction = { type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL" }
 
-export function layoutChanged(layout: Layout): LayoutChangedAction {
-  return {
+export function layoutChanged(layout?: Layout): ThunkAction {
+  return (dispatch, getState) => dispatch({
     type: "LAYOUT_CHANGED",
-    layout: layout,
-  }
+    layout: layout || getLayout(getState()),
+  })
 }
 
 export function toggleLeftPanel(): TogglePanelAction {

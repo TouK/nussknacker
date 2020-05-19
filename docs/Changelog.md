@@ -19,11 +19,13 @@ Nussknacker versions
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
 * [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache
 * [#704](https://github.com/TouK/nussknacker/pull/704) Preloaded creator panel node icons
+* [#943](https://github.com/TouK/nussknacker/pull/943) Literal min / max validators
 
-0.1.2 (not released yet)
+0.1.2
 ------------------------
+* [#965](https://github.com/TouK/nussknacker/pull/965) Added new, 'aggregate-tumbling' node.
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` has now additional aggregation function `Sum`.
- Also was changed parameter from `windowLengthInSeconds` to `windowLength` with human friendly duration input.  
+ Also was changed parameter from `windowLengthInSeconds` to `windowLength` with human friendly duration input.
 
 0.1.1
 ------------

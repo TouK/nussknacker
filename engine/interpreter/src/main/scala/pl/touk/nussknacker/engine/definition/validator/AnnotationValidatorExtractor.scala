@@ -7,18 +7,23 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.reflect.ClassTag
 
-class AnnotationValidatorExtractor(annotationClass: Class[_ <: Annotation], parameterValidator: ParameterValidator) extends ValidatorExtractor {
+class AnnotationValidatorExtractor[T <: Annotation : ClassTag](parameterValidatorProvider: T => ParameterValidator) extends ValidatorExtractor {
   override def extract(params: ValidatorExtractorParameters): Option[ParameterValidator] = {
-    if (params.rawJavaParam.getAnnotation(annotationClass) != null)
-      Some(parameterValidator)
-    else
-      None
+    val annotationClass: Class[T] = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
+
+    params.rawJavaParam.getAnnotation(annotationClass) match {
+      case annotation: T => Some(parameterValidatorProvider(annotation))
+      case _ => None
+    }
   }
 }
 
 object AnnotationValidatorExtractor {
-  def apply[T <: Annotation : ClassTag](parameterValidator: ParameterValidator): AnnotationValidatorExtractor = {
-    val annotationClass: Class[T] = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
-    new AnnotationValidatorExtractor(annotationClass, parameterValidator)
-  }
+
+  def apply[T <: Annotation : ClassTag](parameterValidatorProvider: T => ParameterValidator): AnnotationValidatorExtractor[T] =
+    new AnnotationValidatorExtractor[T](parameterValidatorProvider)
+
+  def apply[T <: Annotation : ClassTag](parameterValidator: ParameterValidator): AnnotationValidatorExtractor[T] =
+    apply[T]((_: T) => parameterValidator)
+
 }

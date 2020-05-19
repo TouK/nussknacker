@@ -70,7 +70,7 @@ case class KafkaZookeeperServer(zooKeeperServer: NIOServerCnxnFactory, kafkaServ
   }
 }
 
-object KafkaUtils {
+object KafkaZookeeperUtils {
 
   def createRawKafkaProducer(kafkaAddress: String, id: String): KafkaProducer[Array[Byte], Array[Byte]] = {
     val props: Properties = createCommonProducerProps(kafkaAddress, id)
@@ -94,7 +94,7 @@ object KafkaUtils {
     val props = new Properties()
     props.put("bootstrap.servers", kafkaAddress)
     props.put("batch.size", "100000")
-    KafkaEspUtils.setClientId(props, id)
+    KafkaUtils.setClientId(props, id)
     props
   }
 

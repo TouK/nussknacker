@@ -4,8 +4,8 @@ import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
 import org.apache.flink.streaming.api.functions.source.SourceFunction
+import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
@@ -13,13 +13,12 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory}
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
+import pl.touk.nussknacker.engine.kafka.BaseKafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, FixedDeserializationSchemaFactory}
 
 import scala.collection.JavaConverters._
@@ -29,8 +28,8 @@ import scala.collection.JavaConverters._
   * Features:
   *   - fetch latest N records which can be later used to test process in UI
   * Fetching data is defined in [[pl.touk.nussknacker.engine.kafka.BaseKafkaSourceFactory.KafkaSource]] which
-  * extends [[pl.touk.nussknacker.engine.api.process.TestDataGenerator]]. See [[pl.touk.nussknacker.engine.kafka.KafkaEspUtils#readLastMessages]]
-  *   - reset Kafka's offset to latest value - `forceLatestRead` property, see [[pl.touk.nussknacker.engine.kafka.KafkaEspUtils#setOffsetToLatest]]
+  * extends [[pl.touk.nussknacker.engine.api.process.TestDataGenerator]]. See [[pl.touk.nussknacker.engine.kafka.KafkaUtils#readLastMessages]]
+  *   - reset Kafka's offset to latest value - `forceLatestRead` property, see [[pl.touk.nussknacker.engine.kafka.KafkaUtils#setOffsetToLatest]]
   *
   * BaseKafkaSourceFactory comes in two variants:
   *   - KafkaSourceFactory - `topic` parameter has to be passed on frontend
@@ -55,28 +54,21 @@ class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchem
 
   @MethodToInvoke
   def create(processMetaData: MetaData,
-             @ParamName(`TopicParamName`)
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.RAW
              )
-             @NotBlank
-             topic: String)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
-    val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
+             @ParamName(`TopicParamName`) @NotBlank topic: String)
+            (implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
+    val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig), processMetaData, nodeId)
   }
 
 }
 
-object KafkaSourceFactory {
-
+object BaseKafkaSourceFactory {
   final val TopicParamName = "topic"
-
-  def parseKafkaConfig(processObjectDependencies: ProcessObjectDependencies): KafkaConfig =
-    KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
-
 }
-
 
 class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
                                                         schemaFactory: DeserializationSchemaFactory[T],
@@ -97,7 +89,7 @@ class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
 
   @MethodToInvoke
   def create(processMetaData: MetaData)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
-    val kafkaConfig = KafkaSourceFactory.parseKafkaConfig(processObjectDependencies)
+    val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig), processMetaData, nodeId)
   }
 
@@ -111,7 +103,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
   @deprecated("Should be used version without process MetaData", "0.1.1")
   protected def createSource(processMetaData: MetaData, topics: List[String],
                              schema: KafkaDeserializationSchema[T]): KafkaSource = {
-    createSource(topics, KafkaSourceFactory.parseKafkaConfig(processObjectDependencies), schema)
+    createSource(topics, KafkaConfig.parseProcessObjectDependencies(processObjectDependencies), schema)
   }
 
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
@@ -153,25 +145,21 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
       }.getOrElse(newStart)
     }
 
-    def preparedTopics: List[String] = topics.map(processObjectDependencies
-                                                    .objectNaming
-                                                    .prepareName(_,
-                                                      processObjectDependencies.config,
-                                                      new NamingContext(KafkaUsageKey)))
+    def preparedTopics: List[String] = topics.map(KafkaUtils.prepareTopicName(_, processObjectDependencies))
 
     protected val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
     protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {
-      preparedTopics.foreach(KafkaEspUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
+      preparedTopics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
       createFlinkSource(consumerGroupId)
     }
 
     protected def createFlinkSource(consumerGroupId: String): FlinkKafkaConsumer[T] = {
-      new FlinkKafkaConsumer[T](preparedTopics.asJava, schema, KafkaEspUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
+      new FlinkKafkaConsumer[T](preparedTopics.asJava, schema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
     }
 
     override def generateTestData(size: Int): Array[Byte] = {
-      val listsFromAllTopics = preparedTopics.map(KafkaEspUtils.readLastMessages(_, size, kafkaConfig))
+      val listsFromAllTopics = preparedTopics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
       val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
       val formatted = recordFormatterOpt.map(formatter => merged.map(formatter.formatRecord)).getOrElse {
         merged.map(_.value())

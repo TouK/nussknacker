@@ -16,7 +16,7 @@ object sampleTransformers {
   object SimpleSlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
                 @SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
@@ -39,7 +39,7 @@ object sampleTransformers {
   object SimpleSlidingAggregateTransformerV2 extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
                 @SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
@@ -59,6 +59,30 @@ object sampleTransformers {
     }
   }
 
+  object SimpleTumblingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+
+    @MethodToInvoke(returnType = classOf[AnyRef])
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
+                @SimpleEditor(
+                  `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+                  possibleValues = Array(
+                    new LabeledExpression(expression = "'Max'", label = "Max"),
+                    new LabeledExpression(expression = "'Min'", label = "Min"),
+                    new LabeledExpression(expression = "'Sum'", label = "Sum"),
+                    new LabeledExpression(expression = "'ApproximateSetCardinality'", label = "ApproximateSetCardinality"),
+                    new LabeledExpression(expression = "'Set'", label = "Set")
+                  )
+                )
+                @ParamName("aggregator") aggregatorType: String,
+                @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
+                @ParamName("windowLength") length: java.time.Duration,
+                @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
+      val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
+      transformers.tumblingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName, explicitUidInStatefulOperators)
+    }
+
+  }
+
   private def toAggregator(aggregatorType: String) = aggregatorType match {
     case "Max" => aggregates.MaxAggregator
     case "Min" => aggregates.MinAggregator
@@ -71,7 +95,7 @@ object sampleTransformers {
   object SlidingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
                 @ParamName("aggregator") aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("windowLengthInSeconds") length: Long,

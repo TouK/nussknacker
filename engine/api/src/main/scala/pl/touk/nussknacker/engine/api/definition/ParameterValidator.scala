@@ -98,6 +98,40 @@ case object LiteralIntegerValidator extends ParameterValidator {
   )
 }
 
+case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterValidator {
+
+  //Blank value should be not validate - we want to chain validators
+  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ >= minimalNumber).isSuccess)
+      valid(Unit)
+    else
+      invalid(error(paramName, nodeId.id))
+
+  private def error(paramName: String, nodeId: String): LowerThanRequiredParameter = LowerThanRequiredParameter(
+    s"This field value has to be a number greater than or equal to ${minimalNumber}",
+    "Please fill field with proper number",
+    paramName,
+    nodeId
+  )
+}
+
+case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterValidator {
+
+  //Blank value should be not validate - we want to chain validators
+  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ <= maximalNumber).isSuccess)
+      valid(Unit)
+    else
+      invalid(error(paramName, nodeId.id))
+
+  private def error(paramName: String, nodeId: String): GreaterThanRequiredParameter = GreaterThanRequiredParameter(
+    s"This field value has to be a number lower than or equal to ${maximalNumber}",
+    "Please fill field with proper number",
+    paramName,
+    nodeId
+  )
+}
+
 case object LiteralParameterValidator {
 
   lazy val integerValidator: ParameterValidator = LiteralIntegerValidator
