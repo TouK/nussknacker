@@ -14,6 +14,8 @@ export enum HandledErrorType {
   InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
   ErrorValidator = "ErrorValidator",
   MismatchParameter = "MismatchParameter",
+  SmallerThanRequiredParameter = "SmallerThanRequiredParameter",
+  GreaterThanRequiredParameter = "GreaterThanRequiredParameter"
 }
 
 /* eslint-disable i18next/no-literal-string */
@@ -23,6 +25,8 @@ export enum BackendValidator {
   FixedValuesValidator = "FixedValuesValidator",
   RegExpParameterValidator = "RegExpParameterValidator",
   LiteralIntegerValidator = "LiteralIntegerValidator",
+  MinimalNumberValidator = "MinimalNumberValidator",
+  MaximalNumberValidator = "MaximalNumberValidator",
 }
 
 export type Validator = {
@@ -93,11 +97,29 @@ export const regExpValueValidator = (pattern: string, message: string, descripti
 export const literalIntegerValueValidator: Validator = {
   //Blank value should be not validate - we want to chain validators
   isValid: value => isEmpty(value) || literalRegExpPattern("^-?[0-9]+$").test(value),
-  message: () => i18next.t("literalIntegerValueValidator.message",  "This field value has to be an integer number"),
-  description: () => i18next.t("literalIntegerValueValidator,description", "Please fill field by proper integer type"),
+  message: () => i18next.t("literalIntegerValueValidator.message", "This field value has to be an integer number"),
+  description: () => i18next.t("literalIntegerValueValidator.description", "Please fill field by proper integer type"),
   handledErrorType: HandledErrorType.InvalidIntegerLiteralParameter,
   validatorType: ValidatorType.Frontend,
 }
+
+export const minimalNumberValidator = (minimalNumber: number): Validator => ({
+  //Blank value should be not validate - we want to chain validators
+  isValid: value => isEmpty(value) || Number(value) >= minimalNumber,
+  message: () => i18next.t("minimalNumberValidator.message", `This field value has to be a number greater than or equal to ${minimalNumber}`),
+  description: () => i18next.t("minimalNumberValidator.description", "Please fill field by proper number"),
+  handledErrorType: HandledErrorType.SmallerThanRequiredParameter,
+  validatorType: ValidatorType.Frontend,
+})
+
+export const maximalNumberValidator = (maximalNumber: number): Validator => ({
+  //Blank value should be not validate - we want to chain validators
+  isValid: value => isEmpty(value) || Number(value) <= maximalNumber,
+  message: () => i18next.t("maximalNumberValidator.message", `This field value has to be a number lower than or equal to ${maximalNumber}`),
+  description: () => i18next.t("maximalNumberValidator.description", "Please fill field by proper number"),
+  handledErrorType: HandledErrorType.GreaterThanRequiredParameter,
+  validatorType: ValidatorType.Frontend,
+})
 
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
   return isEmpty(validators) ? [] :
@@ -117,4 +139,6 @@ export const validators: Record<BackendValidator, (...args: any[]) => Validator>
   [BackendValidator.LiteralIntegerValidator]: () => literalIntegerValueValidator,
   [BackendValidator.FixedValuesValidator]: ({possibleValues}) => fixedValueValidator(possibleValues),
   [BackendValidator.RegExpParameterValidator]: ({pattern, message, description}) => regExpValueValidator(pattern, message, description),
+  [BackendValidator.MinimalNumberValidator]: ({minimalNumber}) => minimalNumberValidator(minimalNumber),
+  [BackendValidator.MaximalNumberValidator]: ({maximalNumber}) => maximalNumberValidator(maximalNumber),
 }

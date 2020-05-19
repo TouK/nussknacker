@@ -4,7 +4,7 @@ import java.time.LocalDate
 import java.util.Optional
 
 import javax.annotation.Nullable
-import javax.validation.constraints.NotBlank
+import javax.validation.constraints.{Max, Min, NotBlank}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -15,26 +15,41 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
 
   private val notAnnotatedParam = getFirstParam("notAnnotated", classOf[String])
   private val nullableAnnotatedParam = getFirstParam("nullableAnnotated", classOf[LocalDate])
+
   private val optionParam = getFirstParam("optionParam", classOf[Option[String]])
   private val optionalParam = getFirstParam("optionalParam", classOf[Optional[String]])
+
   private val nullableNotBlankParam = getFirstParam("nullableNotBlankAnnotatedParam", classOf[String])
   private val notBlankParam = getFirstParam("notBlankAnnotatedParam", classOf[String])
+
   private val literalIntParam = getFirstParam("literalIntAnnotatedParam", classOf[Int])
   private val literalIntegerParam = getFirstParam("literalIntegerAnnotatedParam", classOf[Integer])
   private val literalNullableIntegerParam = getFirstParam("literalNullableIntegerAnnotatedParam", classOf[Integer])
   private val literalStringParam = getFirstParam("literalStringAnnotatedParam", classOf[String])
 
+  private val minimalValueIntegerParam = getFirstParam("minimalValueIntegerAnnotatedParam", classOf[Int])
+  private val minimalValueBigDecimalParam = getFirstParam("minimalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
+
+  private val maximalValueIntegerParam = getFirstParam("maximalValueIntegerAnnotatedParam", classOf[Int])
+  private val maximalValueBigDecimalParam = getFirstParam("maximalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
+
+  private val minimalAndMaximalValueIntegerParam = getFirstParam("minimalAndMaximalValueIntegerAnnotatedParam", classOf[Int])
+  private val minimalAndMaximalValueBigDecimalParam = getFirstParam("minimalAndMaximalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
+
   private def notAnnotated(param: String) {}
 
   private def nullableAnnotated(@Nullable nullableParam: LocalDate) {}
+
 
   private def optionParam(stringOption: Option[String]) {}
 
   private def optionalParam(stringOptional: Optional[String]) {}
 
+
   private def nullableNotBlankAnnotatedParam(@Nullable @NotBlank notBlank: String) {}
 
   private def notBlankAnnotatedParam(@NotBlank notBlank: String) {}
+
 
   private def literalIntAnnotatedParam(@Literal intParam: Int) {}
 
@@ -43,6 +58,22 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   private def literalNullableIntegerAnnotatedParam(@Nullable @Literal integerParam: Integer) {}
 
   private def literalStringAnnotatedParam(@Literal stringParam: String) {}
+
+
+  private def minimalValueIntegerAnnotatedParam(@Min(value = 0) minimalValue: Int) {}
+
+  private def minimalValueBigDecimalAnnotatedParam(@Min(value = 0) minimalValue: BigDecimal) {}
+
+
+  private def maximalValueIntegerAnnotatedParam(@Max(value = 0) maximalValue: Int) {}
+
+  private def maximalValueBigDecimalAnnotatedParam(@Max(value = 0) maximalValue: BigDecimal) {}
+
+
+  private def minimalAndMaximalValueIntegerAnnotatedParam(@Min(value = 0) @Max(value = 1) value: Int) {}
+
+  private def minimalAndMaximalValueBigDecimalAnnotatedParam(@Min(value = 0) @Max(value = 1) value: BigDecimal) {}
+
 
   private def getFirstParam(name: String, params: Class[_]*) = {
     this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
@@ -99,6 +130,40 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   test("should not extract literalStringParam value validator when @Literal annotation detected") {
     ValidatorsExtractor.extract(validatorParams(literalStringParam)) shouldBe List(MandatoryParameterValidator)
   }
+
+
+  test("extract minimalValueIntegerParam value validator when @Min annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(minimalValueIntegerParam)) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0))
+  }
+
+  test("extract minimalValueBigDecimalParam value validator when @Min annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(minimalValueBigDecimalParam)) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0))
+  }
+
+
+  test("extract maximalValueIntegerParam value validator when @Max annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(maximalValueIntegerParam)) shouldBe
+      List(MandatoryParameterValidator, MaximalNumberValidator(0))
+  }
+
+  test("extract maximalValueBigDecimalParam value validator when @Max annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(maximalValueBigDecimalParam)) shouldBe
+      List(MandatoryParameterValidator, MaximalNumberValidator(0))
+  }
+
+
+  test("extract minimalAndMaximalValueIntegerParam value validator when @Min and @Max annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(minimalAndMaximalValueIntegerParam)) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
+  }
+
+  test("extract minimalAndMaximalValueBigDecimalParam value validator when @Min and @Max annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(minimalAndMaximalValueBigDecimalParam)) shouldBe
+      List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
+  }
+
 
   private def validatorParams(rawJavaParam: java.lang.reflect.Parameter,
                               editor: Option[ParameterEditor] = None) =
