@@ -553,8 +553,8 @@ class Graph extends React.Component {
     const graphPosition = svg.getBoundingClientRect()
 
     return {
-      x: (pointerOffset.x - pan.x - graphPosition.left - paddingLeft) / zoom,
-      y: (pointerOffset.y - pan.y - graphPosition.top - paddingTop) / zoom,
+      x: Math.round((pointerOffset.x - pan.x - graphPosition.left - paddingLeft) / zoom),
+      y: Math.round((pointerOffset.y - pan.y - graphPosition.top - paddingTop) / zoom),
     }
   }
 

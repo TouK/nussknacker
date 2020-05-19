@@ -10,7 +10,7 @@ import {GraphState} from "./types"
 import {
   displayOrGroup,
   updateLayoutAfterNodeIdChange,
-  addNodes,
+  addNodesWithLayout,
   prepareNewNodesWithLayout,
   updateAfterNodeIdChange,
   updateAfterNodeDelete,
@@ -203,7 +203,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "NODE_ADDED": {
-      return addNodes(
+      return addNodesWithLayout(
         state,
         prepareNewNodesWithLayout(state, [{
           node: action.node,
@@ -216,6 +216,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 
       const idToUniqueId = zipObject(action.nodesWithPositions.map(n => n.node.id), uniqueIds)
       const edgesWithValidIds = action.edges.map(edge => ({...edge, from: idToUniqueId[edge.from], to: idToUniqueId[edge.to]}))
+
       const updatedEdges = edgesWithValidIds.reduce((edges, edge) => {
         const fromNode = nodes.find(n => n.id === edge.from)
         const toNode = nodes.find(n => n.id === edge.to)
@@ -223,7 +224,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         return edges.concat(newEdge)
       }, state.processToDisplay.edges)
 
-      const stateWithNodesAdded = addNodes(state, {nodes, layout})
+      const stateWithNodesAdded = addNodesWithLayout(state, {nodes, layout})
       return {
         ...stateWithNodesAdded,
         processToDisplay: {
