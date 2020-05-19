@@ -63,7 +63,7 @@ export enum EditorType {
   DURATION_EDITOR = "DurationParameterEditor",
   PERIOD_EDITOR = "PeriodParameterEditor",
   CRON_EDITOR = "CronParameterEditor",
-  TEXTAREA_PARAMETER_EDITOR = "TextareaParameterEditor"
+  TEXTAREA_PARAMETER_EDITOR = "TextareaParameterEditor",
 }
 
 const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
