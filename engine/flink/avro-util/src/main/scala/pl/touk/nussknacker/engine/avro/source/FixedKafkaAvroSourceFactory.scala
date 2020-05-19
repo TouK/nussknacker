@@ -25,7 +25,7 @@ class FixedKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies:
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+             @SimpleEditor(`type` = SimpleEditorType.TEXTAREA_EDITOR)
              //TODO: Create BE and FE validator for verify avro type
              //TODO: Create Avro Editor
              @ParamName("schema") @NotBlank avroSchemaString: String
