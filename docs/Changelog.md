@@ -18,6 +18,7 @@ Nussknacker versions
 * [#949](https://github.com/TouK/nussknacker/pull/949) JVM options can be configured via JDK_JAVA_OPTIONS env variable (in docker and standalone distribution) 
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
 * [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache
+* [#704](https://github.com/TouK/nussknacker/pull/704) Preloaded creator panel node icons
 * [#943](https://github.com/TouK/nussknacker/pull/943) Literal min / max validators
 
 0.1.2
