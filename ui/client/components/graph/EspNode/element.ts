@@ -1,133 +1,12 @@
 /* eslint-disable i18next/no-literal-string */
-import _ from "lodash"
+import {cloneDeepWith, get, isEmpty, toArray, toString} from "lodash"
 import ProcessUtils from "../../../common/ProcessUtils"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
 import NodeUtils from "../NodeUtils"
 import expandIcon from "../../../assets/img/expand.svg"
-import * as joint from "jointjs/index"
-import {rectWidth, rectHeight, nodeLabelFontSize, summaryCountConfig, edgeStroke, maxLineLength, maxLineCount} from "./misc"
+import {rectWidth, rectHeight, summaryCountConfig, maxLineLength, maxLineCount} from "./misc"
 import {getIconHref} from "./getIconHref"
-import nodeMarkup from "../markups/node.html"
-
-const attrsConfig = () => {
-  return {
-    ".": {
-      magnet: false,
-    },
-    ".body": {
-      fill: "none",
-      width: rectWidth,
-      height: rectHeight,
-      stroke: "#B5B5B5",
-      strokeWidth: 1,
-    },
-    ".background": {
-      width: rectWidth,
-      height: rectHeight,
-    },
-    ".disabled-node-layer": {
-      width: rectWidth,
-      height: rectHeight,
-      zIndex: 0,
-    },
-    text: {
-      fill: "#1E1E1E",
-      pointerEvents: "none",
-      fontWeight: 400,
-    },
-    ".nodeIconPlaceholder": {
-      x: 0,
-      y: 0,
-      height: rectHeight,
-      width: rectHeight,
-    },
-    ".nodeIconItself": {
-      width: rectHeight / 2,
-      height: rectHeight / 2,
-      ref: ".nodeIconPlaceholder",
-      refX: rectHeight / 4,
-      refY: rectHeight / 4,
-    },
-    ".contentText": {
-      fontSize: nodeLabelFontSize,
-      ref: ".nodeIconPlaceholder",
-      refX: rectHeight + 10,
-      refY: rectHeight / 2,
-      textVerticalAnchor: "middle",
-    },
-    ".testResultsPlaceholder": {
-      ref: ".nodeIconPlaceholder",
-      refX: rectWidth,
-      y: 0,
-      height: rectHeight,
-      width: rectHeight,
-    },
-    ".testResultsSummary": {
-      textAnchor: "middle",
-      alignmentBaseline: "middle",
-    },
-  }
-}
-const portsAttrs = () => {
-  return {
-    ".port": {
-      refX: 0,
-      refY: 0,
-    },
-    ".port-body": {
-      r: 5,
-      magnet: true,
-      fontSize: 10,
-    },
-  }
-}
-const portInAttrs = () => {
-  return Object.assign({}, portsAttrs(), {
-    ".port circle": {
-      fill: "#FFFFFF",
-      magnet: "passive",
-      stroke: edgeStroke,
-      strokeWidth: "1",
-      type: "input",
-    },
-  })
-}
-const portOutAttrs = () => {
-  return Object.assign({}, portsAttrs(), {
-    ".port circle": {
-      fill: "#FFFFFF",
-      stroke: edgeStroke,
-      strokeWidth: "1",
-      type: "output",
-    },
-  })
-}
-
-joint.shapes.devs.EspNode = joint.shapes.devs.Model.extend({
-  markup: nodeMarkup,
-  portMarkup: "<g class=\"port\"><circle class=\"port-body\"/></g>",
-  portLabelMarkup: null,
-
-  defaults: joint.util.deepSupplement({
-    type: "devs.GenericModel",
-    attrs: attrsConfig(),
-    size: {width: 1, height: 1},
-    inPorts: [],
-    outPorts: [],
-    ports: {
-      groups: {
-        in: {
-          position: "top",
-          attrs: portInAttrs(),
-        },
-        out: {
-          position: "bottom",
-          attrs: portOutAttrs(),
-        },
-      },
-    },
-  }, joint.shapes.devs.Model.prototype.defaults),
-})
+import {EspNodeShape} from "./esp"
 
 function getBodyContent(node) {
   const bodyContent = node.id || ""
@@ -185,7 +64,7 @@ function getBodyContent(node) {
 function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
   const {breakPoint, maxExtraDigits} = summaryCountConfig
 
-  const hasCounts = !_.isEmpty(processCounts)
+  const hasCounts = !isEmpty(processCounts)
   const hasErrors = hasCounts && processCounts && processCounts.errors > 0
   const countsContent = hasCounts ? processCounts ? `${processCounts.all}` : "0" : ""
   let extraDigitsCount = Math.max(countsContent.length - breakPoint, 0)
@@ -202,9 +81,9 @@ function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
 }
 
 export function makeElement(node, processCounts, nodesSettings) {
-  const description = _.get(node.additionalFields, "description", null)
+  const description = get(node.additionalFields, "description", null)
   const {text: bodyContent, multiline} = getBodyContent(node)
-  const hasCounts = !_.isEmpty(processCounts)
+  const hasCounts = !isEmpty(processCounts)
   const width = rectWidth
   const height = rectHeight
   const nodeSettings = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]
@@ -213,7 +92,7 @@ export function makeElement(node, processCounts, nodesSettings) {
   const pxPerChar = 8
   const countsPadding = 8
   //dynamically sized width
-  const testResultsWidth = _.toArray(_.toString(processCounts ? processCounts.all : "")).length * pxPerChar + 2 * countsPadding
+  const testResultsWidth = toArray(toString(processCounts ? processCounts.all : "")).length * pxPerChar + 2 * countsPadding
   const attrs = {
     ".background": {
       width: width,
@@ -268,7 +147,7 @@ export function makeElement(node, processCounts, nodesSettings) {
   const inPorts = NodeUtils.hasInputs(node) ? ["In"] : []
   const outPorts = NodeUtils.hasOutputs(node) ? ["Out"] : []
 
-  return new joint.shapes.devs.EspNode({
+  return new EspNodeShape({
     id: node.id,
     size: {width: width, height: height},
     inPorts: inPorts,
@@ -279,7 +158,7 @@ export function makeElement(node, processCounts, nodesSettings) {
     //This is used by jointjs to handle callbacks/changes
     //TODO: figure out what should be here?
     definitionToCompare: {
-      node: _.cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].indexOf(key) > -1 ? null : undefined),
+      node: cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].indexOf(key) > -1 ? null : undefined),
       processCounts: processCounts,
     },
   })
