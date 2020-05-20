@@ -10,7 +10,7 @@ import {getProcessCategory, getSelectionState} from "../../reducers/selectors/gr
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import "./svg-export/export.styl"
-import EspNode from "./EspNode"
+import * as EspNode from "./EspNode"
 import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
