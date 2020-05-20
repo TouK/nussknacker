@@ -31,13 +31,8 @@ class FixedKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies:
              @ParamName("schema") @NotBlank avroSchemaString: String
             )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-    createKafkaAvroSource(
-      topic,
-      kafkaConfig,
-      new FixedKafkaAvroSchemaProvider(topic, avroSchemaString, kafkaConfig, formatKey, useSpecificAvroReader),
-      processMetaData,
-      nodeId
-    )
+    val kafkaAvroSchemaProvider = FixedKafkaAvroSchemaProvider(topic, avroSchemaString, kafkaConfig, formatKey, useSpecificAvroReader)
+    createKafkaAvroSource(topic, kafkaConfig, kafkaAvroSchemaProvider , processMetaData, nodeId)
   }
 }
 
