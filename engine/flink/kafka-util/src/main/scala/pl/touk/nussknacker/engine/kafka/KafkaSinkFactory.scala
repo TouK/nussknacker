@@ -51,6 +51,7 @@ abstract class BaseKafkaSinkFactory(serializationSchemaFactory: SerializationSch
       PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic, serializationSchema, clientId)
 
     override def testDataOutput: Option[Any => String] = Option(value =>
-      new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8))
+      new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8)
+    )
   }
 }

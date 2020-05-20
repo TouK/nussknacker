@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated
-import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
@@ -53,4 +52,10 @@ object AvroUtils {
 
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
+
+  def createRecord(schema: Schema, data: Map[String, Any]): GenericData.Record = {
+    val record = new GenericData.Record(schema)
+    data.foreach(item => record.put(item._1, item._2))
+    record
+  }
 }

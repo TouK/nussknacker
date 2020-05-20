@@ -6,7 +6,6 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.avro.AvroUtils
 
 object AvroSchemaTypeDefinitionExtractor {
 

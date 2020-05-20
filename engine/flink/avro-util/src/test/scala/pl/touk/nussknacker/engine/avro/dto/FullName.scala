@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.avro.dto
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
 import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.source.MockSchemaRegistry
 
 case class FullNameV1(var first: CharSequence, var last: CharSequence) extends SpecificRecordBase {
   def this() = this(null, null)
@@ -30,7 +29,7 @@ object FullNameV1 {
     """{
       |  "type": "record",
       |  "namespace": "pl.touk.nussknacker.engine.avro.dto",
-      |  "name": "FullName",
+      |  "name": "FullName1",
       |  "fields": [
       |    { "name": "first", "type": "string" },
       |    { "name": "last", "type": "string" }
@@ -39,10 +38,10 @@ object FullNameV1 {
     """.stripMargin)
 }
 
-case class FullName(var first: CharSequence, var middle: CharSequence, var last: CharSequence) extends SpecificRecordBase {
+case class FullNameV2(var first: CharSequence, var middle: CharSequence, var last: CharSequence) extends SpecificRecordBase {
   def this() = this(null, null, null)
 
-  override def getSchema: Schema = MockSchemaRegistry.recordSchemaV2
+  override def getSchema: Schema = FullNameV2.schema
 
   override def get(field: Int): AnyRef =
     field match {
@@ -61,12 +60,12 @@ case class FullName(var first: CharSequence, var middle: CharSequence, var last:
     }
 }
 
-object FullName {
+object FullNameV2 {
   val schema: Schema = AvroUtils.parseSchema(
     """{
       |  "type": "record",
       |  "namespace": "pl.touk.nussknacker.engine.avro.dto",
-      |  "name": "FullName",
+      |  "name": "FullNameV2",
       |  "fields": [
       |    { "name": "first", "type": "string" },
       |    { "name": "middle", "type": ["null", "string"], "default": null },
