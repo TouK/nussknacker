@@ -18,7 +18,7 @@ import NodeDetailsContent from "./NodeDetailsContent"
 import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
 import {getExpandedGroups} from "../../../reducers/selectors/groups"
-import {isBusinessView} from "../../../reducers/selectors/graph"
+import {isBusinessView, getProcessCounts} from "../../../reducers/selectors/graph"
 
 class NodeDetailsModal extends React.Component {
 
@@ -231,7 +231,7 @@ function mapState(state) {
     testResults: state.graphReducer.testResults,
     processDefinitionData: processDefinitionData,
     expandedGroups: getExpandedGroups(state),
-    processCounts: state.graphReducer.processCounts || {},
+    processCounts: getProcessCounts(state),
     businessView: isBusinessView(state),
 
   }

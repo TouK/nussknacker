@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import {ProcessCounts} from "../../../reducers/graph"
 import {cloneDeepWith, get, isEmpty, toArray, toString} from "lodash"
 import ProcessUtils from "../../../common/ProcessUtils"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
@@ -61,7 +62,7 @@ function getBodyContent(node) {
   }
 }
 
-function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
+function getTestResultsSummaryAttr(processCounts: ProcessCounts, width, testResultsWidth) {
   const {breakPoint, maxExtraDigits} = summaryCountConfig
 
   const hasCounts = !isEmpty(processCounts)
@@ -80,7 +81,7 @@ function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
   }
 }
 
-export function makeElement(node, processCounts, nodesSettings) {
+export function makeElement(node, processCounts: ProcessCounts, nodesSettings) {
   const description = get(node.additionalFields, "description", null)
   const {text: bodyContent, multiline} = getBodyContent(node)
   const hasCounts = !isEmpty(processCounts)
@@ -159,7 +160,7 @@ export function makeElement(node, processCounts, nodesSettings) {
     //TODO: figure out what should be here?
     definitionToCompare: {
       node: cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].indexOf(key) > -1 ? null : undefined),
-      processCounts: processCounts,
+      processCounts,
     },
   })
 }

@@ -9,6 +9,8 @@ type GraphHistory = {
   future: GraphHistoryAction[],
 }
 
+export type ProcessCounts = $TodoType
+
 export type GraphState = {
   graphLoading: boolean,
   processState: ProcessStateType,
@@ -25,5 +27,5 @@ export type GraphState = {
   testCapabilities?: $TodoType,
   testResults: $TodoType,
   edgeToDisplay: $TodoType,
-  processCounts: $TodoType,
+  processCounts: ProcessCounts,
 }
