@@ -64,7 +64,8 @@ export class NodeDetailsContent extends React.Component {
       this.setState({editedNode: nextPropsNode})
       this.props.actions.updateNodeData(this.props.processId,
         this.props.variableTypes[this.state.editedNode.id],
-        nextPropsNode)
+        nextPropsNode,
+        this.props.processProperties)
     }
   }
 
@@ -75,7 +76,8 @@ export class NodeDetailsContent extends React.Component {
     if (!_.isEqual(prevState.editedNode, this.state.editedNode)) {
       this.props.actions.updateNodeData(this.props.processId,
         this.props.variableTypes[this.state.editedNode.id],
-        this.state.editedNode)
+        this.state.editedNode,
+        this.props.processProperties)
     }
   }
 
@@ -717,6 +719,7 @@ function mapState(state) {
     //TODO: get rid of this. We should not rely on process from graphReducer, as we may display subprocess node!
     //currently it's used only to figure out processingType, so it's not so harmful
     processId: state.graphReducer.processToDisplay.id,
+    processProperties: state.graphReducer.processToDisplay.properties,
     variableTypes: state.graphReducer.processToDisplay.validationResult.variableTypes,
     nodeValidationErrors: state.nodeDetails.validationErrors,
   }

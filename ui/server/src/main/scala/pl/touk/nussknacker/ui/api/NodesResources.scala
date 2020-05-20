@@ -1,32 +1,27 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.Route
-import cats.data.{OptionT, ValidatedNel}
+import cats.data.OptionT
 import cats.instances.future._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.additionalInfo.{NodeAdditionalInfo, NodeAdditionalInfoProvider}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.{DefinitionContext, ParameterEvaluation, ProcessCompilationError, SingleInputGenericNodeTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.definition.ProcessObjectFactory
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData}
+import pl.touk.nussknacker.engine.compile.nodevalidation.NodeDataValidator
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.ui.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 
@@ -59,11 +54,8 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val modelData = typeToConfig.forTypeUnsafe(process.processingType)
               val globals = modelData.modelData.processDefinition.expressionConfig.globalVariables.mapValues(_.returnType)
               val validationContext = ValidationContext(nodeData.variableTypes, globals, None)
-              val baseResult = nodeData.nodeData match {
-                case a:Filter => new FilterValidator(modelData.modelData).compile(a, validationContext)
-                case a:CustomNode => new CustomNodeValidator(modelData.modelData).compile(a, validationContext)
-                case a => DummyValidator.compile(a, validationContext)
-              }
+              implicit val metaData = nodeData.processProperties.toMetaData(process.id)
+              val baseResult = NodeDataValidator.validate(nodeData.nodeData, modelData.modelData, validationContext)
               NodeValidationResult(baseResult._1.map(_.map(UIParameter(_, ParameterConfig.empty))), baseResult._2.map(PrettyValidationErrors.formatErrorMessage))
             }
           }
@@ -106,70 +98,8 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[Processing
 //parameters =>
 @JsonCodec(encodeOnly = true) case class NodeValidationResult(parameters: Option[List[UIParameter]], validationErrors: List[NodeValidationError])
 
-@JsonCodec case class NodeValidationRequest(nodeData: NodeData, variableTypes: Map[String, TypingResult])
+@JsonCodec case class NodeValidationRequest(nodeData: NodeData,
+                                            processProperties: ProcessProperties,
+                                            variableTypes: Map[String, TypingResult])
 
-//EXTRACT CODE BELOW:
-
-
-trait NodeDataValidator[T<:NodeData] {
-
-  def compile(nodeData: T, validationContext: ValidationContext): (Option[List[Parameter]], List[ProcessCompilationError])
-
-}
-
-class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
-
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(
-      modelData.modelClassLoader.classLoader,
-      modelData.dictServices.dictRegistry,
-      modelData.processDefinition.expressionConfig,
-      modelData.processDefinition.settings
-    )
-
-  override def compile(nodeData: Filter, validationContext: ValidationContext): (Option[List[Parameter]], List[ProcessCompilationError]) = {
-    val validation: ValidatedNel[ProcessCompilationError, _] = expressionCompiler.compile(nodeData.expression, Some(NodeTypingInfo.DefaultExpressionId), validationContext, Typed[Boolean])(NodeId(nodeData.id))
-    (Some(List(Parameter[Boolean]("expression"))), validation.fold(_.toList, _ => Nil))
-  }
-}
-
-class CustomNodeValidator(modelData: ModelData) extends NodeDataValidator[CustomNode] {
-
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(
-      modelData.modelClassLoader.classLoader,
-      modelData.dictServices.dictRegistry,
-      modelData.processDefinition.expressionConfig,
-      modelData.processDefinition.settings
-    )
-
-  private val expressionEvaluator
-    = ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig), List.empty)
-
-  private val parameterEvaluator = new ProcessObjectFactory(expressionEvaluator)
-
-  override def compile(nodeData: CustomNode, validationContext: ValidationContext): (Option[List[Parameter]], List[ProcessCompilationError]) = {
-    val transformer = modelData.processWithObjectsDefinition.customStreamTransformers(nodeData.nodeType)._1.obj
-    transformer match {
-      case a:SingleInputGenericNodeTransformation[_] =>
-        val evaluations = nodeData.parameters.map { parameter =>
-            parameter.name -> new ParameterEvaluation {
-              override def determine(definition: Parameter): ValidatedNel[ProcessCompilationError, Any] = {
-                implicit val nodeId: NodeId = NodeId(nodeData.id)
-                //FIXME: pass from above :)
-                implicit val meta: MetaData = MetaData("TODO", StreamMetaData())
-                expressionCompiler.compile(parameter.expression, Some(parameter.name), validationContext, definition.typ).map { compiled =>
-                  parameterEvaluator.prepareParameters(List((TypedParameter(parameter.name, compiled), definition))).values.head
-                }
-              }
-            }
-        }.toMap
-        val result = a.contextTransformation(Some(DefinitionContext(validationContext, evaluations, Nil)))
-        (Some(result.parameters), result.errors)
-      case _ =>(None, Nil)
-    }
-  }
-}
-
-object DummyValidator extends NodeDataValidator[NodeData] {
-  override def compile(nodeData: NodeData, validationContext: ValidationContext): (Option[List[Parameter]], List[ProcessCompilationError]) = (None, Nil)
-}
 

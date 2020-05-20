@@ -25,9 +25,9 @@ function validate(processId, node, dispatch) {
 //TODO: use sth better?
 const debouncedValidate = _.debounce(validate, 250, {leading: true, trailing: true})
 
-export function updateNodeData(processId: string, variableTypes: any, nodeData: any): ThunkAction {
+export function updateNodeData(processId: string, variableTypes: any, nodeData: any, processProperties: any): ThunkAction {
   return (dispatch) => debouncedValidate(processId, {
-    nodeData, variableTypes}, dispatch)
+    nodeData, variableTypes, processProperties}, dispatch)
 
 }
  

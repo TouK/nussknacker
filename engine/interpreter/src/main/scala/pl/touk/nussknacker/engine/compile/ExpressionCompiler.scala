@@ -93,7 +93,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }
   }
 
-  private def compileParam(param: graph.evaluatedparam.Parameter,
+  def compileParam(param: graph.evaluatedparam.Parameter,
                            ctx: ValidationContext,
                            definition: Parameter)
                           (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.TypedParameter] = {
