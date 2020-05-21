@@ -1,8 +1,7 @@
-package pl.touk.nussknacker.engine.avro.dto
+package pl.touk.nussknacker.engine.avro.schema
 
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
-import pl.touk.nussknacker.engine.avro.AvroUtils
 
 case class FullNameV1(var first: CharSequence, var last: CharSequence) extends SpecificRecordBase {
   def this() = this(null, null)
@@ -24,18 +23,20 @@ case class FullNameV1(var first: CharSequence, var last: CharSequence) extends S
     }
 }
 
-object FullNameV1 {
-  val schema: Schema = AvroUtils.parseSchema(
+object FullNameV1 extends TestSchema {
+  val stringSchema: String =
     """{
       |  "type": "record",
-      |  "namespace": "pl.touk.nussknacker.engine.avro.dto",
+      |  "namespace": "pl.touk.nussknacker.engine.avro.schema",
       |  "name": "FullName1",
       |  "fields": [
       |    { "name": "first", "type": "string" },
       |    { "name": "last", "type": "string" }
       |  ]
       |}
-    """.stripMargin)
+    """.stripMargin
+
+  val exampleData: Map[String, Any] = Map("id" -> 1, "amount" -> 2d)
 }
 
 case class FullNameV2(var first: CharSequence, var middle: CharSequence, var last: CharSequence) extends SpecificRecordBase {
@@ -60,11 +61,11 @@ case class FullNameV2(var first: CharSequence, var middle: CharSequence, var las
     }
 }
 
-object FullNameV2 {
-  val schema: Schema = AvroUtils.parseSchema(
+object FullNameV2 extends TestSchema {
+  val stringSchema: String =
     """{
       |  "type": "record",
-      |  "namespace": "pl.touk.nussknacker.engine.avro.dto",
+      |  "namespace": "pl.touk.nussknacker.engine.avro.schema",
       |  "name": "FullNameV2",
       |  "fields": [
       |    { "name": "first", "type": "string" },
@@ -72,5 +73,7 @@ object FullNameV2 {
       |    { "name": "last", "type": "string" }
       |  ]
       |}
-    """.stripMargin)
+    """.stripMargin
+
+  val exampleData: Map[String, Any] = FullNameV1.exampleData ++ Map("currency" -> "PLN")
 }

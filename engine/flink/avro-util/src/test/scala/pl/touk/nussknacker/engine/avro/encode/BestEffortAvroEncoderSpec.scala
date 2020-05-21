@@ -7,7 +7,9 @@ import org.apache.avro.generic.{GenericData, GenericDatumReader, GenericDatumWri
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.{FunSpec, Matchers}
+import pl.touk.nussknacker.engine.avro.schema.{Company, PaymentV1, Product}
 
+import scala.collection.convert.Wrappers.MutableBufferWrapper
 import scala.collection.immutable.ListSet
 
 class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
@@ -148,10 +150,25 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
     recordWithNull.get("foo") shouldBe null
 
     val recordWithNone = roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("foo" -> None), schema))
-    recordWithNull.get("foo") shouldBe null
+    recordWithNone.get("foo") shouldBe null
 
     val recordWithInt = roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("foo" -> 123).asJava, schema))
     recordWithInt.get("foo") shouldBe 123
+  }
+
+  it("should create record with complex nested fields") {
+    val record = BestEffortAvroEncoder.encodeRecordOrError(PaymentV1.exampleData, PaymentV1.schema)
+    val recordCompany = record.get("company")
+    val recordProducts = record.get("products")
+
+    recordCompany shouldBe Company.record
+
+    val productFounded = recordProducts match {
+      case products: MutableBufferWrapper[_] => products.underlying.exists(_.equals(Product.record))
+      case _ => false
+    }
+
+    productFounded shouldBe true
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =

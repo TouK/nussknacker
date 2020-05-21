@@ -5,14 +5,15 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, Sche
 
 object KafkaAvroFactory {
 
-  final val VersionParamName = "Schema version"
+  final val SchemaVersionParamName = "Schema version"
   final val SinkOutputParamName = "Output"
+  final val FixedSchemaParamName = "Schema"
   final val TopicParamName = "Topic"
 
   def handleSchemaRegistryError(exc: SchemaRegistryError): Nothing = {
     val parameter = exc match {
       case _: SchemaSubjectNotFound => Some(`TopicParamName`)
-      case _: SchemaVersionNotFound => Some(`VersionParamName`)
+      case _: SchemaVersionNotFound => Some(SchemaVersionParamName)
       case _ => None
     }
 

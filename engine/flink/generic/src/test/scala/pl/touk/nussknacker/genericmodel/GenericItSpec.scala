@@ -7,7 +7,6 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
-import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
@@ -26,9 +25,11 @@ import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.genericmodel.schema.FullName
 
 class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
+  import KafkaAvroFactory._
   import KafkaZookeeperUtils._
   import MockSchemaRegistry._
   import org.apache.flink.streaming.api.scala._
@@ -44,7 +45,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
-  val RecordSchema: Schema = AvroUtils.parseSchema(RecordSchemaString)
 
   private val givenNotMatchingJsonObj =
     """{
@@ -63,18 +63,11 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       |  "list2": [ 123 ]
       |}""".stripMargin
 
-  private val givenNotMatchingAvroObj = {
-    val r = new GenericData.Record(RecordSchema)
-    r.put("first", "Zenon")
-    r.put("last", "Nowak")
-    r
-  }
-  private val givenMatchingAvroObj = {
-    val r = new GenericData.Record(RecordSchema)
-    r.put("first", "Jan")
-    r.put("last", "Kowalski")
-    r
-  }
+  private val givenNotMatchingAvroObj =
+    AvroUtils.createRecord(FullName.schema, Map("first" -> "Zenon", "last" -> "Nowak"))
+
+  private val givenMatchingAvroObj =
+    AvroUtils.createRecord(FullName.schema, Map("first" -> "Jan", "last" -> "Kowalski"))
 
   private def jsonProcess(filter: String) =
     EspProcessBuilder
@@ -100,18 +93,25 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .id("avro-test")
       .parallelism(1)
       .exceptionHandler()
-      .source("start", "kafka-avro", "topic" -> s"'$AvroInTopic'", "Schema version" -> versionParam(version))
+      .source("start", "kafka-avro", TopicParamName -> s"'$AvroInTopic'", SchemaVersionParamName -> versionParam(version))
       .filter("name-filter", "#input.first == 'Jan'")
-      .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroOutTopic'")
+      .emptySink("end", "kafka-avro",
+        TopicParamName -> s"'$AvroOutTopic'",
+        SinkOutputParamName -> "#input",
+        SchemaVersionParamName -> ""
+      )
 
   private def avroFromScratchProcess(version: Integer) =
     EspProcessBuilder
       .id("avro-from-scratch-test")
       .parallelism(1)
       .exceptionHandler()
-      .source("start", "kafka-avro", "topic" -> s"'$AvroFromScratchInTopic'", "Schema version" -> versionParam(version))
-      .sink("end", s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('$AvroFromScratchOutTopic'))",
-        "kafka-avro", "topic" -> s"'$AvroFromScratchOutTopic'")
+      .source("start", "kafka-avro", TopicParamName -> s"'$AvroFromScratchInTopic'", SchemaVersionParamName -> versionParam(version))
+      .emptySink("end", "kafka-avro",
+        TopicParamName-> s"'$AvroFromScratchOutTopic'",
+        SinkOutputParamName -> s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('$AvroFromScratchOutTopic'))",
+        SchemaVersionParamName -> ""
+      )
 
   private def avroTypedProcess(fieldSelection: String) =
     EspProcessBuilder
@@ -119,11 +119,15 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .parallelism(1)
       .exceptionHandler()
       .source("start", "kafka-fixed-avro",
-        "topic" -> s"'$AvroTypedInTopic'",
-        "schema" -> s"'$RecordSchemaString'"
+        TopicParamName -> s"'$AvroTypedInTopic'",
+        FixedSchemaParamName -> s"'${FullName.stringSchema}'"
       )
       .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
-      .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroTypedOutTopic'")
+      .emptySink("end", "kafka-avro",
+        TopicParamName -> s"'$AvroTypedOutTopic'",
+        SinkOutputParamName -> "#input",
+        SchemaVersionParamName -> ""
+      )
 
   private def versionParam(version: Integer) =
     if (null != version) version.toString else ""
@@ -135,6 +139,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     assertThrows[Exception] {
       run(jsonProcess("#input.nestMap.notExist == ''")){}
     }
+
     assertThrows[Exception] {
       run(jsonProcess("#input.list1[0].notExist == ''")){}
     }
@@ -143,12 +148,12 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       "#input.nestMap.nestedField != 'dummy' and " +
       "#input.list1[0].listField != 'dummy' and " +
       "#input.list2[0] != 15")
+
     run(validJsonProcess) {
       val consumer = kafkaClient.createConsumer()
       val processed = consumer.consume(JsonOutTopic).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
       processed.map(parseJson) shouldEqual List(parseJson(givenMatchingJsonObj))
     }
-
   }
 
   test("should read avro object from kafka, filter and save it to kafka") {
@@ -178,7 +183,9 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     assertThrows[Exception] {
       run(avroTypedProcess("asdf")){}
     }
+
     val validAvroTypedProcess = avroTypedProcess("first")
+
     run(validAvroTypedProcess) {
       val processed = consumeOneAvroMessage(AvroTypedOutTopic)
       processed shouldEqual List(givenMatchingAvroObj)
@@ -198,7 +205,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
     val bizarreBranchName = "?branch .2-"
     val sanitizedBizarreBranchName = "_branch__2_"
-
 
     val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
         GraphBuilder
@@ -287,7 +293,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     val serializedObj = valueSerializer.serialize(topic, obj)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj)
   }
-
 }
 
 object MockSchemaRegistry extends Serializable {
@@ -301,25 +306,13 @@ object MockSchemaRegistry extends Serializable {
   val AvroTypedInTopic: String = "name.avro.typed.input"
   val AvroTypedOutTopic: String = "name.avro.typed.output"
 
-  val RecordSchemaString: String =
-    """{
-      |  "type": "record",
-      |  "namespace": "pl.touk.nussknacker.engine.avro",
-      |  "name": "FullName",
-      |  "fields": [
-      |    { "name": "first", "type": "string" },
-      |    { "name": "last", "type": "string" }
-      |  ]
-      |}
-    """.stripMargin
-
   val confluentSchemaRegistryMockClient: ConfluentSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
-    .register(AvroInTopic, RecordSchemaString, 1, isKey = false)
-    .register(AvroOutTopic, RecordSchemaString, 1, isKey = false)
-    .register(AvroFromScratchInTopic, RecordSchemaString, 1, isKey = false)
-    .register(AvroFromScratchOutTopic, RecordSchemaString, 1, isKey = false)
-    .register(AvroTypedInTopic, RecordSchemaString, 1, isKey = false)
-    .register(AvroTypedOutTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroInTopic, FullName.schema, 1, isKey = false)
+    .register(AvroOutTopic, FullName.schema, 1, isKey = false)
+    .register(AvroFromScratchInTopic, FullName.schema, 1, isKey = false)
+    .register(AvroFromScratchOutTopic, FullName.schema, 1, isKey = false)
+    .register(AvroTypedInTopic, FullName.schema, 1, isKey = false)
+    .register(AvroTypedOutTopic, FullName.schema, 1, isKey = false)
     .build
 
   object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {

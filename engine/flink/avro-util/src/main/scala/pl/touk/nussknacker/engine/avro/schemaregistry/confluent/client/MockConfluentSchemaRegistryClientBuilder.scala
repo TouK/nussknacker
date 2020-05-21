@@ -15,11 +15,6 @@ class MockConfluentSchemaRegistryClientBuilder {
     this
   }
 
-  def register(topic: String, schema: String, version: Int, isKey: Boolean): MockConfluentSchemaRegistryClientBuilder = {
-    registry.append(RegistryItem(topic,schema, version, isKey))
-    this
-  }
-
   private def register(mockSchemaRegistry: MockSchemaRegistryClient, item: RegistryItem): Int = {
     val subject = item.topic + "-" + (if (item.isKey) "key" else "value")
     mockSchemaRegistry.register(subject, item.schema, item.version, item.id)
