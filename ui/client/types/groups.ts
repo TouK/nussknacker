@@ -1,8 +1,10 @@
 import {NodeId, NodeType, LayoutData} from "./index"
 
-export type GroupNodeType = NodeType & {
-  nodes: NodeType[],
+export type GroupNodeType = {
+  id: GroupId,
   ids: NodeId[],
+  nodes: NodeType[],
+  type: "_group",
 }
 
 export type GroupType = {
@@ -12,4 +14,5 @@ export type GroupType = {
   layoutData?: LayoutData,
   expanded?: boolean,
 }
+
 export type GroupId = GroupType["id"]

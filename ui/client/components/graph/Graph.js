@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import * as dagre from "dagre"
 import * as joint from "jointjs"
 import "jointjs/dist/joint.css"
@@ -17,6 +18,7 @@ import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
+import {drawGraph} from "./GraphMethodsTS/drawGraph"
 
 export class Graph extends React.Component {
 
@@ -228,68 +230,7 @@ export class Graph extends React.Component {
     }
   }
 
-  time = (start, name) => {
-    const now = window.performance.now()
-    //uncomment to track performance...
-    //console.log("time: ", name, now - start)
-    return now
-  }
-
-  drawGraph = (process, layout, processCounts, processDefinitionData, expandedGroups) => {
-    this.redrawing = true
-    //leaving performance debug for now, as there is still room for improvement:
-    //handling processCounts without need of full redraw
-    const performance = window.performance
-    let t = performance.now()
-
-    const nodesWithGroups = NodeUtils.nodesFromProcess(process, expandedGroups)
-    const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
-    t = this.time(t, "start")
-
-    const nodes = _.map(nodesWithGroups, (n) => {
-      return EspNode.makeElement(n, processCounts[n.id], processDefinitionData.nodesConfig || {})
-    })
-
-    t = this.time(t, "nodes")
-
-    const edges = _.map(edgesWithGroups, (e) => EspNode.makeLink(e))
-    t = this.time(t, "links")
-
-    const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups).map(expandedGroup => ({
-      group: expandedGroup,
-      rect: EspNode.boundingRect(nodes, expandedGroup, layout, NodeUtils.createGroupNode(nodesWithGroups, expandedGroup)),
-    }))
-
-    t = this.time(t, "bounding")
-
-    const cells = boundingRects.map(g => g.rect).concat(nodes.concat(edges))
-
-    const newCells = _.filter(cells, cell => !this.graph.getCell(cell.id))
-    const deletedCells = _.filter(this.graph.getCells(), oldCell => !_.find(cells, cell => cell.id === oldCell.id))
-    const changedCells = _.filter(cells, cell => {
-      const old = this.graph.getCell(cell.id)
-      //TODO: some different ways of comparing?
-      return old && JSON.stringify(old.get("definitionToCompare")) !== JSON.stringify(cell.get("definitionToCompare"))
-    })
-
-    t = this.time(t, "compute")
-
-    if (newCells.length + deletedCells.length + changedCells.length > 3) {
-      this.graph.resetCells(cells)
-    } else {
-      this.graph.removeCells(deletedCells)
-      this._updateChangedCells(changedCells)
-      this.graph.addCells(newCells)
-    }
-    t = this.time(t, "redraw")
-
-    this._layout(layout)
-    this.time(t, "layout")
-
-    _.forEach(boundingRects, rect => rect.rect.toBack())
-
-    this.redrawing = false
-  }
+  drawGraph = drawGraph.bind(this)
 
   _layout(layout) {
     if (_.isEmpty(layout)) {
@@ -373,7 +314,7 @@ export class Graph extends React.Component {
       return {id: el.id, position: pos}
     })
 
-    if (!_.isEqual(this.props.layout, newLayout) && !this.props.readonly) {
+    if (!_.isEqual(this.props.layout, newLayout)) {
       this.props.actions && this.props.actions.layoutChanged(newLayout)
     }
   }
