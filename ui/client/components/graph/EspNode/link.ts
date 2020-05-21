@@ -2,8 +2,9 @@
 import NodeUtils from "../NodeUtils"
 import * as joint from "jointjs"
 import {rectWidth} from "./misc"
+import {Edge} from "../../../types"
 
-export function makeLink(edge) {
+export function makeLink(edge: Edge) {
   const label = NodeUtils.edgeLabel(edge)
 
   const labels = []

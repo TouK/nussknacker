@@ -9,13 +9,10 @@ import {rectWidth, rectHeight, summaryCountConfig, maxLineLength, maxLineCount} 
 import {getIconHref} from "./getIconHref"
 import {EspNodeShape} from "./esp"
 
-function getBodyContent(node) {
-  const bodyContent = node.id || ""
-
+function getBodyContent(bodyContent = ""): { text: string, multiline?: boolean } {
   if (bodyContent.length <= maxLineLength) {
     return {
       text: bodyContent,
-      multiline: false,
     }
   }
 
@@ -24,7 +21,6 @@ function getBodyContent(node) {
   if (splitContent[0].length > maxLineLength) {
     return {
       text: `${bodyContent.slice(0, maxLineLength)}...`,
-      multiline: false,
     }
   }
 
@@ -83,7 +79,7 @@ function getTestResultsSummaryAttr(processCounts: ProcessCounts, width, testResu
 
 export function makeElement(node, processCounts: ProcessCounts, nodesSettings) {
   const description = get(node.additionalFields, "description", null)
-  const {text: bodyContent, multiline} = getBodyContent(node)
+  const {text: bodyContent} = getBodyContent(node.id)
   const hasCounts = !isEmpty(processCounts)
   const width = rectWidth
   const height = rectHeight
