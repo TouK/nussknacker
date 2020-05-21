@@ -160,7 +160,8 @@
       "error",
       "double",
       {
-        "avoidEscape": true
+        "avoidEscape": true,
+        "allowTemplateLiterals": true
       }
     ],
     "jsx-quotes": [
@@ -181,7 +182,9 @@
     "import/no-unresolved": [
       "error",
       {
-        "ignore": ["!raw-loader!"]
+        "ignore": [
+          "!raw-loader!"
+        ]
       }
     ],
     "i18next/no-literal-string": [

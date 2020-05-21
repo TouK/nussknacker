@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import React, {createContext, PropsWithChildren, useContext} from "react"
-import Graph from "./Graph"
+import {Graph} from "./Graph"
 
 type GraphContextType = () => Graph
 
