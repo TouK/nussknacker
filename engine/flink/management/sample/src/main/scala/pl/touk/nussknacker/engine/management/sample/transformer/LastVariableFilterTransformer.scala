@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
 import org.apache.flink.streaming.api.scala._
-import pl.touk.nussknacker.engine.api.context.transformation.GenericNodeTransformation.NodeTransformationDefinition
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedLazyParameter, FailedToDefineParameter, FinalResults, NextParameters, NodeDependencyValue, SingleInputGenericNodeTransformation, WithExplicitMethodToInvokeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedLazyParameter, FailedToDefineParameter, NodeDependencyValue, SingleInputGenericNodeTransformation, WithExplicitMethodToInvokeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
@@ -27,11 +26,13 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with
   private def conditionParameter(previousType: TypingResult) = Parameter(conditionParameterName, Typed[Boolean])
     .copy(isLazyParameter = true, additionalVariables = Map("previous" -> previousType))
 
+  type State = Nothing
+
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue]): NodeTransformationDefinition = {
-    case Nil => NextParameters(valueParameter::Nil)
-    case (`valueParameterName`, DefinedLazyParameter(typ)) :: Nil => NextParameters(conditionParameter(typ)::Nil)
-    case (`valueParameterName`, FailedToDefineParameter) :: Nil => NextParameters(conditionParameter(Unknown)::Nil)
-    case (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil => FinalResults(context)
+    case TransformationStep(Nil, _) => NextParameters(valueParameter::Nil)
+    case TransformationStep((`valueParameterName`, DefinedLazyParameter(typ)) :: Nil, _) => NextParameters(conditionParameter(typ)::Nil)
+    case TransformationStep((`valueParameterName`, FailedToDefineParameter) :: Nil, _) => NextParameters(conditionParameter(Unknown)::Nil)
+    case TransformationStep((`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) => FinalResults(context)
   }
 
   override def initialParameters: List[Parameter] = List(valueParameter, conditionParameter(Unknown))

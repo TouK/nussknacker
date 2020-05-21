@@ -3,11 +3,10 @@ package pl.touk.nussknacker.engine.compile.nodevalidation
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.transformation.GenericNodeTransformation.NodeTransformationDefinition
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, WrongParameters}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, DefinedParameter, FailedToDefineParameter, FinalResults, NextParameters, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, DefinedParameter, FailedToDefineParameter, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.ProcessObjectFactory
@@ -35,33 +34,34 @@ class NodeTransformerValidator(modelData: ModelData) {
                    parametersFromNode: List[evaluatedparam.Parameter],
                    validationContext: ValidationContext)(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
 
-    val definition = transformer.contextTransformation(validationContext, Nil)
-    val validation = new NodeInstanceValidation(definition, parametersFromNode, validationContext)
-    validation.evaluatePart(Nil, Nil)
+    val validation = new NodeInstanceValidation(transformer, parametersFromNode, validationContext)
+    validation.evaluatePart(Nil, None, Nil)
   }
 
 
-  class NodeInstanceValidation(definition: NodeTransformationDefinition,
+  class NodeInstanceValidation(tranformer: SingleInputGenericNodeTransformation[_],
                                parametersFromNode: List[evaluatedparam.Parameter],
                                validationContext: ValidationContext )(implicit nodeId: NodeId, metaData: MetaData) {
 
+    private val definition = tranformer.contextTransformation(validationContext, Nil)
+
     @tailrec
-    final def evaluatePart(evaluatedSoFar: List[(Parameter, DefinedParameter)],
+    final def evaluatePart(evaluatedSoFar: List[(Parameter, DefinedParameter)], stateForFar: Option[tranformer.State],
                       errors: List[ProcessCompilationError]): ValidatedNel[ProcessCompilationError, TransformationResult] = {
-      definition.lift.apply(evaluatedSoFar.map(a => a.copy(_1 = a._1.name))) match {
+      definition.lift.apply(tranformer.TransformationStep(evaluatedSoFar.map(a => a.copy(_1 = a._1.name)), stateForFar)) match {
         case None =>
           //FIXME: proper exception
           Invalid(NonEmptyList.of(WrongParameters(Set.empty, evaluatedSoFar.map(_._1.name).toSet)))
         case Some(nextPart) =>
           val errorsCombined = errors ++ nextPart.errors
           nextPart match {
-            case FinalResults(finalContext, _) =>
+            case tranformer.FinalResults(finalContext, _) =>
               Valid(TransformationResult(errors, evaluatedSoFar.map(_._1), finalContext))
-            case NextParameters(newParameters, _) =>
+            case tranformer.NextParameters(newParameters, _, state) =>
               val (parameterEvaluationErrors, newEvaluatedParameters) = newParameters
                 .map(prepareParameter(parametersFromNode)).unzip
               val parametersCombined = evaluatedSoFar ++ newParameters.zip(newEvaluatedParameters)
-              evaluatePart(parametersCombined, errorsCombined ++ parameterEvaluationErrors.flatten)
+              evaluatePart(parametersCombined, state, errorsCombined ++ parameterEvaluationErrors.flatten)
           }
       }
     }
