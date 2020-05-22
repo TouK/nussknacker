@@ -89,9 +89,9 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
 
 }
 
-@JsonCodec(encodeOnly = true) case class NodeValidationResult(validationErrors: List[NodeValidationError])
+@JsonCodec case class NodeValidationResult(validationErrors: List[NodeValidationError])
 
-case class NodeValidationRequest(nodeData: NodeData,
+@JsonCodec(encodeOnly = true) case class NodeValidationRequest(nodeData: NodeData,
                                             processProperties: ProcessProperties,
                                             variableTypes: Map[String, TypingResult])
 

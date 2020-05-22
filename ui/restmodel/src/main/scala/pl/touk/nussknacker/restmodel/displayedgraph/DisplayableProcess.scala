@@ -51,7 +51,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
                                         exceptionHandler: ExceptionHandlerRef,
                                         isSubprocess: Boolean = false,
                                         additionalFields: Option[ProcessAdditionalFields] = None,
-                                        subprocessVersions: Map[String, Long]) {
+                                        subprocessVersions: Map[String, Long] = Map.empty) {
 
   def toMetaData(id: String): MetaData = MetaData(
     id = id,
