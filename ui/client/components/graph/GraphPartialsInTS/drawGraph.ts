@@ -3,8 +3,10 @@ import NodeUtils from "../NodeUtils"
 import {makeLink, makeElement, boundingRect} from "../EspNode"
 import {Process, GroupId, ProcessDefinitionData} from "../../../types"
 import {Layout} from "../../../actions/nk"
-import {Graph} from "../Graph"
 import {ProcessCounts} from "../../../reducers/graph"
+import {updateLayout} from "./updateLayout"
+import {redraw} from "./redraw"
+import {dia} from "jointjs"
 
 export function drawGraph(
   process: Process,
@@ -13,9 +15,11 @@ export function drawGraph(
   processDefinitionData: ProcessDefinitionData,
   expandedGroups: GroupId[],
 ) {
-  if (!(this instanceof Graph)) {
-    throw "bind drawGraphFn to Graph instance!"
-  }
+  const graph: dia.Graph = this.graph
+  const directedLayout = this.directedLayout
+  const _updateLayout = updateLayout(graph, directedLayout)
+  const _redraw = redraw(graph)
+
   performance.mark("redrawing start")
   this.redrawing = true
 
@@ -29,27 +33,21 @@ export function drawGraph(
 
   performance.mark("nodes, links & bounding")
 
-  const cells = [].concat(boundingRects, nodes, edges)
+  const cells = [...boundingRects, ...nodes, ...edges]
 
-  const newCells = cells.filter(cell => !this.graph.getCell(cell.id))
-  const deletedCells = this.graph.getCells().filter(oldCell => !cells.find(cell => cell.id === oldCell.id))
+  const newCells = cells.filter(cell => !graph.getCell(cell.id))
+  const deletedCells = graph.getCells().filter(oldCell => !cells.find(cell => cell.id === oldCell.id))
   const changedCells = cells.filter(cell => {
-    const old = this.graph.getCell(cell.id)
+    const old = graph.getCell(cell.id)
     //TODO: some different ways of comparing?
     return old && JSON.stringify(old.get("definitionToCompare")) !== JSON.stringify(cell.get("definitionToCompare"))
   })
   performance.mark("compute")
 
-  if (newCells.length + deletedCells.length + changedCells.length > 3) {
-    this.graph.resetCells(cells)
-  } else {
-    this.graph.removeCells(deletedCells)
-    this._updateChangedCells(changedCells)
-    this.graph.addCells(newCells)
-  }
+  _redraw(newCells, deletedCells, changedCells, cells)
   performance.mark("redraw")
 
-  this._layout(layout)
+  _updateLayout(layout)
   performance.mark("layout")
 
   boundingRects.forEach(rect => rect.toBack())

@@ -1,5 +1,4 @@
 /* eslint-disable i18next/no-literal-string */
-import * as dagre from "dagre"
 import * as joint from "jointjs"
 import "jointjs/dist/joint.css"
 import _, {cloneDeep} from "lodash"
@@ -18,7 +17,9 @@ import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
-import {drawGraph} from "./GraphMethodsTS/drawGraph"
+import {drawGraph} from "./GraphPartialsInTS/drawGraph"
+import {directedLayout} from "./GraphPartialsInTS/directedLayout"
+import {isBackgroundObject} from "./GraphPartialsInTS/isBackgroundObject"
 
 export class Graph extends React.Component {
 
@@ -107,24 +108,7 @@ export class Graph extends React.Component {
     })
   }
 
-  directedLayout() {
-    //TODO `layout` method can take graph or cells
-    //when joint.layout.DirectedGraph.layout(this.graph) is used here
-    //  then `toFront()` method works as expected but there are issues with group fold/unfold
-    //when joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')) is used here
-    // then `toFront()` method does not work at all, but group fold/unfold works just fine
-    joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get("backgroundObject")), {
-      graphlib: dagre.graphlib,
-      dagre: dagre,
-      nodeSep: 0,
-      edgeSep: 0,
-      rankSep: 75,
-      minLen: 0,
-      rankDir: "TB",
-    })
-    this.changeLayoutIfNeeded()
-    this.fitSmallAndLargeGraphs(this.panAndZoom)
-  }
+  directedLayout = directedLayout.bind(this)
 
   zoomIn() {
     this.panAndZoom.zoomIn()
@@ -161,7 +145,7 @@ export class Graph extends React.Component {
         } else if (model instanceof joint.dia.Link) {
           // Disable the default vertex add and label move functionality on pointerdown.
           return {vertexAdd: false, labelMove: false}
-        } else if (model.get && model.get("backgroundObject")) {
+        } else if (model.get && isBackgroundObject(model)) {
           //Disable moving group rect
           return false
         } else {
@@ -232,30 +216,6 @@ export class Graph extends React.Component {
 
   drawGraph = drawGraph.bind(this)
 
-  _layout(layout) {
-    if (_.isEmpty(layout)) {
-      this.directedLayout()
-    } else {
-      _.forEach(layout, el => {
-        const cell = this.graph.getCell(el.id)
-        if (cell && JSON.stringify(cell.get("position")) !== JSON.stringify(el.position)) cell.set("position", el.position)
-      })
-    }
-  }
-
-  _updateChangedCells(changedCells) {
-    _.forEach(changedCells, cell => {
-      const cellToRemove = this.graph.getCell(cell.id)
-      const links = cellToRemove.isElement ? this.graph.getConnectedLinks(cellToRemove) : []
-      cellToRemove.remove()
-      this.graph.addCell(cell)
-      _.forEach(links, l => {
-        l.remove()
-        this.graph.addCell(l)
-      })
-    })
-  }
-
   _prepareContentForExport = () => {
     const {options} = this.processGraphPaper
     this._exportGraphOptions = cloneDeep(options)
@@ -309,7 +269,7 @@ export class Graph extends React.Component {
   }
 
   changeLayoutIfNeeded = () => {
-    let newLayout = this.graph.getElements().filter(el => !el.get("backgroundObject")).map(el => {
+    let newLayout = this.graph.getElements().filter(el => !isBackgroundObject(el)).map(el => {
       const pos = el.get("position")
       return {id: el.id, position: pos}
     })
@@ -430,7 +390,7 @@ export class Graph extends React.Component {
 
   //needed for proper switch/filter label handling
   showLabelOnHover(model) {
-    if (model.get && !model.get("backgroundObject")) {
+    if (model.get && !isBackgroundObject(model)) {
       model.toFront()
     }
     return model
@@ -438,7 +398,7 @@ export class Graph extends React.Component {
 
   //background is below normal node, we cannot use normal hover/mouseover/mouseout...
   showBackgroundIcon(model) {
-    if (model.get && model.get("backgroundObject")) {
+    if (model.get && isBackgroundObject(model)) {
       const el = this.processGraphPaper.findViewByModel(model).vel
       el.addClass("nodeIconForceHoverBox")
       el.removeClass("nodeIconForceNoHoverBox")
@@ -447,7 +407,7 @@ export class Graph extends React.Component {
 
   //background is below normal node, we cannot use normal hover/mouseover/mouseout...
   hideBackgroundIcon(model, evt) {
-    if (model.get && model.get("backgroundObject")) {
+    if (model.get && isBackgroundObject(model)) {
       if (!this.checkIfCursorInRect(model, evt)) {
         const el = this.processGraphPaper.findViewByModel(model).vel
         el.removeClass("nodeIconForceHoverBox")
