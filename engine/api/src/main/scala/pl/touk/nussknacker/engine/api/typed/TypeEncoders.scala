@@ -1,43 +1,125 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import io.circe.{Encoder, Json, JsonObject}
 import io.circe.Json._
+import io.circe._
+import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
+import pl.touk.nussknacker.engine.api.typed.TypingType.TypingType
 import pl.touk.nussknacker.engine.api.typed.typing._
 
+import scala.util.Try
+
+//TODO: refactor way of encoding to easier handle decoding.
 object TypeEncoders {
 
-  private def encodeTypedClass(ref: TypedClass): Json = obj(
+  private[typed] val typeField = "type"
+
+  private def encodeTypedClass(ref: TypedClass): JsonObject = JsonObject(
     "refClazzName" -> fromString(ref.klass.getName),
     "params" -> fromValues(ref.params.map(encodeTypingResult))
   )
 
-  //TODO: maybe we want to treat Unknown differently also on FE?
-  private val encodeUnknown = obj("refClazzName" -> fromString(classOf[Object].getName), "params" -> fromValues(Nil))
+  private val encodeUnknown = JsonObject("refClazzName" -> fromString(classOf[Object].getName),
+    "params" -> fromValues(Nil))
 
-  private def encodeTypingResult(result: TypingResult): Json = result match {
+  private def encodeTypingResult(result: TypingResult): Json = fromJsonObject((result match {
     case single: SingleTypingResult => encodeSingleTypingResult(single)
     case typing.Unknown => encodeUnknown
     case TypedUnion(classes) =>
-      fromFields(("union" -> fromValues(classes.map(encodeTypingResult).toList))::Nil)
-  }
+      JsonObject("union" -> fromValues(classes.map(encodeTypingResult).toList))
+  }).+:(typeField -> fromString(TypingType.forType(result).toString)))
 
-  private def encodeSingleTypingResult(result: SingleTypingResult): Json = result match {
+  private def encodeSingleTypingResult(result: SingleTypingResult): JsonObject = result match {
     case TypedObjectTypingResult(fields, objType) =>
-      val objTypeEncoded = encodeTypedClass(objType).asObject.getOrElse(JsonObject.empty)
+      val objTypeEncoded = encodeTypedClass(objType)
       val fieldsEncoded = "fields" -> fromFields(fields.mapValues(encodeTypingResult).toList)
-      fromJsonObject(objTypeEncoded.+:(fieldsEncoded))
+      objTypeEncoded.+:(fieldsEncoded)
     case dict: TypedDict =>
-      obj("dict" -> obj(
+      JsonObject("dict" -> obj(
         "id" -> fromString(dict.dictId),
-        "valueType" -> encodeSingleTypingResult(dict.valueType)))
+        "valueType" -> encodeTypingResult(dict.valueType)))
     case TypedTaggedValue(underlying, tag) =>
-      val objTypeEncoded = encodeSingleTypingResult(underlying).asObject.getOrElse(JsonObject.empty)
+      val objTypeEncoded = encodeTypingResult(underlying).asObject.getOrElse(JsonObject.empty)
       val tagEncoded = "tag" -> fromString(tag)
-      fromJsonObject(objTypeEncoded.+:(tagEncoded))
+      objTypeEncoded.+:(tagEncoded)
     case cl: TypedClass => encodeTypedClass(cl)
   }
 
   implicit val typingResultEncoder: Encoder[TypingResult] = Encoder.instance(encodeTypingResult)
 
+}
+
+/*
+  We don't just pass classLoader here, as it won't handle e.g. primitives out of the box.
+  Primitives can be handled by ClassUtils from spring, but we don't want to have explicit dependency in this module
+  See NodeResources in UI for usage
+ */
+class TypingResultDecoder(loadClass: String => Class[_]) {
+
+  implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
+    hcursor.downField(typeField).as[TypingType].flatMap {
+      case TypingType.Unknown => Right(Unknown)
+      case TypingType.TypedUnion => typedUnion(hcursor)
+      case TypingType.TypedDict => typedDict(hcursor)
+      case TypingType.TypedTaggedValue => typedTaggedValue(hcursor)
+      case TypingType.TypedObjectTypingResult => typedObjectTypingResult(hcursor)
+      case TypingType.TypedClass => typedClass(hcursor)
+    }
+  }
+
+  private implicit val singleTypingResult: Decoder[SingleTypingResult] = decodeTypingResults.emap {
+    case e:SingleTypingResult => Right(e)
+    case e => Left(s"$e is not SingleTypingResult")
+  }
+
+  private def typedTaggedValue(obj: HCursor): Decoder.Result[TypingResult] = for {
+    valueClass <- typedClass(obj)
+    tag <- obj.downField("tag").as[String]
+  } yield TypedTaggedValue(valueClass, tag)
+
+  private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
+    valueClass <- typedClass(obj)
+    fields <- obj.downField("fields").as[Map[String, TypingResult]]
+  } yield TypedObjectTypingResult(fields, valueClass)
+
+  private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {
+    val dict = obj.downField("dict")
+    for {
+      id <- dict.downField("id").as[String]
+      valueType <- dict.downField("valueType").as[SingleTypingResult]
+    } yield TypedDict(id, valueType)
+  }
+
+  private def typedUnion(obj: HCursor): Decoder.Result[TypingResult] = {
+    obj.downField("union").as[Set[SingleTypingResult]].map(TypedUnion)
+  }
+
+  private def typedClass(obj: HCursor): Decoder.Result[TypedClass] = {
+    for {
+      refClazzName <- obj.downField("refClazzName").as[String]
+      clazz <- Try(loadClass(refClazzName))
+        .fold(thr => Left(DecodingFailure(s"Failed to load class $refClazzName with ${thr.getMessage}", obj.history)), Right(_))
+      params <- obj.downField("params").as[List[TypingResult]]
+    } yield TypedClass(clazz, params)
+  }
+
+
+}
+
+object TypingType extends Enumeration {
+
+  implicit val decoder: Decoder[TypingType.Value] = Decoder.enumDecoder(TypingType)
+
+  type TypingType = Value
+
+  val TypedUnion, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedClass, Unknown = Value
+
+  def forType(typingResult: TypingResult): TypingType.Value = typingResult match {
+    case _: TypedClass => TypedClass
+    case _: TypedUnion => TypedUnion
+    case _: TypedDict => TypedDict
+    case _: TypedObjectTypingResult => TypedObjectTypingResult
+    case _: TypedTaggedValue => TypedTaggedValue
+    case typing.Unknown => Unknown
+  }
 }
 

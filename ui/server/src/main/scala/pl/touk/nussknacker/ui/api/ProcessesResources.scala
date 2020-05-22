@@ -18,7 +18,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
-import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
@@ -30,7 +29,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessShapeFetchStrategy, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessShapeFetchStrategy, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
@@ -299,7 +298,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               }
             }
           }
-        } ~ new NodesResources(processRepository, new AdditionalInfoProvider(typeToConfig)).securedRoute
+        } ~ new NodesResources(processRepository, typeToConfig.mapValues(_.modelData)).securedRoute
       }
   }
 

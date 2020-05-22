@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val nodeRoute = new NodesResources(processRepository, new AdditionalInfoProvider(typeToConfig))
+  private val nodeRoute = new NodesResources(processRepository, typeToConfig.mapValues(_.modelData))
 
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {

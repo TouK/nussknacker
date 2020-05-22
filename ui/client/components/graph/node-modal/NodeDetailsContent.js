@@ -58,15 +58,29 @@ export class NodeDetailsContent extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (!_.isEqual(this.props.node, nextProps.node)) {
+    if (!_.isEqual(this.props.node, nextProps.node) || !_.isEqual(this.props.nodeValidationErrors, nextProps.nodeValidationErrors)) {
       this.initalizeWithProps(nextProps)
-      this.setState({editedNode: nextProps.node})
+      let nextPropsNode = nextProps.node
+      this.setState({editedNode: nextPropsNode})
+      this.updateNodeDataIfNeeded(nextPropsNode)
+    }
+  }
+
+  updateNodeDataIfNeeded(currentNode) {
+    if (this.props.isEditMode) {
+      this.props.actions.updateNodeData(this.props.processId,
+        this.props.variableTypes,
+        currentNode,
+        this.props.processProperties)
     }
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (!_.isEqual(prevProps.node, this.props.node) || !_.isEqual(prevProps.testResults, this.props.testResults)) {
       this.selectTestResults()
+    }
+    if (!_.isEqual(prevState.editedNode, this.state.editedNode)) {
+      this.updateNodeDataIfNeeded(this.state.editedNode)
     }
   }
 
@@ -681,7 +695,7 @@ export class NodeDetailsContent extends React.Component {
 
   render() {
     const nodeClass = classNames("node-table", {"node-editable": this.props.isEditMode})
-    const fieldErrors = this.fieldErrors(this.props.nodeErrors || [])
+    const fieldErrors = this.fieldErrors(this.props.nodeErrors?.concat(this.props.nodeValidationErrors || []) || [])
     const otherErrors = this.props.nodeErrors ? this.props.nodeErrors.filter(error => !fieldErrors.includes(error)) : []
     return (
       <div className={nodeClass}>
@@ -701,13 +715,17 @@ export class NodeDetailsContent extends React.Component {
   }
 }
 
-function mapState(state) {
+function mapState(state, props) {
+  //NOTE: we have to use mainProcess carefully, as we may display details of subprocess node, in this case
+  //process is *different* than subprocess itself
+  const mainProcess = state.graphReducer.processToDisplay
   return {
     additionalPropertiesConfig: _.get(state.settings, "processDefinitionData.additionalPropertiesConfig") || {},
     processDefinitionData: state.settings.processDefinitionData || {},
-    //TODO: get rid of this. We should not rely on process from graphReducer, as we may display subprocess node!
-    //currently it's used only to figure out processingType, so it's not so harmful
-    processId: state.graphReducer.processToDisplay.id,
+    processId: mainProcess.id,
+    processProperties: mainProcess.properties,
+    variableTypes: mainProcess.variableTypes[props.node.id],
+    nodeValidationErrors: state.nodeDetails.validationErrors,
   }
 }
 
