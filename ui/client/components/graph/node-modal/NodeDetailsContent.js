@@ -695,8 +695,8 @@ export class NodeDetailsContent extends React.Component {
 
   render() {
     const nodeClass = classNames("node-table", {"node-editable": this.props.isEditMode})
-    const fieldErrors = this.fieldErrors(this.props.nodeErrors?.concat(this.props.nodeValidationErrors || []) || [])
-    const otherErrors = this.props.nodeErrors ? this.props.nodeErrors.filter(error => !fieldErrors.includes(error)) : []
+    const fieldErrors = this.fieldErrors(this.props.currentErrors || [])
+    const otherErrors = this.props.currentErrors ? this.props.currentErrors.filter(error => !fieldErrors.includes(error)) : []
     return (
       <div className={nodeClass}>
         <NodeErrors errors={otherErrors} message={"Node has errors"}/>
@@ -725,7 +725,7 @@ function mapState(state, props) {
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
     variableTypes: mainProcess.variableTypes[props.node.id],
-    nodeValidationErrors: state.nodeDetails.validationErrors,
+    currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : this.props.nodeErrors,
   }
 }
 

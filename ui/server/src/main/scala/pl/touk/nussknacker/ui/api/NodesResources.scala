@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.nodevalidation.NodeDataValidator
+import pl.touk.nussknacker.engine.compile.nodevalidation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
@@ -22,7 +22,6 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
-import pl.touk.nussknacker.ui.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 import io.circe.generic.semiauto.deriveDecoder
 import org.springframework.util.ClassUtils
@@ -64,8 +63,10 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val globals = modelData.processDefinition.expressionConfig.globalVariables.mapValues(_.returnType)
               val validationContext = ValidationContext(nodeData.variableTypes, globals, None)
               implicit val metaData: MetaData = nodeData.processProperties.toMetaData(process.id)
-              val baseResult = NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext)
-              NodeValidationResult(baseResult.map(PrettyValidationErrors.formatErrorMessage))
+              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext) match {
+                case ValidationNotPerformed => NodeValidationResult(Nil, performed = false)
+                case ValidationPerformed(errors) => NodeValidationResult(errors.map(PrettyValidationErrors.formatErrorMessage), performed = true)
+              }
             }
           }
         }
@@ -89,7 +90,7 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
 
 }
 
-@JsonCodec case class NodeValidationResult(validationErrors: List[NodeValidationError])
+@JsonCodec case class NodeValidationResult(validationErrors: List[NodeValidationError], performed: Boolean)
 
 @JsonCodec(encodeOnly = true) case class NodeValidationRequest(nodeData: NodeData,
                                             processProperties: ProcessProperties,

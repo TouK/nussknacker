@@ -15,13 +15,19 @@ import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData}
  */
 trait NodeDataValidator[T<:NodeData] {
 
-  def compile(nodeData: T, validationContext: ValidationContext)(implicit metaData: MetaData): List[ProcessCompilationError]
+  def compile(nodeData: T, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse
 
 }
 
+sealed trait ValidationResponse
+
+case class ValidationPerformed(errors: List[ProcessCompilationError]) extends ValidationResponse
+
+case object ValidationNotPerformed extends ValidationResponse
+
 object NodeDataValidator {
 
-  def validate(nodeData: NodeData, modelData: ModelData, validationContext: ValidationContext)(implicit metaData: MetaData): List[ProcessCompilationError] = {
+  def validate(nodeData: NodeData, modelData: ModelData, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     nodeData match {
       case a:Filter => new FilterValidator(modelData).compile(a, validationContext)
       case a => EmptyValidator.compile(a, validationContext)
@@ -40,14 +46,14 @@ class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
       modelData.processDefinition.settings
     )
 
-  override def compile(nodeData: Filter, validationContext: ValidationContext)(implicit metaData: MetaData): List[ProcessCompilationError] = {
+  override def compile(nodeData: Filter, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val validation: ValidatedNel[ProcessCompilationError, _] =
       expressionCompiler.compile(nodeData.expression, Some(NodeTypingInfo.DefaultExpressionId), validationContext, Typed[Boolean])(NodeId(nodeData.id))
-    validation.fold(_.toList, _ => Nil)
+    ValidationPerformed(validation.fold(_.toList, _ => Nil))
   }
 }
 
 object EmptyValidator extends NodeDataValidator[NodeData] {
-  override def compile(nodeData: NodeData, validationContext: ValidationContext)(implicit metaData: MetaData): List[ProcessCompilationError] = Nil
+  override def compile(nodeData: NodeData, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = ValidationNotPerformed
 }
 

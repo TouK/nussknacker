@@ -4,6 +4,7 @@ import {ValidationContext, ValidationError} from "../actions/nk"
 export type NodeDetailsState = {
   parameters?: Map<string, ValidationContext>,
   validationErrors?: ValidationError[],
+  validationPerformed?: boolean,
 }
 
 const initialState: NodeDetailsState = {
@@ -17,6 +18,7 @@ export function reducer(state: NodeDetailsState = initialState, action: Action):
         ...state,
         parameters: validationData.parameters,
         validationErrors: validationData.validationErrors,
+        validationPerformed: validationData.validationPerformed,
       }
     }
     default:
