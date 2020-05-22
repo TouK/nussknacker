@@ -108,7 +108,7 @@ object BestEffortAvroEncoder {
           encode(value, fieldSchema).map(fieldName -> _)
         }
     }.toList.sequence.map { values =>
-      var builder = new GenericRecordBuilder(schema)
+      val builder = new GenericRecordBuilder(schema)
       values.foreach {
         case (k, v) => builder.set(k, v)
       }
@@ -141,10 +141,9 @@ object BestEffortAvroEncoder {
     }
   }
 
-  private def error(str: String) = Invalid(NonEmptyList.of(str))
+  private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
 
   private def encodeString(str: String): Utf8 = {
     new Utf8(str)
   }
-
 }

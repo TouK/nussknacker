@@ -52,7 +52,4 @@ object AvroUtils {
 
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
-
-  def createRecord(schema: Schema, data: Map[String, Any]): GenericData.Record =
-    BestEffortAvroEncoder.encodeRecordOrError(data, schema)
 }

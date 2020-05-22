@@ -9,6 +9,7 @@ import org.apache.flink.api.scala._
 import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
@@ -92,10 +93,10 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpec {
   }
 
   private def createRecordV1(first: String, last: String): GenericData.Record =
-    AvroUtils.createRecord(FullNameV1.schema, Map("first" -> first, "last" -> last))
+    BestEffortAvroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last), FullNameV1.schema)
 
   private def createRecordV2(first: String, last: String, middle: String): GenericData.Record =
-    AvroUtils.createRecord(FullNameV2.schema, Map("first" -> first, "last" -> last, "middle" -> middle))
+    BestEffortAvroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last, "middle" -> middle), FullNameV2.schema)
 
   private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_],
                                     givenObj: Any,

@@ -7,12 +7,14 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
+import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
+import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
@@ -25,7 +27,6 @@ import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.genericmodel.schema.FullName
 
 class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
@@ -64,10 +65,10 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       |}""".stripMargin
 
   private val givenNotMatchingAvroObj =
-    AvroUtils.createRecord(FullName.schema, Map("first" -> "Zenon", "last" -> "Nowak"))
+    BestEffortAvroEncoder.encodeRecordOrError(Map("first" -> "Zenon", "last" -> "Nowak"), FullName.schema)
 
   private val givenMatchingAvroObj =
-    AvroUtils.createRecord(FullName.schema, Map("first" -> "Jan", "last" -> "Kowalski"))
+    BestEffortAvroEncoder.encodeRecordOrError(Map("first" -> "Jan", "last" -> "Kowalski"), FullName.schema)
 
   private def jsonProcess(filter: String) =
     EspProcessBuilder
@@ -319,4 +320,20 @@ object MockSchemaRegistry extends Serializable {
     override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =
       confluentSchemaRegistryMockClient
   }
+}
+
+object FullName {
+  val stringSchema: String =
+    """{
+      |  "type": "record",
+      |  "namespace": "pl.touk.nussknacker.genericmodel.schema",
+      |  "name": "FullName",
+      |  "fields": [
+      |    { "name": "first", "type": "string" },
+      |    { "name": "last", "type": "string" }
+      |  ]
+      |}
+    """.stripMargin
+
+  val schema: Schema = AvroUtils.parseSchema(stringSchema)
 }

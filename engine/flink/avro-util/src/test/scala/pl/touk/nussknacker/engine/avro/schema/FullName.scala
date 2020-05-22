@@ -36,7 +36,7 @@ object FullNameV1 extends TestSchema {
       |}
     """.stripMargin
 
-  val exampleData: Map[String, Any] = Map("id" -> 1, "amount" -> 2d)
+  val exampleData: Map[String, Any] = Map("first" -> "Lucas", "last" -> "C")
 }
 
 case class FullNameV2(var first: CharSequence, var middle: CharSequence, var last: CharSequence) extends SpecificRecordBase {
@@ -75,5 +75,5 @@ object FullNameV2 extends TestSchema {
       |}
     """.stripMargin
 
-  val exampleData: Map[String, Any] = FullNameV1.exampleData ++ Map("currency" -> "PLN")
+  val exampleData: Map[String, Any] = FullNameV1.exampleData ++ Map("middle" -> "None")
 }

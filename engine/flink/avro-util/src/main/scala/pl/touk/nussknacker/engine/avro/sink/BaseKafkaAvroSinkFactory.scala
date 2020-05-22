@@ -9,8 +9,6 @@ import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
-import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
 import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
@@ -37,23 +35,12 @@ abstract class BaseKafkaAvroSinkFactory(processObjectDependencies: ProcessObject
   }
 
   protected def validateOutput(output: LazyParameter[GenericContainer], kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[_]): Unit = {
+    //This is only for checking schema
     val schemaTypeDefinition = kafkaAvroSchemaProvider.returnType(KafkaAvroFactory.handleSchemaRegistryError)
-    val outputTypeDefinition = output.returnType
 
-    val validationResult = outputTypeDefinition match {
-      case _: TypedObjectTypingResult => outputTypeDefinition.canBeSubclassOf(schemaTypeDefinition)
-      case _ => true //TODO: Add possibility to validate when information about inferred type disappeared
-    }
-
-    if (!validationResult) {
-      throw CustomNodeValidationException(
-        InvalidSinkOutput("Invalid output schema. Please provide correct output."),
-        Some(KafkaAvroFactory.SinkOutputParamName)
-      )
-    }
+    //TODO: Add more satisfying validation
   }
 
-  //Output should be LazyParameter[GenericContainer]?
   class KafkaAvroSink(topic: String, output: LazyParameter[Any], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[Any], clientId: String)
     extends FlinkSink with Serializable {
 

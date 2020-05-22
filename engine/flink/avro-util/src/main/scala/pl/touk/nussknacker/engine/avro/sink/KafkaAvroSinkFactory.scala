@@ -21,7 +21,7 @@ class KafkaAvroSinkFactory(schemaRegistryProvider: SchemaRegistryProvider[_], pr
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @ParamName(SchemaVersionParamName) @Nullable @Min(value = 1) version: Integer,
+             @ParamName(`SchemaVersionParamName`) @Nullable @Min(value = 1) version: Integer,
              @ParamName(`SinkOutputParamName`) @NotBlank output: LazyParameter[GenericContainer]
             )(implicit nodeId: NodeId): Sink = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
