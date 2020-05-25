@@ -7,6 +7,7 @@ import {ProcessCounts} from "../../../reducers/graph"
 import {updateLayout} from "./updateLayout"
 import {redraw} from "./redraw"
 import {dia} from "jointjs"
+import {isEqual} from "lodash"
 
 export function drawGraph(
   process: Process,
@@ -39,8 +40,7 @@ export function drawGraph(
   const deletedCells = graph.getCells().filter(oldCell => !cells.find(cell => cell.id === oldCell.id))
   const changedCells = cells.filter(cell => {
     const old = graph.getCell(cell.id)
-    //TODO: some different ways of comparing?
-    return old && JSON.stringify(old.get("definitionToCompare")) !== JSON.stringify(cell.get("definitionToCompare"))
+    return !isEqual(old?.get("definitionToCompare"), cell.get("definitionToCompare"))
   })
   performance.mark("compute")
 

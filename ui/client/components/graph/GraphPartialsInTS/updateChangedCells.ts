@@ -5,12 +5,8 @@ export function updateChangedCells(graph: dia.Graph) {
     changedCells.forEach(cell => {
       const cellToRemove = graph.getCell(cell.id)
       const links = cellToRemove.isElement ? graph.getConnectedLinks(cellToRemove) : []
-      cellToRemove.remove()
-      graph.addCell(cell)
-      links.forEach(link => {
-        link.remove()
-        graph.addCell(link)
-      })
+      graph.removeCells([...links, cellToRemove])
+      graph.addCells([cell, ...links])
     })
   }
 }

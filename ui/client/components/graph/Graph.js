@@ -10,7 +10,6 @@ import {getProcessCategory, getSelectionState} from "../../reducers/selectors/gr
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import "./svg-export/export.styl"
-import * as EspNode from "./EspNode"
 import * as GraphUtils from "./GraphUtils"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
@@ -20,6 +19,7 @@ import {prepareSvg} from "./svg-export/prepareSvg"
 import {drawGraph} from "./GraphPartialsInTS/drawGraph"
 import {directedLayout} from "./GraphPartialsInTS/directedLayout"
 import {isBackgroundObject} from "./GraphPartialsInTS/isBackgroundObject"
+import {createPaper} from "./GraphPartialsInTS/createPaper"
 
 export class Graph extends React.Component {
 
@@ -128,46 +128,7 @@ export class Graph extends React.Component {
     return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData)
   }
 
-  createPaper = () => {
-    const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly
-    const {height = "100%", width = "100%"} = this.props
-    return new joint.dia.Paper({
-      el: this.getEspGraphRef(),
-      gridSize: 1,
-      height,
-      width,
-      model: this.graph,
-      snapLinks: {radius: 75},
-      interactive: function (cellView) {
-        const model = cellView.model
-        if (!canWrite) {
-          return false
-        } else if (model instanceof joint.dia.Link) {
-          // Disable the default vertex add and label move functionality on pointerdown.
-          return {vertexAdd: false, labelMove: false}
-        } else if (model.get && isBackgroundObject(model)) {
-          //Disable moving group rect
-          return false
-        } else {
-          return true
-        }
-      },
-      linkPinning: false,
-      defaultLink: EspNode.makeLink({}),
-      validateConnection: this.validateConnection,
-    })
-      .on("cell:pointerup", (cellView, evt, x, y) => {
-        this.changeLayoutIfNeeded()
-        this.handleInjectBetweenNodes(cellView)
-      })
-      .on("link:connect", (c) => {
-        this.disconnectPreviousEdge(c.model.id)
-        this.props.actions.nodesConnected(
-          c.sourceView.model.attributes.nodeData,
-          c.targetView.model.attributes.nodeData,
-        )
-      })
-  }
+  createPaper = createPaper.bind(this)
 
   disconnectPreviousEdge = (previousEdge) => {
     const nodeIds = previousEdge.split("-").slice(0, 2)
