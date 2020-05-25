@@ -178,8 +178,11 @@ export class Graph extends React.Component {
   drawGraph = drawGraph.bind(this)
 
   _prepareContentForExport = () => {
-    const {options} = this.processGraphPaper
-    this._exportGraphOptions = cloneDeep(options)
+    const {options, defs} = this.processGraphPaper
+    this._exportGraphOptions = {
+      options: cloneDeep(options),
+      defs: defs.cloneNode(true),
+    }
   }
 
   highlightNodes = (data, nodeToDisplay, groupingState, selectionState) => {
