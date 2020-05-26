@@ -9,6 +9,7 @@ import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
+import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter._
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
@@ -41,16 +42,8 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
 
   // copied from AbstractKafkaAvroDeserializer.deserialize
   private def readId(bytes: Array[Byte]): Int = {
-    val buffer = getByteBuffer(bytes)
+    val buffer = AvroUtils.parsePayloadToByteBuffer(bytes)
     buffer.getInt
-  }
-
-  private def getByteBuffer(payload: Array[Byte]) = {
-    val buffer = ByteBuffer.wrap(payload)
-    if (buffer.get != 0)
-      throw new SerializationException("Unknown magic byte!")
-    else
-      buffer
   }
 
   // end of copy-paste

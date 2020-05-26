@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.avro.sink
 import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.api.LazyParameter
-import pl.touk.nussknacker.engine.avro.TestMockSchemaRegistry
+import pl.touk.nussknacker.engine.avro.{KafkaAvroSpec, TestMockSchemaRegistry}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 
-class FixedKafkaAvroSinkFactorySpec extends KafkaAvroSinkSpec {
+class FixedKafkaAvroSinkFactorySpec extends KafkaAvroSpec with KafkaAvroSinkSpec  {
 
   import FixedKafkaAvroMockSchemaRegistry._
 

@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serializer.ConfluentStaticAvroDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
@@ -61,5 +62,5 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
   def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean) =
-    new ConfluentAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
+    new ConfluentStaticAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
 }

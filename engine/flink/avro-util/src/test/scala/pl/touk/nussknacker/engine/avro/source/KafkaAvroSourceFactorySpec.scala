@@ -11,8 +11,9 @@ import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDa
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serializer.ConfluentStaticAvroKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionNotFound}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSpec, TestMockSchemaRegistry}
@@ -152,7 +153,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpec {
 }
 
 class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)(implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
-  extends ConfluentAvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
+  extends ConfluentStaticAvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
     createTuple2TypeInformation(keyTypInfo, valueTypInfo)
   ) {
 

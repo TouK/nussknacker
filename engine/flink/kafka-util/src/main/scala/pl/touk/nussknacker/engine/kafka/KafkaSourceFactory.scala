@@ -61,7 +61,7 @@ class KafkaSourceFactory[T: TypeInformation](schemaFactory: DeserializationSchem
              @ParamName(`TopicParamName`) @NotBlank topic: String)
             (implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-    createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig), processMetaData, nodeId)
+    createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), None, kafkaConfig), processMetaData, nodeId)
   }
 
 }
@@ -90,7 +90,7 @@ class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
   @MethodToInvoke
   def create(processMetaData: MetaData)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-    createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), kafkaConfig), processMetaData, nodeId)
+    createSource(List(topic), kafkaConfig, schemaFactory.create(List(topic), None, kafkaConfig), processMetaData, nodeId)
   }
 
 }

@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.engine.avro
 
+import java.nio.ByteBuffer
+
 import cats.data.Validated
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
+import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaRegistryProvider}
 
@@ -43,6 +46,17 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 object AvroUtils {
 
   private def parser = new Schema.Parser()
+
+  def parsePayloadToByteBuffer(payload: Array[Byte]): ByteBuffer = {
+    val buffer = ByteBuffer.wrap(payload)
+    if (buffer.get != 0)
+      throw new SerializationException("Unknown magic byte!")
+    else
+      buffer
+  }
+
+  def topicSubject(topic: String, isKey: Boolean): String =
+    if (isKey) keySubject(topic) else valueSubject(topic)
 
   def keySubject(topic: String): String =
     topic + "-key"

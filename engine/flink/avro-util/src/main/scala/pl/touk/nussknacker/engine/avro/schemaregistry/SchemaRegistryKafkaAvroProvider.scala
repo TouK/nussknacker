@@ -22,7 +22,7 @@ class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryP
       .map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
 
   override def deserializationSchema: KafkaDeserializationSchema[T] =
-    schemaRegistryProvider.deserializationSchemaFactory.create(List(topic), kafkaConfig)
+    schemaRegistryProvider.deserializationSchemaFactory.create(List(topic), version, kafkaConfig)
 
   override def serializationSchema: KafkaSerializationSchema[Any] =
     schemaRegistryProvider.serializationSchemaFactory.create(topic, kafkaConfig)

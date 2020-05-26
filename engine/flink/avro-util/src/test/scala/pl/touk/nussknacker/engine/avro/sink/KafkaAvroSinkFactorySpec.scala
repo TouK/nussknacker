@@ -3,17 +3,18 @@ package pl.touk.nussknacker.engine.avro.sink
 import org.apache.avro.generic.GenericContainer
 import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.api.LazyParameter
-import pl.touk.nussknacker.engine.avro.TestMockSchemaRegistry
+import pl.touk.nussknacker.engine.avro.{KafkaAvroSpec, TestMockSchemaRegistry}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionNotFound}
 
-class KafkaAvroSinkFactorySpec extends KafkaAvroSinkSpec {
+class KafkaAvroSinkFactorySpec extends KafkaAvroSpec with KafkaAvroSinkSpec {
 
   import KafkaAvroSinkMockSchemaRegistry._
 
-  override def schemaRegistryClient: ConfluentSchemaRegistryClient = confluentSchemaRegistryMockClient
+  override def schemaRegistryClient: ConfluentSchemaRegistryClient =
+    confluentSchemaRegistryMockClient
 
   override protected def topics: List[(String, Int)] = List(
     (fullnameTopic, 2)
