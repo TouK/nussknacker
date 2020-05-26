@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry
 
+import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
-import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
 
 /**
   * @tparam T - Scheme used to deserialize
@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFact
 trait SchemaRegistryProvider[T] extends Serializable {
   def createSchemaRegistryClient: SchemaRegistryClient
 
-  def deserializationSchemaFactory: DeserializationSchemaFactory[T]
+  def deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory[T]
 
-  def serializationSchemaFactory: SerializationSchemaFactory[Any]
+  def serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[Any]
 
   def recordFormatter(topic: String): Option[RecordFormatter]
 }

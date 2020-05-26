@@ -5,12 +5,13 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
-import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKafkaAvroDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 class ConfluentSchemaRegistryProvider[T: TypeInformation](val schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                          val serializationSchemaFactory: SerializationSchemaFactory[Any],
-                                                          val deserializationSchemaFactory: DeserializationSchemaFactory[T],
+                                                          val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[Any],
+                                                          val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory[T],
                                                           val kafkaConfig: KafkaConfig,
                                                           val formatKey: Boolean) extends SchemaRegistryProvider[T] {
   def recordFormatter(topic: String): Option[RecordFormatter] =
@@ -23,8 +24,8 @@ class ConfluentSchemaRegistryProvider[T: TypeInformation](val schemaRegistryClie
 object ConfluentSchemaRegistryProvider extends Serializable {
 
   def apply[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                serializationSchemaFactory: Option[SerializationSchemaFactory[Any]],
-                                deserializationSchemaFactory: Option[DeserializationSchemaFactory[T]],
+                                serializationSchemaFactory: Option[KafkaAvroSerializationSchemaFactory[Any]],
+                                deserializationSchemaFactory: Option[KafkaAvroDeserializationSchemaFactory[T]],
                                 kafkaConfig: KafkaConfig,
                                 useSpecificAvroReader: Boolean,
                                 formatKey: Boolean): ConfluentSchemaRegistryProvider[T] =
@@ -61,5 +62,5 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
   def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean) =
-    new ConfluentAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
+    new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
 }
