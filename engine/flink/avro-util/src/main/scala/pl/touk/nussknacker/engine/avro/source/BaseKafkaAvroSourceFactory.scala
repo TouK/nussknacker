@@ -7,19 +7,20 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.avro.{KafkaAvroSchemaProvider, KafkaAvroFactory}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSchemaProvider}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.kafka._
 
 abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
-  extends BaseKafkaSourceFactory(timestampAssigner, TestParsingUtils.newLineSplit, processObjectDependencies) {
+  extends FlinkSourceFactory[T] with Serializable {
 
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation
-  def createKafkaAvroSource(topic: String,
-                            kafkaConfig: KafkaConfig,
-                            kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
-                            processMetaData: MetaData,
-                            nodeId: NodeId): KafkaSource with ReturningType = {
+  def createSource(topic: String,
+                   kafkaConfig: KafkaConfig,
+                   kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
+                   processMetaData: MetaData,
+                   nodeId: NodeId): KafkaSource[T] with ReturningType = {
 
     val returnTypeDefinition = kafkaAvroSchemaProvider.returnType(KafkaAvroFactory.handleSchemaRegistryError)
 
@@ -27,7 +28,9 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
       List(topic),
       kafkaConfig,
       kafkaAvroSchemaProvider.deserializationSchema,
+      timestampAssigner,
       kafkaAvroSchemaProvider.recordFormatter,
+      TestParsingUtils.newLineSplit,
       processObjectDependencies
     ) with ReturningType {
       override def returnType: typing.TypingResult = returnTypeDefinition
