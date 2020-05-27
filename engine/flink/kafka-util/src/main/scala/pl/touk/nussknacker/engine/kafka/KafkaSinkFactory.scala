@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, Simple
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
-import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaSerializationSchemaFactory, KafkaSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.BaseKafkaSinkFactory._
+import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaSerializationSchemaFactory, KafkaSerializationSchemaFactory}
 
 class KafkaSinkFactory(schemaSerializerFactory: KafkaSerializationSchemaFactory[Any], processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSinkFactory(schemaSerializerFactory, processObjectDependencies) {

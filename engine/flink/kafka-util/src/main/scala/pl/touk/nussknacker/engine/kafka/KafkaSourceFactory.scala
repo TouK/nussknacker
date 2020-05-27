@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.kafka.BaseKafkaSourceFactory._
+import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaDeserializationSchemaFactory, KafkaDeserializationSchemaFactory}
 
 import scala.collection.JavaConverters._
 
@@ -36,14 +37,20 @@ import scala.collection.JavaConverters._
   *
   * </pre>
   * */
-class KafkaSourceFactory[T: TypeInformation](schemaDeserialization: KafkaDeserializationSchema[T],
+class KafkaSourceFactory[T: TypeInformation](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
                                              timestampAssigner: Option[TimestampAssigner[T]],
                                              testPrepareInfo: TestDataSplit,
                                              processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSourceFactory(timestampAssigner, testPrepareInfo, processObjectDependencies) {
 
-  def this(schema: DeserializationSchema[T], timestampAssigner: Option[TimestampAssigner[T]], testPrepareInfo: TestDataSplit, processObjectDependencies: ProcessObjectDependencies) =
-    this(new KafkaDeserializationSchemaWrapper(schema), timestampAssigner, testPrepareInfo, processObjectDependencies)
+  def this(schema: DeserializationSchema[T],
+           timestampAssigner: Option[TimestampAssigner[T]],
+           testPrepareInfo: TestDataSplit,
+           processObjectDependencies: ProcessObjectDependencies) =
+    this(FixedKafkaDeserializationSchemaFactory(new KafkaDeserializationSchemaWrapper(schema)),
+      timestampAssigner,
+      testPrepareInfo,
+      processObjectDependencies)
 
   @MethodToInvoke
   def create(processMetaData: MetaData,
@@ -54,9 +61,8 @@ class KafkaSourceFactory[T: TypeInformation](schemaDeserialization: KafkaDeseria
              @ParamName(`TopicParamName`) @NotBlank topic: String)
             (implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-    createSource(List(topic), kafkaConfig, schemaDeserialization, processMetaData, nodeId)
+    createSource(List(topic), kafkaConfig, deserializationSchemaFactory, processMetaData, nodeId)
   }
-
 }
 
 object BaseKafkaSourceFactory {
@@ -64,21 +70,29 @@ object BaseKafkaSourceFactory {
 }
 
 class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
-                                                        schemaDeserialization: KafkaDeserializationSchema[T],
+                                                        deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
                                                         timestampAssigner: Option[TimestampAssigner[T]],
                                                         testPrepareInfo: TestDataSplit,
                                                         processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSourceFactory(timestampAssigner, testPrepareInfo, processObjectDependencies) {
 
-  def this(topic: String, schema: DeserializationSchema[T], timestampAssigner: Option[TimestampAssigner[T]], testPrepareInfo: TestDataSplit, processObjectDependencies: ProcessObjectDependencies) =
-    this(topic, new KafkaDeserializationSchemaWrapper(schema), timestampAssigner, testPrepareInfo, processObjectDependencies)
+  def this(topic: String,
+           schema: DeserializationSchema[T],
+           timestampAssigner: Option[TimestampAssigner[T]],
+           testPrepareInfo: TestDataSplit,
+           processObjectDependencies: ProcessObjectDependencies) =
+    this(topic, FixedKafkaDeserializationSchemaFactory(
+      new KafkaDeserializationSchemaWrapper(schema)),
+      timestampAssigner,
+      testPrepareInfo,
+      processObjectDependencies
+    )
 
   @MethodToInvoke
   def create(processMetaData: MetaData)(implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-    createSource(List(topic), kafkaConfig, schemaDeserialization, processMetaData, nodeId)
+    createSource(List(topic), kafkaConfig, deserializationSchemaFactory, processMetaData, nodeId)
   }
-
 }
 
 abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner: Option[TimestampAssigner[T]],
@@ -87,32 +101,32 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
   extends FlinkSourceFactory[T] with Serializable {
 
   @deprecated("Should be used version without process MetaData", "0.1.1")
-  protected def createSource(processMetaData: MetaData, topics: List[String],
-                             schema: KafkaDeserializationSchema[T]): KafkaSource = {
-    createSource(topics, KafkaConfig.parseProcessObjectDependencies(processObjectDependencies), schema)
-  }
+  protected def createSource(processMetaData: MetaData, topics: List[String], schema: KafkaDeserializationSchema[T]): KafkaSource =
+    createSource(topics, KafkaConfig.parseProcessObjectDependencies(processObjectDependencies), FixedKafkaDeserializationSchemaFactory(schema))
 
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation
-  protected def createSource(topics: List[String], kafkaConfig: KafkaConfig, schema: KafkaDeserializationSchema[T],
-                             processMetaData: MetaData, nodeId: NodeId): KafkaSource = {
-    createSource(topics, kafkaConfig, schema)
-  }
+  protected def createSource(topics: List[String],
+                             kafkaConfig: KafkaConfig,
+                             deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
+                             processMetaData: MetaData, nodeId: NodeId): KafkaSource =
+    createSource(topics, kafkaConfig, deserializationSchemaFactory)
 
-  protected def createSource(topics: List[String], kafkaConfig: KafkaConfig, schema: KafkaDeserializationSchema[T]): KafkaSource = {
-    new KafkaSource(topics = topics, kafkaConfig, schema, None, processObjectDependencies)
+  protected def createSource(topics: List[String], kafkaConfig: KafkaConfig, deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T]): KafkaSource = {
+    val serializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
+    new KafkaSource(topics = topics, kafkaConfig, serializationSchema, None, processObjectDependencies)
   }
 
   class KafkaSource(topics: List[String],
                     kafkaConfig: KafkaConfig,
-                    schemaDeserialization: KafkaDeserializationSchema[T],
+                    schema: KafkaDeserializationSchema[T],
                     recordFormatterOpt: Option[RecordFormatter],
                     processObjectDependencies: ProcessObjectDependencies,
                     overriddenConsumerGroup: Option[String] = None)
-      extends FlinkSource[T]
-        with Serializable
-        with TestDataParserProvider[T]
-        with TestDataGenerator with ExplicitUidInOperatorsSupport {
+    extends FlinkSource[T]
+      with Serializable
+      with TestDataParserProvider[T]
+      with TestDataGenerator with ExplicitUidInOperatorsSupport {
 
     override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
       val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
@@ -141,7 +155,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
     }
 
     protected def createFlinkSource(consumerGroupId: String): FlinkKafkaConsumer[T] = {
-      new FlinkKafkaConsumer[T](preparedTopics.asJava, schemaDeserialization, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
+      new FlinkKafkaConsumer[T](preparedTopics.asJava, schema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
     }
 
     override def generateTestData(size: Int): Array[Byte] = {
@@ -160,7 +174,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
           val record = recordFormatterOpt
             .map(formatter => formatter.parseRecord(formatted))
             .getOrElse(new ProducerRecord(topic, formatted))
-          schemaDeserialization.deserialize(new ConsumerRecord[Array[Byte], Array[Byte]](topic, -1, -1, record.key(), record.value()))
+          schema.deserialize(new ConsumerRecord[Array[Byte], Array[Byte]](topic, -1, -1, record.key(), record.value()))
         }
     }
 

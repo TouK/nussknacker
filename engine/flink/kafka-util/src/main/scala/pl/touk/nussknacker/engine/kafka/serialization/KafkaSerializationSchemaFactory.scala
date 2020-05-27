@@ -17,11 +17,12 @@ trait KafkaSerializationSchemaFactory[T] extends Serializable {
   * Base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory]]
   * Factory which always return the same schema.
   *
-  * @param serializationSchema schema which will be returned.
+  * @param deserializationSchema schema which will be returned.
   * @tparam T type of serialized object
   */
-case class FixedKafkaSerializationSchemaFactory[T](serializationSchema: String => KafkaSerializationSchema[T])
-  extends KafkaSerializationSchemaFactory[T] with Serializable {
+case class FixedKafkaSerializationSchemaFactory[T](deserializationSchema: String => KafkaSerializationSchema[T])
+  extends KafkaSerializationSchemaFactory[T] {
 
-  override def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] = serializationSchema(topic)
+  override def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =
+    deserializationSchema(topic)
 }

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.serialization
+package pl.touk.nussknacker.engine.kafka.serialization
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
@@ -8,22 +8,25 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
   * Factory class for Flink's KeyedDeserializationSchema. It is extracted for purpose when for creation
-  * of KeyedDeserializationSchema are needed additional information like list of topics, schema avro version and configuration.
+  * of KeyedDeserializationSchema are needed additional information like list of topics, schema version and configuration.
   *
   * @tparam T type of deserialized object
   */
-trait KafkaAvroDeserializationSchemaFactory[T] {
+trait KafkaDeserializationSchemaVersionAwareFactory[T] extends KafkaDeserializationSchemaFactory[T] {
   def create(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
+
+  override def create(topics: List[String], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] =
+    create(topics, None, kafkaConfig)
 }
 
 /**
-  * Abstract base implementation of [[pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory]]
+  * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaVersionAwareFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes only value.
   *
   * @tparam T type of deserialized object
   */
-abstract class BaseKafkaAvroDeserializationSchemaFactory[T: TypeInformation]
-  extends KafkaAvroDeserializationSchemaFactory[T] with Serializable {
+abstract class BaseKafkaDeserializationSchemaVersionAwareFactory[T: TypeInformation]
+  extends KafkaDeserializationSchemaVersionAwareFactory[T] {
 
   protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[T]
 
@@ -44,14 +47,14 @@ abstract class BaseKafkaAvroDeserializationSchemaFactory[T: TypeInformation]
 }
 
 /**
-  * Abstract base implementation of [[pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory]]
-  * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema.
-  * It deserializes both key and value and wrap it in object T
+  * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaVersionAwareFactory]]
+  * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes both key and value
+  * and wrap it in object T
   *
   * @tparam T type of deserialized object
   */
-abstract class BaseKeyValueKafkaAvroDeserializationSchemaFactory[T: TypeInformation]
-  extends KafkaAvroDeserializationSchemaFactory[T] with Serializable {
+abstract class BaseKeyValueKafkaDeserializationSchemaVersionAwareFactory[T: TypeInformation]
+  extends KafkaDeserializationSchemaVersionAwareFactory[T] {
 
   protected type K
 

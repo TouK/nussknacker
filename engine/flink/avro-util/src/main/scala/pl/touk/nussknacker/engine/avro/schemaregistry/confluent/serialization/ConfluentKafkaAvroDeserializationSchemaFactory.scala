@@ -4,8 +4,8 @@ import io.confluent.kafka.serializers._
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.serialization.{BaseKafkaAvroDeserializationSchemaFactory, BaseKeyValueKafkaAvroDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.serialization.{BaseKafkaDeserializationSchemaVersionAwareFactory, BaseKeyValueKafkaDeserializationSchemaVersionAwareFactory}
 
 trait ConfluentKafkaAvroDeserializerFactory {
   import collection.JavaConverters._
@@ -22,14 +22,14 @@ trait ConfluentKafkaAvroDeserializerFactory {
 }
 
 class ConfluentKafkaAvroDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean)
-  extends BaseKafkaAvroDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
+  extends BaseKafkaDeserializationSchemaVersionAwareFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[T] =
     createDeserializer[T](schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
 }
 
 abstract class ConfluentKeyValueKafkaAvroDeserializationFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean)
-  extends BaseKeyValueKafkaAvroDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
+  extends BaseKeyValueKafkaDeserializationSchemaVersionAwareFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createKeyDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[K] =
     createDeserializer[K](schemaRegistryClientFactory, kafkaConfig, isKey = true, useSpecificAvroReader)

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.serialization
+package pl.touk.nussknacker.engine.kafka.serialization
 
 import java.nio.charset.StandardCharsets
 import java.util
