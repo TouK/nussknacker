@@ -29,11 +29,11 @@ trait KafkaAvroSerializationSchemaFactory[T] extends KafkaSerializationSchemaFac
   * @param serializationSchema schema which will be returned.
   * @tparam T type of serialized object
   */
-case class FixedKafkaSerializationSchemaFactory[T](serializationSchema: (String, Option[Int], KafkaConfig) => KafkaSerializationSchema[T])
+case class FixedKafkaSerializationSchemaFactory[T](serializationSchema: (String, Option[Int]) => KafkaSerializationSchema[T])
   extends KafkaAvroSerializationSchemaFactory[T] {
 
   override def create(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =
-    serializationSchema(topic, version, kafkaConfig)
+    serializationSchema(topic, version)
 }
 
 /**

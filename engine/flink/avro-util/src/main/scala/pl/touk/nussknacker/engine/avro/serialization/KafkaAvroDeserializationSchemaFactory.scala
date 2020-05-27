@@ -7,7 +7,7 @@ import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
-  * Factory class for Flink's KafkaAvroDeserializationSchema. It is extracted for purpose when for creation
+  * Factory class for Flink's KeyedDeserializationSchema. It is extracted for purpose when for creation
   * of KeyedDeserializationSchema are needed additional information like list of topics, schema avro version and configuration.
   *
   * @tparam T type of deserialized object
@@ -17,7 +17,7 @@ trait KafkaAvroDeserializationSchemaFactory[T] {
 }
 
 /**
-  * Abstract base implementation of [[KafkaAvroDeserializationSchemaFactory]]
+  * Abstract base implementation of [[pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes only value.
   *
   * @tparam T type of deserialized object
@@ -44,7 +44,7 @@ abstract class BaseKafkaAvroDeserializationSchemaFactory[T: TypeInformation]
 }
 
 /**
-  * Abstract base implementation of [[KafkaAvroDeserializationSchemaFactory]]
+  * Abstract base implementation of [[pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema.
   * It deserializes both key and value and wrap it in object T
   *
