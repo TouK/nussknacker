@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.kafka.BaseKafkaSinkFactory._
 class KafkaSinkFactory(schemaSerializerFactory: KafkaSerializationSchemaFactory[Any], processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSinkFactory(schemaSerializerFactory, processObjectDependencies) {
 
-  def this(schema: String => KafkaSerializationSchema[Any], processObjectDependencies: ProcessObjectDependencies) =
-    this(FixedKafkaSerializationSchemaFactory(schema), processObjectDependencies)
+  def this(serializationSchema: String => KafkaSerializationSchema[Any], processObjectDependencies: ProcessObjectDependencies) =
+    this(FixedKafkaSerializationSchemaFactory(serializationSchema), processObjectDependencies)
 
   @MethodToInvoke
   def create(processMetaData: MetaData,
@@ -39,9 +39,9 @@ abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializati
   protected def createSink(topic: String, processMetaData: MetaData): KafkaSink = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareTopicName(topic, processObjectDependencies)
-    val schemaSerializer = serializationSchemaFactory.create(preparedTopic, kafkaConfig)
+    val serializationSchema = serializationSchemaFactory.create(preparedTopic, kafkaConfig)
     val clientId = s"${processMetaData.id}-$preparedTopic"
-    new KafkaSink(topic, kafkaConfig, schemaSerializer, clientId)
+    new KafkaSink(topic, kafkaConfig, serializationSchema, clientId)
   }
 
   class KafkaSink(topic: String, kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[Any], clientId: String)

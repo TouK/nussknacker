@@ -6,7 +6,7 @@ import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.serialization.{KafkaSerializationSchemaFactory, UUIDSerializer}
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory
 
 /**
   * Factory class for Flink's KeyedSerializationSchema. It is extracted for  purpose when for creation
@@ -24,12 +24,13 @@ trait KafkaAvroSerializationSchemaFactory[T] extends KafkaSerializationSchemaFac
 }
 
 /**
+  * Base implementation of [[pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory]]
   * Factory which always return the same schema.
   *
   * @param serializationSchema schema which will be returned.
   * @tparam T type of serialized object
   */
-case class FixedKafkaSerializationSchemaFactory[T](serializationSchema: (String, Option[Int]) => KafkaSerializationSchema[T])
+case class FixedKafkaAvroSerializationSchemaFactory[T](serializationSchema: (String, Option[Int]) => KafkaSerializationSchema[T])
   extends KafkaAvroSerializationSchemaFactory[T] {
 
   override def create(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =

@@ -28,7 +28,7 @@ class ConfluentKafkaAvroDeserializationSchemaFactory[T: TypeInformation](schemaR
     createDeserializer[T](schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
 }
 
-abstract class ConfluentKeyValueKafkaAvroDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean)
+abstract class ConfluentKeyValueKafkaAvroDeserializationFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean)
   extends BaseKeyValueKafkaAvroDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createKeyDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[K] =

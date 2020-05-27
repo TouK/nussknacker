@@ -27,10 +27,9 @@ To see biggest differences please consult the [changelog](Changelog.md).
       }
     }
   ```
-* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider
-* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider
-     
-API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (In [#871], [#881], [#981]):
+* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981)
+
+API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed:
 
 `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` old way:
 ```
@@ -55,15 +54,14 @@ __
 val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 ```
 
-Also, path to classes AvroSourceFactory was changed from avro.KafkaAvroSourceFactory to avro.source.* 
-
-* [#981](https://github.com/TouK/nussknacker/pull/981) Refactor Kafka and KafkaAvro serialization package
-    - KafkaAvro: Provided new api for serialization: KafkaAvroDeserializationSchemaFactory and KafkaAvroSerializationSchemaFactory
-    - KafkaAvro: Renamed package ConfluentAvroDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory
-    - KafkaAvro: Renamed package ConfluentAvroSerializationSchemaFactory to ConfluentKafkaAvroSerializationSchemaFactory
-    - Kafka: Renamed package SerializationSchemaFactory to KafkaSerializationSchemaFactory
-    - Kafka: Removed package DeserializationSchemaFactor -> API KafkaSourceFactory changed, 
-    now requires deserializationSchema instead of deserializationSchemaFactory
+Additional changes:
+- (Refactor API) path to classes AvroSourceFactory was changed from avro.KafkaAvroSourceFactory to avro.source.* 
+- (New API) KafkaAvro: Provided api serialization for avro: KafkaAvroDeserializationSchemaFactory and KafkaAvroSerializationSchemaFactory
+- (Refactor API) KafkaAvro: Renamed package ConfluentAvroDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory
+- (Refactor API) KafkaAvro: Renamed package ConfluentAvroSerializationSchemaFactory to ConfluentKafkaAvroSerializationSchemaFactory
+- (Refactor API) Kafka: Renamed package SerializationSchemaFactory to KafkaSerializationSchemaFactory
+- (Refactor API) Kafka: Removed classes BaseKafkaSerializationSchemaFactory and BaseKeyValueKafkaSerializationSchemaFactory
+- (Refactor API) Kafka: Removed package DeserializationSchemaFactor -> API KafkaSourceFactory changed now requires deserializationSchema instead of deserializationSchemaFactory
 
 ## In version 0.1.2
 

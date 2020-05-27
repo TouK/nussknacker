@@ -166,5 +166,4 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](val timestampAssigner:
 
     override def timestampAssignerForTest : Option[TimestampAssigner[T]] = BaseKafkaSourceFactory.this.timestampAssigner
   }
-
 }
