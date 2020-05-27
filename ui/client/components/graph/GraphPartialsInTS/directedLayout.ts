@@ -4,10 +4,6 @@ import {isBackgroundObject} from "./isBackgroundObject"
 
 export function directedLayout() {
   const graph = this.graph
-  const panAndZoom = this.panAndZoom
-  const changeLayoutIfNeeded = this.changeLayoutIfNeeded
-  const fitSmallAndLargeGraphs = this.fitSmallAndLargeGraphs
-
   //TODO `layout` method can take graph or cells
   //when joint.layout.DirectedGraph.layout(this.graph) is used here
   //  then `toFront()` method works as expected but there are issues with group fold/unfold
@@ -22,6 +18,5 @@ export function directedLayout() {
     rankSep: 75,
     rankDir: "TB",
   })
-  changeLayoutIfNeeded()
-  fitSmallAndLargeGraphs(panAndZoom)
+  this.changeLayoutIfNeeded()
 }

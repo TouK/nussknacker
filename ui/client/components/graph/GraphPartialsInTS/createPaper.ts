@@ -17,7 +17,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       } else if (model instanceof joint.dia.Link) {
         // Disable the default vertex add and label move functionality on pointerdown.
         return {vertexAdd: false, labelMove: false}
-      } else if (model.get && isBackgroundObject(model)) {
+      } else if (isBackgroundObject(model)) {
         //Disable moving group rect
         return false
       } else {

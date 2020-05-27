@@ -4,11 +4,11 @@ import {cloneDeepWith, get, isEmpty, toArray, toString} from "lodash"
 import ProcessUtils from "../../../common/ProcessUtils"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
 import NodeUtils from "../NodeUtils"
-import expandIcon from "../../../assets/img/expand.svg"
 import {rectWidth, rectHeight, summaryCountConfig, maxLineLength, maxLineCount} from "./misc"
 import {getIconHref} from "./getIconHref"
-import {EspNodeShape} from "./esp"
+import {EspNodeShape, EspGroupShape} from "./esp"
 import {ProcessDefinitionData, NodeType} from "../../../types"
+import * as joint from "jointjs"
 
 function getBodyContent(bodyContent = ""): { text: string, multiline?: boolean } {
   if (bodyContent.length <= maxLineLength) {
@@ -96,65 +96,46 @@ export const makeElement = (counts: ProcessCounts, processDefinitionData: Proces
     const nodeSettings = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]
     const iconHref = getIconHref(node, nodeSettings)
     const attrs = {
-      ".background": {
-        width: width,
+      background: {
         opacity: node.isDisabled ? 0.4 : 1,
       },
-      ".disabled-node-layer": {
-        display: node.isDisabled ? "block" : "none",
-        width: width,
-        fill: "#B3B3B3",
+      border: {
+        stroke: "#B5B5B5",
       },
-      ".background title": {
+      title: {
         text: description,
       },
-      ".body": {
-        width: width,
-      },
-      "rect.nodeIconPlaceholder": {
+      iconBackground: {
         fill: customAttrs[node.type].styles.fill,
         opacity: node.isDisabled ? 0.4 : 1,
       },
-      ".nodeIconItself": {
-        "xlink:href": iconHref,
+      icon: {
+        xlinkHref: iconHref,
       },
-      ".contentText": {
+      content: {
         text: bodyContent,
         opacity: node.isDisabled ? 0.65 : 1,
       },
-      ".testResultsPlaceHolder": {
-        noExport: "",
-        display: hasCounts ? "block" : "none",
-        width: testResultsWidth,
-        refX: width - testResultsWidth,
-        refY: height,
-        height: testResultsHeight,
-      },
-      ".testResultsSummary": {
-        noExport: "",
-        ...getTestResultsSummaryAttr(processCounts, width, testResultsWidth),
-      },
-      ".groupElements": {
-        display: NodeUtils.nodeIsGroup(node) ? "block" : "none",
-      },
-      ".expandIcon": {
-        "xlink:href": expandIcon,
-        width: 26,
-        height: 26,
-        refX: width - 13,
-        refY: -13,
-      },
+
+      // ".testResultsPlaceHolder": {
+      //   noExport: "",
+      //   display: hasCounts ? "block" : "none",
+      //   width: testResultsWidth,
+      //   refX: width - testResultsWidth,
+      //   refY: height,
+      //   height: testResultsHeight,
+      // },
+      // ".testResultsSummary": {
+      //   noExport: "",
+      //   ...getTestResultsSummaryAttr(processCounts, width, testResultsWidth),
+      // },
     }
 
-    const inPorts = NodeUtils.hasInputs(node) ? ["In"] : []
-    const outPorts = NodeUtils.hasOutputs(node) ? ["Out"] : []
-
-    return new EspNodeShape({
+    const attributes: joint.shapes.devs.ModelAttributes = {
       id: node.id,
-      size: {width: width, height: height},
-      inPorts: inPorts,
-      outPorts: outPorts,
-      attrs: attrs,
+      inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
+      outPorts: NodeUtils.hasOutputs(node) ? ["Out"] : [],
+      attrs,
       rankDir: "R",
       nodeData: node,
       //This is used by jointjs to handle callbacks/changes
@@ -163,6 +144,8 @@ export const makeElement = (counts: ProcessCounts, processDefinitionData: Proces
         node: cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].indexOf(key) > -1 ? null : undefined),
         processCounts,
       },
-    })
+    }
+
+    return NodeUtils.nodeIsGroup(node) ? new EspGroupShape(attributes) : new EspNodeShape(attributes)
   }
 }

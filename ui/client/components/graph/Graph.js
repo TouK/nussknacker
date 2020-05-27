@@ -1,11 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
 import * as joint from "jointjs"
 import "jointjs/dist/joint.css"
-import _, {cloneDeep} from "lodash"
+import _, {cloneDeep, defer} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import svgPanZoom from "svg-pan-zoom"
-import cssVariables from "../../stylesheets/_variables.styl"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
@@ -55,13 +54,22 @@ export class Graph extends React.Component {
 
   componentDidMount() {
     this.processGraphPaper = this.createPaper()
-    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, this.props.expandedGroups)
+    this.processGraphPaper.freeze()
+    this.drawGraph(
+      this.props.processToDisplay,
+      this.props.layout,
+      this.props.processCounts,
+      this.props.processDefinitionData,
+      this.props.expandedGroups,
+    )
+    this.processGraphPaper.unfreeze()
     this._prepareContentForExport()
     this.panAndZoom = this.enablePanZoom()
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
     this.cursorBehaviour()
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
+    this.fitSmallAndLargeGraphs()
   }
 
   canAddNode(node) {
@@ -85,7 +93,13 @@ export class Graph extends React.Component {
       !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
       !_.isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
     if (processChanged) {
-      this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, nextProps.processDefinitionData, nextProps.expandedGroups)
+      this.drawGraph(
+        nextProps.processToDisplay,
+        nextProps.layout,
+        nextProps.processCounts,
+        nextProps.processDefinitionData,
+        nextProps.expandedGroups,
+      )
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
@@ -109,6 +123,11 @@ export class Graph extends React.Component {
   }
 
   directedLayout = directedLayout.bind(this)
+
+  forceLayout = () => {
+    this.directedLayout()
+    defer(this.fitSmallAndLargeGraphs)
+  }
 
   zoomIn() {
     this.panAndZoom.zoomIn()
@@ -163,7 +182,13 @@ export class Graph extends React.Component {
       } else if (NodeUtils.nodesAreInOneGroup(this.props.processToDisplay, [sourceNode.id, targetNode.id])) {
         // TODO: handle inject when source and target are in one group
         this.props.notificationActions.info("Injecting node in group is not possible yet")
-      } else if (GraphUtils.canInjectNode(this.props.processToDisplay, sourceNode.id, middleMan.id, targetNode.id, this.props.processDefinitionData)) {
+      } else if (GraphUtils.canInjectNode(
+        this.props.processToDisplay,
+        sourceNode.id,
+        middleMan.id,
+        targetNode.id,
+        this.props.processDefinitionData,
+      )) {
         //TODO: consider doing inject check in actions.js?
         this.props.actions.injectNode(
           sourceNode,
@@ -266,18 +291,18 @@ export class Graph extends React.Component {
       panAndZoom.disablePan()
     })
 
-    this.fitSmallAndLargeGraphs(panAndZoom)
     return panAndZoom
   }
 
-  fitSmallAndLargeGraphs = (panAndZoom) => {
+  fitSmallAndLargeGraphs = () => {
+    const {panAndZoom} = this
     if (!panAndZoom) {
       return
     }
-
+    panAndZoom.updateBBox()
     panAndZoom.fit()
-    const realZoom = panAndZoom.getSizes().realZoom
-    const toZoomBy = realZoom > 1 ? 1 / realZoom : 0.90 //the bigger zoom, the further we get
+    const {realZoom} = panAndZoom.getSizes()
+    const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.8 //the bigger zoom, the further we get
     panAndZoom.zoomBy(toZoomBy)
     panAndZoom.center()
   }
@@ -328,7 +353,7 @@ export class Graph extends React.Component {
       })
     }
 
-    this.processGraphPaper.on("blank:pointerdown", () => {
+    this.processGraphPaper.on("blank:pointerdown", (evt) => {
       if (this.props.fetchedProcessDetails != null) {
         this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
         this.props.actions.resetSelection()
@@ -342,8 +367,8 @@ export class Graph extends React.Component {
       this.showLabelOnHover(model)
       this.showBackgroundIcon(model)
     })
-    this.processGraphPaper.on("cell:mouseout", (cellView, evt) => {
-      this.hideBackgroundIcon(cellView.model, evt)
+    this.processGraphPaper.on("blank:mouseover", () => {
+      this.hideBackgroundsIcons()
     })
   }
 
@@ -362,30 +387,17 @@ export class Graph extends React.Component {
 
   //background is below normal node, we cannot use normal hover/mouseover/mouseout...
   showBackgroundIcon(model) {
-    if (model.get && isBackgroundObject(model)) {
-      const el = this.processGraphPaper.findViewByModel(model).vel
-      el.addClass("nodeIconForceHoverBox")
-      el.removeClass("nodeIconForceNoHoverBox")
+    if (isBackgroundObject(model)) {
+      const el = model.findView(this.processGraphPaper).vel
+      el.toggleClass("forced-hover", true)
     }
   }
 
-  //background is below normal node, we cannot use normal hover/mouseover/mouseout...
-  hideBackgroundIcon(model, evt) {
-    if (model.get && isBackgroundObject(model)) {
-      if (!this.checkIfCursorInRect(model, evt)) {
-        const el = this.processGraphPaper.findViewByModel(model).vel
-        el.removeClass("nodeIconForceHoverBox")
-        el.addClass("nodeIconForceNoHoverBox")
-      }
-
-    }
-  }
-
-  checkIfCursorInRect(model, evt) {
-    const relOffset = this.computeRelOffset({x: evt.clientX, y: evt.clientY})
-    const position = model.attributes.position
-    const size = model.attributes.size
-    return relOffset.x >= position.x && relOffset.y >= position.y && relOffset.x <= position.x + size.width && relOffset.y <= position.y + size.height
+  hideBackgroundsIcons() {
+    this.graph.getElements().filter(isBackgroundObject).forEach(model => {
+      const el = model.findView(this.processGraphPaper).vel
+      el.toggleClass("forced-hover", false)
+    })
   }
 
   cursorBehaviour() {
@@ -400,23 +412,6 @@ export class Graph extends React.Component {
         this.getEspGraphRef().style.cursor = "auto"
       }
     })
-  }
-
-  computeRelOffset(pointerOffset) {
-    const pan = this.panAndZoom ? this.panAndZoom.getPan() : {x: 0, y: 0}
-    const zoom = this.panAndZoom ? this.panAndZoom.getSizes().realZoom : 1
-
-    //TODO: is it REALLY ok?
-    const paddingLeft = cssVariables.svgGraphPaddingLeft
-    const paddingTop = cssVariables.svgGraphPaddingTop
-
-    const {svg} = this.processGraphPaper
-    const graphPosition = svg.getBoundingClientRect()
-
-    return {
-      x: Math.round((pointerOffset.x - pan.x - graphPosition.left - paddingLeft) / zoom),
-      y: Math.round((pointerOffset.y - pan.y - graphPosition.top - paddingTop) / zoom),
-    }
   }
 
   moveSelectedNodesRelatively(element, position) {

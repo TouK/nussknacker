@@ -88,8 +88,7 @@ function createPaper(placeholder: HTMLDivElement, maxSize: number, {options, def
     height: maxSize,
   })
   paper.defs.replaceWith(defs)
-  paper.scaleContentToFit({minScale: 1.5, maxScale: 4})
-  paper.fitToContent()
+  paper.fitToContent({allowNewOrigin: "any"})
 
   const {svg} = paper
   const {width, height} = paper.getComputedSize()
@@ -112,6 +111,7 @@ export async function prepareSvg(options: Pick<joint.dia.Paper, "options" | "def
   await embedImages(svg)
 
   placeholder.remove()
+  _debugInWindow(svg)
   return toXml(svg)
 }
 
