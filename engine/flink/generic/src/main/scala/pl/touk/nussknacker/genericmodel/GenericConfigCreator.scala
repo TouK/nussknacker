@@ -11,9 +11,9 @@ import pl.touk.nussknacker.engine.avro.source.{FixedKafkaAvroSourceFactory, Kafk
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SimpleSlidingAggregateTransformerV2, SimpleTumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
-import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
+import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {

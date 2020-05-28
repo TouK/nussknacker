@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
-import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, SerializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareDeserializationSchemaFactory, KafkaVersionAwareSerializationSchemaFactory}
 
 /**
   * @tparam T - Scheme used to deserialize
   */
 trait SchemaRegistryProvider[T] extends Serializable {
+
   def createSchemaRegistryClient: SchemaRegistryClient
 
-  def deserializationSchemaFactory: DeserializationSchemaFactory[T]
+  def deserializationSchemaFactory: KafkaVersionAwareDeserializationSchemaFactory[T]
 
-  def serializationSchemaFactory: SerializationSchemaFactory[Any]
+  def serializationSchemaFactory: KafkaVersionAwareSerializationSchemaFactory[Any]
 
   def recordFormatter(topic: String): Option[RecordFormatter]
 }

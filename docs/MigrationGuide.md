@@ -27,10 +27,9 @@ To see biggest differences please consult the [changelog](Changelog.md).
       }
     }
   ```
-* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider.
-* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider.
+* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981)
 
-API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed (In [#871] and [#881]):
+API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed:
 
 `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` old way:
 ```
@@ -55,7 +54,22 @@ __
 val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 ```
 
-Also, path to classes AvroSourceFactory was changed from avro.KafkaAvroSourceFactory to avro.source.* 
+Additional changes:
+- (Refactor Kafka API) Moved KafkaSourceFactory to pl.touk.nussknacker.engine.kafka.sink package 
+- (Refactor Kafka API) Changed BaseKafkaSourceFactory, now it requires `deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T]`
+- (Refactor Kafka API) Moved KafkaSinkFactory to pl.touk.nussknacker.engine.kafka.source package
+- (Refactor Kafka API) Renamed SerializationSchemaFactory to KafkaSerializationSchemaFactory 
+- (Refactor Kafka API) Renamed DeserializationSchemaFactory to KafkaDeserializationSchemaFactory
+- (Refactor Kafka API) Renamed FixedDeserializationSchemaFactory to FixedKafkaDeserializationSchemaFactory
+- (Refactor Kafka API) Renamed FixedSerializationSchemaFactory to FixedKafkaSerializationSchemaFactory
+- (Refactor Kafka API) Renamed KafkaSerializationSchemaFactoryBase and KafkaVersionAwareValueSerializationSchemaFactory
+- (Refactor Kafka API) Renamed KafkaKeyValueSerializationSchemaFactoryBase to KafkaVersionAwareKeyValueSerializationSchemaFactory
+- (Refactor Kafka API) Renamed KafkaDeserializationSchemaFactoryBase to KafkaVersionAwareValueDeserializationSchemaFactory
+- (Refactor Kafka API) Renamed KafkaKeyValueDeserializationSchemaFactoryBase to KafkaVersionAwareKeyValueDeserializationSchemaFactory
+- (Refactor KafkaAvro API) Renamed AvroDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory and moved to avro.schemaregistry.confluent package
+- (Refactor KafkaAvro API) Renamed AvroKeyValueDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory and moved to avro.schemaregistry.confluent package
+- (Refactor KafkaAvro API) Renamed AvroSerializationSchemaFactory to ConfluentAvroSerializationSchemaFactory and moved to avro.schemaregistry.confluent package
+- (Refactor KafkaAvro API) Renamed AvroKeyValueSerializationSchemaFactory to ConfluentAvroKeyValueSerializationSchemaFactory and moved to avro.schemaregistry.confluent package
 
 ## In version 0.1.2
 

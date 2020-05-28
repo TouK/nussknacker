@@ -10,17 +10,16 @@ Nussknacker versions
 
 0.2.0 (not released yet)
 ------------------------
-* [#871](https://github.com/TouK/nussknacker/pull/871) Added SchemaRegistryProvider
-* [#881](https://github.com/TouK/nussknacker/pull/881) Introduction to KafkaAvroSchemaProvider
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
-* [#903](https://github.com/TouK/nussknacker/pull/903) Update Confluent version to 5.4.1
 * [#940](https://github.com/TouK/nussknacker/pull/940) More detailed node errors 
 * [#949](https://github.com/TouK/nussknacker/pull/949) JVM options can be configured via JDK_JAVA_OPTIONS env variable (in docker and standalone distribution) 
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
-* [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache
+* [#944](https://github.com/TouK/nussknacker/pull/903) System cache mechanism
 * [#704](https://github.com/TouK/nussknacker/pull/704) Preloaded creator panel node icons
 * [#943](https://github.com/TouK/nussknacker/pull/943) Literal min / max validators
 * [#976](https://github.com/TouK/nussknacker/pull/976) Fixed save button & groups expand for businessView
+* [#973](https://github.com/TouK/nussknacker/pull/973) Textarea editor
+* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981)
 
 0.1.2
 ------------------------

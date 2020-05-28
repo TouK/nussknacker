@@ -344,7 +344,9 @@ lazy val management = (project in engine("flink/management")).
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
       )
     }
-  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", security)
+  //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
+  //kafka module is (wrongly) added to classpath when running UI from Idea
+  ).dependsOn(interpreter, queryableState, httpUtils, kafka % "provided", kafkaTestUtil % "it,test", security)
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -537,7 +539,9 @@ lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
       )
     }
   )
-  .dependsOn(testUtil, kafka)
+  //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
+  //we use kafkaTestUtil with this scope in management, and kafka module is (wrongly) added to classpath when running UI from Idea
+  .dependsOn(testUtil, kafka % "provided")
 
 lazy val util = (project in engine("util")).
   settings(commonSettings).

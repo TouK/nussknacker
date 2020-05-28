@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.reflect.Parameter
 
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, CronParameterEditor, DateParameterEditor, DateTimeParameterEditor, DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, ParameterEditor, PeriodParameterEditor, RawParameterEditor, StringParameterEditor, TimeParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{TextareaParameterEditor, BoolParameterEditor, CronParameterEditor, DateParameterEditor, DateTimeParameterEditor, DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, ParameterEditor, PeriodParameterEditor, RawParameterEditor, StringParameterEditor, TimeParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, RawEditor, SimpleEditor, SimpleEditorType}
 
 
@@ -40,6 +40,7 @@ object EditorExtractor {
       case SimpleEditorType.DURATION_EDITOR => DurationParameterEditor(simpleEditor.timeRangeComponents().toList)
       case SimpleEditorType.PERIOD_EDITOR => PeriodParameterEditor(simpleEditor.timeRangeComponents().toList)
       case SimpleEditorType.CRON_EDITOR => CronParameterEditor
+      case SimpleEditorType.TEXTAREA_EDITOR => TextareaParameterEditor
     }
   }
 }

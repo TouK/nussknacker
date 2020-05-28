@@ -25,14 +25,14 @@ class FixedKafkaAvroSourceFactory[T: TypeInformation](processObjectDependencies:
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
+             @SimpleEditor(`type` = SimpleEditorType.TEXTAREA_EDITOR)
              //TODO: Create BE and FE validator for verify avro type
              //TODO: Create Avro Editor
              @ParamName("schema") @NotBlank avroSchemaString: String
             )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val kafkaAvroSchemaProvider = FixedKafkaAvroSchemaProvider(topic, avroSchemaString, kafkaConfig, formatKey, useSpecificAvroReader)
-    createKafkaAvroSource(topic, kafkaConfig, kafkaAvroSchemaProvider , processMetaData, nodeId)
+    createSource(topic, kafkaConfig, kafkaAvroSchemaProvider , processMetaData, nodeId)
   }
 }
 
