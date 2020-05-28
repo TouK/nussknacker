@@ -21,6 +21,7 @@ import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
 import {components, TimeRangeComponentType} from "./Duration/TimeRangeComponent"
+import TextareaEditor from "./TextareaEditor"
 
 type ParamType = $TodoType
 type ValuesType = Array<string>
@@ -62,6 +63,7 @@ export enum EditorType {
   DURATION_EDITOR = "DurationParameterEditor",
   PERIOD_EDITOR = "PeriodParameterEditor",
   CRON_EDITOR = "CronParameterEditor",
+  TEXTAREA_PARAMETER_EDITOR = "TextareaParameterEditor",
 }
 
 const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
@@ -181,5 +183,11 @@ export const editors: Record<EditorType, EditorConfig> = {
     editor: () => CronEditor,
     hint: switchable => switchable ? CronEditor.switchableToHint() : CronEditor.notSwitchableToHint(),
     switchableTo: CronEditor.switchableTo,
+  },
+  [EditorType.TEXTAREA_PARAMETER_EDITOR]: {
+    ...defaults,
+    editor: () => TextareaEditor,
+    hint: (switchable) => switchable ? TextareaEditor.switchableToHint() : TextareaEditor.notSwitchableToHint(),
+    switchableTo: (expressionObj) => TextareaEditor.switchableTo(expressionObj),
   },
 }

@@ -20,6 +20,7 @@ Nussknacker versions
 * [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache
 * [#704](https://github.com/TouK/nussknacker/pull/704) Preloaded creator panel node icons
 * [#943](https://github.com/TouK/nussknacker/pull/943) Literal min / max validators
+* [#973](https://github.com/TouK/nussknacker/pull/973) Textarea editor
 
 0.1.2
 ------------------------
