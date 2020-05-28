@@ -231,7 +231,6 @@ export default {
   },
 
   validateNode(processId, node) {
-    console.log("Validating node", processId, node)
     return api.post(`/nodes/${processId}/validation`, node)
       .catch(error => this.addError("Failed to get node validation", error, true))
   },

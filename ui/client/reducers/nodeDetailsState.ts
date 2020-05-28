@@ -21,6 +21,8 @@ export function reducer(state: NodeDetailsState = initialState, action: Action):
         validationPerformed: validationData.validationPerformed,
       }
     }
+    case "DISPLAY_MODAL_NODE_DETAILS":
+      return initialState
     default:
       return state
   }

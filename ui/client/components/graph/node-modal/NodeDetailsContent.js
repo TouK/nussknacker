@@ -724,8 +724,8 @@ function mapState(state, props) {
     processDefinitionData: state.settings.processDefinitionData || {},
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
-    variableTypes: mainProcess.variableTypes[props.node.id],
-    currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : this.props.nodeErrors,
+    variableTypes: mainProcess?.validationResult?.variableTypes[props.node.id],
+    currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
   }
 }
 

@@ -64,8 +64,8 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val validationContext = ValidationContext(nodeData.variableTypes, globals, None)
               implicit val metaData: MetaData = nodeData.processProperties.toMetaData(process.id)
               NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext) match {
-                case ValidationNotPerformed => NodeValidationResult(Nil, performed = false)
-                case ValidationPerformed(errors) => NodeValidationResult(errors.map(PrettyValidationErrors.formatErrorMessage), performed = true)
+                case ValidationNotPerformed => NodeValidationResult(Nil, validationPerformed = false)
+                case ValidationPerformed(errors) => NodeValidationResult(errors.map(PrettyValidationErrors.formatErrorMessage), validationPerformed = true)
               }
             }
           }
@@ -90,7 +90,7 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
 
 }
 
-@JsonCodec case class NodeValidationResult(validationErrors: List[NodeValidationError], performed: Boolean)
+@JsonCodec case class NodeValidationResult(validationErrors: List[NodeValidationError], validationPerformed: Boolean)
 
 @JsonCodec(encodeOnly = true) case class NodeValidationRequest(nodeData: NodeData,
                                             processProperties: ProcessProperties,
