@@ -52,13 +52,7 @@ export class Graph extends React.Component {
   componentDidMount() {
     this.processGraphPaper = this.createPaper()
     this.processGraphPaper.freeze()
-    this.drawGraph(
-      this.props.processToDisplay,
-      this.props.layout,
-      this.props.processCounts,
-      this.props.processDefinitionData,
-      this.props.expandedGroups,
-    )
+    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, this.props.expandedGroups)
     this.processGraphPaper.unfreeze()
     this._prepareContentForExport()
     this.panAndZoom = this.enablePanZoom()
@@ -90,13 +84,7 @@ export class Graph extends React.Component {
       !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
       !_.isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
     if (processChanged) {
-      this.drawGraph(
-        nextProps.processToDisplay,
-        nextProps.layout,
-        nextProps.processCounts,
-        nextProps.processDefinitionData,
-        nextProps.expandedGroups,
-      )
+      this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, nextProps.processDefinitionData, nextProps.expandedGroups)
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
@@ -179,13 +167,7 @@ export class Graph extends React.Component {
       } else if (NodeUtils.nodesAreInOneGroup(this.props.processToDisplay, [sourceNode.id, targetNode.id])) {
         // TODO: handle inject when source and target are in one group
         this.props.notificationActions.info("Injecting node in group is not possible yet")
-      } else if (GraphUtils.canInjectNode(
-        this.props.processToDisplay,
-        sourceNode.id,
-        middleMan.id,
-        targetNode.id,
-        this.props.processDefinitionData,
-      )) {
+      } else if (GraphUtils.canInjectNode(this.props.processToDisplay, sourceNode.id, middleMan.id, targetNode.id, this.props.processDefinitionData)) {
         //TODO: consider doing inject check in actions.js?
         this.props.actions.injectNode(
           sourceNode,
