@@ -18,7 +18,7 @@ export default class JsonEditor extends React.Component<Props> {
     super(props)
 
     this.state = {
-      value: "",
+      value: props.expressionObj.expression.replace(/^["'](.*)["']$/, ""),
     }
   }
 
@@ -66,3 +66,4 @@ export default class JsonEditor extends React.Component<Props> {
     )
   }
 }
+
