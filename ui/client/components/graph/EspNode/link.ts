@@ -4,6 +4,9 @@ import {Edge} from "../../../types"
 import NodeUtils from "../NodeUtils"
 import {arrowMarker} from "../arrowMarker"
 
+const LINK_TEXT_COLOR = "#686868"
+const LINK_COLOR = "#F5F5F5"
+
 function makeLabels(label = "") {
   return label.length === 0 ? [] : [{
     position: 0.5,
@@ -16,8 +19,8 @@ function makeLabels(label = "") {
         refHeight: "100%",
         refWidth2: 12,
         refHeight2: 12,
-        stroke: "#686868",
-        fill: "#F5F5F5",
+        stroke: LINK_TEXT_COLOR,
+        fill: LINK_COLOR,
         strokeWidth: 1,
         rx: 5,
         ry: 5,
@@ -27,7 +30,7 @@ function makeLabels(label = "") {
         text: label,
         fontWeight: 300,
         fontSize: 10,
-        fill: "#686868",
+        fill: LINK_TEXT_COLOR,
       },
     },
   }]

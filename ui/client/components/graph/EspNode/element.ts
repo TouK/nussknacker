@@ -1,14 +1,16 @@
 /* eslint-disable i18next/no-literal-string */
 import {ProcessCounts} from "../../../reducers/graph"
-import {cloneDeepWith, get, isEmpty, toArray, toString} from "lodash"
+import {cloneDeepWith, get, isEmpty, toString} from "lodash"
 import ProcessUtils from "../../../common/ProcessUtils"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
 import NodeUtils from "../NodeUtils"
-import {rectWidth, rectHeight, summaryCountConfig, maxLineLength, maxLineCount} from "./misc"
 import {getIconHref} from "./getIconHref"
 import {EspNodeShape, EspGroupShape} from "./esp"
 import {ProcessDefinitionData, NodeType} from "../../../types"
 import * as joint from "jointjs"
+
+const maxLineLength = 24
+const maxLineCount = 2
 
 function getBodyContent(bodyContent = ""): { text: string, multiline?: boolean } {
   if (bodyContent.length <= maxLineLength) {
@@ -59,89 +61,64 @@ function getBodyContent(bodyContent = ""): { text: string, multiline?: boolean }
   }
 }
 
-function getTestResultsSummaryAttr(processCounts: ProcessCounts, width, testResultsWidth) {
-  const {breakPoint, maxExtraDigits} = summaryCountConfig
-
-  const hasCounts = !isEmpty(processCounts)
-  const hasErrors = hasCounts && processCounts && processCounts.errors > 0
-  const countsContent = hasCounts ? processCounts ? `${processCounts.all}` : "0" : ""
-  let extraDigitsCount = Math.max(countsContent.length - breakPoint, 0)
-  extraDigitsCount = Math.min(extraDigitsCount, maxExtraDigits)
-
-  return {
-    text: countsContent,
-    fill: hasErrors ? "red" : "#CCCCCC",
-    refX: width - testResultsWidth / 2,
-    // magic/hack: central vertical position when font-size changes
-    y: 78 - extraDigitsCount * 1.5,
-    height: 16,
-  }
+function getStringWidth(str = "", pxPerChar = 0, padding = 0) {
+  return toString(str).length * pxPerChar + 2 * padding
 }
 
 export const makeElement = (counts: ProcessCounts, processDefinitionData: ProcessDefinitionData) => {
   const nodesSettings = processDefinitionData.nodesConfig || {}
-  const width = rectWidth
-  const height = rectHeight
-  const testResultsHeight = 24
-  const pxPerChar = 8
-  const countsPadding = 8
   return (node: NodeType) => {
     const description = get(node.additionalFields, "description", null)
     const {text: bodyContent} = getBodyContent(node.id)
 
-    const processCounts = counts[node.id]
-    const hasCounts = !isEmpty(processCounts)
-    const testResultsWidth = toArray(toString(processCounts ? processCounts.all : "")).length * pxPerChar + 2 * countsPadding
-
     const nodeSettings = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]
     const iconHref = getIconHref(node, nodeSettings)
-    const attrs = {
-      background: {
-        opacity: node.isDisabled ? 0.4 : 1,
-      },
-      border: {
-        stroke: "#B5B5B5",
-      },
-      title: {
-        text: description,
-      },
-      iconBackground: {
-        fill: customAttrs[node.type].styles.fill,
-        opacity: node.isDisabled ? 0.4 : 1,
-      },
-      icon: {
-        xlinkHref: iconHref,
-      },
-      content: {
-        text: bodyContent,
-        opacity: node.isDisabled ? 0.65 : 1,
-      },
 
-      // ".testResultsPlaceHolder": {
-      //   noExport: "",
-      //   display: hasCounts ? "block" : "none",
-      //   width: testResultsWidth,
-      //   refX: width - testResultsWidth,
-      //   refY: height,
-      //   height: testResultsHeight,
-      // },
-      // ".testResultsSummary": {
-      //   noExport: "",
-      //   ...getTestResultsSummaryAttr(processCounts, width, testResultsWidth),
-      // },
-    }
+    const processCounts = counts[node.id]
+    const hasCounts = !isEmpty(processCounts)
+    const hasErrors = hasCounts && processCounts?.errors > 0
+    const testCounts = hasCounts ? processCounts?.all || 0 : ""
+    const testResultsWidth = getStringWidth(testCounts, 8, 8)
 
     const attributes: joint.shapes.devs.ModelAttributes = {
       id: node.id,
       inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
       outPorts: NodeUtils.hasOutputs(node) ? ["Out"] : [],
-      attrs,
+      attrs: {
+        background: {
+          opacity: node.isDisabled ? 0.4 : 1,
+        },
+        title: {
+          text: description,
+        },
+        iconBackground: {
+          fill: customAttrs[node.type].styles.fill,
+          opacity: node.isDisabled ? 0.4 : 1,
+        },
+        icon: {
+          xlinkHref: iconHref,
+        },
+        content: {
+          text: bodyContent,
+          opacity: node.isDisabled ? 0.65 : 1,
+        },
+        testResultsSummary: {
+          text: testCounts,
+          fill: hasErrors ? "red" : "#CCCCCC",
+          x: -testResultsWidth / 2,
+        },
+        testResults: {
+          display: hasCounts ? "block" : "none",
+          width: testResultsWidth,
+          x: -testResultsWidth,
+        },
+      },
       rankDir: "R",
       nodeData: node,
       //This is used by jointjs to handle callbacks/changes
       //TODO: figure out what should be here?
       definitionToCompare: {
-        node: cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].indexOf(key) > -1 ? null : undefined),
+        node: cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].includes(key) ? null : undefined),
         processCounts,
       },
     }

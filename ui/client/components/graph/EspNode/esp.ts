@@ -1,17 +1,23 @@
 /* eslint-disable i18next/no-literal-string */
 import * as joint from "jointjs"
-import {edgeStroke, rectWidth, rectHeight, nodeLabelFontSize} from "./misc"
+import {dia, util, shapes} from "jointjs"
 import expandIcon from "../../../assets/img/expand.svg"
+import "../graphTheme.styl"
 
-const background = {
+const CONTENT_COLOR = "#1E1E1E"
+const PORT_COLOR = "#FFFFFF"
+const BORDER_COLOR = "#B5B5B5"
+
+const rectWidth = 300
+const rectHeight = 60
+
+const background: dia.MarkupNodeJSON = {
   selector: "background",
   tagName: "rect",
+  className: "background",
   attributes: {
-    class: "background",
     width: rectWidth,
     height: rectHeight,
-    refWidth: "100%",
-    refHeight: "100%",
   },
   children: [
     {
@@ -20,98 +26,140 @@ const background = {
     },
   ],
 }
-const iconBackground = {
+
+const iconBackgroundSize = rectHeight
+const iconBackground: dia.MarkupNodeJSON = {
   selector: "iconBackground",
   tagName: "rect",
   attributes: {
-    height: rectHeight,
-    width: rectHeight,
+    width: iconBackgroundSize,
+    height: iconBackgroundSize,
   },
 }
-const border = {
+
+const border: dia.MarkupNodeJSON = {
   selector: "border",
   tagName: "rect",
+  className: "body",
   attributes: {
-    class: "body",
     width: rectWidth,
     height: rectHeight,
-    strokeWidth: 1,
+    "stroke-width": 1,
     fill: "none",
   },
 }
-const icon = {
+
+const iconSize = iconBackgroundSize / 2
+const icon: dia.MarkupNodeJSON = {
   selector: "icon",
   tagName: "image",
   attributes: {
-    width: rectHeight / 2,
-    height: rectHeight / 2,
-    x: rectHeight / 4,
-    y: rectHeight / 4,
+    width: iconSize,
+    height: iconSize,
+    x: iconSize / 2,
+    y: iconSize / 2,
   },
 }
-const content = {
+
+const content: dia.MarkupNodeJSON = {
   selector: "content",
   tagName: "text",
   attributes: {
-    x: rectHeight + 10,
+    x: iconBackgroundSize + 10,
     y: rectHeight / 2,
+    fill: CONTENT_COLOR,
+    "font-size": 15,
+    "pointer-events": "none",
+    "font-weight": 400,
   },
 }
-const groupElements = {
+
+const expandIconSize = 26
+const groupElements: dia.MarkupNodeJSON = {
   selector: "groupElements",
   tagName: "g",
   children: [
     {
       selector: "expand",
       tagName: "image",
+      className: "expandIcon nodeIcon",
       attributes: {
+        width: expandIconSize,
+        height: expandIconSize,
+        x: rectWidth - expandIconSize / 2,
+        y: -expandIconSize / 2,
         "xlink:href": expandIcon,
-        class: "expandIcon nodeIcon",
-        width: 26,
-        height: 26,
-        x: rectWidth - 13,
-        y: -13,
       },
     },
   ],
+  attributes: {
+    noExport: "",
+  },
 }
-const portMarkup = {
+
+const portSize = 5
+const portMarkup: dia.MarkupNodeJSON = {
   selector: "port",
   tagName: "circle",
   attributes: {
     magnet: true,
-    r: 5,
-    fill: "#FFFFFF",
-    stroke: edgeStroke,
-    strokeWidth: "1",
+    r: portSize,
+    fill: PORT_COLOR,
+    stroke: BORDER_COLOR,
+    "stroke-width": 1,
   },
 }
 
-const defaults = joint.util.defaultsDeep(
+const testResultsHeight = 24
+const testResults: dia.MarkupNodeJSON = {
+  tagName: "g",
+  children: [
+    {
+      selector: "testResults",
+      tagName: "rect",
+      className: "testResultsPlaceholder",
+      attributes: {
+        height: testResultsHeight,
+        y: rectHeight,
+      },
+    },
+    {
+      selector: "testResultsSummary",
+      tagName: "text",
+      className: "testResultsSummary",
+      attributes: {
+        height: testResultsHeight,
+        y: rectHeight + testResultsHeight / 2 + 1,
+      },
+    },
+  ],
+  attributes: {
+    noExport: "",
+
+  },
+}
+
+const defaults = util.defaultsDeep(
   {
     size: {
       width: rectWidth,
       height: rectHeight,
     },
     attrs: {
-      text: {
-        fill: "#1E1E1E",
-        pointerEvents: "none",
-        fontWeight: 400,
-        fontSize: nodeLabelFontSize,
+      content: {
         textVerticalAnchor: "middle",
       },
-      // ".testResultsPlaceholder": {
-      //   ref: ".nodeIconPlaceholder",
-      //   refX: rectWidth,
-      //   y: 0,
-      //   height: rectHeight,
-      //   width: rectHeight,
-      // },
-      // ".testResultsSummary": {
-      //   textAnchor: "middle",
-      //   alignmentBaseline: "middle",
-      // },
+      border: {
+        stroke: BORDER_COLOR,
+      },
+      testResults: {
+        refX: rectWidth,
+      },
+      testResultsSummary: {
+        textAnchor: "middle",
+        textVerticalAnchor: "middle",
+        refX: rectWidth,
+      },
     },
     inPorts: [],
     outPorts: [],
@@ -133,7 +181,7 @@ const defaults = joint.util.defaultsDeep(
       },
     },
   },
-  joint.shapes.devs.Model.prototype.defaults,
+  shapes.devs.Model.prototype.defaults,
 )
 const protoProps = {
   portMarkup: [portMarkup],
@@ -145,16 +193,17 @@ const protoProps = {
     border,
     icon,
     content,
+    testResults,
   ],
 }
 
-export const EspNodeShape = joint.shapes.devs.Model.define(
+export const EspNodeShape = shapes.devs.Model.define(
   `esp.Model`,
   defaults,
   protoProps,
-) as typeof joint.shapes.devs.Model
+) as typeof shapes.devs.Model
 
-export const EspGroupShape = joint.shapes.devs.Model.define(
+export const EspGroupShape = shapes.devs.Model.define(
   `esp.Group`,
   defaults,
   {

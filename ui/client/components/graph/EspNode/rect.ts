@@ -1,17 +1,18 @@
 import collapseIcon from "../../../assets/img/collapse.svg"
 import * as GraphUtils from "../GraphUtils"
 import boundingMarkup from "../markups/bounding.html"
-import {rectHeight} from "./misc"
 import * as joint from "jointjs"
 import {Layout} from "../../../actions/nk"
 import {GroupType, NodeType} from "../../../types"
 import NodeUtils from "../NodeUtils"
 
+const GROUP_COLOR = "green"
+
 export function boundingRect(nodes: joint.dia.Element[], layout: Layout, nodesWithGroups: NodeType[]) {
   return (expandedGroup: GroupType) => {
     const group = NodeUtils.createGroupNode(nodesWithGroups, expandedGroup)
     //TODO: replace with embed & fitToEmbeds
-    const boundingRect = GraphUtils.computeBoundingRect(expandedGroup, layout, nodes, rectHeight, 15)
+    const boundingRect = GraphUtils.computeBoundingRect(expandedGroup, layout, nodes, 15)
 
     return new joint.shapes.basic.Rect({
       id: group.id,
@@ -24,7 +25,7 @@ export function boundingRect(nodes: joint.dia.Element[], layout: Layout, nodesWi
         rect: {
           width: boundingRect.width,
           height: boundingRect.height,
-          fill: "green",
+          fill: GROUP_COLOR,
           opacity: 0.1,
         },
         ".collapseIcon": {
