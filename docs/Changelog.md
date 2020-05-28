@@ -20,6 +20,7 @@ Nussknacker versions
 * [#944](https://github.com/TouK/nussknacker/pull/903) Pluggable SchemaRegistry Cache
 * [#704](https://github.com/TouK/nussknacker/pull/704) Preloaded creator panel node icons
 * [#943](https://github.com/TouK/nussknacker/pull/943) Literal min / max validators
+* [#976](https://github.com/TouK/nussknacker/pull/976) Fixed save button & groups expand for businessView
 
 0.1.2
 ------------------------
