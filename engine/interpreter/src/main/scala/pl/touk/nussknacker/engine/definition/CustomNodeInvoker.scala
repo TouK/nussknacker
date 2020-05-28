@@ -17,6 +17,7 @@ private[definition] trait CompilerLazyParameter[T] extends LazyParameter[T] {
 
 }
 
+// This class is public for tests purpose. Be aware that its interface can be changed in the future
 case class ExpressionLazyParameter[T](nodeId: NodeId,
                                       parameter: evaluatedparam.Parameter,
                                       returnType: TypingResult) extends CompilerLazyParameter[T] {
@@ -51,6 +52,7 @@ private[definition] case class MappedLazyParameter[T, Y](arg: LazyParameter[T], 
   }
 }
 
+// This class is public for tests purpose. Be aware that its interface can be changed in the future
 case class FixedLazyParameter[T](value: T, returnType: TypingResult) extends CompilerLazyParameter[T] {
 
   override def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = _ => Future.successful(value)
