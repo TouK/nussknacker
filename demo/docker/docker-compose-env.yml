@@ -60,6 +60,15 @@ services:
 #      - zookeeper
 #      - kafka
 
+  schemaregistry:
+    container_name: nussknacker_schemaregistry
+    image: confluent/schema-registry
+    ports:
+      - "3081:8081"
+    depends_on:
+      - zookeeper
+      - kafka
+
   jobmanager:
     container_name: nussknacker_jobmanager
     image: flink:${FLINK_VERSION-1.9.1}-scala_${SCALA_VERSION-2.12}
