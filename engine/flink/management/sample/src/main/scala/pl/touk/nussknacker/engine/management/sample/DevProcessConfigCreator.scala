@@ -18,7 +18,9 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.Ag
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
 import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper

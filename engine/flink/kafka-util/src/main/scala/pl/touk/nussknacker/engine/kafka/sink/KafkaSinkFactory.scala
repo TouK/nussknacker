@@ -1,19 +1,23 @@
-package pl.touk.nussknacker.engine.kafka
-
-import java.nio.charset.StandardCharsets
+package pl.touk.nussknacker.engine.kafka.sink
 
 import javax.validation.constraints.NotBlank
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
-import pl.touk.nussknacker.engine.kafka.BaseKafkaSinkFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaSerializationSchemaFactory, KafkaSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.KafkaFactory._
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 
-class KafkaSinkFactory(schemaSerializerFactory: KafkaSerializationSchemaFactory[Any], processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaSinkFactory(schemaSerializerFactory, processObjectDependencies) {
+/** <pre>
+  * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer]]
+  *
+  * Producing data is defined in [[pl.touk.nussknacker.engine.kafka.sink.KafkaSink]]
+
+  * </pre>
+  * */
+class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[Any], processObjectDependencies: ProcessObjectDependencies)
+  extends BaseKafkaSinkFactory(serializationSchemaFactory, processObjectDependencies) {
 
   def this(serializationSchema: String => KafkaSerializationSchema[Any], processObjectDependencies: ProcessObjectDependencies) =
     this(FixedKafkaSerializationSchemaFactory(serializationSchema), processObjectDependencies)
@@ -29,10 +33,6 @@ class KafkaSinkFactory(schemaSerializerFactory: KafkaSerializationSchemaFactory[
     createSink(topic, processMetaData)
 }
 
-object BaseKafkaSinkFactory {
-  final val TopicParamName = "topic"
-}
-
 abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[Any], processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory {
 
@@ -42,15 +42,5 @@ abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializati
     val serializationSchema = serializationSchemaFactory.create(preparedTopic, kafkaConfig)
     val clientId = s"${processMetaData.id}-$preparedTopic"
     new KafkaSink(topic, kafkaConfig, serializationSchema, clientId)
-  }
-
-  class KafkaSink(topic: String, kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[Any], clientId: String)
-    extends BasicFlinkSink with Serializable {
-
-    override def toFlinkFunction: SinkFunction[Any] =
-      PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic, serializationSchema, clientId)
-
-    override def testDataOutput: Option[Any => String] = Option(value =>
-      new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8))
   }
 }

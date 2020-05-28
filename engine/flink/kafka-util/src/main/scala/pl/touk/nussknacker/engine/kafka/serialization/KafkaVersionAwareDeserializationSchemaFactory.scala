@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   *
   * @tparam T type of deserialized object
   */
-trait KafkaDeserializationSchemaVersionAwareFactory[T] extends KafkaDeserializationSchemaFactory[T] {
+trait KafkaVersionAwareDeserializationSchemaFactory[T] extends KafkaDeserializationSchemaFactory[T] {
   def create(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
 
   override def create(topics: List[String], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] =
@@ -20,13 +20,13 @@ trait KafkaDeserializationSchemaVersionAwareFactory[T] extends KafkaDeserializat
 }
 
 /**
-  * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaVersionAwareFactory]]
+  * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareDeserializationSchemaFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes only value.
   *
   * @tparam T type of deserialized object
   */
-abstract class BaseKafkaDeserializationSchemaVersionAwareFactory[T: TypeInformation]
-  extends KafkaDeserializationSchemaVersionAwareFactory[T] {
+abstract class BaseKafkaVersionAwareDeserializationSchemaFactory[T: TypeInformation]
+  extends KafkaVersionAwareDeserializationSchemaFactory[T] {
 
   protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[T]
 
@@ -47,14 +47,14 @@ abstract class BaseKafkaDeserializationSchemaVersionAwareFactory[T: TypeInformat
 }
 
 /**
-  * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaVersionAwareFactory]]
+  * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareDeserializationSchemaFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes both key and value
   * and wrap it in object T
   *
   * @tparam T type of deserialized object
   */
-abstract class BaseKeyValueKafkaDeserializationSchemaVersionAwareFactory[T: TypeInformation]
-  extends KafkaDeserializationSchemaVersionAwareFactory[T] {
+abstract class BaseKafkaVersionAwareKeyValueDeserializationSchemaFactory[T: TypeInformation]
+  extends KafkaVersionAwareDeserializationSchemaFactory[T] {
 
   protected type K
 

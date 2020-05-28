@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka
+package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TestDa
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.kafka._
 
 import scala.collection.JavaConverters._
 

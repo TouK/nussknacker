@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka
+package pl.touk.nussknacker.engine.kafka.source
 
 import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.serialization.DeserializationSchema
@@ -10,14 +10,15 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source
 import pl.touk.nussknacker.engine.api.test.TestDataSplit
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.kafka.BaseKafkaSourceFactory._
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaDeserializationSchemaFactory, KafkaDeserializationSchemaFactory}
 
 /** <pre>
   * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer]]
   * Features:
   *   - fetch latest N records which can be later used to test process in UI
-  * Fetching data is defined in [[pl.touk.nussknacker.engine.kafka.KafkaSource]] which
+  * Fetching data is defined in [[pl.touk.nussknacker.engine.kafka.source.KafkaSource]] which
   * extends [[pl.touk.nussknacker.engine.api.process.TestDataGenerator]]. See [[pl.touk.nussknacker.engine.kafka.KafkaUtils#readLastMessages]]
   *   - reset Kafka's offset to latest value - `forceLatestRead` property, see [[pl.touk.nussknacker.engine.kafka.KafkaUtils#setOffsetToLatest]]
   *
@@ -55,10 +56,6 @@ class KafkaSourceFactory[T: TypeInformation](deserializationSchemaFactory: Kafka
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     createSource(List(topic), kafkaConfig, processMetaData, nodeId)
   }
-}
-
-object BaseKafkaSourceFactory {
-  final val TopicParamName = "topic"
 }
 
 class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,

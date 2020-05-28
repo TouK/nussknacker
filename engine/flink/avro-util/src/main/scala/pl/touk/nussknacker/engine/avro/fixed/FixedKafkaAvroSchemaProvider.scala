@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.Conflu
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKafkaAvroDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
-import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchemaVersionAwareFactory, KafkaSerializationSchemaVersionAwareFactory}
+import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareDeserializationSchemaFactory, KafkaVersionAwareSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 /**
@@ -24,8 +24,8 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 class FixedKafkaAvroSchemaProvider[T: TypeInformation](val topic: String,
                                                        val avroSchemaString: String,
                                                        val schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                       val deserializationSchemaFactory: KafkaDeserializationSchemaVersionAwareFactory[T],
-                                                       val serializationSchemaFactory: KafkaSerializationSchemaVersionAwareFactory[Any],
+                                                       val deserializationSchemaFactory: KafkaVersionAwareDeserializationSchemaFactory[T],
+                                                       val serializationSchemaFactory: KafkaVersionAwareSerializationSchemaFactory[Any],
                                                        val kafkaConfig: KafkaConfig,
                                                        val formatKey: Boolean) extends KafkaAvroSchemaProvider[T] {
 

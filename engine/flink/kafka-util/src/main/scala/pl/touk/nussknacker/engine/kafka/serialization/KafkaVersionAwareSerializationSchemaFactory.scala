@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   *
   * @tparam T type of serialized object
   */
-trait KafkaSerializationSchemaVersionAwareFactory[T] extends KafkaSerializationSchemaFactory[T] {
+trait KafkaVersionAwareSerializationSchemaFactory[T] extends KafkaSerializationSchemaFactory[T] {
 
   def create(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): KafkaSerializationSchema[T]
 
@@ -27,7 +27,7 @@ trait KafkaSerializationSchemaVersionAwareFactory[T] extends KafkaSerializationS
   *
   * @tparam T type of serialized object
   */
-abstract class BaseKafkaSerializationSchemaVersionAwareFactory[T] extends KafkaSerializationSchemaVersionAwareFactory[T] {
+abstract class BaseKafkaVersionAwareSerializationSchemaFactory[T] extends KafkaVersionAwareSerializationSchemaFactory[T] {
 
   protected def createValueSerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[T]
 
@@ -57,7 +57,7 @@ abstract class BaseKafkaSerializationSchemaVersionAwareFactory[T] extends KafkaS
   *
   * @tparam T type of serialized object
   */
-abstract class KafkaKeyValueSerializationSchemaFactoryBase[T] extends KafkaSerializationSchemaVersionAwareFactory[T] {
+abstract class BaseKafkaVersionAwareKeyValueSerializationSchemaFactory[T] extends KafkaVersionAwareSerializationSchemaFactory[T] {
 
   protected type K
 
