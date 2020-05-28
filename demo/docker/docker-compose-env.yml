@@ -60,8 +60,8 @@ services:
 #      - zookeeper
 #      - kafka
 
-  schema-registry:
-    container_name: nussknacker_schema-registry
+  schemaregistry:
+    container_name: nussknacker_schemaregistry
     image: confluent/schema-registry
     ports:
       - "3081:8081"
