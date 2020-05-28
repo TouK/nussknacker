@@ -59,7 +59,7 @@ object FixedKafkaAvroSchemaProvider {
 
   def apply[T: TypeInformation](topic: String, avroSchemaString: String, kafkaConfig: KafkaConfig, formatKey: Boolean, useSpecificAvroReader: Boolean): FixedKafkaAvroSchemaProvider[T] = {
     val schemaRegistryClientFactory = fixedClientFactory(topic, avroSchemaString)
-    val deserializationSchemaFactory = new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
+    val deserializationSchemaFactory = ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
     val serializationSchemaFactory = new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
     new FixedKafkaAvroSchemaProvider(

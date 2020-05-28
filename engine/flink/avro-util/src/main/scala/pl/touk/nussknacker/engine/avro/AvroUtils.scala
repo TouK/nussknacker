@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
+import java.nio.ByteBuffer
+
 import cats.data.Validated
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import org.apache.avro.Schema
@@ -44,6 +46,17 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 object AvroUtils {
 
   private def parser = new Schema.Parser()
+
+  def parsePayloadToByteBuffer(payload: Array[Byte]): Validated[IllegalArgumentException, ByteBuffer] = {
+    val buffer = ByteBuffer.wrap(payload)
+    if (buffer.get != 0)
+      Validated.invalid(new IllegalArgumentException("Unknown magic byte!"))
+    else
+      Validated.valid(buffer)
+  }
+
+  def topicSubject(topic: String, isKey: Boolean): String =
+    if (isKey) keySubject(topic) else valueSubject(topic)
 
   def keySubject(topic: String): String =
     topic + "-key"
