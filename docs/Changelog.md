@@ -17,9 +17,9 @@ Nussknacker versions
 * [#944](https://github.com/TouK/nussknacker/pull/903) System cache mechanism
 * [#704](https://github.com/TouK/nussknacker/pull/704) Preloaded creator panel node icons
 * [#943](https://github.com/TouK/nussknacker/pull/943) Literal min / max validators
+* [#976](https://github.com/TouK/nussknacker/pull/976) Fixed save button & groups expand for businessView
 * [#973](https://github.com/TouK/nussknacker/pull/973) Textarea editor
 * Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981)
-
 
 0.1.2
 ------------------------
