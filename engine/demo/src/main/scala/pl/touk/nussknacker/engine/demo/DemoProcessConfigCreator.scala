@@ -20,7 +20,8 @@ import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionH
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaSinkFactory, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {

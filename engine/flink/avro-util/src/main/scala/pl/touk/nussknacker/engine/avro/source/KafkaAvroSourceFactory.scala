@@ -29,7 +29,7 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
               )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val kafkaAvroSchemaProvider = SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, version)
-    createKafkaAvroSource(topic, kafkaConfig, kafkaAvroSchemaProvider, processMetaData, nodeId)
+    createSource(topic, kafkaConfig, kafkaAvroSchemaProvider, processMetaData, nodeId)
   }
 }
 
