@@ -15,10 +15,7 @@ import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
-import {drawGraph} from "./GraphPartialsInTS/drawGraph"
-import {directedLayout} from "./GraphPartialsInTS/directedLayout"
-import {isBackgroundObject} from "./GraphPartialsInTS/isBackgroundObject"
-import {createPaper} from "./GraphPartialsInTS/createPaper"
+import {drawGraph, directedLayout, isBackgroundObject, createPaper} from "./GraphPartialsInTS"
 
 export class Graph extends React.Component {
 
