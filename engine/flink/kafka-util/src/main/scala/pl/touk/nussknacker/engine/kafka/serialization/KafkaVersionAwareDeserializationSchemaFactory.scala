@@ -25,7 +25,7 @@ trait KafkaVersionAwareDeserializationSchemaFactory[T] extends KafkaDeserializat
   *
   * @tparam T type of deserialized object
   */
-abstract class BaseKafkaVersionAwareDeserializationSchemaFactory[T: TypeInformation]
+abstract class KafkaVersionAwareValueDeserializationSchemaFactory[T: TypeInformation]
   extends KafkaVersionAwareDeserializationSchemaFactory[T] {
 
   protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[T]
@@ -53,7 +53,7 @@ abstract class BaseKafkaVersionAwareDeserializationSchemaFactory[T: TypeInformat
   *
   * @tparam T type of deserialized object
   */
-abstract class BaseKafkaVersionAwareKeyValueDeserializationSchemaFactory[T: TypeInformation]
+abstract class KafkaVersionAwareKeyValueDeserializationSchemaFactory[T: TypeInformation]
   extends KafkaVersionAwareDeserializationSchemaFactory[T] {
 
   protected type K

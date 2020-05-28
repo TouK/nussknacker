@@ -27,7 +27,7 @@ trait KafkaVersionAwareSerializationSchemaFactory[T] extends KafkaSerializationS
   *
   * @tparam T type of serialized object
   */
-abstract class BaseKafkaVersionAwareSerializationSchemaFactory[T] extends KafkaVersionAwareSerializationSchemaFactory[T] {
+abstract class KafkaVersionAwareValueSerializationSchemaFactory[T] extends KafkaVersionAwareSerializationSchemaFactory[T] {
 
   protected def createValueSerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[T]
 
@@ -57,7 +57,7 @@ abstract class BaseKafkaVersionAwareSerializationSchemaFactory[T] extends KafkaV
   *
   * @tparam T type of serialized object
   */
-abstract class BaseKafkaVersionAwareKeyValueSerializationSchemaFactory[T] extends KafkaVersionAwareSerializationSchemaFactory[T] {
+abstract class KafkaVersionAwareKeyValueSerializationSchemaFactory[T] extends KafkaVersionAwareSerializationSchemaFactory[T] {
 
   protected type K
 

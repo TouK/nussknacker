@@ -5,7 +5,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.serialization.{BaseKafkaVersionAwareDeserializationSchemaFactory, BaseKafkaVersionAwareKeyValueDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareValueDeserializationSchemaFactory, KafkaVersionAwareKeyValueDeserializationSchemaFactory}
 
 trait ConfluentKafkaAvroDeserializerFactory {
   import collection.JavaConverters._
@@ -22,14 +22,14 @@ trait ConfluentKafkaAvroDeserializerFactory {
 }
 
 class ConfluentKafkaAvroDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean)
-  extends BaseKafkaVersionAwareDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
+  extends KafkaVersionAwareValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[T] =
     createDeserializer[T](schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
 }
 
 abstract class ConfluentKeyValueKafkaAvroDeserializationFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean)
-  extends BaseKafkaVersionAwareKeyValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
+  extends KafkaVersionAwareKeyValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createKeyDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[K] =
     createDeserializer[K](schemaRegistryClientFactory, kafkaConfig, isKey = true, useSpecificAvroReader)

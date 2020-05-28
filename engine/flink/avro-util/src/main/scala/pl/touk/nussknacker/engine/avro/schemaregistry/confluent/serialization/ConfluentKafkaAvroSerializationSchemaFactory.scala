@@ -4,7 +4,7 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.serialization.{BaseKafkaVersionAwareSerializationSchemaFactory, BaseKafkaVersionAwareKeyValueSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareValueSerializationSchemaFactory, KafkaVersionAwareKeyValueSerializationSchemaFactory}
 
 trait ConfluentAvroSerializerFactory {
   import collection.JavaConverters._
@@ -19,14 +19,14 @@ trait ConfluentAvroSerializerFactory {
 }
 
 class ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends BaseKafkaVersionAwareSerializationSchemaFactory[Any] with ConfluentAvroSerializerFactory {
+  extends KafkaVersionAwareValueSerializationSchemaFactory[Any] with ConfluentAvroSerializerFactory {
 
   override protected def createValueSerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any] =
     createSerializer[Any](schemaRegistryClientFactory, kafkaConfig, isKey = false)
 }
 
 abstract class ConfluentAvroKeyValueSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends BaseKafkaVersionAwareKeyValueSerializationSchemaFactory[Any] with ConfluentAvroSerializerFactory {
+  extends KafkaVersionAwareKeyValueSerializationSchemaFactory[Any] with ConfluentAvroSerializerFactory {
 
   override protected def createKeySerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[K] =
     createSerializer[K](schemaRegistryClientFactory, kafkaConfig, isKey = true)

@@ -62,11 +62,10 @@ Additional changes:
 - (Refactor Kafka API) Renamed DeserializationSchemaFactory to KafkaDeserializationSchemaFactory
 - (Refactor Kafka API) Renamed FixedDeserializationSchemaFactory to FixedKafkaDeserializationSchemaFactory
 - (Refactor Kafka API) Renamed FixedSerializationSchemaFactory to FixedKafkaSerializationSchemaFactory
-- (Refactor Kafka API) Renamed KafkaSerializationSchemaFactoryBase and BaseKafkaSerializationSchemaVersionAwareFactory
-- (Refactor Kafka API) Renamed KafkaSerializationSchemaFactoryBase to BaseKafkaVersionAwareSerializationSchemaFactory
-- (Refactor Kafka API) Renamed KafkaKeyValueSerializationSchemaFactoryBase to BaseKafkaVersionAwareKeyValueSerializationSchemaFactory
-- (Refactor Kafka API) Renamed KafkaDeserializationSchemaFactoryBase to BaseKafkaVersionAwareDeserializationSchemaFactory
-- (Refactor Kafka API) Renamed KafkaKeyValueDeserializationSchemaFactoryBase to BaseKafkaVersionAwareKeyValueDeserializationSchemaFactory
+- (Refactor Kafka API) Renamed KafkaSerializationSchemaFactoryBase and KafkaVersionAwareValueSerializationSchemaFactory
+- (Refactor Kafka API) Renamed KafkaKeyValueSerializationSchemaFactoryBase to KafkaVersionAwareKeyValueSerializationSchemaFactory
+- (Refactor Kafka API) Renamed KafkaDeserializationSchemaFactoryBase to KafkaVersionAwareValueDeserializationSchemaFactory
+- (Refactor Kafka API) Renamed KafkaKeyValueDeserializationSchemaFactoryBase to KafkaVersionAwareKeyValueDeserializationSchemaFactory
 - (Refactor KafkaAvro API) Renamed AvroDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory and moved to avro.schemaregistry.confluent package
 - (Refactor KafkaAvro API) Renamed AvroKeyValueDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory and moved to avro.schemaregistry.confluent package
 - (Refactor KafkaAvro API) Renamed AvroSerializationSchemaFactory to ConfluentAvroSerializationSchemaFactory and moved to avro.schemaregistry.confluent package
