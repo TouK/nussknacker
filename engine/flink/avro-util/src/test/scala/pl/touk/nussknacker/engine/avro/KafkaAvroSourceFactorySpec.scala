@@ -180,7 +180,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
   }
 
   private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
-    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactoryBase[K, V](MockConfluentSchemaRegistryClientFactory)
+    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](MockConfluentSchemaRegistryClientFactory)
     val provider = ConfluentSchemaRegistryProvider(
       MockConfluentSchemaRegistryClientFactory,
       None,
@@ -193,8 +193,8 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
   }
 }
 
-class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactoryBase[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-                                                                         (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
+class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+                                                                     (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
   extends ConfluentKeyValueKafkaAvroDeserializationFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
     createTuple2TypeInformation(keyTypInfo, valueTypInfo)
   ) {
