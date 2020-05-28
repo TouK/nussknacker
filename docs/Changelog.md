@@ -20,6 +20,7 @@ Nussknacker versions
 * [#976](https://github.com/TouK/nussknacker/pull/976) Fixed save button & groups expand for businessView
 * [#973](https://github.com/TouK/nussknacker/pull/973) Textarea editor
 * Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981)
+* [#987](https://github.com/TouK/nussknacker/pull/987) Optimized graph rendering time, fixed minor bugs (expand group icon, view center & fit after layout).
 
 0.1.2
 ------------------------
