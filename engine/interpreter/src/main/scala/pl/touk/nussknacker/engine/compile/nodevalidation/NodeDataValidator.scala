@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData}
  */
 trait NodeDataValidator[T<:NodeData] {
 
-  def compile(nodeData: T, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse
+  def validate(nodeData: T, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse
 
 }
 
@@ -29,8 +29,8 @@ object NodeDataValidator {
 
   def validate(nodeData: NodeData, modelData: ModelData, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     nodeData match {
-      case a:Filter => new FilterValidator(modelData).compile(a, validationContext)
-      case a => EmptyValidator.compile(a, validationContext)
+      case a:Filter => new FilterValidator(modelData).validate(a, validationContext)
+      case a => EmptyValidator.validate(a, validationContext)
     }
   }
 
@@ -46,7 +46,7 @@ class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
       modelData.processDefinition.settings
     )
 
-  override def compile(nodeData: Filter, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
+  override def validate(nodeData: Filter, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val validation: ValidatedNel[ProcessCompilationError, _] =
       expressionCompiler.compile(nodeData.expression, Some(NodeTypingInfo.DefaultExpressionId), validationContext, Typed[Boolean])(NodeId(nodeData.id))
     ValidationPerformed(validation.fold(_.toList, _ => Nil))
@@ -54,6 +54,6 @@ class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
 }
 
 object EmptyValidator extends NodeDataValidator[NodeData] {
-  override def compile(nodeData: NodeData, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = ValidationNotPerformed
+  override def validate(nodeData: NodeData, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = ValidationNotPerformed
 }
 
