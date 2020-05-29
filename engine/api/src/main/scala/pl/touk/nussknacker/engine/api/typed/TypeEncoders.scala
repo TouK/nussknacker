@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
 import pl.touk.nussknacker.engine.api.typed.TypingType.TypingType
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 //TODO: refactor way of encoding to easier handle decoding.
 object TypeEncoders {
@@ -56,7 +56,7 @@ object TypeEncoders {
 class TypingResultDecoder(loadClass: String => Class[_]) {
 
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
-    hcursor.downField(typeField).as[TypingType].flatMap {
+    hcursor.downField(typeField).as[TypingType].right.flatMap {
       case TypingType.Unknown => Right(Unknown)
       case TypingType.TypedUnion => typedUnion(hcursor)
       case TypingType.TypedDict => typedDict(hcursor)
@@ -72,34 +72,40 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   }
 
   private def typedTaggedValue(obj: HCursor): Decoder.Result[TypingResult] = for {
-    valueClass <- typedClass(obj)
-    tag <- obj.downField("tag").as[String]
+    valueClass <- typedClass(obj).right
+    tag <- obj.downField("tag").as[String].right
   } yield TypedTaggedValue(valueClass, tag)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
-    valueClass <- typedClass(obj)
-    fields <- obj.downField("fields").as[Map[String, TypingResult]]
+    valueClass <- typedClass(obj).right
+    fields <- obj.downField("fields").as[Map[String, TypingResult]].right
   } yield TypedObjectTypingResult(fields, valueClass)
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {
     val dict = obj.downField("dict")
     for {
-      id <- dict.downField("id").as[String]
-      valueType <- dict.downField("valueType").as[SingleTypingResult]
+      id <- dict.downField("id").as[String].right
+      valueType <- dict.downField("valueType").as[SingleTypingResult].right
     } yield TypedDict(id, valueType)
   }
 
   private def typedUnion(obj: HCursor): Decoder.Result[TypingResult] = {
-    obj.downField("union").as[Set[SingleTypingResult]].map(TypedUnion)
+    obj.downField("union").as[Set[SingleTypingResult]].right.map(TypedUnion)
   }
 
   private def typedClass(obj: HCursor): Decoder.Result[TypedClass] = {
     for {
-      refClazzName <- obj.downField("refClazzName").as[String]
-      clazz <- Try(loadClass(refClazzName))
-        .fold(thr => Left(DecodingFailure(s"Failed to load class $refClazzName with ${thr.getMessage}", obj.history)), Right(_))
-      params <- obj.downField("params").as[List[TypingResult]]
+      refClazzName <- obj.downField("refClazzName").as[String].right
+      clazz <- tryToLoadClass(refClazzName, obj).right
+      params <- obj.downField("params").as[List[TypingResult]].right
     } yield TypedClass(clazz, params)
+  }
+
+  private def tryToLoadClass(name: String, obj: HCursor): Decoder.Result[Class[_]] = {
+    Try(loadClass(name)) match {
+      case Success(value) => Right(value)
+      case Failure(thr) => Left(DecodingFailure(s"Failed to load class $name with ${thr.getMessage}", obj.history))
+    }
   }
 
 
