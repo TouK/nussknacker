@@ -287,7 +287,7 @@ export class Graph extends React.Component {
   }
 
   changeNodeDetailsOnClick() {
-    this.processGraphPaper.on("cell:pointerdblclick", (cellView, evt, x, y) => {
+    this.processGraphPaper.on("cell:pointerdblclick", (cellView) => {
       if (this.props.groupingState) {
         return
       }
@@ -305,7 +305,7 @@ export class Graph extends React.Component {
     })
 
     if (this.props.singleClickNodeDetailsEnabled) {
-      this.processGraphPaper.on("cell:pointerclick", (cellView, evt, x, y) => {
+      this.processGraphPaper.on("cell:pointerclick", (cellView, evt) => {
 
         const nodeDataId = cellView.model.attributes.nodeData?.id
         if (!nodeDataId) {
@@ -332,7 +332,7 @@ export class Graph extends React.Component {
       })
     }
 
-    this.processGraphPaper.on("blank:pointerdown", (evt) => {
+    this.processGraphPaper.on("blank:pointerdown", () => {
       if (this.props.fetchedProcessDetails != null) {
         this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
         this.props.actions.resetSelection()
@@ -358,7 +358,7 @@ export class Graph extends React.Component {
 
   //needed for proper switch/filter label handling
   showLabelOnHover(model) {
-    if (model.get && !isBackgroundObject(model)) {
+    if (!isBackgroundObject(model)) {
       model.toFront()
     }
     return model
@@ -380,13 +380,13 @@ export class Graph extends React.Component {
   }
 
   cursorBehaviour() {
-    this.processGraphPaper.on("blank:pointerdown", (evt, x, y) => {
+    this.processGraphPaper.on("blank:pointerdown", () => {
       if (this.getEspGraphRef()) {
         this.getEspGraphRef().style.cursor = "move"
       }
     })
 
-    this.processGraphPaper.on("blank:pointerup", (evt, x, y) => {
+    this.processGraphPaper.on("blank:pointerup", () => {
       if (this.getEspGraphRef()) {
         this.getEspGraphRef().style.cursor = "auto"
       }
