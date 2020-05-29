@@ -11,6 +11,8 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
+import org.apache.kafka.common.errors.SerializationException
+import org.apache.kafka.common.serialization.Deserializer
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -18,7 +20,8 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.serializer.{ConfluentKafkaAvroDeserializer, ConfluentStaticKafkaAvroDeserializer}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -47,9 +50,12 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
 
+  lazy val confluentSchemaRegistryClient: ConfluentSchemaRegistryClient = factory.createSchemaRegistryClient(kafkaConfig)
+
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
   val RecordSchema: Schema = AvroUtils.parseSchema(RecordSchemaString)
+  val Record2Schema: Schema = AvroUtils.parseSchema(Record2SchemaString)
 
   private val givenNotMatchingJsonObj =
     """{
@@ -78,6 +84,12 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     val r = new GenericData.Record(RecordSchema)
     r.put("first", "Jan")
     r.put("last", "Kowalski")
+    r
+  }
+
+  private val givenSecondMatchingAvroObj = {
+    val r = new GenericData.Record(Record2Schema)
+    r.put("firstname", "Jan")
     r
   }
 
@@ -161,7 +173,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     send(givenMatchingAvroObj, AvroInTopic)
 
     run(avroProcess(1)) {
-      val consumer = kafkaClient.createConsumer()
       val processed = consumeOneAvroMessage(AvroOutTopic)
       processed shouldEqual List(givenMatchingAvroObj)
     }
@@ -250,12 +261,56 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     }
   }
 
+  test("should throw exception when schema is not compatible with ConfluentStaticKafkaAvroDeserializer") {
+    val serializedObj = valueSerializer.serialize(AvroRecord2Topic, givenSecondMatchingAvroObj)
+    kafkaClient.sendRawMessage("wrong-message", Array.empty, serializedObj)
+    val deserializer = new ConfluentStaticKafkaAvroDeserializer(confluentSchemaRegistryClient, RecordSchema, isKey = false)
+
+    assertThrows[SerializationException] {
+      run(avroProcess(1)) {
+        val processed = consumeOneAvroMessage("wrong-message", deserializer)
+        processed shouldEqual List(givenMatchingAvroObj)
+      }
+    }
+  }
+
+  test("should read avro object from kafka and save new one created from scratch with ConfluentStaticKafkaAvroDeserializer") {
+    send(givenMatchingAvroObj, AvroFromScratchInTopic)
+    val deserializer = new ConfluentStaticKafkaAvroDeserializer(confluentSchemaRegistryClient, RecordSchema, isKey = false)
+    run(avroFromScratchProcess(1)) {
+      val processed = consumeOneAvroMessage(AvroFromScratchOutTopic, deserializer)
+      processed shouldEqual List(givenMatchingAvroObj)
+    }
+  }
+
+  test("should throw exception when schema is not compatible with ConfluentKafkaAvroDeserializer") {
+    val serializedObj = valueSerializer.serialize(AvroRecord2Topic, givenSecondMatchingAvroObj)
+    kafkaClient.sendRawMessage("sec-wrong-message", Array.empty, serializedObj)
+    val deserializer = new ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroInTopic, Some(1), isKey = false)
+
+    assertThrows[SerializationException] {
+      run(avroProcess(1)) {
+        val processed = consumeOneAvroMessage("sec-wrong-message", deserializer)
+        processed shouldEqual List(givenMatchingAvroObj)
+      }
+    }
+  }
+
+  test("should read avro object from kafka and save new one created from scratch with ConfluentKafkaAvroDeserializer") {
+    send(givenMatchingAvroObj, AvroFromScratchInTopic)
+    val deserializer = new ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroRecord2Topic, Option.empty, isKey = false)
+    run(avroFromScratchProcess(1)) {
+      val processed = consumeOneAvroMessage(AvroFromScratchOutTopic, deserializer)
+      processed shouldEqual List(givenMatchingAvroObj)
+    }
+  }
+
   private def parseJson(str: String) = io.circe.parser.parse(str).right.get
 
-  private def consumeOneAvroMessage(topic: String) = {
+  private def consumeOneAvroMessage(topic: String, deserializer: Deserializer[_] = valueDeserializer) = {
     val consumer = kafkaClient.createConsumer()
     consumer.consume(topic).map { record =>
-      valueDeserializer.deserialize(topic, record.message())
+      deserializer.deserialize(topic, record.message())
     }.take(1).toList
   }
 
@@ -320,6 +375,19 @@ object MockSchemaRegistry extends Serializable {
       |}
     """.stripMargin
 
+  val AvroRecord2Topic: String = "name.avro.second.input"
+
+  val Record2SchemaString: String =
+    """{
+      |  "type": "record",
+      |  "namespace": "pl.touk.nussknacker.engine.avro",
+      |  "name": "FullName",
+      |  "fields": [
+      |    { "name": "firstname", "type": "string" }
+      |  ]
+      |}
+    """.stripMargin
+
   val schemaRegistryMockClient: MockSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
     .register(AvroInTopic, RecordSchemaString, 1, isKey = false)
     .register(AvroOutTopic, RecordSchemaString, 1, isKey = false)
@@ -327,6 +395,7 @@ object MockSchemaRegistry extends Serializable {
     .register(AvroFromScratchOutTopic, RecordSchemaString, 1, isKey = false)
     .register(AvroTypedInTopic, RecordSchemaString, 1, isKey = false)
     .register(AvroTypedOutTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroRecord2Topic, Record2SchemaString, 1, isKey = false)
     .build
 
   val expirationTime: Option[FiniteDuration] = Some(FiniteDuration(5, TimeUnit.MINUTES))

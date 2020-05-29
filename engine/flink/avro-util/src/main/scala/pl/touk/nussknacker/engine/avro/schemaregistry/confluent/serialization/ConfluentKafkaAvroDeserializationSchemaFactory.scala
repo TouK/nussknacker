@@ -21,6 +21,15 @@ trait ConfluentKafkaAvroDeserializerFactory {
                                       useSpecificAvroReader: Boolean): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
+    /**
+      * Modes Behavior description:
+      *
+      * STATIC - Deserializer always try to deserialize message to given schema as parameter
+      *
+      * FRESH - Deserializer always fetches schema by given topic name and schema version as parameters
+      *
+      * NORMAL - Standard Confluent Deserializer, it always fetches schema by message schema id
+      */
     val deserializer = mode match {
       case ConfluentKafkaAvroDeserializationMode.STATIC =>
         ConfluentStaticKafkaAvroDeserializer(schemaRegistryClient, topic, version, isKey = isKey)

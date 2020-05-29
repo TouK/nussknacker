@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.s
 
 import org.apache.avro.Schema
 import org.apache.kafka.common.errors.SerializationException
-import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
@@ -15,16 +14,16 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.Confluent
   * @tparam T
   */
 class ConfluentStaticKafkaAvroDeserializer[T](schemaRegistry: ConfluentSchemaRegistryClient, schema: Schema, isKey: Boolean)
-  extends ConfluentBaseKafkaAvroDeserializer(schemaRegistry, isKey) with Deserializer[T] {
+  extends ConfluentBaseKafkaAvroDeserializer[T](schemaRegistry, isKey) {
 
   override def deserialize(topic: String, data: Array[Byte]): T =
-    deserialize(data, schema).asInstanceOf[T]
+    deserializeToSchema(data, schema)
 
-  override def close(): Unit = ???
+  override def close(): Unit = {}
 }
 
 object ConfluentStaticKafkaAvroDeserializer {
-  def apply[T](schemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, version: Option[Int], isKey: Boolean) = {
+  def apply[T](schemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, version: Option[Int], isKey: Boolean): ConfluentStaticKafkaAvroDeserializer[Nothing] = {
     val subject = AvroUtils.topicSubject(topic, isKey = isKey)
     val schema = schemaRegistryClient
       .getSchema(subject, version)

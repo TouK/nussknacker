@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import cats.data.Validated
 import org.apache.avro.Schema
-import org.apache.kafka.common.errors.SerializationException
 
 trait SchemaRegistryClient extends Serializable {
 

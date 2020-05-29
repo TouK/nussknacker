@@ -4,6 +4,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.util
 
+import io.confluent.kafka.schemaregistry.avro.AvroCompatibilityChecker
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.serializers.{AbstractKafkaAvroSerDe, KafkaAvroDeserializerConfig}
 import org.apache.avro.Schema
@@ -13,6 +14,7 @@ import org.apache.avro.io.{DatumReader, DecoderFactory}
 import org.apache.avro.reflect.ReflectDatumReader
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.kafka.common.errors.SerializationException
+import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
@@ -22,10 +24,13 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.Confluent
   * @param confluentSchemaRegistry
   * @param isKey
   */
-abstract class ConfluentBaseKafkaAvroDeserializer(confluentSchemaRegistry: ConfluentSchemaRegistryClient, var isKey: Boolean)
-  extends AbstractKafkaAvroSerDe {
+abstract class ConfluentBaseKafkaAvroDeserializer[T](confluentSchemaRegistry: ConfluentSchemaRegistryClient, var isKey: Boolean)
+  extends AbstractKafkaAvroSerDe with Deserializer[T] {
 
   schemaRegistry = confluentSchemaRegistry.client
+
+  //TODO: In future allow to setting this?
+  val compatibilityChecker: AvroCompatibilityChecker = AvroCompatibilityChecker.FULL_TRANSITIVE_CHECKER
 
   var useSpecificAvroReader: Boolean = false
 
@@ -55,13 +60,19 @@ abstract class ConfluentBaseKafkaAvroDeserializer(confluentSchemaRegistry: Confl
     this.isKey = isKey
   }
 
-  protected def deserialize(payload: Array[Byte], exceptedSchema: Schema): Any = {
+  protected def deserializeToSchema(payload: Array[Byte], exceptedSchema: Schema): T = {
     val buffer = AvroUtils
       .parsePayloadToByteBuffer(payload)
       .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
 
     val recordSchema = schemaFromRegistry(buffer.getInt)
-    read(buffer, recordSchema, exceptedSchema)
+
+    if (!compatibilityChecker.isCompatible(exceptedSchema, recordSchema)) {
+      throw new SerializationException(s"Schemas compatibility mismatch. Record schema $recordSchema is not compatible with excepted schema: $exceptedSchema.")
+    }
+
+    val data = read(buffer, recordSchema, exceptedSchema)
+    data.asInstanceOf[T]
   }
 
   /**
@@ -128,6 +139,13 @@ abstract class ConfluentBaseKafkaAvroDeserializer(confluentSchemaRegistry: Confl
   private def createPrimitiveSchema(parser: Schema.Parser, `type`: String) = {
     val schemaString = String.format("{\"type\" : \"%s\"}", `type`)
     parser.parse(schemaString)
+  }
+
+  protected def schemaByTopicAndVersion(topic: String, version: Option[Int]): Schema = {
+    val subject = AvroUtils.topicSubject(topic, isKey = isKey)
+    confluentSchemaRegistry
+      .getFreshSchema(subject, version)
+      .valueOr(exc => throw new SerializationException(s"Error retrieving Avro schema for topic $topic.", exc))
   }
 
   private def schemaFromRegistry(schemaId: Int): Schema = {
