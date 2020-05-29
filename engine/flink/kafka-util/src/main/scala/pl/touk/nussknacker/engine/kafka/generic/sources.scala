@@ -12,11 +12,14 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.{BaseKafkaSourceFactory, KafkaConfig, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
+//TODO: Move it to source package
 object sources {
 
   import collection.JavaConverters._
@@ -24,15 +27,14 @@ object sources {
   class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[java.util.Map[_, _]](
     JsonMapDeserialization, None, TestParsingUtils.newLineSplit, processObjectDependencies)
 
-  class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends BaseKafkaSourceFactory[TypedMap](
-    None, TestParsingUtils.newLineSplit, processObjectDependencies) {
+  class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies)
+    extends FlinkSourceFactory[TypedMap] with Serializable {
 
     @MethodToInvoke
-    def create(@ParamName("topic") topic: String,
-               @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
+    def create(@ParamName("topic") topic: String, @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
       val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-      val schema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
-      new KafkaSource(List(topic), kafkaConfig, schema, None, processObjectDependencies) with ReturningType {
+      val deserializationSchema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
+      new KafkaSource(List(topic), kafkaConfig, deserializationSchema, None, None, TestParsingUtils.newLineSplit, processObjectDependencies) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }
     }

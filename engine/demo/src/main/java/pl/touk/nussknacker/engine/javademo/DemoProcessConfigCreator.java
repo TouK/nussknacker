@@ -15,9 +15,9 @@ import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
 import pl.touk.nussknacker.engine.demo.LoggingExceptionHandlerFactory;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
-import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
-import pl.touk.nussknacker.engine.kafka.serialization.SerializationSchemaFactory;
+import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory;
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory;
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.schemas;
 import scala.Option;
 import scala.collection.JavaConverters;
@@ -93,7 +93,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
                 throw new RuntimeException("Sorry, only strings");
             }
         };
-        SerializationSchemaFactory<Object> schema = (topic, kafkaConfig1) ->
+        KafkaSerializationSchemaFactory<Object> schema = (topic, kafkaConfig1) ->
             new schemas.SimpleSerializationSchema<>(topic, serializer, null);
         KafkaSinkFactory factory = new KafkaSinkFactory(schema, processObjectDependencies);
         Map<String, WithCategories<SinkFactory>> m = new HashMap<>();

@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.kafka.generic
 import java.util.UUID
 
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
+import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
+//TODO: Move it to sink package
 object sinks {
 
   private val encoder = BestEffortJsonEncoder(failOnUnkown = false)
@@ -21,5 +21,4 @@ object sinks {
     encoder.encode(element).spaces2
     //UUID is *not* performant enough when volume is high...
   }, _ => UUID.randomUUID().toString)
-
 }

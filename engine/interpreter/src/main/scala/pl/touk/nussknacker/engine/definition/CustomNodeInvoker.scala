@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.definition
 
-import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
-import scala.reflect.runtime.universe.TypeTag
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -18,9 +17,10 @@ private[definition] trait CompilerLazyParameter[T] extends LazyParameter[T] {
 
 }
 
-private[definition] case class ExpressionLazyParameter[T](nodeId: NodeId,
-                                                          parameter: evaluatedparam.Parameter,
-                                                          returnType: TypingResult) extends CompilerLazyParameter[T] {
+// This class is public for tests purpose. Be aware that its interface can be changed in the future
+case class ExpressionLazyParameter[T](nodeId: NodeId,
+                                      parameter: evaluatedparam.Parameter,
+                                      returnType: TypingResult) extends CompilerLazyParameter[T] {
   override def prepareEvaluator(compilerInterpreter: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = {
     val compiledExpression = compilerInterpreter.deps.expressionCompiler
               .compileWithoutContextValidation(parameter.expression, parameter.name)(nodeId)
@@ -52,7 +52,8 @@ private[definition] case class MappedLazyParameter[T, Y](arg: LazyParameter[T], 
   }
 }
 
-private[definition] case class FixedLazyParameter[T](value: T, returnType: TypingResult) extends CompilerLazyParameter[T] {
+// This class is public for tests purpose. Be aware that its interface can be changed in the future
+case class FixedLazyParameter[T](value: T, returnType: TypingResult) extends CompilerLazyParameter[T] {
 
   override def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = _ => Future.successful(value)
 

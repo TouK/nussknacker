@@ -32,7 +32,10 @@ export const getFetchedProcessState = createSelector(
   (fetchedProcessDetails, isStateLoaded, processState) => isStateLoaded ? processState : fetchedProcessDetails?.state,
 )
 
-export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest)
+export const isSaveDisabled = createSelector(
+  [isPristine, isLatestProcessVersion, isBusinessView],
+  (pristine, latest, businessView) => pristine && latest || businessView,
+)
 export const isDeployPossible = createSelector(
   [isSaveDisabled, hasError, getFetchedProcessState],
   (disabled, error, state) => disabled && !error && ProcessStateUtils.canDeploy(state),

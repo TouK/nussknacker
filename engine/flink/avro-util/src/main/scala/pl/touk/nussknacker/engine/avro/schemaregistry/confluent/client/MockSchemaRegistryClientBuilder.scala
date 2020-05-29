@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.util.cache.DefaultCache
 
 import scala.collection.mutable.ListBuffer
 
@@ -25,11 +24,10 @@ class MockConfluentSchemaRegistryClientBuilder {
     mockSchemaRegistry.register(subject, item.schema, item.version, item.id)
   }
 
-  def build: CachedConfluentSchemaRegistryClient = {
-    val cache = DefaultCache[Schema]()
+  def build: MockSchemaRegistryClient = {
     val client = new MockSchemaRegistryClient
     registry.foreach(reg => register(client, reg))
-    new CachedConfluentSchemaRegistryClient(client, cache, cache)
+    client
   }
 }
 
@@ -46,4 +44,3 @@ private[client] object RegistryItem {
   def apply(topic: String, schema: Schema, version: Int, isKey: Boolean): RegistryItem =
     new RegistryItem(topic, schema, version, isKey, AutoIncId)
 }
-

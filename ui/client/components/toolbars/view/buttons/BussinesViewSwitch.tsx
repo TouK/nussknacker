@@ -29,7 +29,7 @@ function BussinesViewSwitch(props: Props) {
 }
 
 const mapState = (state: RootState) => ({
-  nothingToSave: isPristine(state),
+  nothingToSave: isPristine(state) || isBusinessView(state),
   processId: getProcessId(state),
   versionId: getProcessVersionId(state),
   businessView: isBusinessView(state),

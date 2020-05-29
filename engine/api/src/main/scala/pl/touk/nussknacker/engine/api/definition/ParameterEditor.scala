@@ -29,6 +29,8 @@ case object TimeParameterEditor extends SimpleParameterEditor
 
 case object DateTimeParameterEditor extends SimpleParameterEditor
 
+case object TextareaParameterEditor extends SimpleParameterEditor
+
 @JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
 
 object DurationParameterEditor {

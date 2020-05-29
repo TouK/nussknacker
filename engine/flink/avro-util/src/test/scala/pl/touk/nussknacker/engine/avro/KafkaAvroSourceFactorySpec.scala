@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.avro
 
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
@@ -17,13 +19,17 @@ import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentAvroKeyValueDeserializationSchemaFactory, ConfluentSchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKeyValueKafkaAvroDeserializationFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionFound}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
+import pl.touk.nussknacker.engine.util.cache.DefaultCache
 import pl.touk.nussknacker.test.NussknackerAssertions
+
+import scala.concurrent.duration.FiniteDuration
 
 class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
 
@@ -41,12 +47,12 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
 
   private lazy val keySerializer: KafkaAvroSerializer = {
-    val serializer = new KafkaAvroSerializer(confluentSchemaRegistryMockClient.client)
+    val serializer = new KafkaAvroSerializer(schemaRegistryMockClient)
     serializer.configure(Map[String, AnyRef]("schema.registry.url" -> "not_used").asJava, true)
     serializer
   }
 
-  private lazy val valueSerializer = new KafkaAvroSerializer(confluentSchemaRegistryMockClient.client)
+  private lazy val valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -170,7 +176,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
 
   private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
     val schemaRegistryProvider = ConfluentSchemaRegistryProvider[AnyRef](
-      MockConfluentSchemaRegistryClientFactory,
+      factory,
       processObjectDependencies,
       useSpecificAvroReader,
       formatKey = false
@@ -179,9 +185,9 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
   }
 
   private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
-    val deserializerFactory = new TupleAvroKeyValueDeserializationSchemaFactory[K, V](MockConfluentSchemaRegistryClientFactory)
+    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
     val provider = ConfluentSchemaRegistryProvider(
-      MockConfluentSchemaRegistryClientFactory,
+      factory,
       None,
       Some(deserializerFactory),
       kafkaConfig,
@@ -192,9 +198,9 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
   }
 }
 
-class TupleAvroKeyValueDeserializationSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-                                                               (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
-  extends ConfluentAvroKeyValueDeserializationSchemaFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
+class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+                                                                     (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
+  extends ConfluentKeyValueKafkaAvroDeserializationFactory[(Key, Value)](schemaRegistryClientFactory, useSpecificAvroReader = false)(
     createTuple2TypeInformation(keyTypInfo, valueTypInfo)
   ) {
 
@@ -243,16 +249,18 @@ object MockSchemaRegistry {
     """.stripMargin
   )
 
-  val confluentSchemaRegistryMockClient: ConfluentSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
+  val schemaRegistryMockClient: MockSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
     .register(RecordTopic, RecordSchemaV1, 1, isKey = false)
     .register(RecordTopic, RecordSchemaV2, 2, isKey = false)
     .register(IntTopic, IntSchema, 1, isKey = false)
     .register(IntTopic, IntSchema, 1, isKey = true)
     .build
 
-  object MockConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory with Serializable {
-    override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient =
-      confluentSchemaRegistryMockClient
+  val expirationTime: Option[FiniteDuration] = Some(FiniteDuration(5, TimeUnit.MINUTES))
+
+  val factory: CachedConfluentSchemaRegistryClientFactory = new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, expirationTime, expirationTime) {
+    override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
+      schemaRegistryMockClient
   }
 }
 
