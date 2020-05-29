@@ -8,6 +8,7 @@ import {SettingsActions} from "./settingsActions"
 import {ToolbarActions} from "./nk/toolbars"
 import {RootState} from "../reducers"
 import {UndoRedoActions} from "./undoRedoActions"
+import {NodeDetailsActions} from "./nk/nodeDetails"
 
 type TypedAction =
   | ReportEventAction
@@ -16,6 +17,7 @@ type TypedAction =
   | DisplayProcessActivityAction
   | NodeActions
   | ToolbarActions
+  | NodeDetailsActions
   | UndoRedoActions
 
 interface UntypedAction extends AnyAction {

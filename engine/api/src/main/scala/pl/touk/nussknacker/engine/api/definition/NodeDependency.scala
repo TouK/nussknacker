@@ -24,7 +24,7 @@ object Parameter {
     Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty,
       branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
-  @deprecated("Passing runtimeClass to Parameter.apply is deprecated in favor of passing isLazyParameter")
+  @deprecated("Passing runtimeClass to Parameter.apply is deprecated in favor of passing isLazyParameter", "0.1.0")
   def apply(name: String,
             typ: TypingResult,
             runtimeClass: Class[_],
