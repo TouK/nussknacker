@@ -16,6 +16,7 @@ import org.apache.avro.specific.SpecificDatumReader
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
 /**
@@ -24,17 +25,14 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.Confluent
   * @param confluentSchemaRegistry
   * @param isKey
   */
-abstract class ConfluentBaseKafkaAvroDeserializer[T](confluentSchemaRegistry: ConfluentSchemaRegistryClient, var isKey: Boolean)
+abstract class ConfluentBaseKafkaAvroDeserializer[T](schemaCompatibilityChecker: AvroCompatibilityChecker, confluentSchemaRegistry: ConfluentSchemaRegistryClient, var isKey: Boolean)
   extends AbstractKafkaAvroSerDe with Deserializer[T] {
 
   schemaRegistry = confluentSchemaRegistry.client
 
-  //TODO: In future allow to setting this?
-  val compatibilityChecker: AvroCompatibilityChecker = AvroCompatibilityChecker.FULL_TRANSITIVE_CHECKER
-
   var useSpecificAvroReader: Boolean = false
 
-  //It's copy paste from AvroSchemaUtils
+  //It's copy paste from AvroSchemaUtils, because there this is private
   lazy val primitives: Map[String, Schema] = {
     val parser = new Schema.Parser
     parser.setValidateDefaults(false)
@@ -61,13 +59,13 @@ abstract class ConfluentBaseKafkaAvroDeserializer[T](confluentSchemaRegistry: Co
   }
 
   protected def deserializeToSchema(payload: Array[Byte], exceptedSchema: Schema): T = {
-    val buffer = AvroUtils
+    val buffer = ConfluentUtils
       .parsePayloadToByteBuffer(payload)
       .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
 
     val recordSchema = schemaFromRegistry(buffer.getInt)
 
-    if (!compatibilityChecker.isCompatible(exceptedSchema, recordSchema)) {
+    if (!schemaCompatibilityChecker.isCompatible(exceptedSchema, recordSchema)) {
       throw new SerializationException(s"Schemas compatibility mismatch. Record schema $recordSchema is not compatible with excepted schema: $exceptedSchema.")
     }
 
@@ -76,7 +74,7 @@ abstract class ConfluentBaseKafkaAvroDeserializer[T](confluentSchemaRegistry: Co
   }
 
   /**
-    * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read
+    * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read, because there this is private
     *
     * @param buffer
     * @param recordSchema
@@ -105,7 +103,7 @@ abstract class ConfluentBaseKafkaAvroDeserializer[T](confluentSchemaRegistry: Co
   }
 
   /**
-    * It's copy paste from AbstractKafkaAvroDeserializer.getDatumReader
+    * It's copy paste from AbstractKafkaAvroDeserializer.getDatumReader, because there this is private
     *
     * @TODO: We should remove it after update confluent to newer version
     *       and using AbstractKafkaAvroDeserializer.getDatumReader
@@ -127,7 +125,7 @@ abstract class ConfluentBaseKafkaAvroDeserializer[T](confluentSchemaRegistry: Co
   }
 
   /**
-    * It's copy paste from AvroSchemaUtils.createPrimitiveSchema
+    * It's copy paste from AvroSchemaUtils.createPrimitiveSchema, because there this is private
     *
     * @TODO: We should remove it after update confluent to newer version
     *       and using AbstractKafkaAvroDeserializer.getDatumReader

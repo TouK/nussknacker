@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKafkaAvroDeserializationMode, ConfluentKeyValueKafkaAvroDeserializationFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKeyValueKafkaAvroDeserializationFactory, SchemaDeterminingStrategy}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionFound}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
@@ -200,7 +200,7 @@ class KafkaAvroSourceFactorySpec extends FunSuite with BeforeAndAfterAll with Ka
 
 class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
                                                                      (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
-  extends ConfluentKeyValueKafkaAvroDeserializationFactory[(Key, Value)](ConfluentKafkaAvroDeserializationMode.STATIC, schemaRegistryClientFactory, useSpecificAvroReader = false)(
+  extends ConfluentKeyValueKafkaAvroDeserializationFactory[(Key, Value)](SchemaDeterminingStrategy.FromSubjectVersion, schemaRegistryClientFactory, useSpecificAvroReader = false)(
     createTuple2TypeInformation(keyTypInfo, valueTypInfo)
   ) {
 

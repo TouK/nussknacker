@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.serializer.{ConfluentKafkaAvroDeserializer, ConfluentStaticKafkaAvroDeserializer}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.serializer.ConfluentKafkaAvroDeserializer
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -261,32 +261,10 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     }
   }
 
-  test("should throw exception when schema is not compatible with ConfluentStaticKafkaAvroDeserializer") {
-    val serializedObj = valueSerializer.serialize(AvroRecord2Topic, givenSecondMatchingAvroObj)
-    kafkaClient.sendRawMessage("wrong-message", Array.empty, serializedObj)
-    val deserializer = new ConfluentStaticKafkaAvroDeserializer(confluentSchemaRegistryClient, RecordSchema, isKey = false)
-
-    assertThrows[SerializationException] {
-      run(avroProcess(1)) {
-        val processed = consumeOneAvroMessage("wrong-message", deserializer)
-        processed shouldEqual List(givenMatchingAvroObj)
-      }
-    }
-  }
-
-  test("should read avro object from kafka and save new one created from scratch with ConfluentStaticKafkaAvroDeserializer") {
-    send(givenMatchingAvroObj, AvroFromScratchInTopic)
-    val deserializer = new ConfluentStaticKafkaAvroDeserializer(confluentSchemaRegistryClient, RecordSchema, isKey = false)
-    run(avroFromScratchProcess(1)) {
-      val processed = consumeOneAvroMessage(AvroFromScratchOutTopic, deserializer)
-      processed shouldEqual List(givenMatchingAvroObj)
-    }
-  }
-
   test("should throw exception when schema is not compatible with ConfluentKafkaAvroDeserializer") {
     val serializedObj = valueSerializer.serialize(AvroRecord2Topic, givenSecondMatchingAvroObj)
     kafkaClient.sendRawMessage("sec-wrong-message", Array.empty, serializedObj)
-    val deserializer = new ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroInTopic, Some(1), isKey = false)
+    val deserializer = ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroInTopic, Some(1), isKey = false)
 
     assertThrows[SerializationException] {
       run(avroProcess(1)) {
@@ -298,7 +276,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   test("should read avro object from kafka and save new one created from scratch with ConfluentKafkaAvroDeserializer") {
     send(givenMatchingAvroObj, AvroFromScratchInTopic)
-    val deserializer = new ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroRecord2Topic, Option.empty, isKey = false)
+    val deserializer = ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroRecord2Topic, Option.empty, isKey = false)
     run(avroFromScratchProcess(1)) {
       val processed = consumeOneAvroMessage(AvroFromScratchOutTopic, deserializer)
       processed shouldEqual List(givenMatchingAvroObj)

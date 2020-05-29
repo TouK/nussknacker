@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io._
-import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
@@ -9,7 +8,7 @@ import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter._
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
@@ -41,7 +40,7 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
   }
 
   private def readId(bytes: Array[Byte]): Int =
-    AvroUtils
+    ConfluentUtils
       .parsePayloadToByteBuffer(bytes)
       .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
       .getInt
