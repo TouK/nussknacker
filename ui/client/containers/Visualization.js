@@ -58,7 +58,12 @@ class Visualization extends React.Component {
 
   bindPasteShortcut() {
     return (event) => this.props.actions.pasteSelection(
-      () => this.pasteSelection(event),
+      () => {
+        if (["INPUT", "TEXTAREA"].includes(event.target?.tagName)) {
+          return
+        }
+        this.pasteSelection(event)
+      },
       {category: events.categories.keyboard, action: events.actions.keyboard.paste},
     )
   }
