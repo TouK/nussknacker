@@ -7,7 +7,7 @@ import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient => CMo
 /**
   * Extended Confluent MockSchemaRegistryClient - base one throws wrong exceptions when version or subject doesn't exist
   */
-private[client] class MockSchemaRegistryClient extends CMockSchemaRegistryClient with LazyLogging {
+class MockSchemaRegistryClient extends CMockSchemaRegistryClient with LazyLogging {
 
   import ConfluentSchemaRegistryClient._
 
