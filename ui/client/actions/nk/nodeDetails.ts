@@ -1,31 +1,36 @@
-import {ThunkAction} from "../reduxTypes"
+import {ThunkAction, ThunkDispatch} from "../reduxTypes"
 import HttpService from "../../http/HttpService"
-import _ from "lodash"
+import {NodeValidationError, PropertiesType, VariableTypes,NodeType} from "../../types"
 
-export type NodeDataUpdated = { type: "NodeDataUpdated", nodeData: any}
-export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: any}
-export type NodeDetailsActions = NodeDataUpdated | NodeValidationUpdated
+import {debounce} from "lodash"
 
-export type NodeValidationData = {
-    parameters? : Map<string, ValidationContext>,
-    validationErrors: Array<ValidationError>,
+export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData}
+export type NodeDetailsActions = NodeValidationUpdated
+
+export type ValidationData = {
+    validationErrors: NodeValidationError[],
+    validationPerformed: boolean,
 }
 
-export type ValidationContext = $TodoType
-export type ValidationError = $TodoType
+type ValidationRequest = {
+    nodeData: NodeType,
+    variableTypes: VariableTypes,
+    processProperties: PropertiesType,
+}
 
-function nodeValidationDataUpdated(validationData: any): NodeValidationUpdated {
+function nodeValidationDataUpdated(validationData: ValidationData): NodeValidationUpdated {
   return {type: "NODE_VALIDATION_UPDATED", validationData: validationData}
 }
 
-function validate(processId, node, dispatch) {
-  HttpService.validateNode(processId, node).then(data => dispatch(nodeValidationDataUpdated(data.data)))
+//we don't return ThunkAction here as it would not work correctly with debounce
+function validate(processId: string, request: ValidationRequest, dispatch: ThunkDispatch) {
+  HttpService.validateNode(processId, request).then(data => dispatch(nodeValidationDataUpdated(data.data)))
 }
 
-//TODO: use sth better?
-const debouncedValidate = _.debounce(validate, 250, {leading: true, trailing: true})
+//TODO: use sth better, how long should be timeout?
+const debouncedValidate = debounce(validate, 500)
 
-export function updateNodeData(processId: string, variableTypes: any, nodeData: any, processProperties: any): ThunkAction {
+export function updateNodeData(processId: string, variableTypes: VariableTypes, nodeData: NodeType, processProperties: PropertiesType): ThunkAction {
   return (dispatch) => debouncedValidate(processId, {
     nodeData, variableTypes, processProperties}, dispatch)
 

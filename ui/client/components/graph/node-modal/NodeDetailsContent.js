@@ -58,7 +58,8 @@ export class NodeDetailsContent extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (!_.isEqual(this.props.node, nextProps.node) || !_.isEqual(this.props.nodeValidationErrors, nextProps.nodeValidationErrors)) {
+
+    if (!_.isEqual(this.props.node, nextProps.node)) {
       this.initalizeWithProps(nextProps)
       let nextPropsNode = nextProps.node
       this.setState({editedNode: nextPropsNode})
