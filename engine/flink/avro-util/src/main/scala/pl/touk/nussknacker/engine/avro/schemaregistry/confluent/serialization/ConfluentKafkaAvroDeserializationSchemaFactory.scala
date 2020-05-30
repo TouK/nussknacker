@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
 import io.confluent.kafka.serializers._
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.SchemaDeterminingStrategy.SchemaDeterminingStrategy
@@ -21,13 +22,6 @@ trait ConfluentKafkaAvroDeserializerFactory {
                                       useSpecificAvroReader: Boolean): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
-    /**
-      * Modes Behavior description:
-      *
-      * FromSubjectVersion - Deserializer always fetches schema by given subject and schema version as parameters
-      *
-      * FromRecord - Standard Confluent Deserializer, it always fetches schema by message schema id
-      */
     val deserializer = schemaDeterminingStrategy match {
       case SchemaDeterminingStrategy.FromSubjectVersion =>
         ConfluentKafkaAvroDeserializer(schemaRegistryClient, topic, version, isKey = isKey)
@@ -42,6 +36,14 @@ trait ConfluentKafkaAvroDeserializerFactory {
     deserializer.configure(props.asJava, isKey)
     deserializer.asInstanceOf[Deserializer[T]]
   }
+
+  protected def fetchTopic(topics: List[String]): String = {
+    if (topics.length > 1) {
+      throw new SerializationException(s"Topics list has more then one element: $topics.")
+    }
+
+    topics.head
+  }
 }
 
 class ConfluentKafkaAvroDeserializationSchemaFactory[T: TypeInformation](schemaDeterminingStrategy: SchemaDeterminingStrategy,
@@ -50,7 +52,7 @@ class ConfluentKafkaAvroDeserializationSchemaFactory[T: TypeInformation](schemaD
   extends KafkaVersionAwareValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[T] =
-    createDeserializer[T](schemaDeterminingStrategy, topics.head, version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
+    createDeserializer[T](schemaDeterminingStrategy, fetchTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
 }
 
 object ConfluentKafkaAvroDeserializationSchemaFactory {
@@ -64,12 +66,16 @@ abstract class ConfluentKeyValueKafkaAvroDeserializationFactory[T: TypeInformati
   extends KafkaVersionAwareKeyValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createKeyDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[K] =
-    createDeserializer[K](schemaDeterminingStrategy, topics.head, version, schemaRegistryClientFactory, kafkaConfig, isKey = true, useSpecificAvroReader)
+    createDeserializer[K](schemaDeterminingStrategy, fetchTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = true, useSpecificAvroReader)
 
   override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[V] =
-    createDeserializer[V](schemaDeterminingStrategy, topics.head, version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
+    createDeserializer[V](schemaDeterminingStrategy, fetchTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
 }
 
+/**
+  * FromSubjectVersion - Deserializer always fetches schema by given subject and schema version as parameters
+  * FromRecord - Standard Confluent Deserializer, it always fetches schema by message schema id
+  */
 object SchemaDeterminingStrategy extends Enumeration {
   type SchemaDeterminingStrategy = Value
   val FromRecord, FromSubjectVersion = Value
