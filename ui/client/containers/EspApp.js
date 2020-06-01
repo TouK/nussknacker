@@ -3,11 +3,11 @@ import {Redirect} from "react-router"
 import {matchPath, Route, Switch, withRouter} from "react-router-dom"
 import _ from "lodash"
 import {MenuBar} from "../components/MenuBar"
-import Processes from "./Processes"
-import SubProcesses from "./SubProcesses"
+import * as Processes from "./Processes"
+import * as SubProcesses from "./SubProcesses"
+import * as Archive from "./Archive"
 import NotFound from "./errors/NotFound"
 import {nkPath} from "../config"
-import {CSSTransition, TransitionGroup} from "react-transition-group"
 import Metrics from "./Metrics"
 import Search from "./Search"
 import Signals from "./Signals"
@@ -17,13 +17,14 @@ import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import Dialogs from "../components/modals/Dialogs"
 import * as VisualizationUrl from "../common/VisualizationUrl"
-import Archive from "./Archive"
 import Visualization from "./Visualization"
 
 import "../stylesheets/mainMenu.styl"
 import "../stylesheets/main.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
+import {ProcessTabs} from "./ProcessTabs"
+import {FadeRoute} from "./FadeRoute"
 
 export class EspApp extends React.Component {
 
@@ -93,22 +94,16 @@ export class EspApp extends React.Component {
                 <Route
                   path={EspApp.path}
                   render={({location}) => (
-                    <TransitionGroup>
-                      <CSSTransition key={location.pathname} classNames="fade" timeout={{enter: 300, exit: 300}}>
-                        <Switch location={location}>
-                          <Route path={SubProcesses.path} component={SubProcesses} exact/>
-                          <Route path={Archive.path} component={Archive} exact/>
-                          <Route path={Processes.path} component={Processes} exact/>
-                          <Route path={Visualization.path} component={Visualization} exact/>
-                          <Route path={Metrics.path} component={Metrics} exact/>
-                          <Route path={Search.path} component={Search} exact/>
-                          <Route path={Signals.path} component={Signals} exact/>
-                          <Route path={AdminPage.path} component={AdminPage} exact/>
-                          <Redirect from={EspApp.path} to={Processes.path} exact/>
-                          <Route component={NotFound}/>
-                        </Switch>
-                      </CSSTransition>
-                    </TransitionGroup>
+                    <Switch location={location}>
+                      <FadeRoute path={[Processes.path, SubProcesses.path, Archive.path]} component={ProcessTabs} exact/>
+                      <FadeRoute path={Visualization.path} component={Visualization} exact/>
+                      <FadeRoute path={Metrics.path} component={Metrics} exact/>
+                      <FadeRoute path={Search.path} component={Search} exact/>
+                      <FadeRoute path={Signals.path} component={Signals} exact/>
+                      <FadeRoute path={AdminPage.path} component={AdminPage} exact/>
+                      <Redirect from={EspApp.path} to={Processes.path} exact/>
+                      <FadeRoute component={NotFound}/>
+                    </Switch>
                   )}
                 />
               </ErrorHandler>

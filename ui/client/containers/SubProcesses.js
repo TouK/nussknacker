@@ -15,6 +15,7 @@ import TableSelect from "../components/table/TableSelect"
 import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
+import {Processes} from "./Processes"
 
 export class SubProcesses extends BaseProcesses {
   queries = {
@@ -118,8 +119,12 @@ export class SubProcesses extends BaseProcesses {
   }
 }
 
-SubProcesses.header = "Subprocesses"
-SubProcesses.path = `${nkPath}/subProcesses`
+export const path = `${nkPath}/subProcesses`
+export const header = "Subprocesses"
+
+//TODO: remove this statics
+SubProcesses.path = path
+SubProcesses.header = header
 
 const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,
@@ -127,4 +132,4 @@ const mapState = (state) => ({
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser),
 })
 
-export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(SubProcesses))
+export const Component = withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(SubProcesses))

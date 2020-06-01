@@ -197,8 +197,12 @@ export class Processes extends BaseProcesses {
   }
 }
 
-Processes.path = `${nkPath}/processes`
-Processes.header = "Processes"
+export const path = `${nkPath}/processes`
+export const header = "Processes"
+
+//TODO: remove this statics
+Processes.path = path
+Processes.header = header
 
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,
@@ -206,4 +210,4 @@ const mapState = state => ({
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser),
 })
 
-export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Processes))
+export const Component = withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Processes))

@@ -14,6 +14,7 @@ import TableSelect from "../components/table/TableSelect"
 import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
+import {Processes} from "./Processes"
 
 export class Archive extends BaseProcesses {
   queries = {
@@ -120,8 +121,12 @@ export class Archive extends BaseProcesses {
   }
 }
 
-Archive.path = `${nkPath}/archivedProcesses`
-Archive.header = "Archive"
+export const path = `${nkPath}/archivedProcesses`
+export const header = "Archive"
+
+//TODO: remove this statics
+Archive.path = path
+Archive.header = header
 
 const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,
@@ -129,4 +134,4 @@ const mapState = (state) => ({
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser),
 })
 
-export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Archive))
+export const Component = withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Archive))
