@@ -37,7 +37,7 @@ trait ConfluentKafkaAvroDeserializerFactory {
     deserializer.asInstanceOf[Deserializer[T]]
   }
 
-  protected def fetchTopic(topics: List[String]): String = {
+  protected def extractTopic(topics: List[String]): String = {
     if (topics.length > 1) {
       throw new SerializationException(s"Topics list has more then one element: $topics.")
     }
@@ -52,7 +52,7 @@ class ConfluentKafkaAvroDeserializationSchemaFactory[T: TypeInformation](schemaD
   extends KafkaVersionAwareValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[T] =
-    createDeserializer[T](schemaDeterminingStrategy, fetchTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
+    createDeserializer[T](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
 }
 
 object ConfluentKafkaAvroDeserializationSchemaFactory {
@@ -66,10 +66,10 @@ abstract class ConfluentKeyValueKafkaAvroDeserializationFactory[T: TypeInformati
   extends KafkaVersionAwareKeyValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createKeyDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[K] =
-    createDeserializer[K](schemaDeterminingStrategy, fetchTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = true, useSpecificAvroReader)
+    createDeserializer[K](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = true, useSpecificAvroReader)
 
   override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[V] =
-    createDeserializer[V](schemaDeterminingStrategy, fetchTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
+    createDeserializer[V](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
 }
 
 /**
