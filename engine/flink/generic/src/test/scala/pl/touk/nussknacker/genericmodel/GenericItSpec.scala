@@ -276,7 +276,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   test("should read avro object from kafka and save new one created from scratch with ConfluentKafkaAvroDeserializer") {
     send(givenMatchingAvroObj, AvroFromScratchInTopic)
-    val deserializer = ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroRecord2Topic, Option.empty, isKey = false)
+    val deserializer = ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroFromScratchInTopic, Option.empty, isKey = false)
     run(avroFromScratchProcess(1)) {
       val processed = consumeOneAvroMessage(AvroFromScratchOutTopic, deserializer)
       processed shouldEqual List(givenMatchingAvroObj)
