@@ -92,7 +92,8 @@ class ExpressionSuggest extends React.Component {
   //fixme maybe use this.state.id here?
   shouldComponentUpdate(nextProps, nextState) {
     return !_.isEqual(this.state.value, nextState.value) ||
-        !_.isEqual(this.state.editorFocused, nextState.editorFocused)
+        !_.isEqual(this.state.editorFocused, nextState.editorFocused) ||
+        !_.isEqual(this.props.validators, nextProps.validators)
   }
 
   componentDidUpdate(prevProps, prevState) {
