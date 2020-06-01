@@ -17,6 +17,7 @@ import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
+import {FocusableDiv} from "./focusable"
 
 export class Graph extends React.Component {
 
@@ -579,7 +580,7 @@ export class Graph extends React.Component {
       <div id="graphContainer" style={{padding: this.props.padding}}>
         {this.props.showNodeDetailsModal ? <NodeDetailsModal/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
-        <div ref={this.espGraphRef} id={this.props.divId}></div>
+        <FocusableDiv ref={this.espGraphRef} id={this.props.divId}/>
       </div>
     )
 
