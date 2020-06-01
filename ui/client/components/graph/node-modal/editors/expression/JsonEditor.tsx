@@ -8,7 +8,7 @@ type Props = {
   className: string,
 }
 
-export default class JsonEditor extends React.Component<Props> {
+export default class JsonEditor extends React.Component<Props, {value: string}> {
 
   static switchableTo = (expressionObj) => true
   static switchableToHint = () => "TODO"
