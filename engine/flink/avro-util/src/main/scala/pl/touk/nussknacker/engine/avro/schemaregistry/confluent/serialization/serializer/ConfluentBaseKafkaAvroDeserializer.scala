@@ -4,7 +4,6 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.util
 
-import io.confluent.kafka.schemaregistry.avro.AvroCompatibilityChecker
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.serializers.{AbstractKafkaAvroSerDe, KafkaAvroDeserializerConfig}
 import org.apache.avro.Schema
@@ -15,18 +14,16 @@ import org.apache.avro.reflect.ReflectDatumReader
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
-import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
 /**
-  * @TODO: After update to newer version of confluent we should try extend by AbstractKafkaAvroDeserializer
+  * This is Base KafkaAvro Deserializer class. It contains parts of AbstractKafkaAvroDeserializer
   *
   * @param confluentSchemaRegistry
   * @param isKey
   */
-abstract class ConfluentBaseKafkaAvroDeserializer[T](schemaCompatibilityChecker: AvroCompatibilityChecker, confluentSchemaRegistry: ConfluentSchemaRegistryClient, var isKey: Boolean)
-  extends AbstractKafkaAvroSerDe with Deserializer[T] {
+abstract class ConfluentBaseKafkaAvroDeserializer[T](confluentSchemaRegistry: ConfluentSchemaRegistryClient, var isKey: Boolean)
+  extends AbstractKafkaAvroSerDe with Deserializer[T] with ConfluentKafkaAvroSerialization {
 
   schemaRegistry = confluentSchemaRegistry.client
 
@@ -51,6 +48,15 @@ abstract class ConfluentBaseKafkaAvroDeserializer[T](schemaCompatibilityChecker:
 
   protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
 
+  protected def deserializeToSchema(payload: Array[Byte], schema: Schema): T = {
+    val buffer = parsePayloadToByteBuffer(payload)
+    val data = read(buffer, schema)
+    data.asInstanceOf[T]
+  }
+
+  protected def schemaByTopicAndVersion(topic: String, version: Option[Int]): Schema =
+    schemaByTopicAndVersion(confluentSchemaRegistry, topic, version, isKey)
+
   def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
     val deserializerConfig = new KafkaAvroDeserializerConfig(configs)
     configureClientProperties(deserializerConfig)
@@ -58,58 +64,47 @@ abstract class ConfluentBaseKafkaAvroDeserializer[T](schemaCompatibilityChecker:
     this.isKey = isKey
   }
 
-  protected def deserializeToSchema(payload: Array[Byte], exceptedSchema: Schema): T = {
-    val buffer = ConfluentUtils
-      .parsePayloadToByteBuffer(payload)
-      .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
-
-    val recordSchema = schemaFromRegistry(buffer.getInt)
-
-    if (!schemaCompatibilityChecker.isCompatible(exceptedSchema, recordSchema)) {
-      throw new SerializationException(s"Schemas compatibility mismatch. Record schema $recordSchema is not compatible with excepted schema: $exceptedSchema.")
-    }
-
-    val data = read(buffer, recordSchema, exceptedSchema)
-    data.asInstanceOf[T]
-  }
-
   /**
-    * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read, because there this is private
+    * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read with some modification. We pass
+    * there record buffer data and schema which will be used to convert record.
     *
     * @param buffer
-    * @param recordSchema
-    * @param exceptedSchema
+    * @param schema
     * @return
     */
-  protected def read(buffer: ByteBuffer, recordSchema: Schema, exceptedSchema: Schema): Any = {
-    val reader = createDatumReader(recordSchema, exceptedSchema)
+  protected def read(buffer: ByteBuffer, schema: Schema): Any = {
+    var schemaId = -1
 
-    val length = buffer.limit - 1 - 4
-    if (exceptedSchema.getType == Type.BYTES) {
-      val bytes = new Array[Byte](length)
-      buffer.get(bytes, 0, length)
-      bytes
-    } else {
-      val start = buffer.position + buffer.arrayOffset
-      try {
+    try {
+      schemaId = buffer.getInt
+      val recordSchema = schemaRegistry.getById(schemaId)
+      val reader = createDatumReader(recordSchema, schema)
+      val length = buffer.limit - 1 - AbstractKafkaAvroSerDe.idSize
+      if (schema.getType == Type.BYTES) {
+        val bytes = new Array[Byte](length)
+        buffer.get(bytes, 0, length)
+        bytes
+      } else {
+        val start = buffer.position + buffer.arrayOffset
         val binaryDecoder = decoderFactory.binaryDecoder(buffer.array, start, length, null)
         val result = reader.read(null, binaryDecoder)
-        if (exceptedSchema.getType == Type.STRING) result.toString else result
-      } catch {
-        case exc@(_: RestClientException | _: IOException) =>
-          throw new SerializationException(s"Error deserializing Avro message for id: ${buffer.getInt}", exc)
+        if (schema.getType == Type.STRING) result.toString else result
       }
+    } catch {
+      case exc: RestClientException =>
+        throw new SerializationException(s"Error retrieving Avro schema for id : $schemaId", exc)
+      case exc@(_: RuntimeException | _: IOException) =>
+        // avro deserialization may throw IOException, AvroRuntimeException, NullPointerException, etc
+        throw new SerializationException(s"Error deserializing Avro message for id: $schemaId", exc)
     }
   }
 
   /**
-    * It's copy paste from AbstractKafkaAvroDeserializer.getDatumReader, because there this is private
+    * It's modified AvroSchemaUtils.getDatumReader. We pass extracted schema from record there and final schema to
+    * which we will convert record.
     *
-    * @TODO: We should remove it after update confluent to newer version
-    *       and using AbstractKafkaAvroDeserializer.getDatumReader
-    *
-    * @param actualSchema
-    * @param exceptedSchema
+    * @param actualSchema it's already extracted schema from event record
+    * @param exceptedSchema it's a final schema
     * @return
     */
   private def createDatumReader(actualSchema: Schema, exceptedSchema: Schema): DatumReader[Any] = {
@@ -125,7 +120,7 @@ abstract class ConfluentBaseKafkaAvroDeserializer[T](schemaCompatibilityChecker:
   }
 
   /**
-    * It's copy paste from AvroSchemaUtils.createPrimitiveSchema, because there this is private
+    * It's copy paste from AvroSchemaUtils.createPrimitiveSchema
     *
     * @TODO: We should remove it after update confluent to newer version
     *       and using AbstractKafkaAvroDeserializer.getDatumReader
@@ -137,21 +132,5 @@ abstract class ConfluentBaseKafkaAvroDeserializer[T](schemaCompatibilityChecker:
   private def createPrimitiveSchema(parser: Schema.Parser, `type`: String) = {
     val schemaString = String.format("{\"type\" : \"%s\"}", `type`)
     parser.parse(schemaString)
-  }
-
-  protected def schemaByTopicAndVersion(topic: String, version: Option[Int]): Schema = {
-    val subject = AvroUtils.topicSubject(topic, isKey = isKey)
-    confluentSchemaRegistry
-      .getFreshSchema(subject, version)
-      .valueOr(exc => throw new SerializationException(s"Error retrieving Avro schema for topic $topic.", exc))
-  }
-
-  private def schemaFromRegistry(schemaId: Int): Schema = {
-    try {
-      schemaRegistry.getById(schemaId)
-    } catch {
-      case exc@(_: RestClientException | _: IOException) =>
-        throw new SerializationException("Error retrieving Avro schema for id " + schemaId, exc)
-    }
   }
 }

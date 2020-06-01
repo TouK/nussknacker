@@ -11,7 +11,6 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
@@ -21,7 +20,6 @@ import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.serializer.ConfluentKafkaAvroDeserializer
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -55,6 +53,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
   val RecordSchema: Schema = AvroUtils.parseSchema(RecordSchemaString)
+  val RecordSchemaV2: Schema = AvroUtils.parseSchema(RecordSchemaStringV2)
   val Record2Schema: Schema = AvroUtils.parseSchema(Record2SchemaString)
 
   private val givenNotMatchingJsonObj =
@@ -80,9 +79,18 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     r.put("last", "Nowak")
     r
   }
+
   private val givenMatchingAvroObj = {
     val r = new GenericData.Record(RecordSchema)
     r.put("first", "Jan")
+    r.put("last", "Kowalski")
+    r
+  }
+
+  private val givenMatchingAvroObjV2 = {
+    val r = new GenericData.Record(RecordSchemaV2)
+    r.put("first", "Jan")
+    r.put("middle", "Tomek")
     r.put("last", "Kowalski")
     r
   }
@@ -165,7 +173,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       val processed = consumer.consume(JsonOutTopic).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
       processed.map(parseJson) shouldEqual List(parseJson(givenMatchingJsonObj))
     }
-
   }
 
   test("should read avro object from kafka, filter and save it to kafka") {
@@ -194,6 +201,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     assertThrows[Exception] {
       run(avroTypedProcess("asdf")) {}
     }
+
     val validAvroTypedProcess = avroTypedProcess("first")
     run(validAvroTypedProcess) {
       val processed = consumeOneAvroMessage(AvroTypedOutTopic)
@@ -214,7 +222,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
     val bizarreBranchName = "?branch .2-"
     val sanitizedBizarreBranchName = "_branch__2_"
-
 
     val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
       GraphBuilder
@@ -261,25 +268,39 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     }
   }
 
-  test("should throw exception when schema is not compatible with ConfluentKafkaAvroDeserializer") {
-    val serializedObj = valueSerializer.serialize(AvroRecord2Topic, givenSecondMatchingAvroObj)
-    kafkaClient.sendRawMessage("sec-wrong-message", Array.empty, serializedObj)
-    val deserializer = ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroInTopic, Some(1), isKey = false)
+  test("should read avro object in v1 from kafka and deserialize it to v2, filter and save it to kafka in v2") {
+    send(givenMatchingAvroObj, AvroInTopic)
 
-    assertThrows[SerializationException] {
-      run(avroProcess(1)) {
-        val processed = consumeOneAvroMessage("sec-wrong-message", deserializer)
-        processed shouldEqual List(givenMatchingAvroObj)
-      }
+    val result = new GenericData.Record(RecordSchemaV2)
+    result.put("first", givenMatchingAvroObj.get("first"))
+    result.put("middle", null) //It's default value in schema version 2
+    result.put("last" ,givenMatchingAvroObj.get("last"))
+
+    run(avroProcess(2)) {
+      val processed = consumeOneAvroMessage(AvroOutTopic)
+      processed shouldEqual List(result)
     }
   }
 
-  test("should read avro object from kafka and save new one created from scratch with ConfluentKafkaAvroDeserializer") {
-    send(givenMatchingAvroObj, AvroFromScratchInTopic)
-    val deserializer = ConfluentKafkaAvroDeserializer(confluentSchemaRegistryClient, AvroFromScratchInTopic, Option.empty, isKey = false)
-    run(avroFromScratchProcess(1)) {
-      val processed = consumeOneAvroMessage(AvroFromScratchOutTopic, deserializer)
+  test("should read avro object in v2 from kafka and deserialize it to v1, filter and save it to kafka in v1") {
+    send(givenMatchingAvroObjV2, AvroInTopic)
+
+    run(avroProcess(1)) {
+      val processed = consumeOneAvroMessage(AvroOutTopic)
       processed shouldEqual List(givenMatchingAvroObj)
+    }
+  }
+
+  test("should throw exception when record doesn't match to schema") {
+    //Given bad message
+    val serializedObj = valueSerializer.serialize(AvroRecord2Topic, givenSecondMatchingAvroObj)
+    kafkaClient.sendRawMessage(AvroInTopic, Array.empty, serializedObj)
+
+    assertThrows[Exception] {
+      run(avroProcess(1)) {
+        val processed = consumeOneAvroMessage(AvroOutTopic)
+        processed shouldEqual List(givenSecondMatchingAvroObj)
+      }
     }
   }
 
@@ -353,6 +374,19 @@ object MockSchemaRegistry extends Serializable {
       |}
     """.stripMargin
 
+  val RecordSchemaStringV2: String =
+    """{
+      |  "type": "record",
+      |  "namespace": "pl.touk.nussknacker.engine.avro",
+      |  "name": "FullName",
+      |  "fields": [
+      |    { "name": "first", "type": "string" },
+      |    { "name": "middle", "type": ["null", "string"], "default": null },
+      |    { "name": "last", "type": "string" }
+      |  ]
+      |}
+    """.stripMargin
+
   val AvroRecord2Topic: String = "name.avro.second.input"
 
   val Record2SchemaString: String =
@@ -368,7 +402,9 @@ object MockSchemaRegistry extends Serializable {
 
   val schemaRegistryMockClient: MockSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
     .register(AvroInTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroInTopic, RecordSchemaStringV2, 2, isKey = false)
     .register(AvroOutTopic, RecordSchemaString, 1, isKey = false)
+    .register(AvroOutTopic, RecordSchemaStringV2, 2, isKey = false)
     .register(AvroFromScratchInTopic, RecordSchemaString, 1, isKey = false)
     .register(AvroFromScratchOutTopic, RecordSchemaString, 1, isKey = false)
     .register(AvroTypedInTopic, RecordSchemaString, 1, isKey = false)
