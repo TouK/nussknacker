@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, Sche
 object KafkaAvroFactory {
 
   final val VersionParamName = "Schema version"
+  final val SchemaParamName = "Schema"
   final val TopicParamName = "topic"
 
   def handleSchemaRegistryError(exc: SchemaRegistryError): Nothing = {
