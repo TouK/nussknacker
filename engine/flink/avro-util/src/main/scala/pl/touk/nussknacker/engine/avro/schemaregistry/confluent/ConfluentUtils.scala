@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 import java.nio.ByteBuffer
 
 import cats.data.Validated
+import org.apache.kafka.common.errors.SerializationException
 
 object ConfluentUtils {
   //Copied from AbstractKafkaAvroSerDe.MAGIC_BYTE
@@ -15,4 +16,10 @@ object ConfluentUtils {
     else
       Validated.valid(buffer)
   }
+
+  def readId(bytes: Array[Byte]): Int =
+    ConfluentUtils
+      .parsePayloadToByteBuffer(bytes)
+      .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
+      .getInt
 }

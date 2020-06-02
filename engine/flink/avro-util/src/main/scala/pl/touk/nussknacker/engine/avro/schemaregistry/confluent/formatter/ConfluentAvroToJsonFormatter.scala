@@ -7,7 +7,6 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter._
@@ -34,16 +33,10 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
   }
 
   private def printId(bytes: Array[Byte], printStream: PrintStream): Unit = {
-    val id = readId(bytes)
+    val id = ConfluentUtils.readId(bytes)
     printStream.print(id)
     printStream.print(Separator)
   }
-
-  private def readId(bytes: Array[Byte]): Int =
-    ConfluentUtils
-      .parsePayloadToByteBuffer(bytes)
-      .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
-      .getInt
 
   override def parseRecord(formatted: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
     val str = new String(formatted, StandardCharsets.UTF_8)

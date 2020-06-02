@@ -23,7 +23,7 @@ trait ConfluentKafkaAvroDeserializerFactory {
 
     val deserializer = schemaDeterminingStrategy match {
       case SchemaDeterminingStrategy.FromSubjectVersion =>
-        new ConfluentKafkaAvroDeserializer(schemaRegistryClient, topic, version, isKey = isKey)
+        ConfluentKafkaAvroDeserializer(schemaRegistryClient, topic, version, isKey = isKey)
       case SchemaDeterminingStrategy.FromRecord =>
         new KafkaAvroDeserializer(schemaRegistryClient.client)
     }
