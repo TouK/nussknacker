@@ -9,8 +9,7 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import org.apache.avro.Schema
-import org.apache.avro.Schema.Parser
+import io.circe.parser._
 
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -138,12 +137,10 @@ case object JsonValidator extends ParameterValidator {
 
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isBlank(value) || Try(getSchemaParser.parse(value)).isSuccess)
+    if (StringUtils.isBlank(value) || parse(value).isRight)
       valid(Unit)
     else
       invalid(error(paramName, nodeId.id))
-
-  private def getSchemaParser = new Schema.Parser();
 
   private def error(paramName: String, nodeId: String): JsonRequiredParameter = JsonRequiredParameter(
     s"This field value has to be a proper json",
