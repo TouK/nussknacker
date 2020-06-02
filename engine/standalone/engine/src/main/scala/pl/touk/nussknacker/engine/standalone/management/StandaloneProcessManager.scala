@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.standalone.management
 
+import java.lang.annotation.Annotation
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCo
 import pl.touk.nussknacker.engine.api.{EndingReference, JobData, ProcessVersion, StandaloneMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -210,8 +211,8 @@ object TestUtils {
   }
 
   def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    new ObjectWithMethodDef(service.obj, service.methodDef, service.objectDefinition) {
-      override def invokeMethod(parameterCreator: String => Option[AnyRef], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+    new OverriddenObjectWithMethodDef(service) {
+      override def invokeMethod(parameterCreator: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
         val newAdditional = additional.map {
           case c: ServiceInvocationCollector => c.enable(runId)
           case a => a

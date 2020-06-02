@@ -38,7 +38,7 @@ object ExpressionEvaluator {
   private def realLazyValuesProvider(services: Map[String, ObjectWithMethodDef])
                                       (ec: ExecutionContext, metaData: MetaData, nodeId: String) = new LazyValuesProvider {
 
-    private implicit val iec = ec
+    private implicit val iec: ExecutionContext = ec
 
     override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] = {
       val paramsMap = params.toMap
@@ -72,18 +72,24 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
                         (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext) : Future[(Context, Map[String, AnyRef])] = {
     params.foldLeft(Future.successful((ctx, Map.empty[String, AnyRef]))) {
       case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
-        evaluate[AnyRef](param.expression, param.name, nodeId.id, accCtx).map { valueWithModifiedContext =>
-          val evaluatedValue = valueWithModifiedContext.value
-          val potentiallyWrappedInScalaOptionValue =
-            if (param.shouldBeWrappedWithScalaOption)
-              Option(evaluatedValue)
-            else if (param.shouldBeWrappedWithJavaOptional)
-              Optional.ofNullable(evaluatedValue)
-            else
-              evaluatedValue
-          val newAccParams = accParams + (param.name -> potentiallyWrappedInScalaOptionValue)
+        evaluateParameter(param, accCtx).map { valueWithModifiedContext =>
+          val newAccParams = accParams + (param.name -> valueWithModifiedContext.value)
           (valueWithModifiedContext.context, newAccParams)
         }
+      }
+    }
+  }
+
+  def evaluateParameter(param: pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter, ctx: Context)
+                          (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext): Future[ValueWithContext[AnyRef]] = {
+    evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx).map { valueWithModifiedContext =>
+      valueWithModifiedContext.map { evaluatedValue =>
+        if (param.shouldBeWrappedWithScalaOption)
+          Option(evaluatedValue)
+        else if (param.shouldBeWrappedWithJavaOptional)
+          Optional.ofNullable(evaluatedValue)
+        else
+          evaluatedValue
       }
     }
   }

@@ -12,6 +12,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels"
 import AceEditor from "./ace"
 import ExpressionSuggester from "./ExpressionSuggester"
 import {allValid} from "../Validators"
+import {reducer as nodeDetails} from "../../../../../reducers/nodeDetailsState"
 
 //to reconsider
 // - respect categories for global variables?
@@ -183,7 +184,12 @@ function mapState(state, props) {
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation
   const variablesForNode = state.graphReducer.nodeToDisplay.id || _.get(state.graphReducer, ".edgeToDisplay.to") || null
-  const variables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition, props.fieldName, processCategory)
+
+  //FIXME: probably validation should return all variables in given param??
+  const additionalVariablesFromValidation = state.nodeDetails?.parameters?.find(p => p.name === props.fieldName)?.additionalVariables || {}
+
+  const baseVariables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition, props.fieldName, processCategory)
+  const variables = _.assign(baseVariables, additionalVariablesFromValidation)
 
   return {
     typesInformation: typesInformation,

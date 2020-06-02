@@ -7,7 +7,7 @@ object SignalDispatcher {
   def dispatchSignal(modelData: ModelData)(signalType: String, processId: String, parameters: Map[String, AnyRef]): Option[Unit] = {
     modelData.processWithObjectsDefinition.signalsWithTransformers.get(signalType).map { case (signalFactory, _) =>
       modelData.withThisAsContextClassLoader {
-        signalFactory.invokeMethod(parameters.get, None, List(processId))
+        signalFactory.invokeMethod(parameters, None, List(processId))
       }
       ()
     }

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.ModelConfigToLoad
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.SignalSenderKey
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
@@ -53,12 +53,12 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: Process
 
   protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef) : ObjectWithMethodDef
 
-  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, method: (String => Option[AnyRef], Option[String], Seq[AnyRef], () => typing.TypingResult) => Any): ObjectWithMethodDef =
-    new ObjectWithMethodDef(original.obj, original.methodDef, original.objectDefinition) {
-      override def invokeMethod(paramFun: (String) => Option[AnyRef], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any =
-        method(paramFun, outputVariableNameOpt, additional, () => {
+  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, method: (Map[String, Any], Option[String], Seq[AnyRef], () => typing.TypingResult) => Any): ObjectWithMethodDef =
+    new OverriddenObjectWithMethodDef(original) {
+      override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any =
+        method(params, outputVariableNameOpt, additional, () => {
           //this is needed to be able to handle dynamic types in tests
-          super.invokeMethod(paramFun, outputVariableNameOpt, additional).cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
+          original.invokeMethod(params, outputVariableNameOpt, additional).cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
         })
     }
 

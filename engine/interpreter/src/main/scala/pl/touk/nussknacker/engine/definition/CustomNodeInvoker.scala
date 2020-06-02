@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
@@ -26,6 +27,7 @@ case class ExpressionLazyParameter[T](nodeId: NodeId,
               .compileWithoutContextValidation(parameter.expression, parameter.name)(nodeId)
               .valueOr(err => throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}"))
     val evaluator = compilerInterpreter.deps.expressionEvaluator
+    //FIXME: use evaluateParam method here, to handle e.g. options properly
     context: Context => evaluator.evaluate[T](compiledExpression, parameter.name, nodeId.id, context)(ec, compilerInterpreter.metaData).map(_.value)(ec)
   }
 }

@@ -15,6 +15,7 @@ export function reducer(state: NodeDetailsState = initialState, action: Action):
       return {
         ...state,
         validationErrors: validationData.validationErrors,
+        parameters: validationData.parameters,
         validationPerformed: validationData.validationPerformed,
       }
     }

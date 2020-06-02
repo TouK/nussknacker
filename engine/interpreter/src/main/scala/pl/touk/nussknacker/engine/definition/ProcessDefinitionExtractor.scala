@@ -43,7 +43,7 @@ object ProcessDefinitionExtractor {
 
     val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, nodesConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
-          transformerDef.methodDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
+          transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
     }
@@ -59,7 +59,7 @@ object ProcessDefinitionExtractor {
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
       val typed = Typed.fromInstance(globalVar.value)
       val safeClass = Option(globalVar.value).map(_.getClass).getOrElse(classOf[Any])
-      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), typed,  safeClass, List()),
+      (varName, StandardObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), typed,  safeClass, List()),
         ObjectDefinition(List(), typed, globalVar.categories, SingleNodeConfig.zero)))
     }
 
@@ -99,7 +99,7 @@ object ProcessDefinitionExtractor {
 
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
     val transformer = objectWithMethodDef.obj.asInstanceOf[CustomStreamTransformer]
-    val queryNamesAnnotation = objectWithMethodDef.methodDef.annotations.flatMap(_.cast[QueryableStateNames])
+    val queryNamesAnnotation = objectWithMethodDef.annotations.flatMap(_.cast[QueryableStateNames])
     val queryNames = queryNamesAnnotation.flatMap(_.values().toList).toSet
     CustomTransformerAdditionalData(queryNames, transformer.clearsContext, transformer.canHaveManyInputs, transformer.canBeEnding)
   }

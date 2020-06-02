@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.definition
 
+import java.lang.annotation.Annotation
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
-import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, _}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
@@ -19,19 +20,25 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
 
   def extract(objWithCategories: WithCategories[T], nodeConfig: SingleNodeConfig): ObjectWithMethodDef = {
     val obj = objWithCategories.value
-    val methodDef = (obj match {
-      case e:WithExplicitMethodToInvoke =>
-        WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
-          classOf[WithExplicitMethodToInvoke].getMethods.find(_.getName == "invoke").get, nodeConfig)
-      case _ =>
-        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), nodeConfig)
-    }).fold(msg => throw new IllegalArgumentException(msg), identity)
-    ObjectWithMethodDef(obj, methodDef, ObjectDefinition(
+
+    def fromMethodDefinition(methodDef: MethodDefinition): StandardObjectWithMethodDef = StandardObjectWithMethodDef(obj, methodDef, ObjectDefinition(
       methodDef.orderedDependencies.definedParameters,
       methodDef.returnType,
       objWithCategories.categories,
       nodeConfig
     ))
+    (obj match {
+      case e:GenericNodeTransformation[_] =>
+        val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
+        val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories)
+        Right(GenericNodeTransformationMethodDef(e, definition))
+      case e:WithExplicitMethodToInvoke =>
+        WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
+          classOf[WithExplicitMethodToInvoke].getMethods.find(_.getName == "invoke").get, nodeConfig).right.map(fromMethodDefinition)
+      case _ =>
+        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), nodeConfig).right.map(fromMethodDefinition)
+    }).fold(msg => throw new IllegalArgumentException(msg), identity)
+
   }
 
   private def findMethodToInvoke(obj: Any): Method = {
@@ -67,13 +74,67 @@ object DefinitionExtractor {
 
   case class ObjectWithType(obj: Any, typ: TypingResult)
 
-  case class ObjectWithMethodDef(obj: Any,
+  trait ObjectWithMethodDef extends ObjectMetadata {
+
+    def invokeMethod(params: Map[String, Any],
+                     outputVariableNameOpt: Option[String],
+                     additional: Seq[AnyRef]) : Any
+
+    def objectDefinition: ObjectDefinition
+
+    def runtimeClass: Class[_]
+
+    def obj: Any
+
+    def annotations: List[Annotation]
+
+    override def parameters: List[Parameter] = objectDefinition.parameters
+
+    override def categories: List[String] = objectDefinition.categories
+
+    override def returnType: TypingResult = objectDefinition.returnType
+
+  }
+
+  abstract class OverriddenObjectWithMethodDef(original: ObjectWithMethodDef) extends ObjectWithMethodDef {
+
+    override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any
+
+    override def objectDefinition: ObjectDefinition = original.objectDefinition
+
+    override def runtimeClass: Class[_] = original.runtimeClass
+
+    override def obj: Any = original.obj
+
+    override def annotations: List[Annotation] = original.annotations
+  }
+
+  case class GenericNodeTransformationMethodDef(obj: GenericNodeTransformation[_], objectDefinition: ObjectDefinition) extends ObjectWithMethodDef {
+
+    override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+      val additionalParams = obj.nodeDependencies.map {
+        case TypedNodeDependency(klazz) =>
+          additional.find(klazz.isInstance).map(TypedNodeDependencyValue)
+            .getOrElse(throw new IllegalArgumentException(s"Failed to find dependency: $klazz"))
+        case OutputVariableNameDependency => outputVariableNameOpt.map(OutputVariableNameValue).getOrElse(throw new IllegalArgumentException("Output variable not defined"))
+        case _ => throw new IllegalArgumentException("Cannot handle this dependency...")
+      }
+      //we assume parameters were already validated!
+      obj.implementation(params, additionalParams)
+    }
+
+    override def runtimeClass: Class[_] = classOf[Any]
+
+    override def annotations: List[Annotation] = Nil
+  }
+
+  case class StandardObjectWithMethodDef(obj: Any,
                                  methodDef: MethodDefinition,
-                                 objectDefinition: ObjectDefinition) extends ObjectMetadata with LazyLogging {
-    def invokeMethod(paramFun: String => Option[AnyRef],
+                                 objectDefinition: ObjectDefinition) extends ObjectWithMethodDef with LazyLogging {
+    def invokeMethod(params: Map[String, Any],
                      outputVariableNameOpt: Option[String],
                      additional: Seq[AnyRef]) : Any = {
-      val values = methodDef.orderedDependencies.prepareValues(paramFun, outputVariableNameOpt, additional)
+      val values = methodDef.orderedDependencies.prepareValues(params, outputVariableNameOpt, additional)
       try {
         methodDef.invocation(obj, values)
       } catch {
@@ -87,14 +148,9 @@ object DefinitionExtractor {
       }
     }
 
-    override def parameters = objectDefinition.parameters
+    override def annotations: List[Annotation] = methodDef.annotations
 
-    override def categories = objectDefinition.categories
-
-    override def returnType = objectDefinition.returnType
-
-    def as[T] : T = obj.asInstanceOf[T]
-
+    override def runtimeClass: Class[_] = methodDef.runtimeClass
   }
 
   case class ObjectDefinition(parameters: List[Parameter],
@@ -134,7 +190,8 @@ object DefinitionExtractor {
         fromAdditionalVars.toList :+ parameter.typ
       }
 
-      obj.methodDef.returnType :: obj.parameters.flatMap(typesFromParameter)
+      //FIXME: it was obj.methodDef.returnType, is it ok to replace with obj.returnType??
+      obj.returnType :: obj.parameters.flatMap(typesFromParameter)
     }
   }
 
