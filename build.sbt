@@ -636,6 +636,7 @@ lazy val api = (project in engine("api")).
         "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.apache.commons" % "commons-text" % commonsTextV,
+        "org.apache.flink" % "flink-avro" % flinkV,
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "1.1.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
