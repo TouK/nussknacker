@@ -25,7 +25,7 @@ case class FullNameV1(var first: CharSequence, var last: CharSequence) extends S
     }
 }
 
-object FullNameV1 extends TestSchema {
+object FullNameV1 extends TestSchemaWithRecord {
   val stringSchema: String =
     """{
       |  "type": "record",
@@ -66,7 +66,7 @@ case class FullNameV2(var first: CharSequence, var middle: CharSequence, var las
     }
 }
 
-object FullNameV2 extends TestSchema {
+object FullNameV2 extends TestSchemaWithRecord {
   val stringSchema: String =
     """{
       |  "type": "record",

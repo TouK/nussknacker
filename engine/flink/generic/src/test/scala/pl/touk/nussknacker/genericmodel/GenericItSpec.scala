@@ -368,7 +368,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   }
 
   /**
-    * We should register difference input topic and output topic for each tests, because topics are not cleaned up after tests,
+    * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
     * and we can have wrong results of tests..
     *
     * @param name

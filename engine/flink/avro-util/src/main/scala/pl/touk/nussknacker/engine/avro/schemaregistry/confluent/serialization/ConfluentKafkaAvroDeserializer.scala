@@ -34,6 +34,5 @@ class ConfluentKafkaAvroDeserializer[T](confluentSchemaRegistryClient: Confluent
   }
 
   override def close(): Unit = {
-
   }
 }
