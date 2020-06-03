@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated
-import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
@@ -44,6 +43,9 @@ class AvroUtils(schemaRegistryProvider: SchemaRegistryProvider[_]) extends Seria
 object AvroUtils {
 
   private def parser = new Schema.Parser()
+
+  def topicSubject(topic: String, isKey: Boolean): String =
+    if (isKey) keySubject(topic) else valueSubject(topic)
 
   def keySubject(topic: String): String =
     topic + "-key"

@@ -7,7 +7,7 @@ import java.time.Duration
 import java.util.Properties
 
 import kafka.server.KafkaServer
-import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
@@ -117,17 +117,22 @@ object KafkaZookeeperUtils {
   implicit class RichConsumerConnector(consumer: KafkaConsumer[Array[Byte], Array[Byte]]) {
     import scala.collection.JavaConverters._
 
-    def consume(topic: String, secondsToWait: Int = 10): Stream[KeyMessage[Array[Byte], Array[Byte]]] = {
+    def consume(topic: String, secondsToWait: Int = 10): Stream[KeyMessage[Array[Byte], Array[Byte]]] =
+      consumeWithConsumerRecord(topic, secondsToWait)
+        .map(record => KeyMessage(record.key(), record.value()))
+
+    def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 10): Stream[ConsumerRecord[Array[Byte], Array[Byte]]] = {
       implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
+
       val partitionsInfo = eventually {
         consumer.listTopics.asScala.getOrElse(topic, throw new IllegalStateException(s"Topic: $topic not exists"))
       }
+
       val partitions = partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
       consumer.assign(partitions.asJava)
 
       Stream.continually(())
         .flatMap(_ => consumer.poll(Duration.ofSeconds(1)).asScala.toStream)
-        .map(record => KeyMessage(record.key(), record.value()))
     }
   }
 

@@ -108,7 +108,7 @@ object BestEffortAvroEncoder {
           encode(value, fieldSchema).map(fieldName -> _)
         }
     }.toList.sequence.map { values =>
-      var builder = new GenericRecordBuilder(schema)
+      val builder = new GenericRecordBuilder(schema)
       values.foreach {
         case (k, v) => builder.set(k, v)
       }
