@@ -40,7 +40,7 @@ class AbstractConfluentKafkaAvroSerializer extends AbstractKafkaAvroSerDe {
 
             val value = data match {
               //When record schema is different then provided schema then we try to convert this record to final schema
-              case record: GenericRecord if !record.getSchema.equals(schema) => convertRecord(record, schema)
+              case record: GenericRecord if !record.getSchema.equals(schema) => convertRecordToSchema(record, schema)
               case container: NonRecordContainer => container.getValue
               case _ => data
             }
@@ -66,27 +66,27 @@ class AbstractConfluentKafkaAvroSerializer extends AbstractKafkaAvroSerDe {
   }
 
   /**
-    * Convert serialization data to final schema.
-    * We try to set schema default value when data doesn't support field from schema.
+    * Convert serialization record to final schema.
+    * We try to set schema default value when record doesn't support field from schema.
     *
-    * @param data
+    * @param record
     * @param schema
     * @return
     */
-  private def convertRecord(data: GenericRecord, schema: Schema): GenericData.Record = {
-    val record = new GenericData.Record(schema)
+  private def convertRecordToSchema(record: GenericRecord, schema: Schema): GenericData.Record = {
+    val newRecord = new GenericData.Record(schema)
 
     schema.getFields.forEach(field => {
-      val recordValue = data.get(field.name())
+      val recordValue = record.get(field.name())
 
       val value = recordValue match {
         case null if field.hasDefaultValue => field.defaultVal()
         case _ => recordValue
       }
 
-      record.put(field.name(), value)
+      newRecord.put(field.name(), value)
     })
 
-    record
+    newRecord
   }
 }
