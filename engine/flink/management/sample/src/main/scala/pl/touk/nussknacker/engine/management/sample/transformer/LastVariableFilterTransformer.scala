@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{AbstractOneParamLazyParameterFunction, FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.KeyWithValueMapper
 
-/* This is example for GenericTransformation, WithExplicitMethodToInvoke will not be here in the future...
+/* This is example for GenericTransformation
    the idea is that we have two parameters:
    - value
    - condition
@@ -51,7 +51,6 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
     val condition = params(conditionParameterName).asInstanceOf[LazyParameter[Boolean]]
     val keyBy = params(keyByParameterName).asInstanceOf[LazyParameter[String]]
 
-    //we leave implementation as an exercise for the reader :P
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       str
         .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, value))
