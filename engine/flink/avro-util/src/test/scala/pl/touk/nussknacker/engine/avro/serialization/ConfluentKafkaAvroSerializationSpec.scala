@@ -22,7 +22,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
   private val fromSubjectVersionFactory = new ConfluentAvroSerializationSchemaFactory(FromSubjectVersion, factory)
   private val fromRecordFactory = new ConfluentAvroSerializationSchemaFactory(FromRecord, factory)
 
-  test("should properly serialize avro object in v1 to record in v1") {
+  test("should properly serialize avro object to record with same schema version") {
     val schemas = List(PaymentV1.schema)
     val version = Some(1)
 
@@ -35,7 +35,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
     runSerializationTest(table, version, schemas)
   }
 
-  test("should properly serialize avro object in v1 to record in v2") {
+  test("should properly serialize avro object to record with newer compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = Some(2)
 
@@ -48,7 +48,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
     runSerializationTest(table, version, schemas)
   }
 
-  test("should properly serialize avro object in v1 to record with latest version") {
+  test("should properly serialize avro object to record with latest compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = None
 
@@ -61,7 +61,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
     runSerializationTest(table, version, schemas)
   }
 
-  test("should properly serialize avro object in v2 to record with to v1") {
+  test("should properly serialize avro object to record with older compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = Some(1)
 
@@ -69,19 +69,6 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
       ("factory", "givenObj", "expectedObj", "topic"),
       (fromRecordFactory, PaymentV2.record, PaymentV2.record, "backward.from-record"),
       (fromSubjectVersionFactory, PaymentV2.record, PaymentV1.record, "backward..from-subject-version")
-    )
-
-    runSerializationTest(table, version, schemas)
-  }
-
-  test("should properly serialize avro object in v2 to record with to latest version") {
-    val schemas = List(PaymentV1.schema, PaymentV2.schema)
-    val version = None
-
-    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
-      ("factory", "givenObj", "expectedObj", "topic"),
-      (fromRecordFactory, PaymentV2.record, PaymentV2.record, "backward.latest.from-record"),
-      (fromSubjectVersionFactory, PaymentV2.record, PaymentV2.record, "backward.latest.from-subject-version")
     )
 
     runSerializationTest(table, version, schemas)
@@ -104,7 +91,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
     }
   }
 
-  test("trying to serialize avro object to schema with not exists version") {
+  test("trying to serialize avro object to record with not exists schema version") {
     val schemas = List(PaymentV1.schema)
     val fromRecordTopic = createAndRegisterTopicConfig("not-exist-version.from-record", schemas)
     val fromSubjectVersionTopic = createAndRegisterTopicConfig("not-exist-version.from-subject-version", schemas)

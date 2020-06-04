@@ -21,7 +21,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
   private val fromSubjectVersionFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromSubjectVersion, factory, false)
   private val fromRecordFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromRecord, factory, false)
 
-  test("should properly deserialize record in v1 to avro object v1") {
+  test("should properly deserialize record to avro object with same schema version") {
     val schemas = List(PaymentV1.schema)
     val version = Some(1)
 
@@ -34,7 +34,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
     runDeserializationTest(table, version, schemas)
   }
 
-  test("should properly deserialize record in v1 to avro object v2") {
+  test("should properly deserialize record to avro object with newer compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = Some(2)
 
@@ -47,7 +47,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
     runDeserializationTest(table, version, schemas)
   }
 
-  test("should properly deserialize record in v1 to avro object in last version") {
+  test("should properly deserialize record to avro object with latest compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = None
 
@@ -60,7 +60,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
     runDeserializationTest(table, version, schemas)
   }
 
-  test("should properly deserialize record in v2 to avro object in v1") {
+  test("should properly deserialize record to avro object with older compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = Some(1)
 
@@ -68,19 +68,6 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
       ("factory", "givenObj", "expectedObj", "topic"),
       (fromRecordFactory, PaymentV2.record, PaymentV2.record, "backward.from-record"),
       (fromSubjectVersionFactory, PaymentV2.record, PaymentV1.record, "backward..from-subject-version")
-    )
-
-    runDeserializationTest(table, version, schemas)
-  }
-
-  test("should properly deserialize generated record in v2 with version set to latest") {
-    val schemas = List(PaymentV1.schema, PaymentV2.schema)
-    val version = None
-
-    val table = Table[KafkaVersionAwareValueDeserializationSchemaFactory[_], GenericRecord, GenericRecord, String](
-      ("factory", "givenObj", "expectedObj", "topic"),
-      (fromRecordFactory, PaymentV2.record, PaymentV2.record, "backward.latest.from-record"),
-      (fromSubjectVersionFactory, PaymentV2.record, PaymentV2.record, "backward.latest.from-subject-version")
     )
 
     runDeserializationTest(table, version, schemas)
@@ -106,7 +93,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
     }
   }
 
-  test("trying to deserialize record to avro object schema with not exists version") {
+  test("trying to deserialize record to avro object with not exists schema version") {
     val schemas = List(PaymentV1.schema)
     val fromRecordTopic = createAndRegisterTopicConfig("not-exist-version.from-record", schemas)
     val fromSubjectVersionTopic = createAndRegisterTopicConfig("not-exist-version.from-subject-version", schemas)
