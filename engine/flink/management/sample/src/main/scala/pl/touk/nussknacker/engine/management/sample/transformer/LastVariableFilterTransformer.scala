@@ -38,6 +38,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(keyByParameter :: valueParameter::Nil)
     case TransformationStep((`keyByParameterName`,_ ) :: (`valueParameterName`, DefinedLazyParameter(typ)) :: Nil, _) => NextParameters(conditionParameter(typ)::Nil)
+    //if we cannot determine value, we'll assume it's type is Unknown
     case TransformationStep((`keyByParameterName`, _) :: (`valueParameterName`, FailedToDefineParameter) :: Nil, _) => NextParameters(conditionParameter(Unknown)::Nil)
     case TransformationStep((`keyByParameterName`, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) => FinalResults(context)
   }
