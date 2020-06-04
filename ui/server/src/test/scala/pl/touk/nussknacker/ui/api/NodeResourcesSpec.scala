@@ -2,11 +2,13 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Decoder
 import org.scalatest._
 import pl.touk.nussknacker.engine.additionalInfo.{MarkdownNodeAdditionalInfo, NodeAdditionalInfo}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -19,7 +21,8 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
+import io.circe.generic.semiauto.deriveDecoder
+import pl.touk.nussknacker.ui.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 
 class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
@@ -48,17 +51,20 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
   test("validates filter nodes") {
 
     val testProcess = ProcessTestData.sampleDisplayableProcess
+    implicit val typingResultDecoder: Decoder[TypingResult] = new TypingResultDecoder(getClass.getClassLoader.loadClass).decodeTypingResults
+    implicit val uiParameterDecoder: Decoder[UIParameter] = deriveDecoder[UIParameter]
+    implicit val responseDecoder: Decoder[NodeValidationResult] = deriveDecoder[NodeValidationResult]
+
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
         ExceptionHandlerRef(Nil)), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]))
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        /*responseAs[NodeValidationResult] shouldBe NodeValidationResult(List(
+        responseAs[NodeValidationResult] shouldBe NodeValidationResult(None, List(
           PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: boolean, found: java.lang.String",
             data.id, Some(NodeTypingInfo.DefaultExpressionId), data.expression.expression))
-        ), validationPerformed = true) */
-        true shouldBe true
+        ), validationPerformed = true)
       }
     }
   }
