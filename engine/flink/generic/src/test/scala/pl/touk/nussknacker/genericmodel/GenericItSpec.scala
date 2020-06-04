@@ -75,6 +75,10 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     Map("first" ->"Jan", "last" -> "Kowalski"), RecordSchemaV1
   )
 
+  private val givenMatchingAvroObjConvertedToV2 = BestEffortAvroEncoder.encodeRecordOrError(
+    Map("first" ->"Jan", "middle" -> null, "last" -> "Kowalski"), RecordSchemaV2
+  )
+
   private val givenMatchingAvroObjV2 = BestEffortAvroEncoder.encodeRecordOrError(
       Map("first" ->"Jan", "middle" -> "Tomek", "last" -> "Kowalski"), RecordSchemaV2
   )
@@ -192,7 +196,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
     run(avroProcess(topicConfig, 1)) {
       val processed = consumeOneAvroMessage(topicConfig.output)
-      processed shouldEqual List(givenMatchingAvroObj)
+      processed shouldEqual List(givenMatchingAvroObjConvertedToV2)
     }
   }
 
@@ -297,13 +301,16 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     }
   }
 
-  test("should read avro object in v2 from kafka and deserialize it to v1, filter and save it to kafka in v1") {
+  test("should read avro object in v2 from kafka and deserialize it to v1, filter and save it to kafka in v2") {
     val topicConfig = createAndRegisterTopicConfig("v2.v1.v1", RecordSchemas)
     send(givenMatchingAvroObjV2, topicConfig.input)
 
+    val converted = GenericData.get().deepCopy(RecordSchemaV2, givenMatchingAvroObjV2)
+    converted.put("middle", null)
+
     run(avroProcess(topicConfig,1)) {
       val processed = consumeOneAvroMessage(topicConfig.output)
-      processed shouldEqual List(givenMatchingAvroObj)
+      processed shouldEqual List(converted)
     }
   }
 
