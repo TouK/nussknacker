@@ -4,6 +4,7 @@ import java.util.regex.Pattern
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
+import io.circe.ParsingFailure
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
@@ -136,14 +137,17 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
 case object JsonValidator extends ParameterValidator {
 
   //Blank value should be not validate - we want to chain validators
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isBlank(value) || parse(value).isRight)
+  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
+    val parsingResult = parse(value)
+
+    if (StringUtils.isBlank(value) || parsingResult.isRight)
       valid(Unit)
     else
-      invalid(error(paramName, nodeId.id))
+      invalid(error(parsingResult.left.get, paramName, nodeId.id))
+  }
 
-  private def error(paramName: String, nodeId: String): JsonRequiredParameter = JsonRequiredParameter(
-    s"This field value has to be a proper json",
+  private def error(parsingException: ParsingFailure, paramName: String, nodeId: String): JsonRequiredParameter = JsonRequiredParameter(
+    parsingException.message,
     "Please fill field with proper json",
     paramName,
     nodeId
