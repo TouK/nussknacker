@@ -70,12 +70,3 @@ abstract class ConfluentKeyValueKafkaAvroDeserializationFactory[T: TypeInformati
   override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[V] =
     createDeserializer[V](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
 }
-
-/**
-  * FromSubjectVersion - Deserializer always fetches schema by given subject and schema version as parameters
-  * FromRecord - Standard Confluent Deserializer, it always fetches schema by message schema id
-  */
-object SchemaDeterminingStrategy extends Enumeration {
-  type SchemaDeterminingStrategy = Value
-  val FromRecord, FromSubjectVersion = Value
-}

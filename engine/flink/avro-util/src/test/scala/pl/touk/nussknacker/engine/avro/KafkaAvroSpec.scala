@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
+import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.test.NussknackerAssertions
 
+import scala.collection.immutable
 import scala.concurrent.Future
 
 trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
@@ -51,6 +52,18 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
   protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None): Future[RecordMetadata] = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
     kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj)
+  }
+
+  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): Future[RecordMetadata] = {
+    val record = kafkaSerializer.serialize(obj, null)
+    kafkaClient.sendRawMessage(topic, record.key(), record.value(), Some(record.partition()))
+  }
+
+  protected def consumeLastMessage(topic: String): List[Any] = {
+    val consumer = kafkaClient.createConsumer()
+    consumer.consume(topic).map { record =>
+      valueDeserializer.deserialize(topic, record.message())
+    }.take(1).toList
   }
 
   protected def consumeLastMessage(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String): List[Any] = {

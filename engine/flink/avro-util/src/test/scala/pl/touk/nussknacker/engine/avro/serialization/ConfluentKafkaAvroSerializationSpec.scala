@@ -1,0 +1,148 @@
+package pl.touk.nussknacker.engine.avro.serialization
+
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
+import org.apache.kafka.common.errors.SerializationException
+import org.scalatest.Assertion
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, SchemaDeterminingStrategy}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroSpec, TestSchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareValueSerializationSchemaFactory
+
+class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDrivenPropertyChecks {
+
+  import MockSchemaRegistry._
+  import SchemaDeterminingStrategy._
+
+  override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
+
+  private val fromSubjectVersionFactory = new ConfluentAvroSerializationSchemaFactory(FromSubjectVersion, factory)
+  private val fromRecordFactory = new ConfluentAvroSerializationSchemaFactory(FromRecord, factory)
+
+  test("should properly serialize avro object in v1 to record in v1") {
+    val schemas = List(PaymentV1.schema)
+    val version = Some(1)
+
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+      ("factory", "givenObj", "expectedObj", "topic"),
+      (fromRecordFactory, PaymentV1.record, PaymentV1.record, "simple.from-record"),
+      (fromSubjectVersionFactory, PaymentV1.record, PaymentV1.record, "simple.from-subject-version")
+    )
+
+    runSerializationTest(table, version, schemas)
+  }
+
+  test("should properly serialize avro object in v1 to record in v2") {
+    val schemas = List(PaymentV1.schema, PaymentV2.schema)
+    val version = Some(2)
+
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+      ("factory", "givenObj", "expectedObj", "topic"),
+      (fromRecordFactory, PaymentV1.record, PaymentV1.record, "forward.from-record"),
+      (fromSubjectVersionFactory, PaymentV1.record, PaymentV2.record, "forward.from-subject-version")
+    )
+
+    runSerializationTest(table, version, schemas)
+  }
+
+  test("should properly serialize avro object in v1 to record with latest version") {
+    val schemas = List(PaymentV1.schema, PaymentV2.schema)
+    val version = None
+
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+      ("factory", "givenObj", "expectedObj", "topic"),
+      (fromRecordFactory, PaymentV1.record, PaymentV1.record, "forward.latest.from-record"),
+      (fromSubjectVersionFactory, PaymentV1.record, PaymentV2.record, "forward.latest.from-subject-version")
+    )
+
+    runSerializationTest(table, version, schemas)
+  }
+
+  test("should properly serialize avro object in v2 to record with to v1") {
+    val schemas = List(PaymentV1.schema, PaymentV2.schema)
+    val version = Some(1)
+
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+      ("factory", "givenObj", "expectedObj", "topic"),
+      (fromRecordFactory, PaymentV2.record, PaymentV2.record, "backward.from-record"),
+      (fromSubjectVersionFactory, PaymentV2.record, PaymentV1.record, "backward..from-subject-version")
+    )
+
+    runSerializationTest(table, version, schemas)
+  }
+
+  test("should properly serialize avro object in v2 to record with to latest version") {
+    val schemas = List(PaymentV1.schema, PaymentV2.schema)
+    val version = None
+
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+      ("factory", "givenObj", "expectedObj", "topic"),
+      (fromRecordFactory, PaymentV2.record, PaymentV2.record, "backward.latest.from-record"),
+      (fromSubjectVersionFactory, PaymentV2.record, PaymentV2.record, "backward.latest.from-subject-version")
+    )
+
+    runSerializationTest(table, version, schemas)
+  }
+
+  test("trying to serialize avro object to wrong type record") {
+    val schemas = List(PaymentV1.schema)
+    val fromRecordTopic = createAndRegisterTopicConfig("wrong.from-record", schemas)
+    val fromSubjectVersionTopic = createAndRegisterTopicConfig("wrong.from-subject-version", schemas)
+    val version = None
+
+    val fromRecordSerializer = fromRecordFactory.create(fromRecordTopic.output, version, kafkaConfig)
+    val fromSubjectVersionSerializer = fromSubjectVersionFactory.create(fromSubjectVersionTopic.output, version, kafkaConfig)
+
+    pushMessage(fromRecordSerializer, FullNameV1.record, fromRecordTopic.output)
+    consumeLastMessageAndAssert(fromRecordTopic.output, FullNameV1.record)
+
+    assertThrows[SerializationException] {
+      pushMessage(fromSubjectVersionSerializer, FullNameV1.record, fromRecordTopic.output)
+    }
+  }
+
+  test("trying to serialize avro object to schema with not exists version") {
+    val schemas = List(PaymentV1.schema)
+    val fromRecordTopic = createAndRegisterTopicConfig("not-exist-version.from-record", schemas)
+    val fromSubjectVersionTopic = createAndRegisterTopicConfig("not-exist-version.from-subject-version", schemas)
+    val version = Some(100)
+
+    val fromRecordSerializer = fromRecordFactory.create(fromRecordTopic.output, version, kafkaConfig)
+    val fromSubjectVersionSerializer = fromSubjectVersionFactory.create(fromSubjectVersionTopic.output, version, kafkaConfig)
+
+    pushMessage(fromRecordSerializer, PaymentV1.record, fromRecordTopic.output)
+    consumeLastMessageAndAssert(fromRecordTopic.output, PaymentV1.record)
+
+    assertThrows[SerializationException] {
+      pushMessage(fromSubjectVersionSerializer, PaymentV1.record, fromRecordTopic.output)
+    }
+  }
+
+  private def runSerializationTest(table: TableFor4[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion =
+    forAll(table) { (factory: KafkaVersionAwareValueSerializationSchemaFactory[Any], givenObj: GenericRecord, expectedObj: GenericRecord, topic: String) =>
+      val topicConfig = createAndRegisterTopicConfig(topic, schemas)
+      val serializer = factory.create(topicConfig.output, version, kafkaConfig)
+
+      pushMessage(serializer, givenObj, topicConfig.output)
+
+      consumeLastMessageAndAssert(topicConfig.output, expectedObj)
+    }
+
+  private def consumeLastMessageAndAssert(topic: String, expectedObj: GenericRecord): Assertion = {
+    val deserializedObject = consumeLastMessage(topic)
+    deserializedObject shouldBe List(expectedObj)
+  }
+
+  object MockSchemaRegistry {
+    final val fullNameTopic = "full-name"
+
+    val schemaRegistryMockClient: CSchemaRegistryClient =  new MockConfluentSchemaRegistryClientBuilder()
+      .register(fullNameTopic, FullNameV1.schema, 1, isKey = false)
+      .build
+
+    val factory: CachedConfluentSchemaRegistryClientFactory = TestSchemaRegistryClientFactory(schemaRegistryMockClient)
+  }
+}
