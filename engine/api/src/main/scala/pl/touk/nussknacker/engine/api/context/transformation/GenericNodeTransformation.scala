@@ -2,21 +2,17 @@ package pl.touk.nussknacker.engine.api.context.transformation
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, WithExplicitMethodToInvoke}
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 /*
-  The idea is this would be low-level API, with more accessible DSLs/builders - also with annotation based configuration
-  I'd like to handle only this trait (or sth similar) in compiler - instead of MethodToInvoke, WithExplicitMethodToInvoke etc
-  Note: this trait is used without @MethodToInvoke. Usages with @MethodToInvoke can be implemented using GenericNodeTransformation
-  by NK itself (using more or less current DefinitionExtractor logic)
+  This trait provided most generic way of defining Node. In particular, implementations can dynamically define parameter list
+  and target validation context, based on current parameters.
+
+  NOTE: this is *experimental* API, subject to changes. In particular:
+   - parameters changes are *not* fully supported on UI,
+   - the trait can *only* be used for Context
+   - branches/joins are not supported
+   - handling dependencies probably will change
  */
-object GenericNodeTransformation {
-
-
-}
-
 trait GenericNodeTransformation[T] {
 
   type InputContext
@@ -30,7 +26,6 @@ trait GenericNodeTransformation[T] {
 
   def initialParameters: List[Parameter]
 
-  //TODO: handle in compilation
   def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef
 
   //Here we assume that this list is fixed - cannot be changed depending on parameter values
@@ -51,8 +46,3 @@ trait GenericNodeTransformation[T] {
 trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
   type InputContext = ValidationContext
 }
-
-trait BranchGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
-  type InputContext = Map[String, ValidationContext]
-}
-

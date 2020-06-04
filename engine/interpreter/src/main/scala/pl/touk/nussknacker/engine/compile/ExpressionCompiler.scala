@@ -46,13 +46,13 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
   import syntax._
 
-  //tu jest dla servicequery
+  //used only by serviceQuery - consider moving there
   def compileValidatedObjectParameters(parameters: List[evaluatedparam.Parameter],
                                        ctx: ValidationContext)(implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
     compileEagerObjectParameters(parameters.map(p => Parameter.optional(p.name, Unknown)), parameters, ctx)
 
-  //tu jest dla service?
+  //used only for services
   def compileEagerObjectParameters(parameterDefinitions: List[Parameter],
                                    parameters: List[evaluatedparam.Parameter],
                                    ctx: ValidationContext)
@@ -65,7 +65,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     })
   }
 
-  //tylko na potrzeby Factory!!!
+  //used by ProcessCompiler
   def compileObjectParameters(parameterDefinitions: List[Parameter],
                               parameters: List[evaluatedparam.Parameter],
                               branchParameters: List[evaluatedparam.BranchParameters],
