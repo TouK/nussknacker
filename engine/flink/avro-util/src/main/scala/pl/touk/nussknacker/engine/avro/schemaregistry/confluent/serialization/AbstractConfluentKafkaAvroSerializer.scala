@@ -22,6 +22,8 @@ import org.apache.kafka.common.errors.SerializationException
   */
 class AbstractConfluentKafkaAvroSerializer extends AbstractKafkaAvroSerDe {
 
+  import scala.collection.JavaConverters._
+
   protected val encoderFactory: EncoderFactory = EncoderFactory.get
 
   def serialize(schema: Schema, schemaId: Int, data: Any): Array[Byte] = {
@@ -75,8 +77,9 @@ class AbstractConfluentKafkaAvroSerializer extends AbstractKafkaAvroSerDe {
     */
   private def convertRecordToSchema(record: GenericRecord, schema: Schema): GenericData.Record = {
     val newRecord = new GenericData.Record(schema)
+    val fields = schema.getFields.asScala
 
-    schema.getFields.forEach(field => {
+    fields.foreach{ field => {
       val recordValue = record.get(field.name())
 
       val value = recordValue match {
@@ -85,7 +88,7 @@ class AbstractConfluentKafkaAvroSerializer extends AbstractKafkaAvroSerDe {
       }
 
       newRecord.put(field.name(), value)
-    })
+    }}
 
     newRecord
   }
