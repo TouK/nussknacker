@@ -16,7 +16,6 @@ import DragArea from "../components/DragArea"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import Dialogs from "../components/modals/Dialogs"
-import * as VisualizationUrl from "../common/VisualizationUrl"
 import Visualization from "./Visualization"
 
 import "../stylesheets/mainMenu.styl"
@@ -25,6 +24,7 @@ import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
 import {ProcessTabs} from "./ProcessTabs"
 import {FadeRoute} from "./FadeRoute"
+import {goToProcess} from "../actions/nk/showProcess"
 
 export class EspApp extends React.Component {
 
@@ -53,7 +53,7 @@ export class EspApp extends React.Component {
 
   goToProcess = () => {
     const match = this.getMetricsMatch()
-    this.props.history.push(VisualizationUrl.visualizationUrl(match.params.processId))
+    goToProcess(match.params.processId)
   }
 
   renderTopLeftButton() {

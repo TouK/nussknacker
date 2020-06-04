@@ -29,13 +29,13 @@ class CustomProcesses extends BaseProcesses {
   }
 
   reloadProcesses(showLoader) {
-    this.setState({showLoader: showLoader == null ? true : showLoader})
+    this.showLoader(showLoader)
 
     HttpService.fetchCustomProcesses().then(response => {
       if (!this.state.showAddProcess) {
         this.setState({processes: response.data, showLoader: false})
       }
-    }).catch(() => this.setState({showLoader: false}))
+    }).catch(() => this.showLoader(false))
   }
 
   deploy = (process) => () => {
@@ -51,6 +51,7 @@ class CustomProcesses extends BaseProcesses {
   }
 
   render() {
+    const processState = getProcessState(this.state)
     return (
       <div className="Page">
         <HealthCheck/>
@@ -104,18 +105,18 @@ class CustomProcesses extends BaseProcesses {
                   <Td column="status" className="status-column">
                     <ProcessStateIcon
                       process={process}
-                      processState={this.getProcessState(process)}
+                      processState={processState(process)}
                       isStateLoaded={this.state.statusesLoaded}
                     />
                   </Td>
                   <Td column="deploy" className="deploy-column">
-                    { ProcessStateUtils.canDeploy(this.getProcessState(process)) ? (
+                    { ProcessStateUtils.canDeploy(processState(process)) ? (
                       <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)}/>
                     ): null
                     }
                   </Td>
                   <Td column="cancel" className="cancel-column">
-                    { ProcessStateUtils.canCancel(this.getProcessState(process)) ? (
+                    { ProcessStateUtils.canCancel(processState(process)) ? (
                       <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)}/>
                     ): null
                     }

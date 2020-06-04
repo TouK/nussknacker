@@ -1,17 +1,27 @@
 import * as _ from "lodash"
 import * as  queryString from "query-string"
 import React from "react"
-import ProcessStateUtils from "../components/Process/ProcessStateUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
-import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
-import history from "../history"
 import HttpService from "../http/HttpService"
-import Metrics from "./Metrics"
 
-class BaseProcesses extends PeriodicallyReloadingComponent {
+export const getProcessState = ({statuses = null}) => (process) => statuses?.[process.name] || null
+
+class BaseProcesses extends React.Component {
+  intervalTime = 15000
+  baseIntervalTime = 40000
+  intervalId = null
+
+  componentDidMount() {
+    this.onMount()
+    this.intervalId = setInterval(() => this.reload(), this.getIntervalTime() || this.baseIntervalTime)
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.intervalId)
+  }
+
   searchItems = ["categories"]
   shouldReloadStatuses = false
-  intervalTime = 15000
   queries = {}
   page = ""
 
@@ -67,10 +77,10 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     }
   }
 
-  reloadProcesses(shouldShowLoader, search) {
-    this.showLoader(shouldShowLoader)
+  reloadProcesses(shouldShowLoader = true) {
+    const searchParams = this.prepareSearchParams()
+    this.setState({showLoader: shouldShowLoader !== false})
 
-    const searchParams = this.prepareSearchParams(search)
     HttpService.fetchProcesses(searchParams).then(response => {
       if (!this.state.showAddProcess) {
         this.setState({processes: response.data, showLoader: false})
@@ -79,10 +89,10 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   showLoader(shouldShowLoader) {
-    this.setState({showLoader: shouldShowLoader == null ? true : shouldShowLoader})
+    this.setState({showLoader: shouldShowLoader !== false})
   }
 
-  prepareSearchParams(search) {
+  prepareSearchParams(search = {}) {
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
     return Object.assign(query, search, this.queries || {})
   }
@@ -109,7 +119,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
       if (!this.state.showAddProcess) {
         this.setState({statuses: response.data, showLoader: false, statusesLoaded: true})
       }
-    }).catch(() => this.setState({showLoader: false}))
+    }).catch(() => this.showLoader(false))
   }
 
   retrieveSelectedCategories(data) {
@@ -119,13 +129,18 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     })
   }
 
-  afterElementChange(params, reload, showLoader, search) {
-    this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams(params)})
-    this.setState(params)
+  afterElementChange(params, reload) {
+    this.setParams(params)
 
     if (reload) {
-      this.reloadProcesses(showLoader, search)
+      this.reloadProcesses()
     }
+  }
+
+  setParams(params) {
+    const search = VisualizationUrl.setAndPreserveLocationParams(params)
+    this.props.history.replace({search})
+    this.setState(params)
   }
 
   onSearchChange = (event) => {
@@ -152,24 +167,8 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     this.afterElementChange({isDeployed: element.value, page: 0}, true)
   }
 
-  showMetrics = (process) => () => {
-    history.push(Metrics.pathForProcess(process.name))
-  }
-
-  showProcess = (process) => () => {
-    history.push(VisualizationUrl.visualizationUrl(process.name))
-  }
-
   getIntervalTime() {
     return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
-  }
-
-  getProcessState = (process) => {
-    if (this.state.statuses == null) {
-      return null
-    }
-
-    return _.get(this.state.statuses, process.name, null)
   }
 }
 

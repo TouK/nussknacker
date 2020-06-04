@@ -14,7 +14,7 @@ import TableSelect from "../components/table/TableSelect"
 import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
-import {Processes} from "./Processes"
+import {goToProcess} from "../actions/nk/showProcess"
 
 export class Archive extends BaseProcesses {
   queries = {
@@ -109,7 +109,7 @@ export class Archive extends BaseProcesses {
                     <TableRowIcon
                       glyph="eye-open"
                       title={`Show ${  process.isSubprocess ? "subprocess" : "process"}`}
-                      onClick={this.showProcess(process)}
+                      onClick={() => goToProcess(process.name)}
                     />
                   </Td>
                 </Tr>

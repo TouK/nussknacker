@@ -2,22 +2,18 @@ import * as  queryString from "query-string"
 import React from "react"
 import {connect} from "react-redux"
 import {withRouter} from "react-router-dom"
-import {Table, Td, Tr} from "reactable"
 import ActionsUtils from "../actions/ActionsUtils"
 import ProcessUtils from "../common/ProcessUtils"
-import AddProcessDialog from "../components/AddProcessDialog"
-import Date from "../components/common/Date"
 import HealthCheck from "../components/HealthCheck"
 import LoaderSpinner from "../components/Spinner"
-import AddProcessButton from "../components/table/AddProcessButton"
-import SearchFilter from "../components/table/SearchFilter"
-import TableRowIcon from "../components/table/TableRowIcon"
-import TableSelect from "../components/table/TableSelect"
 import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 import "../stylesheets/processes.styl"
 import BaseProcesses from "./BaseProcesses"
-import ProcessStateIcon from "../components/Process/ProcessStateIcon"
+import {getTable} from "./getTable"
+import {getTableTools} from "./getTableTools"
+import {getColumns} from "./getColumns"
+import {goToProcess} from "../actions/nk/showProcess"
 
 export class Processes extends BaseProcesses {
   queries = {
@@ -35,6 +31,7 @@ export class Processes extends BaseProcesses {
     {label: "Show only deployed processes", value: true},
     {label: "Show only not deployed processes", value: false},
   ]
+  getTableTools = getTableTools.bind(this)
 
   constructor(props) {
     super(props)
@@ -76,122 +73,31 @@ export class Processes extends BaseProcesses {
   }
 
   render() {
+    const {handleBlur, onSort, onPageChange, changeProcessName, processNameChanged} = this
+    const {sort, statusesLoaded, processes, search, showLoader, statuses, page} = this.state
     return (
       <div className="Page">
         <HealthCheck/>
-        <div id="process-top-bar">
-          <SearchFilter
-            onChange={this.onSearchChange}
-            value={this.state.search}
-          />
-
-          <TableSelect
-            defaultValue={this.state.selectedCategories}
-            options={this.props.filterCategories}
-            placeholder={"Select categories.."}
-            onChange={this.onCategoryChange}
-            isMulti={true}
-            isSearchable={true}
-          />
-
-          <TableSelect
-            defaultValue={this.state.selectedDeployedOption}
-            options={this.deployedOptions}
-            placeholder="Select deployed info.."
-            onChange={this.onDeployedChange}
-            isMulti={false}
-            isSearchable={false}
-          />
-
-          <AddProcessButton
-            loggedUser={this.props.loggedUser}
-            onClick={() => this.setState({showAddProcess: true})}
-          />
-        </div>
-
-        <AddProcessDialog
-          onClose={() => this.setState({showAddProcess: false})}
-          isOpen={this.state.showAddProcess}
-          isSubprocess={false}
-          visualizationPath={Processes.path}
-          message="Create new process"
-          clashedNames={this.state.clashedNames}
-        />
-
+        {this.getTableTools()}
         <LoaderSpinner show={this.state.showLoader}/>
-
-        <Table
-          className="esp-table"
-          onSort={this.onSort}
-          onPageChange={this.onPageChange}
-          noDataText="No matching records found."
-          hidden={this.state.showLoader}
-          currentPage={this.state.page}
-          defaultSort={this.state.sort}
-          itemsPerPage={10}
-          pageButtonLimit={5}
-          previousPageLabel="<"
-          nextPageLabel=">"
-          sortable={["name", "category", "modifyDate", "createdAt", "createdBy"]}
-          filterable={["name", "category", "createdBy"]}
-          hideFilterInput
-          filterBy={this.state.search.toLowerCase()}
-          columns={[
-            {key: "name", label: "Name"},
-            {key: "category", label: "Category"},
-            {key: "createdBy", label: "Created by"},
-            {key: "createdAt", label: "Created at"},
-            {key: "modifyDate", label: "Last modification"},
-            {key: "status", label: "Status"},
-            {key: "edit", label: "Edit"},
-            {key: "metrics", label: "Metrics"},
-          ]}
-        >
-          {this.state.processes.map((process, index) => {
-            return (
-              <Tr className="row-hover" key={index}>
-                <Td column="name" className="name-column" value={process.name}>
-                  <input
-                    value={process.editedName != null ? process.editedName : process.name}
-                    className="transparent"
-                    onKeyPress={(event) => this.changeProcessName(process, event)}
-                    onChange={(event) => this.processNameChanged(process.name, event)}
-                    onBlur={(event) => this.handleBlur(process, event)}
-                  />
-                </Td>
-                <Td column="category">{process.processCategory}</Td>
-                <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>
-                <Td column="createdAt" className="centered-column" value={process.createdAt}>
-                  <Date date={process.createdAt}/>
-                </Td>
-                <Td column="modifyDate" className="centered-column" value={process.modificationDate}>
-                  <Date date={process.modificationDate}/>
-                </Td>
-                <Td column="status" className="status-column">
-                  <ProcessStateIcon
-                    process={process}
-                    processState={this.getProcessState(process)}
-                    isStateLoaded={this.state.statusesLoaded}
-                  />
-                </Td>
-                <Td column="edit" className="edit-column">
-                  <TableRowIcon
-                    glyph="edit"
-                    title="Edit process"
-                    onClick={this.showProcess(process)}
-                  />
-                </Td>
-                <Td column="metrics" className="metrics-column">
-                  <TableRowIcon
-                    glyph={"stats"}
-                    title="Show metrics"
-                    onClick={this.showMetrics(process)}
-                  />
-                </Td>
-              </Tr>
-            )
-          })}
-        </Table>
+        {getTable({
+          columns: getColumns(),
+          handleBlur,
+          onSort,
+          state: this.state,
+          onPageChange,
+          showProcess: (process) => () => goToProcess(process.name),
+          changeProcessName,
+          processNameChanged,
+        }, {
+          sort,
+          statusesLoaded,
+          processes,
+          search,
+          showLoader,
+          statuses,
+          page,
+        })}
       </div>
     )
   }

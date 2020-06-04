@@ -3,6 +3,7 @@ import {omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {nkPath} from "../config"
+import {NodeId} from "../types"
 
 export const visualizationBasePath = `${nkPath}/visualization`
 export const visualizationPath = `${visualizationBasePath  }/:processId`
@@ -25,7 +26,7 @@ function fromTimestampOrDate(tsOrDate) {
   return Moment(tsOrDate)
 }
 
-export function visualizationUrl(processName, nodeId, edgeId) {
+export function visualizationUrl(processName: string, nodeId?: NodeId, edgeId?: NodeId) {
   const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
   const nodeIdUrlPart = nodeId && edgeId == null ? nodeIdPart(nodeId) : ""
   const edgeIdUrlPart = edgeId && nodeId == null ? edgeIdPart(edgeId) : ""

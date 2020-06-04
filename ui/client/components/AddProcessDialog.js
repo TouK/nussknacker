@@ -7,13 +7,11 @@ import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import EspModalStyles from "../common/EspModalStyles"
 import {allValid, mandatoryValueValidator} from "./graph/node-modal/editors/Validators"
-import * as VisualizationUrl from "../common/VisualizationUrl"
-
-import history from "../history"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import ValidationLabels from "./modals/ValidationLabels"
 import * as DialogMessages from "../common/DialogMessages"
+import {goToProcess} from "../actions/nk/showProcess"
 
 //TODO: Consider integrating with GenericModalDialog
 class AddProcessDialog extends React.Component {
@@ -46,12 +44,12 @@ class AddProcessDialog extends React.Component {
     const processId = this.state.processId
     HttpService.createProcess(this.state.processId, this.state.processCategory, this.props.isSubprocess).then((response) => {
       this.closeDialog()
-      history.push(VisualizationUrl.visualizationUrl(processId))
+      goToProcess(processId)
     })
   }
 
   render() {
-    const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
+    const titleStyles = EspModalStyles.headerStyles("#2D8E54", "white")
     const nameValidators = prepareNameValidators(this.props.clashedNames)
 
     return (
@@ -137,7 +135,7 @@ const nameAlreadyExists = (clashedNames, name) => {
   return clashedNames.some(processName => processName === name)
 }
 
-const prepareNameValidators = (clashedNames) =>  [
+const prepareNameValidators = (clashedNames) => [
   mandatoryValueValidator,
   {
     isValid: (name) => !nameAlreadyExists(clashedNames, name),
