@@ -20,27 +20,27 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
 
   private val expressionName = "expression"
 
-  private val syncEc = SynchronousExecutionContext.ctx
+  private implicit val syncEc: ExecutionContext = SynchronousExecutionContext.ctx
 
   def interpret(node: Node,
                 metaData: MetaData,
                 ctx: Context)
                (implicit executor: ExecutionContext): Future[Either[List[InterpretationResult], EspExceptionInfo[_<:Throwable]]] = {
-    implicit val impMetaData = metaData
-    tryToInterpretNode(node, ctx).map(Left(_)).recover {
+    implicit val impMetaData: MetaData = metaData
+    tryToInterpretNode(node, ctx, executor).map(Left(_))(syncEc).recover {
       case ex@NodeIdExceptionWrapper(nodeId, exception) =>
         val exInfo = EspExceptionInfo(Some(nodeId), exception, ctx)
         Right(exInfo)
       case NonFatal(ex) =>
         val exInfo = EspExceptionInfo(None, ex, ctx)
         Right(exInfo)
-    }
+    }(syncEc)
   }
 
-  private def tryToInterpretNode(node: Node, ctx: Context)
-                           (implicit metaData: MetaData, executor: ExecutionContext): Future[List[InterpretationResult]] = {
+  private def tryToInterpretNode(node: Node, ctx: Context, serviceEc: ExecutionContext)
+                           (implicit metaData: MetaData): Future[List[InterpretationResult]] = {
     try {
-      interpretNode(node, ctx).transform(identity, transform(node.id))
+      interpretNode(node, ctx, serviceEc).transform(identity, transform(node.id))
     } catch {
       case NonFatal(ex) => Future.failed(transform(node.id)(ex))
     }
@@ -53,22 +53,22 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
 
   private implicit def nodeToId(implicit node: Node) : NodeId = NodeId(node.id)
 
-  private def interpretNode(node: Node, ctx: Context)
-                           (implicit metaData: MetaData, executor: ExecutionContext): Future[List[InterpretationResult]] = {
+  private def interpretNode(node: Node, ctx: Context, serviceEc: ExecutionContext)
+                           (implicit metaData: MetaData): Future[List[InterpretationResult]] = {
     implicit val nodeImplicit = node
     listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     node match {
       case Source(_, next) =>
-        interpretNext(next, ctx)
+        interpretNext(next, ctx, serviceEc)
       case VariableBuilder(_, varName, Right(fields), next) =>
-        createOrUpdateVariable(ctx, varName, fields).flatMap(interpretNext(next, _))
+        createOrUpdateVariable(ctx, varName, fields).flatMap(interpretNext(next, _, serviceEc))
       case VariableBuilder(_, varName, Left(expression), next) =>
         expressionEvaluator.evaluate[Any](expression, varName, node.id, ctx).flatMap { valueWithModifiedContext =>
-          interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
+          interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value), serviceEc)
         }
       case SubprocessStart(_, params, next) =>
         expressionEvaluator.evaluateParameters(params, ctx).flatMap { case (newCtx, vars) =>
-          interpretNext(next, newCtx.pushNewContext(vars))
+          interpretNext(next, newCtx.pushNewContext(vars), serviceEc)
         }
       case SubprocessEnd(_, varName, fields, next) =>
         createOrUpdateVariable(ctx, varName, fields).flatMap { updatedCtx =>
@@ -76,15 +76,15 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
           val newParentContext = updatedCtx.variables.get(varName).map { value =>
             parentContext.withVariable(varName, value)
           }.getOrElse(parentContext)
-          interpretNext(next, newParentContext)
+          interpretNext(next, newParentContext, serviceEc)
         }
       case Processor(_, ref, next, false) =>
-        invoke(ref, None, ctx).flatMap {
-          case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)
+        invoke(ref, None, ctx, serviceEc).flatMap {
+          case ValueWithContext(_, newCtx) => interpretNext(next, newCtx, serviceEc)
         }
-      case Processor(_, ref, next, true) => interpretNext(next, ctx)
+      case Processor(_, ref, next, true) => interpretNext(next, ctx, serviceEc)
       case EndingProcessor(id, ref, false) =>
-        invoke(ref, None, ctx).map {
+        invoke(ref, None, ctx, serviceEc).map {
           case ValueWithContext(output, newCtx) =>
             List(InterpretationResult(EndReference(id), output, newCtx))
         }
@@ -92,17 +92,17 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
         //FIXME: null??
         Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
       case Enricher(_, ref, outName, next) =>
-        invoke(ref, Some(outName), ctx).flatMap {
+        invoke(ref, Some(outName), ctx, serviceEc).flatMap {
           case ValueWithContext(out, newCtx) =>
-            interpretNext(next, newCtx.withVariable(outName, out))
+            interpretNext(next, newCtx.withVariable(outName, out), serviceEc)
         }
       case Filter(_, expression, nextTrue, nextFalse, disabled) =>
         val expressionResult = if (disabled) Future.successful(ValueWithContext(true, ctx)) else evaluateExpression[Boolean](expression, ctx, expressionName)
         expressionResult.flatMap { valueWithModifiedContext =>
           if (disabled || valueWithModifiedContext.value)
-            interpretNext(nextTrue, valueWithModifiedContext.context)
+            interpretNext(nextTrue, valueWithModifiedContext.context, serviceEc)
           else
-            interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
+            interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context, serviceEc)
         }
       case Switch(_, expression, exprVal, nexts, defaultNext) =>
         val valueWithModifiedContext = evaluateExpression[Any](expression, ctx, expressionName)
@@ -121,9 +121,9 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
           }
         }.flatMap {
           case (accCtx, Some(nextNode)) =>
-            interpretNext(nextNode, accCtx)
+            interpretNext(nextNode, accCtx, serviceEc)
           case (accCtx, None) =>
-            interpretOptionalNext(node, defaultNext, accCtx)
+            interpretOptionalNext(node, defaultNext, accCtx, serviceEc)
         }
       case Sink(id, _, _, true) =>
         Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
@@ -140,29 +140,29 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
       case BranchEnd(e) =>
         Future.successful(List(InterpretationResult(e.joinReference, null, ctx)))
       case CustomNode(_, next) =>
-        interpretNext(next, ctx)
+        interpretNext(next, ctx, serviceEc)
       case EndingCustomNode(id) =>
         Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
       case SplitNode(id, nexts) =>
-        Future.sequence(nexts.map(interpretNext(_, ctx))).map(_.flatten)
+        Future.sequence(nexts.map(interpretNext(_, ctx, serviceEc))).map(_.flatten)
     }
   }
 
-  private def interpretOptionalNext(node: Node, optionalNext: Option[Next], ctx: Context)
-                                   (implicit metaData: MetaData, ec: ExecutionContext): Future[List[InterpretationResult]] = {
+  private def interpretOptionalNext(node: Node, optionalNext: Option[Next], ctx: Context, serviceEc: ExecutionContext)
+                                   (implicit metaData: MetaData): Future[List[InterpretationResult]] = {
     optionalNext match {
       case Some(next) =>
-        interpretNext(next, ctx)
+        interpretNext(next, ctx, serviceEc)
       case None =>
         listeners.foreach(_.deadEndEncountered(node.id, ctx, metaData))
         Future.successful(List(InterpretationResult(DeadEndReference(node.id), outputValue(ctx), ctx)))
     }
   }
 
-  private def interpretNext(next: Next, ctx: Context)
-                           (implicit metaData: MetaData, executor: ExecutionContext): Future[List[InterpretationResult]] =
+  private def interpretNext(next: Next, ctx: Context, serviceEc: ExecutionContext)
+                           (implicit metaData: MetaData): Future[List[InterpretationResult]] =
     next match {
-      case NextNode(node) => tryToInterpretNode(node, ctx)
+      case NextNode(node) => tryToInterpretNode(node, ctx, serviceEc)
       case PartRef(ref) => Future.successful(List(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)))
     }
 
@@ -171,7 +171,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
   ctx.getOrElse[Any](OutputParamName, new java.util.HashMap[String, Any]())
 
   private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])
-                                    (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Future[Context] = {
+                                    (implicit metaData: MetaData, node: Node): Future[Context] = {
     val contextWithInitialVariable = ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
 
     fields.foldLeft(Future.successful(contextWithInitialVariable)) {
@@ -186,10 +186,10 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
     }
   }
 
-  private def invoke(ref: ServiceRef, outputVariableNameOpt: Option[String], ctx: Context)
-                    (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
+  private def invoke(ref: ServiceRef, outputVariableNameOpt: Option[String], ctx: Context, serviceEc: ExecutionContext)
+                    (implicit metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
     expressionEvaluator.evaluateParameters(ref.parameters, ctx).flatMap { case (newCtx, preparedParams) =>
-      val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id, outputVariableNameOpt))
+      val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id, outputVariableNameOpt))(serviceEc, metaData)
       resultFuture.onComplete { result =>
         //TODO: what about implicit??
         listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
@@ -199,7 +199,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
-                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node):  Future[ValueWithContext[R]] = {
+                                   (implicit metaData: MetaData, node: Node):  Future[ValueWithContext[R]] = {
     expressionEvaluator.evaluate(expr, name, node.id, ctx)
   }
 
