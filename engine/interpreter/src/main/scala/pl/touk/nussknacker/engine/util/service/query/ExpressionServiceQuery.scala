@@ -34,7 +34,7 @@ class ExpressionServiceQuery(
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
     expressionCompiler.compileValidatedObjectParameters(params, ValidationContext.empty) match {
       case Valid(p) => expressionEvaluator
-        .evaluateParameters(p, ctx)(nodeId,ServiceQuery.jobData.metaData, executionContext)
+        .evaluateParameters(p, ctx)(nodeId,ServiceQuery.jobData.metaData)
         .flatMap {
           case (_, vars) =>
             serviceQuery

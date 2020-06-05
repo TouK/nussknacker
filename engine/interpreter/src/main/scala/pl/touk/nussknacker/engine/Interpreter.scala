@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -18,6 +19,8 @@ import scala.util.control.NonFatal
 class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: ExpressionEvaluator) {
 
   private val expressionName = "expression"
+
+  private val syncEc = SynchronousExecutionContext.ctx
 
   def interpret(node: Node,
                 metaData: MetaData,
@@ -191,7 +194,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
         //TODO: what about implicit??
         listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
       }
-      resultFuture.map(ValueWithContext(_, newCtx))
+      resultFuture.map(ValueWithContext(_, newCtx))(SynchronousExecutionContext.ctx)
     }
   }
 

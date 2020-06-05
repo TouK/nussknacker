@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, Value
 import pl.touk.nussknacker.engine.compile.Validations
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ServiceInvoker
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -66,10 +67,10 @@ object ExpressionEvaluator {
 
 class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
                           listeners: Seq[ProcessListener], lazyValuesProviderCreator: (ExecutionContext, MetaData, String) => LazyValuesProvider) {
-
+  private implicit val ecToUse: ExecutionContext = SynchronousExecutionContext.ctx
 
   def evaluateParameters(params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter], ctx: Context)
-                        (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext) : Future[(Context, Map[String, AnyRef])] = {
+                        (implicit nodeId: NodeId, metaData: MetaData) : Future[(Context, Map[String, AnyRef])] = {
     params.foldLeft(Future.successful((ctx, Map.empty[String, AnyRef]))) {
       case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
         evaluateParameter(param, accCtx).map { valueWithModifiedContext =>
@@ -95,8 +96,8 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
   }
 
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
-                 (implicit ec: ExecutionContext, metaData: MetaData): Future[ValueWithContext[R]] = {
-    val lazyValuesProvider = lazyValuesProviderCreator(ec, metaData, nodeId)
+                 (implicit metaData: MetaData): Future[ValueWithContext[R]] = {
+    val lazyValuesProvider = lazyValuesProviderCreator(ecToUse, metaData, nodeId)
     //FIXME: this is *not* performant when we have some global variables, we should not add to map here, but e.g. push
     //lookup logic down to expressions
     val ctxWithGlobals = ctx.withVariables(globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj))
