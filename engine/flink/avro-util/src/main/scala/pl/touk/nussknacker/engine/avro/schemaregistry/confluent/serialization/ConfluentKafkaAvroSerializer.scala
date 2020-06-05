@@ -6,6 +6,7 @@ import io.confluent.kafka.serializers.KafkaAvroSerializerConfig
 import org.apache.avro.Schema
 import org.apache.avro.io.EncoderFactory
 import org.apache.kafka.common.serialization.Serializer
+import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
 /**
@@ -15,14 +16,15 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.Confluent
   *            fetching schema for serializer has place at deploy moment. It can be happen when process has
   *            set latest version and deploy was run after new schema was added.
   *
+  * @param schemaEvolutionHandler
   * @param confluentSchemaRegistryClient
   * @param schema
   * @param schemaId
   * @param isKey
   * @tparam T
   */
-class ConfluentKafkaAvroSerializer[T](schema: Schema, schemaId: Int, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, var isKey: Boolean)
-  extends AbstractConfluentKafkaAvroSerializer with Serializer[T] {
+class ConfluentKafkaAvroSerializer[T](confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, schemaEvolutionHandler: AvroSchemaEvolution, schema: Schema, schemaId: Int, var isKey: Boolean)
+  extends AbstractConfluentKafkaAvroSerializer(schemaEvolutionHandler) with Serializer[T] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
 
@@ -39,8 +41,9 @@ class ConfluentKafkaAvroSerializer[T](schema: Schema, schemaId: Int, confluentSc
 
 object ConfluentKafkaAvroSerializer extends ConfluentKafkaAvroSerializationMixin {
   def apply[T](confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, version: Option[Int], isKey: Boolean): ConfluentKafkaAvroSerializer[T] = {
+    val schemaEvolutionHandler = new DefaultAvroSchemaEvolution
     val schema = fetchSchema(confluentSchemaRegistryClient, topic, version, isKey = isKey)
     val schemaId = fetchSchemaId(confluentSchemaRegistryClient, topic, schema, isKey = isKey)
-    new ConfluentKafkaAvroSerializer(schema, schemaId, confluentSchemaRegistryClient, isKey = isKey)
+    new ConfluentKafkaAvroSerializer(confluentSchemaRegistryClient, schemaEvolutionHandler, schema, schemaId, isKey = isKey)
   }
 }
