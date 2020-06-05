@@ -7,6 +7,7 @@ export enum ValidatorType {
 
 /* eslint-disable i18next/no-literal-string */
 export enum HandledErrorType {
+  AlreadyExists = "AlreadyExists",
   EmptyMandatoryParameter = "EmptyMandatoryParameter",
   BlankParameter = "BlankParameter",
   WrongDateFormat = "WrongDateFormat",

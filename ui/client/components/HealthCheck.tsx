@@ -7,6 +7,7 @@ import PeriodicallyReloadingComponent from "./PeriodicallyReloadingComponent"
 import {withTranslation} from "react-i18next"
 import {WithTranslation} from "react-i18next/src"
 import {compose} from "redux"
+import {getFeatureSettings} from "../reducers/selectors/settings"
 
 type HealthCheckResponse = {
   state: string,
@@ -41,7 +42,7 @@ class HealthCheck extends PeriodicallyReloadingComponent<Props, State> {
 }
 
 const mapState = state => ({
-  healthCheckInterval: state.settings.featuresSettings?.intervalSettings?.healthCheck,
+  healthCheckInterval: getFeatureSettings(state)?.intervalSettings?.healthCheck,
 })
 
 type Props = ReturnType<typeof mapState> & EspActionsProps &  WithTranslation

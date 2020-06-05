@@ -4,6 +4,8 @@ import {connect} from "react-redux"
 import {withRouter} from "react-router"
 import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
+import {Page} from "./Page"
+import {getFeatureSettings} from "../reducers/selectors/settings"
 
 export class Metrics extends React.Component {
 
@@ -41,7 +43,7 @@ export class Metrics extends React.Component {
     const finalIframeUrl = url.replace("$dashboard", dashboard).replace("$process", processName)
 
     return (
-      <div className="Page">
+      <Page>
         <iframe
           ref="metricsFrame"
           src={finalIframeUrl}
@@ -49,7 +51,7 @@ export class Metrics extends React.Component {
           height={window.innerHeight}
           frameBorder="0"
         />
-      </div>
+      </Page>
     )
   }
 
@@ -67,7 +69,7 @@ Metrics.header = "Metrics"
 
 function mapState(state) {
   return {
-    settings: state.settings.featuresSettings.metrics || {},
+    settings: getFeatureSettings(state).metrics || {},
   }
 }
 

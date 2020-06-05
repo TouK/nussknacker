@@ -25,6 +25,7 @@ import ErrorHandler from "./ErrorHandler"
 import {ProcessTabs} from "./ProcessTabs"
 import {FadeRoute} from "./FadeRoute"
 import {goToProcess} from "../actions/nk/showProcess"
+import {getFeatureSettings} from "../reducers/selectors/settings"
 
 export class EspApp extends React.Component {
 
@@ -119,7 +120,7 @@ function mapState(state) {
   const loggedUser = state.settings.loggedUser
   return {
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
-    featuresSettings: state.settings.featuresSettings,
+    featuresSettings: getFeatureSettings(state),
     loggedUser: loggedUser,
     resolved: !_.isEmpty(loggedUser),
   }

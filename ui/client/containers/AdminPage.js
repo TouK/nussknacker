@@ -4,17 +4,18 @@ import {withRouter} from "react-router-dom"
 import {Tab, TabList, TabPanel, Tabs} from "react-tabs"
 import "react-tabs/style/react-tabs.css"
 import {nkPath} from "../config"
-import CustomProcesses from "./admin/CustomProcesses"
+import {CustomProcessesPage, key, header} from "./admin/CustomProcesses"
 import SearchComponents from "./admin/SearchComponents"
 import Services from "./admin/Services"
 import UnusedComponents from "./admin/UnusedComponents"
+import {Page} from "./Page"
 
 export class AdminPage extends React.Component {
   tabs = [
     {key: SearchComponents.key, title: SearchComponents.header, component: <SearchComponents/>},
     {key: UnusedComponents.key, title: UnusedComponents.header, component: <UnusedComponents/>},
     {key: Services.key, title: Services.header, component: <Services/>},
-    {key: CustomProcesses.key, title: CustomProcesses.header, component: <CustomProcesses/>},
+    {key: key, title: header, component: <CustomProcessesPage/>},
   ]
 
   constructor(props) {
@@ -35,7 +36,7 @@ export class AdminPage extends React.Component {
 
   render() {
     return (
-      <div className="Page">
+      <Page>
         <Tabs defaultIndex={this.state.selectedTab} onSelect={this.onTabChange}>
           <TabList>
             {
@@ -54,7 +55,7 @@ export class AdminPage extends React.Component {
             })
           }
         </Tabs>
-      </div>
+      </Page>
     )
   }
 }

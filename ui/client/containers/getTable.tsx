@@ -10,13 +10,9 @@ type Props = {
   columns,
   handleBlur,
   onSort,
-  state,
   onPageChange,
   changeProcessName,
   processNameChanged,
-}
-
-type State = {
   sort,
   statusesLoaded,
   processes,
@@ -26,10 +22,10 @@ type State = {
   statuses?,
 }
 
-export function getTable(props: Props, state: State) {
+export function getTable(props: Props) {
   const {columns, handleBlur, onSort, onPageChange, changeProcessName, processNameChanged} = props
-  const {sort, statusesLoaded, processes, search, showLoader, page} = state
-  const processState = getProcessState(state)
+  const {sort, statusesLoaded, processes, search, showLoader, page} = props
+  const processState = getProcessState(props)
   const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy"]
   const filterable = ["name", "category", "createdBy"]
   const filterBy = search.toLowerCase()

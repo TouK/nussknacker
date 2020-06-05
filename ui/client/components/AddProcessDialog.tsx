@@ -1,60 +1,72 @@
-import _ from "lodash"
-import PropTypes from "prop-types"
+/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import Draggable from "react-draggable"
 import Modal from "react-modal"
 import {connect} from "react-redux"
-import ActionsUtils from "../actions/ActionsUtils"
 import EspModalStyles from "../common/EspModalStyles"
-import {allValid, mandatoryValueValidator} from "./graph/node-modal/editors/Validators"
+import {allValid, mandatoryValueValidator, Validator, ValidatorType, HandledErrorType} from "./graph/node-modal/editors/Validators"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import ValidationLabels from "./modals/ValidationLabels"
 import * as DialogMessages from "../common/DialogMessages"
-import {goToProcess} from "../actions/nk/showProcess"
+import {showProcess} from "../actions/nk/showProcess"
 
-//TODO: Consider integrating with GenericModalDialog
-class AddProcessDialog extends React.Component {
+type State = {
+  processId: string,
+  processCategory: string,
+}
 
-  static propTypes = {
-    categories: PropTypes.array.isRequired,
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    isSubprocess: PropTypes.bool,
-    visualizationPath: PropTypes.string.isRequired,
-    message: PropTypes.string.isRequired,
-    clashedNames: PropTypes.array,
+//TODO: move this validation to backend to simplify FE code
+function getAlreadyExistsValidator(clashedNames): Validator {
+  return {
+    isValid: (name) => !clashedNames.includes(name),
+    message: DialogMessages.valueAlreadyTaken,
+    description: DialogMessages.valueAlreadyTakenDescription,
+    validatorType: ValidatorType.Frontend,
+    handledErrorType: HandledErrorType.AlreadyExists,
   }
+}
 
-  initialState(props) {
-    return {processId: "", processCategory: _.head(props.categories) || ""}
-  }
+function prepareNameValidators(clashedNames) {
+  const alreadyExistsValidator = getAlreadyExistsValidator(clashedNames)
+  return [
+    mandatoryValueValidator,
+    alreadyExistsValidator,
+  ]
+}
 
-  constructor(props) {
-    super(props)
-    this.state = this.initialState(props)
-  }
+class AddProcessDialog extends React.Component<Props, State> {
+  initialState = () => ({processId: "", processCategory: this.props.categories[0] || ""})
+
+  state = this.initialState()
 
   closeDialog = () => {
-    this.setState(this.initialState(this.props))
+    this.setState(this.initialState())
     this.props.onClose()
   }
 
-  confirm = () => {
-    const processId = this.state.processId
-    HttpService.createProcess(this.state.processId, this.state.processCategory, this.props.isSubprocess).then((response) => {
-      this.closeDialog()
-      goToProcess(processId)
-    })
+  confirm = async () => {
+    const {processCategory, processId} = this.state
+    await this.createProcess(processId, processCategory)
+    this.closeDialog()
+  }
+
+  private async createProcess(processId: string, processCategory: string) {
+    const {isSubprocess, showProcess} = this.props
+    await HttpService.createProcess(processId, processCategory, isSubprocess)
+    showProcess(processId)
   }
 
   render() {
+    const {message, clashedNames, categories, isOpen} = this.props
+    const {processId} = this.state
+
     const titleStyles = EspModalStyles.headerStyles("#2D8E54", "white")
-    const nameValidators = prepareNameValidators(this.props.clashedNames)
+    const nameValidators = prepareNameValidators(clashedNames)
 
     return (
       <Modal
-        isOpen={this.props.isOpen}
+        isOpen={isOpen}
         shouldCloseOnOverlayClick={false}
         onRequestClose={this.closeDialog}
       >
@@ -63,7 +75,7 @@ class AddProcessDialog extends React.Component {
             <div className="espModal">
               <div className="modalHeader">
                 <div className="modal-title modal-draggable-handle" style={titleStyles}>
-                  <span>{this.props.message}</span>
+                  <span>{message}</span>
                 </div>
               </div>
 
@@ -78,10 +90,10 @@ class AddProcessDialog extends React.Component {
                           type="text"
                           id="newProcessId"
                           className="node-input"
-                          value={this.state.processId}
+                          value={processId}
                           onChange={(e) => this.setState({processId: e.target.value})}
                         />
-                        <ValidationLabels validators={nameValidators} values={[this.state.processId]}/>
+                        <ValidationLabels validators={nameValidators} values={[processId]}/>
                       </div>
                     </div>
                     <div className="node-row">
@@ -92,7 +104,7 @@ class AddProcessDialog extends React.Component {
                           className="node-input"
                           onChange={(e) => this.setState({processCategory: e.target.value})}
                         >
-                          {this.props.categories.map((cat, index) => (
+                          {categories.map((cat, index) => (
                             <option key={index} value={cat}>{cat}</option>))}
                         </select>
                       </div>
@@ -109,7 +121,7 @@ class AddProcessDialog extends React.Component {
                     type="button"
                     title="Create"
                     className="modalButton"
-                    disabled={!allValid(nameValidators, this.state.processId)}
+                    disabled={!allValid(nameValidators, [processId])}
                     onClick={this.confirm}
                   >Create
                   </button>
@@ -130,19 +142,17 @@ function mapState(state) {
   }
 }
 
-//TODO: move this validation to backend to simplify FE code
-const nameAlreadyExists = (clashedNames, name) => {
-  return clashedNames.some(processName => processName === name)
+const mapDispatch = {showProcess}
+
+type OwnProps = {
+  onClose: () => void,
+  categories: string[],
+  message: string,
+  clashedNames?: string[],
+  isOpen?: boolean,
+  isSubprocess?: boolean,
 }
 
-const prepareNameValidators = (clashedNames) => [
-  mandatoryValueValidator,
-  {
-    isValid: (name) => !nameAlreadyExists(clashedNames, name),
-    message: DialogMessages.valueAlreadyTaken,
-    description: DialogMessages.valueAlreadyTakenDescription,
-  },
-]
+type Props = OwnProps & ReturnType<typeof mapState> & typeof mapDispatch
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(AddProcessDialog)
-
+export default connect(mapState, mapDispatch)(AddProcessDialog)

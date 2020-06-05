@@ -1,77 +1,85 @@
+/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {Glyphicon} from "react-bootstrap"
 import {connect} from "react-redux"
-import {withRouter} from "react-router-dom"
+import {withRouter, RouteComponentProps} from "react-router-dom"
 import {Table, Td, Tr} from "reactable"
-import ActionsUtils from "../../actions/ActionsUtils"
 import * as DialogMessages from "../../common/DialogMessages"
 import Date from "../../components/common/Date"
-import HealthCheck from "../../components/HealthCheck"
 import LoaderSpinner from "../../components/Spinner"
-import SearchFilter from "../../components/table/SearchFilter"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
-import BaseProcesses from "./../BaseProcesses"
+import {BaseProcesses, getProcessState, BaseProcessesOwnProps, baseMapState} from "../BaseProcesses"
 import ProcessStateIcon from "../../components/Process/ProcessStateIcon"
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
+import {PageWithHealthCheck} from "../Page"
+import {toggleConfirmDialog} from "../../actions/nk"
+import {TableFilters} from "../TableFilters"
+import {ProcessTableTools} from "../processTableTools"
 
-class CustomProcesses extends BaseProcesses {
-  shouldReloadStatuses = true
-  page = "custom"
+export const CustomProcessesPage = () => {
+  return (
+    <CustomProcessesComponent
+      searchItems={[]}
+      page={"custom"}
+      shouldReloadStatuses={true}
+      defaultState={{
+        statusesLoaded: false,
+        statuses: {},
+      }}
+    />
+  )
+}
 
-  constructor(props) {
-    super(props)
+export const header = "Custom Processes"
+export const key = "custom-processes"
 
-    this.state = Object.assign({
-      statusesLoaded: false,
-      statuses: {},
-    }, this.prepareState())
-  }
-
-  reloadProcesses(showLoader) {
-    this.showLoader(showLoader)
+class CustomProcesses extends BaseProcesses<Props> {
+  reloadProcesses(shouldShowLoader = true) {
+    this.showLoader(shouldShowLoader)
 
     HttpService.fetchCustomProcesses().then(response => {
-      if (!this.state.showAddProcess) {
-        this.setState({processes: response.data, showLoader: false})
-      }
+      this.setState({processes: response.data, showLoader: false})
     }).catch(() => this.showLoader(false))
   }
 
-  deploy = (process) => () => {
-    this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.name), () => {
+  deploy = process => () => {
+    this.props.toggleConfirmDialog(true, DialogMessages.deploy(process.name), () => {
       return HttpService.deploy(process.name).finally(() => this.reload())
     })
   }
 
-  cancel = (process) => () => {
-    this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.name), () => {
+  cancel = process => () => {
+    this.props.toggleConfirmDialog(true, DialogMessages.stop(process.name), () => {
       return HttpService.cancel(process.name).finally(() => this.reload())
     })
   }
 
   render() {
+    const {cancel, onSort, onPageChange, deploy} = this
     const processState = getProcessState(this.state)
-    return (
-      <div className="Page">
-        <HealthCheck/>
-        <div id="process-top-bar">
-          <SearchFilter
-            value={this.state.search}
-            onChange={this.onSearchChange}
-          />
-        </div>
+    const {sort, statusesLoaded, processes, showLoader, page, search} = this.state
 
-        <LoaderSpinner show={this.state.showLoader}/>
+    return (
+      <PageWithHealthCheck>
+        <ProcessTableTools>
+          <TableFilters
+            filters={this.searchItems}
+            value={this.state}
+            onChange={this.onFilterChange}
+          />
+        </ProcessTableTools>
+
+        <LoaderSpinner show={showLoader}/>
 
         <Table
           className="esp-table"
-          onSort={this.onSort}
-          onPageChange={this.onPageChange}
+          onSort={onSort}
+          onPageChange={onPageChange}
           noDataText="No matching records found."
-          hidden={this.state.showLoader}
-          currentPage={this.state.page}
-          defaultSort={this.state.sort}
+          hidden={showLoader}
+          currentPage={page}
+          defaultSort={sort}
           itemsPerPage={10}
           pageButtonLimit={5}
           previousPageLabel="<"
@@ -79,7 +87,7 @@ class CustomProcesses extends BaseProcesses {
           sortable={["name", "category", "modifyDate", "createdAt"]}
           filterable={["name", "category"]}
           hideFilterInput
-          filterBy={this.state.search.toLowerCase()}
+          filterBy={search.toLowerCase()}
           columns={[
             {key: "name", label: "Process name"},
             {key: "category", label: "Category"},
@@ -91,7 +99,7 @@ class CustomProcesses extends BaseProcesses {
           ]}
         >
           {
-            this.state.processes.map((process, index) => {
+            processes.map((process, index) => {
               return (
                 <Tr className="row-hover" key={index}>
                   <Td column="name">{process.name}</Td>
@@ -106,36 +114,37 @@ class CustomProcesses extends BaseProcesses {
                     <ProcessStateIcon
                       process={process}
                       processState={processState(process)}
-                      isStateLoaded={this.state.statusesLoaded}
+                      isStateLoaded={statusesLoaded}
                     />
                   </Td>
                   <Td column="deploy" className="deploy-column">
-                    { ProcessStateUtils.canDeploy(processState(process)) ? (
-                      <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy(process)}/>
-                    ): null
+                    {ProcessStateUtils.canDeploy(processState(process)) ? (
+                      <Glyphicon glyph="play" title="Deploy process" onClick={deploy(process)}/>
+                    ) : null
                     }
                   </Td>
                   <Td column="cancel" className="cancel-column">
-                    { ProcessStateUtils.canCancel(processState(process)) ? (
-                      <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel(process)}/>
-                    ): null
+                    {ProcessStateUtils.canCancel(processState(process)) ? (
+                      <Glyphicon glyph="stop" title="Cancel process" onClick={cancel(process)}/>
+                    ) : null
                     }
                   </Td>
                 </Tr>
               )
             })}
         </Table>
-      </div>
+      </PageWithHealthCheck>
     )
   }
+
+  static header = header
+  static key = key
 }
 
-CustomProcesses.header = "Custom Processes"
-CustomProcesses.key = "custom-processes"
+const mapDispatch = {toggleConfirmDialog}
 
-const mapState = state => ({
-  loggedUser: state.settings.loggedUser,
-  featuresSettings: state.settings.featuresSettings,
-})
+type StateProps = typeof mapDispatch & ReturnType<typeof baseMapState> & RouteComponentProps
+type Props = StateProps & RouteComponentProps & BaseProcessesOwnProps
 
-export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CustomProcesses))
+const CustomProcessesComponent = withRouter(connect(baseMapState, mapDispatch)(CustomProcesses))
+

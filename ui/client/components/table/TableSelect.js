@@ -15,7 +15,7 @@ export default class TableSelect extends React.Component {
     option: (styles, state) => ({
       ...styles,
       fontSize: 14,
-      backgroundColor: state.isSelected ? "#e6ecff" : null,
+      backgroundColor: state.isSelected ? "#E6ECFF" : null,
       color: "#555555",
     }),
   }
@@ -25,13 +25,13 @@ export default class TableSelect extends React.Component {
       ...theme,
       colors: {
         ...theme.colors,
-        primary: "#0058a9",
+        primary: "#0058A9",
       },
     }
   }
 
   render() {
-    const {defaultValue, options, onChange, isMulti, isSearchable, placeholder} = this.props
+    const {defaultValue, options, isMulti, isSearchable, placeholder} = this.props
 
     return (
       <div id="table-filter" className="input-group">
@@ -43,11 +43,16 @@ export default class TableSelect extends React.Component {
           className="form-select"
           options={options}
           placeholder={placeholder}
-          onChange={onChange}
+          onChange={this.getOnChange}
           styles={this.customSelectStyles}
           theme={this.customSelectTheme}
         />
       </div>
     )
+  }
+
+  getOnChange = value => {
+    const {onChange, isMulti} = this.props
+    onChange(isMulti ? value || [] : value)
   }
 }
