@@ -33,7 +33,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     if (writerSchema.equals(schema)) {
       container
     } else {
-      val serializedObject = serializeToRecordSchema(container, writerSchema)
+      val serializedObject = serializeRecord(container)
       val deserializedRecord = deserializePayloadToSchema(serializedObject, container, writerSchema, schema)
       deserializedRecord.asInstanceOf[GenericContainer]
     }
@@ -50,9 +50,8 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     * @return
     */
   protected def deserializePayloadToSchema(payload: Array[Byte], record: GenericContainer, writerSchema: Schema, readerSchema: Schema): Any = {
-    val reader = createDatumReader(record, writerSchema, readerSchema, useSchemaReflection)
-
     try {
+      val reader = createDatumReader(record, writerSchema, readerSchema, useSchemaReflection = useSchemaReflection)
       val buffer = ByteBuffer.wrap(payload)
       val length = buffer.limit
       if (writerSchema.getType == Schema.Type.BYTES) {
@@ -83,15 +82,13 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     * To serialization we use schema from record.
     *
     * @param record
-    * @param writerSchema
     * @return
     */
-  protected def serializeToRecordSchema(record: GenericContainer, writerSchema: Schema): Array[Byte] = {
+  protected def serializeRecord(record: GenericContainer): Array[Byte] = {
     try {
       val out = new ByteArrayOutputStream
       val encoder = encoderFactory.directBinaryEncoder(out, null)
-      val writer = createDatumWriter(record, writerSchema, useSchemaReflection = useSchemaReflection)
-
+      val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection)
       writer.write(record, encoder)
       encoder.flush()
       val bytes = out.toByteArray

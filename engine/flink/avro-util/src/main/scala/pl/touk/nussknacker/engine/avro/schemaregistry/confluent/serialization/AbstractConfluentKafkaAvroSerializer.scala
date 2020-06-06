@@ -5,10 +5,8 @@ import java.nio.ByteBuffer
 
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDe
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericContainer, GenericDatumWriter}
+import org.apache.avro.generic.GenericContainer
 import org.apache.avro.io.EncoderFactory
-import org.apache.avro.reflect.ReflectDatumWriter
-import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DatumReaderWriterMixin}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
@@ -40,7 +38,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
             val encoder = this.encoderFactory.directBinaryEncoder(out, null)
 
             val record = data match {
-              //When record schema is different then provided schema then we try to convert this record to final schema
+              //We try to convert record to provided schema if it's possible
               case record: GenericContainer => avroSchemaEvolution.alignRecordToSchema(record, schema)
               case _ => data
             }
