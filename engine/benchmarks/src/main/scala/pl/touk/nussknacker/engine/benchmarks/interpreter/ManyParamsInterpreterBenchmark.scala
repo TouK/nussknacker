@@ -14,8 +14,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 /*
-[info] ManyParamsInterpreterBenchmark.benchmarkAsync  thrpt    8  56433.663 ± 2941.387  ops/s
-[info] ManyParamsInterpreterBenchmark.benchmarkSync   thrpt    8  86119.583 ± 7837.837  ops/s
+[info] ManyParamsInterpreterBenchmark.benchmarkAsync  thrpt    8   85822.908 ± 5572.295  ops/s
+[info] ManyParamsInterpreterBenchmark.benchmarkSync   thrpt    8  126208.502 ± 2997.227  ops/s
  */
 @State(Scope.Thread)
 class ManyParamsInterpreterBenchmark {
@@ -103,9 +103,7 @@ object ManyParamsService extends Service {
     if (ec == SynchronousExecutionContext.ctx) {
       Future.failed(new IllegalArgumentException("Should be normal EC..."))
     } else {
-      Future {
-        s1
-      }
+      Future.successful(s1)
     }
   }
 
