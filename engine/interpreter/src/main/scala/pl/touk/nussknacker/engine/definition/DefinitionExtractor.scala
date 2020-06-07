@@ -117,7 +117,7 @@ object DefinitionExtractor {
           additional.find(klazz.isInstance).map(TypedNodeDependencyValue)
             .getOrElse(throw new IllegalArgumentException(s"Failed to find dependency: $klazz"))
         case OutputVariableNameDependency => outputVariableNameOpt.map(OutputVariableNameValue).getOrElse(throw new IllegalArgumentException("Output variable not defined"))
-        case _ => throw new IllegalArgumentException("Cannot handle this dependency...")
+        case other => throw new IllegalArgumentException(s"Cannot handle dependency $other")
       }
       //we assume parameters were already validated!
       obj.implementation(params, additionalParams)
