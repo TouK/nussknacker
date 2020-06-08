@@ -6,8 +6,9 @@ import cats.data.Validated
 import org.apache.kafka.common.errors.SerializationException
 
 object ConfluentUtils {
-  //Copied from AbstractKafkaAvroSerDe.MAGIC_BYTE
+  //Copied from AbstractKafkaAvroSerDe
   final val MagicByte = 0
+  final val IdSize = 4
 
   def parsePayloadToByteBuffer(payload: Array[Byte]): Validated[IllegalArgumentException, ByteBuffer] = {
     val buffer = ByteBuffer.wrap(payload)

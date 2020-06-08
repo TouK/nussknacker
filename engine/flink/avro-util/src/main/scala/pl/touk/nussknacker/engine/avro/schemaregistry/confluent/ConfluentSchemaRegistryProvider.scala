@@ -59,7 +59,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     )
 
   def defaultSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentAvroSerializationSchemaFactory =
-    new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
+    ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
   def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean): ConfluentKafkaAvroDeserializationSchemaFactory[T] =
     ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)

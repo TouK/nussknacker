@@ -4,9 +4,7 @@ import java.util
 
 import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, KafkaAvroDeserializerConfig}
 import org.apache.avro.Schema
-import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
-import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
 /**
@@ -41,13 +39,9 @@ class ConfluentKafkaAvroDeserializer[T](schema: Schema, confluentSchemaRegistryC
   override def close(): Unit = {}
 }
 
-object ConfluentKafkaAvroDeserializer {
+object ConfluentKafkaAvroDeserializer extends ConfluentKafkaAvroSerializationMixin {
   def apply[T](confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, version: Option[Int], isKey: Boolean): ConfluentKafkaAvroDeserializer[T] = {
-    val subject = AvroUtils.topicSubject(topic, isKey = isKey)
-    val schema = confluentSchemaRegistryClient
-      .getFreshSchema(subject, version)
-      .valueOr(exc => throw new SerializationException(s"Error retrieving Avro schema for topic $topic.", exc))
-
+    val schema = fetchSchema(confluentSchemaRegistryClient, topic, version, isKey = isKey)
     new ConfluentKafkaAvroDeserializer(schema, confluentSchemaRegistryClient, isKey = isKey)
   }
 }
