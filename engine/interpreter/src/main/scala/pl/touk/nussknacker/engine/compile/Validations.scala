@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.compile
 
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, RedundantParameters}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterValidator}
 import pl.touk.nussknacker.engine.graph.evaluatedparam
+
+import scala.annotation.tailrec
 
 object Validations {
 
@@ -56,14 +59,28 @@ object Validations {
   private def validateWithCustomValidators[T >: PartSubGraphCompilationError <: ProcessCompilationError](parameterDefinitions: List[Parameter],
                                                                                                          parameters: List[evaluatedparam.Parameter])
                                                                                                         (implicit nodeId: NodeId) = {
-    val validators = parameterDefinitions.map(param => (param.name, param.validators)).toMap
-    val paramWithValidatorList = for {
-      param <- parameters
-      validator <- validators.getOrElse(param.name, List.empty)
-    } yield (param, validator)
-    val validationResults = paramWithValidatorList.map {
-      case (param, validator) => validator.isValid(param.name, param.expression.expression, None).toValidatedNel
+    def validateValidatorsList(param: evaluatedparam.Parameter, validatorList: List[ParameterValidator]) = {
+      validatorList.map(_.isValid(param.name, param.expression.expression, None).toValidatedNel).sequence.map(_ => Unit)
     }
-    validationResults.sequence.map(_ => Unit)
+
+    @tailrec
+    def validatePriorityGroups(param: evaluatedparam.Parameter, priorityGroups: List[List[ParameterValidator]]):
+                                            Validated[NonEmptyList[PartSubGraphCompilationError], Unit.type] = {
+      priorityGroups match {
+        case group :: Nil => validateValidatorsList(param, group)
+        case group :: rest =>
+          val validationResult = validateValidatorsList(param, group)
+          if (validationResult.isValid) validatePriorityGroups(param, rest)
+          else validationResult
+      }
+    }
+
+    val validators = parameterDefinitions.map(param => (param.name, param.validators)).toMap
+    parameters.collect {
+      case param if validators.getOrElse(param.name, Nil).nonEmpty =>
+        val validatorList = validators.getOrElse(param.name, Nil)
+        val validatorsPerPriority = validatorList.groupBy(_.priority).toList.sortBy(-_._1).map(_._2)
+        validatePriorityGroups(param, validatorsPerPriority)
+    }.sequence.map(_ => Unit)
   }
 }

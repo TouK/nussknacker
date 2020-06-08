@@ -9,7 +9,7 @@ import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, NotBlankParameter, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, MandatoryParameterValidator, MaximalNumberValidator, NotBlankParameter, NotBlankParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -72,6 +72,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       )), emptyQueryNamesData()),
       "withRegExpParam" -> (ObjectDefinition.withParams(List(
         Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
+      )), emptyQueryNamesData()),
+      "withPriorities" -> (ObjectDefinition.withParams(List(
+        Parameter[Integer]("priorities").copy(validators = List(LiteralParameterValidator.integerValidator,
+          MaximalNumberValidator(10), MandatoryParameterValidator))
       )), emptyQueryNamesData())
     ),
     Map.empty,
@@ -1014,6 +1018,38 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(scala.concurrent.Future[java.lang.String]). Required: identity(java.lang.String)", _, _, _), Nil)) =>
     }
+  }
+
+  test("mandatory parameter validation in descending order by priorities") {
+    val process = EspProcessBuilder
+      .id("process")
+      .exceptionHandler()
+      .source("id", "source")
+      .customNode("customNode", "event", "withPriorities", "priorities" -> "")
+      .emptySink("emptySink", "sink")
+
+    print(validate(process, baseDefinition).result )
+    validate(process, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+      EmptyMandatoryParameter(_, _, "priorities", "customNode"), Nil)) =>
+    }
+
+  }
+
+  test("parameter validation done in descending order by priorities") {
+    val process = EspProcessBuilder
+      .id("process")
+      .exceptionHandler()
+      .source("id", "source")
+      .customNode("customNode", "event", "withPriorities", "priorities" -> "aaa")
+      .emptySink("emptySink", "sink")
+
+    print(validate(process, baseDefinition).result )
+    validate(process, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+      InvalidIntegerLiteralParameter(_, _, "priorities", "customNode"), Nil)) =>
+    }
+
   }
 
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
