@@ -21,6 +21,7 @@ Nussknacker versions
 * [#973](https://github.com/TouK/nussknacker/pull/973) Textarea editor
 * Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989)
 * [#978](https://github.com/TouK/nussknacker/pull/978) Dynamic filter validation
+* [#996](https://github.com/TouK/nussknacker/pull/996) First version of GenericNodeTransformation
 
 0.1.2
 ------------------------

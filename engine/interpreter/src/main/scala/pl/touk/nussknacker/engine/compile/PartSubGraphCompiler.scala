@@ -300,7 +300,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
   //this method tries to compute constant parameters if service is ServiceReturningType
   //TODO: is it right way to do this? Maybe we just need to analyze Expression?
   private def computeReturnType(objWithMethod: ObjectWithMethodDef,
-                                parameters: List[compiledgraph.evaluatedparam.Parameter]): TypingResult = objWithMethod.obj match {
+                                parameters: List[compiledgraph.evaluatedparam.Parameter])(implicit nodeId: NodeId): TypingResult = objWithMethod.obj match {
     case srt: ServiceReturningType =>
 
       val data = parameters.map { param =>
@@ -314,11 +314,11 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
   /*
       we try to evaluate parameter, but if it fails (e.g. it contains variable), or future does not complete immediately - we just return None
    */
-  private def tryToEvaluateParam(param: compiledgraph.evaluatedparam.Parameter): Option[Any] = {
+  private def tryToEvaluateParam(param: compiledgraph.evaluatedparam.Parameter)(implicit nodeId: NodeId): Option[Any] = {
     import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
     implicit val meta: MetaData = MetaData("", null)
     Try {
-      val futureValue = expressionEvaluator.evaluate[Any](param.expression, "", "", Context(""))
+      val futureValue = expressionEvaluator.evaluateParameter(param, Context(""))
       futureValue.value.flatMap(_.toOption).map(_.value)
     }.toOption.flatten
   }

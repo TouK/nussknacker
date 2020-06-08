@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -761,8 +761,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val failingDefinition = base
       .copy(sourceFactories = base.sourceFactories
-        .mapValues(v => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
-        => throw new IllegalArgumentException("You passed incorrect parameter, cannot proceed")))))
+        .mapValues { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
+        => throw new IllegalArgumentException("You passed incorrect parameter, cannot proceed"))) })
 
     val processWithInvalidExpresssion =
       EspProcessBuilder

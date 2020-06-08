@@ -16,7 +16,10 @@ import org.apache.flink.streaming.api.functions.timestamps.{AscendingTimestampEx
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, FailedToDefineParameter, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -33,6 +36,7 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
+import pl.touk.nussknacker.engine.util.Implicits._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -427,6 +431,53 @@ object SampleNodes {
 
   object EmptyService extends Service {
     def invoke(): Future[Unit.type] = Future.successful(Unit)
+  }
+
+  object GenericParametersNode extends CustomStreamTransformer with SingleInputGenericNodeTransformation[AnyRef] {
+
+    override type State = List[String]
+
+    override def contextTransformation(context: ValidationContext,
+                                       dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(("par1", DefinedEagerParameter(value: String, _))::("lazyPar1", _)::Nil, None) =>
+        val split = value.split(",").toList
+        NextParameters(split.map(Parameter(_, Unknown)), state = Some(split))
+      case TransformationStep(("par1", FailedToDefineParameter)::("lazyPar1", _)::Nil, None) =>
+        outputParameters(context, dependencies, Nil)
+      case TransformationStep(("par1", _)::("lazyPar1", _)::rest, Some(names)) if rest.map(_._1) == names =>
+        outputParameters(context, dependencies, rest)
+    }
+
+    private def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+      dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
+        case Some(name) =>
+          val result = TypedObjectTypingResult(rest.toMap.mapValuesNow(_.returnType))
+          context.withVariable(name, result).fold(
+            errors => FinalResults(context, errors.toList),
+            FinalResults(_))
+        case None =>
+          FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
+      }
+    }
+
+    override def initialParameters: List[Parameter] = List(
+      Parameter[String]("par1"), Parameter[Boolean]("lazyPar1").copy(isLazyParameter = true)
+    )
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
+      val map = params.filterNot(k => List("par1", "lazyPar1").contains(k._1))
+      val bool = params("lazyPar1").asInstanceOf[LazyParameter[Boolean]]
+      FlinkCustomStreamTransformation((stream, fctx) => {
+        stream
+          .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
+          .map(ctx => ValueWithContext[Any](TypedMap(map), ctx))
+      })
+    }
+
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
+
+
   }
 
   object ProcessHelper {

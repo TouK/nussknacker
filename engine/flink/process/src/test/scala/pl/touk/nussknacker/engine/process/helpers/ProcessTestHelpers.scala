@@ -101,7 +101,8 @@ object ProcessTestHelpers {
         "signalReader" -> WithCategories(CustomSignalReader),
         "transformWithTime" -> WithCategories(TransformerWithTime),
         "transformWithNullable" -> WithCategories(TransformerWithNullableParam),
-        "optionalEndingCustom" -> WithCategories(OptionalEndingCustom)
+        "optionalEndingCustom" -> WithCategories(OptionalEndingCustom),
+        "genericParametersNode" -> WithCategories(GenericParametersNode)
       )
 
       override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()

@@ -83,7 +83,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
   protected def signalSenders(processObjectDependencies: ProcessObjectDependencies): Map[SignalSenderKey, FlinkProcessSignalSender]
-    = definitions(processObjectDependencies).signalsWithTransformers.mapValuesNow(_._1.as[FlinkProcessSignalSender])
+    = definitions(processObjectDependencies).signalsWithTransformers.mapValuesNow(_._1.obj.asInstanceOf[FlinkProcessSignalSender])
       .map { case (k, v) => SignalSenderKey(k, v.getClass) -> v }
 
   //TODO: consider moving to CompiledProcess??

@@ -25,9 +25,7 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
 
   override def invoke(params: Map[String, Any], nodeContext: NodeContext)
                      (implicit ec: ExecutionContext, metaData: MetaData): Future[Any] = {
-    objectWithMethodDef.invokeMethod(
-      paramFun = (params.get _)
-        .andThen(_.map(_.asInstanceOf[AnyRef])),
+    objectWithMethodDef.invokeMethod(params,
       outputVariableNameOpt = nodeContext.outputVariableNameOpt,
       additional = Seq(ec, collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId))
     ).asInstanceOf[Future[Any]]
@@ -41,7 +39,7 @@ private[definition] class JavaServiceInvokerImpl(objectWithMethodDef: ObjectWith
   override def invoke(params: Map[String, Any], nodeContext: NodeContext)
                      (implicit ec: ExecutionContext, metaData: MetaData): Future[Any] = {
     val result = objectWithMethodDef.invokeMethod(
-      paramFun = (params.get _).andThen(_.map(_.asInstanceOf[AnyRef])),
+      params,
       outputVariableNameOpt = None,
       additional = Seq(prepareExecutor(ec), collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId)))
     FutureConverters.toScala(result.asInstanceOf[CompletionStage[_]])
@@ -65,7 +63,7 @@ object ServiceInvoker {
   )
 
   def apply(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None): ServiceInvoker = {
-    val detectedRuntimeClass = objectWithMethodDef.methodDef.runtimeClass
+    val detectedRuntimeClass = objectWithMethodDef.runtimeClass
     if (classOf[Future[_]].isAssignableFrom(detectedRuntimeClass))
       new ServiceInvokerImpl(objectWithMethodDef, collector)
     else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(detectedRuntimeClass))

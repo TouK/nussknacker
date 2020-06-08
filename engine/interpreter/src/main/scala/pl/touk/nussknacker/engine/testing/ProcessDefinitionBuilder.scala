@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -20,7 +20,7 @@ object ProcessDefinitionBuilder {
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
-    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: Class[_] = classOf[Any]) = new ObjectWithMethodDef(null,
+    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: Class[_] = classOf[Any]) = StandardObjectWithMethodDef(null,
       MethodDefinition("", (_, _) => null, new OrderedDependencies(objectDefinition.parameters),
         Unknown, realType, List()), objectDefinition)
 
