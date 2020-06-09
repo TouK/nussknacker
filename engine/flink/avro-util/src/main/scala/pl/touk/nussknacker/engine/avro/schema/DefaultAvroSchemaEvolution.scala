@@ -53,13 +53,13 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     try {
       val reader = createDatumReader(record, writerSchema, readerSchema, useSchemaReflection = useSchemaReflection)
       val buffer = ByteBuffer.wrap(payload)
-      val length = buffer.limit
+      val length = buffer.limit()
       if (writerSchema.getType == Schema.Type.BYTES) {
         val bytes = new Array[Byte](length)
         buffer.get(bytes, 0, length)
         bytes
       } else {
-        val start = buffer.position + buffer.arrayOffset
+        val start = buffer.position() + buffer.arrayOffset
         val binaryDecoder = decoderFactory.binaryDecoder(buffer.array, start, length, null)
         val result = reader.read(record, binaryDecoder)
         if (writerSchema.getType == Schema.Type.STRING) result.toString else result
