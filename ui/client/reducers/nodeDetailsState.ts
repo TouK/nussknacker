@@ -1,11 +1,18 @@
 import {Action} from "../actions/reduxTypes"
 import {ValidationData} from "../actions/nk"
+import {NodeValidationError, UIParameter} from "../types"
 
-export type NodeDetailsState = ValidationData
+export type NodeDetailsState = {
+    parameters? : Map<string, UIParameter>,
+    validationErrors: NodeValidationError[],
+    validationPerformed: boolean,
+    validationRequestPerformed: boolean,
+}
 
 const initialState: NodeDetailsState = {
   validationErrors: [],
   validationPerformed: false,
+  validationRequestPerformed: false,
 }
 
 export function reducer(state: NodeDetailsState = initialState, action: Action): NodeDetailsState {
@@ -17,6 +24,7 @@ export function reducer(state: NodeDetailsState = initialState, action: Action):
         validationErrors: validationData.validationErrors,
         parameters: validationData.parameters,
         validationPerformed: validationData.validationPerformed,
+        validationRequestPerformed: true,
       }
     }
     case "DISPLAY_MODAL_NODE_DETAILS":

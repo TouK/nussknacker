@@ -1,6 +1,6 @@
 import {ThunkAction, ThunkDispatch} from "../reduxTypes"
 import HttpService from "../../http/HttpService"
-import {NodeValidationError, PropertiesType, VariableTypes,NodeType} from "../../types"
+import {NodeValidationError, PropertiesType, VariableTypes, NodeType, UIParameter} from "../../types"
 
 import {debounce} from "lodash"
 
@@ -8,7 +8,7 @@ export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validatio
 export type NodeDetailsActions = NodeValidationUpdated
 
 export type ValidationData = {
-    parameters? : Map<string, any>,
+    parameters? : Map<string, UIParameter>,
     validationErrors: NodeValidationError[],
     validationPerformed: boolean,
 }

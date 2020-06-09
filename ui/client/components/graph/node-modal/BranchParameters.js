@@ -5,10 +5,10 @@ import ExpressionField from "./editors/expression/ExpressionField"
 const BranchParameters = (props) => {
 
   const {node, isMarked, showValidation, errors, showSwitch, isEditMode,
-    nodeObjectDetails, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult} = props
+    parameterDefinitions, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult} = props
 
   //TODO: maybe we can rely only on node?
-  const branchParameters = nodeObjectDetails?.parameters.filter(p => p.branchParam)
+  const branchParameters = parameterDefinitions?.filter(p => p.branchParam)
   return (
     branchParameters?.map((param) => {
       const paramName = param.name
@@ -39,7 +39,7 @@ const BranchParameters = (props) => {
                           isMarked={isMarked}
                           showValidation={showValidation}
                           showSwitch={showSwitch}
-                          nodeObjectDetails={nodeObjectDetails}
+                          parameterDefinition={param}
                           setNodeDataAt={setNodeDataAt}
                           testResultsToShow={testResultsToShow}
                           testResultsToHide={testResultsToHide}
@@ -65,7 +65,7 @@ BranchParameters.propTypes = {
   isEditMode: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
   showSwitch: PropTypes.bool,
-  nodeObjectDetails: PropTypes.any,
+  parameterDefinitions: PropTypes.array.isRequired,
   setNodeDataAt: PropTypes.func.isRequired,
   testResultsToShow: PropTypes.any,
   testResultsToHide: PropTypes.any,

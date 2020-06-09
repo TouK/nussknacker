@@ -45,7 +45,6 @@ export default function ParameterList(props) {
         })}
         {diffParams.added.map((params, index) => {
           const newIndex = index + diffParams.unchanged.length
-          console.log(params)
           return (
             <div className="node-block added" key={nodeId + params.name + newIndex}>
               {props.createListField(params, newIndex)}

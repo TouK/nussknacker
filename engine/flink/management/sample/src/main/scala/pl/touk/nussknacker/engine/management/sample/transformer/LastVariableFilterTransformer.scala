@@ -43,7 +43,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
     case TransformationStep((`keyByParameterName`, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) => FinalResults(context)
   }
 
-  override def initialParameters: List[Parameter] = List(valueParameter, conditionParameter(Unknown))
+  override def initialParameters: List[Parameter] = List(keyByParameter, valueParameter, conditionParameter(Unknown))
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 

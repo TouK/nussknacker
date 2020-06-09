@@ -23,6 +23,16 @@ export type NodeType = {
   ref?: $TodoType,
 }
 
+export type Parameter = {
+    name: string,
+    expression: Expression,
+}
+
+export type Expression = {
+    languge: string,
+    expression: string,
+}
+
 //TODO: Add other process properties...
 export type PropertiesType = NodeType & {
   type: "Properties",
