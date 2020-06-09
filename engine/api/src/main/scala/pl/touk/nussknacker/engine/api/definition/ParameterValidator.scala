@@ -149,7 +149,7 @@ case object JsonValidator extends ParameterValidator {
 
   private def error(parsingException: ParsingFailure, paramName: String, nodeId: String): JsonRequiredParameter = JsonRequiredParameter(
     parsingException.message,
-    "Please fill field with proper json",
+    "Please fill field with valid json",
     paramName,
     nodeId
   )

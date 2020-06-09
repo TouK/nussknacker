@@ -15,7 +15,8 @@ export enum HandledErrorType {
   ErrorValidator = "ErrorValidator",
   MismatchParameter = "MismatchParameter",
   SmallerThanRequiredParameter = "SmallerThanRequiredParameter",
-  GreaterThanRequiredParameter = "GreaterThanRequiredParameter"
+  GreaterThanRequiredParameter = "GreaterThanRequiredParameter",
+  JsonRequiredParameter = "JsonRequiredParameter",
 }
 
 /* eslint-disable i18next/no-literal-string */
@@ -27,6 +28,7 @@ export enum BackendValidator {
   LiteralIntegerValidator = "LiteralIntegerValidator",
   MinimalNumberValidator = "MinimalNumberValidator",
   MaximalNumberValidator = "MaximalNumberValidator",
+  JsonValidator = "JsonValidator",
 }
 
 export type Validator = {
@@ -121,6 +123,25 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
   validatorType: ValidatorType.Frontend,
 })
 
+const isJsonValid = (value: string): boolean => {
+  try {
+    JSON.parse(value)
+  } catch (e) {
+    return false
+  }
+
+  return true
+}
+
+export const jsonValidator: Validator = {
+  //Blank value should be not validate - we want to chain validators
+  isValid: value => isEmpty(value) || isJsonValid(value),
+  message: () => i18next.t("jsonValidator.message", `This field value has to be a valid json`),
+  description: () => i18next.t("jsonValidator.description", "Please fill field with valid json"),
+  handledErrorType: HandledErrorType.JsonRequiredParameter,
+  validatorType: ValidatorType.Frontend,
+}
+
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
   return isEmpty(validators) ? [] :
     chain(validators)
@@ -141,4 +162,5 @@ export const validators: Record<BackendValidator, (...args: any[]) => Validator>
   [BackendValidator.RegExpParameterValidator]: ({pattern, message, description}) => regExpValueValidator(pattern, message, description),
   [BackendValidator.MinimalNumberValidator]: ({minimalNumber}) => minimalNumberValidator(minimalNumber),
   [BackendValidator.MaximalNumberValidator]: ({maximalNumber}) => maximalNumberValidator(maximalNumber),
+  [BackendValidator.JsonValidator]: () => jsonValidator,
 }
