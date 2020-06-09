@@ -138,7 +138,8 @@ case object JsonValidator extends ParameterValidator {
 
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-    val parsingResult = parse(value)
+    val strippedValue = value.stripPrefix("'").stripSuffix("'").trim
+    val parsingResult = parse(strippedValue)
 
     if (StringUtils.isBlank(value) || parsingResult.isRight)
       valid(Unit)
