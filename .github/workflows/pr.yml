@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v5
       - name: Backend tests
         shell: bash
@@ -21,7 +27,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v5
       - name: Compile
         shell: bash
         run: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
+  integrationTests:
+    name: IntegrationTests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: olafurpg/setup-scala@v5
+      - name: Integration tests
+        shell: bash
+        run: ./ciRunSbt.sh clean management/it:test engineStandalone/it:test
+
+
+
