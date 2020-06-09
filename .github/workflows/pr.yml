@@ -1,0 +1,27 @@
+name: PR Build
+on:
+  pull_request:
+    branches:
+      - master
+      - staging
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: olafurpg/setup-scala@v5
+      - name: Backend tests
+        shell: bash
+        run: ./ciBackendTest.sh
+
+  crossCompile:
+    name: CrossCompile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: olafurpg/setup-scala@v5
+      - name: Compile
+        shell: bash
+        run: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
