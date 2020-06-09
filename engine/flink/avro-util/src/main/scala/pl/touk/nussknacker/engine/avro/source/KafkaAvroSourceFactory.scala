@@ -25,7 +25,7 @@ class KafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaR
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @ParamName(`VersionParamName`) @Min(value = 1) @Nullable version: Integer
+             @ParamName(SchemaVersionParamName) @Min(value = 1) @Nullable version: Integer
               )(implicit nodeId: NodeId): Source[T] with TestDataGenerator with ReturningType = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val kafkaAvroSchemaProvider = SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, version)

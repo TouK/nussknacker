@@ -115,7 +115,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         "start",
         "kafka-avro",
         KafkaAvroFactory.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroFactory.VersionParamName -> versionParam(version)
+        KafkaAvroFactory.SchemaVersionParamName -> versionParam(version)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .sink(
@@ -134,7 +134,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         "start",
         "kafka-avro",
         KafkaAvroFactory.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroFactory.VersionParamName -> versionParam(version)
+        KafkaAvroFactory.SchemaVersionParamName -> versionParam(version)
       )
       .sink(
         "end",
@@ -152,7 +152,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         "start",
         "kafka-fixed-avro",
         KafkaAvroFactory.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroFactory.SchemaParamName -> s"'$schema'"
+        KafkaAvroFactory.FixedSchemaParamName -> s"'$schema'"
       )
       .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
       .sink(

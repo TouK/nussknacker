@@ -13,19 +13,23 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.test.NussknackerAssertions
 
-import scala.collection.immutable
 import scala.concurrent.Future
 
 trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
 
   import KafkaZookeeperUtils._
+  import org.apache.flink.api.scala._
 
   import collection.JavaConverters._
 
   protected def schemaRegistryClient: CSchemaRegistryClient
+
+  protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
 
   // schema.registry.url have to be defined even for MockSchemaRegistryClient
   override lazy val config: Config = ConfigFactory.load()
@@ -46,8 +50,19 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
     serializer
   }
 
+  /**
+    * Default Confluent Avro serialization components
+    */
   protected lazy val valueDeserializer: KafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient)
   protected lazy val valueSerializer: KafkaAvroSerializer = new KafkaAvroSerializer(schemaRegistryClient)
+
+  protected def createSchemaRegistryProvider(useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[AnyRef] =
+    ConfluentSchemaRegistryProvider[AnyRef](
+      confluentClientFactory,
+      processObjectDependencies,
+      useSpecificAvroReader = useSpecificAvroReader,
+      formatKey = formatKey
+    )
 
   protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None): Future[RecordMetadata] = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)

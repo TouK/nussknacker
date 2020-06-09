@@ -4,19 +4,22 @@ import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.kafka.common.errors.SerializationException
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
+import pl.touk.nussknacker.engine.avro.KafkaAvroSpec
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKafkaAvroDeserializationSchemaFactory, SchemaDeterminingStrategy}
-import pl.touk.nussknacker.engine.avro.{KafkaAvroSpec, TestSchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.avro.serialization.ConfluentKafkaAvroSeDeSpecMixin
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareValueDeserializationSchemaFactory
 
-class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDrivenPropertyChecks {
+class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
   import SchemaDeterminingStrategy._
   import org.apache.flink.api.scala._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
+
+  override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   private val fromSubjectVersionFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromSubjectVersion, factory, false)
   private val fromRecordFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromRecord, factory, false)
@@ -123,14 +126,4 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
       val deserializedObject = consumeLastMessage(deserializer, topicConfig.input)
       deserializedObject shouldBe List(expectedObj)
     }
-
-  object MockSchemaRegistry {
-    final val fullNameTopic = "full-name"
-
-    val schemaRegistryMockClient: CSchemaRegistryClient =  new MockConfluentSchemaRegistryClientBuilder()
-      .register(fullNameTopic, FullNameV1.schema, 1, isKey = false)
-      .build
-
-    val factory: CachedConfluentSchemaRegistryClientFactory = TestSchemaRegistryClientFactory(schemaRegistryMockClient)
-  }
 }

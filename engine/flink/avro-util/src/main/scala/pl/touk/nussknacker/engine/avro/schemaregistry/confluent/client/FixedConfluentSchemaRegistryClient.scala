@@ -6,11 +6,14 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaParseError, SchemaRegistryError}
+
+import scala.util.Try
 
 class FixedConfluentSchemaRegistryClient(subject: String, avroSchemaString: String) extends ConfluentSchemaRegistryClient with LazyLogging {
 
-  private lazy val schema = AvroUtils.parseSchema(avroSchemaString)
+  private lazy val schema = Try(AvroUtils.parseSchema(avroSchemaString))
+    .getOrElse(throw SchemaParseError("Provided value is not valid avro schema format."))
 
   override def getLatestFreshSchema(subject: String): Validated[SchemaRegistryError, Schema] =
     Valid(schema)

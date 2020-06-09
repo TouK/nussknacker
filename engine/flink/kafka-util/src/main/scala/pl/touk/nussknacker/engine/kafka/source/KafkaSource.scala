@@ -46,7 +46,7 @@ class KafkaSource[T: TypeInformation](topics: List[String],
     }.getOrElse(newStart)
   }
 
-  def  preparedTopics: List[String] = topics.map(KafkaUtils.prepareTopicName(_, processObjectDependencies))
+  def preparedTopics: List[String] = topics.map(KafkaUtils.prepareTopicName(_, processObjectDependencies))
 
   protected val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
