@@ -52,6 +52,21 @@ jobs:
       - name: Integration tests
         shell: bash
         run: ./ciRunSbt.sh clean management/it:test engineStandalone/it:test
-
+  frontendTests:
+    name: FrontendTests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache npm
+        uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: 13.2
+      - run: ./ciFrontendTest.sh
 
 
