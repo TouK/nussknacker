@@ -56,7 +56,7 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
 
   protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): Future[RecordMetadata] = {
     val record = kafkaSerializer.serialize(obj, null)
-    kafkaClient.sendRawMessage(topic, record.key(), record.value(), Some(record.partition()))
+    kafkaClient.sendRawMessage(topic, record.key(), record.value())
   }
 
   protected def consumeLastMessage(topic: String): List[Any] = {
