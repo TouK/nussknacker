@@ -11,7 +11,8 @@ trait WithCompiledProcessDeps extends RichFunction {
   protected lazy val compiledProcessWithDeps : CompiledProcessWithDeps = compiledProcessWithDepsProvider(getRuntimeContext.getUserCodeClassLoader)
 
   override def close(): Unit = {
-    compiledProcessWithDeps.close()
+    if (compiledProcessWithDeps != null)
+      compiledProcessWithDeps.close()
   }
 
   override def open(parameters: Configuration): Unit = {
