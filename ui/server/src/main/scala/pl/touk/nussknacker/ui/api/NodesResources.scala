@@ -69,6 +69,8 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
                 case ValidationNotPerformed => NodeValidationResult(None, Nil, validationPerformed = false)
                 case ValidationPerformed(errors, parameters) =>
                   val uiParams = parameters.map(_.map(UIParameter(_, ParameterConfig.empty)))
+                  //We don't return MissingParameter error when we are returning those missing parameters to be added - since
+                  //it's not really exception ATM
                   def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
                     case MissingParameters(params, _) => params.forall(missing => uiParams.exists(_.exists(_.name == missing)))
                     case _ => false

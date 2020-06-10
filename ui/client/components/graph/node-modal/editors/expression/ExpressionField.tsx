@@ -3,17 +3,18 @@ import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableEditor from "../EditableEditor"
 import {EditorType} from "./Editor"
+import {NodeType, UIParameter} from "../../../../../types"
 
 type Props = {
   fieldName: string,
   fieldLabel: string,
   exprPath: string,
   isEditMode: boolean,
-  editedNode: $TodoType,
+  editedNode: NodeType,
   isMarked: Function,
   showValidation: boolean,
   showSwitch: boolean,
-  parameterDefinition: $TodoType,
+  parameterDefinition: UIParameter,
   setNodeDataAt: Function,
   testResultsToShow: $TodoType,
   testResultsToHide: $TodoType,

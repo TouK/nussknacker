@@ -45,6 +45,6 @@ object DynamicParametersTransformer extends CustomStreamTransformer with SingleI
     FlinkCustomStreamTransformation(_.map(ctx => ValueWithContext[Any](null, ctx)))
   }
 
-  override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
+  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
 
 }

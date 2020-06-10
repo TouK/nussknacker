@@ -54,7 +54,7 @@ export class NodeDetailsContent extends React.Component {
   initalizeWithProps(props) {
     const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(props.node, props.processDefinitionData.processDefinition)
     this.parameterDefinitions = props.dynamicParameterDefinitions ? props.dynamicParameterDefinitions : nodeObjectDetails?.parameters
-    let hasNoReturn = nodeObjectDetails == null || nodeObjectDetails.returnType == null
+    const hasNoReturn = nodeObjectDetails == null || nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || hasNoReturn === true && props.node.outputVar
   }
 
@@ -67,23 +67,23 @@ export class NodeDetailsContent extends React.Component {
     })
   }
 
+  //TODO: get rid of this method as deprecated in React
   componentWillReceiveProps(nextProps) {
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
+    //So the flow should be: first node is updated, then node details are updated from BE and only then we adjust parameters
+    //TODO: make it more explicit?
     if (!_.isEqual(this.props.node, nextPropsNode)) {
-      this.adjustStateWithParameters(nextPropsNode, nextProps)
       this.updateNodeDataIfNeeded(nextPropsNode)
     } else if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
-      this.adjustStateWithParameters(this.state.editedNode, nextProps)
+      this.adjustStateWithParameters(this.state.editedNode)
     }
   }
 
-  adjustStateWithParameters(nodeToAdjust, nextProps) {
-    if (nextProps.validationRequestPerformed) {
-      const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions, this.nodeDefinitionByName(nodeToAdjust))
-      this.setState({editedNode: node, unusedParameters: unusedParameters})
-    }
+  adjustStateWithParameters(nodeToAdjust) {
+    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions, this.nodeDefinitionByName(nodeToAdjust))
+    this.setState({editedNode: node, unusedParameters: unusedParameters})
   }
 
   updateNodeDataIfNeeded(currentNode) {
@@ -612,11 +612,13 @@ export class NodeDetailsContent extends React.Component {
   }
 
   setNodeDataAt = (propToMutate, newValue, defaultValue) => {
-
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     const node = _.cloneDeep(this.state.editedNode)
+
     _.set(node, propToMutate, value)
-    this.setState({editedNode: node}, () => this.props.onChange(node))
+
+    this.setState({editedNode: node})
+    this.props.onChange(node)
   }
 
   descriptionField = () => {
@@ -713,9 +715,6 @@ export class NodeDetailsContent extends React.Component {
   }
 
   render() {
-    if (!this.props.validationRequestPerformed) {
-      return null
-    }
     const nodeClass = classNames("node-table", {"node-editable": this.props.isEditMode})
     const fieldErrors = this.fieldErrors(this.props.currentErrors || [])
     const otherErrors = this.props.currentErrors ? this.props.currentErrors.filter(error => !fieldErrors.includes(error)) : []
@@ -749,7 +748,6 @@ function mapState(state, props) {
     variableTypes: mainProcess?.validationResult?.variableTypes[props.node.id],
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters : null,
-    validationRequestPerformed: state.nodeDetails.validationRequestPerformed,
   }
 }
 
