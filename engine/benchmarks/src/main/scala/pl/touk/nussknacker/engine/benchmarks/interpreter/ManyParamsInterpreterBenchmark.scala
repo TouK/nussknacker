@@ -50,38 +50,7 @@ class ManyParamsInterpreterBenchmark {
     Await.result(interpreterAsync(Context("")), 1 second)
   }
 
-
-
 }
-
-object Test extends App {
-
-  private val ec = SynchronousExecutionContext.create()
-
-  private val process: EspProcess = EspProcessBuilder
-    .id("t1")
-    .exceptionHandlerNoParams()
-    .source("source", "source")
-    .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
-    .sink("sink", "#out", "sink")
-  private val interpreter = new InterpreterSetup[String].sourceInterpretation(process, Map("service" -> new ManyParamsService(ec)), Nil)
-
-  var i = 0
-  val count = 100 * 1000
-  val start = System.currentTimeMillis()
-
-  while (i<count) {
-    i += 1
-    Await.result(interpreter(Context(""), ec), 1 second)
-    if (i % 1000 == 0) {
-      println(s"Running $i")
-    }
-  }
-  println(s"throughput ${(count * 1000)/(System.currentTimeMillis() - start)}/s")
-
-}
-
-
 
 class ManyParamsService(expectedEc: ExecutionContext) extends Service {
 
