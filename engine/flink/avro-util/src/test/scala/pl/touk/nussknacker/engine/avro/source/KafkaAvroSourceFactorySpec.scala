@@ -4,19 +4,20 @@ import java.nio.charset.StandardCharsets
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
+import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.avro.KafkaAvroSpec
+import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionNotFound}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 
-class KafkaAvroSourceFactorySpec extends KafkaAvroSpec with KafkaAvroSourceSpecMixin {
+class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
 
   import KafkaAvroSourceMockSchemaRegistry._
 
@@ -88,7 +89,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpec with KafkaAvroSourceSpecM
     readLastMessageAndVerify(sourceFactory, IntTopic, 1, givenObj, IntSchema)
   }
 
-  protected def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
+  protected def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[GenericData.Record] = {
     val schemaRegistryProvider = createSchemaRegistryProvider(useSpecificAvroReader)
     new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
   }

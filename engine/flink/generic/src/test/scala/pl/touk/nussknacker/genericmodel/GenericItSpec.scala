@@ -340,12 +340,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
     override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[GenericData.Record] =
-      ConfluentSchemaRegistryProvider[GenericData.Record](
-        factory,
-        processObjectDependencies,
-        useSpecificAvroReader = false,
-        formatKey = false
-      )
+      ConfluentSchemaRegistryProvider[GenericData.Record](factory, processObjectDependencies)
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
@@ -457,8 +452,13 @@ object MockSchemaRegistry extends Serializable {
 
   val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
 
-  val factory: CachedConfluentSchemaRegistryClientFactory = new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None) {
-    override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
-      schemaRegistryMockClient
-  }
+  /**
+    * It has to be done in this way, because schemaRegistryMockClient is not serializable..
+    * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
+    */
+  val factory: CachedConfluentSchemaRegistryClientFactory =
+    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None) {
+      override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
+        schemaRegistryMockClient
+    }
 }

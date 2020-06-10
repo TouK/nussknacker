@@ -4,14 +4,14 @@ import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.kafka.common.errors.SerializationException
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
-import pl.touk.nussknacker.engine.avro.KafkaAvroSpec
+import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKafkaAvroDeserializationSchemaFactory, SchemaDeterminingStrategy}
 import pl.touk.nussknacker.engine.avro.serialization.ConfluentKafkaAvroSeDeSpecMixin
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareValueDeserializationSchemaFactory
 
-class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
+class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
   import SchemaDeterminingStrategy._
@@ -88,11 +88,11 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
     val fromRecordDeserializer = fromRecordFactory.create(List(fromRecordTopic.input), version, kafkaConfig)
     val fromSubjectVersionDeserializer = fromSubjectVersionFactory.create(List(fromSubjectVersionTopic.input), version, kafkaConfig)
 
-    val result = consumeLastMessage(fromRecordDeserializer, fromRecordTopic.input)
+    val result = consumeMessages(fromRecordDeserializer, fromRecordTopic.input)
     result shouldBe List(FullNameV1.record)
 
     assertThrows[SerializationException] {
-      consumeLastMessage(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input)
+      consumeMessages(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input)
     }
   }
 
@@ -108,11 +108,11 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
     val fromRecordDeserializer = fromRecordFactory.create(List(fromRecordTopic.input), version, kafkaConfig)
     val fromSubjectVersionDeserializer = fromSubjectVersionFactory.create(List(fromSubjectVersionTopic.input), version, kafkaConfig)
 
-    val result = consumeLastMessage(fromRecordDeserializer, fromRecordTopic.input)
+    val result = consumeMessages(fromRecordDeserializer, fromRecordTopic.input)
     result shouldBe List(PaymentV1.record)
 
     assertThrows[SerializationException] {
-      consumeLastMessage(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input)
+      consumeMessages(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input)
     }
   }
 
@@ -123,7 +123,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpec with TableDriv
       pushMessage(givenObj, topicConfig.input)
 
       val deserializer = factory.create(List(topicConfig.input), version, kafkaConfig)
-      val deserializedObject = consumeLastMessage(deserializer, topicConfig.input)
+      val deserializedObject = consumeMessages(deserializer, topicConfig.input)
       deserializedObject shouldBe List(expectedObj)
     }
 }

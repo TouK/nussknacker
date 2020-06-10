@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.avro.schema
 
 object Company extends TestSchemaWithRecord {
+
+  final val DefaultName = "TOUK SP Z O O SPÓŁKA KOMANDYTOWO AKCYJNA"
+
   val stringSchema: String =
     s"""
       |{
@@ -20,7 +23,15 @@ object Company extends TestSchemaWithRecord {
     """.stripMargin
 
   val exampleData: Map[String, Any] = Map(
-    "name" -> "TOUK SP Z O O SPÓŁKA KOMANDYTOWO AKCYJNA",
+    "name" -> DefaultName,
     "address" -> Address.exampleData
   )
+
+  val jsonMap: String =
+    s"""
+      |{
+      |   name: "$DefaultName",
+      |   address: ${Address.jsonMap}
+      |}
+     """.stripMargin
 }

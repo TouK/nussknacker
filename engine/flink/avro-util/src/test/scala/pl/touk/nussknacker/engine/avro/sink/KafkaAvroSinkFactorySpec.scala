@@ -4,12 +4,12 @@ import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchema
 import org.apache.avro.generic.GenericContainer
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.process.Sink
-import pl.touk.nussknacker.engine.avro.KafkaAvroSpec
-import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1}
+import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionNotFound}
 
-class KafkaAvroSinkFactorySpec extends KafkaAvroSpec with KafkaAvroSinkSpecMixin {
+class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
   import KafkaAvroSinkMockSchemaRegistry._
 
@@ -44,13 +44,18 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpec with KafkaAvroSinkSpecMixin
     createSink(fullnameTopic, 1, output)
   }
 
-  test("should allow to create sink when #output schema is compatible with sink schema") {
+  test("should allow to create sink when #output schema is compatible with newer sink schema") {
     val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
-    val sink = createSink(fullnameTopic, 2, output)
+    createSink(fullnameTopic, 2, output)
+  }
+
+  test("should allow to create sink when #output schema is compatible with older fxied sink schema") {
+    val output = createOutput(FullNameV2.schema, FullNameV2.exampleData)
+    createSink(fullnameTopic, 1, output)
   }
 
   //TODO: add after type validation will be implemented
-  ignore("should throw exception when #output schema doesn't match to sink schema") {
+  ignore("should throw exception when #output schema is not compatible with sink schema") {
     assertThrowsWithParent[InvalidSinkOutput] {
       val output = createOutput(PaymentV1.schema, PaymentV1.exampleData)
       createSink(fullnameTopic, 2, output)

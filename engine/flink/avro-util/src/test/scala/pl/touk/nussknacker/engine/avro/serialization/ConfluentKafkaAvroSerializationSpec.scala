@@ -6,13 +6,13 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
-import pl.touk.nussknacker.engine.avro.KafkaAvroSpec
+import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, SchemaDeterminingStrategy}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareValueSerializationSchemaFactory
 
-class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
+class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
   import SchemaDeterminingStrategy._
@@ -121,7 +121,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
     }
 
   private def consumeLastMessageAndAssert(topic: String, expectedObj: GenericRecord): Assertion = {
-    val deserializedObject = consumeLastMessage(topic)
+    val deserializedObject = consumeMessages(topic)
     deserializedObject shouldBe List(expectedObj)
   }
 }

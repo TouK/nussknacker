@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.avro.schema
 
 object Address extends TestSchemaWithRecord {
+  final val DefaultCity = "Warsaw"
+  final val DefaultStreet = "ul. Bohaterów Września 9"
+
   val stringSchema: String =
     """
       |{
@@ -20,7 +23,15 @@ object Address extends TestSchemaWithRecord {
     """.stripMargin
 
   val exampleData: Map[String, Any] = Map(
-    "city" -> "Warsaw",
-    "street" -> "ul. Bohaterów Września 9"
+    "city" -> DefaultCity,
+    "street" -> DefaultStreet
   )
+
+  val jsonMap: String =
+    s"""
+       |{
+       |  city: "$DefaultCity",
+       |  street: "$DefaultStreet"
+       |}
+     """.stripMargin
 }

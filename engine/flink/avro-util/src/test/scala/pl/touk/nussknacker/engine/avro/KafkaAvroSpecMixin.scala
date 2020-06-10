@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
+import org.apache.avro.generic.GenericData
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
@@ -20,16 +21,18 @@ import pl.touk.nussknacker.test.NussknackerAssertions
 
 import scala.concurrent.Future
 
-trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
+trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
 
   import KafkaZookeeperUtils._
   import org.apache.flink.api.scala._
 
   import collection.JavaConverters._
 
+  protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
+
   protected def schemaRegistryClient: CSchemaRegistryClient
 
-  protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
+  protected def kafkaTopicNamespace: String = getClass.getSimpleName
 
   // schema.registry.url have to be defined even for MockSchemaRegistryClient
   override lazy val config: Config = ConfigFactory.load()
@@ -56,8 +59,8 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
   protected lazy val valueDeserializer: KafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient)
   protected lazy val valueSerializer: KafkaAvroSerializer = new KafkaAvroSerializer(schemaRegistryClient)
 
-  protected def createSchemaRegistryProvider(useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[AnyRef] =
-    ConfluentSchemaRegistryProvider[AnyRef](
+  protected def createSchemaRegistryProvider(useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[GenericData.Record] =
+    ConfluentSchemaRegistryProvider[GenericData.Record](
       confluentClientFactory,
       processObjectDependencies,
       useSpecificAvroReader = useSpecificAvroReader,
@@ -74,14 +77,14 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
     kafkaClient.sendRawMessage(topic, record.key(), record.value())
   }
 
-  protected def consumeLastMessage(topic: String): List[Any] = {
+  protected def consumeMessages(topic: String, count: Int = 1): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     consumer.consume(topic).map { record =>
       valueDeserializer.deserialize(topic, record.message())
-    }.take(1).toList
+    }.take(count).toList
   }
 
-  protected def consumeLastMessage(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String): List[Any] = {
+  protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     consumer.consumeWithConsumerRecord(topic).map { record =>
       kafkaDeserializer.deserialize(record)
@@ -111,14 +114,17 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
 
   protected def createAndRegisterTopicConfig(name: String, schema: Schema): TopicConfig =
     createAndRegisterTopicConfig(name, List(schema))
+
+  object TopicConfig {
+    private final val inputPrefix = "test.avro.input"
+    private final val outputPrefix = "test.avro.output"
+
+    def apply(testName: String, schemas: List[Schema]): TopicConfig = {
+      val inputTopic = s"$inputPrefix.$kafkaTopicNamespace.$testName"
+      val outputTopic = s"$outputPrefix.$kafkaTopicNamespace.$testName"
+      new TopicConfig(inputTopic, outputTopic, schemas, isKey = false)
+    }
+  }
 }
 
 case class TopicConfig(input: String, output: String, schemas: List[Schema], isKey: Boolean)
-
-object TopicConfig {
-  private final val inputPrefix = "test.avro.input."
-  private final val outputPrefix = "test.avro.output."
-
-  def apply(testName: String, schemas: List[Schema]): TopicConfig =
-    new TopicConfig(inputPrefix + testName, outputPrefix + testName, schemas, isKey = false)
-}
