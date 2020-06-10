@@ -107,13 +107,13 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     new KafkaAvroSourceFactory(provider, processObjectDependencies, None)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, exceptedSchema: Schema) = {
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema) = {
     pushMessage(givenObj, topic)
-    readLastMessageAndVerify(sourceFactory, topic, version, givenObj, exceptedSchema)
+    readLastMessageAndVerify(sourceFactory, topic, version, givenObj, expectedSchema)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, exceptedSchema: Schema): Assertion = {
-    val source = createAndVerifySource(sourceFactory, topic, version, exceptedSchema)
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema): Assertion = {
+    val source = createAndVerifySource(sourceFactory, topic, version, expectedSchema)
 
     val bytes = source.generateTestData(1)
     info("test object: " + new String(bytes, StandardCharsets.UTF_8))
@@ -122,12 +122,12 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     deserializedObj shouldEqual List(givenObj)
   }
 
-  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, exceptedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
     val source = sourceFactory
       .create(metaData, topic, version)(nodeId)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 
-    source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(exceptedSchema)
+    source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(expectedSchema)
 
     source
   }

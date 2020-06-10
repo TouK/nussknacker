@@ -91,18 +91,18 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     }.take(count).toList
   }
 
-  protected def consumeAndVerifyMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, excepted: List[Any]): Assertion = {
-    val result = consumeMessages(kafkaDeserializer, topic, excepted.length)
-    result shouldBe excepted
+  protected def consumeAndVerifyMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, expected: List[Any]): Assertion = {
+    val result = consumeMessages(kafkaDeserializer, topic, expected.length)
+    result shouldBe expected
   }
 
-  protected def consumeAndVerifyMessages(topic: String, excepted: List[Any]): Assertion = {
-    val result = consumeMessages(topic, excepted.length)
-    result shouldBe excepted
+  protected def consumeAndVerifyMessages(topic: String, expected: List[Any]): Assertion = {
+    val result = consumeMessages(topic, expected.length)
+    result shouldBe expected
   }
 
-  protected def consumeAndVerifyMessages(topic: String, excepted: Any): Assertion =
-    consumeAndVerifyMessages(topic, List(excepted))
+  protected def consumeAndVerifyMessages(topic: String, expected: Any): Assertion =
+    consumeAndVerifyMessages(topic, List(expected))
 
   /**
     * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,

@@ -229,17 +229,17 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   private def parseVersion(version: Option[Int]) =
     version.map(v => s"$v").getOrElse("")
 
-  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, event: Any, excepted: GenericContainer): Unit =
-    runAndVerifyResult(process, topic, List(event), List(excepted))
+  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, event: Any, expected: GenericContainer): Unit =
+    runAndVerifyResult(process, topic, List(event), List(expected))
 
-  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], excepted: GenericContainer): Unit =
-    runAndVerifyResult(process, topic, events, List(excepted))
+  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: GenericContainer): Unit =
+    runAndVerifyResult(process, topic, events, List(expected))
 
-  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], excepted: List[GenericContainer]): Unit = {
+  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: List[GenericContainer]): Unit = {
     events.foreach(obj => pushMessage(obj, topic.input))
 
     run(process) {
-      consumeAndVerifyMessages(topic.output, excepted)
+      consumeAndVerifyMessages(topic.output, expected)
     }
   }
 }
