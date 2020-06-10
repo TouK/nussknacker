@@ -24,12 +24,22 @@ import scala.concurrent.{ExecutionContext, Future}
 */
 object ExpressionEvaluator {
 
-  def withLazyVals(globalVariablesPreparer: GlobalVariablesPreparer, listeners: Seq[ProcessListener], services: Map[String, ObjectWithMethodDef]) =
-      new ExpressionEvaluator(globalVariablesPreparer, listeners, realLazyValuesProvider(services))
+  def optimizedEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
+                         listeners: Seq[ProcessListener],
+                         metaData: MetaData,
+                         services: Map[String, ObjectWithMethodDef]): ExpressionEvaluator = {
+    val lazyValuesProvider: (ExecutionContext, MetaData, String) => LazyValuesProvider = if (metaData.typeSpecificData.allowLazyVars) {
+      realLazyValuesProvider(services)
+    } else {
+      (_, _, _) => ThrowingLazyValuesProvider
+    }
+    new ExpressionEvaluator(globalVariablesPreparer, listeners, Some(metaData), lazyValuesProvider)
+  }
 
-  def withoutLazyVals(globalVariablesPreparer: GlobalVariablesPreparer, listeners: Seq[ProcessListener]) =
-    new ExpressionEvaluator(globalVariablesPreparer, listeners, (_, _, _) => ThrowingLazyValuesProvider)
-
+  //This is for evaluation expressions fixed expressions during object creation *and* during tests/service queries
+  //Should *NOT* be used for evaluating expressions on events in *production*
+  def unOptimizedEvaluator(globalVariablesPreparer: GlobalVariablesPreparer) =
+    new ExpressionEvaluator(globalVariablesPreparer, Nil, None, (_, _, _) => ThrowingLazyValuesProvider)
 
   private object ThrowingLazyValuesProvider extends LazyValuesProvider {
     override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] =
@@ -66,8 +76,14 @@ object ExpressionEvaluator {
 }
 
 class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
-                          listeners: Seq[ProcessListener], lazyValuesProviderCreator: (ExecutionContext, MetaData, String) => LazyValuesProvider) {
+                          listeners: Seq[ProcessListener],
+                          metaDataToUse: Option[MetaData],
+                          lazyValuesProviderCreator: (ExecutionContext, MetaData, String) => LazyValuesProvider) {
   private implicit val ecToUse: ExecutionContext = SynchronousExecutionContext.ctx
+
+  private def prepareGlobals(metaData: MetaData): Map[String, Any] = globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj)
+
+  private val optimizedGlobals = metaDataToUse.map(prepareGlobals)
 
   def evaluateParameters(params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter], ctx: Context)
                         (implicit nodeId: NodeId, metaData: MetaData) : Future[(Context, Map[String, AnyRef])] = {
@@ -82,7 +98,7 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
   }
 
   def evaluateParameter(param: pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter, ctx: Context)
-                          (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext): Future[ValueWithContext[AnyRef]] = {
+                          (implicit nodeId: NodeId, metaData: MetaData): Future[ValueWithContext[AnyRef]] = {
     evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx).map { valueWithModifiedContext =>
       valueWithModifiedContext.map { evaluatedValue =>
         if (param.shouldBeWrappedWithScalaOption)
@@ -98,11 +114,9 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
                  (implicit metaData: MetaData): Future[ValueWithContext[R]] = {
     val lazyValuesProvider = lazyValuesProviderCreator(ecToUse, metaData, nodeId)
-    //FIXME: this is *not* performant when we have some global variables, we should not add to map here, but e.g. push
-    //lookup logic down to expressions
-    val ctxWithGlobals = ctx//ctx.withVariables(globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj))
+    val globalVariables = optimizedGlobals.getOrElse(prepareGlobals(metaData))
 
-    expr.evaluate[R](ctxWithGlobals, lazyValuesProvider).map { valueWithLazyContext =>
+    expr.evaluate[R](ctx, globalVariables, lazyValuesProvider).map { valueWithLazyContext =>
       listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
       ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
     }

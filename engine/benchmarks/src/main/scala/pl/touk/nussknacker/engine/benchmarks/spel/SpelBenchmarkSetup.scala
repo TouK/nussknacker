@@ -41,7 +41,7 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
   private val ctx = Context("id", vars, LazyContext(""), None)
 
   def test(): AnyRef = {
-    compiledExpression.evaluate[AnyRef](ctx, provider).value.get.get.value
+    compiledExpression.evaluate[AnyRef](ctx, Map.empty, provider).value.get.get.value
   }
 
 }

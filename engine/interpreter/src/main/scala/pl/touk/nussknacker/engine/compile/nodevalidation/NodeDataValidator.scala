@@ -69,7 +69,7 @@ class CustomNodeValidator(modelData: ModelData) extends NodeDataValidator[Custom
   )
 
   private val expressionEvaluator
-  = ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig), List.empty)
+  = ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))
 
   private val nodeValidator = new GenericNodeTransformationValidator(expressionCompiler, expressionEvaluator)
 

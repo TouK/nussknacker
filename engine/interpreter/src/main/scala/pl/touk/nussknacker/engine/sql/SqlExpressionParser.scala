@@ -100,16 +100,17 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
     new HsqlSqlQueryableDataBase(original, columnModels)
   }
 
-  override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = {
+  override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = {
     Future.successful {
-      val result = evaluate(ctx).asJava.asInstanceOf[T]
+      //TODO: optimize if needed
+      val result = evaluate(ctx.variables ++ globals).asJava.asInstanceOf[T]
       ValueWithLazyContext(result, ctx.lazyContext)
     }
   }
 
-  private def evaluate[T](ctx: Context): List[TypedMap] = {
+  private def evaluate[T](variables: Map[String, Any]): List[TypedMap] = {
     val db = databaseHolder.get()
-    PrepareTables(ctx.variables, columnModels)
+    PrepareTables(variables, columnModels)
       .map(db.query)
       .valueOr(error => throw SqlExpressEvaluationException(error))
   }

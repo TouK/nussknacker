@@ -14,8 +14,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 /*
-[info] ManyParamsInterpreterBenchmark.benchmarkAsync  thrpt    8   85822.908 ± 5572.295  ops/s
-[info] ManyParamsInterpreterBenchmark.benchmarkSync   thrpt    8  126208.502 ± 2997.227  ops/s
+[info] ManyParamsInterpreterBenchmark.benchmarkAsync  thrpt    8  136383.766 ± 9897.488  ops/s
+[info] ManyParamsInterpreterBenchmark.benchmarkSync   thrpt    8  142224.760 ± 7516.919  ops/s
  */
 @State(Scope.Thread)
 class ManyParamsInterpreterBenchmark {
@@ -26,14 +26,20 @@ class ManyParamsInterpreterBenchmark {
     .source("source", "source")
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .sink("sink", "#out", "sink")
-  private val interpreter = new InterpreterSetup[String].sourceInterpretation(process, Map("service" -> ManyParamsService), Nil)
 
+  private def prepareInterpreter(executionContext: ExecutionContext) = {
+    val setup = new InterpreterSetup[String].sourceInterpretation(process, Map("service" -> new ManyParamsService(executionContext)), Nil)
+    (ctx: Context) => setup(ctx, executionContext)
+  }
+
+  private val interpreterSync = prepareInterpreter(SynchronousExecutionContext.create())
+  private val interpreterAsync = prepareInterpreter(ExecutionContext.Implicits.global)
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSync(): AnyRef = {
-    Await.result(interpreter(Context(""), SynchronousExecutionContext.ctx), 1 second)
+    Await.result(interpreterSync(Context("")), 1 second)
   }
 
 
@@ -41,7 +47,7 @@ class ManyParamsInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsync(): AnyRef = {
-    Await.result(interpreter(Context(""), ExecutionContext.Implicits.global), 1 second)
+    Await.result(interpreterAsync(Context("")), 1 second)
   }
 
 
@@ -50,21 +56,23 @@ class ManyParamsInterpreterBenchmark {
 
 object Test extends App {
 
+  private val ec = SynchronousExecutionContext.create()
+
   private val process: EspProcess = EspProcessBuilder
     .id("t1")
     .exceptionHandlerNoParams()
     .source("source", "source")
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .sink("sink", "#out", "sink")
-  private val interpreter = new InterpreterSetup[String].sourceInterpretation(process, Map("service" -> ManyParamsService), Nil)
+  private val interpreter = new InterpreterSetup[String].sourceInterpretation(process, Map("service" -> new ManyParamsService(ec)), Nil)
 
   var i = 0
-  val count = 10 * 1000
+  val count = 100 * 1000
   val start = System.currentTimeMillis()
 
   while (i<count) {
     i += 1
-    Await.result(interpreter(Context(""), SynchronousExecutionContext.ctx), 1 second)
+    Await.result(interpreter(Context(""), ec), 1 second)
     if (i % 1000 == 0) {
       println(s"Running $i")
     }
@@ -75,7 +83,7 @@ object Test extends App {
 
 
 
-object ManyParamsService extends Service {
+class ManyParamsService(expectedEc: ExecutionContext) extends Service {
 
   @MethodToInvoke
   def methodToInvoke(
@@ -100,7 +108,7 @@ object ManyParamsService extends Service {
                       @ParamName("p19") s19: String,
                       @ParamName("p20") s20: String
                     )(implicit ec: ExecutionContext): Future[String] = {
-    if (ec == SynchronousExecutionContext.ctx) {
+    if (ec != expectedEc) {
       Future.failed(new IllegalArgumentException("Should be normal EC..."))
     } else {
       Future.successful(s1)

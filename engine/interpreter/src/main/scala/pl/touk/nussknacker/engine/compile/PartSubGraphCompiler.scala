@@ -43,7 +43,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   //FIXME: should it be here?
   private val expressionEvaluator =
-    ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(expressionConfig), List.empty)
+    ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig))
 
   def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): CompilationResult[Unit] = {
     compile(n, ctx).map(_ => ())

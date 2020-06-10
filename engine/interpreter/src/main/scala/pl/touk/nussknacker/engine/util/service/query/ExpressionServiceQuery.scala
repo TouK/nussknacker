@@ -61,7 +61,7 @@ object ExpressionServiceQuery {
 
   //TODO: extract shared part with TestInfoProvider
   private def expressionEvaluator(modelData: ModelData): ExpressionEvaluator = {
-    ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig), List.empty)
+    ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))
   }
 
   private def expressionCompiler(modelData: ModelData) = {

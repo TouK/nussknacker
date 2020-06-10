@@ -19,8 +19,8 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionFunctions: Map[String, Method]) {
 
   //this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
-  def prepareEvaluationContext(ctx: Context, lazyValuesProvider: LazyValuesProvider): EvaluationContext = {
-    val optimized = new OptimizedEvaluationContext(ctx, lazyValuesProvider, expressionFunctions)
+  def prepareEvaluationContext(ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): EvaluationContext = {
+    val optimized = new OptimizedEvaluationContext(ctx, globals, lazyValuesProvider, expressionFunctions)
     optimized.setTypeLocator(locator)
     optimized.setPropertyAccessors(propertyAccessorsList)
     optimized.setMethodResolvers(optimizedMethodResolvers)
@@ -45,7 +45,8 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
 
 }
 
-class OptimizedEvaluationContext(ctx: Context, lazyValuesProvider: LazyValuesProvider, expressionFunctions: Map[String, Method]) extends StandardEvaluationContext {
+class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any],
+                                 lazyValuesProvider: LazyValuesProvider, expressionFunctions: Map[String, Method]) extends StandardEvaluationContext {
 
   @volatile private var lazyCtx: AnyRef = ctx.lazyContext
 
@@ -54,6 +55,7 @@ class OptimizedEvaluationContext(ctx: Context, lazyValuesProvider: LazyValuesPro
     if (name == SpelExpressionParser.LazyContextVariableName) return lazyCtx
     if (name == SpelExpressionParser.LazyValuesProviderVariableName) return lazyValuesProvider
     ctx.get(name)
+      .orElse(globals.get(name))
       .orElse(expressionFunctions.get(name))
       .orNull.asInstanceOf[AnyRef]
   }
