@@ -20,7 +20,7 @@ class KafkaAvroSink(topic: String, output: LazyParameter[Any], kafkaConfig: Kafk
       .addSink(toFlinkFunction)
 
   /**
-    * Right now we don't support i, because we don't use default sink behavior with expression..
+    * Right now we don't support it, because we don't use default sink behavior with expression..
     */
   override def testDataOutput: Option[Any => String] = None
 

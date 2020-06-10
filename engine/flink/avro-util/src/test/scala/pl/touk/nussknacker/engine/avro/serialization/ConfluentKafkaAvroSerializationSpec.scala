@@ -86,7 +86,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     val fromSubjectVersionSerializer = fromSubjectVersionFactory.create(fromSubjectVersionTopic.output, version, kafkaConfig)
 
     pushMessage(fromRecordSerializer, FullNameV1.record, fromRecordTopic.output)
-    consumeLastMessageAndAssert(fromRecordTopic.output, FullNameV1.record)
+    consumeAndVerifyMessages(fromRecordTopic.output, FullNameV1.record)
 
     assertThrows[SerializationException] {
       pushMessage(fromSubjectVersionSerializer, FullNameV1.record, fromRecordTopic.output)
@@ -103,7 +103,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     val fromSubjectVersionSerializer = fromSubjectVersionFactory.create(fromSubjectVersionTopic.output, version, kafkaConfig)
 
     pushMessage(fromRecordSerializer, PaymentV1.record, fromRecordTopic.output)
-    consumeLastMessageAndAssert(fromRecordTopic.output, PaymentV1.record)
+    consumeAndVerifyMessages(fromRecordTopic.output, PaymentV1.record)
 
     assertThrows[SerializationException] {
       pushMessage(fromSubjectVersionSerializer, PaymentV1.record, fromRecordTopic.output)
@@ -116,12 +116,6 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
       val serializer = factory.create(topicConfig.output, version, kafkaConfig)
 
       pushMessage(serializer, givenObj, topicConfig.output)
-
-      consumeLastMessageAndAssert(topicConfig.output, expectedObj)
+      consumeAndVerifyMessages(topicConfig.output, expectedObj)
     }
-
-  private def consumeLastMessageAndAssert(topic: String, expectedObj: GenericRecord): Assertion = {
-    val deserializedObject = consumeMessages(topic)
-    deserializedObject shouldBe List(expectedObj)
-  }
 }

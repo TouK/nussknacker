@@ -6,8 +6,8 @@ import org.apache.avro.generic.{GenericContainer, GenericData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
-import pl.touk.nussknacker.engine.avro.schema.{Currency, FullNameV1, FullNameV2, PaymentNotCompatible, PaymentV1, PaymentV2}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SchemaSubjectNotFound}
+import pl.touk.nussknacker.engine.avro.schema.{PaymentNotCompatible, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -239,8 +239,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     events.foreach(obj => pushMessage(obj, topic.input))
 
     run(process) {
-      val processed = consumeMessages(topic.output, excepted.length)
-      excepted shouldEqual processed
+      consumeAndVerifyMessages(topic.output, excepted)
     }
   }
 }

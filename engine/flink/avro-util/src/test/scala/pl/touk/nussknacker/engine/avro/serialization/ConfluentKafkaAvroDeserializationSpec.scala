@@ -88,11 +88,10 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     val fromRecordDeserializer = fromRecordFactory.create(List(fromRecordTopic.input), version, kafkaConfig)
     val fromSubjectVersionDeserializer = fromSubjectVersionFactory.create(List(fromSubjectVersionTopic.input), version, kafkaConfig)
 
-    val result = consumeMessages(fromRecordDeserializer, fromRecordTopic.input)
-    result shouldBe List(FullNameV1.record)
+    consumeAndVerifyMessages(fromRecordDeserializer, fromRecordTopic.input, List(FullNameV1.record))
 
     assertThrows[SerializationException] {
-      consumeMessages(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input)
+      consumeMessages(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input, count = 1)
     }
   }
 
@@ -108,22 +107,20 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     val fromRecordDeserializer = fromRecordFactory.create(List(fromRecordTopic.input), version, kafkaConfig)
     val fromSubjectVersionDeserializer = fromSubjectVersionFactory.create(List(fromSubjectVersionTopic.input), version, kafkaConfig)
 
-    val result = consumeMessages(fromRecordDeserializer, fromRecordTopic.input)
-    result shouldBe List(PaymentV1.record)
+    consumeAndVerifyMessages(fromRecordDeserializer, fromRecordTopic.input, List(PaymentV1.record))
 
     assertThrows[SerializationException] {
-      consumeMessages(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input)
+      consumeMessages(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input, count = 1)
     }
   }
 
   private def runDeserializationTest(table: TableFor4[KafkaVersionAwareValueDeserializationSchemaFactory[_], GenericRecord, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion =
     forAll(table) { (factory: KafkaVersionAwareValueDeserializationSchemaFactory[_], givenObj: GenericRecord, expectedObj: GenericRecord, topic: String) =>
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
+      val deserializer = factory.create(List(topicConfig.input), version, kafkaConfig)
 
       pushMessage(givenObj, topicConfig.input)
 
-      val deserializer = factory.create(List(topicConfig.input), version, kafkaConfig)
-      val deserializedObject = consumeMessages(deserializer, topicConfig.input)
-      deserializedObject shouldBe List(expectedObj)
+      consumeAndVerifyMessages(deserializer, topicConfig.input, List(expectedObj))
     }
 }

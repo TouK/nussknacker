@@ -9,7 +9,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -77,19 +77,32 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     kafkaClient.sendRawMessage(topic, record.key(), record.value())
   }
 
-  protected def consumeMessages(topic: String, count: Int = 1): List[Any] = {
+  protected def consumeMessages(topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     consumer.consume(topic).map { record =>
       valueDeserializer.deserialize(topic, record.message())
     }.take(count).toList
   }
 
-  protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String): List[Any] = {
+  protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     consumer.consumeWithConsumerRecord(topic).map { record =>
       kafkaDeserializer.deserialize(record)
-    }.take(1).toList
+    }.take(count).toList
   }
+
+  protected def consumeAndVerifyMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, excepted: List[Any]): Assertion = {
+    val result = consumeMessages(kafkaDeserializer, topic, excepted.length)
+    result shouldBe excepted
+  }
+
+  protected def consumeAndVerifyMessages(topic: String, excepted: List[Any]): Assertion = {
+    val result = consumeMessages(topic, excepted.length)
+    result shouldBe excepted
+  }
+
+  protected def consumeAndVerifyMessages(topic: String, excepted: Any): Assertion =
+    consumeAndVerifyMessages(topic, List(excepted))
 
   /**
     * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
