@@ -124,8 +124,12 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
 })
 
 const isJsonValid = (value: string): boolean => {
+  const trimmedValue = value
+    .replace(/^'/, "")
+    .replace(/'$/, "")
+
   try {
-    JSON.parse(value)
+    JSON.parse(trimmedValue)
   } catch (e) {
     return false
   }
