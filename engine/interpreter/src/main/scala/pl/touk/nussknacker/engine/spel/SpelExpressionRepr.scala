@@ -8,4 +8,5 @@ import pl.touk.nussknacker.engine.api.Context
  */
 case class SpelExpressionRepr(parsed: org.springframework.expression.Expression,
                               context: Context,
+                              globals: Map[String, Any],
                               original: String)

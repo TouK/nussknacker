@@ -24,7 +24,6 @@ import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.compiledgraph.part.PotentiallyStartPart
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MissingOutputVariableException
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -38,7 +37,6 @@ import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.end.NormalEnd
 import pl.touk.nussknacker.engine.splittedgraph.part._
-import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
@@ -57,7 +55,7 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
 
   //FIXME: should it be here?
   private val expressionEvaluator =
-    ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(expressionConfig), List.empty)
+    ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig))
 
   override def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
@@ -334,7 +332,7 @@ protected trait ProcessCompilerBase {
       customStreamTransformers.get(data.nodeType) match {
         case Some((nodeDefinition, _)) if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] =>
           val nodeValidator = new GenericNodeTransformationValidator(objectParametersExpressionCompiler,
-              ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(expressionConfig), List.empty))
+              ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig)))
           val afterValidation = nodeValidator.validateNode(nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]], data.parameters, ctx.left.get, data.outputVar).map {
             case TransformationResult(Nil, parameters, outputContext) =>
               val (typingInfo, validProcessObject) = compileProcessObject[AnyRef](nodeDefinition, data.parameters,

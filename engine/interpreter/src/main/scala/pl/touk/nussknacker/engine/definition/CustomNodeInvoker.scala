@@ -28,7 +28,7 @@ case class ExpressionLazyParameter[T](nodeId: NodeId,
               .valueOr(err => throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}"))
     val evaluator = compilerInterpreter.deps.expressionEvaluator
     //FIXME: use evaluateParam method here, to handle e.g. options properly
-    context: Context => evaluator.evaluate[T](compiledExpression, parameter.name, nodeId.id, context)(ec, compilerInterpreter.metaData).map(_.value)(ec)
+    context: Context => evaluator.evaluate[T](compiledExpression, parameter.name, nodeId.id, context)(compilerInterpreter.metaData).map(_.value)(ec)
   }
 }
 

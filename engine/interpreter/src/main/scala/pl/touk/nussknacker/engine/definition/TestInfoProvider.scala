@@ -28,7 +28,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
   private lazy val globalVariablesPreparer =
     GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig)
 
-  private lazy val evaluator = ExpressionEvaluator.withoutLazyVals(globalVariablesPreparer, List.empty)
+  private lazy val evaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
     modelData.dictServices.dictRegistry,
