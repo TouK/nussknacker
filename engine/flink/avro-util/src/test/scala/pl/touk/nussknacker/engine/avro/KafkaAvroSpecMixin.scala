@@ -6,26 +6,33 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
+import org.apache.avro.generic.GenericData
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.test.NussknackerAssertions
 
-import scala.collection.immutable
 import scala.concurrent.Future
 
-trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
+trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
 
   import KafkaZookeeperUtils._
+  import org.apache.flink.api.scala._
 
   import collection.JavaConverters._
 
+  protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
+
   protected def schemaRegistryClient: CSchemaRegistryClient
+
+  protected def kafkaTopicNamespace: String = getClass.getSimpleName
 
   // schema.registry.url have to be defined even for MockSchemaRegistryClient
   override lazy val config: Config = ConfigFactory.load()
@@ -46,8 +53,19 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
     serializer
   }
 
+  /**
+    * Default Confluent Avro serialization components
+    */
   protected lazy val valueDeserializer: KafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient)
   protected lazy val valueSerializer: KafkaAvroSerializer = new KafkaAvroSerializer(schemaRegistryClient)
+
+  protected def createSchemaRegistryProvider(useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[GenericData.Record] =
+    ConfluentSchemaRegistryProvider[GenericData.Record](
+      confluentClientFactory,
+      processObjectDependencies,
+      useSpecificAvroReader = useSpecificAvroReader,
+      formatKey = formatKey
+    )
 
   protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None): Future[RecordMetadata] = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
@@ -59,19 +77,32 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
     kafkaClient.sendRawMessage(topic, record.key(), record.value())
   }
 
-  protected def consumeLastMessage(topic: String): List[Any] = {
+  protected def consumeMessages(topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     consumer.consume(topic).map { record =>
       valueDeserializer.deserialize(topic, record.message())
-    }.take(1).toList
+    }.take(count).toList
   }
 
-  protected def consumeLastMessage(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String): List[Any] = {
+  protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     consumer.consumeWithConsumerRecord(topic).map { record =>
       kafkaDeserializer.deserialize(record)
-    }.take(1).toList
+    }.take(count).toList
   }
+
+  protected def consumeAndVerifyMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, expected: List[Any]): Assertion = {
+    val result = consumeMessages(kafkaDeserializer, topic, expected.length)
+    result shouldBe expected
+  }
+
+  protected def consumeAndVerifyMessages(topic: String, expected: List[Any]): Assertion = {
+    val result = consumeMessages(topic, expected.length)
+    result shouldBe expected
+  }
+
+  protected def consumeAndVerifyMessages(topic: String, expected: Any): Assertion =
+    consumeAndVerifyMessages(topic, List(expected))
 
   /**
     * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
@@ -96,14 +127,17 @@ trait KafkaAvroSpec extends FunSuite with BeforeAndAfterAll with KafkaSpec with 
 
   protected def createAndRegisterTopicConfig(name: String, schema: Schema): TopicConfig =
     createAndRegisterTopicConfig(name, List(schema))
+
+  object TopicConfig {
+    private final val inputPrefix = "test.avro.input"
+    private final val outputPrefix = "test.avro.output"
+
+    def apply(testName: String, schemas: List[Schema]): TopicConfig = {
+      val inputTopic = s"$inputPrefix.$kafkaTopicNamespace.$testName"
+      val outputTopic = s"$outputPrefix.$kafkaTopicNamespace.$testName"
+      new TopicConfig(inputTopic, outputTopic, schemas, isKey = false)
+    }
+  }
 }
 
 case class TopicConfig(input: String, output: String, schemas: List[Schema], isKey: Boolean)
-
-object TopicConfig {
-  private final val inputPrefix = "test.avro.input."
-  private final val outputPrefix = "test.avro.output."
-
-  def apply(testName: String, schemas: List[Schema]): TopicConfig =
-    new TopicConfig(inputPrefix + testName, outputPrefix + testName, schemas, isKey = false)
-}

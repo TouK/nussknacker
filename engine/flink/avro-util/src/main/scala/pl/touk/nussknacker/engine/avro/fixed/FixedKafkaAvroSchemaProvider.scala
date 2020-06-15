@@ -72,4 +72,7 @@ object FixedKafkaAvroSchemaProvider {
       formatKey
     )
   }
+
+  def apply[T: TypeInformation](topic: String, avroSchemaString: String, kafkaConfig: KafkaConfig): FixedKafkaAvroSchemaProvider[T] =
+    FixedKafkaAvroSchemaProvider(topic, avroSchemaString, kafkaConfig, formatKey = false, useSpecificAvroReader = false)
 }

@@ -6,18 +6,20 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
+import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, SchemaDeterminingStrategy}
-import pl.touk.nussknacker.engine.avro.{KafkaAvroSpec, TestSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareValueSerializationSchemaFactory
 
-class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDrivenPropertyChecks {
+class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
   import SchemaDeterminingStrategy._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
+
+  override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   private val fromSubjectVersionFactory = new ConfluentAvroSerializationSchemaFactory(FromSubjectVersion, factory)
   private val fromRecordFactory = new ConfluentAvroSerializationSchemaFactory(FromRecord, factory)
@@ -84,7 +86,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
     val fromSubjectVersionSerializer = fromSubjectVersionFactory.create(fromSubjectVersionTopic.output, version, kafkaConfig)
 
     pushMessage(fromRecordSerializer, FullNameV1.record, fromRecordTopic.output)
-    consumeLastMessageAndAssert(fromRecordTopic.output, FullNameV1.record)
+    consumeAndVerifyMessages(fromRecordTopic.output, FullNameV1.record)
 
     assertThrows[SerializationException] {
       pushMessage(fromSubjectVersionSerializer, FullNameV1.record, fromRecordTopic.output)
@@ -101,7 +103,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
     val fromSubjectVersionSerializer = fromSubjectVersionFactory.create(fromSubjectVersionTopic.output, version, kafkaConfig)
 
     pushMessage(fromRecordSerializer, PaymentV1.record, fromRecordTopic.output)
-    consumeLastMessageAndAssert(fromRecordTopic.output, PaymentV1.record)
+    consumeAndVerifyMessages(fromRecordTopic.output, PaymentV1.record)
 
     assertThrows[SerializationException] {
       pushMessage(fromSubjectVersionSerializer, PaymentV1.record, fromRecordTopic.output)
@@ -114,22 +116,6 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpec with TableDriven
       val serializer = factory.create(topicConfig.output, version, kafkaConfig)
 
       pushMessage(serializer, givenObj, topicConfig.output)
-
-      consumeLastMessageAndAssert(topicConfig.output, expectedObj)
+      consumeAndVerifyMessages(topicConfig.output, expectedObj)
     }
-
-  private def consumeLastMessageAndAssert(topic: String, expectedObj: GenericRecord): Assertion = {
-    val deserializedObject = consumeLastMessage(topic)
-    deserializedObject shouldBe List(expectedObj)
-  }
-
-  object MockSchemaRegistry {
-    final val fullNameTopic = "full-name"
-
-    val schemaRegistryMockClient: CSchemaRegistryClient =  new MockConfluentSchemaRegistryClientBuilder()
-      .register(fullNameTopic, FullNameV1.schema, 1, isKey = false)
-      .build
-
-    val factory: CachedConfluentSchemaRegistryClientFactory = TestSchemaRegistryClientFactory(schemaRegistryMockClient)
-  }
 }

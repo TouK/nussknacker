@@ -4,44 +4,46 @@ import java.nio.charset.StandardCharsets
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
+import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.scalatest.Assertion
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKeyValueKafkaAvroDeserializationFactory, SchemaDeterminingStrategy}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionFound}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionNotFound}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSpec, TestSchemaRegistryClientFactory}
 
-class KafkaAvroSourceFactorySpec extends KafkaAvroSpec {
+class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
 
-  import MockSchemaRegistry._
+  import KafkaAvroSourceMockSchemaRegistry._
+
+  override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
+
+  override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   test("should read generated record in v1") {
     val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, givenObj, 1, FullNameV1.schema, RecordTopic)
+    roundTripSingleObject(sourceFactory, RecordTopic, 1, givenObj, FullNameV1.schema)
   }
 
   test("should read generated record in v2") {
     val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, givenObj, 2, FullNameV2.schema, RecordTopic)
+    roundTripSingleObject(sourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
   }
 
   test("should read generated record in last version") {
     val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, givenObj, null, FullNameV2.schema, RecordTopic)
+    roundTripSingleObject(sourceFactory, RecordTopic, null, givenObj, FullNameV2.schema)
   }
 
   test("should throw exception when schema doesn't exist") {
@@ -49,7 +51,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpec {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
     assertThrowsWithParent[SchemaSubjectNotFound] {
-      readLastMessageAndVerify(sourceFactory, givenObj, 1, FullNameV2.schema, "fake-topic")
+      readLastMessageAndVerify(sourceFactory, "fake-topic", 1, givenObj, FullNameV2.schema)
     }
   }
 
@@ -57,8 +59,8 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpec {
     val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    assertThrowsWithParent[SchemaVersionFound]{
-      readLastMessageAndVerify(sourceFactory, givenObj, 3, FullNameV2.schema, RecordTopic)
+    assertThrowsWithParent[SchemaVersionNotFound]{
+      readLastMessageAndVerify(sourceFactory, RecordTopic, 3, givenObj, FullNameV2.schema)
     }
   }
 
@@ -66,14 +68,14 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpec {
     val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
     val givenObj = 123123
 
-    roundTripSingleObject(sourceFactory, givenObj, 1, IntSchema, IntTopic)
+    roundTripSingleObject(sourceFactory, IntTopic, 1, givenObj, IntSchema)
   }
 
   test("should read last generated record as a specific class") {
     val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = true)
     val givenObj = FullNameV2("Jan", "Maria", "Nowak")
 
-    roundTripSingleObject(sourceFactory, givenObj, 2, FullNameV2.schema, RecordTopic)
+    roundTripSingleObject(sourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
   }
 
   test("should read last generated key-value object") {
@@ -84,47 +86,11 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpec {
     val serializedValue = valueSerializer.serialize(IntTopic, givenObj._2)
     kafkaClient.sendRawMessage(IntTopic, serializedKey, serializedValue, Some(0))
 
-    readLastMessageAndVerify(sourceFactory, givenObj, 1, IntSchema, IntTopic)
+    readLastMessageAndVerify(sourceFactory, IntTopic, 1, givenObj, IntSchema)
   }
 
-  override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
-
-  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_],
-                                    givenObj: Any,
-                                    schemaVersion: Integer,
-                                    exceptedSchema: Schema,
-                                    topic: String): Assertion = {
-    val serializedObj = valueSerializer.serialize(topic, givenObj)
-    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, Some(0))
-
-    readLastMessageAndVerify(sourceFactory, givenObj, schemaVersion, exceptedSchema, topic)
-  }
-
-  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_],
-                                       givenObj: Any,
-                                       schemaVersion: Integer,
-                                       exceptedSchema: Schema,
-                                       topic: String): Assertion = {
-    val source = sourceFactory
-      .create(MetaData("", StreamMetaData()), topic, schemaVersion)(NodeId(""))
-      .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
-
-    source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(exceptedSchema)
-
-    val bytes = source.generateTestData(1)
-    info("test object: " + new String(bytes, StandardCharsets.UTF_8))
-    val deserializedObj = source.testDataParser.parseTestData(bytes)
-
-    deserializedObj shouldEqual List(givenObj)
-  }
-
-  private def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[AnyRef] = {
-    val schemaRegistryProvider = ConfluentSchemaRegistryProvider[AnyRef](
-      factory,
-      processObjectDependencies,
-      useSpecificAvroReader,
-      formatKey = false
-    )
+  protected def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[GenericData.Record] = {
+    val schemaRegistryProvider = createSchemaRegistryProvider(useSpecificAvroReader)
     new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
   }
 
@@ -140,40 +106,29 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpec {
     )
     new KafkaAvroSourceFactory(provider, processObjectDependencies, None)
   }
-}
 
-class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-                                                                     (implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
-  extends ConfluentKeyValueKafkaAvroDeserializationFactory[(Key, Value)](SchemaDeterminingStrategy.FromSubjectVersion, schemaRegistryClientFactory, useSpecificAvroReader = false)(
-    createTuple2TypeInformation(keyTypInfo, valueTypInfo)
-  ) {
-
-  override protected type K = Key
-  override protected type V = Value
-
-  override protected def createObject(key: Key, value: Value, topic: String): (Key, Value) = {
-    (key, value)
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema) = {
+    pushMessage(givenObj, topic)
+    readLastMessageAndVerify(sourceFactory, topic, version, givenObj, expectedSchema)
   }
-}
 
-object MockSchemaRegistry {
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema): Assertion = {
+    val source = createAndVerifySource(sourceFactory, topic, version, expectedSchema)
 
-  val RecordTopic: String = "testAvroRecordTopic1"
-  val IntTopic: String = "testAvroIntTopic1"
+    val bytes = source.generateTestData(1)
+    info("test object: " + new String(bytes, StandardCharsets.UTF_8))
+    val deserializedObj = source.testDataParser.parseTestData(bytes)
 
-  val IntSchema: Schema = AvroUtils.parseSchema(
-    """{
-      |  "type": "int"
-      |}
-    """.stripMargin
-  )
+    deserializedObj shouldEqual List(givenObj)
+  }
 
-  val schemaRegistryMockClient: CSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
-    .register(RecordTopic, FullNameV1.schema, 1, isKey = false)
-    .register(RecordTopic, FullNameV2.schema, 2, isKey = false)
-    .register(IntTopic, IntSchema, 1, isKey = false)
-    .register(IntTopic, IntSchema, 1, isKey = true)
-    .build
+  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+    val source = sourceFactory
+      .create(metaData, topic, version)(nodeId)
+      .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 
-  val factory: CachedConfluentSchemaRegistryClientFactory = TestSchemaRegistryClientFactory(schemaRegistryMockClient)
+    source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(expectedSchema)
+
+    source
+  }
 }

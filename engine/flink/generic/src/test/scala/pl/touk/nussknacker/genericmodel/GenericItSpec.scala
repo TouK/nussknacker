@@ -115,14 +115,15 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         "start",
         "kafka-avro",
         KafkaAvroFactory.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroFactory.VersionParamName -> versionParam(version)
+        KafkaAvroFactory.SchemaVersionParamName -> versionParam(version)
       )
       .filter("name-filter", "#input.first == 'Jan'")
-      .sink(
+      .emptySink(
         "end",
-        "#input",
         "kafka-avro",
-        KafkaAvroFactory.TopicParamName  -> s"'${topicConfig.output}'"
+        KafkaAvroFactory.SinkOutputParamName  -> "#input",
+        KafkaAvroFactory.TopicParamName  -> s"'${topicConfig.output}'",
+        KafkaAvroFactory.SchemaVersionParamName -> ""
       )
 
   private def avroFromScratchProcess(topicConfig: TopicConfig, version: Integer) =
@@ -134,13 +135,14 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         "start",
         "kafka-avro",
         KafkaAvroFactory.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroFactory.VersionParamName -> versionParam(version)
+        KafkaAvroFactory.SchemaVersionParamName -> versionParam(version)
       )
-      .sink(
+      .emptySink(
         "end",
-        s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('${topicConfig.output}'))",
         "kafka-avro",
-        KafkaAvroFactory.TopicParamName -> s"'${topicConfig.output}'"
+        KafkaAvroFactory.SinkOutputParamName -> s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('${topicConfig.output}'))",
+        KafkaAvroFactory.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaAvroFactory.SchemaVersionParamName -> ""
       )
 
   private def avroTypedProcess(topicConfig: TopicConfig, schema: String, fieldSelection: String) =
@@ -152,14 +154,15 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         "start",
         "kafka-fixed-avro",
         KafkaAvroFactory.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroFactory.SchemaParamName -> s"'$schema'"
+        KafkaAvroFactory.FixedSchemaParamName -> s"'$schema'"
       )
       .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
-      .sink(
+      .emptySink(
         "end",
-        "#input",
         "kafka-avro",
-        KafkaAvroFactory.TopicParamName -> s"'${topicConfig.output}'"
+        KafkaAvroFactory.SinkOutputParamName -> "#input",
+        KafkaAvroFactory.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaAvroFactory.SchemaVersionParamName -> ""
       )
 
   private def versionParam(version: Integer) =
@@ -340,12 +343,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
     override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[GenericData.Record] =
-      ConfluentSchemaRegistryProvider[GenericData.Record](
-        factory,
-        processObjectDependencies,
-        useSpecificAvroReader = false,
-        formatKey = false
-      )
+      ConfluentSchemaRegistryProvider[GenericData.Record](factory, processObjectDependencies)
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
@@ -457,8 +455,13 @@ object MockSchemaRegistry extends Serializable {
 
   val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
 
-  val factory: CachedConfluentSchemaRegistryClientFactory = new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None) {
-    override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
-      schemaRegistryMockClient
-  }
+  /**
+    * It has to be done in this way, because schemaRegistryMockClient is not serializable..
+    * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
+    */
+  val factory: CachedConfluentSchemaRegistryClientFactory =
+    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None) {
+      override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
+        schemaRegistryMockClient
+    }
 }

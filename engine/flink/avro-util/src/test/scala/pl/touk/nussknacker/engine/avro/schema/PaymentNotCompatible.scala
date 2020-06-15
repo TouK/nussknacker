@@ -55,5 +55,5 @@ object PaymentNotCompatible extends TestSchemaWithRecord {
        |}
     """.stripMargin
 
-  val exampleData = PaymentV1.exampleData ++ Map("attributes" -> Map(), "date" -> 189123)
+  val exampleData = PaymentV2.exampleData ++ Map("attributes" -> Map(), "date" -> 189123)
 }

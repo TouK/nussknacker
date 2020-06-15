@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.{FixedKafkaAvroSourceFactory, KafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SimpleSlidingAggregateTransformerV2, SimpleTumblingAggregateTransformer}
@@ -44,10 +45,11 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
+    val kafkaAvroSinkFactory = new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)
 
     Map(
       "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(new KafkaSinkFactory(schemaRegistryProvider.serializationSchemaFactory, processObjectDependencies))
+      "kafka-avro" -> defaultCategory(kafkaAvroSinkFactory)
     )
   }
 

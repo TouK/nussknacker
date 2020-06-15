@@ -51,8 +51,11 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   }
 
   def apply[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(), processObjectDependencies)
+
+  def apply[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider(
-      CachedConfluentSchemaRegistryClientFactory(),
+      schemaRegistryClientFactory,
       processObjectDependencies,
       useSpecificAvroReader = false,
       formatKey = false
