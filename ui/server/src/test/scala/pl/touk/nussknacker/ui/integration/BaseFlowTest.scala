@@ -127,7 +127,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "optionalTypesService" -> SingleNodeConfig(
           Some(Map(
             "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
-            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
+            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator())), None)
           )),
           None,
           None,
@@ -152,7 +152,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "environment" -> new UiAdditionalPropertyConfig(
           Some("test"),
           StringParameterEditor,
-          List(MandatoryParameterValidator),
+          List(MandatoryParameterValidator()),
           Some("Environment")
         ),
         "maxEvents" -> new UiAdditionalPropertyConfig(

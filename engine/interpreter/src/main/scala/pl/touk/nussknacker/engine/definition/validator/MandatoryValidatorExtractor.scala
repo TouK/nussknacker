@@ -13,7 +13,7 @@ object MandatoryValidatorExtractor extends ValidatorExtractor {
     } else if (params.rawJavaParam.getAnnotation(classOf[Nullable]) != null) {
       None
     } else {
-      Some(MandatoryParameterValidator)
+      Some(MandatoryParameterValidator())
     }
   }
 

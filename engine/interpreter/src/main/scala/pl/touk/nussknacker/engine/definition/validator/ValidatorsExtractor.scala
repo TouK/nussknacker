@@ -7,7 +7,7 @@ object ValidatorsExtractor {
   def extract(params: ValidatorExtractorParameters): List[ParameterValidator] = {
     List(
       MandatoryValidatorExtractor,
-      AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
+      AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator()),
       FixedValueValidatorExtractor,
       LiteralValidatorExtractor,
       AnnotationValidatorExtractor[Min]((annotation: Min) => MinimalNumberValidator(annotation.value())),

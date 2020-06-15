@@ -29,7 +29,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   val processValidation = new ProcessValidation(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
+      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator())), Some("label")),
       "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
       "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
     )),

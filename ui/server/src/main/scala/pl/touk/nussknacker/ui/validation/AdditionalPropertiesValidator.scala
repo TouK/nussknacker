@@ -65,7 +65,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
   private def getMissingRequiredPropertyValidationResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
     config
       .filter(_._2.validators.nonEmpty)
-      .filter(_._2.validators.get.contains(MandatoryParameterValidator))
+      .filter(_._2.validators.get.contains(MandatoryParameterValidator()))
       .map(propertyConfig => (propertyConfig._1, propertyConfig._2, MissingRequiredPropertyValidator(additionalProperties.map(_._1))))
       .toList.map {
       case (propertyName, config, validator) => validator.isValid(propertyName, config.label).toValidatedNel

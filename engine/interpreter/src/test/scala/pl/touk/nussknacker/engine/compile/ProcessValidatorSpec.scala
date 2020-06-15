@@ -75,7 +75,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       )), emptyQueryNamesData()),
       "withPriorities" -> (ObjectDefinition.withParams(List(
         Parameter[Integer]("priorities").copy(validators = List(LiteralParameterValidator.integerValidator,
-          MaximalNumberValidator(10), MandatoryParameterValidator))
+          MaximalNumberValidator(10), MandatoryParameterValidator()))
       )), emptyQueryNamesData())
     ),
     Map.empty,

@@ -10,13 +10,13 @@ class AdditionalPropertyValidatorsDeterminerChainTest extends FunSuite with Matc
     val config = AdditionalPropertyConfig(
       None,
       None,
-      Some(List(MandatoryParameterValidator)),
+      Some(List(MandatoryParameterValidator())),
       None
     )
 
     val determined = AdditionalPropertyValidatorDeterminerChain(config).determine()
 
-    determined shouldBe List(MandatoryParameterValidator)
+    determined shouldBe List(MandatoryParameterValidator())
   }
 
   test("determine property validator based on fixed value editor") {

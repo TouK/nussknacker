@@ -17,7 +17,7 @@ class ParameterBasedValidatorsDeterminerChainTest extends FunSuite with Matchers
 
   test("determine validators based on config") {
     val param = Parameter.optional[String]("param")
-    val config = ParameterConfig(None, None, Some(List(MandatoryParameterValidator, NotBlankParameterValidator)), None)
+    val config = ParameterConfig(None, None, Some(List(MandatoryParameterValidator(), NotBlankParameterValidator())), None)
 
     val validators = ParameterValidatorsDeterminerChain(config).determineValidators(param)
 

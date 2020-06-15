@@ -95,8 +95,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       .withNodeConfig(SingleNodeConfig.zero.copy(
         category = Some("types"),
         params = Some(Map(
-          "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None),
-          "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
+          "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator())), None),
+          "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator())), None)
         ))
       )),
     "collectionTypesService" -> categories(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(

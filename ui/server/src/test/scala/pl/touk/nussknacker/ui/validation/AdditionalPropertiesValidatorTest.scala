@@ -21,7 +21,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
         reqFieldName -> AdditionalPropertyConfig(
           None,
           None,
-          Some(List(LiteralParameterValidator.integerValidator, MandatoryParameterValidator)),
+          Some(List(LiteralParameterValidator.integerValidator, MandatoryParameterValidator())),
           Some(label)),
         regexpFieldName -> AdditionalPropertyConfig(
           None,

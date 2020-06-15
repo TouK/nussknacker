@@ -18,7 +18,7 @@ object Parameter {
 
   // we want to have mandatory parameters by default because it can protect us from NPE in some cases)
   def apply(name: String, typ: TypingResult): Parameter =
-    Parameter(name, typ, validators = List(MandatoryParameterValidator))
+    Parameter(name, typ, validators = List(MandatoryParameterValidator()))
 
   def apply(name: String, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
     Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty,
@@ -51,7 +51,7 @@ object Parameter {
 object NotBlankParameter {
 
   def apply(name: String, typ: TypingResult): Parameter =
-    Parameter(name, typ, validators = List(NotBlankParameterValidator))
+    Parameter(name, typ, validators = List(NotBlankParameterValidator()))
 
 }
 

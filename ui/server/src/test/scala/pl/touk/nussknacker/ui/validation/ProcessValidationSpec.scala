@@ -36,7 +36,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   private val validator = new ProcessValidation(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
+      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator())), Some("label")),
       "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
       "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
     )),
@@ -160,7 +160,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   test("not allow required process fields") {
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
+        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator())), Some("label1")),
         "field2" -> AdditionalPropertyConfig(None, None, None, Some("label2"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
@@ -182,8 +182,8 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
-        "field2" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
+        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator())), Some("label1")),
+        "field2" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator())), Some("label2"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
     val process = validProcessWithFields(Map())

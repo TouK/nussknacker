@@ -79,8 +79,16 @@ object Validations {
     parameters.collect {
       case param if validators.getOrElse(param.name, Nil).nonEmpty =>
         val validatorList = validators.getOrElse(param.name, Nil)
-        val validatorsPerPriority = validatorList.groupBy(_.priority).toList.sortBy(-_._1).map(_._2)
-        validatePriorityGroups(param, validatorsPerPriority)
+        // if at least one of validators has undefined priority, ignore priorities
+        val isPriorityDefined = validatorList.forall(_.priority.isDefined)
+        if (isPriorityDefined) {
+          val validatorsPerPriority = validatorList.groupBy(_.priority).toList.map{
+            case (key, l) => (key.getOrElse(0L), l)
+          }.sortBy(-_._1).map(_._2)
+          validatePriorityGroups(param, validatorsPerPriority)
+        } else {
+          validatePriorityGroups(param, List(validatorList))
+        }
     }.sequence.map(_ => Unit)
   }
 }

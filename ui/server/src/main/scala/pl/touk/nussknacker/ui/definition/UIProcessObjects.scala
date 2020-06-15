@@ -157,7 +157,7 @@ object UIObjectDefinition {
                                                      additionalVariables: Map[String, TypingResult],
                                                      branchParam: Boolean) {
 
-  def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
+  def isOptional: Boolean = !validators.contains(MandatoryParameterValidator())
 
 }
 
