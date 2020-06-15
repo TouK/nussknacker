@@ -8,13 +8,12 @@ import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
-import pl.touk.nussknacker.engine.avro.source.{FixedKafkaAvroSourceFactory, KafkaAvroSourceFactory}
+import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SimpleSlidingAggregateTransformerV2, SimpleTumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
-import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {
@@ -33,13 +32,11 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
     val avroSourceFactory = KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies)
-    val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 
     Map(
       "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
       "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(avroSourceFactory),
-      "kafka-fixed-avro" -> defaultCategory(avroFixedSourceFactory)
+      "kafka-avro" -> defaultCategory(avroSourceFactory)
     )
   }
 
