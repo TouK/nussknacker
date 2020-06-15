@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
-import pl.touk.nussknacker.engine.avro.source.{FixedKafkaAvroSourceFactory, KafkaAvroSourceFactory}
+import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
@@ -19,11 +19,9 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
     val avroSourceFactory = KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies)
-    val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
 
     Map(
-      "kafka-avro" -> defaultCategory(avroSourceFactory),
-      "kafka-fixed-avro" -> defaultCategory(avroFixedSourceFactory)
+      "kafka-avro" -> defaultCategory(avroSourceFactory)
     )
   }
 
