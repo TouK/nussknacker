@@ -1,6 +1,6 @@
 import NodeUtils from "../NodeUtils"
 import {NodeType, Parameter, UIParameter} from "../../../types"
-import {cloneDeep} from "lodash"
+import {cloneDeep, get, set} from "lodash"
 
 export type AdjustReturn = {
     node: NodeType,
@@ -12,11 +12,14 @@ const findUnusedParameters = (parameters: Array<Parameter>, definitions: Array<U
   return parameters.filter(param => !definitions.find(def => def.name == param.name))
 }
 
-//Currently we want to handle adjustment only for CustomNode, TODO: add other types when they will be handled
+//Currently we want to handle adjustment only for CustomNode,Source and Sink, TODO: add other types when they will be handled
 const propertiesPath = (node) => {
   switch (NodeUtils.nodeType(node)) {
     case "CustomNode":
       return "parameters"
+    case "Source":
+    case "Sink":
+      return "ref.parameters"
     default:
       return null
   }
@@ -27,9 +30,9 @@ const propertiesPath = (node) => {
 export const adjustParameters = (node: NodeType, parameterDefinitions: Array<UIParameter>, baseNode: NodeType): AdjustReturn => {
   const path = propertiesPath(node)
   //Currently we try to check if parameter exists in node in toolbox
-  const baseNodeParameters = baseNode && baseNode[path]
+  const baseNodeParameters = baseNode && get(baseNode, path)
   if (path) {
-    const currentParameters = node[path]
+    const currentParameters = get(node, path)
     const adjustedParameters = parameterDefinitions.map(def => {
       const currentParam = currentParameters.find(p => p.name == def.name)
       const parameterFromBase = baseNodeParameters?.find(p => p.name == def.name)
@@ -38,7 +41,7 @@ export const adjustParameters = (node: NodeType, parameterDefinitions: Array<UIP
       return currentParam || parameterFromBase || parameterFromDefinition
     })
     const cloned = cloneDeep(node)
-    cloned[path] = adjustedParameters
+    set(cloned, path, adjustedParameters)
     return {
       node: cloned,
       unusedParameters: findUnusedParameters(currentParameters, parameterDefinitions),

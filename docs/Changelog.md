@@ -20,10 +20,12 @@ Nussknacker versions
 * [#976](https://github.com/TouK/nussknacker/pull/976) Fixed save button & groups expand for businessView
 * [#973](https://github.com/TouK/nussknacker/pull/973) Textarea editor
 * Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998)
-* [#978](https://github.com/TouK/nussknacker/pull/978) Dynamic filter validation
-* [#996](https://github.com/TouK/nussknacker/pull/996) First version of GenericNodeTransformation
-* [#1001](https://github.com/TouK/nussknacker/pull/1001) First version dynamic parameters on UI
-
+* Dynamic parameters: filter validation, GenericNodeTransformation introduction (for CustomNodes, Sources, Sinks) - also handling dynamic parameters on UI: 
+    [#978](https://github.com/TouK/nussknacker/pull/978), 
+    [#996](https://github.com/TouK/nussknacker/pull/996), 
+    [#1001](https://github.com/TouK/nussknacker/pull/1001),
+    [#1011](https://github.com/TouK/nussknacker/pull/1011)
+    
 0.1.2
 ------------------------
 * [#965](https://github.com/TouK/nussknacker/pull/965) Added new, 'aggregate-tumbling' node.

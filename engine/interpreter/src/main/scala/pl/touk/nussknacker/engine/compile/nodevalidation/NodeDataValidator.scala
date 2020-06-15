@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Sink, Source, WithParameters}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 /*
@@ -36,6 +36,8 @@ object NodeDataValidator {
     nodeData match {
       case a:Filter => new FilterValidator(modelData).validate(a, validationContext)
       case a:CustomNode => new CustomNodeValidator(modelData).validate(a, validationContext)
+      case a:Source => new SourceNodeValidator(modelData).validate(a, validationContext)
+      case a:Sink => new SinkNodeValidator(modelData).validate(a, validationContext)
       case a => EmptyValidator.validate(a, validationContext)
     }
   }
@@ -59,7 +61,9 @@ class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
   }
 }
 
-class CustomNodeValidator(modelData: ModelData) extends NodeDataValidator[CustomNode] {
+trait WithParametersNodeValidator[T <: NodeData with WithParameters] extends NodeDataValidator[T] {
+
+  protected def modelData: ModelData
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(
     modelData.modelClassLoader.classLoader,
@@ -73,16 +77,53 @@ class CustomNodeValidator(modelData: ModelData) extends NodeDataValidator[Custom
 
   private val nodeValidator = new GenericNodeTransformationValidator(expressionCompiler, expressionEvaluator)
 
+  protected def validate(transform: SingleInputGenericNodeTransformation[_],
+                         nodeData: NodeData with WithParameters,
+                         validationContext: ValidationContext, outputVar: Option[String])(implicit metaData: MetaData): ValidationPerformed = {
+    implicit val nodeId: NodeId = NodeId(nodeData.id)
+    nodeValidator.validateNode(transform, nodeData.parameters, validationContext, outputVar) match {
+      case Valid(result) =>
+        ValidationPerformed(result.errors, Some(result.parameters))
+      case Invalid(e) => ValidationPerformed(e.toList, None)
+    }
+  }
+
+}
+
+class CustomNodeValidator(val modelData: ModelData) extends WithParametersNodeValidator[CustomNode] {
+
   override def validate(nodeData: CustomNode, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val transformer = modelData.processWithObjectsDefinition.customStreamTransformers(nodeData.nodeType)._1.obj
     transformer match {
       case a:SingleInputGenericNodeTransformation[_] =>
-        implicit val nodeId: NodeId = NodeId(nodeData.id)
-        nodeValidator.validateNode(a, nodeData.parameters, validationContext, nodeData.outputVar) match {
-          case Valid(result) =>
-            ValidationPerformed(result.errors, Some(result.parameters))
-          case Invalid(e) => ValidationPerformed(e.toList, None)
-        }
+        validate(a, nodeData, validationContext, nodeData.outputVar)
+      //TODO: handle 'standard' case
+      case _ => ValidationNotPerformed
+    }
+  }
+}
+
+class SinkNodeValidator(val modelData: ModelData) extends WithParametersNodeValidator[Sink] {
+
+  override def validate(nodeData: Sink, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
+    val transformer = modelData.processWithObjectsDefinition.sinkFactories(nodeData.ref.typ)._1.obj
+    transformer match {
+      case a:SingleInputGenericNodeTransformation[_] =>
+        validate(a, nodeData, validationContext, None)
+      //TODO: handle 'standard' case
+      case _ => ValidationNotPerformed
+    }
+  }
+}
+
+class SourceNodeValidator(val modelData: ModelData) extends WithParametersNodeValidator[Source] {
+
+  override def validate(nodeData: Source, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
+    val transformer = modelData.processWithObjectsDefinition.sourceFactories(nodeData.ref.typ).obj
+    transformer match {
+      case a:SingleInputGenericNodeTransformation[_] =>
+        validate(a, nodeData, validationContext, None)
+      //TODO: handle 'standard' case
       case _ => ValidationNotPerformed
     }
   }

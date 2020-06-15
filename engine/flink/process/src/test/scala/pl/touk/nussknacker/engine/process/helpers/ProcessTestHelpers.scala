@@ -80,7 +80,8 @@ object ProcessTestHelpers {
       override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
         "input" -> WithCategories(SampleNodes.simpleRecordSource(data)),
         "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
-        "kafka-keyvalue" -> WithCategories(new KeyValueKafkaSourceFactory(processObjectDependencies))
+        "kafka-keyvalue" -> WithCategories(new KeyValueKafkaSourceFactory(processObjectDependencies)),
+        "genericParametersSource" -> WithCategories(GenericParametersSource)
       )
 
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
@@ -88,7 +89,8 @@ object ProcessTestHelpers {
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
         "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
         "lazyParameterSink"-> WithCategories(LazyParameterSinkFactory),
-        "eagerOptionalParameterSink"-> WithCategories(EagerOptionalParameterSinkFactory)
+        "eagerOptionalParameterSink"-> WithCategories(EagerOptionalParameterSinkFactory),
+        "genericParametersSink" -> WithCategories(GenericParametersSink)
       )
 
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
