@@ -80,7 +80,7 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   }
 
   test("extract not empty validator by default") {
-    ValidatorsExtractor.extract(validatorParams(notAnnotatedParam)) shouldBe List(MandatoryParameterValidator)
+    ValidatorsExtractor.extract(validatorParams(notAnnotatedParam)) shouldBe List(MandatoryParameterValidator())
   }
 
   test("extract none mandatory value validator when @Nullable annotation detected") {
@@ -108,19 +108,19 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   }
 
   test("extract nullable notBlank value validator when @Nullable @NotBlank annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(nullableNotBlankParam)) shouldBe List(NotBlankParameterValidator)
+    ValidatorsExtractor.extract(validatorParams(nullableNotBlankParam)) shouldBe List(NotBlankParameterValidator())
   }
 
   test("extract notBlank value validator when @NotBlank annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(notBlankParam)) shouldBe List(MandatoryParameterValidator, NotBlankParameterValidator)
+    ValidatorsExtractor.extract(validatorParams(notBlankParam)) shouldBe List(MandatoryParameterValidator(), NotBlankParameterValidator())
   }
 
   test("extract literalIntParam value validator when @Literal annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(literalIntParam)) shouldBe List(MandatoryParameterValidator, LiteralParameterValidator.integerValidator)
+    ValidatorsExtractor.extract(validatorParams(literalIntParam)) shouldBe List(MandatoryParameterValidator(), LiteralParameterValidator.integerValidator)
   }
 
   test("extract literalIntegerParam value validator when @Literal annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(literalIntegerParam)) shouldBe List(MandatoryParameterValidator, LiteralParameterValidator.integerValidator)
+    ValidatorsExtractor.extract(validatorParams(literalIntegerParam)) shouldBe List(MandatoryParameterValidator(), LiteralParameterValidator.integerValidator)
   }
 
   test("extract literalOptionalIntegerParam value validator when @Nullable @Literal annotation detected") {
@@ -128,46 +128,51 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   }
 
   test("should not extract literalStringParam value validator when @Literal annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(literalStringParam)) shouldBe List(MandatoryParameterValidator)
+    ValidatorsExtractor.extract(validatorParams(literalStringParam)) shouldBe List(MandatoryParameterValidator())
   }
 
 
   test("extract minimalValueIntegerParam value validator when @Min annotation detected") {
     ValidatorsExtractor.extract(validatorParams(minimalValueIntegerParam)) shouldBe
-      List(MandatoryParameterValidator, MinimalNumberValidator(0))
+      List(MandatoryParameterValidator(), MinimalNumberValidator(0))
   }
 
   test("extract minimalValueBigDecimalParam value validator when @Min annotation detected") {
     ValidatorsExtractor.extract(validatorParams(minimalValueBigDecimalParam)) shouldBe
-      List(MandatoryParameterValidator, MinimalNumberValidator(0))
+      List(MandatoryParameterValidator(), MinimalNumberValidator(0))
   }
 
 
   test("extract maximalValueIntegerParam value validator when @Max annotation detected") {
     ValidatorsExtractor.extract(validatorParams(maximalValueIntegerParam)) shouldBe
-      List(MandatoryParameterValidator, MaximalNumberValidator(0))
+      List(MandatoryParameterValidator(), MaximalNumberValidator(0))
   }
 
   test("extract maximalValueBigDecimalParam value validator when @Max annotation detected") {
     ValidatorsExtractor.extract(validatorParams(maximalValueBigDecimalParam)) shouldBe
-      List(MandatoryParameterValidator, MaximalNumberValidator(0))
+      List(MandatoryParameterValidator(), MaximalNumberValidator(0))
   }
 
 
   test("extract minimalAndMaximalValueIntegerParam value validator when @Min and @Max annotation detected") {
     ValidatorsExtractor.extract(validatorParams(minimalAndMaximalValueIntegerParam)) shouldBe
-      List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
+      List(MandatoryParameterValidator(), MinimalNumberValidator(0), MaximalNumberValidator(1))
   }
 
   test("extract minimalAndMaximalValueBigDecimalParam value validator when @Min and @Max annotation detected") {
     ValidatorsExtractor.extract(validatorParams(minimalAndMaximalValueBigDecimalParam)) shouldBe
-      List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
+      List(MandatoryParameterValidator(), MinimalNumberValidator(0), MaximalNumberValidator(1))
   }
 
 
   private def validatorParams(rawJavaParam: java.lang.reflect.Parameter,
-                              editor: Option[ParameterEditor] = None) =
+                              editor: Option[ParameterEditor] = None) = {
+    val isJavaOptional = classOf[Optional[_]].isAssignableFrom(rawJavaParam.getType)
+    val isScalaOption = classOf[Option[_]].isAssignableFrom(rawJavaParam.getType)
+    val isNullable = rawJavaParam.getAnnotation(classOf[Nullable]) != null
     ValidatorExtractorParameters(rawJavaParam, EspTypeUtils.extractParameterType(rawJavaParam),
-      classOf[Option[_]].isAssignableFrom(rawJavaParam.getType), classOf[Optional[_]].isAssignableFrom(rawJavaParam.getType), editor)
+      !(isJavaOptional || isScalaOption || isNullable), isScalaOption, isJavaOptional, editor)
+
+  }
 
 }

@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.Method
 import java.util.Optional
 
+import javax.annotation.Nullable
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation.GenericNodeTransformation
 import pl.touk.nussknacker.engine.api.definition._
@@ -73,8 +74,9 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
         val (paramTypeWithUnwrappedLazy, isLazyParameter) = determineIfLazyParameter(paramWithUnwrappedBranch)
         val (paramType, isScalaOptionParameter, isJavaOptionalParameter) = determineOptionalParameter(paramTypeWithUnwrappedLazy)
         val extractedEditor = EditorExtractor.extract(p)
-        val validators = tryToDetermineValidators(p, paramType, isScalaOptionParameter, isJavaOptionalParameter, extractedEditor)
-        Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined,
+        val isRequiredParameter = determineIfRequiredParameter(p, isScalaOptionParameter, isJavaOptionalParameter)
+        val validators = tryToDetermineValidators(p, paramType, isRequiredParameter, isScalaOptionParameter, isJavaOptionalParameter, extractedEditor)
+        Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined, isRequiredParameter = isRequiredParameter,
           isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
       }
     }.toList
@@ -97,6 +99,12 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       (typ, false)
   }
 
+  private def determineIfRequiredParameter(p: java.lang.reflect.Parameter, isScalaOptionParameter: Boolean, isJavaOptionalParameter: Boolean): Boolean = {
+    if (isScalaOptionParameter || isJavaOptionalParameter) false
+    else if (p.getAnnotation(classOf[Nullable]) != null) false
+    else true
+  }
+
   private def determineOptionalParameter(typ: TypingResult) = typ match {
     case TypedClass(cl, genericParams) if classOf[Option[_]].isAssignableFrom(cl) =>
       (genericParams.head, true, false)
@@ -108,6 +116,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
   private def tryToDetermineValidators(param: java.lang.reflect.Parameter,
                                        paramType: TypingResult,
+                                       isRequiredParameter: Boolean,
                                        isScalaOptionParameter: Boolean,
                                        isJavaOptionalParameter: Boolean,
                                        extractedEditor: Option[ParameterEditor]) = {
@@ -115,7 +124,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       case Some(editor) => Some(editor)
       case None => new ParameterTypeEditorDeterminer(paramType).determine()
     }
-    ValidatorsExtractor.extract(ValidatorExtractorParameters(param, paramType, isScalaOptionParameter, isJavaOptionalParameter, possibleEditor))
+    ValidatorsExtractor.extract(ValidatorExtractorParameters(param, paramType, isRequiredParameter, isScalaOptionParameter, isJavaOptionalParameter, possibleEditor))
   }
 
   private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, TypingResult] =

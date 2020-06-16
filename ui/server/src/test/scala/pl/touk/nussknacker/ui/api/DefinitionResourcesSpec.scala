@@ -7,7 +7,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.definition.FixedValuesValidator
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestProcessingTypes}
@@ -247,7 +246,9 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       val validator: Json = getParamValidator("datesTypesService", "periodParam")
 
 
-      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryParameterValidator")))
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryParameterValidator"),
+                                          "priority" -> Json.fromBigInt(Long.MaxValue),
+                                          "skipOnBlankIfNotRequired" -> Json.fromBoolean(false)))
     }
   }
 
@@ -267,7 +268,9 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
 
       val validator: Json = getParamValidator("optionalTypesService", "overriddenByDevConfigParam")
 
-      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryParameterValidator")))
+      validator shouldBe Json.arr(Json.obj("type" -> Json.fromString("MandatoryParameterValidator"),
+                                            "priority" -> Json.fromBigInt(Long.MaxValue),
+                                            "skipOnBlankIfNotRequired" -> Json.fromBoolean(false)))
     }
   }
 
@@ -288,7 +291,9 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       val validator: Json = getParamValidator("paramService", "param")
 
       validator shouldBe Json.arr(
-        Json.obj("type" -> Json.fromString("MandatoryParameterValidator")),
+        Json.obj("type" -> Json.fromString("MandatoryParameterValidator"),
+                  "priority" -> Json.fromBigInt(Long.MaxValue),
+                  "skipOnBlankIfNotRequired" -> Json.fromBoolean(false)),
         Json.obj(
           "possibleValues" -> Json.arr(
             Json.obj(
@@ -304,7 +309,9 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
               "label" -> Json.fromString("c")
             )
           ),
-          "type" -> Json.fromString("FixedValuesValidator")
+          "type" -> Json.fromString("FixedValuesValidator"),
+          "priority" -> Json.fromBigInt(0),
+          "skipOnBlankIfNotRequired" -> Json.fromBoolean(true)
       ))
     }
   }
@@ -332,7 +339,9 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
                 "label" -> Json.fromString("2")
               )
             ),
-            "type" -> Json.fromString("FixedValuesValidator")
+            "type" -> Json.fromString("FixedValuesValidator"),
+            "priority" -> Json.fromBigInt(0),
+            "skipOnBlankIfNotRequired" -> Json.fromBoolean(true)
           )
         )
     }

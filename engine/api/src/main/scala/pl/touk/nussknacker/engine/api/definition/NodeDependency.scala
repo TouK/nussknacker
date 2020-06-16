@@ -14,15 +14,15 @@ case object OutputVariableNameDependency extends NodeDependency
 
 object Parameter {
 
-  def apply[T: ClassTag](name: String): Parameter = Parameter(name, Typed[T])
+  def apply[T: ClassTag](name: String, isRequiredParameter: Boolean = true): Parameter = Parameter(name, Typed[T], isRequiredParameter)
 
   // we want to have mandatory parameters by default because it can protect us from NPE in some cases)
-  def apply(name: String, typ: TypingResult): Parameter =
-    Parameter(name, typ, validators = List(MandatoryParameterValidator()))
+  def apply(name: String, typ: TypingResult, isRequiredParameter: Boolean): Parameter =
+    Parameter(name, typ, validators = List(MandatoryParameterValidator()), isRequiredParameter)
 
-  def apply(name: String, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
+  def apply(name: String, typ: TypingResult, validators: List[ParameterValidator], isRequiredParameter: Boolean): Parameter =
     Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty,
-      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
+      branchParam = false, isLazyParameter = false, isRequiredParameter = isRequiredParameter, scalaOptionParameter = false, javaOptionalParameter = false)
 
   @deprecated("Passing runtimeClass to Parameter.apply is deprecated in favor of passing isLazyParameter", "0.1.0")
   def apply(name: String,
@@ -33,7 +33,7 @@ object Parameter {
             additionalVariables: Map[String, TypingResult],
             branchParam: Boolean): Parameter = {
     val isLazyParameter = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
-    Parameter(name, typ, editor, validators, additionalVariables, branchParam, isLazyParameter,
+    Parameter(name, typ, editor, validators, additionalVariables, branchParam, isLazyParameter, isRequiredParameter = true,
       scalaOptionParameter = false, javaOptionalParameter = false)
   }
 
@@ -44,14 +44,14 @@ object Parameter {
   // you should redefine scalaOptionParameter and javaOptionalParameter
   def optional(name: String, typ: TypingResult): Parameter =
     Parameter(name, typ, editor = None, validators = List.empty, additionalVariables = Map.empty,
-      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
+      branchParam = false, isLazyParameter = false, isRequiredParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
 }
 
 object NotBlankParameter {
 
-  def apply(name: String, typ: TypingResult): Parameter =
-    Parameter(name, typ, validators = List(NotBlankParameterValidator()))
+  def apply(name: String, typ: TypingResult, isRequiredParameter: Boolean = true): Parameter =
+    Parameter(name, typ, validators = List(NotBlankParameterValidator()), isRequiredParameter)
 
 }
 
@@ -62,5 +62,6 @@ case class Parameter(name: String,
                      additionalVariables: Map[String, TypingResult],
                      branchParam: Boolean,
                      isLazyParameter: Boolean,
+                     isRequiredParameter: Boolean,
                      scalaOptionParameter: Boolean,
                      javaOptionalParameter: Boolean) extends NodeDependency

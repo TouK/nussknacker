@@ -14,7 +14,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntegerValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -152,13 +152,13 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         "environment" -> new UiAdditionalPropertyConfig(
           Some("test"),
           StringParameterEditor,
-          List(MandatoryParameterValidator()),
+          List(MandatoryParameterValidator(None, None)),
           Some("Environment")
         ),
         "maxEvents" -> new UiAdditionalPropertyConfig(
           None,
           StringParameterEditor,
-          List(LiteralParameterValidator.integerValidator),
+          List(LiteralIntegerValidator(None, None)),
           Some("Max events")
         ),
         "numberOfThreads" -> new UiAdditionalPropertyConfig(

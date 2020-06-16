@@ -8,12 +8,10 @@ import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, P
 object MandatoryValidatorExtractor extends ValidatorExtractor {
 
   override def extract(params: ValidatorExtractorParameters): Option[ParameterValidator] = {
-    if (params.isScalaOptionParameter || params.isJavaOptionalParameter) {
-      None
-    } else if (params.rawJavaParam.getAnnotation(classOf[Nullable]) != null) {
-      None
-    } else {
+    if (params.isRequiredParameter) {
       Some(MandatoryParameterValidator())
+    } else {
+      None
     }
   }
 

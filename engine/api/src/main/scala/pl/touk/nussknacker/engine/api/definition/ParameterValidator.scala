@@ -23,8 +23,8 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
   */
 @ConfiguredJsonCodec sealed trait ParameterValidator {
 
-  val priority: Option[Long] = Some(0)
-  val skipOnBlankIfRequired: Option[Boolean]
+  val priority: Option[Long]
+  val skipOnBlankIfNotRequired: Option[Boolean]
 
   def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit]
 }
@@ -33,11 +33,11 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object MandatoryParameterValidator {
   def apply(): ParameterValidator = {
-    MandatoryParameterValidator(skipOnBlankIfRequired = Some(false), Some(Long.MaxValue))
+    MandatoryParameterValidator(skipOnBlankIfNotRequired = Some(false), Some(Long.MaxValue))
   }
 }
 
-case class MandatoryParameterValidator(override val skipOnBlankIfRequired: Option[Boolean], override val priority: Option[Long]) extends ParameterValidator {
+case class MandatoryParameterValidator(override val skipOnBlankIfNotRequired: Option[Boolean], override val priority: Option[Long]) extends ParameterValidator {
   override def isValid(paramName: String, expression: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isNotBlank(expression)) valid(Unit) else invalid(error(paramName, nodeId.id))
 
@@ -51,11 +51,11 @@ case class MandatoryParameterValidator(override val skipOnBlankIfRequired: Optio
 
 object NotBlankParameterValidator {
   def apply(): ParameterValidator = {
-    NotBlankParameterValidator(skipOnBlankIfRequired = Some(false), Some(Long.MaxValue - 1))
+    NotBlankParameterValidator(skipOnBlankIfNotRequired = Some(false), Some(Long.MaxValue - 1))
   }
 }
 
-case class NotBlankParameterValidator(override val skipOnBlankIfRequired: Option[Boolean], override val priority: Option[Long]) extends ParameterValidator {
+case class NotBlankParameterValidator(override val skipOnBlankIfNotRequired: Option[Boolean], override val priority: Option[Long]) extends ParameterValidator {
 
   private final lazy val blankStringLiteralPattern: Pattern = Pattern.compile("'\\s*'")
 
@@ -76,11 +76,11 @@ case class NotBlankParameterValidator(override val skipOnBlankIfRequired: Option
 
 object FixedValuesValidator {
   def apply(possibleValues: List[FixedExpressionValue]): ParameterValidator = {
-    FixedValuesValidator(skipOnBlankIfRequired = Some(true), Some(0), possibleValues)
+    FixedValuesValidator(skipOnBlankIfNotRequired = Some(true), Some(0), possibleValues)
   }
 }
 
-case class FixedValuesValidator(override val skipOnBlankIfRequired: Option[Boolean], override val priority: Option[Long], possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
+case class FixedValuesValidator(override val skipOnBlankIfNotRequired: Option[Boolean], override val priority: Option[Long], possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
 
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
     val values = possibleValues.map(possibleValue => possibleValue.expression)
@@ -94,11 +94,11 @@ case class FixedValuesValidator(override val skipOnBlankIfRequired: Option[Boole
 
 object LiteralIntegerValidator {
   def apply(): ParameterValidator = {
-    LiteralIntegerValidator(skipOnBlankIfRequired = Some(true), Some(1))
+    LiteralIntegerValidator(skipOnBlankIfNotRequired = Some(true), Some(1))
   }
 }
 
-case class LiteralIntegerValidator(override val skipOnBlankIfRequired: Option[Boolean], override val priority: Option[Long]) extends ParameterValidator {
+case class LiteralIntegerValidator(override val skipOnBlankIfNotRequired: Option[Boolean], override val priority: Option[Long]) extends ParameterValidator {
 
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (Try(value.toInt).isSuccess) valid(Unit) else invalid(error(paramName, nodeId.id))
@@ -113,11 +113,11 @@ case class LiteralIntegerValidator(override val skipOnBlankIfRequired: Option[Bo
 
 object RegExpParameterValidator {
   def apply(pattern: String, message: String, description: String): ParameterValidator = {
-    RegExpParameterValidator(skipOnBlankIfRequired = Some(true), Some(1), pattern, message, description)
+    RegExpParameterValidator(skipOnBlankIfNotRequired = Some(true), Some(1), pattern, message, description)
   }
 }
 
-case class RegExpParameterValidator(override val skipOnBlankIfRequired: Option[Boolean], override val priority: Option[Long], pattern: String, message: String, description: String) extends ParameterValidator {
+case class RegExpParameterValidator(override val skipOnBlankIfNotRequired: Option[Boolean], override val priority: Option[Long], pattern: String, message: String, description: String) extends ParameterValidator {
 
   lazy val regexpPattern: Pattern = Pattern.compile(pattern)
 
@@ -131,11 +131,11 @@ case class RegExpParameterValidator(override val skipOnBlankIfRequired: Option[B
 
 object MinimalNumberValidator {
   def apply(minimalNumber: BigDecimal): ParameterValidator = {
-    MinimalNumberValidator(skipOnBlankIfRequired = Some(true), Some(0), minimalNumber)
+    MinimalNumberValidator(skipOnBlankIfNotRequired = Some(true), Some(0), minimalNumber)
   }
 }
 
-case class MinimalNumberValidator(override val skipOnBlankIfRequired: Option[Boolean], override val priority: Option[Long], minimalNumber: BigDecimal) extends ParameterValidator {
+case class MinimalNumberValidator(override val skipOnBlankIfNotRequired: Option[Boolean], override val priority: Option[Long], minimalNumber: BigDecimal) extends ParameterValidator {
 
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (Try(BigDecimal(value)).filter(_ >= minimalNumber).isSuccess)
@@ -153,11 +153,11 @@ case class MinimalNumberValidator(override val skipOnBlankIfRequired: Option[Boo
 
 object MaximalNumberValidator {
   def apply(maximalNumber: BigDecimal): MaximalNumberValidator = {
-    MaximalNumberValidator(skipOnBlankIfRequired = Some(true), Some(0), maximalNumber)
+    MaximalNumberValidator(skipOnBlankIfNotRequired = Some(true), Some(0), maximalNumber)
   }
 }
 
-case class MaximalNumberValidator(override val skipOnBlankIfRequired: Option[Boolean], override val priority: Option[Long], maximalNumber: BigDecimal) extends ParameterValidator {
+case class MaximalNumberValidator(override val skipOnBlankIfNotRequired: Option[Boolean], override val priority: Option[Long], maximalNumber: BigDecimal) extends ParameterValidator {
 
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (Try(BigDecimal(value)).filter(_ <= maximalNumber).isSuccess)

@@ -154,6 +154,7 @@ object UIObjectDefinition {
                                                      typ: TypingResult,
                                                      editor: ParameterEditor,
                                                      validators: List[ParameterValidator],
+                                                     isRequired: Boolean,
                                                      additionalVariables: Map[String, TypingResult],
                                                      branchParam: Boolean) {
 
@@ -168,6 +169,7 @@ object UIParameter {
       typ = parameter.typ,
       editor = ParameterEditorDeterminerChain(parameter, paramConfig).determineEditor(),
       validators = ParameterValidatorsDeterminerChain(paramConfig).determineValidators(parameter),
+      isRequired = parameter.isRequiredParameter,
       additionalVariables = parameter.additionalVariables,
       branchParam = parameter.branchParam
     )

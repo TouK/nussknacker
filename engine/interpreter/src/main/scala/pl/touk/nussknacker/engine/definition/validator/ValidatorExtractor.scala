@@ -11,6 +11,7 @@ trait ValidatorExtractor {
 
 case class ValidatorExtractorParameters(rawJavaParam: java.lang.reflect.Parameter,
                                         paramType: TypingResult,
+                                        isRequiredParameter: Boolean,
                                         isScalaOptionParameter: Boolean,
                                         isJavaOptionalParameter: Boolean,
                                         extractedEditor: Option[ParameterEditor])
