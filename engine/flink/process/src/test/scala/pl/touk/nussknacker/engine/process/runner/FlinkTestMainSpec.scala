@@ -406,7 +406,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       GraphBuilder.branch("join1", "joinBranchExpression", Some("input33"),
         List(
           "end1" -> List("value" -> "#input"),
-          "end2" -> List("value" -> "#input"),
+          "end2" -> List("value" -> "#input")
         ))
         .processorEnd("proc2", "logService", "all" -> "#input33.id")
     ))
