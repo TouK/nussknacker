@@ -8,8 +8,6 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
-//Right now looking for schema version only during compilation. In runtime we use schema of event record.
-//TODO: Serializer / Deserializer with schema from SchemaRegistry
 class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryProvider[T],
                                          kafkaConfig: KafkaConfig,
                                          topic: String,
@@ -19,7 +17,7 @@ class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryP
     schemaRegistryProvider
       .createSchemaRegistryClient
       .getFreshSchema(AvroUtils.valueSubject(topic), version)
-      .map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
+      .map(schema => AvroSchemaTypeDefinitionExtractor.typeDefinition(schema))
 
   override def deserializationSchema: KafkaDeserializationSchema[T] =
     schemaRegistryProvider.deserializationSchemaFactory.create(List(topic), version, kafkaConfig)
