@@ -32,6 +32,7 @@ class ExpressionSuggest extends React.Component {
     showValidation: PropTypes.bool,
     processingType: PropTypes.string,
     isMarked: PropTypes.bool,
+    isRequiredParameter: PropTypes.bool
   }
 
   customAceEditorCompleter = {
@@ -116,7 +117,7 @@ class ExpressionSuggest extends React.Component {
 
   render() {
     if (this.props.dataResolved) {
-      const {isMarked, showValidation, inputProps, validators} = this.props
+      const {isMarked, showValidation, inputProps, validators, isRequiredParameter} = this.props
       const {editorFocused, value} = this.state
       const THEME = "nussknacker"
 
@@ -166,7 +167,7 @@ class ExpressionSuggest extends React.Component {
               onBlur={this.setEditorFocus(false)}
             />
           </div>
-          {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
+          {showValidation && <ValidationLabels validators={validators} values={[value]} isOptionalParameter={!isRequiredParameter}/>}
         </React.Fragment>
       )
     } else {

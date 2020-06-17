@@ -20,7 +20,7 @@ const Variable = (props) => {
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+        validators={[mandatoryValueValidator(), errorValidator(errors, "id")]}
       />
       <LabeledInput
         renderFieldLabel={() => renderFieldLabel("Variable Name")}
@@ -29,7 +29,7 @@ const Variable = (props) => {
         isMarked={isMarked("varName")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "varName")]}
+        validators={[mandatoryValueValidator(), errorValidator(errors, "varName")]}
       />
       <EditableEditor
         fieldName="expression"

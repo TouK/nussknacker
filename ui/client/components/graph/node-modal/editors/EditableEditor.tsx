@@ -76,6 +76,7 @@ class EditableEditor extends React.Component<Props, State> {
           formatter={expressionObj.language === "spel" && spelFormatters[param?.typ.refClazzName] != null ?
             spelFormatters[param.typ.refClazzName] : null}
           showValidation={showValidation}
+          isRequiredParameter={param.isRequired}
         />
         {
             param?.editor?.type === EditorType.DUAL_PARAMETER_EDITOR && (

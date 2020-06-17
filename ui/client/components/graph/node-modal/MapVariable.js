@@ -24,7 +24,7 @@ const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readO
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+        validators={[(mandatoryValueValidator()), errorValidator(errors, "id")]}
       />
 
       <LabeledInput
@@ -34,7 +34,7 @@ const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readO
         isMarked={isMarked("varName")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "varName")]}
+        validators={[mandatoryValueValidator(), errorValidator(errors, "varName")]}
       />
 
       <Map

@@ -17,7 +17,7 @@ const FieldsSelect = (props) => {
     onChange(`${namespace}`, newFields)
   }
 
-  const validators = [mandatoryValueValidator]
+  const validators = [mandatoryValueValidator()]
 
   return (
     <div className="node-row">

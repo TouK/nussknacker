@@ -29,7 +29,7 @@ class GenerateTestDataDialog extends React.Component {
   }
 
   render() {
-    const validators = [literalIntegerValueValidator, mandatoryValueValidator]
+    const validators = [literalIntegerValueValidator(), mandatoryValueValidator()]
     return (
       <GenericModalDialog
         init={() => this.setState(this.initState)}

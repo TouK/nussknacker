@@ -138,7 +138,7 @@ const nameAlreadyExists = (clashedNames, name) => {
 }
 
 const prepareNameValidators = (clashedNames) =>  [
-  mandatoryValueValidator,
+  mandatoryValueValidator(),
   {
     isValid: (name) => !nameAlreadyExists(clashedNames, name),
     message: DialogMessages.valueAlreadyTaken,

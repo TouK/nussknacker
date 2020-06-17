@@ -171,7 +171,7 @@ export class NodeDetailsContent extends React.Component {
       case "Filter":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Name", "id", true, [mandatoryValueValidator(), errorValidator(fieldErrors, "id")])}
             {this.createExpressionField(
               "expression",
               "Expression",
@@ -186,7 +186,7 @@ export class NodeDetailsContent extends React.Component {
       case "Processor":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Name", "id", true, [mandatoryValueValidator(), errorValidator(fieldErrors, "id")])}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
@@ -213,7 +213,7 @@ export class NodeDetailsContent extends React.Component {
       case "SubprocessInput":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Name", "id", true, [mandatoryValueValidator(), errorValidator(fieldErrors, "id")])}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
               processDefinitionData={this.props.processDefinitionData}
@@ -247,7 +247,7 @@ export class NodeDetailsContent extends React.Component {
       case "CustomNode":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Name", "id", true, [mandatoryValueValidator(), errorValidator(fieldErrors, "id")])}
 
             {
               this.showOutputVar && this.createField(
@@ -321,21 +321,21 @@ export class NodeDetailsContent extends React.Component {
       case "Switch":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Name", "id", true, [mandatoryValueValidator(), errorValidator(fieldErrors, "id")])}
             {this.createExpressionField(
               "expression",
               "Expression",
               "expression",
               fieldErrors
             )}
-            {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
+            {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator(), errorValidator(fieldErrors, "exprVal")])}
             {this.descriptionField()}
           </div>
         )
       case "Split":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.createField("input", "Name", "id", true, [mandatoryValueValidator(), errorValidator(fieldErrors, "id")])}
             {this.descriptionField()}
           </div>
         )
@@ -472,7 +472,7 @@ export class NodeDetailsContent extends React.Component {
   sourceSinkCommon(toAppend, fieldErrors) {
     return (
       <div className="node-table-body">
-        {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "Id")])}
+        {this.createField("input", "Name", "id", true, [mandatoryValueValidator(), errorValidator(fieldErrors, "Id")])}
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>

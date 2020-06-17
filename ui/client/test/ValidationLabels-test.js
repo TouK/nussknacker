@@ -37,7 +37,7 @@ describe("test validation labels", () => {
     it(description, () => {
       //given
       const validators = [
-        mandatoryValueValidator,
+        mandatoryValueValidator(),
         errorValidator([backendError(errorType)], fieldName),
       ]
 

@@ -24,7 +24,7 @@ const SubprocessOutputDefinition = ({isMarked, node, removeElement, addElement, 
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+        validators={[mandatoryValueValidator(), errorValidator(errors, "id")]}
       />
 
       <LabeledInput
@@ -34,7 +34,7 @@ const SubprocessOutputDefinition = ({isMarked, node, removeElement, addElement, 
         isMarked={isMarked("outputName")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "outputName")]}
+        validators={[mandatoryValueValidator(), errorValidator(errors, "outputName")]}
       />
 
       <Map

@@ -12,7 +12,7 @@ export default function MapRow(props) {
       <MapKey
         rowKey={field}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator]}
+        validators={[mandatoryValueValidator()]}
         autofocus={false}
         isMarked={isMarked(paths)}
         readOnly={readOnly}
