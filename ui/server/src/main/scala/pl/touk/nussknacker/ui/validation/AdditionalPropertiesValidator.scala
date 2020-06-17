@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, NodeId, UnknownProperty}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.compile.Validations
+import pl.touk.nussknacker.engine.compile.ValidationUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.additionalproperty.AdditionalPropertyValidatorDeterminerChain
@@ -55,7 +55,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
       case property if validatorsByPropertyName.getOrElse(property._1, Nil).nonEmpty =>
         val validatorList = validatorsByPropertyName.getOrElse(property._1, Nil)
         val isParameterRequired = validatorList.contains(MandatoryParameterValidator())
-        Validations.validateWithPriorityGroups(property._1, property._2, isParameterRequired, validatorList, config.get(property._1).flatMap(_.label))
+        ValidationUtils.validateWithPriorityGroups(property._1, property._2, isParameterRequired, validatorList, config.get(property._1).flatMap(_.label))
     }
     errors.sequence.map(_ => Unit)
   }

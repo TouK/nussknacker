@@ -94,7 +94,6 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
     val result = validator.validate(process)
 
-    // propRegExp is not required, so should be validated if blank
     result.errors.processPropertiesErrors should matchPattern {
       case List() =>
     }
