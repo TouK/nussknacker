@@ -123,7 +123,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "unionWithEditors" -> all(JoinTransformerWithEditors),
     // types
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
-    "lastVariableWithFilter" -> all(LastVariableFilterTransformer)
+    "lastVariableWithFilter" -> all(LastVariableFilterTransformer),
+    "sendCommunication" -> all(DynamicParametersTransformer)
   )
 
   override def signals(processObjectDependencies: ProcessObjectDependencies) = Map(

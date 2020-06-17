@@ -22,6 +22,7 @@ Nussknacker versions
 * Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998), [#1007](https://github.com/TouK/nussknacker/pull/1007)
 * [#978](https://github.com/TouK/nussknacker/pull/978) Dynamic filter validation
 * [#996](https://github.com/TouK/nussknacker/pull/996) First version of GenericNodeTransformation
+* [#1001](https://github.com/TouK/nussknacker/pull/1001) First version dynamic parameters on UI
 
 0.1.2
 ------------------------

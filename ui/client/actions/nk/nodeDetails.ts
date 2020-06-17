@@ -1,6 +1,6 @@
 import {ThunkAction, ThunkDispatch} from "../reduxTypes"
 import HttpService from "../../http/HttpService"
-import {NodeValidationError, PropertiesType, VariableTypes,NodeType} from "../../types"
+import {NodeValidationError, PropertiesType, VariableTypes, NodeType, UIParameter} from "../../types"
 
 import {debounce} from "lodash"
 
@@ -8,7 +8,7 @@ export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validatio
 export type NodeDetailsActions = NodeValidationUpdated
 
 export type ValidationData = {
-    parameters? : Map<string, any>,
+    parameters? : Map<string, UIParameter>,
     validationErrors: NodeValidationError[],
     validationPerformed: boolean,
 }
@@ -32,8 +32,13 @@ function validate(processId: string, request: ValidationRequest, dispatch: Thunk
 const debouncedValidate = debounce(validate, 500)
 
 export function updateNodeData(processId: string, variableTypes: VariableTypes, nodeData: NodeType, processProperties: PropertiesType): ThunkAction {
-  return (dispatch) => debouncedValidate(processId, {
-    nodeData, variableTypes, processProperties}, dispatch)
+  //groups and Properties are "special types" which are not compatible with NodeData in BE
+  if (nodeData.type && nodeData.type !== "_group" && nodeData.type !== "Properties") {
+    return (dispatch) => debouncedValidate(processId, {
+      nodeData, variableTypes, processProperties}, dispatch)
+  } else {
+    return () => {/* ignore invocation */}
+  }
 
 }
  

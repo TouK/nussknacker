@@ -3,17 +3,18 @@ import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableEditor from "../EditableEditor"
 import {EditorType} from "./Editor"
+import {NodeType, UIParameter} from "../../../../../types"
 
 type Props = {
   fieldName: string,
   fieldLabel: string,
   exprPath: string,
   isEditMode: boolean,
-  editedNode: $TodoType,
+  editedNode: NodeType,
   isMarked: Function,
   showValidation: boolean,
   showSwitch: boolean,
-  nodeObjectDetails: $TodoType,
+  parameterDefinition: UIParameter,
   setNodeDataAt: Function,
   testResultsToShow: $TodoType,
   testResultsToHide: $TodoType,
@@ -28,14 +29,14 @@ class ExpressionField extends React.Component<Props> {
   render() {
     const {
       fieldName, fieldLabel, exprPath, isEditMode, editedNode, isMarked, showValidation, showSwitch,
-      nodeObjectDetails, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel, fieldType,
+      parameterDefinition, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel, fieldType,
       errors,
     } = this.props
     const readOnly = !isEditMode
     const exprTextPath = `${exprPath}.expression`
     const expressionObj = _.get(editedNode, exprPath)
     const marked = isMarked(exprTextPath)
-    const editor = this.findParamByName(fieldName)?.editor || {}
+    const editor = parameterDefinition?.editor || {}
 
     if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR)
       return (
@@ -43,7 +44,7 @@ class ExpressionField extends React.Component<Props> {
           fieldType={EditorType.FIXED_VALUES_PARAMETER_EDITOR}
           fieldLabel={fieldLabel}
           fieldName={fieldName}
-          param={this.findParamByName(fieldLabel)}
+          param={parameterDefinition}
           expressionObj={expressionObj}
           renderFieldLabel={renderFieldLabel}
           values={editor.possibleValues}
@@ -65,7 +66,7 @@ class ExpressionField extends React.Component<Props> {
       >
         <EditableEditor
           fieldType={fieldType}
-          param={this.findParamByName(fieldLabel)}
+          param={parameterDefinition}
           editorName={EditorType.RAW_PARAMETER_EDITOR}
           renderFieldLabel={renderFieldLabel}
           fieldLabel={fieldLabel}
@@ -81,9 +82,6 @@ class ExpressionField extends React.Component<Props> {
       </ExpressionTestResults>
     )
   }
-
-  findParamByName = (paramName) => _.get(this.props, "nodeObjectDetails.parameters", [])
-    .find((param) => param.name === paramName)
 }
 
 export default ExpressionField
