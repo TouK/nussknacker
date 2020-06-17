@@ -6,22 +6,31 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.avro.AvroUtils
 
-object AvroSchemaTypeDefinitionExtractor {
+/**
+  * Right now we're doing approximate type generation to avoid false positives in validation,
+  * so now we add option to skip nullable fields.
+  *
+  * @TODO In future should do it in another way
+  *
+  * @param skippNullableFields
+  */
+class AvroSchemaTypeDefinitionExtractor(skippNullableFields: Boolean) {
 
   import collection.JavaConverters._
 
   // see BestEffortAvroEncoder for underlying avro types
   def typeDefinition(schema: Schema): TypingResult = {
     schema.getType match {
-      case Schema.Type.RECORD =>
+      case Schema.Type.RECORD => {
+        val fields = schema.getFields.asScala.filterNot(field => skippNullableFields && field.schema().isNullable)
         TypedObjectTypingResult(
-          schema.getFields.asScala.map { field =>
+          fields.map { field =>
             field.name() -> typeDefinition(field.schema())
           }.toMap,
           Typed.typedClass[GenericRecord]
         )
+      }
       case Schema.Type.ENUM =>
         Typed[EnumSymbol]
       case Schema.Type.ARRAY =>
@@ -51,5 +60,17 @@ object AvroSchemaTypeDefinitionExtractor {
         Typed.empty
     }
   }
+}
 
+object AvroSchemaTypeDefinitionExtractor {
+
+  private lazy val withoutOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skippNullableFields = true)
+
+  private lazy val withOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skippNullableFields = false)
+
+  def typeDefinitionWithoutNullableFields(schema: Schema): TypingResult =
+    withoutOptionallyFieldsExtractor.typeDefinition(schema)
+
+  def typeDefinition(schema: Schema): TypingResult =
+      withOptionallyFieldsExtractor.typeDefinition(schema)
 }

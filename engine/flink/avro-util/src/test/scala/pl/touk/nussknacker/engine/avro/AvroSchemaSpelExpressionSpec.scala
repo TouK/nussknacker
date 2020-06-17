@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.avro.schema.PaymentV1
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -123,6 +124,13 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[Int]("#input.union", ctx) should be ('valid)
     parse[Long]("#input.union", ctx) should be ('valid)
     parse[CharSequence]("#input.union", ctx) should be ('invalid)
+  }
+
+  it("should skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
+    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV1.schema)
+    val ctx = ValidationContext.empty.withVariable("input", typeResult).toOption.get
+
+    parse[Int]("#input.vat", ctx) should be ('invalid)
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
