@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.nodevalidation.{GenericNodeTransformationValidator, TransformationResult}
-import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
+import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.compiledgraph.part.PotentiallyStartPart
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -30,12 +30,13 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.graph.node.{Sink => _, Source => _, _}
+import pl.touk.nussknacker.engine.graph.node.{Sink, Source => _, _}
 import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam, node}
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.end.NormalEnd
 import pl.touk.nussknacker.engine.splittedgraph.part._
+import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
@@ -186,7 +187,7 @@ protected trait ProcessCompilerBase {
 
     source match {
       case SourcePart(node@splittednode.SourceNode(sourceData: SourceNodeData, _), _, _) =>
-        SourceNodeCompiler.compileSourcePart(source, node, sourceData)
+        SourceNodeCompiler.compileSourcePart(source, sourceData)
       case SourcePart(srcNode@splittednode.SourceNode(data: Join, _), _, _) =>
         val node = srcNode.asInstanceOf[splittednode.SourceNode[Join]]
         CustomNodeCompiler.compileCustomNodePart(source, node, data, Right(branchEndContexts))
@@ -194,23 +195,43 @@ protected trait ProcessCompilerBase {
 
   }
 
+  private def compileParts(parts: List[SubsequentPart], ctx: Map[String, ValidationContext])
+                          (implicit metaData: MetaData): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
+    import CompilationResult._
+    parts.map(p =>
+      ctx.get(p.id).map(compileSubsequentPart(p, _)).getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
+    ).sequence
+  }
+
+  private def compileSubsequentPart(part: SubsequentPart, ctx: ValidationContext)
+                     (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SubsequentPart] = {
+    implicit val nodeId: NodeId = NodeId(part.id)
+    part match {
+      case SinkPart(node) =>
+        SinkNodeCompiler.compileSinkPart(node, ctx)
+      case CustomNodePart(node@splittednode.EndingNode(data), _, _) =>
+        CustomNodeCompiler.compileEndingCustomNodePart(node, data, ctx)
+      case CustomNodePart(node@splittednode.OneOutputSubsequentNode(data, _), _, _) =>
+        CustomNodeCompiler.compileCustomNodePart(part, node, data, Left(ctx))
+    }
+  }
+
   object SourceNodeCompiler {
 
-    def compileSourcePart(part: SourcePart, node: splittednode.SourceNode[StartingNodeData],
-                          sourceData: SourceNodeData)
+    def compileSourcePart(part: SourcePart, sourceData: SourceNodeData)
                          (implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.part.SourcePart] = {
       val (typingInfo, initialCtx, compiledSource) = compileNode(sourceData)
 
-      val validatedSource = sub.validate(node, initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
+      val validatedSource = sub.validate(part.node, initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
       val typesForParts = validatedSource.typing.mapValues(_.inputValidationContext)
-      val nodeTypingInfo = Map(node.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo))
+      val nodeTypingInfo = Map(part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo))
 
       CompilationResult.map4(
         validatedSource,
         compileParts(part.nextParts, typesForParts),
         CompilationResult(initialCtx),
         CompilationResult(nodeTypingInfo, compiledSource)) { (_, nextParts, ctx, obj) =>
-        compiledgraph.part.SourcePart(obj, splittednode.SourceNode(sourceData, node.next), ctx, nextParts, part.ends)
+        compiledgraph.part.SourcePart(obj, splittednode.SourceNode(sourceData, part.node.next), ctx, nextParts, part.ends)
       }
     }
 
@@ -219,9 +240,9 @@ protected trait ProcessCompilerBase {
       case a@pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
         sourceFactories.get(ref.typ) match {
           case Some(definition) =>
-            compileObjectWithTransformation[Source[_]](a, Left(contextWithOnlyGlobalVariables), Some(Interpreter.InputParamName), definition, compiled => {
-              Valid(contextWithOnlyGlobalVariables.copy(localVariables = Map(Interpreter.InputParamName -> compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown))))
-            })
+            def defaultContextTransformation(compiled: Option[Any]) =
+              contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown))
+            compileObjectWithTransformation[Source[_]](a, Left(contextWithOnlyGlobalVariables), Some(Interpreter.InputParamName), definition, defaultContextTransformation)
           case None =>
             val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
             //TODO: is this default behaviour ok?
@@ -239,48 +260,35 @@ protected trait ProcessCompilerBase {
 
   }
 
-  private def compileParts(parts: List[SubsequentPart], ctx: Map[String, ValidationContext])
-                          (implicit metaData: MetaData): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
-    import CompilationResult._
-    parts.map(p =>
-      ctx.get(p.id).map(compile(p, _)).getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
-    ).sequence
-  }
+  object SinkNodeCompiler {
 
-  private def compile(part: SubsequentPart, ctx: ValidationContext)
-                     (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SubsequentPart] = {
-    implicit val nodeId: NodeId = NodeId(part.id)
-    part match {
-      case SinkPart(node) =>
-        val (typingInfo, compiledSink) = compile(node.data, ctx)
-        val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo))
-        CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
-          compiledgraph.part.SinkPart(obj, node, ctx)
-        )
-      case CustomNodePart(node@splittednode.EndingNode(data), _, _) =>
-        CustomNodeCompiler.compileEndingCustomNodePart(part, node, data, ctx)
-      case CustomNodePart(node@splittednode.OneOutputSubsequentNode(data, _), _, _) =>
-        CustomNodeCompiler.compileCustomNodePart(part, node, data, Left(ctx))
+    def compileSinkPart(node: EndingNode[Sink], ctx: ValidationContext)(implicit metaData: MetaData, nodeId: NodeId): CompilationResult[part.SinkPart] = {
+      val (typingInfo, compiledSink) = compile(node.data, ctx)
+      val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo))
+      CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
+        compiledgraph.part.SinkPart(obj, node, ctx)
+      )
     }
-  }
 
-  private def compile(sink: node.Sink, ctx: ValidationContext)
-                     (implicit nodeId: NodeId,
-                      metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, api.process.Sink]) = {
-    val ref = sink.ref
-    val (typeInfo, _, validSinkFactory) = sinkFactories.get(ref.typ) match {
-      case Some(definition) =>
-        compileObjectWithTransformation[Sink](sink, Left(ctx), None, definition._1, (_:Any) => Valid(ctx))
-      case None =>
-        val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
-        (Map.empty[String, ExpressionTypingInfo], error, error)
+    private def compile(sink: node.Sink, ctx: ValidationContext)
+                       (implicit nodeId: NodeId,
+                        metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, api.process.Sink]) = {
+      val ref = sink.ref
+      sinkFactories.get(ref.typ) match {
+        case Some(definition) =>
+          val (typeInfo, _, validSinkFactory) =
+            compileObjectWithTransformation[api.process.Sink](sink, Left(ctx), None, definition._1, (_:Any) => Valid(ctx))
+          (typeInfo, validSinkFactory)
+        case None =>
+          val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
+          (Map.empty[String, ExpressionTypingInfo], error)
+      }
     }
-    (typeInfo, validSinkFactory)
   }
 
   object CustomNodeCompiler {
 
-    def compileEndingCustomNodePart(part: ProcessPart, node: splittednode.EndingNode[CustomNode], data: CustomNodeData,
+    def compileEndingCustomNodePart(node: splittednode.EndingNode[CustomNode], data: CustomNodeData,
                                     ctx: ValidationContext)
                                    (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
       val (typingInfo, validatedNextCtx, compiledNode) = compileCustomNodeObject(data, Left(ctx), ending = true)
@@ -356,10 +364,7 @@ protected trait ProcessCompilerBase {
             case (None, Some(_)) => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
           }
       }
-
-
     }
-
   }
 
   private def compileObjectWithTransformation[T](data: NodeData with WithParameters,
@@ -401,6 +406,8 @@ protected trait ProcessCompilerBase {
           .groupBy(_.branchId).keys.map(k => k -> branchEndContexts.contextForId(k)).toMap
         // copying global variables because custom transformation may override them -> todo in ValidationContext
         transformation.transform(contexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
+      case (Some(transformation), ctx) =>
+        Invalid(FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")).toValidatedNel
       case (None, _) =>
         legacy(cNode)
     }

@@ -43,6 +43,8 @@ object ProcessTestHelpers {
           .register(new StreamExecutionEnvironment(env), process, processVersion)
 
         MockService.clear()
+        SinkForStrings.clear()
+        SinkForInts.clear()
         val id = env.execute(process.id)
         env.waitForJobState(id.getJobID, process.id, ExecutionState.FINISHED)()
       } finally {
