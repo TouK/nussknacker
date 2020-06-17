@@ -13,11 +13,12 @@ class SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider: SchemaRegistryP
                                          topic: String,
                                          version: Option[Int]) extends KafkaAvroSchemaProvider[T] {
 
+  //For typing we use all fields from schema (also optionally fields)
   override def typeDefinition: Validated[SchemaRegistryError, typing.TypingResult] =
     schemaRegistryProvider
       .createSchemaRegistryClient
       .getFreshSchema(AvroUtils.valueSubject(topic), version)
-      .map(schema => AvroSchemaTypeDefinitionExtractor.typeDefinition(schema))
+      .map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
 
   override def deserializationSchema: KafkaDeserializationSchema[T] =
     schemaRegistryProvider.deserializationSchemaFactory.create(List(topic), version, kafkaConfig)
