@@ -442,7 +442,7 @@ object SampleNodes {
       case TransformationStep(Nil, _) => NextParameters(initialParameters)
       case TransformationStep(("par1", DefinedEagerParameter(value: String, _))::("lazyPar1", _)::Nil, None) =>
         val split = value.split(",").toList
-        NextParameters(split.map(Parameter(_, Unknown)), state = Some(split))
+        NextParameters(split.map(Parameter(_, Unknown, isRequiredParameter = true)), state = Some(split))
       case TransformationStep(("par1", FailedToDefineParameter)::("lazyPar1", _)::Nil, None) =>
         outputParameters(context, dependencies, Nil)
       case TransformationStep(("par1", _)::("lazyPar1", _)::rest, Some(names)) if rest.map(_._1) == names =>

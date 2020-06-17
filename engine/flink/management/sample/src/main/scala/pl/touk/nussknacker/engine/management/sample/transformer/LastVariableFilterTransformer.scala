@@ -24,13 +24,13 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
   private val conditionParameterName = "condition"
 
-  private val valueParameter = Parameter(valueParameterName, Unknown).copy(isLazyParameter = true)
+  private val valueParameter = Parameter(valueParameterName, Unknown, isRequiredParameter = true).copy(isLazyParameter = true)
 
   private val keyByParameterName = "keyBy"
 
-  private val keyByParameter = Parameter(keyByParameterName, Typed[String]).copy(isLazyParameter = true)
+  private val keyByParameter = Parameter(keyByParameterName, Typed[String], isRequiredParameter = true).copy(isLazyParameter = true)
 
-  private def conditionParameter(valueType: TypingResult) = Parameter(conditionParameterName, Typed[Boolean])
+  private def conditionParameter(valueType: TypingResult) = Parameter(conditionParameterName, Typed[Boolean], isRequiredParameter = true)
     .copy(isLazyParameter = true, additionalVariables = Map("current" -> valueType, "previous" -> valueType))
 
   type State = Nothing
