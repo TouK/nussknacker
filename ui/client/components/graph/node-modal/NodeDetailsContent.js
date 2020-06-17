@@ -231,7 +231,7 @@ export class NodeDetailsContent extends React.Component {
               editedNode={this.state.editedNode}
               savedNode={this.state.editedNode}
               setNodeState={newParams => this.setNodeDataAt("ref.parameters", newParams)}
-              createListField={(param, index) => this. createParameterExpressionField(
+              createListField={(param, index) => this.createParameterExpressionField(
                 param.name,
                 "expression",
                 `ref.parameters[${index}]`,
@@ -540,7 +540,7 @@ export class NodeDetailsContent extends React.Component {
     return this.doCreateExpressionField(fieldName, fieldLabel, `${expressionProperty}`, fieldErrors)
   }
 
-  //
+  //this is for "dynamic" parameters in sources, sinks, services etc.
   createParameterExpressionField = (fieldName, expressionProperty, listFieldPath, fieldErrors, fieldType) => {
     return this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`, fieldErrors, fieldType)
   }
