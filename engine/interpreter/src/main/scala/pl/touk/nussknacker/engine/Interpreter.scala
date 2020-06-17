@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -52,29 +53,27 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
 
   private def interpretNode(node: Node, ctx: Context)
                            (implicit metaData: MetaData, executor: ExecutionContext): Future[List[InterpretationResult]] = {
-    implicit val nodeImplicit = node
+    implicit val nodeImplicit: Node = node
     listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     node match {
       case Source(_, next) =>
         interpretNext(next, ctx)
       case VariableBuilder(_, varName, Right(fields), next) =>
-        createOrUpdateVariable(ctx, varName, fields).flatMap(interpretNext(next, _))
+        val variable = createOrUpdateVariable(ctx, varName, fields)
+        interpretNext(next, variable)
       case VariableBuilder(_, varName, Left(expression), next) =>
-        expressionEvaluator.evaluate[Any](expression, varName, node.id, ctx).flatMap { valueWithModifiedContext =>
-          interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
-        }
+        val valueWithModifiedContext = expressionEvaluator.evaluate[Any](expression, varName, node.id, ctx)
+        interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
       case SubprocessStart(_, params, next) =>
-        expressionEvaluator.evaluateParameters(params, ctx).flatMap { case (newCtx, vars) =>
-          interpretNext(next, newCtx.pushNewContext(vars))
-        }
+        val (newCtx, vars) = expressionEvaluator.evaluateParameters(params, ctx)
+        interpretNext(next, newCtx.pushNewContext(vars))
       case SubprocessEnd(_, varName, fields, next) =>
-        createOrUpdateVariable(ctx, varName, fields).flatMap { updatedCtx =>
-          val parentContext = ctx.popContext
-          val newParentContext = updatedCtx.variables.get(varName).map { value =>
-            parentContext.withVariable(varName, value)
-          }.getOrElse(parentContext)
-          interpretNext(next, newParentContext)
-        }
+        val updatedCtx = createOrUpdateVariable(ctx, varName, fields)
+        val parentContext = ctx.popContext
+        val newParentContext = updatedCtx.variables.get(varName).map { value =>
+          parentContext.withVariable(varName, value)
+        }.getOrElse(parentContext)
+        interpretNext(next, newParentContext)
       case Processor(_, ref, next, false) =>
         invoke(ref, None, ctx).flatMap {
           case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)
@@ -94,29 +93,26 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
             interpretNext(next, newCtx.withVariable(outName, out))
         }
       case Filter(_, expression, nextTrue, nextFalse, disabled) =>
-        val expressionResult = if (disabled) Future.successful(ValueWithContext(true, ctx)) else evaluateExpression[Boolean](expression, ctx, expressionName)
-        expressionResult.flatMap { valueWithModifiedContext =>
-          if (disabled || valueWithModifiedContext.value)
-            interpretNext(nextTrue, valueWithModifiedContext.context)
-          else
-            interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
-        }
+        val valueWithModifiedContext = if (disabled) ValueWithContext(true, ctx) else evaluateExpression[Boolean](expression, ctx, expressionName)
+        if (disabled || valueWithModifiedContext.value)
+          interpretNext(nextTrue, valueWithModifiedContext.context)
+        else
+          interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
       case Switch(_, expression, exprVal, nexts, defaultNext) =>
-        val valueWithModifiedContext = evaluateExpression[Any](expression, ctx, expressionName)
-        val newCtx = valueWithModifiedContext.map( vmc =>
-          (vmc.context.withVariable(exprVal, vmc.value), Option.empty[Next]))
+        val vmc = evaluateExpression[Any](expression, ctx, expressionName)
+        val newCtx = (vmc.context.withVariable(exprVal, vmc.value), Option.empty[Next])
         nexts.zipWithIndex.foldLeft(newCtx) { case (acc, (casee, i)) =>
-          acc.flatMap {
-            case (accCtx, None) => evaluateExpression[Boolean](casee.expression, accCtx, s"$expressionName-$i").map { valueWithModifiedContext =>
+          acc match {
+            case (accCtx, None) =>
+              val valueWithModifiedContext = evaluateExpression[Boolean](casee.expression, accCtx, s"$expressionName-$i")
               if (valueWithModifiedContext.value) {
                 (valueWithModifiedContext.context, Some(casee.node))
               } else {
                 (valueWithModifiedContext.context, None)
               }
-            }
-            case a => Future.successful(a)
+            case a => a
           }
-        }.flatMap {
+        } match {
           case (accCtx, Some(nextNode)) =>
             interpretNext(nextNode, accCtx)
           case (accCtx, None) =>
@@ -125,22 +121,21 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
       case Sink(id, _, _, true) =>
         Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
       case Sink(id, ref, optionalExpression, false) =>
-        (optionalExpression match {
+        val valueWithModifiedContext = (optionalExpression match {
           case Some((expression, _)) =>
             evaluateExpression[Any](expression, ctx, expressionName)
           case None =>
-            Future.successful(ValueWithContext(outputValue(ctx), ctx))
-        }).map { valueWithModifiedContext =>
-          listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
-          List(InterpretationResult(EndReference(id), valueWithModifiedContext))
-        }
+            ValueWithContext(outputValue(ctx), ctx)
+        })
+        listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
+        Future.successful(List(InterpretationResult(EndReference(id), valueWithModifiedContext)))
       case BranchEnd(e) =>
         Future.successful(List(InterpretationResult(e.joinReference, null, ctx)))
       case CustomNode(_, next) =>
         interpretNext(next, ctx)
       case EndingCustomNode(id) =>
         Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
-      case SplitNode(id, nexts) =>
+      case SplitNode(_, nexts) =>
         Future.sequence(nexts.map(interpretNext(_, ctx))).map(_.flatten)
     }
   }
@@ -168,35 +163,33 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
   ctx.getOrElse[Any](OutputParamName, new java.util.HashMap[String, Any]())
 
   private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])
-                                    (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Future[Context] = {
+                                    (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Context = {
     val contextWithInitialVariable = ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
 
-    fields.foldLeft(Future.successful(contextWithInitialVariable)) {
+    fields.foldLeft(contextWithInitialVariable) {
       case (context, field) =>
-        context.flatMap(expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, _)).map { valueWithContext =>
-          valueWithContext.context.modifyVariable[java.util.Map[String, Any]](varName, { m =>
-            val newMap = new java.util.HashMap[String, Any](m)
-            newMap.put(field.name, valueWithContext.value)
-            newMap
-          })
-        }
+      val valueWithContext = expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, context)
+        valueWithContext.context.modifyVariable[java.util.Map[String, Any]](varName, { m =>
+          val newMap = new java.util.HashMap[String, Any](m)
+          newMap.put(field.name, valueWithContext.value)
+          newMap
+        })
     }
   }
 
   private def invoke(ref: ServiceRef, outputVariableNameOpt: Option[String], ctx: Context)
                     (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
-    expressionEvaluator.evaluateParameters(ref.parameters, ctx).flatMap { case (newCtx, preparedParams) =>
-      val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id, outputVariableNameOpt))
-      resultFuture.onComplete { result =>
-        //TODO: what about implicit??
-        listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
-      }
-      resultFuture.map(ValueWithContext(_, newCtx))
+    val (newCtx, preparedParams) = expressionEvaluator.evaluateParameters(ref.parameters, ctx)
+    val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id, outputVariableNameOpt))
+    resultFuture.onComplete { result =>
+      //TODO: what about implicit??
+      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
+    resultFuture.map(ValueWithContext(_, newCtx))(SynchronousExecutionContext.ctx)
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
-                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node):  Future[ValueWithContext[R]] = {
+                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node):  ValueWithContext[R] = {
     expressionEvaluator.evaluate(expr, name, node.id, ctx)
   }
 

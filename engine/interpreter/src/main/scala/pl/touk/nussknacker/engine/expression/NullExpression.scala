@@ -13,6 +13,6 @@ case class NullExpression(original: String,
                           flavour: Flavour) extends api.expression.Expression with LazyLogging {
   override def language: String = flavour.languageId
 
-  override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]]
-  = Future.successful(ValueWithLazyContext(null.asInstanceOf[T], ctx.lazyContext))
+  override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T]
+  = ValueWithLazyContext(null.asInstanceOf[T], ctx.lazyContext)
 }

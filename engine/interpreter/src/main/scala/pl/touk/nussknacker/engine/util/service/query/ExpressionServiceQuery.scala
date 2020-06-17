@@ -33,13 +33,9 @@ class ExpressionServiceQuery(
   def invoke(serviceName: String,params: List[evaluatedparam.Parameter])
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
     expressionCompiler.compileValidatedObjectParameters(params, ValidationContext.empty) match {
-      case Valid(p) => expressionEvaluator
-        .evaluateParameters(p, ctx)(nodeId,ServiceQuery.jobData.metaData)
-        .flatMap {
-          case (_, vars) =>
-            serviceQuery
-              .invoke(serviceName, vars.toList: _*)
-        }
+      case Valid(p) =>
+        val (_, vars) = expressionEvaluator.evaluateParameters(p, ctx)(nodeId,ServiceQuery.jobData.metaData)
+        serviceQuery.invoke(serviceName, vars.toList: _*)
       case Invalid(e) => Future.failed(ParametersCompilationException(e))
     }
   }

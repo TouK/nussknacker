@@ -100,12 +100,10 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
     new HsqlSqlQueryableDataBase(original, columnModels)
   }
 
-  override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = {
-    Future.successful {
-      //TODO: optimize if needed
-      val result = evaluate(ctx.variables ++ globals).asJava.asInstanceOf[T]
-      ValueWithLazyContext(result, ctx.lazyContext)
-    }
+  override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T] = {
+    //TODO: optimize if needed
+    val result = evaluate(ctx.variables ++ globals).asJava.asInstanceOf[T]
+    ValueWithLazyContext(result, ctx.lazyContext)
   }
 
   private def evaluate[T](variables: Map[String, Any]): List[TypedMap] = {
