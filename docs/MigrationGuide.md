@@ -27,7 +27,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
       }
     }
   ```
-* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998), [#1007](https://github.com/TouK/nussknacker/pull/1007)
+* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998), [#1007](https://github.com/TouK/nussknacker/pull/1007), [#1014](https://github.com/TouK/nussknacker/pull/1014)
 
 API for `KafkaAvroSourceFactory` was changed:
 
