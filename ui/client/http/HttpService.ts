@@ -1,9 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
+import {AxiosError} from "axios"
 import FileSaver from "file-saver"
 import api from "../api"
+import {ProcessStateType, ProcessType} from "../components/Process/types"
 import {API_URL} from "../config"
-import {ProcessType, ProcessStateType} from "../components/Process/types"
-import {AxiosError} from "axios"
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -18,6 +18,8 @@ export type FetchProcessQueryParams = Partial<{
   isArchived: boolean,
   isDeployed: boolean,
 }>
+
+export type StatusesType = Record<ProcessType["name"], ProcessStateType>
 
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
 class HttpService {
@@ -137,7 +139,7 @@ class HttpService {
   }
 
   fetchProcessesStates() {
-    return api.get<ProcessStateType[]>("/processes/status")
+    return api.get<StatusesType>("/processes/status")
       .catch(error => Promise.reject(this.addError("Cannot fetch statuses", error)))
   }
 
@@ -196,7 +198,7 @@ class HttpService {
     window.open(`${API_URL}/processes/${processId}/${processVersionId}/activity/attachments/${attachmentId}`)
   }
 
-  changeProcessName(processName, newProcessName) {
+  changeProcessName(processName, newProcessName): Promise<boolean> {
     if (newProcessName == null || newProcessName === "") {
       this.addErrorMessage("Failed to change process name:", "Name cannot be empty", true)
       return Promise.resolve(false)

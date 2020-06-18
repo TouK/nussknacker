@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import React, {PropsWithChildren} from "react"
-import styles from "./processesTable.styl"
 import {AddProcessButton} from "../components/table/AddProcessButton"
+import styles from "./processesTable.styl"
 
 type Props = {
   allowAdd?: boolean,

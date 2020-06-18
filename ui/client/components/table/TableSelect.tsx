@@ -2,7 +2,16 @@ import React from "react"
 import Select from "react-select"
 import "../../stylesheets/processes.styl"
 
-export default class TableSelect extends React.Component {
+type Props = {
+  defaultValue: $TodoType,
+  onChange: $TodoType,
+  options: $TodoType[],
+  isMulti: boolean,
+  isSearchable: boolean,
+  placeholder: string,
+}
+
+export default class TableSelect extends React.Component<Props> {
 
   customSelectStyles = {
     control: styles => ({

@@ -1,9 +1,12 @@
-import SearchFilter from "../components/table/SearchFilter"
+import {isEqual} from "lodash"
+import React, {useEffect} from "react"
 import {CategoriesFilter} from "../components/table/CategoriesFilter"
-import {SubprocessFilter} from "../components/table/SubprocessFilter"
 import {DeployedFilter} from "../components/table/DeployedFilter"
-import React, {useState, useEffect, useCallback} from "react"
-import {isEqual, omitBy} from "lodash"
+import SearchFilter from "../components/table/SearchFilter"
+import {SubprocessFilter} from "../components/table/SubprocessFilter"
+import {ensureArray} from "./EnsureArray"
+import {usePrevious} from "./hooks/usePrevious"
+import {useStateInSync} from "./hooks/useStateInSync"
 
 export enum SearchItem {
   categories = "categories",
@@ -11,62 +14,58 @@ export enum SearchItem {
   isDeployed = "isDeployed",
 }
 
-export type FiltersState = {
-  search?: string,
-  categories?: string[],
-  isSubprocess?: boolean,
-  isDeployed?: boolean,
-}
+export type CategoryName = string
+
+export type FiltersState = Partial<{
+  search: string,
+  categories: CategoryName[],
+  isSubprocess: boolean,
+  isDeployed: boolean,
+}>
 
 type Props = {
   filters: SearchItem[],
   value: FiltersState,
-  onChange: (value: FiltersState) => void,
-}
-
-function getDiff(current: FiltersState, base: FiltersState): Partial<FiltersState> {
-  return omitBy(current, (value, key) => isEqual(value, base[key]))
+  onChange: (value: FiltersState, prevValue: FiltersState) => void,
 }
 
 export function TableFilters(props: Props) {
-  const {filters} = props
+  const {filters = []} = props
   const {value, onChange} = props
 
-  const [state, setState] = useState<FiltersState>(value)
-  const updateState = useCallback((partial: Partial<FiltersState>) => {
-    setState(prev => ({...prev, ...partial}))
-  }, [])
+  const [state, setState] = useStateInSync<FiltersState>(value)
+  const prev = usePrevious(state)
 
   useEffect(() => {
     if (!isEqual(value, state)) {
-      onChange(getDiff(state, value))
+      onChange(state, prev)
     }
   }, [state])
 
   return (
     <>
       <SearchFilter
-        onChange={search => updateState({search})}
+        onChange={search => setState(s => ({...s, search}))}
         value={state.search}
       />
 
       {filters.includes(SearchItem.categories) && (
         <CategoriesFilter
-          onChange={categories => updateState({categories})}
-          value={state.categories}
+          onChange={categories => setState(s => ({...s, categories}))}
+          value={ensureArray(state.categories)}
         />
       )}
 
       {filters.includes(SearchItem.isSubprocess) && (
         <SubprocessFilter
-          onChange={isSubprocess => updateState({isSubprocess})}
+          onChange={isSubprocess => setState(s => ({...s, isSubprocess}))}
           value={state.isSubprocess}
         />
       )}
 
       {filters.includes(SearchItem.isDeployed) && (
         <DeployedFilter
-          onChange={isDeployed => updateState({isDeployed})}
+          onChange={isDeployed => setState(s => ({...s, isDeployed}))}
           value={state.isDeployed}
         />
       )}

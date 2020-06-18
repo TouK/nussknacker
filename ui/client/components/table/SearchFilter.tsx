@@ -1,6 +1,6 @@
+import {isEmpty} from "lodash"
 import React from "react"
 import SvgDiv from "../SvgDiv"
-import {isEmpty} from "lodash"
 import {FilterProps} from "./FilterTypes"
 
 export default function SearchFilter(props: FilterProps) {
@@ -13,8 +13,8 @@ export default function SearchFilter(props: FilterProps) {
           type="text"
           placeholder="Filter by text..."
           className="form-control"
-          value={value}
-          onChange={(e) => onChange(e.target.value.toString())}
+          value={value || ""}
+          onChange={e => onChange(`${e.target.value}`)}
         />
         <SvgDiv className={`search-icon ${fillIconClass}`} svgFile="search.svg"/>
       </div>

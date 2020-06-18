@@ -1,11 +1,11 @@
 import React, {useState} from "react"
-import createProcessIcon from "../../assets/img/create-process.svg"
 import {useSelector} from "react-redux"
+import createProcessIcon from "../../assets/img/create-process.svg"
+import {useClashedNames} from "../../containers/hooks/useClashedNames"
 import {getLoggedUser} from "../../reducers/selectors/settings"
-import {useClashedNames} from "../../containers/useClashedNames"
 import AddProcessDialog from "../AddProcessDialog"
 
-type Props = { onClick: () => void }
+type Props = {onClick: () => void}
 
 function AddButton(props: Props) {
   const {onClick} = props
