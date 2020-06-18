@@ -11,7 +11,7 @@ import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
 /**
   * This class is mainly copy-paste of Confluent's AvroMessageReader but with better constructor handling
@@ -30,9 +30,9 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
 
   schemaRegistry = schemaRegistryClient
 
-  private val keySubject = AvroUtils.keySubject(topic)
+  private val keySubject = ConfluentUtils.keySubject(topic)
 
-  private val valueSubject = AvroUtils.valueSubject(topic)
+  private val valueSubject = ConfluentUtils.valueSubject(topic)
 
   private val decoderFactory = DecoderFactory.get
 

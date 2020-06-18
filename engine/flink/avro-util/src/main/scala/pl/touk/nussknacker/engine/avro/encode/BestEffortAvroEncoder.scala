@@ -8,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
 import org.apache.avro.generic.GenericData.EnumSymbol
-import org.apache.avro.generic.{GenericData, GenericRecordBuilder}
+import org.apache.avro.generic.{GenericContainer, GenericData, GenericRecordBuilder}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
 
@@ -23,6 +23,9 @@ object BestEffortAvroEncoder {
     (schema.getType, value) match {
       case (_, Some(nested)) =>
         encode(nested, schema)
+      //It's special situation when at sink we do map with #input as field
+      case (Schema.Type.RECORD, container: GenericContainer) =>
+        Valid(container)
       case (Schema.Type.RECORD, map: collection.Map[String@unchecked, _]) =>
         encodeRecord(map, schema)
       case (Schema.Type.RECORD, map: util.Map[String@unchecked, _]) =>
@@ -141,7 +144,7 @@ object BestEffortAvroEncoder {
     }
   }
 
-  private def error(str: String) = Invalid(NonEmptyList.of(str))
+  private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
 
   private def encodeString(str: String): Utf8 = {
     new Utf8(str)

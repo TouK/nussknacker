@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro
 
 import cats.data.ValidatedNel
 import org.apache.avro.Schema
+import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.avro.schema.PaymentV1
+import pl.touk.nussknacker.engine.avro.schema.{PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -126,11 +127,26 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[CharSequence]("#input.union", ctx) should be ('invalid)
   }
 
-  it("should skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
-    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV1.schema)
+  it("should recognize record with enum") {
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema)).toOption.get
+
+    parse[CharSequence]("#input.currency", ctx) should be ('valid)
+    parse[EnumSymbol]("#input.currency", ctx) should be ('valid)
+  }
+
+  it("should not skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
+    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV1.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
     val ctx = ValidationContext.empty.withVariable("input", typeResult).toOption.get
 
-    parse[Int]("#input.vat", ctx) should be ('invalid)
+    parse[Int]("#input.vat", ctx) should be ('valid)
+  }
+
+  it("should skipp optional fields from schema PaymentV2 when skippNullableFields is set") {
+    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV2.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
+    val ctx = ValidationContext.empty.withVariable("input", typeResult).toOption.get
+
+    parse[Int]("#input.cnt", ctx) should be ('invalid)
+    parse[Map[String, Any]]("#input.attributes", ctx) should be ('invalid)
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {

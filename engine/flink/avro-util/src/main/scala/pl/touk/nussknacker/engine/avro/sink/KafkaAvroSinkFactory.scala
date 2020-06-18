@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.sink
 
 import javax.annotation.Nullable
 import javax.validation.constraints.{Min, NotBlank}
-import org.apache.avro.generic.GenericContainer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink}
@@ -22,7 +21,7 @@ class KafkaAvroSinkFactory(schemaRegistryProvider: SchemaRegistryProvider[_], pr
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
              @ParamName(`SchemaVersionParamName`) @Nullable @Min(value = 1) version: Integer,
-             @ParamName(`SinkOutputParamName`) @NotBlank output: LazyParameter[GenericContainer]
+             @ParamName(`SinkOutputParamName`) @NotBlank output: LazyParameter[Any]
             )(implicit nodeId: NodeId): Sink = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val kafkaAvroSchemaProvider = SchemaRegistryKafkaAvroProvider(schemaRegistryProvider, kafkaConfig, topic, version)

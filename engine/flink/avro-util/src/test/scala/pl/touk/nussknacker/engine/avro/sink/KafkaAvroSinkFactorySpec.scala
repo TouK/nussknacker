@@ -35,7 +35,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
   test("should throw exception when schema version doesn't exist") {
     assertThrowsWithParent[SchemaVersionNotFound] {
       val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
-      createSink(fullnameTopic, 3, output)
+      createSink(fullnameTopic, 666, output)
     }
   }
 
@@ -54,8 +54,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     createSink(fullnameTopic, 1, output)
   }
 
-  //TODO: add after type validation will be implemented
-  ignore("should throw exception when #output schema is not compatible with sink schema") {
+  test("should throw exception when #output schema is not compatible with sink schema") {
     assertThrowsWithParent[InvalidSinkOutput] {
       val output = createOutput(PaymentV1.schema, PaymentV1.exampleData)
       createSink(fullnameTopic, 2, output)

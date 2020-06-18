@@ -7,6 +7,7 @@ import org.apache.avro.generic.{GenericData, GenericDatumReader, GenericDatumWri
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.{FunSpec, Matchers}
+import pl.touk.nussknacker.engine.avro.schema.{Address, Company}
 
 import scala.collection.immutable.ListSet
 
@@ -129,6 +130,15 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
     }
 
     roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("fixed" -> "ala").asJava, schema))
+  }
+
+  it("should allow to create record with nested GenericRecord field") {
+    val data = Map(
+      "name" -> Company.DefaultName,
+      "address" -> Address.record
+    )
+
+    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(data.asJava, Company.schema))
   }
 
   it("should create record with union field") {

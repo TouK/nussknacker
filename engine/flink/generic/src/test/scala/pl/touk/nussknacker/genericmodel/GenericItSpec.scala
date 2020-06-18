@@ -17,8 +17,8 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -140,7 +140,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .emptySink(
         "end",
         "kafka-avro",
-        KafkaAvroFactory.SinkOutputParamName -> s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('${topicConfig.output}'))",
+        KafkaAvroFactory.SinkOutputParamName -> s"{first: #input.first, last: #input.last}",
         KafkaAvroFactory.TopicParamName -> s"'${topicConfig.output}'",
         KafkaAvroFactory.SchemaVersionParamName -> ""
       )
@@ -347,8 +347,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     val topicConfig = TopicConfig(name, schemas)
 
     schemas.foreach(schema => {
-      val inputSubject = AvroUtils.topicSubject(topicConfig.input, topicConfig.isKey)
-      val outputSubject = AvroUtils.topicSubject(topicConfig.output, topicConfig.isKey)
+      val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
+      val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
       schemaRegistryMockClient.register(inputSubject, schema)
       schemaRegistryMockClient.register(outputSubject, schema)
     })
