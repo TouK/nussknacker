@@ -10,9 +10,11 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.cache.Cache
+import scala.collection.JavaConverters._
 
 /**
   * We use there own cache engine because ConfluentCachedClient doesn't cache getLatestSchemaMetadata and getSchemaMetadata
+ * FIXME: cache subjects/versions...
   */
 class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, schemaCache: Cache[Schema], latestSchemaCache: Cache[Schema])
   extends ConfluentSchemaRegistryClient with LazyLogging {
@@ -41,6 +43,15 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, sch
         AvroUtils.parseSchema(schemaMetadata.getSchema)
       }
     }
+
+
+  override def getAllTopics: Validated[SchemaRegistryError, List[String]] = handleClientError {
+    client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject)
+  }
+
+  override def getAllVersions(topic: String): Validated[SchemaRegistryError, List[Integer]] = handleClientError {
+    client.getAllVersions(ConfluentUtils.valueSubject(topic)).asScala.toList
+  }
 
   private def latestSchemaRequest(subject: String): Schema = {
     val schemaMetadata = client.getLatestSchemaMetadata(subject)

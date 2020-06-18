@@ -4,13 +4,14 @@ import java.nio.charset.StandardCharsets
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericData
+import org.apache.avro.generic.GenericRecord
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.scalatest.Assertion
+import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSpecMixin}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
@@ -89,8 +90,8 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     readLastMessageAndVerify(sourceFactory, IntTopic, 1, givenObj, IntSchema)
   }
 
-  protected def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[GenericData.Record] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider(useSpecificAvroReader)
+  protected def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[GenericRecord] = {
+    val schemaRegistryProvider = createSchemaRegistryProvider[GenericRecord](useSpecificAvroReader)
     new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
   }
 
@@ -124,7 +125,8 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
 
   private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
     val source = sourceFactory
-      .create(metaData, topic, version)(nodeId)
+      .implementation(Map(KafkaAvroFactory.TopicParamName -> topic, KafkaAvroFactory.SchemaVersionParamName -> version),
+        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 
     source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(expectedSchema)

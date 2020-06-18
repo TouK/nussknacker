@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
-import org.apache.flink.streaming.api.functions.{KeyedProcessFunction, ProcessFunction}
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedLazyParameter, FailedToDefineParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.api.process.{AbstractOneParamLazyParameterFunction, FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.KeyWithValueMapper
 
 /* This is example for GenericTransformation
@@ -47,7 +47,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef= {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkCustomStreamTransformation= {
     val value = params(valueParameterName).asInstanceOf[LazyParameter[AnyRef]]
     val condition = params(conditionParameterName).asInstanceOf[LazyParameter[Boolean]]
     val keyBy = params(keyByParameterName).asInstanceOf[LazyParameter[String]]

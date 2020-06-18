@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile.nodevalidation
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{Interpreter, ModelData}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.SingleInputGenericNodeTransformation
@@ -118,7 +118,7 @@ class SourceNodeValidator(val modelData: ModelData) extends WithParametersNodeVa
   override def validate(nodeData: Source, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val transformer = modelData.processWithObjectsDefinition.sourceFactories(nodeData.ref.typ).obj
     //TODO: handle standard case (non-generic transformer)
-    validateGenericTransformer(transformer, nodeData, validationContext, None, _ => ValidationNotPerformed)
+    validateGenericTransformer(transformer, nodeData, validationContext, Some(Interpreter.InputParamName), _ => ValidationNotPerformed)
   }
 }
 

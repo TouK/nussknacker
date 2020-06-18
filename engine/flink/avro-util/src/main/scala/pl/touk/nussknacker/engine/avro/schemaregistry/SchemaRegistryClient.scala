@@ -34,4 +34,10 @@ trait SchemaRegistryClient extends Serializable {
     version
       .map(ver => getBySubjectAndVersion(topic, ver, isKey))
       .getOrElse(getLatestFreshSchema(topic, isKey))
+
+  def getAllTopics: Validated[SchemaRegistryError, List[String]]
+
+  def getAllVersions(schema: String): Validated[SchemaRegistryError, List[Integer]]
+
 }
+

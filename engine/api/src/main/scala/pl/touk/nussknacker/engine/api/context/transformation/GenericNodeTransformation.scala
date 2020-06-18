@@ -30,7 +30,7 @@ trait GenericNodeTransformation[T] {
 
   def initialParameters: List[Parameter]
 
-  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef
+  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): T
 
   //Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
