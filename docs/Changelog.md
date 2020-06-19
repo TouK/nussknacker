@@ -23,6 +23,7 @@ Nussknacker versions
 * [#978](https://github.com/TouK/nussknacker/pull/978) Dynamic filter validation
 * [#996](https://github.com/TouK/nussknacker/pull/996) First version of GenericNodeTransformation
 * [#1001](https://github.com/TouK/nussknacker/pull/1001) First version dynamic parameters on UI
+* [#988](https://github.com/TouK/nussknacker/pull/988) Json editor
 
 0.1.2
 ------------------------
