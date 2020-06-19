@@ -20,7 +20,7 @@ trait KafkaAvroSchemaProvider[T] extends Serializable {
 
   def recordFormatter: Option[RecordFormatter]
 
-  def fetchValueSchema: Validated[SchemaRegistryError, Schema]
+  def fetchTopicValueSchema: Validated[SchemaRegistryError, Schema]
 
   def returnType(f: SchemaRegistryError => typing.TypingResult): typing.TypingResult =
     typeDefinition.valueOr(f)

@@ -20,7 +20,7 @@ abstract class BaseKafkaAvroSinkFactory(processObjectDependencies: ProcessObject
                            processMetaData: MetaData,
                            nodeId: NodeId): Sink = {
 
-    val schema = kafkaAvroSchemaProvider.fetchValueSchema.valueOr(KafkaAvroFactory.handleError)
+    val schema = kafkaAvroSchemaProvider.fetchTopicValueSchema.valueOr(KafkaAvroFactory.handleError)
 
     validateOutput(output, schema)
 

@@ -7,6 +7,7 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.cache.Cache
 
@@ -16,21 +17,24 @@ import pl.touk.nussknacker.engine.util.cache.Cache
 class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, schemaCache: Cache[Schema], latestSchemaCache: Cache[Schema])
   extends ConfluentSchemaRegistryClient with LazyLogging {
 
-  override def getLatestFreshSchema(subject: String): Validated[SchemaRegistryError, Schema] =
+  override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Schema] =
     handleClientError {
+      val subject = ConfluentUtils.topicSubject(topic, isKey)
       latestSchemaRequest(subject)
     }
 
-  override def getLatestSchema(subject: String): Validated[SchemaRegistryError, Schema] =
+  override def getLatestSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Schema] =
     handleClientError {
+      val subject = ConfluentUtils.topicSubject(topic, isKey)
       latestSchemaCache.getOrCreate(subject) {
         logger.debug(s"Cache latest schema for subject: $subject.")
         latestSchemaRequest(subject)
       }
     }
 
-  override def getBySubjectAndVersion(subject: String, version: Int): Validated[SchemaRegistryError, Schema] =
+  override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, Schema] =
     handleClientError {
+      val subject = ConfluentUtils.topicSubject(topic, isKey)
       schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cache schema for subject: $subject and version: $version.")
         val schemaMetadata = client.getSchemaMetadata(subject, version)
