@@ -13,8 +13,10 @@ import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchema
 
 trait KafkaAvroSinkSpecMixin {
 
+  final protected val avroEncoder = BestEffortAvroEncoder()
+
   protected def createOutput(schema: Schema, data: Map[String, Any]): LazyParameter[GenericContainer] = {
-    val record = BestEffortAvroEncoder.encodeRecordOrError(data, schema)
+    val record = avroEncoder.encodeRecordOrError(data, schema)
     new LazyParameter[GenericContainer] {
       override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(record.getSchema)
     }

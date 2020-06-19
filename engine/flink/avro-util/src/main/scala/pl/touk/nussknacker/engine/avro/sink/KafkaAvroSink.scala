@@ -16,12 +16,14 @@ class KafkaAvroSink(topic: String, output: LazyParameter[Any], kafkaConfig: Kafk
 
   import org.apache.flink.streaming.api.scala._
 
+  final private val avroEncoder = BestEffortAvroEncoder()
+
   override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
     dataStream
       .map(_.finalContext)
       .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(output))
       .map(ctx => ctx.value match {
-          case data: java.util.Map[String, Any] => BestEffortAvroEncoder.encodeRecordOrError(data, schema)
+          case data: java.util.Map[String, Any] => avroEncoder.encodeRecordOrError(data, schema)
           case record: GenericRecord => record
           case value => {
             //TODO: We should better handle this situation by using EspExceptionHandler

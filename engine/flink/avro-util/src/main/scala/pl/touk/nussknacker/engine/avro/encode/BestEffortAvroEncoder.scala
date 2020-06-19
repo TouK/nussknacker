@@ -11,8 +11,9 @@ import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericContainer, GenericData, GenericRecordBuilder}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
+import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 
-object BestEffortAvroEncoder {
+class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
 
   import scala.collection.JavaConverters._
 
@@ -119,7 +120,7 @@ object BestEffortAvroEncoder {
   }
 
   private def encodeGenericContainer(container: GenericContainer, schema: Schema): WithError[GenericContainer] = {
-    if (!container.getSchema.equals(schema)) {
+    if (!avroSchemaEvolution.canBeEvolved(container, schema)) {
       error(s"Not expected container: ${container.getSchema} for schema: $schema")
     } else {
       Valid(container)
@@ -157,4 +158,11 @@ object BestEffortAvroEncoder {
     new Utf8(str)
   }
 
+}
+
+object BestEffortAvroEncoder {
+
+  final private val DefaultSchemaEvolution = new DefaultAvroSchemaEvolution
+
+  def apply(): BestEffortAvroEncoder = new BestEffortAvroEncoder(DefaultSchemaEvolution)
 }

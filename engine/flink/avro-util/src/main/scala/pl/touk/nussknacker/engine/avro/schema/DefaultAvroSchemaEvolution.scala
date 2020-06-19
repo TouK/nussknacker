@@ -7,6 +7,8 @@ import org.apache.avro.Schema
 import org.apache.avro.generic._
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 
+import scala.util.Try
+
 /**
   * It's base implementation of AvroSchemaEvolution. In this case strategy to evolve record to schema is as follows:
   *
@@ -39,6 +41,9 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     }
   }
 
+  override def canBeEvolved(container: GenericContainer, schema: Schema): Boolean =
+    Try(alignRecordToSchema(container, schema)).isSuccess
+  
   /**
     * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read with some modification.
     * We pass there record buffer data and schema which will be used to convert record.
