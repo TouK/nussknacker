@@ -7,13 +7,10 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
 class ConfluentKafkaAvroSerializationMixin {
-  def fetchSchema[T](confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, version: Option[Int], isKey: Boolean): Schema = {
-    val subject = ConfluentUtils.topicSubject(topic, isKey = isKey)
-
+  def fetchSchema[T](confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, version: Option[Int], isKey: Boolean): Schema =
     confluentSchemaRegistryClient
-      .getFreshSchema(subject, version)
+      .getFreshSchema(topic, version, isKey)
       .valueOr(exc => throw new SerializationException(s"Error retrieving Avro schema for topic $topic.", exc))
-  }
 
   def fetchSchemaId(confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, schema: Schema, isKey: Boolean): Int =
     try {
