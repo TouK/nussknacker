@@ -28,7 +28,7 @@ abstract class BaseKafkaAvroSinkFactory(processObjectDependencies: ProcessObject
     val serializationSchema = kafkaAvroSchemaProvider.serializationSchema
     val clientId = s"${processMetaData.id}-$preparedTopic"
 
-    new KafkaAvroSink(topic, output, kafkaConfig, schema, serializationSchema, clientId)
+    new KafkaAvroSink(topic, output, kafkaConfig, kafkaAvroSchemaProvider, clientId)
   }
 
   /**
