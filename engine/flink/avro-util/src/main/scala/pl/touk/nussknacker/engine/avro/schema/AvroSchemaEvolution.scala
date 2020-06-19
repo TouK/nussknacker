@@ -5,6 +5,7 @@ import org.apache.avro.generic.GenericContainer
 
 trait AvroSchemaEvolution {
   def alignRecordToSchema(container: GenericContainer, schema: Schema): GenericContainer
+  def canBeEvolved(container: GenericContainer, schema: Schema): Boolean
 }
 
 class AvroSchemaEvolutionException(message: String, cause: Throwable) extends RuntimeException(message, cause)

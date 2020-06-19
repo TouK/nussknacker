@@ -7,6 +7,7 @@ import org.apache.avro.generic.{GenericData, GenericDatumReader, GenericDatumWri
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.{FunSpec, Matchers}
+import pl.touk.nussknacker.engine.avro.schema.{Address, Company, FullNameV1}
 
 import scala.collection.immutable.ListSet
 
@@ -14,14 +15,16 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
 
   import collection.JavaConverters._
 
+  final protected val avroEncoder = BestEffortAvroEncoder()
+
   it("should create simple record") {
     val schema = wrapWithRecordSchema(
       """[
         |  { "name": "foo", "type": "string" }
         |]""".stripMargin)
 
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("foo" -> "bar").asJava, schema))
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("foo" -> Some("bar")), schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("foo" -> "bar").asJava, schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("foo" -> Some("bar")), schema))
   }
 
   it("should create nested record") {
@@ -40,14 +43,14 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecordOrError(Map("nested" -> Map("foo1" -> "bar").asJava).asJava, schema)
+      avroEncoder.encodeRecordOrError(Map("nested" -> Map("foo1" -> "bar").asJava).asJava, schema)
     }
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecordOrError(Map("nested" -> Map("foo" -> "bar", "foo1" -> "bar1").asJava).asJava, schema)
+      avroEncoder.encodeRecordOrError(Map("nested" -> Map("foo" -> "bar", "foo1" -> "bar1").asJava).asJava, schema)
     }
 
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("nested" -> Map("foo" -> "bar").asJava).asJava, schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("nested" -> Map("foo" -> "bar").asJava).asJava, schema))
   }
 
   it("should create record with enum field") {
@@ -64,10 +67,10 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecordOrError(Map("enum" -> "X").asJava, schema)
+      avroEncoder.encodeRecordOrError(Map("enum" -> "X").asJava, schema)
     }
 
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("enum" -> "B").asJava, schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("enum" -> "B").asJava, schema))
   }
 
   it("should create record with array field") {
@@ -83,12 +86,12 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecordOrError(Map("array" -> List(1, 2, "foo").asJava).asJava, schema)
+      avroEncoder.encodeRecordOrError(Map("array" -> List(1, 2, "foo").asJava).asJava, schema)
     }
 
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("array" -> List("foo", "bar").asJava).asJava, schema))
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("array" -> List("foo", "bar")), schema))
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("array" -> ListSet("foo", "bar")), schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("array" -> List("foo", "bar").asJava).asJava, schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("array" -> List("foo", "bar")), schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("array" -> ListSet("foo", "bar")), schema))
   }
 
   it("should create record with map field") {
@@ -104,11 +107,11 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecordOrError(Map("map" -> Map("foo" -> "bar").asJava).asJava, schema)
+      avroEncoder.encodeRecordOrError(Map("map" -> Map("foo" -> "bar").asJava).asJava, schema)
     }
 
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("map" -> Map("foo" -> 1).asJava).asJava, schema))
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("map" -> Map("foo" -> 1)), schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("map" -> Map("foo" -> 1).asJava).asJava, schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("map" -> Map("foo" -> 1)), schema))
   }
 
   it("should create record with fixed field") {
@@ -125,10 +128,24 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecordOrError(Map("fixed" -> "ala123").asJava, schema)
+      avroEncoder.encodeRecordOrError(Map("fixed" -> "ala123").asJava, schema)
     }
 
-    roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("fixed" -> "ala").asJava, schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("fixed" -> "ala").asJava, schema))
+  }
+
+  it("should allow to create record with nested GenericRecord field") {
+    val data = Map("name" -> Company.DefaultName, "address" -> Address.record)
+
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(data.asJava, Company.schema))
+  }
+
+  it("should not allow to create record with nested GenericRecord field") {
+    val data = Map("name" -> Company.DefaultName, "address" -> FullNameV1.record)
+
+    assertThrows[AvroRuntimeException] {
+      avroEncoder.encodeRecordOrError(data.asJava, Company.schema)
+    }
   }
 
   it("should create record with union field") {
@@ -141,16 +158,16 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecordOrError(Map("foo" -> "ala").asJava, schema)
+      avroEncoder.encodeRecordOrError(Map("foo" -> "ala").asJava, schema)
     }
 
-    val recordWithNull = roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("foo" -> null).asJava, schema))
+    val recordWithNull = roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("foo" -> null).asJava, schema))
     recordWithNull.get("foo") shouldBe null
 
-    val recordWithNone = roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("foo" -> None), schema))
+    val recordWithNone = roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("foo" -> None), schema))
     recordWithNull.get("foo") shouldBe null
 
-    val recordWithInt = roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("foo" -> 123).asJava, schema))
+    val recordWithInt = roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("foo" -> 123).asJava, schema))
     recordWithInt.get("foo") shouldBe 123
   }
 

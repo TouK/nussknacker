@@ -13,8 +13,10 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 
 trait KafkaAvroSourceSpecMixin {
 
+  final private val avroEncoder = BestEffortAvroEncoder()
+
   protected def createOutput(schema: Schema, data: Map[String, Any]): LazyParameter[GenericContainer] = {
-    val record = BestEffortAvroEncoder.encodeRecordOrError(data, schema)
+    val record = avroEncoder.encodeRecordOrError(data, schema)
     new LazyParameter[GenericContainer] {
       override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(record.getSchema)
     }

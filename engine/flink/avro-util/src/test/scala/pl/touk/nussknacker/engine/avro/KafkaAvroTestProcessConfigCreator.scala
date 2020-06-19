@@ -36,13 +36,6 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
-    val globalProcessVariables = Map("AVRO" -> defaultCategory(new AvroUtils(schemaRegistryProvider)))
-
-    ExpressionConfig(globalProcessVariables, List())
-  }
-
   protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies):SchemaRegistryProvider[GenericData.Record] =
     ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
 }

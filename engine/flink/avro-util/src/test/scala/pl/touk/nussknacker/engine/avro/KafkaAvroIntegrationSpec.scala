@@ -126,21 +126,19 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     runAndVerifyResult(process, topicConfig, PaymentNotCompatible.record, PaymentV1.record)
   }
 
-  test("should read older compatible event with source and save it in latest compatible version with #Avro helper output") {
-    val topicConfig = createAndRegisterTopicConfig("older-output-with-helper", List(PaymentV1.schema, PaymentV2.schema))
+  test("should read older compatible event with source and save it in latest compatible version with map output") {
+    val topicConfig = createAndRegisterTopicConfig("older-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
     val sourceParam = SourceAvroParam(topicConfig, Some(1))
-    val output = s"#AVRO.record(${PaymentV2.jsonMap}, #AVRO.latestValueSchema('${topicConfig.output}'))"
-    val sinkParam = SinkAvroParam(topicConfig, None, output)
+    val sinkParam = SinkAvroParam(topicConfig, None, PaymentV2.jsonMap)
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV2.record)
   }
 
-  test("should read newer compatible event with source and save it in older compatible version with #Avro helper output") {
-    val topicConfig = createAndRegisterTopicConfig("newer-output-with-helper", List(PaymentV1.schema, PaymentV2.schema))
+  test("should read newer compatible event with source and save it in older compatible version with map output") {
+    val topicConfig = createAndRegisterTopicConfig("newer-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
     val sourceParam = SourceAvroParam(topicConfig, Some(2))
-    val output = s"#AVRO.record(${PaymentV1.jsonMap}, #AVRO.valueSchema('${topicConfig.output}', 1))"
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), output)
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), PaymentV1.jsonMap)
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV2.record, PaymentV1.record)
@@ -149,8 +147,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   test("should rise exception when we provide wrong data map for #Avro helper output") {
     val topicConfig = createAndRegisterTopicConfig("bad-data-with-helper", List(PaymentV1.schema, PaymentV2.schema))
     val sourceParam = SourceAvroParam(topicConfig, Some(2))
-    val output = s"""#AVRO.record({id: "bad"}, #AVRO.valueSchema('${topicConfig.output}', 1))"""
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), output)
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), """{id: "bad"}""")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     assertThrowsWithParent[Exception] {

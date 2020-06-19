@@ -44,7 +44,7 @@ object FullNameV1 extends TestSchemaWithSpecificRecord {
   val exampleData: Map[String, Any] = Map("first" -> BaseFirst, "last" -> BaseLast)
 
   def createRecord(first: String, last: String): GenericData.Record =
-    BestEffortAvroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last), schema)
+    avroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last), schema)
 
   def createSpecificRecord(first: String, last: String): FullNameV1 =
     new FullNameV1(first, last)
