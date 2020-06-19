@@ -26,8 +26,8 @@ class AvroSchemaTypeDefinitionExtractor(skippNullableFields: Boolean) {
         val fields = schema
           .getFields
           .asScala
-          //@TODO: Maybe Optional field should be marked when it has defaultValue?
-          .filterNot(field => skippNullableFields && field.schema().isNullable && field.hasDefaultValue)
+          //Field is marked as optional when field has default value
+          .filterNot(field => skippNullableFields && field.hasDefaultValue)
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
           .toMap
 

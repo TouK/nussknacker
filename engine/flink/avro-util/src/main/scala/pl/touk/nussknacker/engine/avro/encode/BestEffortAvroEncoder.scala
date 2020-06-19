@@ -23,9 +23,8 @@ object BestEffortAvroEncoder {
     (schema.getType, value) match {
       case (_, Some(nested)) =>
         encode(nested, schema)
-      //It's special situation when at sink we do map with #input as field
       case (Schema.Type.RECORD, container: GenericContainer) =>
-        Valid(container)
+        encodeGenericContainer(container, schema)
       case (Schema.Type.RECORD, map: collection.Map[String@unchecked, _]) =>
         encodeRecord(map, schema)
       case (Schema.Type.RECORD, map: util.Map[String@unchecked, _]) =>
@@ -116,6 +115,14 @@ object BestEffortAvroEncoder {
         case (k, v) => builder.set(k, v)
       }
       builder.build()
+    }
+  }
+
+  private def encodeGenericContainer(container: GenericContainer, schema: Schema): WithError[GenericContainer] = {
+    if (!container.getSchema.equals(schema)) {
+      error(s"Not expected container: ${container.getSchema} for schema: $schema")
+    } else {
+      Valid(container)
     }
   }
 

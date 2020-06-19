@@ -6,7 +6,7 @@ import org.apache.avro.generic.{GenericContainer, GenericData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
-import pl.touk.nussknacker.engine.avro.schema.{Address, Company, PaymentNotCompatible, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schema.{PaymentNotCompatible, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}

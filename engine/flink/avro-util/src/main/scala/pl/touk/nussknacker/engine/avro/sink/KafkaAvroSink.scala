@@ -22,10 +22,11 @@ class KafkaAvroSink(topic: String, output: LazyParameter[Any], kafkaConfig: Kafk
       .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(output))
       .map(ctx => ctx.value match {
           case data: java.util.Map[String, Any] => BestEffortAvroEncoder.encodeRecordOrError(data, schema)
-          case _: GenericRecord => ctx.value
+          case record: GenericRecord => record
           case value => {
+            //TODO: We should better handle this situation by using EspExceptionHandler
             logger.error("Invalid output type error.", ctx)
-            throw InvalidSinkOutput(s"Invalid output type ${value.getClass}. Excepted java.util.Map or GenericRecord.")
+            value
           }
         }
       )
