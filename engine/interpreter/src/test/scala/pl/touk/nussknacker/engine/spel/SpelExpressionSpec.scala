@@ -35,7 +35,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private class EvaluateSync(expression: Expression) {
     def evaluateSync[T](ctx: Context = ctx, lvp: LazyValuesProvider = dumbLazyProvider) : ValueWithLazyContext[T]
-      = Await.result(expression.evaluate[T](ctx, Map.empty, lvp), 5 seconds)
+      = expression.evaluate[T](ctx, Map.empty, lvp)
 
     def evaluateSyncToValue[T](ctx: Context = ctx, lvp: LazyValuesProvider = dumbLazyProvider) : T
       = evaluateSync(ctx, lvp).value

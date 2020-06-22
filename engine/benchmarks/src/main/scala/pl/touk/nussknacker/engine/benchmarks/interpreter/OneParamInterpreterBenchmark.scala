@@ -13,8 +13,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 /*
-[info] OneParamInterpreterBenchmark.benchmarkAsync  thrpt    8    80438.667 ±  10106.195  ops/s
-[info] OneParamInterpreterBenchmark.benchmarkSync   thrpt    8  1248502.934 ± 148813.140  ops/s
+[info] OneParamInterpreterBenchmark.benchmarkAsync  thrpt    8    98594.526 ±  884.768  ops/s
+[info] OneParamInterpreterBenchmark.benchmarkSync   thrpt    8  1561340.536 ± 7666.706  ops/s
  */
 @State(Scope.Thread)
 class OneParamInterpreterBenchmark {

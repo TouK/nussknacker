@@ -14,7 +14,7 @@ trait Expression {
 
   def original: String
 
-  def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]]
+  def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T]
 }
 
 trait ExpressionParser {
