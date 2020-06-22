@@ -4,7 +4,6 @@ import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
-import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
@@ -56,15 +55,12 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   import pl.touk.nussknacker.engine.util.functions._
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
-
     ExpressionConfig(
       Map(
         "GEO" -> defaultCategory(geo),
         "NUMERIC" -> defaultCategory(numeric),
         "CONV" -> defaultCategory(conversion),
-        "DATE" -> defaultCategory(date),
-        "AVRO" -> defaultCategory(new AvroUtils(schemaRegistryProvider))
+        "DATE" -> defaultCategory(date)
       ),
       List()
     )

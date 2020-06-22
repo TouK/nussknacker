@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, SchemaDeterminingStrategy, ConfluentKafkaAvroDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKafkaAvroDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareDeserializationSchemaFactory, KafkaVersionAwareSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
@@ -14,6 +14,7 @@ class ConfluentSchemaRegistryProvider[T: TypeInformation](val schemaRegistryClie
                                                           val deserializationSchemaFactory: KafkaVersionAwareDeserializationSchemaFactory[T],
                                                           val kafkaConfig: KafkaConfig,
                                                           val formatKey: Boolean) extends SchemaRegistryProvider[T] {
+
   def recordFormatter(topic: String): Option[RecordFormatter] =
     Some(ConfluentAvroToJsonFormatter(createSchemaRegistryClient, topic, formatKey))
 

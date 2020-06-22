@@ -10,6 +10,15 @@ object ConfluentUtils {
   final val MagicByte = 0
   final val IdSize = 4
 
+  def topicSubject(topic: String, isKey: Boolean): String =
+    if (isKey) keySubject(topic) else valueSubject(topic)
+
+  def keySubject(topic: String): String =
+    topic + "-key"
+
+  def valueSubject(topic: String): String =
+    topic + "-value"
+
   def parsePayloadToByteBuffer(payload: Array[Byte]): Validated[IllegalArgumentException, ByteBuffer] = {
     val buffer = ByteBuffer.wrap(payload)
     if (buffer.get != MagicByte)

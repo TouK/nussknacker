@@ -19,7 +19,7 @@ Nussknacker versions
 * [#943](https://github.com/TouK/nussknacker/pull/943) Literal min / max validators
 * [#976](https://github.com/TouK/nussknacker/pull/976) Fixed save button & groups expand for businessView
 * [#973](https://github.com/TouK/nussknacker/pull/973) Textarea editor
-* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998)
+* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998), [#1007](https://github.com/TouK/nussknacker/pull/1007), [#1014](https://github.com/TouK/nussknacker/pull/1014)
 * Dynamic parameters: filter validation, GenericNodeTransformation introduction (for CustomNodes, Sources, Sinks) - also handling dynamic parameters on UI: 
     [#978](https://github.com/TouK/nussknacker/pull/978), 
     [#996](https://github.com/TouK/nussknacker/pull/996), 

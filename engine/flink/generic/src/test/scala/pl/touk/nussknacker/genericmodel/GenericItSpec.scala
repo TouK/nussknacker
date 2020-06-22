@@ -17,8 +17,8 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -50,6 +50,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
 
+  protected val avroEncoder = BestEffortAvroEncoder()
+
   private val givenNotMatchingJsonObj =
     """{
       |  "first": "Zenon",
@@ -67,23 +69,23 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       |  "list2": [ 123 ]
       |}""".stripMargin
 
-  private val givenNotMatchingAvroObj = BestEffortAvroEncoder.encodeRecordOrError(
+  private val givenNotMatchingAvroObj = avroEncoder.encodeRecordOrError(
     Map("first" ->"Zenon", "last" -> "Nowak"), RecordSchemaV1
   )
 
-  private val givenMatchingAvroObj = BestEffortAvroEncoder.encodeRecordOrError(
+  private val givenMatchingAvroObj = avroEncoder.encodeRecordOrError(
     Map("first" ->"Jan", "last" -> "Kowalski"), RecordSchemaV1
   )
 
-  private val givenMatchingAvroObjConvertedToV2 = BestEffortAvroEncoder.encodeRecordOrError(
+  private val givenMatchingAvroObjConvertedToV2 = avroEncoder.encodeRecordOrError(
     Map("first" ->"Jan", "middle" -> null, "last" -> "Kowalski"), RecordSchemaV2
   )
 
-  private val givenMatchingAvroObjV2 = BestEffortAvroEncoder.encodeRecordOrError(
+  private val givenMatchingAvroObjV2 = avroEncoder.encodeRecordOrError(
       Map("first" ->"Jan", "middle" -> "Tomek", "last" -> "Kowalski"), RecordSchemaV2
   )
 
-  private val givenSecondMatchingAvroObj = BestEffortAvroEncoder.encodeRecordOrError(
+  private val givenSecondMatchingAvroObj = avroEncoder.encodeRecordOrError(
     Map("firstname" ->"Jan"), SecondRecordSchemaV1
   )
 
@@ -140,7 +142,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .emptySink(
         "end",
         "kafka-avro",
-        KafkaAvroFactory.SinkOutputParamName -> s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('${topicConfig.output}'))",
+        KafkaAvroFactory.SinkOutputParamName -> s"{first: #input.first, last: #input.last}",
         KafkaAvroFactory.TopicParamName -> s"'${topicConfig.output}'",
         KafkaAvroFactory.SchemaVersionParamName -> ""
       )
@@ -254,7 +256,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   test("should read avro object in v1 from kafka and deserialize it to v2, filter and save it to kafka in v2") {
     val topicConfig = createAndRegisterTopicConfig("v1.v2.v2", RecordSchemas)
-    val result = BestEffortAvroEncoder.encodeRecordOrError(
+    val result = avroEncoder.encodeRecordOrError(
       Map("first" -> givenMatchingAvroObj.get("first"), "middle" -> null, "last" -> givenMatchingAvroObj.get("last")),
       RecordSchemaV2
     )
@@ -347,8 +349,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     val topicConfig = TopicConfig(name, schemas)
 
     schemas.foreach(schema => {
-      val inputSubject = AvroUtils.topicSubject(topicConfig.input, topicConfig.isKey)
-      val outputSubject = AvroUtils.topicSubject(topicConfig.output, topicConfig.isKey)
+      val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
+      val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
       schemaRegistryMockClient.register(inputSubject, schema)
       schemaRegistryMockClient.register(outputSubject, schema)
     })

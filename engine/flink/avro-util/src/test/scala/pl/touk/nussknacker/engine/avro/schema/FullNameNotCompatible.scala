@@ -48,7 +48,7 @@ object FullNameNotCompatible extends TestSchemaWithSpecificRecord {
   val exampleData: Map[String, Any] = FullNameV2.exampleData ++ Map("sex" -> BaseSex)
 
   def createRecord(first: String, middle: String, last: String, sex: String): GenericData.Record =
-    BestEffortAvroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last, "middle" -> middle, "sex" -> sex), schema)
+    avroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last, "middle" -> middle, "sex" -> sex), schema)
 
   def createSpecificRecord(first: String, middle: String, last: String, sex: String): FullNameNotCompatible =
     new FullNameNotCompatible(first, middle, last, sex)
