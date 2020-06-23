@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 
-trait DynamicParametersSample extends SingleInputGenericNodeTransformation[AnyRef] {
+trait DynamicParametersMixin extends SingleInputGenericNodeTransformation[AnyRef] {
 
   override type State = Nothing
 

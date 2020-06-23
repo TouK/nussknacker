@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 
-object DynamicParametersSink extends SinkFactory with DynamicParametersSample {
+object DynamicParametersSink extends SinkFactory with DynamicParametersMixin {
 
   override def requiresOutput: Boolean = false
 
