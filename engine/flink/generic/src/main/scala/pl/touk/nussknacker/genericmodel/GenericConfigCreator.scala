@@ -36,7 +36,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     Map(
       "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
       "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(avroSourceFactory),
+      "kafka-avro" -> defaultCategory(avroSourceFactory)
     )
   }
 

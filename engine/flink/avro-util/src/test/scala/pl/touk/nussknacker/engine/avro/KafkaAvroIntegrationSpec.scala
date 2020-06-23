@@ -267,7 +267,7 @@ object KafkaAvroIntegrationMockSchemaRegistry {
     * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
     */
   val factory: CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None) {
+    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None, None) {
       override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
         schemaRegistryMockClient
     }

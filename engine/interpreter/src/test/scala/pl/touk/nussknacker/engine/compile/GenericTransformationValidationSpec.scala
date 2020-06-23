@@ -111,7 +111,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     )
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): T = {
-      ???
+      null.asInstanceOf[T]
     }
 
   }

@@ -28,7 +28,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
   override def initialParameters: List[Parameter] = {
     List(
       Parameter[Any](KafkaAvroFactory.SinkOutputParamName).copy(isLazyParameter = true),
-      topicParam,
+      topicParam
     )
   }
 
