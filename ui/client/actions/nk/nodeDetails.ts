@@ -16,6 +16,7 @@ export type ValidationData = {
 type ValidationRequest = {
     nodeData: NodeType,
     variableTypes: VariableTypes,
+    branchVariableTypes: Record<string, VariableTypes>,
     processProperties: PropertiesType,
 }
 
@@ -31,11 +32,11 @@ function validate(processId: string, request: ValidationRequest, dispatch: Thunk
 //TODO: use sth better, how long should be timeout?
 const debouncedValidate = debounce(validate, 500)
 
-export function updateNodeData(processId: string, variableTypes: VariableTypes, nodeData: NodeType, processProperties: PropertiesType): ThunkAction {
+export function updateNodeData(processId: string, variableTypes: VariableTypes, branchVariableTypes: Record<string, VariableTypes>, nodeData: NodeType, processProperties: PropertiesType): ThunkAction {
   //groups and Properties are "special types" which are not compatible with NodeData in BE
   if (nodeData.type && nodeData.type !== "_group" && nodeData.type !== "Properties") {
     return (dispatch) => debouncedValidate(processId, {
-      nodeData, variableTypes, processProperties}, dispatch)
+      nodeData, variableTypes, processProperties, branchVariableTypes}, dispatch)
   } else {
     return () => {/* ignore invocation */}
   }

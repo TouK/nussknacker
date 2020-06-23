@@ -50,3 +50,7 @@ trait GenericNodeTransformation[T] {
 trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
   type InputContext = ValidationContext
 }
+
+trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
+  type InputContext = Map[String, ValidationContext]
+}

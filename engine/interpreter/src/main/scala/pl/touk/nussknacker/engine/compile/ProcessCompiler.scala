@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.context.transformation.SingleInputGenericNodeTransformation
+import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
@@ -113,11 +113,11 @@ protected trait ProcessCompilerBase {
 
   private lazy val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
 
-  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext = {
-    val globalTypes = globalVariablesPreparer.prepareGlobalVariables(metaData).mapValuesNow(_.typ)
+  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext
+    = globalVariablesPreparer.emptyValidationContext(metaData)
 
-    ValidationContext(Map.empty, globalTypes)
-  }
+  private def nodeValidator(implicit metaData: MetaData)
+    = new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
@@ -427,14 +427,24 @@ protected trait ProcessCompilerBase {
                                         parameters: List[evaluatedparam.Parameter],
                                         branchParameters: List[BranchParameters], outputVar: Option[String])
                                        (implicit metaData: MetaData, nodeId: NodeId):
-    PartialFunction[ObjectWithMethodDef, 
+    PartialFunction[ObjectWithMethodDef,
       (Map[String, ExpressionTypingInfo], Validated[NonEmptyList[ProcessCompilationError], ValidationContext], Validated[NonEmptyList[ProcessCompilationError], T])] = {
 
-    case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] =>
+    case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
       val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
-      val nodeValidator = new GenericNodeTransformationValidator(objectParametersExpressionCompiler,
-          ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig)))
-      val afterValidation = nodeValidator.validateNode(transformer, parameters, ctx.left.get, outputVar).map {
+      val afterValidation = nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.left.get).map {
+        case TransformationResult(Nil, computedParameters, outputContext) =>
+          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
+            branchParameters, outputVar, ctx, Some(computedParameters))
+          (typingInfo, outputContext, validProcessObject)
+        case TransformationResult(h::t, _, outputContext) =>
+          //TODO: typing info here??
+          (Map.empty[String, ExpressionTypingInfo], outputContext, Invalid(NonEmptyList(h, t)))
+      }
+      (afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2), afterValidation.andThen(_._3))
+    case nodeDefinition if nodeDefinition.obj.isInstanceOf[JoinGenericNodeTransformation[_]] && ctx.isRight  =>
+      val transformer = nodeDefinition.obj.asInstanceOf[JoinGenericNodeTransformation[_]]
+      val afterValidation = nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.right.get.contexts).map {
         case TransformationResult(Nil, computedParameters, outputContext) =>
           val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
             branchParameters, outputVar, ctx, Some(computedParameters))

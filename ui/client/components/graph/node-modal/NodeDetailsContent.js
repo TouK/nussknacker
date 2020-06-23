@@ -91,6 +91,7 @@ export class NodeDetailsContent extends React.Component {
     if (this.props.isEditMode) {
       this.props.actions.updateNodeData(this.props.processId,
         this.props.variableTypes,
+        this.props.branchVariableTypes,
         currentNode,
         this.props.processProperties)
     } else {
@@ -531,7 +532,8 @@ export class NodeDetailsContent extends React.Component {
 
   //this is for "dynamic" parameters in sources, sinks, services etc.
   createParameterExpressionField = (parameter, expressionProperty, listFieldPath, fieldErrors) => {
-    return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, parameter)
+    const paramDefinition = this.parameterDefinitions.find(p => p.name === parameter.name)
+    return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, paramDefinition)
   }
 
   doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter) => {
@@ -735,12 +737,15 @@ function mapState(state, props) {
   //TODO: in particular we need it for branches, how to handle it for subprocesses?
   const mainProcess = state.graphReducer.processToDisplay
   const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData, getProcessCategory(state), mainProcess)
+
+  const branchVars = ProcessUtils.findVariablesForBranches(props.node, mainProcess?.validationResult?.variableTypes)
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
     processDefinitionData: processDefinitionData,
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
     variableTypes: mainProcess?.validationResult?.variableTypes[props.node.id] || {},
+    branchVariableTypes: branchVars,
     findAvailableVariables: findAvailableVariables,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters : null,

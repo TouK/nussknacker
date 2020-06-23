@@ -64,8 +64,10 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
             complete {
               val globals = modelData.processDefinition.expressionConfig.globalVariables.mapValues(_.returnType)
               val validationContext = ValidationContext(nodeData.variableTypes, globals, None)
+              val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValues(ValidationContext(_, globals, None))
+
               implicit val metaData: MetaData = nodeData.processProperties.toMetaData(process.id)
-              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext) match {
+              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs) match {
                 case ValidationNotPerformed => NodeValidationResult(None, Nil, validationPerformed = false)
                 case ValidationPerformed(errors, parameters) =>
                   val uiParams = parameters.map(_.map(UIParameter(_, ParameterConfig.empty)))
@@ -105,6 +107,6 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
 
 @JsonCodec(encodeOnly = true) case class NodeValidationRequest(nodeData: NodeData,
                                             processProperties: ProcessProperties,
-                                            variableTypes: Map[String, TypingResult])
+                                            variableTypes: Map[String, TypingResult], branchVariableTypes: Option[Map[String, Map[String, TypingResult]]])
 
 

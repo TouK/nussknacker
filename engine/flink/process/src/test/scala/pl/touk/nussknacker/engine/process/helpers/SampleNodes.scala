@@ -562,7 +562,6 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = Nil
   }
 
-
   object ProcessHelper {
 
     val constant = 4

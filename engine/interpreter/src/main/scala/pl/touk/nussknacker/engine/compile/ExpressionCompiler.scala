@@ -112,7 +112,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }
   }
 
-  private def compileBranchParam(branchIdAndExpressions: List[(String, expression.Expression)],
+  def compileBranchParam(branchIdAndExpressions: List[(String, expression.Expression)],
                                  branchContexts: Map[String, ValidationContext],
                                  definition: Parameter)
                                 (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {

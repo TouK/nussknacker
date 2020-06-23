@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.variables
 
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, ObjectWithType}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.util.Implicits._
 
 class GlobalVariablesPreparer(userDefinedGlobalVariables: Map[String, ObjectWithType], hideMetaVariable: Boolean) {
 
@@ -11,10 +13,14 @@ class GlobalVariablesPreparer(userDefinedGlobalVariables: Map[String, ObjectWith
     if (hideMetaVariable) {
       userDefinedGlobalVariables
     } else {
-      //FIXME: this is *not* performant, currently we do it for *each* expression execution
       userDefinedGlobalVariables + (Interpreter.MetaParamName -> MetaVariables.withType(metaData))
     }
   }
+
+  def emptyValidationContext(metaData: MetaData): ValidationContext = ValidationContext(
+    Map.empty,
+    prepareGlobalVariables(metaData).mapValuesNow(_.typ)
+  )
 
 }
 

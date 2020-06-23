@@ -1,14 +1,29 @@
 package pl.touk.nussknacker.engine.api.context.transformation
 
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 sealed trait DefinedParameter {
   def returnType: TypingResult
 }
 
-case class DefinedLazyParameter(returnType: TypingResult) extends DefinedParameter
-case class DefinedEagerParameter(value: Any, returnType: TypingResult) extends DefinedParameter
-case object FailedToDefineParameter extends DefinedParameter {
-  override def returnType: TypingResult = Unknown
+sealed trait DefinedSingleParameter extends DefinedParameter
+
+sealed trait DefinedBranchParameter extends DefinedParameter {
+
+  override def returnType: TypingResult = Typed(detailedReturnType.values.toSet)
+
+  def detailedReturnType: Map[String, TypingResult]
+
+}
+
+case class DefinedLazyParameter(returnType: TypingResult) extends DefinedSingleParameter
+case class DefinedEagerParameter(value: Any, returnType: TypingResult) extends DefinedSingleParameter
+
+case class DefinedLazyBranchParameter(detailedReturnType: Map[String, TypingResult]  ) extends DefinedBranchParameter
+case class DefinedEagerBranchParameter(value: Map[String, Any], detailedReturnType: Map[String, TypingResult]  ) extends DefinedBranchParameter
+
+//TODO: and for branch parameters??
+case object FailedToDefineParameter extends DefinedSingleParameter {
+  override val returnType: TypingResult = Unknown
 }
 

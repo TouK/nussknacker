@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodevalidation
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, DefinedLazyBranchParameter, DefinedLazyParameter, DefinedParameter}
 import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
@@ -10,14 +11,11 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.util.Implicits._
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
 
   private val contextToUse: Context = Context("objectCreate")
 
-  def prepareParameter(typedParameter: TypedParameter, definition: ParameterDef)(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
+  def prepareParameter(typedParameter: TypedParameter, definition: ParameterDef)(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, DefinedParameter) = {
     if (definition.isLazyParameter) {
       prepareLazyParameter(typedParameter, definition)
     } else {
@@ -25,23 +23,25 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
     }
   }
 
-  private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(implicit nodeId: NodeId): AnyRef = {
+  private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(implicit nodeId: NodeId): (AnyRef, DefinedParameter) = {
     param.typedValue match {
       case e:TypedExpression if !definition.branchParam =>
-        prepareLazyParameterExpression(definition, e)
+        (prepareLazyParameterExpression(definition, e), DefinedLazyParameter(e.returnType))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _))
+        (valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)), DefinedLazyBranchParameter(valueByKey.mapValuesNow(_.returnType)))
     }
   }
 
   private def evaluateParam[T](param: TypedParameter, definition: ParameterDef)
-                              (implicit processMetaData: MetaData, nodeId: NodeId) = {
+                              (implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, DefinedParameter) = {
 
     param.typedValue match {
       case e:TypedExpression if !definition.branchParam =>
-        evaluateSync(Parameter(e, definition))
+        val evaluated = evaluateSync(Parameter(e, definition))
+        (evaluated, DefinedEagerParameter(evaluated, e.returnType))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        valueByKey.mapValuesNow(exp => evaluateSync(Parameter(exp, definition)))
+        val evaluated = valueByKey.mapValuesNow(exp => evaluateSync(Parameter(exp, definition)))
+        (evaluated, DefinedEagerBranchParameter(evaluated, valueByKey.mapValuesNow(_.returnType)))
     }
   }
 
