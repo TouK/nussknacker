@@ -28,9 +28,9 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
   private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(implicit nodeId: NodeId): AnyRef = {
     param.typedValue match {
       case e:TypedExpression if !definition.branchParam =>
-        prepareLazyParameterExpression(param.name, e)
+        prepareLazyParameterExpression(definition, e)
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        valueByKey.mapValuesNow(prepareLazyParameterExpression(param.name, _))
+        valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _))
     }
   }
 
@@ -45,14 +45,13 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
     }
   }
 
-  private def prepareLazyParameterExpression[T](name: String, exprValue: TypedExpression)(implicit nodeId: NodeId): ExpressionLazyParameter[Nothing] = {
-    ExpressionLazyParameter(nodeId, graph.evaluatedparam.Parameter(name,
-      graph.expression.Expression(exprValue.expression.language, exprValue.expression.original)), exprValue.returnType)
+  private def prepareLazyParameterExpression[T](definition: ParameterDef, exprValue: TypedExpression)(implicit nodeId: NodeId): ExpressionLazyParameter[Nothing] = {
+    ExpressionLazyParameter(nodeId, definition,
+      graph.expression.Expression(exprValue.expression.language, exprValue.expression.original), exprValue.returnType)
   }
 
   private def evaluateSync(param: Parameter)(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
-    import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
-    Await.result(expressionEvaluator.evaluateParameter(param, contextToUse).map(_.value), 10 seconds)
+    expressionEvaluator.evaluateParameter(param, contextToUse).value
   }
 
 }

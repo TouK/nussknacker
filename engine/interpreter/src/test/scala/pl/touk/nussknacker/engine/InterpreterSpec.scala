@@ -800,8 +800,8 @@ object InterpreterSpec {
     case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
       override def language: String = languageId
 
-      override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]]
-      = Future.successful(ValueWithLazyContext(original.asInstanceOf[T], ctx.lazyContext))
+      override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T]
+      = ValueWithLazyContext(original.asInstanceOf[T], ctx.lazyContext)
     }
 
     override def languageId: String = "literal"

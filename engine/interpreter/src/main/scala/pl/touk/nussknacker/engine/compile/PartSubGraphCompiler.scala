@@ -318,9 +318,8 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
     implicit val meta: MetaData = MetaData("", null)
     Try {
-      val futureValue = expressionEvaluator.evaluateParameter(param, Context(""))
-      futureValue.value.flatMap(_.toOption).map(_.value)
-    }.toOption.flatten
+      expressionEvaluator.evaluateParameter(param, Context("")).value
+    }.toOption
   }
 
   private def getSubprocessParamDefinition(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
