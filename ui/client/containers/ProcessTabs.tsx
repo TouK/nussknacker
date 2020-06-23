@@ -1,14 +1,18 @@
-import {Switch} from "react-router-dom"
-import * as Processes from "./Processes"
-import * as SubProcesses from "./SubProcesses"
-import * as Archive from "./Archive"
-import React from "react"
-import {TabRoute} from "./TabRoute"
-import {TabLink} from "./TabLink"
-import styles from "./ProcessTabs.styl"
+import React, {ComponentType} from "react"
 import {hot} from "react-hot-loader"
+import {Switch} from "react-router-dom"
+import {ArchiveTabData} from "./Archive"
+import {ProcessesTabData} from "./Processes"
+import styles from "./ProcessTabs.styl"
+import {SubProcessesTabData} from "./SubProcesses"
+import {TabLink} from "./TabLink"
+import {TabRoute} from "./TabRoute"
 
-const routes = [Processes, SubProcesses, Archive]
+const routes: {path: string, header: string, Component: ComponentType}[] = [
+  ProcessesTabData,
+  SubProcessesTabData,
+  ArchiveTabData,
+]
 
 function Tabs() {
   return (

@@ -12,9 +12,6 @@ import {getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessNameInput} from "./ProcessNameInput"
 import {SearchItem} from "./TableFilters"
 
-export const path = `${nkPath}/processes`
-export const header = "Processes"
-
 const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
   const processState = getProcessState(statuses)
   return processes.map((process, index) => {
@@ -23,7 +20,6 @@ const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => 
         <Td column="name" className="name-column" value={process.name}>
           <ProcessNameInput process={process} onChange={getProcesses}/>
         </Td>
-
         <Td column="category">{process.processCategory}</Td>
         <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>
         <Td column="createdAt" className="centered-column" value={process.createdAt}>
@@ -83,4 +79,8 @@ function Processes() {
   )
 }
 
-export const Component = Processes
+export const ProcessesTabData = {
+  path: `${nkPath}/processes`,
+  header: "Processes",
+  Component: Processes,
+}

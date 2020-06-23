@@ -3,9 +3,9 @@ import {Redirect} from "react-router"
 import {matchPath, Route, Switch, withRouter} from "react-router-dom"
 import _ from "lodash"
 import {MenuBar} from "../components/MenuBar"
-import * as Processes from "./Processes"
-import * as SubProcesses from "./SubProcesses"
-import * as Archive from "./Archive"
+import {ProcessesTabData} from "./Processes"
+import {SubProcessesTabData} from "./SubProcesses"
+import {ArchiveTabData} from "./Archive"
 import NotFound from "./errors/NotFound"
 import {nkPath} from "../config"
 import Metrics from "./Metrics"
@@ -96,13 +96,17 @@ export class EspApp extends React.Component {
                   path={EspApp.path}
                   render={({location}) => (
                     <Switch location={location}>
-                      <FadeRoute path={[Processes.path, SubProcesses.path, Archive.path]} component={ProcessTabs} exact/>
+                      <FadeRoute
+                        path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
+                        component={ProcessTabs}
+                        exact
+                      />
                       <FadeRoute path={Visualization.path} component={Visualization} exact/>
                       <FadeRoute path={Metrics.path} component={Metrics} exact/>
                       <FadeRoute path={Search.path} component={Search} exact/>
                       <FadeRoute path={Signals.path} component={Signals} exact/>
                       <FadeRoute path={AdminPage.path} component={AdminPage} exact/>
-                      <Redirect from={EspApp.path} to={Processes.path} exact/>
+                      <Redirect from={EspApp.path} to={ProcessesTabData.path} exact/>
                       <FadeRoute component={NotFound}/>
                     </Switch>
                   )}

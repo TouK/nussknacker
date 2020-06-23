@@ -12,9 +12,6 @@ import {PageWithHealthCheck} from "./Page"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
 import {SearchItem} from "./TableFilters"
 
-export const path = `${nkPath}/subProcesses`
-export const header = "Subprocesses"
-
 function ShowProcessIcon({process}: {process: ProcessType}) {
   const dispatch = useDispatch()
   const onClick = useCallback(() => dispatch(showProcess(process.name)), [process.name])
@@ -64,4 +61,8 @@ function SubProcesses() {
   )
 }
 
-export const Component = SubProcesses
+export const SubProcessesTabData = {
+  path: `${nkPath}/subProcesses`,
+  header: "Subprocesses",
+  Component: SubProcesses,
+}

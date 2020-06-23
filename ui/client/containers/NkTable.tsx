@@ -6,6 +6,7 @@ import {useSearchQuery} from "./hooks/useSearchQuery"
 
 type OwnProps = {
   isLoading?: boolean,
+  className?: string,
 }
 
 type TableProps = Pick<TableComponentProperties, "columns" | "filterable" | "sortable" | "filterBy" | "itemsPerPage" | "children">
@@ -14,7 +15,7 @@ type Props = TableProps & OwnProps
 type QueryType = {page: number} & SortType
 
 export function NkTable(props: Props) {
-  const {isLoading, sortable, columns, ...passProps} = props
+  const {isLoading, sortable, columns, className, ...passProps} = props
 
   const [query, setQuery] = useSearchQuery<QueryType>({parseNumbers: true})
 
@@ -43,6 +44,8 @@ export function NkTable(props: Props) {
         nextPageLabel={">"}
         pageButtonLimit={5}
         hideFilterInput={true}
+
+        itemsPerPage={5}
 
         sortable={sortable}
         columns={columns}

@@ -10,9 +10,6 @@ import {Page} from "./Page"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
 import {SearchItem} from "./TableFilters"
 
-export const path = `${nkPath}/archivedProcesses`
-export const header = "Archive"
-
 const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process => (
   <Tr className="row-hover" key={process.name}>
     <Td column="name">{process.name}</Td>
@@ -60,4 +57,8 @@ function Archive() {
   )
 }
 
-export const Component = Archive
+export const ArchiveTabData = {
+  path: `${nkPath}/archivedProcesses`,
+  header: "Archive",
+  Component: Archive,
+}

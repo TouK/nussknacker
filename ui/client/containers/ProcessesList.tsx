@@ -90,8 +90,6 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
         isLoading={isLoading}
         filterBy={search?.toString()}
 
-        itemsPerPage={10}
-
         sortable={sortable}
         filterable={filterable}
         columns={columns}

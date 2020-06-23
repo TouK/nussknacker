@@ -9,9 +9,6 @@ import {getProcessState, ProcessesList, RowsRenderer} from "../ProcessesList"
 import {CancelIcon} from "./CancelIcon"
 import {DeployIcon} from "./DeployIcon"
 
-export const header = "Custom Processes"
-export const key = "custom-processes"
-
 const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
   const processState = getProcessState(statuses)
   return processes.map(process => {
@@ -47,7 +44,7 @@ const columns = [
   {key: "cancel", label: "Cancel"},
 ]
 
-function CustomProcesses() {
+export function CustomProcesses() {
 
   return (
     <PageWithHealthCheck>
@@ -66,4 +63,8 @@ function CustomProcesses() {
   )
 }
 
-export const Component = CustomProcesses
+export const CustomProcessesTabData = {
+  header: "Custom Processes",
+  key: "custom-processes",
+  Component: CustomProcesses,
+}

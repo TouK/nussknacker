@@ -3,13 +3,13 @@ import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {NavLink} from "react-router-dom"
 import {AdminPage} from "../containers/AdminPage"
-import * as Archive from "../containers/Archive"
+import {ArchiveTabData} from "../containers/Archive"
 import {EspApp} from "../containers/EspApp"
 import {Metrics} from "../containers/Metrics"
-import * as Processes from "../containers/Processes"
+import {ProcessesTabData} from "../containers/Processes"
 import {Search} from "../containers/Search"
 import {Signals} from "../containers/Signals"
-import * as SubProcesses from "../containers/SubProcesses"
+import {SubProcessesTabData} from "../containers/SubProcesses"
 import {Flex} from "./common/Flex"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -61,12 +61,12 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
             <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
           </button>
           <ul id="menu-items" onClick={() => setExpanded(false)}>
-            <MenuItem path={Processes.path} title={t("menu.processes", "Processes")}/>
-            <MenuItem path={SubProcesses.path} title={t("menu.subProcesses", "Subprocesses")}/>
+            <MenuItem path={ProcessesTabData.path} title={t("menu.processes", "Processes")}/>
+            <MenuItem path={SubProcessesTabData.path} title={t("menu.subProcesses", "Subprocesses")}/>
             {showMetrics && <MenuItem path={Metrics.basePath} title={t("menu.metrics", "Metrics")}/>}
             {showSearch && <MenuItem path={Search.path} title={t("menu.search", "Search")}/>}
             {showSignals && <MenuItem path={Signals.path} title={t("menu.signals", "Signals")}/>}
-            <MenuItem path={Archive.path} title={t("menu.archive", "Archive")}/>
+            <MenuItem path={ArchiveTabData.path} title={t("menu.archive", "Archive")}/>
             {showAdmin && <MenuItem path={AdminPage.path} title={t("menu.adminPage", "Admin")}/>}
           </ul>
         </Flex>

@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import * as DialogMessages from "../../../../common/DialogMessages"
 import HttpService from "../../../../http/HttpService"
 import history from "../../../../history"
-import * as Archive from "../../../../containers/Archive"
+import {ArchiveTabData} from "../../../../containers/Archive"
 import {events} from "../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../actions/nk/ui/toggleConfirmDialog"
 import {bindActionCreators} from "redux"
@@ -28,7 +28,7 @@ function ArchiveButton(props: StateProps) {
       onClick={() => !isRunning && toggleConfirmDialog(
         true,
         DialogMessages.archiveProcess(processId),
-        () => HttpService.archiveProcess(processId).then(() => history.push(Archive.path)),
+        () => HttpService.archiveProcess(processId).then(() => history.push(ArchiveTabData.path)),
         t("panels.actions.process-archive.yes", "Yes"),
         t("panels.actions.process-archive.no", "No"),
         // eslint-disable-next-line i18next/no-literal-string
