@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+const bootstrap = require("bootstrap")
 const path = require("path")
 const webpack = require("webpack")
 const childProcess = require("child_process")
@@ -185,7 +186,15 @@ module.exports = {
       {
         test: /\.styl$/,
         enforce: "pre",
-        use: [...cssPreLoaders, "stylus-loader"],
+        use: [
+          ...cssPreLoaders,
+          {
+            loader: "stylus-loader",
+            options: {
+              use: [bootstrap()],
+            },
+          },
+        ],
       },
       {
         test: /\.less$/,
