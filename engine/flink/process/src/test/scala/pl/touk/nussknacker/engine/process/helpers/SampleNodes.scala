@@ -492,6 +492,7 @@ object SampleNodes {
       : this.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(initialParameters)
       case TransformationStep(("type", DefinedEagerParameter(value: String, _))::Nil, None) =>
+        //This is just sample, so we don't care about all cases, in *real* transformer we would e.g. take lists from config file, external service etc.
         val versions = value match {
           case "type1" => List(1, 2)
           case "type2" => List(3, 4)

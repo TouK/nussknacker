@@ -77,14 +77,19 @@ trait WithParametersNodeValidator[T <: NodeData with WithParameters] extends Nod
 
   private val nodeValidator = new GenericNodeTransformationValidator(expressionCompiler, expressionEvaluator)
 
-  protected def validate(transform: SingleInputGenericNodeTransformation[_],
-                         nodeData: NodeData with WithParameters,
-                         validationContext: ValidationContext, outputVar: Option[String])(implicit metaData: MetaData): ValidationPerformed = {
-    implicit val nodeId: NodeId = NodeId(nodeData.id)
-    nodeValidator.validateNode(transform, nodeData.parameters, validationContext, outputVar) match {
-      case Valid(result) =>
-        ValidationPerformed(result.errors, Some(result.parameters))
-      case Invalid(e) => ValidationPerformed(e.toList, None)
+  protected def validateGenericTransformer(obj: Any,
+                                           nodeData: NodeData with WithParameters,
+                                           validationContext: ValidationContext,
+                                           outputVar: Option[String], default: Any => ValidationResponse)(implicit metaData: MetaData): ValidationResponse = {
+    obj match {
+      case transform:SingleInputGenericNodeTransformation[_] =>
+        implicit val nodeId: NodeId = NodeId(nodeData.id)
+        nodeValidator.validateNode(transform, nodeData.parameters, validationContext, outputVar) match {
+          case Valid(result) =>
+            ValidationPerformed(result.errors, Some(result.parameters))
+          case Invalid(e) => ValidationPerformed(e.toList, None)
+        }
+      case other => default(other)
     }
   }
 
@@ -94,12 +99,8 @@ class CustomNodeValidator(val modelData: ModelData) extends WithParametersNodeVa
 
   override def validate(nodeData: CustomNode, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val transformer = modelData.processWithObjectsDefinition.customStreamTransformers(nodeData.nodeType)._1.obj
-    transformer match {
-      case a:SingleInputGenericNodeTransformation[_] =>
-        validate(a, nodeData, validationContext, nodeData.outputVar)
-      //TODO: handle 'standard' case
-      case _ => ValidationNotPerformed
-    }
+    //TODO: handle standard case (non-generic transformer)
+    validateGenericTransformer(transformer, nodeData, validationContext, nodeData.outputVar, _ => ValidationNotPerformed)
   }
 }
 
@@ -107,12 +108,8 @@ class SinkNodeValidator(val modelData: ModelData) extends WithParametersNodeVali
 
   override def validate(nodeData: Sink, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val transformer = modelData.processWithObjectsDefinition.sinkFactories(nodeData.ref.typ)._1.obj
-    transformer match {
-      case a:SingleInputGenericNodeTransformation[_] =>
-        validate(a, nodeData, validationContext, None)
-      //TODO: handle 'standard' case
-      case _ => ValidationNotPerformed
-    }
+    //TODO: handle standard case (non-generic transformer)
+    validateGenericTransformer(transformer, nodeData, validationContext, None, _ => ValidationNotPerformed)
   }
 }
 
@@ -120,12 +117,8 @@ class SourceNodeValidator(val modelData: ModelData) extends WithParametersNodeVa
 
   override def validate(nodeData: Source, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val transformer = modelData.processWithObjectsDefinition.sourceFactories(nodeData.ref.typ).obj
-    transformer match {
-      case a:SingleInputGenericNodeTransformation[_] =>
-        validate(a, nodeData, validationContext, None)
-      //TODO: handle 'standard' case
-      case _ => ValidationNotPerformed
-    }
+    //TODO: handle standard case (non-generic transformer)
+    validateGenericTransformer(transformer, nodeData, validationContext, None, _ => ValidationNotPerformed)
   }
 }
 
