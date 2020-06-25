@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericData
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
@@ -59,8 +59,8 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   protected lazy val valueDeserializer: KafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient)
   protected lazy val valueSerializer: KafkaAvroSerializer = new KafkaAvroSerializer(schemaRegistryClient)
 
-  protected def createSchemaRegistryProvider(useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[GenericData.Record] =
-    ConfluentSchemaRegistryProvider[GenericData.Record](
+  protected def createSchemaRegistryProvider[T:TypeInformation](useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider[T](
       confluentClientFactory,
       processObjectDependencies,
       useSpecificAvroReader = useSpecificAvroReader,

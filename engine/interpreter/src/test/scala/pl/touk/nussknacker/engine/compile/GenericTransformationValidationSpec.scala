@@ -110,8 +110,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       Parameter[String]("par1"), Parameter[Long]("lazyPar1").copy(isLazyParameter = true)
     )
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
-      null
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): T = {
+      null.asInstanceOf[T]
     }
 
   }

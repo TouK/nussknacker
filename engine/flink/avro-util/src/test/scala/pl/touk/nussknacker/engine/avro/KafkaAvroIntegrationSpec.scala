@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.avro
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericContainer, GenericData}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
@@ -38,8 +39,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[GenericData.Record] =
-      ConfluentSchemaRegistryProvider[GenericData.Record](factory, processObjectDependencies)
+    override protected def createSchemaProvider[T:TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
+      ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
@@ -266,7 +267,7 @@ object KafkaAvroIntegrationMockSchemaRegistry {
     * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
     */
   val factory: CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None) {
+    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None, None) {
       override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
         schemaRegistryMockClient
     }

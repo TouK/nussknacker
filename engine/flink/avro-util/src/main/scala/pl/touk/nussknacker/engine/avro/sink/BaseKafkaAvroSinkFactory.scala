@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.avro.sink
 
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSchemaProvider}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 
 abstract class BaseKafkaAvroSinkFactory(processObjectDependencies: ProcessObjectDependencies) extends SinkFactory {
@@ -18,7 +19,7 @@ abstract class BaseKafkaAvroSinkFactory(processObjectDependencies: ProcessObject
                            kafkaConfig: KafkaConfig,
                            kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[_],
                            processMetaData: MetaData,
-                           nodeId: NodeId): Sink = {
+                           nodeId: NodeId): FlinkSink = {
 
     val schema = kafkaAvroSchemaProvider.fetchTopicValueSchema.valueOr(KafkaAvroFactory.handleError)
 
