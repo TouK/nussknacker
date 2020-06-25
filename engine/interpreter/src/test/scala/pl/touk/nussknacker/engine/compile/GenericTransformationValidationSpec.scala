@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, MethodToInvoke, process}
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, Source, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -24,16 +24,20 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   object MyProcessConfigCreator extends EmptyProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-      "genericParameters" -> WithCategories(GenericParameters)
+      "genericParameters" -> WithCategories(GenericParametersTransformer)
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-      "mySource" -> WithCategories(SimpleStringSource))
+      "mySource" -> WithCategories(SimpleStringSource),
+      "genericParametersSource" -> WithCategories(GenericParametersSource)
+    )
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
       "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {
         override def testDataOutput: Option[Nothing] = None
-      })))
+      })),
+      "genericParametersSink" -> WithCategories(GenericParametersSink)
+    )
 
   }
 
@@ -44,12 +48,45 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     def create(): api.process.Source[String] = null
   }
 
-  object GenericParameters extends CustomStreamTransformer with SingleInputGenericNodeTransformation[AnyRef] {
+
+  object GenericParametersTransformer extends CustomStreamTransformer with GenericParameters[Null] {
+
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+      dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
+        case Some(name) =>
+          finalResult(context, rest, name)
+        case None =>
+          FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
+      }
+    }
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
+
+  }
+
+  object GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
+    override def clazz: Class[_] = classOf[String]
+
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+      finalResult(context, rest, "otherNameThanInput")
+    }
+    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
+
+  }
+
+  object GenericParametersSink extends SinkFactory with GenericParameters[Sink] {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+      FinalResults(context)
+    }
+    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
+
+  }
+
+  trait GenericParameters[T] extends SingleInputGenericNodeTransformation[T] {
 
     override type State = List[String]
 
     override def contextTransformation(context: ValidationContext,
-                                       dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): GenericParameters.NodeTransformationDefinition = {
+                                       dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(initialParameters)
       case TransformationStep(("par1", DefinedEagerParameter(value: String, _))::("lazyPar1", _)::Nil, None) =>
         val split = value.split(",").toList
@@ -60,16 +97,13 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         outputParameters(context, dependencies, rest)
     }
 
-    private def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): GenericParameters.FinalResults = {
-      dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
-        case Some(name) =>
-          val result = TypedObjectTypingResult(rest.toMap.mapValues(_.returnType))
-          context.withVariable(name, result).fold(
-            errors => FinalResults(context, errors.toList),
-            FinalResults(_))
-        case None =>
-          FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
-      }
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
+
+    protected def finalResult(context: ValidationContext, rest: List[(String, DefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
+      val result = TypedObjectTypingResult(rest.toMap.mapValues(_.returnType))
+      context.withVariable(name, result).fold(
+        errors => FinalResults(context, errors.toList),
+        FinalResults(_))
     }
 
     override def initialParameters: List[Parameter] = List(
@@ -79,9 +113,6 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
       null
     }
-
-    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
-
 
   }
 
@@ -114,6 +145,51 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
     ))
 
+  }
+
+  test("should validate sources") {
+    val result = validator.validate(
+      EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "genericParametersSource",
+           "par1" -> "'val1,val2,val3'",
+           "lazyPar1" -> "'ll' == null ? 1 : 5",
+           "val1" -> "'aa'",
+           "val2" -> "11",
+           "val3" -> "{false}"
+         )
+         .emptySink("end", "dummySink")
+     )
+     result.result shouldBe 'valid
+     val info1 = result.typing("end")
+
+     info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(Map(
+       "val1" -> Typed[String],
+       "val2" -> Typed[java.lang.Integer],
+       "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
+     ))
+  }
+
+  test("should validate sinks") {
+    val result = validator.validate(
+      processBase.emptySink("end", "genericParametersSink",
+           "par1" -> "'val1,val2,val3'",
+           "lazyPar1" -> "#input == null ? 1 : 5",
+           "val1" -> "'aa'",
+           "val2" -> "11",
+           "val3" -> "{false}"
+         )
+     )
+     result.result shouldBe 'valid
+  }
+
+  test("should dependent parameter in sink") {
+    val result = validator.validate(
+      processBase.emptySink("end", "genericParametersSink",
+        "par1" -> "'val1,val2'",
+        "lazyPar1" -> "#input == null ? 1 : 5",
+        "val1" -> "''"
+      )
+    )
+    result.result shouldBe Invalid(NonEmptyList.of(MissingParameters(Set("val2"), "end")))
   }
 
   test("should find wrong determining parameter") {

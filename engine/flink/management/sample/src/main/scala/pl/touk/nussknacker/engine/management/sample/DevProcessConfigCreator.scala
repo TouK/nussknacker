@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
-import pl.touk.nussknacker.engine.management.sample.source.{BoundedSource, CsvSource, NoEndingSource, OneSource}
+import pl.touk.nussknacker.engine.management.sample.source.{BoundedSource, CsvSource, DynamicParametersSource, NoEndingSource, OneSource}
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 
@@ -52,6 +52,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
     "monitor" -> categories(SinkFactory.noParam(EmptySink)),
+    "communicationSink" -> categories(DynamicParametersSink),
     "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, _.toString),
                                                 processObjectDependencies))
   )
@@ -66,6 +67,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
+    "communicationSource" -> categories(DynamicParametersSource),
     "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource))
   )
 

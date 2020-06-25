@@ -9,9 +9,12 @@ import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.FilterFunction
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
+import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.timestamps.{AscendingTimestampExtractor, BoundedOutOfOrdernessTimestampExtractor}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -19,7 +22,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, FailedToDefineParameter, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -35,6 +38,7 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeseri
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.GenericParametersSource
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -479,6 +483,89 @@ object SampleNodes {
 
 
   }
+
+  object GenericParametersSource extends FlinkSourceFactory[AnyRef] with SingleInputGenericNodeTransformation[Source[AnyRef]] {
+
+    override type State = Nothing
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
+      : this.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(("type", DefinedEagerParameter(value: String, _))::Nil, None) =>
+        //This is just sample, so we don't care about all cases, in *real* transformer we would e.g. take lists from config file, external service etc.
+        val versions = value match {
+          case "type1" => List(1, 2)
+          case "type2" => List(3, 4)
+          case _ => ???
+        }
+        NextParameters(Parameter[Int]("version")
+              .copy(editor = Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))):: Nil)
+      case TransformationStep(("type", FailedToDefineParameter)::Nil, None) =>
+        output(context, dependencies)
+      case TransformationStep(("type", _)::("version", _)::Nil, None) =>
+        output(context, dependencies)
+    }
+
+    private def output(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId) = {
+      context.withVariable(dependencies.collectFirst {
+        case OutputVariableNameValue(name) => name
+      }.get, Typed[String]).fold(
+        errors => FinalResults(context, errors.toList),
+        FinalResults(_))
+    }
+
+    override def initialParameters: List[Parameter] = Parameter[String]("type")
+      .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
+      val out = params("type") + "-" + params("version")
+      CollectionSource(StreamExecutionEnvironment.getExecutionEnvironment.getConfig, out::Nil, None, Typed[String])
+    }
+
+    override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
+  }
+
+  object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink]  {
+
+    override type State = Nothing
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
+      : this.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(("value", _) :: ("type", DefinedEagerParameter(value: String, _))::Nil, None) =>
+        val versions = value match {
+          case "type1" => List(1, 2)
+          case "type2" => List(3, 4)
+          case _ => ???
+        }
+        NextParameters(Parameter[Int]("version")
+              .copy(editor = Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))):: Nil)
+      case TransformationStep(("value", _) :: ("type", FailedToDefineParameter)::Nil, None) => FinalResults(context)
+      case TransformationStep(("value", _) :: ("type", _)::("version", _)::Nil, None) => FinalResults(context)
+    }
+    override def initialParameters: List[Parameter] = Parameter[String]("value").copy(isLazyParameter = true) :: Parameter[String]("type")
+      .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
+      new FlinkSink with Serializable {
+        private val typ = params("type")
+        private val version = params("version")
+
+        override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
+          dataStream
+            .map(_.finalContext)
+            .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
+            .map[Any]((v: ValueWithContext[String]) => s"${v.value}+$typ-$version")
+            .addSink(SinkForStrings.toFlinkFunction)
+        }
+
+        override def testDataOutput: Option[Any => String] = None
+      }
+    }
+
+    override def nodeDependencies: List[NodeDependency] = Nil
+  }
+
 
   object ProcessHelper {
 
