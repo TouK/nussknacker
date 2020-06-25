@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryKafkaAvroPr
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory._
 
+@Deprecated
 class LegacyKafkaAvroSourceFactory[T: TypeInformation](schemaRegistryProvider: SchemaRegistryProvider[T],
                                                        processObjectDependencies: ProcessObjectDependencies,
                                                        timestampAssigner: Option[TimestampAssigner[T]])

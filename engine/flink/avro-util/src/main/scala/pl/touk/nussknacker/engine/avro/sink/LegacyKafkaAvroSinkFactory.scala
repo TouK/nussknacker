@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroFactory._
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
+@Deprecated
 class LegacyKafkaAvroSinkFactory(schemaRegistryProvider: SchemaRegistryProvider[_], processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaAvroSinkFactory(processObjectDependencies) {
 

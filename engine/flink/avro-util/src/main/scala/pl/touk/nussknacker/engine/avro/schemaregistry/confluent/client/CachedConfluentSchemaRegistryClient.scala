@@ -50,9 +50,10 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     }
   }
 
-  override def getAllVersions(topic: String): Validated[SchemaRegistryError, List[Integer]] = handleClientError {
-    caches.versionsCache.getOrCreate(topic) {
-      client.getAllVersions(ConfluentUtils.valueSubject(topic)).asScala.toList
+  override def getAllVersions(topic: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] = handleClientError {
+    val subject = ConfluentUtils.topicSubject(topic, isKey)
+    caches.versionsCache.getOrCreate(subject) {
+      client.getAllVersions(subject).asScala.toList
     }
   }
 

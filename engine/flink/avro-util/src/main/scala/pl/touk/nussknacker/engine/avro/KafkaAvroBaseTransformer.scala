@@ -26,7 +26,7 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
   )))
 
   protected def versionParam(topic: String): Parameter = {
-    val versions = schemaRegistryClient.getAllVersions(topic).getOrElse(Nil).sorted
+    val versions = schemaRegistryClient.getAllVersions(topic, isKey = false).getOrElse(Nil).sorted
     val versionValues = FixedExpressionValue("", "Latest version") :: versions.map(v => FixedExpressionValue(v.toString, v.toString))
     Parameter[Integer](KafkaAvroFactory.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)), validators = Nil
    )

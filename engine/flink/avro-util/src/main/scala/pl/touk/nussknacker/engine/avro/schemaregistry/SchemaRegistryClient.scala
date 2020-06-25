@@ -37,7 +37,7 @@ trait SchemaRegistryClient extends Serializable {
 
   def getAllTopics: Validated[SchemaRegistryError, List[String]]
 
-  def getAllVersions(topic: String): Validated[SchemaRegistryError, List[Integer]]
+  def getAllVersions(topic: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
 
 }
 
