@@ -517,7 +517,7 @@ object SampleNodes {
     override def initialParameters: List[Parameter] = Parameter[String]("type")
       .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): Source[AnyRef] = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
       val out = params("type") + "-" + params("version")
       CollectionSource(StreamExecutionEnvironment.getExecutionEnvironment.getConfig, out::Nil, None, Typed[String])
     }
@@ -546,7 +546,7 @@ object SampleNodes {
     override def initialParameters: List[Parameter] = Parameter[String]("value").copy(isLazyParameter = true) :: Parameter[String]("type")
       .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): Sink = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
       new FlinkSink with Serializable {
         private val typ = params("type")
         private val version = params("version")
