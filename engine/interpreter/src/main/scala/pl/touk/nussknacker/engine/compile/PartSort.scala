@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import pl.touk.nussknacker.engine.graph.node.{BranchEndData, BranchEndDefinition, SourceNodeData}
-import pl.touk.nussknacker.engine.splittedgraph.SplittedNodesCollector
+import pl.touk.nussknacker.engine.split.NodesCollector
 import pl.touk.nussknacker.engine.splittedgraph.part.SourcePart
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 
@@ -33,8 +33,8 @@ object PartSort {
   }
 
   private def sourcePartIdNotInBranchEnds(part: SourcePart, toSort: List[SourcePart]): Boolean = {
-    toSort.map(_.node)
-      .flatMap(SplittedNodesCollector.collectNodes)
+    toSort
+      .flatMap(NodesCollector.collectNodesInAllParts)
       .collect {
         case EndingNode(BranchEndData(BranchEndDefinition(_, joinId))) if joinId == part.id =>
           true
