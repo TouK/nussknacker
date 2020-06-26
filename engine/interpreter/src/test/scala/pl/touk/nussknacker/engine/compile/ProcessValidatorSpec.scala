@@ -302,10 +302,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .id("process1")
         .exceptionHandler()
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withJsonParam", "jsonParam" -> "'{'")
-        .customNode("customNodeId2", "event", "withJsonParam", "jsonParam" -> "'{\"}'")
-        .customNode("customNodeId3", "event", "withJsonParam", "jsonParam" -> "'{\"invalid\" : \"json\" : \"0\"}'")
-        .customNode("customNodeId4", "event", "withJsonParam", "jsonParam" -> "'{\"invalid\" : [\"json\"}'")
+        .customNode("customNodeId", "event1", "withJsonParam", "jsonParam" -> "'{'")
+        .customNode("customNodeId2", "event2", "withJsonParam", "jsonParam" -> "'{\"}'")
+        .customNode("customNodeId3", "event3", "withJsonParam", "jsonParam" -> "'{\"invalid\" : \"json\" : \"0\"}'")
+        .customNode("customNodeId4", "event4", "withJsonParam", "jsonParam" -> "'{\"invalid\" : [\"json\"}'")
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
