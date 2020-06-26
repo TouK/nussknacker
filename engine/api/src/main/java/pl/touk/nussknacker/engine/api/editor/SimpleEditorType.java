@@ -11,4 +11,5 @@ public enum SimpleEditorType {
     STRING_EDITOR,
     TIME_EDITOR,
     TEXTAREA_EDITOR,
+    JSON_EDITOR,
 }

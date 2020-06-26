@@ -27,7 +27,8 @@ Nussknacker versions
     [#996](https://github.com/TouK/nussknacker/pull/996), 
     [#1001](https://github.com/TouK/nussknacker/pull/1001),
     [#1011](https://github.com/TouK/nussknacker/pull/1011)
-    
+* [#988](https://github.com/TouK/nussknacker/pull/988) Json editor
+
 0.1.2
 ------------------------
 * [#965](https://github.com/TouK/nussknacker/pull/965) Added new, 'aggregate-tumbling' node.
