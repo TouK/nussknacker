@@ -520,6 +520,25 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
+  test("join-custom-join should work (branch end is in different part of process)") {
+    val validProcess =
+      EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "mySource")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .branch("join1", "unionTransformer", Some("outPutVar"), List("branch1" -> List("key" -> "'key1'", "value" -> "'ala'")))
+          .customNode("custom1", "outPutVar3", "producingTupleTransformer", "numberOfFields" -> "2")
+          .branchEnd("branch2", "join2"),
+        GraphBuilder
+          .branch("join2", "unionTransformer", Some("outPutVar2"), List("branch2" -> List("key" -> "'key1'", "value" -> "'ala'")))
+          .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
+      ))
+    val validationResult = validator.validate(validProcess)
+
+    validationResult.result shouldBe 'valid
+  }
+
   test("eager params in joins") {
     val process =
       EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
