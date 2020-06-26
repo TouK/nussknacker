@@ -14,6 +14,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
+                                additionalNac: Option[List[AdditionalNac]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 attachments: Option[String])
 
@@ -33,6 +34,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
+    val additionalNac = parseOptionalConfig[List[AdditionalNac]](config, "additionalNac")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
 
@@ -44,6 +46,7 @@ object FeatureTogglesConfig extends LazyLogging{
       counts = counts,
       commentSettings = commentSettings,
       deploySettings = deploySettings,
+      additionalNac = additionalNac,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
       attachments = attachments
