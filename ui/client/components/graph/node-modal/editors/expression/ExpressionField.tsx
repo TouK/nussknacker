@@ -3,7 +3,7 @@ import React from "react"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableEditor from "../EditableEditor"
 import {EditorType} from "./Editor"
-import {NodeType, UIParameter} from "../../../../../types"
+import {NodeType, UIParameter, VariableTypes} from "../../../../../types"
 
 type Props = {
   fieldName: string,
@@ -22,6 +22,7 @@ type Props = {
   renderFieldLabel: Function,
   fieldType: string,
   errors: Array<Error>,
+  variableTypes: VariableTypes,
 }
 
 class ExpressionField extends React.Component<Props> {
@@ -30,8 +31,10 @@ class ExpressionField extends React.Component<Props> {
     const {
       fieldName, fieldLabel, exprPath, isEditMode, editedNode, isMarked, showValidation, showSwitch,
       parameterDefinition, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel, fieldType,
-      errors,
+      errors, variableTypes,
     } = this.props
+    console.log("name", fieldName, variableTypes)
+
     const readOnly = !isEditMode
     const exprTextPath = `${exprPath}.expression`
     const expressionObj = _.get(editedNode, exprPath)
@@ -53,6 +56,7 @@ class ExpressionField extends React.Component<Props> {
           readOnly={readOnly}
           onValueChange={(newValue) => setNodeDataAt(exprTextPath, newValue)}
           errors={errors}
+          variableTypes={variableTypes}
           showValidation={showValidation}
         />
       )
@@ -76,6 +80,7 @@ class ExpressionField extends React.Component<Props> {
           showValidation={showValidation}
           showSwitch={showSwitch}
           readOnly={readOnly}
+          variableTypes={variableTypes}
           onValueChange={(newValue) => setNodeDataAt(exprTextPath, newValue)}
           errors={errors}
         />

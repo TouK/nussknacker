@@ -1,9 +1,10 @@
 import ProcessUtils from '../common/ProcessUtils'
 import _ from 'lodash'
 
+//nodeId, process, processDefinition, fieldName, processCategory  ==> (processDefinition, processCategory, process) => (nodeId, parameterDefinition)
 describe("process available variables finder", () => {
   it("should find available variables with its types in process at the beginning of the process", () => {
-    const availableVariables = ProcessUtils.findAvailableVariables("processVariables", process, processDefinition, null, "Category1")
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", process)("processVariables")
     expect(availableVariables).toEqual({
       "input": {refClazzName: "org.nussknacker.model.Transaction"},
       "date": {refClazzName:"java.time.LocalDate"}
@@ -12,7 +13,8 @@ describe("process available variables finder", () => {
 
   
   it("should find available variables with its types in process in the end of the process", () => {
-    const availableVariables = ProcessUtils.findAvailableVariables("endEnriched", process, processDefinition, null, "Category1")
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", process)("endEnriched")
+
     expect(availableVariables).toEqual({
       "input": {refClazzName:"org.nussknacker.model.Transaction"},
       "date": {refClazzName:"java.time.LocalDate"},
@@ -25,7 +27,7 @@ describe("process available variables finder", () => {
 
 
   it("should find subprocess parameters as variables with its types", () => {
-    const availableVariables = ProcessUtils.findAvailableVariables("endEnriched", subprocess, processDefinition, null, "Category1")
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", subprocess)("endEnriched")
     expect(availableVariables).toEqual({
       "date": {refClazzName:"java.time.LocalDate"},
       "subprocessParam": {refClazzName:"java.lang.String"}
@@ -38,7 +40,7 @@ describe("process available variables finder", () => {
     const newEdges = _.reject(process.edges, (edge) => {return edge.from == danglingNodeId || edge.to == danglingNodeId})
     const processWithDanglingNode = {...process, ...{edges: newEdges}}
 
-    const availableVariables = ProcessUtils.findAvailableVariables(danglingNodeId, processWithDanglingNode, processDefinition, null, "Category1")
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", processWithDanglingNode)("danglingNodeId")
 
     expect(availableVariables).toEqual({
       "date": {refClazzName:"java.time.LocalDate"}
@@ -46,7 +48,7 @@ describe("process available variables finder", () => {
   })
 
   it("should use variables from validation results if exist", () => {
-    const availableVariables = ProcessUtils.findAvailableVariables("variableNode", processWithVariableTypes, processDefinition, null, "Category1")
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", processWithVariableTypes)("variableNode")
 
     expect(availableVariables).toEqual({
       "input": {refClazzName:"java.lang.String"}, "processVariables": {refClazzName:"java.util.Map", fields: {field1: {refClazzName: "java.lang.String"}}}
@@ -54,7 +56,7 @@ describe("process available variables finder", () => {
   })
 
   it("should fallback to variables decoded from graph if typing via validation fails", () => {
-    const availableVariables = ProcessUtils.findAvailableVariables("anonymousUserFilter", processWithVariableTypes, processDefinition, null, "Category1")
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", processWithVariableTypes)("anonymousUserFilter")
 
     expect(availableVariables).toEqual({
       "date": {refClazzName:"java.time.LocalDate"},
@@ -65,7 +67,7 @@ describe("process available variables finder", () => {
   })
 
   it("should filter globalVariables by Category3", () => {
-    const availableVariables = ProcessUtils.findAvailableVariables("anonymousUserFilter", processWithVariableTypes, processDefinition, null, "Category3")
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category3", processWithVariableTypes)("anonymousUserFilter")
 
     expect(availableVariables).toEqual({
       "date2": {refClazzName:"java.time.Date"},
@@ -76,7 +78,7 @@ describe("process available variables finder", () => {
   })
 
   it("should not fetch globalVariables for no defined category", () => {
-    const availableVariables = ProcessUtils.findAvailableVariables("anonymousUserFilter", processWithVariableTypes, processDefinition)
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, null, processWithVariableTypes)("anonymousUserFilter")
 
     expect(availableVariables).toEqual({
       someVariableName: {refClazzName:"java.lang.Object"},
@@ -85,8 +87,10 @@ describe("process available variables finder", () => {
     })
   })
 
+
   it("add additional variables to node if defined", () => {
-    const availableVariables = ProcessUtils.findAvailableVariables("aggregateId", processWithVariableTypes, processDefinition, "withAdditional", "Category1")
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", processWithVariableTypes)("aggregateId", paramWithAdditionalVariables)
+
     expect(availableVariables).toEqual({
       "additional1": {refClazzName: "java.lang.String"},
       "input": {refClazzName:"org.nussknacker.model.Transaction"},
@@ -98,6 +102,8 @@ describe("process available variables finder", () => {
   })
 })
 
+const paramWithAdditionalVariables = {name: "withAdditional", additionalVariables: {"additional1": { "refClazzName": "java.lang.String"}}}
+
 const processDefinition = {
   "services" : { "transactionParser": { "parameters": [], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": ["Category1"]},},
   "sourceFactories" : { "kafka-transaction": { "parameters": [ { "name": "topic", "typ": { "refClazzName": "java.lang.String"} }], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": [ "Category1" ]} },
@@ -105,7 +111,7 @@ const processDefinition = {
   "customStreamTransformers" : {
     "transactionAggregator" : {
       "parameters": [
-        {name: "withAdditional", additionalVariables: {"additional1": { "refClazzName": "java.lang.String"}}}
+        paramWithAdditionalVariables
       ],
       "returnType": {"refClazzName": "java.lang.String"}, "categories": [ "Category12"]}},
   "exceptionHandlerFactory" : { "parameters" : [ { "name": "errorsTopic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "org.nussknacker.process.espExceptionHandlerFactory"}, "categories" : []},

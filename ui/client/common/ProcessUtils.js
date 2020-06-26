@@ -42,11 +42,11 @@ class ProcessUtils {
     return _.isEmpty(result.processPropertiesErrors)
   }
 
-  findAvailableVariables = (nodeId, process, processDefinition, fieldName, processCategory) => {
+  findAvailableVariables = (processDefinition, processCategory, process) => (nodeId, parameterDefinition) => {
     const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
     const variablesFromValidation = _.get(process, ["validationResult", "variableTypes", nodeId])
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
-    const additionalVariablesForParam = nodeId ? this._additionalVariablesForParameter(nodeId, process, processDefinition, fieldName) : {}
+    const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...variablesForNode, ...additionalVariablesForParam}
 
     //Filtering by category - we show variables only with the same category as process, removing these which are in blackList
@@ -56,13 +56,6 @@ class ProcessUtils {
   //It's not pretty but works.. This should be done at backend with properly category hierarchy
   _findGlobalVariablesWithoutProcessCategory = (globalVariables, processCategory) => {
     return _.keys(_.pickBy(globalVariables, variable => _.indexOf(variable.categories, processCategory) === -1))
-  }
-
-  _additionalVariablesForParameter = (nodeId, process, processDefinition, fieldName) => {
-    const node = NodeUtils.getNodeById(nodeId, process)
-    const nodeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition) || {}
-    const parameter = (nodeDefinition.parameters || []).find(p => p.name === fieldName) || {}
-    return parameter.additionalVariables || {}
   }
 
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
@@ -93,7 +86,7 @@ class ProcessUtils {
   }
 
   _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
-    const node = _.find(process.nodes, (node) => node.id == nodeId)
+    const node = _.find(process.nodes, (node) => node.id === nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
     const clazzName = _.get(nodeObjectTypeDefinition, "returnType")
     switch (node.type) {
