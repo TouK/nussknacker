@@ -8,11 +8,12 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
 import org.apache.avro.generic.GenericData.EnumSymbol
-import org.apache.avro.generic.{GenericData, GenericRecordBuilder}
+import org.apache.avro.generic.{GenericContainer, GenericData, GenericRecordBuilder}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
+import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 
-object BestEffortAvroEncoder {
+class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
 
   import scala.collection.JavaConverters._
 
@@ -23,6 +24,8 @@ object BestEffortAvroEncoder {
     (schema.getType, value) match {
       case (_, Some(nested)) =>
         encode(nested, schema)
+      case (Schema.Type.RECORD, container: GenericContainer) =>
+        encodeGenericContainer(container, schema)
       case (Schema.Type.RECORD, map: collection.Map[String@unchecked, _]) =>
         encodeRecord(map, schema)
       case (Schema.Type.RECORD, map: util.Map[String@unchecked, _]) =>
@@ -116,6 +119,14 @@ object BestEffortAvroEncoder {
     }
   }
 
+  private def encodeGenericContainer(container: GenericContainer, schema: Schema): WithError[GenericContainer] = {
+    if (!avroSchemaEvolution.canBeEvolved(container, schema)) {
+      error(s"Not expected container: ${container.getSchema} for schema: $schema")
+    } else {
+      Valid(container)
+    }
+  }
+
   private def encodeMap(map: collection.Map[_, _], schema: Schema): WithError[util.Map[CharSequence, Any]] = {
     map.map {
       case (k: String, v) =>
@@ -141,10 +152,17 @@ object BestEffortAvroEncoder {
     }
   }
 
-  private def error(str: String) = Invalid(NonEmptyList.of(str))
+  private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
 
   private def encodeString(str: String): Utf8 = {
     new Utf8(str)
   }
 
+}
+
+object BestEffortAvroEncoder {
+
+  final private val DefaultSchemaEvolution = new DefaultAvroSchemaEvolution
+
+  def apply(): BestEffortAvroEncoder = new BestEffortAvroEncoder(DefaultSchemaEvolution)
 }

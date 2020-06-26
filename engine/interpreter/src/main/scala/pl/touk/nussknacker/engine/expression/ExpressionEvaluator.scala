@@ -86,40 +86,38 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
   private val optimizedGlobals = metaDataToUse.map(prepareGlobals)
 
   def evaluateParameters(params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter], ctx: Context)
-                        (implicit nodeId: NodeId, metaData: MetaData) : Future[(Context, Map[String, AnyRef])] = {
-    params.foldLeft(Future.successful((ctx, Map.empty[String, AnyRef]))) {
-      case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
-        evaluateParameter(param, accCtx).map { valueWithModifiedContext =>
-          val newAccParams = accParams + (param.name -> valueWithModifiedContext.value)
-          (valueWithModifiedContext.context, newAccParams)
-        }
-      }
+                        (implicit nodeId: NodeId, metaData: MetaData) : (Context, Map[String, AnyRef]) = {
+    val (newCtx, evaluatedParams) = params.foldLeft((ctx, List.empty[(String, AnyRef)])) {
+      case ( (accCtx, accParams), param) =>
+        val valueWithModifiedContext = evaluateParameter(param, accCtx)
+        val newAccParams = (param.name -> valueWithModifiedContext.value) :: accParams
+        (valueWithModifiedContext.context, newAccParams)
     }
+    //hopefully peformance will be a bit improved with https://github.com/scala/scala/pull/7118
+    (newCtx, evaluatedParams.toMap)
   }
 
   def evaluateParameter(param: pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter, ctx: Context)
-                          (implicit nodeId: NodeId, metaData: MetaData): Future[ValueWithContext[AnyRef]] = {
-    evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx).map { valueWithModifiedContext =>
-      valueWithModifiedContext.map { evaluatedValue =>
-        if (param.shouldBeWrappedWithScalaOption)
-          Option(evaluatedValue)
-        else if (param.shouldBeWrappedWithJavaOptional)
-          Optional.ofNullable(evaluatedValue)
-        else
-          evaluatedValue
-      }
+                          (implicit nodeId: NodeId, metaData: MetaData): ValueWithContext[AnyRef] = {
+    val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx)
+    valueWithModifiedContext.map { evaluatedValue =>
+      if (param.shouldBeWrappedWithScalaOption)
+        Option(evaluatedValue)
+      else if (param.shouldBeWrappedWithJavaOptional)
+        Optional.ofNullable(evaluatedValue)
+      else
+        evaluatedValue
     }
   }
 
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
-                 (implicit metaData: MetaData): Future[ValueWithContext[R]] = {
+                 (implicit metaData: MetaData): ValueWithContext[R] = {
     val lazyValuesProvider = lazyValuesProviderCreator(ecToUse, metaData, nodeId)
     val globalVariables = optimizedGlobals.getOrElse(prepareGlobals(metaData))
 
-    expr.evaluate[R](ctx, globalVariables, lazyValuesProvider).map { valueWithLazyContext =>
-      listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
-      ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
-    }
+    val valueWithLazyContext = expr.evaluate[R](ctx, globalVariables, lazyValuesProvider)
+    listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
+    ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
   }
 
 

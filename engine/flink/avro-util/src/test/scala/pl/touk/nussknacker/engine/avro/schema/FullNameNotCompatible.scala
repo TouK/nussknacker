@@ -24,7 +24,7 @@ case class FullNameNotCompatible(var first: CharSequence, var middle: CharSequen
       case 0 => first = value.asInstanceOf[CharSequence]
       case 1 => middle = value.asInstanceOf[CharSequence]
       case 2 => last = value.asInstanceOf[CharSequence]
-      case 2 => sex = value.asInstanceOf[CharSequence]
+      case 3 => sex = value.asInstanceOf[CharSequence]
       case _ => throw new AvroRuntimeException("Bad index")
     }
 }
@@ -49,7 +49,7 @@ object FullNameNotCompatible extends TestSchemaWithSpecificRecord {
   val exampleData: Map[String, Any] = FullNameV2.exampleData ++ Map("sex" -> BaseSex)
 
   def createRecord(first: String, middle: String, last: String, sex: String): GenericData.Record =
-    BestEffortAvroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last, "middle" -> middle, "sex" -> sex), schema)
+    avroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last, "middle" -> middle, "sex" -> sex), schema)
 
   def createSpecificRecord(first: String, middle: String, last: String, sex: String): FullNameNotCompatible =
     new FullNameNotCompatible(first, middle, last, sex)

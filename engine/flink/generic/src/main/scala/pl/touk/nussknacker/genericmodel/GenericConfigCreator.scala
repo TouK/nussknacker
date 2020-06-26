@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.genericmodel
 
-import org.apache.avro.generic.GenericData
+import org.apache.avro.generic.GenericRecord
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
-import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
@@ -30,8 +30,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
-    val avroSourceFactory = KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies)
+    val schemaRegistryProvider = createSchemaProvider[GenericRecord](processObjectDependencies)
+    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 
     Map(
       "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
@@ -41,7 +41,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
+    val schemaRegistryProvider = createSchemaProvider[Any](processObjectDependencies)
     val kafkaAvroSinkFactory = new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)
 
     Map(
@@ -56,21 +56,18 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   import pl.touk.nussknacker.engine.util.functions._
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
-
     ExpressionConfig(
       Map(
         "GEO" -> defaultCategory(geo),
         "NUMERIC" -> defaultCategory(numeric),
         "CONV" -> defaultCategory(conversion),
-        "DATE" -> defaultCategory(date),
-        "AVRO" -> defaultCategory(new AvroUtils(schemaRegistryProvider))
+        "DATE" -> defaultCategory(date)
       ),
       List()
     )
   }
 
-  protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies):SchemaRegistryProvider[GenericData.Record] =
-    ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
+  protected def createSchemaProvider[T:TypeInformation](processObjectDependencies: ProcessObjectDependencies):SchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider[T](processObjectDependencies)
 
 }

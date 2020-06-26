@@ -196,10 +196,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .customNode("customNodeId1", "event", "withNotBlankParams", "notBlankParam" -> "''")
-        .customNode("customNodeId2", "event", "withNotBlankParams", "notBlankParam" -> "'   '")
-        .customNode("customNodeId3", "event", "withNotBlankParams", "notBlankParam" -> " '' ")
-        .customNode("customNodeId4", "event", "withNotBlankParams", "notBlankParam" -> " '  ' ")
-        .customNode("customNodeId5", "event", "withNotBlankParams", "notBlankParam" -> "'test'")
+        .customNode("customNodeId2", "event2", "withNotBlankParams", "notBlankParam" -> "'   '")
+        .customNode("customNodeId3", "event3", "withNotBlankParams", "notBlankParam" -> " '' ")
+        .customNode("customNodeId4", "event4", "withNotBlankParams", "notBlankParam" -> " '  ' ")
+        .customNode("customNodeId5", "event5", "withNotBlankParams", "notBlankParam" -> "'test'")
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
@@ -249,7 +249,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "as")
-        .customNode("customNodeId2", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "1.23")
+        .customNode("customNodeId2", "event2", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "1.23")
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {

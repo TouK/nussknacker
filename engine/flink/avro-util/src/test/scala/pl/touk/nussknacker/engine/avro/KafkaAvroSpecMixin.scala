@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericData
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.test.NussknackerAssertions
 
@@ -59,8 +59,8 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   protected lazy val valueDeserializer: KafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient)
   protected lazy val valueSerializer: KafkaAvroSerializer = new KafkaAvroSerializer(schemaRegistryClient)
 
-  protected def createSchemaRegistryProvider(useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[GenericData.Record] =
-    ConfluentSchemaRegistryProvider[GenericData.Record](
+  protected def createSchemaRegistryProvider[T:TypeInformation](useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider[T](
       confluentClientFactory,
       processObjectDependencies,
       useSpecificAvroReader = useSpecificAvroReader,
@@ -116,8 +116,8 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     val topicConfig = TopicConfig(name, schemas)
 
     schemas.foreach(schema => {
-      val inputSubject = AvroUtils.topicSubject(topicConfig.input, topicConfig.isKey)
-      val outputSubject = AvroUtils.topicSubject(topicConfig.output, topicConfig.isKey)
+      val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
+      val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
       schemaRegistryClient.register(inputSubject, schema)
       schemaRegistryClient.register(outputSubject, schema)
     })

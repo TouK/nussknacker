@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
-import org.apache.avro.generic.GenericData
+import org.apache.avro.generic.GenericRecord
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
@@ -17,8 +18,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
-    val avroSourceFactory = KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies)
+    val schemaRegistryProvider = createSchemaProvider[GenericRecord](processObjectDependencies)
+    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 
     Map(
       "kafka-avro" -> defaultCategory(avroSourceFactory)
@@ -26,7 +27,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
+    val schemaRegistryProvider = createSchemaProvider[Any](processObjectDependencies)
 
     Map(
       "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies))
@@ -36,13 +37,6 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
-    val globalProcessVariables = Map("AVRO" -> defaultCategory(new AvroUtils(schemaRegistryProvider)))
-
-    ExpressionConfig(globalProcessVariables, List())
-  }
-
-  protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies):SchemaRegistryProvider[GenericData.Record] =
-    ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
+  protected def createSchemaProvider[T:TypeInformation](processObjectDependencies: ProcessObjectDependencies):SchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider[T](processObjectDependencies)
 }

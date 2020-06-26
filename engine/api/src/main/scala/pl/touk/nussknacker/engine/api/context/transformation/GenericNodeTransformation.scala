@@ -9,10 +9,11 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
   Please @see LastVariableFilterTransformer for sample usage
 
   NOTE: this is *experimental* API, subject to changes. In particular:
-   - parameters changes are *not* fully supported on UI,
-   - the trait can *only* be used for custom nodes for now (not for sources, sinks, ...)
    - branches/joins are not supported
-   - handling dependencies probably will change
+   - handling dependencies probably will change. In particular definition of OutputVariable/ValidationContext transformation
+     for sources/sinks is subject to limitations:
+     - for sinks OutputVariable is not handled, result ValidationContext will be ignored
+     - for sources OutputVariable *has* to be used for Flink sources, it's value is always equal to 'input' ATM, due to source API limitations
  */
 trait GenericNodeTransformation[T] {
 
@@ -29,7 +30,7 @@ trait GenericNodeTransformation[T] {
 
   def initialParameters: List[Parameter]
 
-  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef
+  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): T
 
   //Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]

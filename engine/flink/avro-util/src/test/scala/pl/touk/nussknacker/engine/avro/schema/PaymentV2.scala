@@ -63,7 +63,7 @@ object PaymentV2 extends TestSchemaWithRecord {
     )
   )
 
-  val recordWithData: GenericData.Record = BestEffortAvroEncoder.encodeRecordOrError(exampleDataWithAttributes, schema)
+  val recordWithData: GenericData.Record = avroEncoder.encodeRecordOrError(exampleDataWithAttributes, schema)
 
   val jsonMap: String =
     s"""{

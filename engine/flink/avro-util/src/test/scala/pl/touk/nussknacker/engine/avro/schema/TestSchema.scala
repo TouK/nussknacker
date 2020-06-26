@@ -13,7 +13,8 @@ trait TestSchema {
 }
 
 trait TestSchemaWithRecord extends TestSchema {
-  lazy val record: GenericRecord = BestEffortAvroEncoder.encodeRecordOrError(exampleData, schema)
+  final protected val avroEncoder = BestEffortAvroEncoder()
+  lazy val record: GenericRecord = avroEncoder.encodeRecordOrError(exampleData, schema)
   def exampleData: Map[String, Any]
 }
 
