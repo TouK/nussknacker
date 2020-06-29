@@ -6,6 +6,7 @@ import FixedValuesEditor from "./expression/FixedValuesEditor"
 import {isEmpty} from "lodash"
 import {ExpressionObj} from "./expression/types"
 import {spelFormatters} from "./expression/Formatter"
+import {VariableTypes} from "../../../../types"
 
 type Props = {
   fieldType?: string,
@@ -24,6 +25,7 @@ type Props = {
   showValidation?: boolean,
   onValueChange: Function,
   errors?: Array<Error>,
+  variableTypes: VariableTypes,
 }
 
 type State = {
@@ -51,7 +53,7 @@ class EditableEditor extends React.Component<Props, State> {
   render() {
     const {
       fieldType, expressionObj, rowClassName, valueClassName, showSwitch, param, renderFieldLabel, fieldLabel, readOnly,
-      values, errors, fieldName, showValidation,
+      values, errors, fieldName, showValidation, variableTypes,
     } = this.props
 
     const paramType = fieldType || (param ? ProcessUtils.humanReadableType(param.typ.refClazzName) : "expression")
@@ -76,6 +78,7 @@ class EditableEditor extends React.Component<Props, State> {
           formatter={expressionObj.language === "spel" && spelFormatters[param?.typ.refClazzName] != null ?
             spelFormatters[param.typ.refClazzName] : null}
           showValidation={showValidation}
+          variableTypes={variableTypes}
         />
         {
             param?.editor?.type === EditorType.DUAL_PARAMETER_EDITOR && (

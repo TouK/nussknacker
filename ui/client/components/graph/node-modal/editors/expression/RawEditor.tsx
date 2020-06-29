@@ -2,6 +2,7 @@ import cn from "classnames"
 import React from "react"
 import ExpressionSuggest from "./ExpressionSuggest"
 import {Editor} from "./Editor"
+import {VariableTypes} from "../../../../../types"
 
 type Props = {
   fieldName: string,
@@ -14,13 +15,15 @@ type Props = {
   rows: number,
   cols: number,
   className: string,
+  variableTypes: VariableTypes,
+
 }
 
 const RawEditor = (props: Props) => {
 
   const {
     fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows = 1, cols = 50, className,
+    onValueChange, rows = 1, cols = 50, className, variableTypes,
   } = props
 
   return (
@@ -36,6 +39,7 @@ const RawEditor = (props: Props) => {
           onValueChange: onValueChange,
           readOnly: readOnly,
         }}
+        variableTypes={variableTypes}
         validators={validators}
         isMarked={isMarked}
         showValidation={showValidation}
