@@ -45,7 +45,7 @@ export default function AdditionalProperty(props: Props) {
       key={propertyName}
       showSwitch={showSwitch}
       showValidation={showValidation}
-      //FIXME??
+      //AdditionalProperties do not use any variables 
       variableTypes={{}}
       errors={propertyErrors}
     />

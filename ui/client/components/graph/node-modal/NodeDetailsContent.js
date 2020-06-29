@@ -742,11 +742,12 @@ export class NodeDetailsContent extends React.Component {
 }
 
 function mapState(state, props) {
+  const processDefinitionData = state.settings.processDefinitionData || {}
+
   //NOTE: we have to use mainProcess carefully, as we may display details of subprocess node, in this case
   //process is *different* than subprocess itself
+  //TODO: in particular we need it for branches, how to handle it for subprocesses?
   const mainProcess = state.graphReducer.processToDisplay
-  //TODO: we need it for branches, how to handle it for subprocesses?
-  const processDefinitionData = state.settings.processDefinitionData || {}
   const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData, getProcessCategory(state), mainProcess)
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
