@@ -33,7 +33,6 @@ class ExpressionField extends React.Component<Props> {
       parameterDefinition, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel, fieldType,
       errors, variableTypes,
     } = this.props
-    console.log("name", fieldName, variableTypes)
 
     const readOnly = !isEditMode
     const exprTextPath = `${exprPath}.expression`
