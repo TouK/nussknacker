@@ -9,7 +9,7 @@ import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{LiteralParameterValidator, NotBlankParameter, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{JsonValidator, LiteralParameterValidator, NotBlankParameter, Parameter}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -72,6 +72,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       )), emptyQueryNamesData()),
       "withRegExpParam" -> (ObjectDefinition.withParams(List(
         Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
+      )), emptyQueryNamesData()),
+      "withJsonParam" -> (ObjectDefinition.withParams(List(
+        Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
       )), emptyQueryNamesData())
     ),
     Map.empty,
@@ -163,14 +166,14 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
   test("find expression parse error") {
-    val processWithInvalidExpresssion =
+    val processWithInvalidExpression =
       EspProcessBuilder
         .id("process1")
         .exceptionHandler()
         .source("id1", "source")
         .sink("id2", "wtf!!!", "sink")
 
-    validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
     }
   }
@@ -275,6 +278,44 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
         MismatchParameter(_, _, "regExpParam", "customNodeId"), _
+      )) =>
+    }
+  }
+
+  test ("valid for json param") {
+    val processWithValidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withJsonParam", "jsonParam" -> "'{\"example\": \"json\"}'")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithValidExpression, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test ("invalid for json param") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event1", "withJsonParam", "jsonParam" -> "'{'")
+        .customNode("customNodeId2", "event2", "withJsonParam", "jsonParam" -> "'{\"}'")
+        .customNode("customNodeId3", "event3", "withJsonParam", "jsonParam" -> "'{\"invalid\" : \"json\" : \"0\"}'")
+        .customNode("customNodeId4", "event4", "withJsonParam", "jsonParam" -> "'{\"invalid\" : [\"json\"}'")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+        JsonRequiredParameter(_, _, "jsonParam", "customNodeId"),
+        List(
+          JsonRequiredParameter(_, _, "jsonParam", "customNodeId2"),
+          JsonRequiredParameter(_, _, "jsonParam", "customNodeId3"),
+          JsonRequiredParameter(_, _, "jsonParam", "customNodeId4")
+        )
       )) =>
     }
   }
