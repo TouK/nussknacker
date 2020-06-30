@@ -11,7 +11,7 @@ object ValidatorsExtractor {
       EditorBasedValidatorExtractor,
       LiteralValidatorExtractor,
       AnnotationValidatorExtractor[Min]((annotation: Min) => MinimalNumberValidator(annotation.value())),
-      AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value())),
+      AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value()))
     ).flatMap(_.extract(params))
   }
 }
