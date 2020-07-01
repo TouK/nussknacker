@@ -47,12 +47,7 @@ object NodeDataValidator {
 
 class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(
-      modelData.modelClassLoader.classLoader,
-      modelData.dictServices.dictRegistry,
-      modelData.processDefinition.expressionConfig,
-      modelData.processDefinition.settings
-    )
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
 
   override def validate(nodeData: Filter, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val validation: ValidatedNel[ProcessCompilationError, _] =
@@ -65,12 +60,7 @@ trait WithParametersNodeValidator[T <: NodeData with WithParameters] extends Nod
 
   protected def modelData: ModelData
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(
-    modelData.modelClassLoader.classLoader,
-    modelData.dictServices.dictRegistry,
-    modelData.processDefinition.expressionConfig,
-    modelData.processDefinition.settings
-  )
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
 
   private val expressionEvaluator
   = ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))

@@ -52,7 +52,7 @@ object ExpressionServiceQuery {
       serviceQuery = serviceQuery,
       ctx = context,
       expressionEvaluator = expressionEvaluator(modelData),
-      expressionCompiler = expressionCompiler(modelData)
+      expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
     )
 
   //TODO: extract shared part with TestInfoProvider
@@ -60,12 +60,4 @@ object ExpressionServiceQuery {
     ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))
   }
 
-  private def expressionCompiler(modelData: ModelData) = {
-    ExpressionCompiler.withoutOptimization(
-      modelData.modelClassLoader.classLoader,
-      modelData.dictServices.dictRegistry,
-      modelData.processDefinition.expressionConfig,
-      modelData.processDefinition.settings
-    )
-  }
 }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.expression
 import java.util.Optional
 
 import cats.effect.IO
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
@@ -40,6 +41,10 @@ object ExpressionEvaluator {
   //Should *NOT* be used for evaluating expressions on events in *production*
   def unOptimizedEvaluator(globalVariablesPreparer: GlobalVariablesPreparer) =
     new ExpressionEvaluator(globalVariablesPreparer, Nil, None, (_, _, _) => ThrowingLazyValuesProvider)
+
+  def unOptimizedEvaluator(modelData: ModelData): ExpressionEvaluator =
+    unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))
+
 
   private object ThrowingLazyValuesProvider extends LazyValuesProvider {
     override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] =

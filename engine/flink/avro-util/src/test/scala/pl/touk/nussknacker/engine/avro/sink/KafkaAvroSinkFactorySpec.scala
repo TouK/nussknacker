@@ -6,6 +6,7 @@ import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.Sink
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSpecMixin}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
@@ -31,14 +32,14 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
             List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
 
   test("should throw exception when schema doesn't exist") {
-    assertThrowsWithParent[SchemaSubjectNotFound] {
+    assertThrowsWithParent[CustomNodeValidationException] {
       val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
       createSink("not-exists-subject", 1, output)
     }
   }
 
   test("should throw exception when schema version doesn't exist") {
-    assertThrowsWithParent[SchemaVersionNotFound] {
+    assertThrowsWithParent[CustomNodeValidationException] {
       val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
       createSink(fullnameTopic, 666, output)
     }
@@ -60,7 +61,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
   }
 
   test("should throw exception when #output schema is not compatible with sink schema") {
-    assertThrowsWithParent[InvalidSinkOutput] {
+    assertThrowsWithParent[CustomNodeValidationException] {
       val output = createOutput(PaymentV1.schema, PaymentV1.exampleData)
       createSink(fullnameTopic, 2, output)
     }

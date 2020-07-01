@@ -16,7 +16,6 @@ object KafkaAvroFactory {
       case _: SchemaVersionNotFound => Some(`SchemaVersionParamName`)
       case _ => None
     }
-
     throw CustomNodeValidationException(exc, parameter)
   }
 
