@@ -152,6 +152,8 @@ object ProcessCompilationError {
 
   case class GreaterThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
+  case class JsonRequiredParameter(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
+
   case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 

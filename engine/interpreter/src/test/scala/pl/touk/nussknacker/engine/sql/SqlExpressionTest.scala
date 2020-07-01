@@ -82,8 +82,8 @@ class SqlExpressionTest extends FunSuite with Matchers with PatientScalaFutures 
   }
 
   private def evaluate(expression: String, ctx: Context = ctx, validationContext: ValidationContext = validationContext): List[TypedMap] =
-    parseOrFail(expression, validationContext).evaluate[java.util.List[TypedMap]](ctx, dumbLazyProvider)
-      .futureValue.value.asScala.toList
+    parseOrFail(expression, validationContext).evaluate[java.util.List[TypedMap]](ctx, Map.empty, dumbLazyProvider)
+      .value.asScala.toList
 
   private def parseOrFail(expression: String, validationContext: ValidationContext = validationContext): SqlExpression =
     SqlExpressionParser

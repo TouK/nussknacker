@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.additionalInfo.{NodeAdditionalInfo, NodeAdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.nodevalidation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
@@ -25,7 +25,9 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 import io.circe.generic.semiauto.deriveDecoder
 import org.springframework.util.ClassUtils
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
+import pl.touk.nussknacker.ui.definition.UIParameter
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -64,8 +66,17 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val validationContext = ValidationContext(nodeData.variableTypes, globals, None)
               implicit val metaData: MetaData = nodeData.processProperties.toMetaData(process.id)
               NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext) match {
-                case ValidationNotPerformed => NodeValidationResult(Nil, validationPerformed = false)
-                case ValidationPerformed(errors) => NodeValidationResult(errors.map(PrettyValidationErrors.formatErrorMessage), validationPerformed = true)
+                case ValidationNotPerformed => NodeValidationResult(None, Nil, validationPerformed = false)
+                case ValidationPerformed(errors, parameters) =>
+                  val uiParams = parameters.map(_.map(UIParameter(_, ParameterConfig.empty)))
+                  //We don't return MissingParameter error when we are returning those missing parameters to be added - since
+                  //it's not really exception ATM
+                  def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
+                    case MissingParameters(params, _) => params.forall(missing => uiParams.exists(_.exists(_.name == missing)))
+                    case _ => false
+                  }
+                  val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
+                  NodeValidationResult(uiParams, uiErrors, validationPerformed = true)
               }
             }
           }
@@ -90,7 +101,7 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
 
 }
 
-@JsonCodec case class NodeValidationResult(validationErrors: List[NodeValidationError], validationPerformed: Boolean)
+@JsonCodec(encodeOnly = true) case class NodeValidationResult(parameters: Option[List[UIParameter]], validationErrors: List[NodeValidationError], validationPerformed: Boolean)
 
 @JsonCodec(encodeOnly = true) case class NodeValidationRequest(nodeData: NodeData,
                                             processProperties: ProcessProperties,

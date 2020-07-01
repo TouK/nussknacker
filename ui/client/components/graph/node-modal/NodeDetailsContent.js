@@ -24,6 +24,8 @@ import TestResultsSelect from "./tests/TestResultsSelect"
 import AdditionalProperty from "./AdditionalProperty"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
+import {adjustParameters} from "./ParametersUtils"
+import {getProcessCategory} from "../../../reducers/selectors/graph"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -32,20 +34,29 @@ export class NodeDetailsContent extends React.Component {
   constructor(props) {
     super(props)
 
+    this.initalizeWithProps(props)
     this.state = {
       ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
       editedNode: props.node,
+      unusedParameters: [],
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
-    this.initalizeWithProps(props)
+    this.updateNodeDataIfNeeded(props.node)
     this.generateUUID("fields", "parameters")
   }
 
+  nodeDefinitionByName(node) {
+    return this.props.processDefinitionData.nodesToAdd
+      .flatMap(c => c.possibleNodes)
+      .find(n => n.node.type === node.type && n.label === ProcessUtils.findNodeDefinitionId(node))?.node
+  }
+
   initalizeWithProps(props) {
-    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(props.node, props.processDefinitionData.processDefinition)
-    let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
-    this.showOutputVar = hasNoReturn === false || hasNoReturn === true && this.state.editedNode.outputVar
+    const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(props.node, props.processDefinitionData.processDefinition)
+    this.parameterDefinitions = props.dynamicParameterDefinitions ? props.dynamicParameterDefinitions : nodeObjectDetails?.parameters
+    const hasNoReturn = nodeObjectDetails == null || nodeObjectDetails.returnType == null
+    this.showOutputVar = hasNoReturn === false || hasNoReturn === true && props.node.outputVar
   }
 
   generateUUID(...properties) {
@@ -57,14 +68,23 @@ export class NodeDetailsContent extends React.Component {
     })
   }
 
+  //TODO: get rid of this method as deprecated in React
   componentWillReceiveProps(nextProps) {
+    this.initalizeWithProps(nextProps)
+    const nextPropsNode = nextProps.node
 
-    if (!_.isEqual(this.props.node, nextProps.node)) {
-      this.initalizeWithProps(nextProps)
-      let nextPropsNode = nextProps.node
-      this.setState({editedNode: nextPropsNode})
+    //So the flow should be: first node is updated, then node details are updated from BE and only then we adjust parameters
+    //TODO: make it more explicit?
+    if (!_.isEqual(this.props.node, nextPropsNode)) {
       this.updateNodeDataIfNeeded(nextPropsNode)
+    } else if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
+      this.adjustStateWithParameters(this.state.editedNode)
     }
+  }
+
+  adjustStateWithParameters(nodeToAdjust) {
+    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions, this.nodeDefinitionByName(nodeToAdjust))
+    this.setState({editedNode: node, unusedParameters: unusedParameters})
   }
 
   updateNodeDataIfNeeded(currentNode) {
@@ -85,8 +105,8 @@ export class NodeDetailsContent extends React.Component {
     }
   }
 
-  findParamByName(paramName) {
-    return _.get(this.nodeObjectDetails, "parameters", []).find((param) => param.name === paramName)
+  findParamDefinitionByName(paramName) {
+    return (this.parameterDefinitions || []).find((param) => param.name === paramName)
   }
 
   removeElement = (property, index) => {
@@ -109,14 +129,6 @@ export class NodeDetailsContent extends React.Component {
     }
   }
 
-  setNodeDataAt = (property, value) => {
-    _.set(this.state.editedNode, property, value)
-
-    this.setState((state, props) => ({editedNode: state.editedNode}), () => {
-      this.props.onChange(this.state.editedNode)
-    })
-  }
-
   customNode = (fieldErrors) => {
     const {showValidation, showSwitch, isEditMode} = this.props
 
@@ -128,7 +140,7 @@ export class NodeDetailsContent extends React.Component {
           <div>
             {
               //TODO: this is a bit clumsy. we should use some metadata, instead of relying on what comes in diagram
-              this.props.node.endResult ? this.createExpressionField(
+              this.props.node.endResult ? this.createStaticExpressionField(
                 "expression",
                 "Expression",
                 "endResult",
@@ -172,7 +184,7 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
-            {this.createExpressionField(
+            {this.createStaticExpressionField(
               "expression",
               "Expression",
               "expression",
@@ -190,8 +202,8 @@ export class NodeDetailsContent extends React.Component {
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
-                  {this.createExpressionListField(
-                    param.name,
+                  {this.createParameterExpressionField(
+                    param,
                     "expression",
                     `service.parameters[${index}]`,
                     fieldErrors
@@ -220,8 +232,8 @@ export class NodeDetailsContent extends React.Component {
               editedNode={this.state.editedNode}
               savedNode={this.state.editedNode}
               setNodeState={newParams => this.setNodeDataAt("ref.parameters", newParams)}
-              createListField={(param, index) => this. createExpressionListField(
-                param.name,
+              createListField={(param, index) => this.createParameterExpressionField(
+                param,
                 "expression",
                 `ref.parameters[${index}]`,
                 fieldErrors
@@ -269,18 +281,19 @@ export class NodeDetailsContent extends React.Component {
                 showSwitch={showSwitch}
                 isEditMode={isEditMode}
                 errors={fieldErrors}
-                nodeObjectDetails={this.nodeObjectDetails}
+                parameterDefinitions={this.parameterDefinitions}
                 setNodeDataAt={this.setNodeDataAt}
                 testResultsToShow={this.state.testResultsToShow}
                 testResultsToHide={this.state.testResultsToHide}
                 toggleTestResult={this.toggleTestResult}
+                findAvailableVariables={this.props.findAvailableVariables}
               />
             )}
             {this.state.editedNode.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
-                  {this.createExpressionListField(
-                    param.name,
+                  {this.createParameterExpressionField(
+                    param,
                     "expression",
                     `parameters[${index}]`,
                     fieldErrors
@@ -322,7 +335,7 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
-            {this.createExpressionField(
+            {this.createStaticExpressionField(
               "expression",
               "Expression",
               "expression",
@@ -427,8 +440,8 @@ export class NodeDetailsContent extends React.Component {
                     {this.state.editedNode.exceptionHandler.parameters.map((param, index) => {
                       return (
                         <div className="node-block" key={this.props.node.id + param.name + index}>
-                          {this.createExpressionListField(
-                            param.name,
+                          {this.createParameterExpressionField(
+                            param,
                             "expression",
                             `exceptionHandler.parameters[${index}]`,
                             fieldErrors,
@@ -476,8 +489,8 @@ export class NodeDetailsContent extends React.Component {
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
-              {this. createExpressionListField(
-                param.name,
+              {this. createParameterExpressionField(
+                param,
                 "expression",
                 `ref.parameters[${index}]`,
                 fieldErrors
@@ -524,12 +537,20 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
-  createExpressionField = (fieldName, fieldLabel, expressionProperty, fieldErrors) => this.doCreateExpressionField(fieldName, fieldLabel, `${expressionProperty}`, fieldErrors)
+  //this is for "static" fields like expressions in filters, switches etc.
+  createStaticExpressionField = (fieldName, fieldLabel, expressionProperty, fieldErrors) => {
+    return this.doCreateExpressionField(fieldName, fieldLabel, `${expressionProperty}`, fieldErrors)
+  }
 
-  createExpressionListField = (fieldName, expressionProperty, listFieldPath, fieldErrors, fieldType) => this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`, fieldErrors, fieldType)
+  //this is for "dynamic" parameters in sources, sinks, services etc.
+  createParameterExpressionField = (parameter, expressionProperty, listFieldPath, fieldErrors, fieldType) => {
+    return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, fieldType, parameter)
+  }
 
-  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, fieldType) => {
-    const {showValidation, showSwitch, isEditMode} = this.props
+  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, fieldType, parameter) => {
+    const {showValidation, showSwitch, isEditMode, node, findAvailableVariables} = this.props
+
+    const variableTypes = findAvailableVariables(node.id, parameter)
     return (
       <ExpressionField
         fieldName={fieldName}
@@ -541,12 +562,13 @@ export class NodeDetailsContent extends React.Component {
         isMarked={this.isMarked}
         showValidation={showValidation}
         showSwitch={showSwitch}
-        nodeObjectDetails={this.nodeObjectDetails}
+        parameterDefinition={this.findParamDefinitionByName(fieldName)}
         setNodeDataAt={this.setNodeDataAt}
         testResultsToShow={this.state.testResultsToShow}
         testResultsToHide={this.state.testResultsToHide}
         toggleTestResult={this.toggleTestResult}
         renderFieldLabel={this.renderFieldLabel}
+        variableTypes={variableTypes}
         errors={fieldErrors}
       />
     )
@@ -616,7 +638,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   renderFieldLabel = (label) => {
-    const parameter = this.findParamByName(label)
+    const parameter = this.findParamDefinitionByName(label)
     return (
       <div className="node-label" title={label}>{label}:
         {parameter ?
@@ -631,6 +653,9 @@ export class NodeDetailsContent extends React.Component {
   }
 
   availableFields = () => {
+    if (this.props.dynamicParameterDefinitions) {
+      return this.props.dynamicParameterDefinitions.map(param => param.name)
+    }
     switch (NodeUtils.nodeType(this.state.editedNode)) {
       case "Source": {
         const commonFields = ["id"]
@@ -717,16 +742,22 @@ export class NodeDetailsContent extends React.Component {
 }
 
 function mapState(state, props) {
+  const processDefinitionData = state.settings.processDefinitionData || {}
+
   //NOTE: we have to use mainProcess carefully, as we may display details of subprocess node, in this case
   //process is *different* than subprocess itself
+  //TODO: in particular we need it for branches, how to handle it for subprocesses?
   const mainProcess = state.graphReducer.processToDisplay
+  const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData, getProcessCategory(state), mainProcess)
   return {
-    additionalPropertiesConfig: _.get(state.settings, "processDefinitionData.additionalPropertiesConfig") || {},
-    processDefinitionData: state.settings.processDefinitionData || {},
+    additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
+    processDefinitionData: processDefinitionData,
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
     variableTypes: mainProcess?.validationResult?.variableTypes[props.node.id],
+    findAvailableVariables: findAvailableVariables,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
+    dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters : null,
   }
 }
 

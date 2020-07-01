@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{LazyParameter, _}
+import pl.touk.nussknacker.engine.api.expression.TypedExpression
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{LazyParameter, definition, _}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.duration.FiniteDuration
@@ -13,20 +15,23 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 private[definition] trait CompilerLazyParameter[T] extends LazyParameter[T] {
 
+  //TODO: get rid of Future[_] as we evaluate parameters synchronously...
   def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T]
 
 }
 
 // This class is public for tests purpose. Be aware that its interface can be changed in the future
 case class ExpressionLazyParameter[T](nodeId: NodeId,
-                                      parameter: evaluatedparam.Parameter,
+                                      parameterDef: definition.Parameter,
+                                      expression: Expression,
                                       returnType: TypingResult) extends CompilerLazyParameter[T] {
   override def prepareEvaluator(compilerInterpreter: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = {
     val compiledExpression = compilerInterpreter.deps.expressionCompiler
-              .compileWithoutContextValidation(parameter.expression, parameter.name)(nodeId)
+              .compileWithoutContextValidation(expression, parameterDef.name)(nodeId)
               .valueOr(err => throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}"))
     val evaluator = compilerInterpreter.deps.expressionEvaluator
-    context: Context => evaluator.evaluate[T](compiledExpression, parameter.name, nodeId.id, context)(ec, compilerInterpreter.metaData).map(_.value)(ec)
+    val compiledParameter = compiledgraph.evaluatedparam.Parameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
+    context: Context => Future.successful(evaluator.evaluateParameter(compiledParameter, context)(nodeId, compilerInterpreter.metaData)).map(_.value.asInstanceOf[T])(ec)
   }
 }
 

@@ -30,38 +30,30 @@ export default class FixedValuesEditor extends React.Component<Props> {
   public static switchableToHint = () => "Switch to basic mode"
   public static notSwitchableToHint = () => "Expression must be one of the expression possible values to switch basic mode"
 
-  private readonly options: any
-
-  constructor(props) {
-    super(props)
-    this.options = getOptions(props.values)
-  }
-
-  currentOption = () => {
-    const {expressionObj, param} = this.props
-
-    return expressionObj && this.options.find((option) => option.value === expressionObj.expression) ||  // current value with label taken from options
+  currentOption = (expressionObj, options) => {
+    return expressionObj && options.find((option) => option.value === expressionObj.expression) ||  // current value with label taken from options
         expressionObj && {value: expressionObj.expression, label: expressionObj.expression} ||          // current value is no longer valid option? Show it anyway, let user know. Validation should take care
         null                                                                                            // just leave undefined and let the user explicitly select one
   }
 
   render() {
     const {
-      readOnly, onValueChange, className, showValidation, validators,
+      expressionObj, readOnly, onValueChange, className, showValidation, validators, values,
     } = this.props
-    const option = this.currentOption()
+    const options = getOptions(values)
+    const currentOption = this.currentOption(expressionObj, options)
 
     return (
       <div className={`node-value-select ${className}`}>
         <Creatable
           classNamePrefix="node-value-select"
-          value={option}
+          value={currentOption}
           onChange={(newValue) => onValueChange(newValue.value)}
-          options={this.options}
+          options={getOptions(values)}
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
         />
-        {showValidation && <ValidationLabels validators={validators} values={[option.value]}/>}
+        {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]}/>}
       </div>
     )
   }

@@ -5,6 +5,7 @@ import java.lang.reflect.Method
 import java.util.Optional
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.transformation.GenericNodeTransformation
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
@@ -36,7 +37,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
       MethodDefinition(methodToInvoke.getName,
-        (obj, args) => method.invoke(obj, args:_*), extractParameters(obj, method, nodeConfig),
+        (obj, args) => method.invoke(obj, args.map(_.asInstanceOf[Object]):_*), extractParameters(obj, method, nodeConfig),
         extractReturnTypeFromMethod(obj, method), method.getReturnType, method.getAnnotations.toList)
     }
   }
@@ -150,7 +151,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 object MethodDefinitionExtractor {
 
   case class MethodDefinition(name: String,
-                              invocation: (Any, Seq[AnyRef]) => Any,
+                              invocation: (Any, Seq[Any]) => Any,
                               orderedDependencies: OrderedDependencies,
                               // TODO: remove after full switch to ContextTransformation API
                               returnType: TypingResult,
@@ -163,12 +164,12 @@ object MethodDefinitionExtractor {
       case param: Parameter => param
     }
 
-    def prepareValues(prepareValue: String => Option[AnyRef],
+    def prepareValues(values: Map[String, Any],
                       outputVariableNameOpt: Option[String],
-                      additionalDependencies: Seq[AnyRef]): List[AnyRef] = {
+                      additionalDependencies: Seq[AnyRef]): List[Any] = {
       dependencies.map {
         case param: Parameter =>
-          val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
+          val foundParam = values.getOrElse(param.name, throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
           validateParamType(param.name, foundParam, param)
           foundParam
         case OutputVariableNameDependency =>
@@ -183,7 +184,7 @@ object MethodDefinitionExtractor {
     }
 
     //TODO: what is *really* needed here?? is it performant enough?? (copied from previous version: EspTypeUtils.signatureElementMatches
-    private def validateParamType(name: String, value: AnyRef, param: Parameter): Unit = {
+    private def validateParamType(name: String, value: Any, param: Parameter): Unit = {
       // The order of wrapping should be reversed to order of unwrapping - see extractParameters
       val typeWrappedWithOption = if (param.scalaOptionParameter) {
         Typed.genericTypeClass(classOf[Option[_]], List(param.typ))
@@ -205,7 +206,7 @@ object MethodDefinitionExtractor {
       validateType(name, value, typeWrappedWithBranch)
     }
 
-    private def validateType(name: String, value: AnyRef, expectedType: TypingResult) : Unit = {
+    private def validateType(name: String, value: Any, expectedType: TypingResult) : Unit = {
       if (value != null && !Typed(value.getClass).canBeSubclassOf(expectedType)) {
         throw new IllegalArgumentException(s"Parameter $name has invalid type: ${value.getClass.getName}, should be: ${expectedType.display}")
       }

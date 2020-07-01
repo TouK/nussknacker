@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io._
-import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.errors.SerializationException
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter._
 import pl.touk.nussknacker.engine.kafka.RecordFormatter
@@ -34,26 +33,10 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
   }
 
   private def printId(bytes: Array[Byte], printStream: PrintStream): Unit = {
-    val id = readId(bytes)
+    val id = ConfluentUtils.readId(bytes)
     printStream.print(id)
     printStream.print(Separator)
   }
-
-  // copied from AbstractKafkaAvroDeserializer.deserialize
-  private def readId(bytes: Array[Byte]): Int = {
-    val buffer = getByteBuffer(bytes)
-    buffer.getInt
-  }
-
-  private def getByteBuffer(payload: Array[Byte]) = {
-    val buffer = ByteBuffer.wrap(payload)
-    if (buffer.get != 0)
-      throw new SerializationException("Unknown magic byte!")
-    else
-      buffer
-  }
-
-  // end of copy-paste
 
   override def parseRecord(formatted: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
     val str = new String(formatted, StandardCharsets.UTF_8)

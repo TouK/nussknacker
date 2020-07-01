@@ -84,7 +84,8 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
   protected var lazyParameterInterpreter : LazyParameterInterpreter = _
 
   override def close(): Unit = {
-    lazyParameterInterpreter.close()
+    if (lazyParameterInterpreter != null)
+      lazyParameterInterpreter.close()
   }
 
   //TODO: how can we make sure this will invoke super.open(...) (can't do it directly...)

@@ -12,6 +12,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels"
 import AceEditor from "./ace"
 import ExpressionSuggester from "./ExpressionSuggester"
 import {allValid} from "../Validators"
+import {reducer as nodeDetails} from "../../../../../reducers/nodeDetailsState"
 
 //to reconsider
 // - respect categories for global variables?
@@ -31,6 +32,7 @@ class ExpressionSuggest extends React.Component {
     showValidation: PropTypes.bool,
     processingType: PropTypes.string,
     isMarked: PropTypes.bool,
+    variableTypes: PropTypes.object,
   }
 
   customAceEditorCompleter = {
@@ -93,7 +95,8 @@ class ExpressionSuggest extends React.Component {
   shouldComponentUpdate(nextProps, nextState) {
     return !_.isEqual(this.state.value, nextState.value) ||
         !_.isEqual(this.state.editorFocused, nextState.editorFocused) ||
-        !_.isEqual(this.props.validators, nextProps.validators)
+        !_.isEqual(this.props.validators, nextProps.validators) ||
+        !_.isEqual(this.props.variableTypes, nextProps.variableTypes)
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -104,7 +107,7 @@ class ExpressionSuggest extends React.Component {
   }
 
   createExpressionSuggester = (props) => {
-    return new ExpressionSuggester(props.typesInformation, props.variables, props.processingType, HttpService)
+    return new ExpressionSuggester(props.typesInformation, props.variableTypes, props.processingType, HttpService)
   }
 
   onChange = (newValue) => {
@@ -177,18 +180,13 @@ class ExpressionSuggest extends React.Component {
   setEditorFocus = (focus) => () => this.setState({editorFocused: focus})
 }
 
-function mapState(state, props) {
-  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, "processCategory")
+function mapState(state) {
   const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: {typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation
-  const variablesForNode = state.graphReducer.nodeToDisplay.id || _.get(state.graphReducer, ".edgeToDisplay.to") || null
-  const variables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition, props.fieldName, processCategory)
-
   return {
     typesInformation: typesInformation,
     dataResolved: dataResolved,
-    variables: variables,
     processingType: state.graphReducer.processToDisplay.processingType,
   }
 }

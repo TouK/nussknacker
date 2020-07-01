@@ -85,18 +85,18 @@ class SpelExpression(parsed: ParsedSpelExpression,
     }
 
   // TODO: better interoperability with scala type, mainly: scala.math.BigDecimal, scala.math.BigInt and collections
-  override def evaluate[T](ctx: Context,
-                           lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
+  override def evaluate[T](ctx: Context, globals: Map[String, Any],
+                           lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T] = logOnException(ctx) {
     if (expectedClass == classOf[SpelExpressionRepr]) {
-      return Future.successful(ValueWithLazyContext(SpelExpressionRepr(parsed.parsed, ctx, original).asInstanceOf[T], ctx.lazyContext))
+      return ValueWithLazyContext(SpelExpressionRepr(parsed.parsed, ctx, globals, original).asInstanceOf[T], ctx.lazyContext)
     }
 
-    val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(ctx, lazyValuesProvider)
+    val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(ctx, globals, lazyValuesProvider)
 
     //TODO: async evaluation of lazy vals...
     val value = parsed.getValue[T](evaluationContext, expectedClass)
     val modifiedLazyContext = evaluationContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
-    Future.successful(ValueWithLazyContext(value, modifiedLazyContext))
+    ValueWithLazyContext(value, modifiedLazyContext)
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {

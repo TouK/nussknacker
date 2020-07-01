@@ -2,13 +2,15 @@ import PropTypes from "prop-types"
 import React from "react"
 import ExpressionField from "./editors/expression/ExpressionField"
 
+const validationContextId = (branchId, node) => `$edge-${branchId}-${node.id}`
+
 const BranchParameters = (props) => {
 
   const {node, isMarked, showValidation, errors, showSwitch, isEditMode,
-    nodeObjectDetails, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult} = props
+    parameterDefinitions, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, findAvailableVariables} = props
 
   //TODO: maybe we can rely only on node?
-  const branchParameters = nodeObjectDetails?.parameters.filter(p => p.branchParam)
+  const branchParameters = parameterDefinitions?.filter(p => p.branchParam)
   return (
     branchParameters?.map((param) => {
       const paramName = param.name
@@ -25,6 +27,10 @@ const BranchParameters = (props) => {
                   const paramIndex = branchParameter.parameters.findIndex(paramInBranch => paramInBranch.name === paramName)
                   const paramValue = branchParameter.parameters[paramIndex]
                   const expressionPath = `branchParameters[${branchIndex}].parameters[${paramIndex}].expression`
+
+                  const contextId = validationContextId(branchId, node)
+                  const variables = findAvailableVariables(contextId, param)
+
                   return paramValue ? (
                     <div className="branch-parameter-row" key={`${paramName}-${branchId}`}>
                       <div className={"branch-param-label"}>{branchId}</div>
@@ -39,12 +45,13 @@ const BranchParameters = (props) => {
                           isMarked={isMarked}
                           showValidation={showValidation}
                           showSwitch={showSwitch}
-                          nodeObjectDetails={nodeObjectDetails}
+                          parameterDefinition={param}
                           setNodeDataAt={setNodeDataAt}
                           testResultsToShow={testResultsToShow}
                           testResultsToHide={testResultsToHide}
                           toggleTestResult={toggleTestResult}
                           renderFieldLabel={() => false}
+                          variableTypes={variables}
                           errors={errors}
                         />
                       </div>
@@ -65,11 +72,12 @@ BranchParameters.propTypes = {
   isEditMode: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
   showSwitch: PropTypes.bool,
-  nodeObjectDetails: PropTypes.any,
+  parameterDefinitions: PropTypes.array.isRequired,
   setNodeDataAt: PropTypes.func.isRequired,
   testResultsToShow: PropTypes.any,
   testResultsToHide: PropTypes.any,
   toggleTestResult: PropTypes.func.isRequired,
+  findAvailableVariables: PropTypes.func.isRequired,
 }
 
 BranchParameters.defaultProps = {

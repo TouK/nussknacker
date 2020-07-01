@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, Value
 import pl.touk.nussknacker.engine.compile.Validations
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ServiceInvoker
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,12 +24,22 @@ import scala.concurrent.{ExecutionContext, Future}
 */
 object ExpressionEvaluator {
 
-  def withLazyVals(globalVariablesPreparer: GlobalVariablesPreparer, listeners: Seq[ProcessListener], services: Map[String, ObjectWithMethodDef]) =
-      new ExpressionEvaluator(globalVariablesPreparer, listeners, realLazyValuesProvider(services))
+  def optimizedEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
+                         listeners: Seq[ProcessListener],
+                         metaData: MetaData,
+                         services: Map[String, ObjectWithMethodDef]): ExpressionEvaluator = {
+    val lazyValuesProvider: (ExecutionContext, MetaData, String) => LazyValuesProvider = if (metaData.typeSpecificData.allowLazyVars) {
+      realLazyValuesProvider(services)
+    } else {
+      (_, _, _) => ThrowingLazyValuesProvider
+    }
+    new ExpressionEvaluator(globalVariablesPreparer, listeners, Some(metaData), lazyValuesProvider)
+  }
 
-  def withoutLazyVals(globalVariablesPreparer: GlobalVariablesPreparer, listeners: Seq[ProcessListener]) =
-    new ExpressionEvaluator(globalVariablesPreparer, listeners, (_, _, _) => ThrowingLazyValuesProvider)
-
+  //This is for evaluation expressions fixed expressions during object creation *and* during tests/service queries
+  //Should *NOT* be used for evaluating expressions on events in *production*
+  def unOptimizedEvaluator(globalVariablesPreparer: GlobalVariablesPreparer) =
+    new ExpressionEvaluator(globalVariablesPreparer, Nil, None, (_, _, _) => ThrowingLazyValuesProvider)
 
   private object ThrowingLazyValuesProvider extends LazyValuesProvider {
     override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] =
@@ -38,7 +49,7 @@ object ExpressionEvaluator {
   private def realLazyValuesProvider(services: Map[String, ObjectWithMethodDef])
                                       (ec: ExecutionContext, metaData: MetaData, nodeId: String) = new LazyValuesProvider {
 
-    private implicit val iec = ec
+    private implicit val iec: ExecutionContext = ec
 
     override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] = {
       val paramsMap = params.toMap
@@ -65,40 +76,48 @@ object ExpressionEvaluator {
 }
 
 class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
-                          listeners: Seq[ProcessListener], lazyValuesProviderCreator: (ExecutionContext, MetaData, String) => LazyValuesProvider) {
+                          listeners: Seq[ProcessListener],
+                          metaDataToUse: Option[MetaData],
+                          lazyValuesProviderCreator: (ExecutionContext, MetaData, String) => LazyValuesProvider) {
+  private implicit val ecToUse: ExecutionContext = SynchronousExecutionContext.ctx
 
+  private def prepareGlobals(metaData: MetaData): Map[String, Any] = globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj)
+
+  private val optimizedGlobals = metaDataToUse.map(prepareGlobals)
 
   def evaluateParameters(params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter], ctx: Context)
-                        (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext) : Future[(Context, Map[String, AnyRef])] = {
-    params.foldLeft(Future.successful((ctx, Map.empty[String, AnyRef]))) {
-      case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
-        evaluate[AnyRef](param.expression, param.name, nodeId.id, accCtx).map { valueWithModifiedContext =>
-          val evaluatedValue = valueWithModifiedContext.value
-          val potentiallyWrappedInScalaOptionValue =
-            if (param.shouldBeWrappedWithScalaOption)
-              Option(evaluatedValue)
-            else if (param.shouldBeWrappedWithJavaOptional)
-              Optional.ofNullable(evaluatedValue)
-            else
-              evaluatedValue
-          val newAccParams = accParams + (param.name -> potentiallyWrappedInScalaOptionValue)
-          (valueWithModifiedContext.context, newAccParams)
-        }
-      }
+                        (implicit nodeId: NodeId, metaData: MetaData) : (Context, Map[String, AnyRef]) = {
+    val (newCtx, evaluatedParams) = params.foldLeft((ctx, List.empty[(String, AnyRef)])) {
+      case ( (accCtx, accParams), param) =>
+        val valueWithModifiedContext = evaluateParameter(param, accCtx)
+        val newAccParams = (param.name -> valueWithModifiedContext.value) :: accParams
+        (valueWithModifiedContext.context, newAccParams)
+    }
+    //hopefully peformance will be a bit improved with https://github.com/scala/scala/pull/7118
+    (newCtx, evaluatedParams.toMap)
+  }
+
+  def evaluateParameter(param: pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter, ctx: Context)
+                          (implicit nodeId: NodeId, metaData: MetaData): ValueWithContext[AnyRef] = {
+    val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx)
+    valueWithModifiedContext.map { evaluatedValue =>
+      if (param.shouldBeWrappedWithScalaOption)
+        Option(evaluatedValue)
+      else if (param.shouldBeWrappedWithJavaOptional)
+        Optional.ofNullable(evaluatedValue)
+      else
+        evaluatedValue
     }
   }
 
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
-                 (implicit ec: ExecutionContext, metaData: MetaData): Future[ValueWithContext[R]] = {
-    val lazyValuesProvider = lazyValuesProviderCreator(ec, metaData, nodeId)
-    //FIXME: this is *not* performant when we have some global variables, we should not add to map here, but e.g. push
-    //lookup logic down to expressions
-    val ctxWithGlobals = ctx.withVariables(globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj))
+                 (implicit metaData: MetaData): ValueWithContext[R] = {
+    val lazyValuesProvider = lazyValuesProviderCreator(ecToUse, metaData, nodeId)
+    val globalVariables = optimizedGlobals.getOrElse(prepareGlobals(metaData))
 
-    expr.evaluate[R](ctxWithGlobals, lazyValuesProvider).map { valueWithLazyContext =>
-      listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
-      ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
-    }
+    val valueWithLazyContext = expr.evaluate[R](ctx, globalVariables, lazyValuesProvider)
+    listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
+    ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
   }
 
 

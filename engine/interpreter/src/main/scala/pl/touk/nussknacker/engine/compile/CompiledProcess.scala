@@ -39,11 +39,7 @@ object CompiledProcess {
     processCompiler.compile(process).result.map { compiledProcess =>
       val globalVariablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
 
-      val expressionEvaluator = if (process.metaData.typeSpecificData.allowLazyVars) {
-        ExpressionEvaluator.withLazyVals(globalVariablesPreparer, listeners, servicesDefs)
-      } else {
-        ExpressionEvaluator.withoutLazyVals(globalVariablesPreparer, listeners)
-      }
+      val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData, servicesDefs)
 
       val interpreter = Interpreter(listeners, expressionEvaluator)
 

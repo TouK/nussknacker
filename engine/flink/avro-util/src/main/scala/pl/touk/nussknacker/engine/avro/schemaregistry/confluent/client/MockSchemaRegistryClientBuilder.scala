@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
 import scala.collection.mutable.ListBuffer
 
@@ -20,7 +21,7 @@ class MockConfluentSchemaRegistryClientBuilder {
   }
 
   private def register(mockSchemaRegistry: MockSchemaRegistryClient, item: RegistryItem): Int = {
-    val subject = item.topic + "-" + (if (item.isKey) "key" else "value")
+    val subject = ConfluentUtils.topicSubject(item.topic, item.isKey)
     mockSchemaRegistry.register(subject, item.schema, item.version, item.id)
   }
 

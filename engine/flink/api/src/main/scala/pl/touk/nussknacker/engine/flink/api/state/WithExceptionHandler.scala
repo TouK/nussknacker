@@ -11,7 +11,8 @@ trait WithExceptionHandler extends RichFunction {
   def lazyHandler: (ClassLoader) => FlinkEspExceptionHandler
 
   override def close() = {
-    exceptionHandler.close()
+    if (exceptionHandler != null)
+      exceptionHandler.close()
   }
 
   override def open(parameters: Configuration) = {

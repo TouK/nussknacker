@@ -14,14 +14,14 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
 
   def client: CSchemaRegistryClient
 
-  protected def handleClientError(schema: => Schema): Validated[SchemaRegistryError, Schema] =
+  protected def handleClientError[T](data: => T): Validated[SchemaRegistryError, T] =
     try {
-      valid(schema)
+      valid(data)
     } catch {
       case exc: RestClientException if exc.getErrorCode == subjectNotFoundCode =>
         invalid(SchemaSubjectNotFound("Schema subject doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == versionNotFoundCode =>
-        invalid(SchemaVersionFound("Schema version doesn't exist."))
+        invalid(SchemaVersionNotFound("Schema version doesn't exist."))
       case exc: Throwable =>
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data."))

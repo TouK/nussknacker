@@ -14,6 +14,7 @@ class ConfluentSchemaRegistryProvider[T: TypeInformation](val schemaRegistryClie
                                                           val deserializationSchemaFactory: KafkaVersionAwareDeserializationSchemaFactory[T],
                                                           val kafkaConfig: KafkaConfig,
                                                           val formatKey: Boolean) extends SchemaRegistryProvider[T] {
+
   def recordFormatter(topic: String): Option[RecordFormatter] =
     Some(ConfluentAvroToJsonFormatter(createSchemaRegistryClient, topic, formatKey))
 
@@ -51,16 +52,19 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   }
 
   def apply[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
+    ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(), processObjectDependencies)
+
+  def apply[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider(
-      CachedConfluentSchemaRegistryClientFactory(),
+      schemaRegistryClientFactory,
       processObjectDependencies,
       useSpecificAvroReader = false,
       formatKey = false
     )
 
-  def defaultSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) =
-    new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
+  def defaultSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentAvroSerializationSchemaFactory =
+    ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
-  def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean) =
-    new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
+  def defaultDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean): ConfluentKafkaAvroDeserializationSchemaFactory[T] =
+    ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useSpecificAvroReader)
 }

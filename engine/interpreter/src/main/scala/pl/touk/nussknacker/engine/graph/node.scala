@@ -69,7 +69,7 @@ object node {
     def isDisabled: Option[Boolean]
   }
 
-  sealed trait CustomNodeData extends NodeData with WithComponent with RealNodeData {
+  sealed trait CustomNodeData extends NodeData with WithComponent with RealNodeData with WithParameters {
     def nodeType: String
     def parameters: List[Parameter]
     def outputVar: Option[String]
@@ -77,6 +77,10 @@ object node {
 
   trait WithComponent {
     def componentId: String
+  }
+
+  trait WithParameters {
+    def parameters: List[Parameter]
   }
 
   sealed trait OneOutputSubsequentNodeData extends NodeData with RealNodeData
@@ -87,8 +91,10 @@ object node {
 
   sealed trait SourceNodeData extends StartingNodeData
 
-  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends SourceNodeData with WithComponent with RealNodeData {
-    override val componentId = ref.typ
+  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+    extends SourceNodeData with WithComponent with RealNodeData with WithParameters {
+    override val componentId: String = ref.typ
+    override def parameters: List[Parameter] = ref.parameters
   }
 
   // TODO JOIN: move branchParameters to BranchEnd
@@ -107,8 +113,9 @@ object node {
 
   case class Variable(id: String, varName: String, value: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
-  case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent {
-    override val componentId = service.id
+  case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent with WithParameters {
+    override val componentId: String = service.id
+    override def parameters: List[Parameter] = service.parameters
   }
 
   case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter],
@@ -119,8 +126,10 @@ object node {
 
   case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData
 
-  case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent {
-    override val componentId = service.id
+  case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends
+    OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent with WithParameters {
+    override val componentId: String = service.id
+    override def parameters: List[Parameter] = service.parameters
   }
 
   case class BranchEndData(definition: BranchEndDefinition) extends EndingNodeData {
@@ -135,6 +144,8 @@ object node {
   @JsonCodec case class BranchEndDefinition(id: String, joinId: String) {
 
     //in CanonicalProcess and EspProcess we have to add artifical node (BranchEnd), we use this generated, unique id
+    //TODO: we're using this also in BranchParameters.js to get ValidationContext. This should be refactored, so
+    //that we're passing ValidationContext for nodes explicitly
     def artificialNodeId: String = s"$$edge-$id-$joinId"
 
     //TODO: remove it and replace with sth more understandable
@@ -147,8 +158,9 @@ object node {
                    endResult: Option[Expression] = None,
                    isDisabled: Option[Boolean] = None,
                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None
-                 ) extends EndingNodeData with WithComponent with Disableable with RealNodeData {
-    override val componentId = ref.typ
+                 ) extends EndingNodeData with WithComponent with Disableable with RealNodeData with WithParameters {
+    override val componentId: String = ref.typ
+    override def parameters: List[Parameter] = ref.parameters
   }
 
   // TODO: A better way of passing information regarding subprocess parameter definition

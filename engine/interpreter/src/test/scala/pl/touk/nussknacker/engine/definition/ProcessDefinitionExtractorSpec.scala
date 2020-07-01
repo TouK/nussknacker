@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{process, _}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef
 
 import scala.concurrent.Future
 
@@ -22,11 +23,11 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val signal1 = processDefinition.signalsWithTransformers.get("signal1")
     signal1 shouldBe 'defined
     signal1.get._2 shouldBe Set("transformer1")
-    signal1.get._1.methodDef.name shouldBe "send1"
+    signal1.get._1.asInstanceOf[StandardObjectWithMethodDef].methodDef.name shouldBe "send1"
   }
 
   test("extract additional variables info from annotation") {
-    val methodDef = processDefinition.customStreamTransformers("transformer1")._1.methodDef
+    val methodDef = processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[StandardObjectWithMethodDef].methodDef
     val additionalVars = methodDef.orderedDependencies.definedParameters.head.additionalVariables
     additionalVars("var1") shouldBe Typed[OnlyUsedInAdditionalVariable]
   }
@@ -41,7 +42,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val definition = processDefinition.services("configurable1")
 
     definition.returnType shouldBe Typed[String]
-    definition.methodDef.runtimeClass shouldBe classOf[Future[_]]
+    definition.asInstanceOf[StandardObjectWithMethodDef].methodDef.runtimeClass shouldBe classOf[Future[_]]
 
     definition.parameters shouldBe List(Parameter[Int]("param1"))
   }

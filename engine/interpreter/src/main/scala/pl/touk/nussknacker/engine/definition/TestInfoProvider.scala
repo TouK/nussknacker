@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, process}
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -28,7 +28,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
   private lazy val globalVariablesPreparer =
     GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig)
 
-  private lazy val evaluator = ExpressionEvaluator.withoutLazyVals(globalVariablesPreparer, List.empty)
+  private lazy val evaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
     modelData.dictServices.dictRegistry,
@@ -56,7 +56,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     for {
       definition <- extractSourceFactory(source)
       sourceParams <- prepareSourceParams(definition, source)
-      sourceObj = factory.create[process.Source[Any]](definition, sourceParams, None)
+      sourceObj <- factory.createObject[process.Source[Any]](definition, None, sourceParams).toOption
     } yield sourceObj
   }
 

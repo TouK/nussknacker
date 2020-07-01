@@ -1,3 +1,5 @@
+import {TypingResult} from "./definition"
+
 export type ValidationResult = {
     validationErrors: ValidationErrors[],
     validationWarnings: ValidationWarnings[],
@@ -10,8 +12,6 @@ export type ValidationWarnings = {
     invalidNodes: Record<string, NodeValidationError[]>,
 
 }
-
-export type TypingResult = $TodoType
 
 export type ValidationErrors = {
     invalidNodes: Record<string, NodeValidationError[]>,

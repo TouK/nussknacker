@@ -47,8 +47,8 @@ class ServiceQuery(modelData: ModelData) {
     queryResult
   }
   private def closableService(methodDef: ObjectWithMethodDef): Lifecycle = {
-    methodDef match {
-      case ObjectWithMethodDef(lifecycle: Lifecycle, _, _) => lifecycle
+    methodDef.obj match {
+      case lifecycle: Lifecycle => lifecycle
       case _ => throw new IllegalArgumentException
     }
   }

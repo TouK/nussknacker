@@ -33,13 +33,9 @@ class ExpressionServiceQuery(
   def invoke(serviceName: String,params: List[evaluatedparam.Parameter])
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
     expressionCompiler.compileValidatedObjectParameters(params, ValidationContext.empty) match {
-      case Valid(p) => expressionEvaluator
-        .evaluateParameters(p, ctx)(nodeId,ServiceQuery.jobData.metaData, executionContext)
-        .flatMap {
-          case (_, vars) =>
-            serviceQuery
-              .invoke(serviceName, vars.toList: _*)
-        }
+      case Valid(p) =>
+        val (_, vars) = expressionEvaluator.evaluateParameters(p, ctx)(nodeId,ServiceQuery.jobData.metaData)
+        serviceQuery.invoke(serviceName, vars.toList: _*)
       case Invalid(e) => Future.failed(ParametersCompilationException(e))
     }
   }
@@ -61,7 +57,7 @@ object ExpressionServiceQuery {
 
   //TODO: extract shared part with TestInfoProvider
   private def expressionEvaluator(modelData: ModelData): ExpressionEvaluator = {
-    ExpressionEvaluator.withoutLazyVals(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig), List.empty)
+    ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))
   }
 
   private def expressionCompiler(modelData: ModelData) = {

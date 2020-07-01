@@ -44,7 +44,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfi
   }
 
   override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(service, (parameterCreator: String => Option[AnyRef], outputVariableNameOpt, additional: Seq[AnyRef], _) => {
+    overrideObjectWithMethod(service, (parameterCreator: Map[String, Any], outputVariableNameOpt, additional: Seq[AnyRef], _) => {
       val newAdditional = additional.map {
         case c: ServiceInvocationCollector => c.enable(collectingListener.runId)
         case a => a

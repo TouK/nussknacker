@@ -4,11 +4,13 @@ import java.util.regex.Pattern
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
+import io.circe.ParsingFailure
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import io.circe.parser._
 
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -127,6 +129,27 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
   private def error(paramName: String, nodeId: String): GreaterThanRequiredParameter = GreaterThanRequiredParameter(
     s"This field value has to be a number lower than or equal to ${maximalNumber}",
     "Please fill field with proper number",
+    paramName,
+    nodeId
+  )
+}
+
+case object JsonValidator extends ParameterValidator {
+
+  //Blank value should be not validate - we want to chain validators
+  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
+    val strippedValue = value.stripPrefix("'").stripSuffix("'").trim
+    val parsingResult = parse(strippedValue)
+
+    if (StringUtils.isBlank(value) || parsingResult.isRight)
+      valid(Unit)
+    else
+      invalid(error(parsingResult.left.get, paramName, nodeId.id))
+  }
+
+  private def error(parsingException: ParsingFailure, paramName: String, nodeId: String): JsonRequiredParameter = JsonRequiredParameter(
+    parsingException.message,
+    "Please fill field with valid json",
     paramName,
     nodeId
   )

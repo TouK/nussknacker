@@ -27,11 +27,11 @@ To see biggest differences please consult the [changelog](Changelog.md).
       }
     }
   ```
-* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981)
+* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998), [#1007](https://github.com/TouK/nussknacker/pull/1007), [#1014](https://github.com/TouK/nussknacker/pull/1014)
 
-API for `KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` was changed:
+API for `KafkaAvroSourceFactory` was changed:
 
-`KafkaAvroSourceFactory` and `KafkaTypedAvroSourceFactory` old way:
+`KafkaAvroSourceFactory` old way:
 ```
 val clientFactory = new SchemaRegistryClientFactory
 val source = new KafkaAvroSourceFactory(
@@ -40,7 +40,6 @@ val source = new KafkaAvroSourceFactory(
   None,
   processObjectDependencies = processObjectDependencies
 )
-
 ```
 
 `KafkaAvroSourceFactory` new way :
@@ -48,10 +47,11 @@ val source = new KafkaAvroSourceFactory(
 val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
 val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 ```
-__
-`KafkaTypedAvroSourceFactory` (*class name changed*) new way:
+
+Provided new API for Kafka Avro Sink:
+
 ```
-val avroFixedSourceFactory = FixedKafkaAvroSourceFactory[GenericData.Record](processObjectDependencies)
+val kafkaAvroSinkFactory = new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)
 ```
 
 Additional changes:
@@ -70,6 +70,10 @@ Additional changes:
 - (Refactor KafkaAvro API) Renamed AvroKeyValueDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory and moved to avro.schemaregistry.confluent package
 - (Refactor KafkaAvro API) Renamed AvroSerializationSchemaFactory to ConfluentAvroSerializationSchemaFactory and moved to avro.schemaregistry.confluent package
 - (Refactor KafkaAvro API) Renamed AvroKeyValueSerializationSchemaFactory to ConfluentAvroKeyValueSerializationSchemaFactory and moved to avro.schemaregistry.confluent package
+- (Refactor KafkaAvro API) Deleted FixedKafkaAvroSourceFactory and FixedKafkaAvroSinkFactory (now we don't support fixed schema)
+
+* [#1013](https://github.com/TouK/nussknacker/pull/1013) Expression evaluation is synchronous now. It shouldn't cause any problems 
+(all languages were synchronous anyway), but some internal code may have o change.
 
 ## In version 0.1.2
 
