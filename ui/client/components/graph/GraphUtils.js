@@ -75,7 +75,7 @@ function addEdge(process, fromId, toId) {
   }
 }
 
-export function computeBoundingRect(expandedGroup, layout, nodes, nodeHeight, margin) {
+export function computeBoundingRect(expandedGroup, layout, nodes, margin) {
 
   const widthsHeights = expandedGroup.nodes
     .map(id => nodes.find(node => node.id == id))

@@ -2,11 +2,12 @@ import moment from "moment"
 import {dateFormat} from "../../config"
 import HttpService from "../../http/HttpService"
 import {ThunkAction} from "../reduxTypes"
+import {ProcessCounts} from "../../reducers/graph"
 
-export function displayProcessCounts(processCounts: $TodoType): $TodoType {
+export function displayProcessCounts(processCounts: ProcessCounts): $TodoType {
   return {
     type: "DISPLAY_PROCESS_COUNTS",
-    processCounts: processCounts,
+    processCounts,
   }
 }
 

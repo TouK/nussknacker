@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import * as joint from "jointjs"
 import css from "!raw-loader!./export.styl"
-import {toXml, svgTowDataURL} from "../../../common/SVGUtils"
+import * as joint from "jointjs"
 import {memoize} from "lodash"
+import {svgTowDataURL, toXml} from "../../../common/SVGUtils"
 
 function createStyle() {
   const style = joint.V("style").node
@@ -65,7 +65,7 @@ function hasDisplay(el: Element) {
 
 const removeHiddenNodes = (root: SVGElement) => Array
   // TODO: find better way
-  .from(root.querySelectorAll<SVGGraphicsElement>("[style*='display'], [class]"))
+  .from(root.querySelectorAll<SVGGraphicsElement>("svg > g [style*='display'], svg > g [class]"))
   .filter(el => !hasSize(el) || !hasDisplay(el))
   .filter((el, i, all) => !all.includes(el.ownerSVGElement))
   .forEach(el => el.remove())
@@ -80,16 +80,15 @@ function createPlaceholder(parent = document.body) {
   return el
 }
 
-function createPaper(placeholder: HTMLDivElement, maxSize: number, options: joint.dia.Paper.Options) {
+function createPaper(placeholder: HTMLDivElement, maxSize: number, {options, defs}: Pick<joint.dia.Paper, "options" | "defs">) {
   const paper = new joint.dia.Paper({
     ...options,
     el: placeholder,
     width: maxSize,
     height: maxSize,
   })
-
-  paper.scaleContentToFit({minScale: 1.5, maxScale: 4})
-  paper.fitToContent()
+  paper.defs.replaceWith(defs)
+  paper.fitToContent({allowNewOrigin: "any"})
 
   const {svg} = paper
   const {width, height} = paper.getComputedSize()
@@ -103,7 +102,7 @@ function addStyles(svg: SVGElement, height: number, width: number) {
   svg.setAttribute("class", "graph-export")
 }
 
-export async function prepareSvg(options: joint.dia.Paper.Options, maxSize = 15000) {
+export async function prepareSvg(options: Pick<joint.dia.Paper, "options" | "defs">, a, maxSize = 15000) {
   const placeholder = createPlaceholder()
   const {svg, width, height} = createPaper(placeholder, maxSize, options)
 

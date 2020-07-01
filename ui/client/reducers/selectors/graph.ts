@@ -2,7 +2,7 @@ import {RootState} from "../index"
 import {createSelector} from "reselect"
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import ProcessUtils from "../../common/ProcessUtils"
-import {GraphState} from "../graph"
+import {GraphState, ProcessCounts} from "../graph"
 import {Process} from "../../types"
 
 export const getGraph = (state: RootState): GraphState => state.graphReducer
@@ -43,7 +43,7 @@ export const isDeployPossible = createSelector(
 export const isCancelPossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canCancel(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities || {})
 const getTestResults = createSelector(getGraph, g => g.testResults)
-export const getProcessCounts = createSelector(getGraph, g => g.processCounts || {})
+export const getProcessCounts = createSelector(getGraph, g => g.processCounts || {} as ProcessCounts)
 export const getShowRunProcessDetails = createSelector(
   [getTestResults, getProcessCounts],
   (testResults, processCounts) => testResults || processCounts,

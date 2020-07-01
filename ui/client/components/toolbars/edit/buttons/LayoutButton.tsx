@@ -15,7 +15,7 @@ function LayoutButton() {
     <ToolbarButton
       name={t("panels.actions.edit-layout.button", "layout")}
       icon={<Icon/>}
-      onClick={() => dispatch(layout(() => graphGetter().directedLayout()))}
+      onClick={() => dispatch(layout(() => graphGetter().forceLayout()))}
     />
   )
 }

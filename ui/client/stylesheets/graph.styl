@@ -631,28 +631,20 @@ espPanelButton()
   padding 8px
   border: 0
 
+
 .nodeIcon
-  &:not(:hover)
     opacity 0.75
-  &:hover
-    opacity 1
 
-.nodeIconHoverBox
-  &:not(:hover)
-    .nodeIcon
-      display: none
-  &:hover
-    .nodeIcon
-      display: block
+    &:hover
+        opacity 1
 
-.nodeIconForceHoverBox
-  .nodeIcon
-    display: block
+    .joint-type-esp-group &
+    .joint-type-basic-rect &
+        display none
 
-.nodeIconForceNoHoverBox
-  .nodeIcon
-    display: none
-
+    .forced-hover &
+    .joint-type-esp-group:hover &
+        display block
 
 .fadeout {
   position: relative;

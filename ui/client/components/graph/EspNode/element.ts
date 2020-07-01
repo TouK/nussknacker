@@ -1,20 +1,21 @@
 /* eslint-disable i18next/no-literal-string */
-import {cloneDeepWith, get, isEmpty, toArray, toString} from "lodash"
+import {ProcessCounts} from "../../../reducers/graph"
+import {cloneDeepWith, get, isEmpty, toString} from "lodash"
 import ProcessUtils from "../../../common/ProcessUtils"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
 import NodeUtils from "../NodeUtils"
-import expandIcon from "../../../assets/img/expand.svg"
-import {rectWidth, rectHeight, summaryCountConfig, maxLineLength, maxLineCount} from "./misc"
 import {getIconHref} from "./getIconHref"
-import {EspNodeShape} from "./esp"
+import {EspNodeShape, EspGroupShape} from "./esp"
+import {ProcessDefinitionData, NodeType} from "../../../types"
+import * as joint from "jointjs"
 
-function getBodyContent(node) {
-  const bodyContent = node.id || ""
+const maxLineLength = 24
+const maxLineCount = 2
 
+function getBodyContent(bodyContent = ""): { text: string, multiline?: boolean } {
   if (bodyContent.length <= maxLineLength) {
     return {
       text: bodyContent,
-      multiline: false,
     }
   }
 
@@ -23,7 +24,6 @@ function getBodyContent(node) {
   if (splitContent[0].length > maxLineLength) {
     return {
       text: `${bodyContent.slice(0, maxLineLength)}...`,
-      multiline: false,
     }
   }
 
@@ -61,106 +61,68 @@ function getBodyContent(node) {
   }
 }
 
-function getTestResultsSummaryAttr(processCounts, width, testResultsWidth) {
-  const {breakPoint, maxExtraDigits} = summaryCountConfig
-
-  const hasCounts = !isEmpty(processCounts)
-  const hasErrors = hasCounts && processCounts && processCounts.errors > 0
-  const countsContent = hasCounts ? processCounts ? `${processCounts.all}` : "0" : ""
-  let extraDigitsCount = Math.max(countsContent.length - breakPoint, 0)
-  extraDigitsCount = Math.min(extraDigitsCount, maxExtraDigits)
-
-  return {
-    text: countsContent,
-    fill: hasErrors ? "red" : "#CCCCCC",
-    refX: width - testResultsWidth / 2,
-    // magic/hack: central vertical position when font-size changes
-    y: 78 - extraDigitsCount * 1.5,
-    height: 16,
-  }
+function getStringWidth(str = "", pxPerChar = 0, padding = 0) {
+  return toString(str).length * pxPerChar + 2 * padding
 }
 
-export function makeElement(node, processCounts, nodesSettings) {
-  const description = get(node.additionalFields, "description", null)
-  const {text: bodyContent, multiline} = getBodyContent(node)
-  const hasCounts = !isEmpty(processCounts)
-  const width = rectWidth
-  const height = rectHeight
-  const nodeSettings = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]
-  const iconHref = getIconHref(node, nodeSettings)
-  const testResultsHeight = 24
-  const pxPerChar = 8
-  const countsPadding = 8
-  //dynamically sized width
-  const testResultsWidth = toArray(toString(processCounts ? processCounts.all : "")).length * pxPerChar + 2 * countsPadding
-  const attrs = {
-    ".background": {
-      width: width,
-      opacity: node.isDisabled ? 0.4 : 1,
-    },
-    ".disabled-node-layer": {
-      display: node.isDisabled ? "block" : "none",
-      width: width,
-      fill: "#B3B3B3",
-    },
-    ".background title": {
-      text: description,
-    },
-    ".body": {
-      width: width,
-    },
-    "rect.nodeIconPlaceholder": {
-      fill: customAttrs[node.type].styles.fill,
-      opacity: node.isDisabled ? 0.4 : 1,
-    },
-    ".nodeIconItself": {
-      "xlink:href": iconHref,
-    },
-    ".contentText": {
-      text: bodyContent,
-      opacity: node.isDisabled ? 0.65 : 1,
-    },
-    ".testResultsPlaceHolder": {
-      noExport: "",
-      display: hasCounts ? "block" : "none",
-      width: testResultsWidth,
-      refX: width - testResultsWidth,
-      refY: height,
-      height: testResultsHeight,
-    },
-    ".testResultsSummary": {
-      noExport: "",
-      ...getTestResultsSummaryAttr(processCounts, width, testResultsWidth),
-    },
-    ".groupElements": {
-      display: NodeUtils.nodeIsGroup(node) ? "block" : "none",
-    },
-    ".expandIcon": {
-      "xlink:href": expandIcon,
-      width: 26,
-      height: 26,
-      refX: width - 13,
-      refY: -13,
-    },
+export const makeElement = (counts: ProcessCounts, processDefinitionData: ProcessDefinitionData) => {
+  const nodesSettings = processDefinitionData.nodesConfig || {}
+  return (node: NodeType) => {
+    const description = get(node.additionalFields, "description", null)
+    const {text: bodyContent} = getBodyContent(node.id)
+
+    const nodeSettings = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]
+    const iconHref = getIconHref(node, nodeSettings)
+
+    const processCounts = counts[node.id]
+    const hasCounts = !isEmpty(processCounts)
+    const hasErrors = hasCounts && processCounts?.errors > 0
+    const testCounts = hasCounts ? processCounts?.all || 0 : ""
+    const testResultsWidth = getStringWidth(testCounts, 8, 8)
+
+    const attributes: joint.shapes.devs.ModelAttributes = {
+      id: node.id,
+      inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
+      outPorts: NodeUtils.hasOutputs(node) ? ["Out"] : [],
+      attrs: {
+        background: {
+          opacity: node.isDisabled ? 0.4 : 1,
+        },
+        title: {
+          text: description,
+        },
+        iconBackground: {
+          fill: customAttrs[node.type].styles.fill,
+          opacity: node.isDisabled ? 0.4 : 1,
+        },
+        icon: {
+          xlinkHref: iconHref,
+        },
+        content: {
+          text: bodyContent,
+          opacity: node.isDisabled ? 0.65 : 1,
+        },
+        testResultsSummary: {
+          text: testCounts,
+          fill: hasErrors ? "red" : "#CCCCCC",
+          x: -testResultsWidth / 2,
+        },
+        testResults: {
+          display: hasCounts ? "block" : "none",
+          width: testResultsWidth,
+          x: -testResultsWidth,
+        },
+      },
+      rankDir: "R",
+      nodeData: node,
+      //This is used by jointjs to handle callbacks/changes
+      //TODO: figure out what should be here?
+      definitionToCompare: {
+        node: cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].includes(key) ? null : undefined),
+        processCounts,
+      },
+    }
+
+    return NodeUtils.nodeIsGroup(node) ? new EspGroupShape(attributes) : new EspNodeShape(attributes)
   }
-
-  const inPorts = NodeUtils.hasInputs(node) ? ["In"] : []
-  const outPorts = NodeUtils.hasOutputs(node) ? ["Out"] : []
-
-  return new EspNodeShape({
-    id: node.id,
-    size: {width: width, height: height},
-    inPorts: inPorts,
-    outPorts: outPorts,
-    attrs: attrs,
-    rankDir: "R",
-    nodeData: node,
-    //This is used by jointjs to handle callbacks/changes
-    //TODO: figure out what should be here?
-    definitionToCompare: {
-      node: cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].indexOf(key) > -1 ? null : undefined),
-      processCounts: processCounts,
-    },
-  })
 }
-

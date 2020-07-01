@@ -1,15 +1,16 @@
 @require "../graphTheme.styl"
 
+linkColor = #B3B3B3
+
 .graph-export
     [no-export]
     .connection-wrap
     .marker-arrowheads
         display none
 
+    .arrow-marker path
+        fill linkColor
+
     .joint-theme-default
         .connection
-            stroke #B3B3B3
-
-        .marker-target
-            stroke #B3B3B3
-            fill #B3B3B3
+            stroke linkColor

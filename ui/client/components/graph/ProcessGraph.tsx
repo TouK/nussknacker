@@ -18,7 +18,8 @@ import {commonState, Graph} from "./Graph"
 
 const spec = {
   drop: (props, monitor, component) => {
-    const relOffset = component.computeRelOffset(monitor.getClientOffset())
+    const clientOffset = monitor.getClientOffset()
+    const relOffset = component.processGraphPaper.clientToLocalPoint(clientOffset)
     component.addNode(monitor.getItem(), relOffset)
   },
 }
