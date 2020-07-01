@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import * as joint from "jointjs"
 import css from "!raw-loader!./export.styl"
-import {toXml, svgTowDataURL} from "../../../common/SVGUtils"
+import * as joint from "jointjs"
 import {memoize} from "lodash"
+import {svgTowDataURL, toXml} from "../../../common/SVGUtils"
 
 function createStyle() {
   const style = joint.V("style").node
@@ -111,7 +111,6 @@ export async function prepareSvg(options: Pick<joint.dia.Paper, "options" | "def
   await embedImages(svg)
 
   placeholder.remove()
-  _debugInWindow(svg)
   return toXml(svg)
 }
 
