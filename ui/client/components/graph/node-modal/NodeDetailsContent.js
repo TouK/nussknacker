@@ -130,7 +130,8 @@ export class NodeDetailsContent extends React.Component {
   }
 
   customNode = (fieldErrors) => {
-    const {showValidation, showSwitch, isEditMode} = this.props
+    const {showValidation, showSwitch, isEditMode, findAvailableVariables, node} = this.props
+    const variableTypes = findAvailableVariables(node.id)
 
     switch (NodeUtils.nodeType(this.props.node)) {
       case "Source":
@@ -316,6 +317,7 @@ export class NodeDetailsContent extends React.Component {
             isMarked={this.isMarked}
             readOnly={!this.props.isEditMode}
             showValidation={showValidation}
+            variableTypes={variableTypes}
             errors={fieldErrors}
           />
         )
@@ -328,6 +330,7 @@ export class NodeDetailsContent extends React.Component {
             isMarked={this.isMarked}
             readOnly={!this.props.isEditMode}
             showValidation={showValidation}
+            variableTypes={variableTypes}
             errors={fieldErrors}
           />
         )
@@ -504,10 +507,6 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
-  createReadonlyField = (fieldType, fieldLabel, fieldProperty) => {
-    return this.createField(fieldType, fieldLabel, fieldProperty, false, [], null, true)
-  }
-
   createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName, readonly, defaultValue, key) => {
     return this.doCreateField(
       fieldType,
@@ -520,20 +519,6 @@ export class NodeDetailsContent extends React.Component {
       key,
       autofocus,
       validators,
-    )
-  }
-
-  createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
-    const path = `${listFieldProperty}.${fieldProperty}`
-
-    return this.doCreateField(
-      fieldType,
-      fieldLabel,
-      fieldName,
-      _.get(obj, fieldProperty),
-      (newValue) => this.setNodeDataAt(path, newValue),
-      null,
-      this.isMarked(path),
     )
   }
 

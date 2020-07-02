@@ -10,6 +10,7 @@ import ActionsUtils from "../../../actions/ActionsUtils"
 import EspModalStyles from "../../../common/EspModalStyles"
 import NodeUtils from "../NodeUtils"
 import EdgeDetailsContent from "./EdgeDetailsContent"
+import ProcessUtils from "../../../common/ProcessUtils"
 
 //TODO: this is still pretty switch-specific.
 class EdgeDetailsModal extends React.Component {
@@ -119,6 +120,7 @@ class EdgeDetailsModal extends React.Component {
                     edge={this.state.editedEdge}
                     showValidation={true}
                     showSwitch={true}
+                    variableTypes={this.props.variableTypes}
                   />
                 </div>
                 <div className="modalFooter">
@@ -139,6 +141,9 @@ function mapState(state) {
   const nodeId = state.graphReducer.edgeToDisplay.from
   const errors = _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${nodeId}]`, [])
   const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
+  const variableTypes = ProcessUtils.findAvailableVariables(state.settings.processDefinitionData,
+    processCategory,
+    state.graphReducer.processToDisplay)(nodeId)
   return {
     edgeToDisplay: state.graphReducer.edgeToDisplay,
     processToDisplay: state.graphReducer.processToDisplay,
@@ -147,6 +152,7 @@ function mapState(state) {
       _.get(state, "graphReducer.fetchedProcessDetails.isArchived"),
     processDefinitionData: state.settings.processDefinitionData,
     showEdgeDetailsModal: state.ui.showEdgeDetailsModal,
+    variableTypes: variableTypes,
   }
 }
 

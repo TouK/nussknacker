@@ -9,7 +9,7 @@ import LabeledTextarea from "./editors/field/LabeledTextarea"
 
 const Variable = (props) => {
 
-  const {node, onChange, isMarked, readOnly, showValidation, errors, parameter, renderFieldLabel} = props
+  const {node, onChange, isMarked, readOnly, showValidation, errors, variableTypes, renderFieldLabel} = props
 
   return (
     <div className="node-table-body node-variable-builder-body">
@@ -41,6 +41,7 @@ const Variable = (props) => {
         showValidation={showValidation}
         showSwitch={false}
         errors={errors}
+        variableTypes={variableTypes}
       />
       <LabeledTextarea
         renderFieldLabel={() => renderFieldLabel("Description")}
@@ -62,6 +63,7 @@ Variable.propTypes = {
   onChange: PropTypes.func.isRequired,
   showValidation: PropTypes.bool.isRequired,
   showSwitch: PropTypes.bool,
+  variableTypes: PropTypes.object.isRequired,
 }
 
 Variable.defaultProps = {

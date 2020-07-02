@@ -5,7 +5,7 @@ import MapKey from "./MapKey"
 import MapValue from "./MapValue"
 
 export default function MapRow(props) {
-  const {field, validators, showValidation, readOnly, paths, isMarked, onChange, onRemoveField, showSwitch, errors} = props
+  const {field, showValidation, readOnly, paths, isMarked, onChange, onRemoveField, showSwitch, errors, variableTypes} = props
 
   return (
     <div className="node-row movable-row">
@@ -30,6 +30,7 @@ export default function MapRow(props) {
         showSwitch={showSwitch}
         readOnly={readOnly}
         onChange={onChange}
+        variableTypes={variableTypes}
       />
 
       {
@@ -50,7 +51,7 @@ export default function MapRow(props) {
 MapRow.propTypes = {
   field: PropTypes.object.isRequired,
   paths: PropTypes.string.isRequired,
-  validators: PropTypes.array,
   onChange: PropTypes.func,
   showSwitch: PropTypes.bool,
+  variableTypes: PropTypes.object.isRequired,
 }

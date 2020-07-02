@@ -1,13 +1,12 @@
 import _ from "lodash"
 import PropTypes from "prop-types"
-import React from "react"
 import {v4 as uuid4} from "uuid"
 import {errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import Map from "./editors/map/Map"
 
-const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel}) => {
+const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel, variableTypes}) => {
 
   const addField = () => {
     addElement("fields", {name: "", uuid: uuid4(), expression: {expression: "", language: "spel"}})
@@ -47,6 +46,7 @@ const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readO
         isMarked={isMarked}
         readOnly={readOnly}
         showValidation={showValidation}
+        variableTypes={variableTypes}
         showSwitch={false}
         errors={errors}
       />
@@ -72,6 +72,7 @@ MapVariable.propTypes = {
   readOnly: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
   errors: PropTypes.array.isRequired,
+  variableTypes: PropTypes.object.isRequired,
   renderFieldLabel: PropTypes.func.isRequired,
 }
 

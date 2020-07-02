@@ -5,8 +5,8 @@ import MapRow from "./MapRow"
 const Map = (props) => {
 
   const {
-    label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation, expressionValue,
-    showSwitch, errors,
+    label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation,
+    showSwitch, errors, variableTypes,
   } = props
 
   return (
@@ -27,6 +27,7 @@ const Map = (props) => {
                 onChange={onChange}
                 onRemoveField={() => removeField(namespace, index)}
                 errors={errors}
+                variableTypes={variableTypes}
               />
             ))
           }
@@ -56,9 +57,9 @@ Map.propTypes = {
   addField: PropTypes.func.isRequired,
   removeField: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
-  expressionValue: PropTypes.bool,
   showValidation: PropTypes.bool.isRequired,
   showSwitch: PropTypes.bool,
+  variableTypes: PropTypes.object.isRequired,
 }
 
 Map.defaultProps = {
