@@ -5,15 +5,14 @@ import {Editor} from "./Editor"
 import {VariableTypes} from "../../../../../types"
 
 type Props = {
-  fieldName: string,
   expressionObj: $TodoType,
   validators: Array<$TodoType>,
   isMarked: boolean,
   showValidation: boolean,
   readOnly: boolean,
   onValueChange: Function,
-  rows: number,
-  cols: number,
+  rows?: number,
+  cols?: number,
   className: string,
   variableTypes: VariableTypes,
 
@@ -22,14 +21,13 @@ type Props = {
 const RawEditor = (props: Props) => {
 
   const {
-    fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
+    expressionObj, validators, isMarked, showValidation, readOnly,
     onValueChange, rows = 1, cols = 50, className, variableTypes,
   } = props
 
   return (
     <div className={className}>
       <ExpressionSuggest
-        fieldName={fieldName}
         inputProps={{
           rows: rows,
           cols: cols,

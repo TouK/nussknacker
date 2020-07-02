@@ -450,8 +450,7 @@ export class NodeDetailsContent extends React.Component {
                             param,
                             "expression",
                             `exceptionHandler.parameters[${index}]`,
-                            fieldErrors,
-                            "String",
+                            fieldErrors
                           )}
                         </div>
                       )
@@ -531,11 +530,11 @@ export class NodeDetailsContent extends React.Component {
   }
 
   //this is for "dynamic" parameters in sources, sinks, services etc.
-  createParameterExpressionField = (parameter, expressionProperty, listFieldPath, fieldErrors, fieldType) => {
-    return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, fieldType, parameter)
+  createParameterExpressionField = (parameter, expressionProperty, listFieldPath, fieldErrors) => {
+    return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, parameter)
   }
 
-  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, fieldType, parameter) => {
+  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter) => {
     const {showValidation, showSwitch, isEditMode, node, findAvailableVariables} = this.props
 
     const variableTypes = findAvailableVariables(node.id, parameter)
@@ -543,7 +542,6 @@ export class NodeDetailsContent extends React.Component {
       <ExpressionField
         fieldName={fieldName}
         fieldLabel={fieldLabel}
-        fieldType={fieldType}
         exprPath={exprPath}
         isEditMode={isEditMode}
         editedNode={this.state.editedNode}

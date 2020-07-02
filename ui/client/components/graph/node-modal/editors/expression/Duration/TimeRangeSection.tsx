@@ -1,4 +1,4 @@
-import TimeRangeComponent, {TimeRangeComponentType} from "./TimeRangeComponent"
+import TimeRangeComponent, {TimeRange, TimeRangeComponentType} from "./TimeRangeComponent"
 import ValidationLabels from "../../../../../modals/ValidationLabels"
 import React from "react"
 import {Duration} from "./DurationEditor"
@@ -7,7 +7,7 @@ import {Period} from "./PeriodEditor"
 import "./timeRange.styl"
 
 type Props = {
-  components: Array<TimeRangeComponentType>,
+  components: Array<TimeRange>,
   onComponentValueChange: Function,
   readOnly: boolean,
   showValidation: boolean,
@@ -29,8 +29,8 @@ export default function TimeRangeSection(props: Props) {
         {
           components.map(component => (
             <TimeRangeComponent
-              key={component.fieldName}
-              component={component}
+              key={component}
+              timeRangeComponent={component}
               onChange={onComponentValueChange}
               value={value}
               readOnly={readOnly}

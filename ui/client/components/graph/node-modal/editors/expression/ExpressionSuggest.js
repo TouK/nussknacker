@@ -27,7 +27,6 @@ class ExpressionSuggest extends React.Component {
 
   static propTypes = {
     inputProps: PropTypes.object.isRequired,
-    fieldName: PropTypes.string,
     validators: PropTypes.array,
     showValidation: PropTypes.bool,
     processingType: PropTypes.string,

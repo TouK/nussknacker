@@ -1,6 +1,6 @@
 import React from "react"
 import Input from "../field/Input"
-import {Editor} from "./Editor"
+import {Editor, SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
 import i18next from "i18next"
 
@@ -11,7 +11,7 @@ type Props = {
   formatter: Formatter,
 }
 
-const StringEditor: Editor<Props> = (props: Props) => {
+const StringEditor: SimpleEditor<Props> = (props: Props) => {
 
   const {expressionObj, onValueChange, className, formatter} = props
   const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter

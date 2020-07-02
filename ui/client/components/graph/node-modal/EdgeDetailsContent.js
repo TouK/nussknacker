@@ -51,7 +51,6 @@ export default class EdgeDetailsContent extends React.Component {
           >
             <EditableEditor
               variableTypes={variableTypes}
-              fieldType={"expression"}
               fieldLabel={"Expression"}
               renderFieldLabel={this.renderFieldLabel}
               expressionObj={expressionObj}

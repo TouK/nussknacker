@@ -4,6 +4,7 @@ import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableEditor from "../EditableEditor"
 import {EditorType} from "./Editor"
 import {NodeType, UIParameter, VariableTypes} from "../../../../../types"
+import {Error} from "../Validators"
 
 type Props = {
   fieldName: string,
@@ -20,7 +21,6 @@ type Props = {
   testResultsToHide: $TodoType,
   toggleTestResult: Function,
   renderFieldLabel: Function,
-  fieldType: string,
   errors: Array<Error>,
   variableTypes: VariableTypes,
 }
@@ -30,7 +30,7 @@ class ExpressionField extends React.Component<Props> {
   render() {
     const {
       fieldName, fieldLabel, exprPath, isEditMode, editedNode, isMarked, showValidation, showSwitch,
-      parameterDefinition, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel, fieldType,
+      parameterDefinition, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel,
       errors, variableTypes,
     } = this.props
 
@@ -43,13 +43,11 @@ class ExpressionField extends React.Component<Props> {
     if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR)
       return (
         <EditableEditor
-          fieldType={EditorType.FIXED_VALUES_PARAMETER_EDITOR}
           fieldLabel={fieldLabel}
           fieldName={fieldName}
           param={parameterDefinition}
           expressionObj={expressionObj}
           renderFieldLabel={renderFieldLabel}
-          values={editor.possibleValues}
           isMarked={marked}
           showSwitch={showSwitch}
           readOnly={readOnly}
@@ -68,9 +66,7 @@ class ExpressionField extends React.Component<Props> {
         toggleResult={toggleTestResult}
       >
         <EditableEditor
-          fieldType={fieldType}
           param={parameterDefinition}
-          editorName={EditorType.RAW_PARAMETER_EDITOR}
           renderFieldLabel={renderFieldLabel}
           fieldLabel={fieldLabel}
           fieldName={fieldName}

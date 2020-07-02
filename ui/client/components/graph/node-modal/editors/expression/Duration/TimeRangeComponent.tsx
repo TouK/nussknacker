@@ -9,7 +9,7 @@ export type TimeRangeComponentType = {
   fieldName: string,
 }
 
-enum TimeRange {
+export enum TimeRange {
   Years = "YEARS",
   Months = "MONTHS",
   Days = "DAYS",
@@ -17,7 +17,7 @@ enum TimeRange {
   Minutes = "MINUTES"
 }
 
-export const components: Record<string, TimeRangeComponentType> = {
+const components: Record<string, TimeRangeComponentType> = {
   [TimeRange.Years]: {
     label: "years",
     fieldName: "years",
@@ -41,7 +41,7 @@ export const components: Record<string, TimeRangeComponentType> = {
 }
 
 type Props = {
-  component: TimeRangeComponentType,
+  timeRangeComponent: TimeRange,
   onChange: Function,
   value: Duration | Period,
   readOnly: boolean,
@@ -52,7 +52,8 @@ type Props = {
 
 export default function TimeRangeComponent(props: Props) {
 
-  const {component, onChange, value, readOnly, showValidation, isValid, isMarked} = props
+  const {timeRangeComponent, onChange, value, readOnly, showValidation, isValid, isMarked} = props
+  const component = components[timeRangeComponent]
 
   return (
     <div className={"time-range-component"}>
