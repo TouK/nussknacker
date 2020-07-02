@@ -14,6 +14,7 @@ export default class EdgeDetailsContent extends React.Component {
     pathsToMark: PropTypes.array,
     showValidation: PropTypes.bool.isRequired,
     showSwitch: PropTypes.bool.isRequired,
+    variableTypes: PropTypes.object.isRequired,
   }
 
   isMarked = (path) => {
@@ -21,7 +22,7 @@ export default class EdgeDetailsContent extends React.Component {
   }
 
   render() {
-    const {edge, edgeErrors, readOnly, updateEdgeProp, showValidation, showSwitch, changeEdgeTypeValue} = this.props
+    const {edge, edgeErrors, readOnly, updateEdgeProp, showValidation, showSwitch, changeEdgeTypeValue, variableTypes} = this.props
 
     switch (_.get(edge.edgeType, "type")) {
       case "SwitchDefault": {
@@ -49,6 +50,7 @@ export default class EdgeDetailsContent extends React.Component {
             changeEdgeTypeValue={changeEdgeTypeValue}
           >
             <EditableEditor
+              variableTypes={variableTypes}
               fieldType={"expression"}
               fieldLabel={"Expression"}
               renderFieldLabel={this.renderFieldLabel}
