@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.util.cache.DefaultCache
+import pl.touk.nussknacker.engine.util.cache.{DefaultCache, SingleValueCache}
 
 import scala.concurrent.duration.Duration
 
@@ -42,7 +42,8 @@ class SchemaRegistryCaches(maximumSize: Long, latestSchemaExpirationTime: Option
                            schemaExpirationTime: Option[Duration], versionsCacheExpirationTime: Option[Duration]) {
    val schemaCache = new DefaultCache[Schema](maximumSize, schemaExpirationTime, Option.empty)
    val latestSchemaCache = new DefaultCache[Schema](maximumSize, Option.empty, latestSchemaExpirationTime)
-
-   val topicsCache = new DefaultCache[List[String]](1, Option.empty, versionsCacheExpirationTime)
    val versionsCache = new DefaultCache[List[Integer]](maximumSize, Option.empty, versionsCacheExpirationTime)
+   val topicsCache = new SingleValueCache[List[String]](Option.empty, versionsCacheExpirationTime)
+
+
 }
