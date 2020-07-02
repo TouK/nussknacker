@@ -25,6 +25,7 @@ import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
@@ -107,6 +108,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
     configureCheckpoints(env, streamMetaData)
 
     val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
+    implicit val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
 
     diskStateBackend match {
       case Some(backend) if streamMetaData.splitStateToDisk.getOrElse(false) =>

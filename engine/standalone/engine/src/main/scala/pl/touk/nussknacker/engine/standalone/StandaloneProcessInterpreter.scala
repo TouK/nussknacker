@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
+import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -55,7 +56,7 @@ object StandaloneProcessInterpreter {
       definitions,
       listeners,
       modelData.modelClassLoader.classLoader
-    ).andThen { compiledProcess =>
+    )(DefaultAsyncInterpretationValueDeterminer.DefaultValue).andThen { compiledProcess =>
       val source = extractSource(compiledProcess)
       StandaloneInvokerCompiler(compiledProcess).compile.map(_.run).map { case (sinkTypes, invoker) =>
         StandaloneProcessInterpreter(source, sinkTypes, contextPreparer.prepare(process.id), invoker, compiledProcess.lifecycle, modelData)

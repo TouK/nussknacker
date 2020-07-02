@@ -7,6 +7,7 @@ import CirceUtil._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto._
+import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 
 import scala.concurrent.duration.Duration
 
@@ -39,7 +40,7 @@ object ProcessAdditionalFields {
                     subprocessVersions: Map[String, Long] = Map.empty)
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
-  def allowLazyVars : Boolean
+  def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue) : Boolean
 }
 
 case class StreamMetaData(parallelism: Option[Int] = None,
@@ -50,9 +51,9 @@ case class StreamMetaData(parallelism: Option[Int] = None,
   
   def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
-  val shouldUseAsyncInterpretation : Boolean = useAsyncInterpretation.getOrElse(false)
+  def shouldUseAsyncInterpretation(implicit defaultValue: DefaultAsyncInterpretationValue) : Boolean = useAsyncInterpretation.getOrElse(defaultValue.value)
 
-  override val allowLazyVars: Boolean = !shouldUseAsyncInterpretation
+  override def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): Boolean = !shouldUseAsyncInterpretation
 
 }
 
@@ -67,5 +68,5 @@ object StreamMetaData {
 }
 
 case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData {
-  override val allowLazyVars: Boolean = true
+  override def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): Boolean = true
 }

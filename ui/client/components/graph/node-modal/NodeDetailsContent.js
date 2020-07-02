@@ -398,7 +398,7 @@ export class NodeDetailsContent extends React.Component {
             [errorValidator(fieldErrors, "useAsyncInterpretation")],
             "useAsyncInterpretation",
             false,
-            false,
+            this.props.processDefinitionData.servicesDefinition.defaultAsyncInterpretation,
             "use-async",
           ),
         ] : [this.createField(
@@ -513,7 +513,7 @@ export class NodeDetailsContent extends React.Component {
       fieldType,
       fieldLabel,
       fieldName,
-      _.get(this.state.editedNode, fieldProperty, ""),
+      _.get(this.state.editedNode, fieldProperty, null) || defaultValue,
       (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue),
       readonly,
       this.isMarked(fieldProperty),

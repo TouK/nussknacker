@@ -6,6 +6,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import pl.touk.nussknacker.engine.util.config.FicusReaders._
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -59,6 +60,9 @@ object UIProcessObjects {
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
       .mapValues(UiAdditionalPropertyConfig(_))
 
+    val defaultUseAsyncInterpretationFromConfig = processConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
+    val defaultAsyncInterpretation: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig)
+
     UIProcessObjects(
       nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
         user = user,
@@ -78,7 +82,8 @@ object UIProcessObjects {
         user = user,
         processDefinition = chosenProcessDefinition,
         isSubprocess = isSubprocess,
-        subprocessesDetails = subprocessesDetails))
+        subprocessesDetails = subprocessesDetails),
+      servicesDefinition = UIServicesDefinition(defaultAsyncInterpretation.value))
   }
 
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
@@ -108,10 +113,11 @@ object UIProcessObjects {
 }
 
 @JsonCodec(encodeOnly = true) case class UIProcessObjects(nodesToAdd: List[NodeGroup],
-                            processDefinition: UIProcessDefinition,
-                            nodesConfig: Map[String, SingleNodeConfig],
-                            additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
-                            edgesForNodes: List[NodeEdges])
+                                                          processDefinition: UIProcessDefinition,
+                                                          nodesConfig: Map[String, SingleNodeConfig],
+                                                          additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
+                                                          edgesForNodes: List[NodeEdges],
+                                                          servicesDefinition: UIServicesDefinition)
 
 @JsonCodec(encodeOnly = true) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
                                sourceFactories: Map[String, UIObjectDefinition],
@@ -160,6 +166,8 @@ object UIObjectDefinition {
   def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
 }
+
+@JsonCodec(encodeOnly = true) case class UIServicesDefinition(defaultAsyncInterpretation: Boolean)
 
 object UIParameter {
   def apply(parameter: Parameter, paramConfig: ParameterConfig): UIParameter = {

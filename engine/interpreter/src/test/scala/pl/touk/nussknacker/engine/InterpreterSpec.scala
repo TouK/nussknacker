@@ -10,6 +10,7 @@ import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
+import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -135,7 +136,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), DefaultObjectNaming))
 
-    failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader))
+    failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader)(DefaultAsyncInterpretationValueDeterminer.DefaultValue))
   }
 
   private def failOnErrors[T](obj: ValidatedNel[ProcessCompilationError, T]): T = obj match {

@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.Interpreter
+import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -23,7 +24,7 @@ object CompiledProcess {
               definitions: ProcessDefinition[ObjectWithMethodDef],
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader
-             ): ValidatedNel[ProcessCompilationError, CompiledProcess] = {
+             )(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ValidatedNel[ProcessCompilationError, CompiledProcess] = {
     val servicesDefs = definitions.services
 
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
