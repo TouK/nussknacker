@@ -25,10 +25,8 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
       (KafkaAvroFactory.TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
         val version = versionParam(topic)
         NextParameters(List(version.value), version.written, None)
-    //edge case - for some reason Topic is not defined
     case TransformationStep((KafkaAvroFactory.SinkOutputParamName, _) ::
-      (KafkaAvroFactory.TopicParamName, _) :: Nil, _) =>
-        NextParameters(List(versionParam(Nil)), Nil, None)
+      (KafkaAvroFactory.TopicParamName, _) :: Nil, _) => fallbackVersionParam
     case TransformationStep((KafkaAvroFactory.SinkOutputParamName, output:DefinedParameter) ::
       (KafkaAvroFactory.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (KafkaAvroFactory.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>

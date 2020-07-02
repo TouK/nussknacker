@@ -28,9 +28,8 @@ class KafkaAvroSourceFactory[T:TypeInformation](val schemaRegistryProvider: Sche
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
       val version = versionParam(topic)
      NextParameters(List(version.value), version.written, None)
-    //edge case - for some reason Topic is not defined
     case TransformationStep((TopicParamName, _) :: Nil, _) =>
-      NextParameters(List(versionParam(Nil)), Nil, None)
+      fallbackVersionParam
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
       //we do casting here and not in case, as version can be null...

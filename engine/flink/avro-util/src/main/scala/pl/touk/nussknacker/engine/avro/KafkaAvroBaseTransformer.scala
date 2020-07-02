@@ -77,4 +77,7 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
     }
   }
 
+  //edge case - for some reason Topic is not defined
+  protected val fallbackVersionParam: NextParameters = NextParameters(List(versionParam(Nil)), Nil, None)
+
 }
