@@ -44,8 +44,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] = handleClientError {
-    val fixedKey = ""
-    caches.topicsCache.getOrCreate(fixedKey) {
+    caches.topicsCache.getOrCreate {
       client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject)
     }
   }

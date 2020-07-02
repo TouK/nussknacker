@@ -48,3 +48,13 @@ object DefaultCache {
   def apply[T](expireAfterAccess: Option[Duration], expireAfterWrite: Option[Duration]): DefaultCache[T] =
     new DefaultCache(defaultMaximumSize, expireAfterAccess, expireAfterWrite)
 }
+
+class SingleValueCache[T](expireAfterAccess: Option[Duration], expireAfterWrite: Option[Duration]) {
+
+  private val cache = new DefaultCache[T](1, expireAfterAccess, expireAfterWrite)
+
+  private val fixedKey = "fixedKey"
+
+  def getOrCreate(value: => T): T = cache.getOrCreate(fixedKey)(value)
+
+}

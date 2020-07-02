@@ -102,7 +102,7 @@ object typing {
   object Typed {
 
     //TODO: how to assert in compile time that T != Any, AnyRef, Object?
-    def typedClass[T: ClassTag] = TypedClass(toRuntime[T], Nil)
+    def typedClass[T: ClassTag]: TypedClass = TypedClass(toRuntime[T], Nil)
 
     //TODO: make it more safe??
     def typedClass(klass: Class[_]): TypedClass = if (klass == classOf[Any]) {

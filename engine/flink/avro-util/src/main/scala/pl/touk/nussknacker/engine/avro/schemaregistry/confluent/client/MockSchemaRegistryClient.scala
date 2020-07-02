@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
+import java.util
+
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, MockSchemaRegistryClient => CMockSchemaRegistryClient}
@@ -19,6 +21,12 @@ class MockSchemaRegistryClient extends CMockSchemaRegistryClient with LazyLoggin
   override def getLatestSchemaMetadata(subject: String): SchemaMetadata = {
     verify(subject, None)
     super.getLatestSchemaMetadata(subject)
+  }
+
+
+  override def getAllVersions(subject: String): util.List[Integer] = {
+    verify(subject, None)
+    super.getAllVersions(subject)
   }
 
   /**

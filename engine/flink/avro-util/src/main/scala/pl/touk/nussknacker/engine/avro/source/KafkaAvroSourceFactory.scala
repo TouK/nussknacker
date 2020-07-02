@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
+import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 
 class KafkaAvroSourceFactory[T:TypeInformation](val schemaRegistryProvider: SchemaRegistryProvider[T],
@@ -21,20 +22,28 @@ class KafkaAvroSourceFactory[T:TypeInformation](val schemaRegistryProvider: Sche
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(initialParameters)
-    case TransformationStep((KafkaAvroFactory.TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
-       NextParameters(List(versionParam(topic)), Nil, None)
-    case TransformationStep((KafkaAvroFactory.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
-      (KafkaAvroFactory.SchemaVersionParamName, DefinedEagerParameter(version:Integer, _)) ::Nil, _) =>
-      val result = createSchemaRegistryProvider(topic, version).typeDefinition
+    case TransformationStep(Nil, _) =>
+      val initial = topicParam
+      NextParameters(List(initial.value), initial.written)
+    case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
+      val version = versionParam(topic)
+     NextParameters(List(version.value), version.written, None)
+    case TransformationStep((TopicParamName, _) :: Nil, _) =>
+      fallbackVersionParam
+    case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::
+      (SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
+      //we do casting here and not in case, as version can be null...
+      val result = createSchemaRegistryProvider(topic, version.asInstanceOf[Integer]).typeDefinition
       val finalCtxValue = finalCtx(context, dependencies, result.getOrElse(Unknown))
-      FinalResults(finalCtxValue, result.fold(error => List(CustomNodeError(error.getMessage, None)), _ => Nil))
-    case TransformationStep((KafkaAvroFactory.TopicParamName, _) ::
-      (KafkaAvroFactory.SchemaVersionParamName, _) ::Nil, _) =>
+      val finalErrors = result.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
+      FinalResults(finalCtxValue, finalErrors)
+    //edge case - for some reason Topic/Version is not defined
+    case TransformationStep((TopicParamName, _) ::
+      (SchemaVersionParamName, _) ::Nil, _) =>
       FinalResults(finalCtx(context, dependencies, Unknown), Nil)
   }
 
-  private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue], result: typing.TypingResult)(implicit nodeId: NodeId) = {
+  private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue], result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
     context.withVariable(variableName(dependencies), result).getOrElse(context)
   }
 
@@ -45,7 +54,7 @@ class KafkaAvroSourceFactory[T:TypeInformation](val schemaRegistryProvider: Sche
   }
 
   override def initialParameters: List[Parameter] = {
-    List(topicParam)
+    List(topicParam(NodeId("")).value)
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[T] = {

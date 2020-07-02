@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.sql.SqlExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-import pl.touk.nussknacker.engine.{compiledgraph, graph}
+import pl.touk.nussknacker.engine.{ModelData, compiledgraph, graph}
 
 object ExpressionCompiler {
 
@@ -27,6 +27,13 @@ object ExpressionCompiler {
 
   def withoutOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata], settings: ClassExtractionSettings): ExpressionCompiler
       = default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, settings)
+
+  def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
+    withoutOptimization(modelData.modelClassLoader.classLoader,
+        modelData.dictServices.dictRegistry,
+        modelData.processDefinition.expressionConfig,
+        modelData.processDefinition.settings)
+  }
 
   private def default(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
                       optimizeCompilation: Boolean, settings: ClassExtractionSettings): ExpressionCompiler = {
