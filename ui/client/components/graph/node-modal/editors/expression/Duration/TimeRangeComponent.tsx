@@ -41,7 +41,7 @@ const components: Record<string, TimeRangeComponentType> = {
 }
 
 type Props = {
-  timeRangeComponent: TimeRange,
+  timeRangeComponentName: TimeRange,
   onChange: Function,
   value: Duration | Period,
   readOnly: boolean,
@@ -52,8 +52,8 @@ type Props = {
 
 export default function TimeRangeComponent(props: Props) {
 
-  const {timeRangeComponent, onChange, value, readOnly, showValidation, isValid, isMarked} = props
-  const component = components[timeRangeComponent]
+  const {timeRangeComponentName, onChange, value, readOnly, showValidation, isValid, isMarked} = props
+  const component = components[timeRangeComponentName]
 
   return (
     <div className={"time-range-component"}>
