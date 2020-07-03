@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
@@ -38,6 +39,8 @@ object StoppableExecutionEnvironment {
 
 }
 
+// Remove @silent after upgrade to silencer 1.7
+@silent("deprecated")
 @nowarn("deprecated")
 abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment
   with LazyLogging with PatientScalaFutures with Matchers {
@@ -131,6 +134,8 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
 
 }
 
+// Remove @silent after upgrade to silencer 1.7
+@silent("deprecated")
 @nowarn("deprecated")
 trait MiniClusterResourceFlink_1_7 extends StoppableExecutionEnvironment {
 

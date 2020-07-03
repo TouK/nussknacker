@@ -9,8 +9,11 @@ import ReleaseTransformations._
 import scala.util.Try
 
 val scala211 = "2.11.12"
-val scala212 = "2.12.11"
+// Warning: Flink dosn't work correctly with 2.12.11
+val scala212 = "2.12.10"
 lazy val supportedScalaVersions = List(scala212, scala211)
+// Warning: Silencer 1.7.x require Scala 2.12.11 (see warning above)
+val silencerV = "1.6.0" // must be compatible with used exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
@@ -171,7 +174,6 @@ val commonsTextV = "1.8"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
-val silencerV = "1.7.0"
 val scalaCollectionsCompatV = "2.1.6"
 
 val akkaHttpV = "10.1.8"
