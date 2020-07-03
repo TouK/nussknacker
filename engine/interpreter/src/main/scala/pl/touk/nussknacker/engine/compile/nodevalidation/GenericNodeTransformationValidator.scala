@@ -73,8 +73,9 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
     private def evaluateParameter(parameterDefinition: Parameter, evaluated: evaluatedparam.Parameter) = {
       expressionCompiler.compileParam(evaluated, validationContext, parameterDefinition, false).map { compiled =>
         val typ = compiled.typedValue match {
-          //FIXME: handle branches...
           case TypedExpression(_, returnType, _) => returnType
+          //FIXME: handle branches...
+          case other => throw new IllegalArgumentException("Not supported type: " + other)
         }
         //TODO: handling exceptions here?
         (typ, parameterEvaluator.prepareParameter(compiled, parameterDefinition))
