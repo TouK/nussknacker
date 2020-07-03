@@ -93,6 +93,8 @@ export class NodeDetailsContent extends React.Component {
         this.props.variableTypes,
         currentNode,
         this.props.processProperties)
+    } else {
+      this.setState({editedNode: currentNode, unusedParameters: []})
     }
   }
 
@@ -428,6 +430,7 @@ export class NodeDetailsContent extends React.Component {
               renderFieldLabel={this.renderFieldLabel}
               isEditMode={!this.props.isEditMode}
               editedNode={this.state.editedNode}
+              readOnly={!this.props.isEditMode}
             />
           )
         )
