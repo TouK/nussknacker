@@ -251,10 +251,7 @@ class SimpleKafkaAvroSerializer(schemaRegistryClient: CSchemaRegistryClient) ext
 
   def serialize(topic: String, obj: Any): Array[Byte] = {
     val subject = getSubjectName(topic,false, obj, AvroSchemaUtils.getSchema(obj, useSchemaReflection))
-    val schema = obj match {
-      case container: GenericContainer => container.getSchema
-      case _ => null
-    }
+    val schema = AvroSchemaUtils.getSchema(obj)
     val schemaId = schemaRegistry.getId(subject, schema)
     serialize(schema, schemaId, obj)
   }
