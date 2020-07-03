@@ -56,6 +56,7 @@ object StandaloneProcessInterpreter {
       definitions,
       listeners,
       modelData.modelClassLoader.classLoader
+      // defaultAsyncValue is not important here because it doesn't used in standalone mode
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue).andThen { compiledProcess =>
       val source = extractSource(compiledProcess)
       StandaloneInvokerCompiler(compiledProcess).compile.map(_.run).map { case (sinkTypes, invoker) =>

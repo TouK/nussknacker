@@ -83,7 +83,7 @@ object UIProcessObjects {
         processDefinition = chosenProcessDefinition,
         isSubprocess = isSubprocess,
         subprocessesDetails = subprocessesDetails),
-      servicesDefinition = UIServicesDefinition(defaultAsyncInterpretation.value))
+      defaultAsyncInterpretation = defaultAsyncInterpretation.value)
   }
 
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
@@ -117,7 +117,7 @@ object UIProcessObjects {
                                                           nodesConfig: Map[String, SingleNodeConfig],
                                                           additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
                                                           edgesForNodes: List[NodeEdges],
-                                                          servicesDefinition: UIServicesDefinition)
+                                                          defaultAsyncInterpretation: Boolean)
 
 @JsonCodec(encodeOnly = true) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
                                sourceFactories: Map[String, UIObjectDefinition],
@@ -166,8 +166,6 @@ object UIObjectDefinition {
   def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
 }
-
-@JsonCodec(encodeOnly = true) case class UIServicesDefinition(defaultAsyncInterpretation: Boolean)
 
 object UIParameter {
   def apply(parameter: Parameter, paramConfig: ParameterConfig): UIParameter = {

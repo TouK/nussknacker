@@ -29,6 +29,7 @@ object ExpressionEvaluator {
                          listeners: Seq[ProcessListener],
                          metaData: MetaData,
                          services: Map[String, ObjectWithMethodDef])
+                        // defaultAsyncValue is used in allowLazyVars. When lazy vars will be removed, it should be removed too.
                         (implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ExpressionEvaluator = {
     val lazyValuesProvider: (ExecutionContext, MetaData, String) => LazyValuesProvider = if (metaData.typeSpecificData.allowLazyVars) {
       realLazyValuesProvider(services)

@@ -398,7 +398,7 @@ export class NodeDetailsContent extends React.Component {
             [errorValidator(fieldErrors, "useAsyncInterpretation")],
             "useAsyncInterpretation",
             false,
-            this.props.processDefinitionData.servicesDefinition.defaultAsyncInterpretation,
+            this.props.processDefinitionData.defaultAsyncInterpretation,
             "use-async",
           ),
         ] : [this.createField(
