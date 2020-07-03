@@ -27,6 +27,18 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
+function mapAdditionalItems(title: string, url: string) {
+  return {show: true, path: url, title: title}
+}
+
+function createMenuItem(show: boolean, path: string, title: string) {
+  return show && <MenuItem path={path} title={title}/>
+}
+
+function MenuItem({title, path}: { title: string, path: string }) {
+  return <li key={title}><NavLink to={path}>{title}</NavLink></li>
+}
+
 type Props = {
   app: typeof EspApp,
   rightElement?: ReactNode,
@@ -43,9 +55,34 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
   const showSearch = !_.isEmpty(featuresSettings.search)
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
+  const additionalNac = [...featuresSettings.additionalNac]
 
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()
+
+  function buildMenu() {
+    const defaultMenuItems = [
+      {show: true, path: Processes.path, title: t("menu.processes", "Processes")},
+      {show: true, path: SubProcesses.path, title: t("menu.subProcesses", "Subprocesses")},
+      {show: showMetrics, path: Metrics.basePath, title: t("menu.metrics", "Metrics")},
+      {show: showSearch, path: Search.path, title: t("menu.search", "Search")},
+      {show: showSignals, path: Signals.path, title: t("menu.signals", "Signals")},
+      {show: true, path: Archive.path, title: t("menu.archive", "Archive")},
+      {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
+    ]
+    const additionalMenuItems = additionalNac
+      .map(o => mapAdditionalItems(o.label, o.url))
+
+    const menuItems = defaultMenuItems
+      .concat(additionalMenuItems)
+      .map(o => createMenuItem(o.show, o.path, o.title))
+
+    return (
+      <ul id="menu-items" onClick={() => setExpanded(false)}>
+        {menuItems}
+      </ul>
+    )
+  }
 
   return (
     <header>
@@ -60,22 +97,10 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
           <button className="expand-button" onClick={() => setExpanded(!expanded)}>
             <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
           </button>
-          <ul id="menu-items" onClick={() => setExpanded(false)}>
-            <MenuItem path={Processes.path} title={t("menu.processes", "Processes")}/>
-            <MenuItem path={SubProcesses.path} title={t("menu.subProcesses", "Subprocesses")}/>
-            {showMetrics && <MenuItem path={Metrics.basePath} title={t("menu.metrics", "Metrics")}/>}
-            {showSearch && <MenuItem path={Search.path} title={t("menu.search", "Search")}/>}
-            {showSignals && <MenuItem path={Signals.path} title={t("menu.signals", "Signals")}/>}
-            <MenuItem path={Archive.path} title={t("menu.archive", "Archive")}/>
-            {showAdmin && <MenuItem path={AdminPage.path} title={t("menu.adminPage", "Admin")}/>}
-          </ul>
+          {buildMenu()}
         </Flex>
       </nav>
     </header>
   )
-}
-
-function MenuItem({title, path}: { title: string, path: string }) {
-  return <li key={title}><NavLink to={path}>{title}</NavLink></li>
 }
 
