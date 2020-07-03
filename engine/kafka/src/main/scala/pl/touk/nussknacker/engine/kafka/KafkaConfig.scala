@@ -6,7 +6,18 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 case class KafkaConfig(kafkaAddress: String,
                        kafkaProperties: Option[Map[String, String]],
                        kafkaEspProperties: Option[Map[String, String]],
-                       consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None)
+                       consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None) {
+
+  private def readBoolean(name: String): Option[Boolean]
+    = kafkaEspProperties.flatMap(_.get(name)).map(_.toBoolean)
+
+  def forceLatestRead: Option[Boolean] = readBoolean("forceLatestRead")
+
+  def writeEventTimestamp: Option[Boolean] = readBoolean("writeEventTimestamp")
+
+  def defaultMaxOutOfOrdernessMillis: Option[Long]
+    = kafkaEspProperties.flatMap(_.get("defaultMaxOutOfOrdernessMillis")).map(_.toLong)
+}
 
 object ConsumerGroupNamingStrategy extends Enumeration {
   val ProcessId: ConsumerGroupNamingStrategy.Value = Value("processId")
