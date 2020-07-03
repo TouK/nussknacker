@@ -2,7 +2,10 @@ package pl.touk.nussknacker.engine.avro.encode
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.time.chrono.ChronoZonedDateTime
+import java.time.{Instant, LocalTime, OffsetDateTime}
 import java.util
+import java.util.UUID
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
@@ -10,8 +13,10 @@ import cats.implicits._
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericContainer, GenericData, GenericRecordBuilder}
 import org.apache.avro.util.Utf8
-import org.apache.avro.{AvroRuntimeException, Schema}
+import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
+
+import scala.math.BigDecimal.RoundingMode
 
 class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
 
@@ -61,16 +66,32 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
         Valid(encodeString(str))
       case (Schema.Type.STRING, str: CharSequence) =>
         Valid(str)
+      case (Schema.Type.STRING, uuid: UUID) if schema.getLogicalType == LogicalTypes.uuid() =>
+        Valid(uuid)
       case (Schema.Type.BYTES, str: CharSequence) =>
         Valid(ByteBuffer.wrap(str.toString.getBytes(StandardCharsets.UTF_8)))
       case (Schema.Type.BYTES, bytes: Array[Byte]) =>
         Valid(ByteBuffer.wrap(bytes))
       case (Schema.Type.BYTES, buffer: ByteBuffer) =>
         Valid(buffer)
+      case (Schema.Type.FIXED | Schema.Type.BYTES, decimal: java.math.BigDecimal) if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
+        Valid(alignDecimalScale(decimal, schema))
+      case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number) if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
+        Valid(alignDecimalScale(new java.math.BigDecimal(number.toString), schema))
       case (Schema.Type.INT, number: Number) =>
         Valid(number.intValue())
+      case (Schema.Type.INT, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMillis() =>
+        Valid(time)
       case (Schema.Type.LONG, number: Number) =>
         Valid(number.longValue())
+      case (Schema.Type.LONG, instant: Instant) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+        Valid(instant)
+      case (Schema.Type.LONG, zoned: ChronoZonedDateTime[_]) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+        Valid(zoned.toInstant)
+      case (Schema.Type.LONG, offset: OffsetDateTime) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+        Valid(offset.toInstant)
+      case (Schema.Type.LONG, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMicros() =>
+        Valid(time)
       case (Schema.Type.FLOAT, number: Number) =>
         Valid(number.floatValue())
       case (Schema.Type.DOUBLE, number: Number) =>
@@ -86,6 +107,11 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
       case (_, _) =>
         error(s"Not expected type: ${value.getClass.getName} for schema: $schema")
     }
+  }
+
+  private def alignDecimalScale(decimal: java.math.BigDecimal, schema: Schema): java.math.BigDecimal = {
+    val decimalLogicalType = schema.getLogicalType.asInstanceOf[LogicalTypes.Decimal]
+    decimal.setScale(decimalLogicalType.getScale, RoundingMode.DOWN).bigDecimal
   }
 
   def encodeRecordOrError(fields: collection.Map[String, _], schema: Schema): GenericData.Record = {

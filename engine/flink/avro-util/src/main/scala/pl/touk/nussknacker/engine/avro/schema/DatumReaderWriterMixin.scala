@@ -5,6 +5,7 @@ import org.apache.avro.generic.{GenericContainer, GenericDatumReader, GenericDat
 import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.{ReflectDatumReader, ReflectDatumWriter}
 import org.apache.avro.specific.{SpecificDatumReader, SpecificDatumWriter, SpecificRecord}
+import pl.touk.nussknacker.engine.avro.AvroUtils
 
 /**
   * Mixin for DatumReader and DatumWriter. It collects factory methods for Datums.
@@ -32,26 +33,33 @@ trait DatumReaderWriterMixin {
   }
 
   def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = record match {
-    case _: SpecificRecord => new SpecificDatumWriter[Any](schema)
-    case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema)
-    case _ => new GenericDatumWriter[Any](schema)
+    case _: SpecificRecord => new SpecificDatumWriter[Any](schema, AvroUtils.SpecificData)
+    case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.ReflectData)
+    case _ => new GenericDatumWriter[Any](schema, AvroUtils.GenericData)
   }
 
   /**
     * Detecting DatumReader is based on record type and varying writerSchema is primitive
-    *
-    * @param record
-    * @param writerSchema
-    * @param readerSchema
-    * @return
     */
   def createDatumReader(record: GenericContainer, writerSchema: Schema, readerSchema: Schema, useSchemaReflection: Boolean): DatumReader[Any] = {
     val writerSchemaIsPrimitive = primitives.values.exists(_.equals(writerSchema))
 
     record match {
-      case _: SpecificRecord if !writerSchemaIsPrimitive => new SpecificDatumReader(writerSchema, readerSchema)
-      case _ if useSchemaReflection && !writerSchemaIsPrimitive => new ReflectDatumReader(writerSchema, readerSchema)
-      case _ => new GenericDatumReader(writerSchema, readerSchema)
+      case _: SpecificRecord if !writerSchemaIsPrimitive => new SpecificDatumReader(writerSchema, readerSchema, AvroUtils.SpecificData)
+      case _ if useSchemaReflection && !writerSchemaIsPrimitive => new ReflectDatumReader(writerSchema, readerSchema, AvroUtils.ReflectData)
+      case _ => new GenericDatumReader(writerSchema, readerSchema, AvroUtils.GenericData)
+    }
+  }
+
+  def createDatumReader(writerSchema: Schema, readerSchema: Schema, useSchemaReflection: Boolean, useSpecificAvroReader: Boolean): DatumReader[Any] = {
+    val writerSchemaIsPrimitive = primitives.values.exists(_.equals(readerSchema))
+
+    if (useSchemaReflection && !writerSchemaIsPrimitive) {
+      new ReflectDatumReader(writerSchema, readerSchema, AvroUtils.ReflectData)
+    } else if (useSpecificAvroReader && !writerSchemaIsPrimitive) {
+      new SpecificDatumReader(writerSchema, readerSchema, AvroUtils.SpecificData)
+    } else {
+      new GenericDatumReader(writerSchema, readerSchema, AvroUtils.GenericData)
     }
   }
 

@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.avro
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
+import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
-import pl.touk.nussknacker.engine.avro.schema.{LongFieldV1, PaymentNotCompatible, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schema.{LongFieldV1, PaymentDate, PaymentNotCompatible, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
@@ -246,6 +247,15 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     run(process) {
       consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
     }
+  }
+
+  test("should accept date fields") {
+    val topicConfig = createAndRegisterTopicConfig("date-fields", List(PaymentDate.schema))
+    val sourceParam = SourceAvroParam(topicConfig, None)
+    val sinkParam = SinkAvroParam(topicConfig, None, "#input")
+    val process = createAvroProcess(sourceParam, sinkParam, Some(s"#input.date.toEpochMilli == ${PaymentDate.dateMillis}"))
+
+    runAndVerifyResult(process, topicConfig, PaymentDate.recordWithData, PaymentDate.record)
   }
 }
 

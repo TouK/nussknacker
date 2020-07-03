@@ -34,7 +34,7 @@ If you already have done some Flink's `ExecutionConfig` set up before you've reg
       }
     }
   ```
-* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998), [#1007](https://github.com/TouK/nussknacker/pull/1007), [#1014](https://github.com/TouK/nussknacker/pull/1014)
+* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998), [#1007](https://github.com/TouK/nussknacker/pull/1007), [#1014](https://github.com/TouK/nussknacker/pull/1014), [#1034](https://github.com/TouK/nussknacker/pull/1034)
 
 API for `KafkaAvroSourceFactory` was changed:
 
@@ -79,6 +79,8 @@ Additional changes:
 - (Refactor KafkaAvro API) Renamed AvroKeyValueSerializationSchemaFactory to ConfluentAvroKeyValueSerializationSchemaFactory and moved to avro.schemaregistry.confluent package
 - (Refactor KafkaAvro API) Deleted FixedKafkaAvroSourceFactory and FixedKafkaAvroSinkFactory (now we don't support fixed schema)
 - (Refactor Kafka API) Replaced replace topics: List[String] by List[PreparedKafkaTopic] and removed processObjectDependencies in KafkaSource
+
+Be aware that we are using avro 1.9.2 instead of default Flink's 1.8.2 (for java time logical types conversions purpose).
 
 * [#1013](https://github.com/TouK/nussknacker/pull/1013) Expression evaluation is synchronous now. It shouldn't cause any problems 
 (all languages were synchronous anyway), but some internal code may have o change.

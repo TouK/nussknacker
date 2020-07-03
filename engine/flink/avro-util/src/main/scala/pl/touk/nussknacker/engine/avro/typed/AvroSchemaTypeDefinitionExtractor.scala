@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.avro.typed
 
 import java.nio.ByteBuffer
+import java.time.{Instant, LocalDate, LocalTime}
+import java.util.UUID
 
-import org.apache.avro.Schema
+import org.apache.avro.{LogicalTypes, Schema}
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
@@ -42,14 +44,29 @@ class AvroSchemaTypeDefinitionExtractor(skippNullableFields: Boolean) {
       case Schema.Type.UNION =>
         val childTypeDefinitions = schema.getTypes.asScala.map(sch => typeDefinition(sch, possibleTypes)).toSet
         Typed(childTypeDefinitions)
-      case Schema.Type.FIXED =>
-        Typed[GenericData.Fixed]
+      // See org.apache.avro.UUIDConversion
+      case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
+        Typed[UUID]
+      // See org.apache.avro.DecimalConversion
+      case Schema.Type.BYTES | Schema.Type.FIXED if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
+        Typed[java.math.BigDecimal]
       case Schema.Type.STRING =>
         Typed[CharSequence]
       case Schema.Type.BYTES =>
         Typed[ByteBuffer]
+      case Schema.Type.FIXED =>
+        Typed[GenericData.Fixed]
+      case Schema.Type.INT if schema.getLogicalType == LogicalTypes.date() =>
+        Typed[LocalDate]
+      case Schema.Type.INT if schema.getLogicalType == LogicalTypes.timeMillis() =>
+        Typed[LocalTime]
       case Schema.Type.INT =>
-        Typed[Integer]
+        Typed[Int]
+      // See org.apache.avro.data.TimeConversions
+      case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+        Typed[Instant]
+      case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timeMicros() =>
+        Typed[LocalTime]
       case Schema.Type.LONG =>
         Typed[Long]
       case Schema.Type.FLOAT =>

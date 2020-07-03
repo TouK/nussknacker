@@ -7,6 +7,7 @@ import org.apache.avro.generic.{GenericData, GenericDatumReader, GenericDatumWri
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.{FunSpec, Matchers}
+import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.{Address, Company, FullNameV1}
 
 import scala.collection.immutable.ListSet
@@ -183,10 +184,10 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
     val bos = new ByteArrayOutputStream()
     val encoder = EncoderFactory.get().binaryEncoder(bos, null)
     val schema = givenRecord.getSchema
-    new GenericDatumWriter[GenericRecord](schema).write(givenRecord, encoder)
+    new GenericDatumWriter[GenericRecord](schema, AvroUtils.GenericData).write(givenRecord, encoder)
     encoder.flush()
     val decoder = DecoderFactory.get().binaryDecoder(new ByteArrayInputStream(bos.toByteArray), null)
-    val readRecord = new GenericDatumReader[GenericRecord](schema).read(null, decoder)
+    val readRecord = new GenericDatumReader[GenericRecord](schema, schema, AvroUtils.GenericData).read(null, decoder)
     readRecord shouldEqual givenRecord
     readRecord
   }

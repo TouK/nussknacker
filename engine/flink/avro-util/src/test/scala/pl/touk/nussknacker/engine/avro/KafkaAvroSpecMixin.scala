@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
+import io.confluent.kafka.serializers.{AvroSchemaUtils, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericContainer, GenericRecord}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -17,7 +17,9 @@ import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
@@ -71,8 +73,8 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   /**
     * Default Confluent Avro serialization components
     */
-  protected lazy val valueDeserializer: KafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient)
-  protected lazy val valueSerializer: KafkaAvroSerializer = new KafkaAvroSerializer(schemaRegistryClient)
+  protected lazy val valueDeserializer: SimpleKafkaAvroDeserializer = new SimpleKafkaAvroDeserializer(schemaRegistryClient)
+  protected lazy val valueSerializer: SimpleKafkaAvroSerializer = new SimpleKafkaAvroSerializer(schemaRegistryClient)
 
   protected def createSchemaRegistryProvider[T:TypeInformation](useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider[T](
@@ -231,4 +233,30 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     def apply(topicConfig: TopicConfig, version: Option[Int], output: String): SinkAvroParam =
       new SinkAvroParam(topicConfig.output, version, output)
   }
+}
+
+class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient) extends AbstractConfluentKafkaAvroDeserializer {
+
+  this.schemaRegistry = schemaRegistryClient
+
+  def deserialize(topic: String, record: Array[Byte]): Any = {
+    deserialize(topic, isKey = false, record, null)
+  }
+
+}
+
+class SimpleKafkaAvroSerializer(schemaRegistryClient: CSchemaRegistryClient) extends AbstractConfluentKafkaAvroSerializer(new DefaultAvroSchemaEvolution) {
+
+  this.schemaRegistry = schemaRegistryClient
+
+  def serialize(topic: String, obj: Any): Array[Byte] = {
+    val subject = getSubjectName(topic,false, obj, AvroSchemaUtils.getSchema(obj, useSchemaReflection))
+    val schema = obj match {
+      case container: GenericContainer => container.getSchema
+      case _ => null
+    }
+    val schemaId = schemaRegistry.getId(subject, schema)
+    serialize(schema, schemaId, obj)
+  }
+
 }
