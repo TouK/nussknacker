@@ -38,14 +38,13 @@ abstract class KafkaVersionAwareValueSerializationSchemaFactory[T] extends Kafka
     new KafkaSerializationSchema[T] {
 
       private lazy val valueSerializer = createValueSerializer(topic, version, kafkaConfig)
-
       private lazy val keySerializer = createKeySerializer(topic, version, kafkaConfig)
 
       override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-        new ProducerRecord[Array[Byte], Array[Byte]](topic,
+        KafkaProducerHelper.createRecord(topic,
           keySerializer.serialize(topic, element),
-          valueSerializer.serialize(topic, element)
-        )
+          valueSerializer.serialize(topic, element),
+          timestamp)
       }
     }
   }
@@ -77,15 +76,9 @@ abstract class KafkaVersionAwareKeyValueSerializationSchemaFactory[T] extends Ka
       private lazy val valueSerializer = createValueSerializer(topic, version, kafkaConfig)
 
       override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-        val key = extractKey(element, version, topic)
-        val value = extractValue(element, version, topic)
-        //Kafka timestamp has to be >= 0, while Flink can use Long.MinValue
-        val timestampForKafka = Math.max(0, timestamp)
-
-        new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestampForKafka,
-          keySerializer.serialize(topic, key),
-          valueSerializer.serialize(topic, value)
-        )
+        val key = keySerializer.serialize(topic, extractKey(element, version, topic))
+        val value = valueSerializer.serialize(topic, extractValue(element, version, topic))
+        KafkaProducerHelper.createRecord(topic, key, value, timestamp)
       }
     }
   }

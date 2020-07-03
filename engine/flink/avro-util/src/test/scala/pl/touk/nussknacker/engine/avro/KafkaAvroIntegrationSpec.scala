@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.avro
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericContainer, GenericData}
+import org.apache.avro.generic.GenericContainer
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
-import pl.touk.nussknacker.engine.avro.schema.{PaymentNotCompatible, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schema.{LongFieldV1, PaymentNotCompatible, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
@@ -26,10 +27,14 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   import KafkaAvroIntegrationMockSchemaRegistry._
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
+  import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 
+  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
+    override protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
+      ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
+  }
   protected val paymentSchemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema)
   protected val payment2Schemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema, PaymentNotCompatible.schema)
-
   protected val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
   protected val env = new StreamExecutionEnvironment(stoppableEnv)
   protected var registrar: FlinkStreamingProcessRegistrar = _
@@ -37,11 +42,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   override def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
-
-  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaProvider[T:TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
-      ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
-  }
 
   test("should read event in the same version as source requires and save it in the same version") {
     val topicConfig = createAndRegisterTopicConfig("simple", PaymentV1.schema)
@@ -176,11 +176,63 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     val process = createAvroProcess(sourceParam, sinkParam)
 
     /**
-      * When we try deserialize not compatible event then exception will be thrown..
-      * After that flink will stopped working.. And we can't find job. It can take some time.
-      */
+     * When we try deserialize not compatible event then exception will be thrown..
+     * After that flink will stopped working.. And we can't find job. It can take some time.
+     */
     assertThrowsWithParent[Exception] {
       runAndVerifyResult(process, topicConfig, PaymentV2.recordWithData, PaymentNotCompatible.record)
+    }
+  }
+
+  test("should pass timestamp from kafka to flink") {
+    val topicConfig = createAndRegisterTopicConfig("simple", LongFieldV1.schema)
+
+    val process = EspProcessBuilder
+      .id("avro-test").parallelism(1).exceptionHandler()
+      .source(
+        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      "timestampToSet" -> "10000")
+      .emptySink(
+        "end",
+        "kafka-avro",
+        TopicParamName -> s"'${topicConfig.output}'",
+        SchemaVersionParamName -> "",
+        SinkOutputParamName -> s"{field: #extractedTimestamp}"
+      )
+
+    val timePassedThroughKafka = 2530000L
+    pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
+    run(process) {
+      consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
+    }
+
+  }
+
+  test("should pass timestamp from flink to kafka") {
+    val topicConfig = createAndRegisterTopicConfig("simple", LongFieldV1.schema)
+    val timeToSetInProcess = 25301240L
+
+    val process = EspProcessBuilder
+      .id("avro-test").parallelism(1).exceptionHandler()
+      .source(
+        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      "timestampToSet" -> timeToSetInProcess.toString)
+      .emptySink(
+        "end",
+        "kafka-avro",
+        TopicParamName -> s"'${topicConfig.output}'",
+        SchemaVersionParamName -> "",
+        SinkOutputParamName -> s"{field: #extractedTimestamp}"
+      )
+
+    pushMessage(LongFieldV1.record, topicConfig.input)
+    run(process) {
+      val consumer = kafkaClient.createConsumer()
+      val message = consumer.consumeWithConsumerRecord(topicConfig.output).head
+      message.timestamp() shouldBe timeToSetInProcess
+      message.timestampType() shouldBe TimestampType.CREATE_TIME
     }
   }
 
@@ -263,9 +315,9 @@ object KafkaAvroIntegrationMockSchemaRegistry {
       .build
 
   /**
-    * It has to be done in this way, because schemaRegistryMockClient is not serializable..
-    * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
-    */
+   * It has to be done in this way, because schemaRegistryMockClient is not serializable..
+   * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
+   */
   val factory: CachedConfluentSchemaRegistryClientFactory =
     new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None, None) {
       override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =

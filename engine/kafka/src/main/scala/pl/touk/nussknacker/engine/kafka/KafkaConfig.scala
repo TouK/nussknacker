@@ -8,12 +8,7 @@ case class KafkaConfig(kafkaAddress: String,
                        kafkaEspProperties: Option[Map[String, String]],
                        consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None) {
 
-  private def readBoolean(name: String): Option[Boolean]
-    = kafkaEspProperties.flatMap(_.get(name)).map(_.toBoolean)
-
-  def forceLatestRead: Option[Boolean] = readBoolean("forceLatestRead")
-
-  def writeEventTimestamp: Option[Boolean] = readBoolean("writeEventTimestamp")
+  def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 
   def defaultMaxOutOfOrdernessMillis: Option[Long]
     = kafkaEspProperties.flatMap(_.get("defaultMaxOutOfOrdernessMillis")).map(_.toLong)

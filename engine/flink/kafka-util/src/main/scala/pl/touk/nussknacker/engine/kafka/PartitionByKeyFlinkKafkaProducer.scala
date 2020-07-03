@@ -16,9 +16,7 @@ object PartitionByKeyFlinkKafkaProducer {
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("client.id", clientId)
     withPropertiesFromConfig(props, config)
-    new FlinkKafkaProducer[T](topic, serializationSchema, props, semantic) {
-      setWriteTimestampToKafka(config.writeEventTimestamp.getOrElse(true))
-    }
+    new FlinkKafkaProducer[T](topic, serializationSchema, props, semantic)
   }
 
 }
