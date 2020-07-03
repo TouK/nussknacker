@@ -45,7 +45,7 @@ const Variable = (props) => {
       />
       <LabeledTextarea
         renderFieldLabel={() => renderFieldLabel("Description")}
-        value={_.get(node, "additionalFields.description", "")}
+        value={node?.additionalFields?.description || ""}
         path="additionalFields.description"
         onChange={(event) => onChange("additionalFields.description", event.target.value)}
         isMarked={isMarked("additionalFields.description")}

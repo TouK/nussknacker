@@ -192,6 +192,7 @@ class CompareVersionsDialog extends React.Component {
         changeEdgeTypeValue={() => {}}
         updateEdgeProp={() => {}}
         pathsToMark={pathsToMark}
+        variableTypes={{}}
       />
     ) :
       (<div className="notPresent">Edge not present</div>)

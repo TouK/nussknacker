@@ -65,12 +65,13 @@ class EditableEditor extends React.Component<Props, State> {
 
     const Editor = editor.editor(param, this.state.displayRawEditor, expressionObj)
 
+    const shouldShowSwitch = showSwitch && editor.showSwitch
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
         {fieldLabel && renderFieldLabel(fieldLabel)}
         <Editor
           toggleEditor={this.toggleEditor}
-          className={`${valueClassName ? valueClassName : "node-value"} ${editor.showSwitch ? "switchable " : ""}`}
+          className={`${valueClassName ? valueClassName : "node-value"} ${shouldShowSwitch ? "switchable " : ""}`}
           {...this.props}
           values={Editor === FixedValuesEditor ? editor.values(param, values) : []}
           validators={editor.validators(param, errors, fieldName || fieldLabel, this.state.displayRawEditor)}
@@ -86,7 +87,7 @@ class EditableEditor extends React.Component<Props, State> {
               switchable={editor.switchable(Editor, param, expressionObj)}
               hint={editor.hint(editor.switchable(Editor, param, expressionObj), Editor, param)}
               onClick={this.toggleEditor}
-              shouldShowSwitch={editor.showSwitch}
+              shouldShowSwitch={shouldShowSwitch}
               displayRawEditor={this.state.displayRawEditor}
               readOnly={readOnly}
             />
