@@ -4,11 +4,12 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, MethodToInvoke, ProcessListener, Service}
+import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compile.CompiledProcess
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -53,7 +54,7 @@ class InterpreterSetup[T:ClassTag] {
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator,
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), DefaultObjectNaming))
 
-    failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader))
+    failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader)(DefaultAsyncInterpretationValueDeterminer.DefaultValue))
   }
 
   private def failOnErrors[Y](obj: ValidatedNel[ProcessCompilationError, Y]): Y = obj match {

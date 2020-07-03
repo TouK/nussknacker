@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -47,6 +48,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val asyncExecutionContextPreparer = creator.asyncExecutionContextPreparer(processObjectDependencies).getOrElse(
       config.as[DefaultAsyncExecutionConfigPreparer]("asyncExecutionConfig")
     )
+    implicit val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
 
     val listenersToUse = listeners(processObjectDependencies)
 
