@@ -183,33 +183,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     pushMessage(PaymentV2.recordWithData, topicConfig.input)
     registrar.register(env, process, ProcessVersion.empty)
     val executionResult = stoppableEnv.executeAndWaitForStart(process.id)
-    stoppableEnv.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED)()
-
-  }
-
-  test("should pass timestamp from kafka to flink") {
-    val topicConfig = createAndRegisterTopicConfig("timestamp-kafka-flink", LongFieldV1.schema)
-
-    val process = EspProcessBuilder
-      .id("avro-test").parallelism(1).exceptionHandler()
-      .source(
-        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
-      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
-      "timestampToSet" -> "10000")
-      .emptySink(
-        "end",
-        "kafka-avro",
-        TopicParamName -> s"'${topicConfig.output}'",
-        SchemaVersionParamName -> "",
-        SinkOutputParamName -> s"{field: #extractedTimestamp}"
-      )
-
-    val timePassedThroughKafka = 2530000L
-    pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
-    kafkaClient.createTopic(topicConfig.output)
-    run(process) {
-      consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
-    }
+    stoppableEnv.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
 
   }
 
@@ -218,7 +192,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     val timeToSetInProcess = 25301240L
 
     val process = EspProcessBuilder
-      .id("avro-test").parallelism(1).exceptionHandler()
+      .id("avro-test-timestamp-flink-kafka").parallelism(1).exceptionHandler()
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
@@ -241,6 +215,32 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     }
   }
 
+  test("should pass timestamp from kafka to flink") {
+    val topicConfig = createAndRegisterTopicConfig("timestamp-kafka-flink", LongFieldV1.schema)
+
+    val process = EspProcessBuilder
+      .id("avro-test-timestamp-kafka-flink").parallelism(1).exceptionHandler()
+      .source(
+        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      "timestampToSet" -> "10000")
+      .emptySink(
+        "end",
+        "kafka-avro",
+        TopicParamName -> s"'${topicConfig.output}'",
+        SchemaVersionParamName -> "",
+        SinkOutputParamName -> s"{field: #extractedTimestamp}"
+      )
+
+    val timePassedThroughKafka = 2530000L
+    pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
+    kafkaClient.createTopic(topicConfig.output)
+    run(process) {
+      consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
+    }
+
+  }
+
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
@@ -258,7 +258,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   private def createAvroProcess(source: SourceAvroParam, sink: SinkAvroParam, filterExpression: Option[String] = None) = {
     val builder = EspProcessBuilder
-      .id("avro-test")
+      .id(s"avro-test-${source.topic}")
       .parallelism(1)
       .exceptionHandler()
       .source(
