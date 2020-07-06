@@ -128,6 +128,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
         val docs = parse(responseAs[String]) match {
           case Right(json) => json
+          case Left(error) => throw new AssertionError(error)
         }
 
         val cursorState = docs.hcursor

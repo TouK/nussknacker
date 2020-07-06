@@ -4,12 +4,12 @@ import java.util.Optional
 
 import cats.effect.IO
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
-import pl.touk.nussknacker.engine.compile.Validations
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ServiceInvoker
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
@@ -28,7 +28,9 @@ object ExpressionEvaluator {
   def optimizedEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
                          listeners: Seq[ProcessListener],
                          metaData: MetaData,
-                         services: Map[String, ObjectWithMethodDef]): ExpressionEvaluator = {
+                         services: Map[String, ObjectWithMethodDef])
+                        // defaultAsyncValue is used in allowLazyVars. When lazy vars will be removed, it should be removed too.
+                        (implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ExpressionEvaluator = {
     val lazyValuesProvider: (ExecutionContext, MetaData, String) => LazyValuesProvider = if (metaData.typeSpecificData.allowLazyVars) {
       realLazyValuesProvider(services)
     } else {

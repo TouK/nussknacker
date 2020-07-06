@@ -36,7 +36,7 @@ class KafkaAvroSink(topic: String, output: LazyParameter[Any], kafkaConfig: Kafk
       .map(_.finalContext)
       .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(output))
       .map(ctx => ctx.value match {
-          case data: java.util.Map[String, Any] => avroEncoder.encodeRecordOrError(data, schema)
+          case data: java.util.Map[String@unchecked, Any@unchecked] => avroEncoder.encodeRecordOrError(data, schema)
           case _: GenericContainer => ctx.value
           case _ => {
             //TODO: We should better handle this situation by using EspExceptionHandler

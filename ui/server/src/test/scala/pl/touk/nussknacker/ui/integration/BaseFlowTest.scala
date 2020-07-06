@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
 import java.io.File
+import java.nio.charset.Charset
 import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
@@ -290,7 +291,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     //we generate random parameter
     val parameterUUID = UUID.randomUUID().toString
-    FileUtils.writeStringToFile(dynamicServiceFile, parameterUUID)
+    FileUtils.writeStringToFile(dynamicServiceFile, parameterUUID, Charset.forName("UTF-8"))
 
     dynamicServiceParametersBeforeReload.exists(_.contains(parameterUUID)) shouldBe false
     dynamicServiceParameters shouldBe dynamicServiceParametersBeforeReload

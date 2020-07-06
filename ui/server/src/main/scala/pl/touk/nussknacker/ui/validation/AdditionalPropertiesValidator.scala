@@ -55,11 +55,10 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
       validator <- validatorsByPropertyName.getOrElse(property._1, List.empty)
     } yield (property, config.get(property._1), validator)
 
-    propertiesWithConfiguredValidator.map {
+    propertiesWithConfiguredValidator.collect {
       case (property, Some(config), validator: ParameterValidator) =>
         validator.isValid(property._1, property._2, config.label).toValidatedNel
-    }
-      .sequence.map(_ => Unit)
+    }.sequence.map(_ => Unit)
   }
 
   private def getMissingRequiredPropertyValidationResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
