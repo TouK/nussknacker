@@ -29,5 +29,5 @@ export type ProcessDefinitionData = {
   nodesConfig?: $TodoType,
   nodesToAdd?: NodesGroup[],
   processDefinition?: $TodoType,
-  defaultAsyncInterpretation?: boolean
+  defaultAsyncInterpretation?: boolean,
 }

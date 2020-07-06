@@ -11,6 +11,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
@@ -27,7 +28,7 @@ import pl.touk.nussknacker.test.NussknackerAssertions
 
 import scala.concurrent.Future
 
-trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions {
+trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions with ScalaFutures {
 
   import KafkaZookeeperUtils._
   import org.apache.flink.api.scala._
@@ -79,26 +80,26 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
       formatKey = formatKey
     )
 
-  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None): Future[RecordMetadata] = {
+  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: Long = 0): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
-    kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj)
+    kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
   }
 
-  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): Future[RecordMetadata] = {
+  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): RecordMetadata = {
     val record = kafkaSerializer.serialize(obj, null)
-    kafkaClient.sendRawMessage(topic, record.key(), record.value())
+    kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
   }
 
   protected def consumeMessages(topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer()
-    consumer.consume(topic).map { record =>
+    consumer.consume(topic, 20).map { record =>
       valueDeserializer.deserialize(topic, record.message())
     }.take(count).toList
   }
 
   protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer()
-    consumer.consumeWithConsumerRecord(topic).map { record =>
+    consumer.consumeWithConsumerRecord(topic, 20).map { record =>
       kafkaDeserializer.deserialize(record)
     }.take(count).toList
   }

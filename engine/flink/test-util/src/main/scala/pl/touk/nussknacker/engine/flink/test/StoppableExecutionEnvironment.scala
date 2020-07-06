@@ -76,9 +76,14 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
     try {
       actionToInvokeWithJobRunning
     } finally {
-      cancel(executionResult.getJobID)
-      waitForJobState(executionResult.getJobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
+      stopJob(jobName, executionResult)
     }
+  }
+
+  def stopJob[T](jobName: String, executionResult: JobExecutionResult): Unit = {
+    cancel(executionResult.getJobID)
+    waitForJobState(executionResult.getJobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
+    cleanupGraph()
   }
 
   val defaultWaitForStatePatience: PatienceConfig = PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
@@ -126,6 +131,11 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
 
   def cancel(jobId: JobID): Unit = {
     flinkMiniCluster.getClusterClient.cancel(jobId)
+  }
+
+  //this *has* to be done between tests, otherwise next .execute() will execute also current operators
+  def cleanupGraph(): Unit = {
+    transformations.clear()
   }
 
   def stop(): Unit = {

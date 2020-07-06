@@ -37,9 +37,7 @@ object schemas {
     override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
       val value = valueSerializer.serialize(element)
       val key = Option(keySerializer).map(_.serialize(element)).orNull
-      //Kafka timestamp has to be >= 0, while Flink can use Long.MinValue
-      val timestampForKafka = Math.max(0, timestamp)
-      new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestampForKafka, safeBytes(key), safeBytes(value))
+      KafkaProducerHelper.createRecord(topic, safeBytes(key), safeBytes(value), timestamp)
     }
   }
 

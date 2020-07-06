@@ -42,8 +42,7 @@ object KafkaUtils extends LazyLogging {
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
   def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: String, consumerGroupId: String): Unit = {
-    val setToLatestOffset =
-      config.kafkaEspProperties.flatMap(_.get("forceLatestRead")).exists(java.lang.Boolean.parseBoolean)
+    val setToLatestOffset = config.forceLatestRead.contains(true)
     if (setToLatestOffset) {
       KafkaUtils.setOffsetToLatest(topic, consumerGroupId, config)
     }
