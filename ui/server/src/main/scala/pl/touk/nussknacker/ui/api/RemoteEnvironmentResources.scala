@@ -71,7 +71,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
           path("testAutomaticMigration") {
             get {
               complete {
-                remoteEnvironment.testMigration
+                remoteEnvironment.testMigration()
                   .flatMap(_.fold((Future.successful[HttpResponse] _)
                     .compose(EspErrorToHttp.espErrorToHttp), testMigrationResponse))
               }

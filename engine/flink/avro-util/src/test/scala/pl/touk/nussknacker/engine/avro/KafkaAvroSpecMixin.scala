@@ -6,7 +6,9 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.concurrent.ScalaFutures
@@ -17,7 +19,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
+import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, MiniClusterResourceFlink_1_7, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
+import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.test.NussknackerAssertions
 
 import scala.concurrent.Future
@@ -39,6 +45,12 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   override lazy val config: Config = ConfigFactory.load()
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
+
+  protected val stoppableEnv: StoppableExecutionEnvironment with MiniClusterResourceFlink_1_7 = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
+
+  protected val env = new StreamExecutionEnvironment(stoppableEnv)
+
+  protected var registrar: FlinkStreamingProcessRegistrar = _
 
   protected lazy val processObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
 
@@ -138,6 +150,16 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
       val outputTopic = s"$outputPrefix.$kafkaTopicNamespace.$testName"
       new TopicConfig(inputTopic, outputTopic, schemas, isKey = false)
     }
+  }
+
+  protected def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[GenericRecord] = {
+    val schemaRegistryProvider = createSchemaRegistryProvider[GenericRecord](useSpecificAvroReader = useSpecificAvroReader)
+    new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+  }
+
+  protected def createAvroSinkFactory(useSpecificAvroReader: Boolean): KafkaAvroSinkFactory = {
+    val schemaRegistryProvider = createSchemaRegistryProvider[Any](useSpecificAvroReader = useSpecificAvroReader)
+    new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)
   }
 }
 

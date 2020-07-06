@@ -40,7 +40,7 @@ trait RemoteEnvironment {
 
   def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
-  def testMigration(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
+  def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
 }
 
 case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
@@ -129,10 +129,10 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
   }
 
-  override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
+  override def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
       basicProcesses <- EitherT(fetchProcesses)
-      processes      <- fetchGroupByGroup(basicProcesses)
+      processes      <- fetchGroupByGroup(basicProcesses.filter(processToInclude))
       subProcesses   <- EitherT(fetchSubProcessesDetails)
     } yield testModelMigrations.testMigrations(processes, subProcesses)).value
   }

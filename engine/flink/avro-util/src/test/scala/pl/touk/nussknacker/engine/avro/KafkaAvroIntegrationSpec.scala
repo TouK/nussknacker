@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
@@ -27,7 +26,6 @@ import pl.touk.nussknacker.engine.util.cache.DefaultCache
 class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
-  import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
   import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 
@@ -37,9 +35,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   }
   protected val paymentSchemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema)
   protected val payment2Schemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema, PaymentNotCompatible.schema)
-  protected val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-  protected val env = new StreamExecutionEnvironment(stoppableEnv)
-  protected var registrar: FlinkStreamingProcessRegistrar = _
+
 
   override def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 

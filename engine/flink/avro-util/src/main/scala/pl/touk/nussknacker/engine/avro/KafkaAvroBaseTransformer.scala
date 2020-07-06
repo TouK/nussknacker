@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, SchemaRegistryKafkaAvroProvider, SchemaRegistryProvider}
@@ -31,12 +32,16 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
 
   protected def topicParam(implicit nodeId: NodeId): WithError[Parameter] = {
     val topics = schemaRegistryClient.getAllTopics
+
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[String]](Nil, topics)
       case Invalid(e) => Writer[List[ProcessCompilationError], List[String]](List(CustomNodeError(e.getMessage, Some(KafkaAvroFactory.TopicParamName))), Nil)
     }).map { topics =>
       Parameter[String](KafkaAvroFactory.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
-        topics.sorted.map(v => FixedExpressionValue(s"'$v'", v))
+        topics
+          .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, new NamingContext(KafkaUsageKey)))
+          .sorted
+          .map(v => FixedExpressionValue(s"'$v'", v))
       )))
     }
   }
