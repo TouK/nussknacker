@@ -7,6 +7,7 @@ import cats.data.NonEmptyList
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.{LazyLogging, Logger}
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.tuple
@@ -42,7 +43,7 @@ import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
-import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, StateConfiguration, UserClassLoader}
+import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, StateConfiguration, UserClassLoader}
 import pl.touk.nussknacker.engine.splittedgraph.end.{BranchEnd, DeadEnd, End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
@@ -58,9 +59,9 @@ import scala.util.{Failure, Success}
 class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
                                      eventTimeMetricDuration: FiniteDuration,
                                      checkpointConfig: Option[CheckpointConfig],
-                                     enableObjectReuse: Boolean,
-                                     diskStateBackend: Option[StateBackend])
-  extends FlinkProcessRegistrar[StreamExecutionEnvironment] {
+                                     diskStateBackend: Option[StateBackend],
+                                     executionConfigPreparer: ExecutionConfigPreparer)
+  extends FlinkProcessRegistrar[StreamExecutionEnvironment] with LazyLogging {
 
   import FlinkProcessRegistrar._
 
@@ -69,7 +70,7 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
   override protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.getJavaEnv.isInstanceOf[RemoteStreamEnvironment]
 
   def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
-    prepareExecutionConfig(env.getConfig, enableObjectReuse)
+    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(process, processVersion)
     usingRightClassloader(env) {
       register(env, compileProcess(process, processVersion), testRunId)
     }
@@ -262,9 +263,7 @@ object FlinkStreamingProcessRegistrar {
 
   private final val EndId = "$end"
 
-  def apply(compiler: FlinkProcessCompiler, config: Config) : FlinkStreamingProcessRegistrar = {
-
-    val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
+  def apply(compiler: FlinkProcessCompiler, config: Config, prepareExecutionConfig: ExecutionConfigPreparer) : FlinkStreamingProcessRegistrar = {
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
 
     // TODO checkpointInterval is deprecated - remove it in future
@@ -279,13 +278,13 @@ object FlinkStreamingProcessRegistrar {
     new FlinkStreamingProcessRegistrar(
       compileProcess = compiler.compileProcess,
       eventTimeMetricDuration = eventTimeMetricDuration,
-      enableObjectReuse = enableObjectReuse,
       diskStateBackend =  {
         if (compiler.diskStateBackendSupport) {
           config.getAs[RocksDBStateBackendConfig]("rocksDB").map(StateConfiguration.prepareRocksDBStateBackend)
         } else None
       },
-      checkpointConfig = checkpointConfig
+      checkpointConfig = checkpointConfig,
+      executionConfigPreparer = prepareExecutionConfig
     )
   }
 

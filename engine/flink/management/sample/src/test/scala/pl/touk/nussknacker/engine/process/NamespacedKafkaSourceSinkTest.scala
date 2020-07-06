@@ -64,8 +64,8 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with
     val config = ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("namespace", fromAnyRef(namespaceName))
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, configCreator,
-      objectNaming = new TestObjectNaming)), config)
+    val modelData = LocalModelData(config, configCreator, objectNaming = new TestObjectNaming)
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
   override protected def afterAll(): Unit = {

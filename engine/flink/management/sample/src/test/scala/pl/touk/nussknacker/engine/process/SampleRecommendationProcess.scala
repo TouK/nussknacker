@@ -35,8 +35,8 @@ class SampleRecommendationProcess extends FlatSpec with BeforeAndAfterAll with M
 
     val config = ConfigFactory.load()
 
-
-    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+    val modelData = LocalModelData(config, creator)
+    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
     val result = env.execute(process.id)

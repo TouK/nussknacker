@@ -7,11 +7,10 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.client.program.OptimizerPlanEnvironment.ProgramAbortException
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
-import pl.touk.nussknacker.engine.flink.api.{NamingParameters, NkGlobalParameters}
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 
 import scala.util.control.NonFatal
 
@@ -25,13 +24,10 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val process = readProcessFromArg(args(0))
       val processVersion = parseProcessVersion(args(1))
       val config: Config = readConfigFromArgs(args)
-      val buildInfo = if (args.length > 3) args(3) else ""
+      val buildInfo = if (args.length > 3) Some(args(3)) else None
       val modelData = ModelData(config, List())
       val env = getExecutionEnvironment
-      val namingParameters = modelData.objectNaming.objectNamingParameters(process.id, modelData.processConfig, new NamingContext(FlinkUsageKey))
-        .map(p => NamingParameters(p.toTags))
-      NkGlobalParameters.setInContext(getConfig(env), NkGlobalParameters(buildInfo, processVersion, modelData.processConfig, namingParameters))
-      runProcess(env, modelData, process, processVersion)
+      runProcess(env, modelData, process, processVersion, ExecutionConfigPreparer.defautChain(modelData, buildInfo))
     } catch {
       // marker exception for graph optimalization
       case ex: ProgramAbortException =>
@@ -49,7 +45,8 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
   protected def runProcess(env: Env,
                            modelData: ModelData,
                            process: EspProcess,
-                           processVersion: ProcessVersion): Unit
+                           processVersion: ProcessVersion,
+                           prepareExecutionConfig: ExecutionConfigPreparer): Unit
 
   private def parseProcessVersion(json: String): ProcessVersion =
     CirceUtil.decodeJsonUnsafe[ProcessVersion](json, "invalid process version")

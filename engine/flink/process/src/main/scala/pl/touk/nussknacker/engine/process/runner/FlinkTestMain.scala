@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResu
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompiler
 
 object FlinkTestMain extends FlinkRunner {
@@ -35,7 +35,9 @@ case class FlinkTestMain(modelData: ModelData, process: EspProcess, testData: Te
         process,
         testData,
         env.getConfig,
-        modelData.objectNaming), modelData.processConfig)
+        modelData.objectNaming),
+        modelData.processConfig,
+        ExecutionConfigPreparer.defautChain(modelData, None))
       registrar.register(env, process, processVersion, Option(collectingListener.runId))
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results
