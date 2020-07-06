@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedCo
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
@@ -203,6 +203,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
     val timePassedThroughKafka = 2530000L
     pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
+    kafkaClient.createTopic(topicConfig.output)
     run(process) {
       consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
     }
@@ -228,6 +229,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       )
 
     pushMessage(LongFieldV1.record, topicConfig.input)
+    kafkaClient.createTopic(topicConfig.output)
     run(process) {
       val consumer = kafkaClient.createConsumer()
       val message = consumer.consumeWithConsumerRecord(topicConfig.output).head
@@ -288,6 +290,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: List[GenericContainer]): Unit = {
     events.foreach(obj => pushMessage(obj, topic.input))
 
+    kafkaClient.createTopic(topic.output)
     run(process) {
       consumeAndVerifyMessages(topic.output, expected)
     }

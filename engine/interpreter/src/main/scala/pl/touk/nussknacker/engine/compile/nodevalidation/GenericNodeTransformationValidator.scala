@@ -75,6 +75,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         val typ = compiled.typedValue match {
           //FIXME: handle branches...
           case TypedExpression(_, returnType, _) => returnType
+          case _ => ???
         }
         //TODO: handling exceptions here?
         (typ, parameterEvaluator.prepareParameter(compiled, parameterDefinition))
