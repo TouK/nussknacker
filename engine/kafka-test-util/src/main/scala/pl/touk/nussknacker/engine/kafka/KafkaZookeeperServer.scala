@@ -5,9 +5,10 @@ import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.time.Duration
 import java.util.Properties
+import java.util.concurrent.TimeoutException
 
 import kafka.server.KafkaServer
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer}
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
@@ -131,8 +132,29 @@ object KafkaZookeeperUtils {
       val partitions = partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
       consumer.assign(partitions.asJava)
 
-      Stream.continually(())
-        .flatMap(_ => consumer.poll(Duration.ofSeconds(1)).asScala.toStream)
+      Stream.continually(()).flatMap(new Poller(secondsToWait))
+    }
+
+    class Poller(secondsToWait: Int) extends Function1[Unit, Stream[ConsumerRecord[Array[Byte], Array[Byte]]]] {
+      private var timeoutCount = 0
+
+      override def apply(v1: Unit): Stream[ConsumerRecord[Array[Byte], Array[Byte]]] = {
+        val polled = consumer.poll(Duration.ofSeconds(1))
+        checkIfEmpty(polled)
+        polled.asScala.toStream
+      }
+
+      def checkIfEmpty(records: ConsumerRecords[_, _]): Unit = {
+        if (records.isEmpty) {
+          timeoutCount += 1
+          if (timeoutCount >= secondsToWait) {
+            throw new TimeoutException(s"Exceeded waiting time in poll ${timeoutCount}s")
+          }
+        } else {
+          timeoutCount = 0
+        }
+      }
+
     }
   }
 
