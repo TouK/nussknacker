@@ -6,6 +6,7 @@ import org.apache.avro.generic.GenericContainer
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.kafka.common.record.TimestampType
+import org.scalatest.BeforeAndAfterEach
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
@@ -184,7 +185,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     registrar.register(env, process, ProcessVersion.empty)
     val executionResult = stoppableEnv.executeAndWaitForStart(process.id)
     stoppableEnv.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
-
+    stoppableEnv.cleanupGraph()
   }
 
   test("should pass timestamp from flink to kafka") {
