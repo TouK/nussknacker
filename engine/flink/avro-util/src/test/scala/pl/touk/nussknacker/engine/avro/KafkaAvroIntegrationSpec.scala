@@ -185,7 +185,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   }
 
   test("should pass timestamp from kafka to flink") {
-    val topicConfig = createAndRegisterTopicConfig("simple", LongFieldV1.schema)
+    val topicConfig = createAndRegisterTopicConfig("timestamp-kafka-flink", LongFieldV1.schema)
 
     val process = EspProcessBuilder
       .id("avro-test").parallelism(1).exceptionHandler()
@@ -210,7 +210,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   }
 
   test("should pass timestamp from flink to kafka") {
-    val topicConfig = createAndRegisterTopicConfig("simple", LongFieldV1.schema)
+    val topicConfig = createAndRegisterTopicConfig("timestamp-flink-kafka", LongFieldV1.schema)
     val timeToSetInProcess = 25301240L
 
     val process = EspProcessBuilder
