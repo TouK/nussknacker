@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.encode
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.time.chrono.ChronoZonedDateTime
-import java.time.{Instant, LocalTime, OffsetDateTime}
+import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
 import java.util
 import java.util.UUID
 
@@ -81,6 +81,8 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
       case (Schema.Type.INT, number: Number) =>
         Valid(number.intValue())
       case (Schema.Type.INT, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMillis() =>
+        Valid(time)
+      case (Schema.Type.INT, time: LocalDate) if schema.getLogicalType == LogicalTypes.date() =>
         Valid(time)
       case (Schema.Type.LONG, number: Number) =>
         Valid(number.longValue())
