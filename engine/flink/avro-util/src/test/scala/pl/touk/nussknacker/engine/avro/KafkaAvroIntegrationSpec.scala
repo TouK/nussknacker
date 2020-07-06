@@ -134,56 +134,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV2.record)
   }
 
-  test("should read newer compatible event with source and save it in older compatible version with map output") {
-    val topicConfig = createAndRegisterTopicConfig("newer-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), PaymentV1.jsonMap)
-    val process = createAvroProcess(sourceParam, sinkParam)
-
-    runAndVerifyResult(process, topicConfig, PaymentV2.record, PaymentV1.record)
-  }
-
-  test("should rise exception when we provide wrong data map for #Avro helper output") {
-    val topicConfig = createAndRegisterTopicConfig("bad-data-with-helper", List(PaymentV1.schema, PaymentV2.schema))
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), """{id: "bad"}""")
-    val process = createAvroProcess(sourceParam, sinkParam)
-
-    assertThrowsWithParent[Exception] {
-      runAndVerifyResult(process, topicConfig, PaymentV2.record, PaymentV1.record)
-    }
-  }
-
-  test("should throw exception when try to filter by missing field") {
-    val topicConfig = createAndRegisterTopicConfig("try-filter-by-missing-field", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(1))
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
-    val filerParam = Some("#input.cnt == 1")
-    val events = List(PaymentV1.record, PaymentV2.record)
-    val process = createAvroProcess(sourceParam, sinkParam, filerParam)
-
-    assertThrowsWithParent[Exception] {
-      runAndVerifyResult(process, topicConfig, events, PaymentV2.recordWithData)
-    }
-  }
-
-  test("should throw exception when try to convert not compatible event") {
-    val topicConfig = createAndRegisterTopicConfig("try-to-convert-not-compatible", payment2Schemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(3))
-    val sinkParam = SinkAvroParam(topicConfig, Some(3), "#input")
-    val process = createAvroProcess(sourceParam, sinkParam)
-
-    /**
-     * When we try deserialize not compatible event then exception will be thrown..
-     * After that flink will stopped working.. And we can't find job. It can take some time.
-     */
-    pushMessage(PaymentV2.recordWithData, topicConfig.input)
-    registrar.register(env, process, ProcessVersion.empty)
-    val executionResult = stoppableEnv.executeAndWaitForStart(process.id)
-    stoppableEnv.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
-    stoppableEnv.cleanupGraph()
-  }
-
   test("should pass timestamp from flink to kafka") {
     val topicConfig = createAndRegisterTopicConfig("timestamp-flink-kafka", LongFieldV1.schema)
     val timeToSetInProcess = 25301240L
@@ -236,6 +186,56 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
     }
 
+  }
+
+  test("should read newer compatible event with source and save it in older compatible version with map output") {
+    val topicConfig = createAndRegisterTopicConfig("newer-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
+    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), PaymentV1.jsonMap)
+    val process = createAvroProcess(sourceParam, sinkParam)
+
+    runAndVerifyResult(process, topicConfig, PaymentV2.record, PaymentV1.record)
+  }
+
+  test("should rise exception when we provide wrong data map for #Avro helper output") {
+    val topicConfig = createAndRegisterTopicConfig("bad-data-with-helper", List(PaymentV1.schema, PaymentV2.schema))
+    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), """{id: "bad"}""")
+    val process = createAvroProcess(sourceParam, sinkParam)
+
+    assertThrowsWithParent[Exception] {
+      runAndVerifyResult(process, topicConfig, PaymentV2.record, PaymentV1.record)
+    }
+  }
+
+  test("should throw exception when try to filter by missing field") {
+    val topicConfig = createAndRegisterTopicConfig("try-filter-by-missing-field", paymentSchemas)
+    val sourceParam = SourceAvroParam(topicConfig, Some(1))
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
+    val filerParam = Some("#input.cnt == 1")
+    val events = List(PaymentV1.record, PaymentV2.record)
+    val process = createAvroProcess(sourceParam, sinkParam, filerParam)
+
+    assertThrowsWithParent[Exception] {
+      runAndVerifyResult(process, topicConfig, events, PaymentV2.recordWithData)
+    }
+  }
+
+  test("should throw exception when try to convert not compatible event") {
+    val topicConfig = createAndRegisterTopicConfig("try-to-convert-not-compatible", payment2Schemas)
+    val sourceParam = SourceAvroParam(topicConfig, Some(3))
+    val sinkParam = SinkAvroParam(topicConfig, Some(3), "#input")
+    val process = createAvroProcess(sourceParam, sinkParam)
+
+    /**
+     * When we try deserialize not compatible event then exception will be thrown..
+     * After that flink will stopped working.. And we can't find job. It can take some time.
+     */
+    pushMessage(PaymentV2.recordWithData, topicConfig.input)
+    registrar.register(env, process, ProcessVersion.empty)
+    val executionResult = stoppableEnv.executeAndWaitForStart(process.id)
+    stoppableEnv.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
+    stoppableEnv.cleanupGraph()
   }
 
   override protected def beforeAll(): Unit = {
