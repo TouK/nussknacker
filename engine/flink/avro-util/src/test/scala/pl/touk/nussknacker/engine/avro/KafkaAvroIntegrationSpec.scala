@@ -4,6 +4,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -179,9 +180,11 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
      * When we try deserialize not compatible event then exception will be thrown..
      * After that flink will stopped working.. And we can't find job. It can take some time.
      */
-    assertThrowsWithParent[Exception] {
-      runAndVerifyResult(process, topicConfig, PaymentV2.recordWithData, PaymentNotCompatible.record)
-    }
+    pushMessage(PaymentV2.recordWithData, topicConfig.input)
+    registrar.register(env, process, ProcessVersion.empty)
+    val executionResult = stoppableEnv.executeAndWaitForStart(process.id)
+    stoppableEnv.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED)()
+
   }
 
   test("should pass timestamp from kafka to flink") {
@@ -290,7 +293,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: List[GenericContainer]): Unit = {
     events.foreach(obj => pushMessage(obj, topic.input))
 
-    kafkaClient.createTopic(topic.output)
+    kafkaClient.createTopic(topic.output, partitions = 1)
     run(process) {
       consumeAndVerifyMessages(topic.output, expected)
     }
