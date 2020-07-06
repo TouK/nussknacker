@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 trait ObjectNaming extends Serializable {
   def prepareName(originalName: String, config: Config, namingContext: NamingContext): String
   def objectNamingParameters(originalName: String, config: Config, namingContext: NamingContext): Option[ObjectNamingParameters]
+  def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String]
 }
 
 trait ObjectNamingParameters {
@@ -19,4 +20,5 @@ trait ObjectNamingParameters {
 case object DefaultObjectNaming extends ObjectNaming {
   override def prepareName(originalName: String, config: Config, namingContext: NamingContext): String = originalName
   override def objectNamingParameters(originalName: String, config: Config, namingContext: NamingContext): Option[ObjectNamingParameters] = None
+  override def decodeName(originalName: String, config: Config, namingContext: NamingContext): Option[String] = Some(originalName)
 }

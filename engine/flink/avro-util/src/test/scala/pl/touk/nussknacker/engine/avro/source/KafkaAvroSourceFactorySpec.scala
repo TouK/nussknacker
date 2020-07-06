@@ -104,11 +104,6 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     readLastMessageAndVerify(sourceFactory, IntTopic, 1, givenObj, IntSchema)
   }
 
-  protected def createAvroSourceFactory(useSpecificAvroReader: Boolean): KafkaAvroSourceFactory[GenericRecord] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider[GenericRecord](useSpecificAvroReader)
-    new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
-  }
-
   test("Should validate specific version") {
     val result = validate(TopicParamName -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
       SchemaVersionParamName -> "1")
