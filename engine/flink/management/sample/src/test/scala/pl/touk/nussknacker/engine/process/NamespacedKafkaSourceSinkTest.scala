@@ -86,6 +86,8 @@ case class TestObjectNaming() extends ObjectNaming {
   }
 
   override def objectNamingParameters(originalName: String, config: Config, namingContext: NamingContext): Option[ObjectNamingParameters] = None
+
+  override def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String] = Some(preparedName)
 }
 
 class TestProcessConfig extends DevProcessConfigCreator {
