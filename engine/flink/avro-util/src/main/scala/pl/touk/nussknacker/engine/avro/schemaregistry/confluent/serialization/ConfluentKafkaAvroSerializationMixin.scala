@@ -15,7 +15,8 @@ class ConfluentKafkaAvroSerializationMixin {
   def fetchSchemaId(confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, schema: Schema, isKey: Boolean): Int =
     try {
       val subject = ConfluentUtils.topicSubject(topic, isKey = isKey)
-      confluentSchemaRegistryClient.client.getId(subject, schema)
+      val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
+      confluentSchemaRegistryClient.client.getId(subject, parsedSchema)
     } catch {
       case exc: RestClientException =>
         throw new SerializationException(s"Error retrieving Avro schema id for topic: $topic and schema: $schema.", exc)

@@ -22,7 +22,8 @@ class MockConfluentSchemaRegistryClientBuilder {
 
   private def register(mockSchemaRegistry: MockSchemaRegistryClient, item: RegistryItem): Int = {
     val subject = ConfluentUtils.topicSubject(item.topic, item.isKey)
-    mockSchemaRegistry.register(subject, item.schema, item.version, item.id)
+    val parsedSchema = ConfluentUtils.convertToAvroSchema(item.schema, Some(item.version))
+    mockSchemaRegistry.register(subject, parsedSchema, item.version, item.id)
   }
 
   def build: MockSchemaRegistryClient = {

@@ -135,8 +135,9 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     schemas.foreach(schema => {
       val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
       val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
-      schemaRegistryClient.register(inputSubject, schema)
-      schemaRegistryClient.register(outputSubject, schema)
+      val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
+      schemaRegistryClient.register(inputSubject, parsedSchema)
+      schemaRegistryClient.register(outputSubject, parsedSchema)
     })
 
     topicConfig

@@ -5,6 +5,7 @@ import java.util
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
 /**
@@ -31,7 +32,7 @@ class ConfluentKafkaAvroDeserializer[T](schema: Schema, confluentSchemaRegistryC
 
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
     val deserializerConfig = new KafkaAvroDeserializerConfig(configs)
-    configureClientProperties(deserializerConfig)
+    configureClientProperties(deserializerConfig, ConfluentUtils.SchemaProvider)
     useSpecificAvroReader = deserializerConfig.getBoolean("specific.avro.reader")
     this.isKey = isKey
   }

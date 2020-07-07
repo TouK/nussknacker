@@ -57,7 +57,9 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
       throw new IllegalStateException(s"Cannot find schema id separtor: $Separator in text: $str")
     val id = Integer.parseInt(str.substring(0, separatorIndx))
     val remaining = if (separatorIndx + 1 > str.length) "" else str.substring(separatorIndx + 1)
-    (schemaRegistryClient.getById(id), remaining)
+    val parsedSchema = schemaRegistryClient.getSchemaById(id)
+    val schema = ConfluentUtils.extractSchema(parsedSchema)
+    (schema, remaining)
   }
 }
 

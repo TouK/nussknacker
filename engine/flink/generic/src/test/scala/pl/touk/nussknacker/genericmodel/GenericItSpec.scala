@@ -353,8 +353,9 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     schemas.foreach(schema => {
       val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
       val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
-      schemaRegistryMockClient.register(inputSubject, schema)
-      schemaRegistryMockClient.register(outputSubject, schema)
+      val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
+      schemaRegistryMockClient.register(inputSubject, parsedSchema)
+      schemaRegistryMockClient.register(outputSubject, parsedSchema)
     })
 
     topicConfig

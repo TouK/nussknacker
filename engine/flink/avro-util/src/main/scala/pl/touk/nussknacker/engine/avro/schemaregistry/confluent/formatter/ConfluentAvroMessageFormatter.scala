@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 import java.io.PrintStream
 import java.nio.ByteBuffer
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AvroSchemaUtils}
+import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer}
 import org.apache.avro.AvroRuntimeException
 import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.io.EncoderFactory

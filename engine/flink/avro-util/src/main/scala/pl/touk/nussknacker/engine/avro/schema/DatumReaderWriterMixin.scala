@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schema
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericContainer, GenericDatumReader, GenericDatumWriter}
 import org.apache.avro.io.DatumReader
@@ -7,31 +8,27 @@ import org.apache.avro.reflect.{ReflectDatumReader, ReflectDatumWriter}
 import org.apache.avro.specific.{SpecificDatumReader, SpecificDatumWriter, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+
 /**
   * Mixin for DatumReader and DatumWriter. It collects factory methods for Datums.
   */
 trait DatumReaderWriterMixin {
 
   /**
-    * It's copy paste from AvroSchemaUtils, because there this is private
     * We use it on checking writerSchema is primitive - on creating DatumReader (createDatumReader).
     */
-  lazy protected val primitives: Map[String, Schema] = {
-    val parser = new Schema.Parser
-    parser.setValidateDefaults(false)
+  protected val primitives: mutable.Map[String, Schema] = AvroSchemaUtils.getPrimitiveSchemas.asScala
 
-    Map(
-      "Null" -> createPrimitiveSchema(parser, "null"),
-      "Boolean" -> createPrimitiveSchema(parser, "boolean"),
-      "Integer" -> createPrimitiveSchema(parser, "int"),
-      "Long" -> createPrimitiveSchema(parser, "long"),
-      "Float" -> createPrimitiveSchema(parser, "float"),
-      "Double" -> createPrimitiveSchema(parser, "double"),
-      "String" -> createPrimitiveSchema(parser, "string"),
-      "Bytes" -> createPrimitiveSchema(parser, "bytes")
-    )
-  }
-
+  /**
+    * Detecting DatumWriter
+    *
+    * @param record
+    * @param schema
+    * @param useSchemaReflection
+    * @return
+    */
   def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = record match {
     case _: SpecificRecord => new SpecificDatumWriter[Any](schema, AvroUtils.SpecificData)
     case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.ReflectData)
@@ -61,18 +58,5 @@ trait DatumReaderWriterMixin {
     } else {
       new GenericDatumReader(writerSchema, readerSchema, AvroUtils.GenericData)
     }
-  }
-
-  /**
-    * It's copy paste from AvroSchemaUtils.createPrimitiveSchema, because there this method is private and
-    * we use it on checking writerSchema is primitive - on creating DatumReader (createDatumReader).
-    *
-    * @param parser
-    * @param `type`
-    * @return
-    */
-  protected def createPrimitiveSchema(parser: Schema.Parser, `type`: String): Schema = {
-    val schemaString = String.format("{\"type\" : \"%s\"}", `type`)
-    parser.parse(schemaString)
   }
 }
