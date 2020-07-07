@@ -43,6 +43,20 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
+
+  test("first test to start") {
+    val topicConfig = createAndRegisterTopicConfig("firsttopic", PaymentV1.schema)
+    val sourceParam = SourceAvroParam(topicConfig, Some(1))
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
+    val process = createAvroProcess(sourceParam, sinkParam)
+
+    pushMessage(PaymentV1.record, topicConfig.input)
+    run(process) {
+      Thread.sleep(1000)
+      logger.info("Finishing initialization")
+    }
+  }
+
   test("should read event in the same version as source requires and save it in the same version") {
     val topicConfig = createAndRegisterTopicConfig("simple", PaymentV1.schema)
     val sourceParam = SourceAvroParam(topicConfig, Some(1))
@@ -248,6 +262,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
+    stoppableEnv.start()
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
   }
 
@@ -301,8 +316,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     kafkaClient.createTopic(topic.output, partitions = 1)
 
     events.foreach(obj => pushMessage(obj, topic.input))
-    //FIXME?
-    Thread.sleep(500)
 
     run(process) {
       logger.info(s"Waiting for ${topic.output}")
