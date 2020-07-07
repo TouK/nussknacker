@@ -144,7 +144,9 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       .id("avro-test-timestamp-flink-kafka").parallelism(1).exceptionHandler()
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
-      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      )
+      .processor("logging", "logging", "message" -> s"'invoked'")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
       "timestampToSet" -> timeToSetInProcess.toString)
       .emptySink(
         "end",
@@ -173,7 +175,9 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       .id("avro-test-timestamp-kafka-flink").parallelism(1).exceptionHandler()
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
-      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      )
+      .processor("logging", "logging", "message" -> s"'invoked'")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
       "timestampToSet" -> "10000")
       .emptySink(
         "end",
@@ -301,9 +305,9 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     Thread.sleep(500)
 
     run(process) {
-      logger.info(s"Waiting for ${testNames} - ${topic.output}")
+      logger.info(s"Waiting for ${topic.output}")
       consumeAndVerifyMessages(topic.output, expected)
-      logger.info(s"Received for ${testNames} - ${topic.output}")
+      logger.info(s"Received for ${topic.output}")
     }
   }
 }
