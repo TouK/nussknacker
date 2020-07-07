@@ -95,14 +95,14 @@ object KafkaZookeeperUtils {
   private def createCommonProducerProps[K, T](kafkaAddress: String, id: String) = {
     val props = new Properties()
     props.put("bootstrap.servers", kafkaAddress)
-    props.put("batch.size", "100000")
+    props.put("batch.size", "10000")
     KafkaUtils.setClientId(props, id)
     props
   }
 
-  def createConsumerConnectorProperties(kafkaAddress: String, consumerTimeout: Long = 10000): Properties = {
+  def createConsumerConnectorProperties(kafkaAddress: String, consumerTimeout: Long = 10000, groupId: String = "testGroup"): Properties = {
     val props = new Properties()
-    props.put("group.id", "testGroup")
+    props.put("group.id", groupId)
     props.put("bootstrap.servers", kafkaAddress)
     props.put("auto.offset.reset", "earliest")
     props.put("consumer.timeout.ms", consumerTimeout.toString)

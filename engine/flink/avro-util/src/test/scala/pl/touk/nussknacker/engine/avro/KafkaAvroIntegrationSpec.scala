@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
+import java.util.UUID
+
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
@@ -154,9 +156,11 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
     pushMessage(LongFieldV1.record, topicConfig.input)
     kafkaClient.createTopic(topicConfig.output)
+    logger.info("Created: " + kafkaClient.createConsumer(groupId = UUID.randomUUID().toString).consume(topicConfig.input, 15).head)
+
     run(process) {
-      val consumer = kafkaClient.createConsumer()
-      val message = consumer.consumeWithConsumerRecord(topicConfig.output).head
+      val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
+      val message = consumer.consumeWithConsumerRecord(topicConfig.output, 20).head
       message.timestamp() shouldBe timeToSetInProcess
       message.timestampType() shouldBe TimestampType.CREATE_TIME
     }
@@ -264,6 +268,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
         TopicParamName -> s"'${source.topic}'",
         SchemaVersionParamName -> parseVersion(source.version)
       )
+      .processor("logging", "logging", "message" -> s"'invoked'")
 
     val filteredBuilder = filterExpression
       .map(filter => builder.filter("filter", filter))

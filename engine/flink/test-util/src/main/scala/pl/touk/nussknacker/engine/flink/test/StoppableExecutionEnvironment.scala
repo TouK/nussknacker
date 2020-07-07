@@ -7,6 +7,7 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.execution.ExecutionState
+import org.apache.flink.runtime.executiongraph.ArchivedExecutionVertex
 import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
 import org.apache.flink.runtime.minicluster.MiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -104,7 +105,7 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
       // It returns RUNNING even when some vertices are not started yet
       val executionGraph = getMiniCluster(flinkMiniCluster).getExecutionGraph(jobID).get()
       val executionVertices = executionGraph.getAllExecutionVertices.asScala
-      val notRunning = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
+      val notRunning = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState)).filterNot(_.isInstanceOf[ArchivedExecutionVertex])
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
     }(patience, implicitly[Position])
   }

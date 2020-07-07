@@ -83,8 +83,8 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
     zkClient.close()
   }
 
-  def createConsumer(consumerTimeout: Long = 10000): KafkaConsumer[Array[Byte], Array[Byte]] = {
-    val props = KafkaZookeeperUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout)
+  def createConsumer(consumerTimeout: Long = 10000, groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = {
+    val props = KafkaZookeeperUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer

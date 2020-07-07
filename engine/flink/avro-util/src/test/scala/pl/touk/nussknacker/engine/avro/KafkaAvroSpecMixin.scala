@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
+import java.util.UUID
+
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -91,14 +93,14 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   }
 
   protected def consumeMessages(topic: String, count: Int): List[Any] = {
-    val consumer = kafkaClient.createConsumer()
+    val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
     consumer.consume(topic, 20).map { record =>
       valueDeserializer.deserialize(topic, record.message())
     }.take(count).toList
   }
 
   protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
-    val consumer = kafkaClient.createConsumer()
+    val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
     consumer.consumeWithConsumerRecord(topic, 20).map { record =>
       kafkaDeserializer.deserialize(record)
     }.take(count).toList
