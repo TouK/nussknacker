@@ -10,6 +10,7 @@ import "../stylesheets/processes.styl"
 import {PageWithHealthCheck} from "./Page"
 import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
+import tabStyles from "./processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 function ShowProcessIcon({process}: {process: ProcessType}) {
@@ -44,7 +45,7 @@ const columns = [
 
 function SubProcesses() {
   return (
-    <PageWithHealthCheck>
+    <PageWithHealthCheck className={tabStyles.tabContentPage}>
       <ProcessesList
         defaultQuery={{isSubprocess: true, isArchived: false}}
         searchItems={[SearchItem.categories]}

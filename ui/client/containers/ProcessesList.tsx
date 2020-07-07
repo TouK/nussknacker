@@ -11,6 +11,7 @@ import {getBaseIntervalTime} from "../reducers/selectors/settings"
 import {useFetch} from "./hooks/useFetch"
 import {useInterval} from "./Interval"
 import {ProcessesTable} from "./processesTable/ProcessesTable"
+import styles from "./processesTable.styl"
 import {ProcessTableTools} from "./ProcessTableTools"
 import {SearchQueryComponent} from "./SearchQuery"
 import {FiltersState, SearchItem} from "./TableFilters"
@@ -109,6 +110,7 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
       </ProcessTableTools>
 
       <ProcessesTable
+        className={styles.table}
         isLoading={isLoading}
         filterBy={search?.toString()}
 

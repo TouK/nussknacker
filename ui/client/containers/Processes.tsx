@@ -10,6 +10,7 @@ import {MetricsItem} from "./metricsItem"
 import {PageWithHealthCheck} from "./Page"
 import {getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessNameInput} from "./ProcessNameInput"
+import tabStyles from "./processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
@@ -61,7 +62,7 @@ const columns = [
 
 function Processes() {
   return (
-    <PageWithHealthCheck>
+    <PageWithHealthCheck className={tabStyles.tabContentPage}>
       <ProcessesList
         defaultQuery={{isSubprocess: false, isArchived: false}}
         searchItems={[SearchItem.categories, SearchItem.isDeployed]}

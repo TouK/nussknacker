@@ -1,3 +1,4 @@
+import cn from "classnames"
 import {isArray, isString} from "lodash"
 import React, {useCallback, useMemo} from "react"
 import {SortType, Table, TableComponentProperties} from "reactable"
@@ -37,7 +38,7 @@ export function ProcessesTable(props: Props) {
       <LoaderSpinner show={isLoading}/>
       <Table
         {...passProps}
-        className={"esp-table"}
+        className={cn("esp-table", className)}
         noDataText={isLoading ? "Loading data..." : "No matching records found."}
         previousPageLabel={"<"}
         nextPageLabel={">"}

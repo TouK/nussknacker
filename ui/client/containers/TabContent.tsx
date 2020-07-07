@@ -1,5 +1,5 @@
 import React, {PropsWithChildren} from "react"
-import styles from "./ProcessTabs.styl"
+import styles from "./processTabs.styl"
 
 export function TabContent({children}: PropsWithChildren<{}>) {
   return (

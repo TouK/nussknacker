@@ -7,6 +7,7 @@ import {ShowItem} from "./editItem"
 import {Page} from "./Page"
 import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
+import tabStyles from "./processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process => (
@@ -41,7 +42,7 @@ const columns = [
 
 function Archive() {
   return (
-    <Page>
+    <Page className={tabStyles.tabContentPage}>
       <ProcessesList
         defaultQuery={{isArchived: true}}
         searchItems={[SearchItem.categories, SearchItem.isSubprocess]}

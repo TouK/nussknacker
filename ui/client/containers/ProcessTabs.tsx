@@ -1,7 +1,7 @@
 import React, {ComponentType} from "react"
 import {ArchiveTabData} from "./Archive"
 import {ProcessesTabData} from "./Processes"
-import styles from "./ProcessTabs.styl"
+import styles from "./processTabs.styl"
 import {SubProcessesTabData} from "./SubProcesses"
 import {TabLink} from "./TabLink"
 import {TabRoute} from "./TabRoute"

@@ -1,9 +1,9 @@
 import {NavLink} from "react-router-dom"
 import React from "react"
 import {Tab} from "./Tab"
-import styles from "./ProcessTabs.styl"
+import styles from "./processTabs.styl"
 
-export function TabLink({path, header}: { path: string, header: string }) {
+export function TabLink({path, header}: {path: string, header: string}) {
   return (
     <NavLink
       to={path}
