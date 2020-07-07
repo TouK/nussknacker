@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.kafka
 
 import java.util.Properties
-import java.util.concurrent.TimeUnit
 
-import kafka.admin.AdminUtils
-import kafka.utils.ZkUtils
 import kafka.zk.{AdminZkClient, KafkaZkClient}
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.utils.Time
 
 import scala.concurrent.{Future, Promise}
@@ -72,22 +69,27 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
     }
   }
 
-  def flush() = {
+  def flush(): Unit = {
     producer.flush()
   }
 
-  def shutdown() = {
-    consumers.foreach(_.close())
+  def shutdown(): Unit = {
+    closeConsumers()
     producer.close()
     rawProducer.close()
     zkClient.close()
   }
 
-  def createConsumer(consumerTimeout: Long = 10000, groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = {
+  def createConsumer(consumerTimeout: Long = 10000, groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
     val props = KafkaZookeeperUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer
+  }
+
+  def closeConsumers(): Unit = synchronized {
+    consumers.foreach(_.close())
+    consumers.clear()
   }
 
 }

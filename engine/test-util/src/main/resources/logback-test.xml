@@ -33,6 +33,7 @@
     <logger name="org.apache.kafka.producer" level="ERROR"/>
     <logger name="org.apache.kafka.clients.consumer" level="ERROR"/>
     <logger name="org.apache.kafka.clients.producer" level="ERROR"/>
+    <logger name="org.apache.kafka.clients.consumer.internals.Fetcher" level="INFO"/>
     <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR"/>
     <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
     <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>
