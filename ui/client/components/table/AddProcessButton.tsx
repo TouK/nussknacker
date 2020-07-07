@@ -1,40 +1,43 @@
+import cn from "classnames"
 import React, {useState} from "react"
 import {useSelector} from "react-redux"
-import createProcessIcon from "../../assets/img/create-process.svg"
+import appStyles from "../../app.styl"
 import {useClashedNames} from "../../containers/hooks/useClashedNames"
 import {getLoggedUser} from "../../reducers/selectors/settings"
 import AddProcessDialog from "../AddProcessDialog"
 import {ButtonWithFocus} from "../withFocus"
 
-type Props = {onClick: () => void}
+type Props = {
+  onClick: () => void,
+  className?: string,
+}
 
 function AddButton(props: Props) {
-  const {onClick} = props
+  const {onClick, className} = props
   const loggedUser = useSelector(getLoggedUser)
+  const title = "CREATE NEW PROCESS"
 
   return loggedUser.isWriter() ? (
     <ButtonWithFocus
       type={"button"}
-      id="process-add-button"
-      className="btn btn-primary big-blue-button input-group "
+      className={cn(appStyles.btn, appStyles.btnPrimary, className)}
       onClick={onClick}
-      title={"CREATE NEW PROCESS"}
+      title={title}
     >
-      <span>CREATE NEW PROCESS</span>
-      <img id="add-icon" src={createProcessIcon} alt={"add process icon"}/>
+      <span>{title}</span>
     </ButtonWithFocus>
   ) : null
 
 }
 
-export function AddProcessButton(props: { isSubprocess: boolean }) {
+export function AddProcessButton(props: {isSubprocess: boolean, className?: string}) {
   const {isSubprocess} = props
   const [addOpened, setAddOpened] = useState(false)
   const clashedNames = useClashedNames(addOpened)
 
   return (
     <>
-      <AddButton onClick={() => setAddOpened(true)}/>
+      <AddButton className={cn(props.className)} onClick={() => setAddOpened(true)}/>
       <AddProcessDialog
         onClose={() => setAddOpened(false)}
         isOpen={addOpened}

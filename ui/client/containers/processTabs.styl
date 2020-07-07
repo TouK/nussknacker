@@ -1,32 +1,135 @@
+@require "../stylesheets/darkColors.styl"
+
+tabsBorder = dark1
+
+tabsBackground = dark2
+tabsText = light2
+
+tabsActiveBackground = dark3
+tabsActiveText = light
+
+tabRadius = borderRadius
+
+tabsLineIndex = 1
+activeTabIndex = tabsLineIndex + 1
+
 :local
 	.tabs-wrap
 		box-sizing border-box
 		height 100%
-		padding 0em 10em
 		display flex
 		flex-direction column
 		justify-content stretch
 		overflow hidden
 
+		padding marginSize (marginSize * 10)
+
 	.tabs
 		box-sizing border-box
 		display flex
+		overflow hidden
 
 	a.link
-		box-sizing border-box
-		display block
+		display flex
 
 		&, &:hover, &:active, &:focus
 			text-decoration none
 
 		& > .tab
-			padding 1em
-			background black
-			color white
+			padding 1em 3em
+			background tabsBackground
+			color tabsText
+			border 1px solid tabsBorder
 
 		&.active > .tab
-			background lime
-			color black
+			background tabsActiveBackground
+			color tabsActiveText
+
+	.with-bottom-line
+		//bottom line
+		position relative
+		overflow visible
+
+		&:before
+			content ""
+			display block
+			left 0
+			right 0
+			bottom 0
+			position absolute
+			border 1px solid tabsBorder
+			border-bottom 0
+			background tabsActiveBackground
+			z-index tabsLineIndex
+
+		&.rounded:before
+			bottom -(tabRadius - 1)
+			height tabRadius
+			border-radius 0 borderRadius 0 0
+
+		a.link
+			&.active > .tab
+				z-index activeTabIndex
+				border-bottom-color tabsActiveBackground
+
+	.rounded
+		//tab rounded
+
+		.link
+
+			& > .tab
+				border-radius tabRadius tabRadius 0 0
+
+			&.active
+				//bottom active tab corners rounded
+				position relative
+
+				&:before
+				&:after
+					content ""
+					background url("./tabCorner.svg")
+					background-repeat no-repeat
+					-svg-mixer-fill tabsActiveBackground
+					-svg-mixer-stroke tabsBorder
+					position absolute
+					display block
+					bottom 0
+					width tabRadius * 1.5
+					height @width
+					z-index 4
+
+				&:before
+					left 0
+					transform scaleX(-1) translateX(-1px) translateX(100%)
+
+				&:first-child:before
+					content none
+
+				&:after
+					right 0
+					transform translateX(-1px) translateX(100%)
+
+	.with-drop
+		//drop inactive
+
+		.link
+			overflow hidden
+
+			& > .tab
+				transform translateY(tabRadius)
+
+			&.active
+				overflow visible
+
+				& > .tab
+					transform translateY(0)
+
+			&:not(:first-child):not(.active) > .tab
+				border-top-left-radius 0
+
+			&:not(:last-child):not(.active) > .tab
+				border-top-right-radius 0
+
 
 	.content-wrap
 		box-sizing border-box
@@ -35,6 +138,7 @@
 
 	.content
 		box-sizing border-box
+
 
 .tab-content-page
 	display flex

@@ -1,7 +1,33 @@
-:local
-	.tools
-		display flex
-		justify-content: space-between
+@require "../stylesheets/darkColors.styl"
 
-	:global(.tab-content-page) .table
-		margin 0
+tabsActiveBackground = dark3
+
+.tab-content-page
+	:local
+		.tools
+			display flex
+			justify-content space-between
+			background dark3
+			border 1px solid dark1
+			border-top 0
+			margin-bottom marginSize
+			border-radius 0 borderRadius borderRadius borderRadius
+
+		.group
+			display flex
+			justify-content stretch
+			padding marginSize
+
+		.expand
+			flex-grow 1
+			max-width 75%
+
+		.filter-input
+		.filter-button
+			margin 0 marginSize 0 0
+
+			&:last-child
+				margin 0
+
+		.table
+			margin 0

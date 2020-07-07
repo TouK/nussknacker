@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import cn from "classnames"
 import React, {PropsWithChildren} from "react"
 import {AddProcessButton} from "../components/table/AddProcessButton"
 import styles from "./processesTable.styl"
@@ -12,12 +13,19 @@ export function ProcessTableTools(props: PropsWithChildren<Props>) {
   const {isSubprocess, allowAdd} = props
 
   return (
-    <>
-      <div id="process-top-bar" className={styles.tools}>
+    <div className={styles.tools}>
+      <Group expand>
         {props.children}
-        {allowAdd && <AddProcessButton isSubprocess={isSubprocess}/>}
-      </div>
-    </>
+      </Group>
+      <Group>
+        {allowAdd && <AddProcessButton className={styles.filterButton} isSubprocess={isSubprocess}/>}
+      </Group>
+    </div>
   )
 }
 
+const Group = ({children, expand}: PropsWithChildren<{expand?: boolean}>) => !children ? null : (
+  <div className={cn(styles.group, expand && styles.expand)}>
+    {children}
+  </div>
+)
