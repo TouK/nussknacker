@@ -82,14 +82,18 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
       formatKey = formatKey
     )
 
-  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: Long = 0): RecordMetadata = {
+  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: Long = 0): Unit = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
-    kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
+    val ret = kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
+    kafkaClient.createConsumer(groupId = UUID.randomUUID().toString).consume(topic.getOrElse(objectTopic)).head
+    logger.info(s"Produced: $topic, offset: ${ret.offset()}")
   }
 
-  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): RecordMetadata = {
+  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): Unit = {
     val record = kafkaSerializer.serialize(obj, null)
-    kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
+    val ret = kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
+    kafkaClient.createConsumer(groupId = UUID.randomUUID().toString).consume(topic).head
+    logger.info(s"Produced: $topic, offset: ${ret.offset()}")
   }
 
   protected def consumeMessages(topic: String, count: Int): List[Any] = {
