@@ -292,6 +292,9 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     kafkaClient.createTopic(topic.output, partitions = 1)
 
     events.foreach(obj => pushMessage(obj, topic.input))
+    //FIXME?
+    Thread.sleep(500)
+
     run(process) {
       logger.info(s"Waiting for ${testNames} - ${topic.output}")
       consumeAndVerifyMessages(topic.output, expected)
