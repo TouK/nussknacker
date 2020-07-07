@@ -135,6 +135,7 @@ object KafkaZookeeperUtils {
       Stream.continually(()).flatMap(new Poller(secondsToWait))
     }
 
+    //If we do just _ => consumer.poll(...).asScala.toStream, the stream will block indefinitely when no messages are sent
     class Poller(secondsToWait: Int) extends Function1[Unit, Stream[ConsumerRecord[Array[Byte], Array[Byte]]]] {
       private var timeoutCount = 0
 

@@ -134,63 +134,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV2.record)
   }
 
-  test("should pass timestamp from flink to kafka") {
-    val topicConfig = createAndRegisterTopicConfig("timestamp-flink-kafka", LongFieldV1.schema)
-    //Can't be too long ago, otherwise retention could delete it
-    val timeToSetInProcess = System.currentTimeMillis() - 600000L
-
-    val process = EspProcessBuilder
-      .id("avro-test-timestamp-flink-kafka").parallelism(1).exceptionHandler()
-      .source(
-        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
-      )
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
-      "timestampToSet" -> (timeToSetInProcess.toString + "L"))
-      .emptySink(
-        "end",
-        "kafka-avro",
-        TopicParamName -> s"'${topicConfig.output}'",
-        SchemaVersionParamName -> "",
-        SinkOutputParamName -> s"{field: #extractedTimestamp}"
-      )
-
-    pushMessage(LongFieldV1.record, topicConfig.input)
-    kafkaClient.createTopic(topicConfig.output)
-    run(process) {
-      val consumer = kafkaClient.createConsumer()
-      val message = consumer.consumeWithConsumerRecord(topicConfig.output).head
-      message.timestamp() shouldBe timeToSetInProcess
-      message.timestampType() shouldBe TimestampType.CREATE_TIME
-    }
-  }
-
-  test("should pass timestamp from kafka to flink") {
-    val topicConfig = createAndRegisterTopicConfig("timestamp-kafka-flink", LongFieldV1.schema)
-
-    val process = EspProcessBuilder
-      .id("avro-test-timestamp-kafka-flink").parallelism(1).exceptionHandler()
-      .source(
-        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
-      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
-      "timestampToSet" -> "10000")
-      .emptySink(
-        "end",
-        "kafka-avro",
-        TopicParamName -> s"'${topicConfig.output}'",
-        SchemaVersionParamName -> "",
-        SinkOutputParamName -> s"{field: #extractedTimestamp}"
-      )
-
-    //Can't be too long ago, otherwise retention could delete it
-    val timePassedThroughKafka = System.currentTimeMillis() - 120000L
-    pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
-    kafkaClient.createTopic(topicConfig.output)
-    run(process) {
-      consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
-    }
-
-  }
-
   test("should read newer compatible event with source and save it in older compatible version with map output") {
     val topicConfig = createAndRegisterTopicConfig("newer-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
     val sourceParam = SourceAvroParam(topicConfig, Some(2))
@@ -239,6 +182,62 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     val executionResult = stoppableEnv.executeAndWaitForStart(process.id)
     stoppableEnv.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
     stoppableEnv.cleanupGraph()
+  }
+
+  test("should pass timestamp from flink to kafka") {
+    val topicConfig = createAndRegisterTopicConfig("timestamp-flink-kafka", LongFieldV1.schema)
+    //Can't be too long ago, otherwise retention could delete it
+    val timeToSetInProcess = System.currentTimeMillis() - 600000L
+
+    val process = EspProcessBuilder
+      .id("avro-test-timestamp-flink-kafka").parallelism(1).exceptionHandler()
+      .source(
+        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      "timestampToSet" -> (timeToSetInProcess.toString + "L"))
+      .emptySink(
+        "end",
+        "kafka-avro",
+        TopicParamName -> s"'${topicConfig.output}'",
+        SchemaVersionParamName -> "",
+        SinkOutputParamName -> s"{field: #extractedTimestamp}"
+      )
+
+    pushMessage(LongFieldV1.record, topicConfig.input)
+    kafkaClient.createTopic(topicConfig.output)
+    run(process) {
+      val consumer = kafkaClient.createConsumer()
+      val message = consumer.consumeWithConsumerRecord(topicConfig.output).head
+      message.timestamp() shouldBe timeToSetInProcess
+      message.timestampType() shouldBe TimestampType.CREATE_TIME
+    }
+  }
+
+  test("should pass timestamp from kafka to flink") {
+    val topicConfig = createAndRegisterTopicConfig("timestamp-kafka-flink", LongFieldV1.schema)
+
+    val process = EspProcessBuilder
+      .id("avro-test-timestamp-kafka-flink").parallelism(1).exceptionHandler()
+      .source(
+        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      "timestampToSet" -> "10000")
+      .emptySink(
+        "end",
+        "kafka-avro",
+        TopicParamName -> s"'${topicConfig.output}'",
+        SchemaVersionParamName -> "",
+        SinkOutputParamName -> s"{field: #extractedTimestamp}"
+      )
+
+    //Can't be too long ago, otherwise retention could delete it
+    val timePassedThroughKafka = System.currentTimeMillis() - 120000L
+    pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
+    kafkaClient.createTopic(topicConfig.output)
+    run(process) {
+      consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
+    }
+
   }
 
   override protected def beforeAll(): Unit = {
