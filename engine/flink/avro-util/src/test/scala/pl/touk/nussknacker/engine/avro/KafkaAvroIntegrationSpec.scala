@@ -288,11 +288,14 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     runAndVerifyResult(process, topic, events, List(expected))
 
   private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: List[GenericContainer]): Unit = {
-    events.foreach(obj => pushMessage(obj, topic.input))
-
+    kafkaClient.createTopic(topic.input, partitions = 1)
     kafkaClient.createTopic(topic.output, partitions = 1)
+
+    events.foreach(obj => pushMessage(obj, topic.input))
     run(process) {
+      logger.info(s"Waiting for ${testNames} - ${topic.output}")
       consumeAndVerifyMessages(topic.output, expected)
+      logger.info(s"Received for ${testNames} - ${topic.output}")
     }
   }
 }
