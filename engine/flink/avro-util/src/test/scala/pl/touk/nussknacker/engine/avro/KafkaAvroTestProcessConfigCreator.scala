@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.avro
 
-import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.generic.GenericRecord
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
@@ -9,7 +8,6 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
@@ -17,8 +15,6 @@ import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
-
-import scala.concurrent.Future
 
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
@@ -47,9 +43,6 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
     )
   }
 
-
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map("logging" -> defaultCategory(LogService))
-
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
@@ -58,17 +51,6 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider[T](processObjectDependencies)
 
-
-}
-
-object LogService extends Service with LazyLogging {
-
-  @MethodToInvoke
-  def invoke(@ParamName("message") message: String)(implicit metaData: MetaData) : Future[Unit] = {
-    logger.info(s"Logging: ${message} for ${metaData.id}")
-
-    Future.successful(())
-  }
 
 }
 

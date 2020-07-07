@@ -63,7 +63,6 @@ object KafkaUtils extends LazyLogging {
     val props = new Properties()
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("auto.offset.reset", "earliest")
-    props.setProperty("enable.auto.commit", "false")
     groupId.foreach(props.setProperty("group.id", _))
     withPropertiesFromConfig(props, config)
   }

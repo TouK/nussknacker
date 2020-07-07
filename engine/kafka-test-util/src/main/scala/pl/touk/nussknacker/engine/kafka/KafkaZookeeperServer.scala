@@ -44,7 +44,6 @@ object KafkaZookeeperServer {
     properties.setProperty("num.partitions", "1")
     properties.setProperty("offsets.topic.replication.factor", "1")
     properties.setProperty("log.cleaner.dedupe.buffer.size", (2 * 1024 * 1024L).toString) //2MB should be enough for tests
-    properties.setProperty("group.initial.rebalance.delay.ms", "100")
 
     properties.setProperty("port", s"$kafkaPort")
     properties.setProperty("log.dir", tempDir().getAbsolutePath)
@@ -95,7 +94,7 @@ object KafkaZookeeperUtils {
   private def createCommonProducerProps[K, T](kafkaAddress: String, id: String) = {
     val props = new Properties()
     props.put("bootstrap.servers", kafkaAddress)
-    props.put("batch.size", "10000")
+    props.put("batch.size", "100000")
     KafkaUtils.setClientId(props, id)
     props
   }

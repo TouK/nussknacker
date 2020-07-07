@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.avro
 
-import java.util.UUID
-
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -13,9 +11,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
-import org.scalactic.source.Position
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Assertion, BeforeAndAfter, BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
+import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -70,11 +66,6 @@ trait KafkaAvroSpecMixin extends FunSuite
     serializer
   }
 
-
-  override protected def afterEach(): Unit = {
-    kafkaClient.closeConsumers()
-  }
-
   /**
     * Default Confluent Avro serialization components
     */
@@ -89,30 +80,26 @@ trait KafkaAvroSpecMixin extends FunSuite
       formatKey = formatKey
     )
 
-  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): Unit = {
+  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
-    val ret = kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
-    kafkaClient.createConsumer(groupId = UUID.randomUUID().toString).consume(topic.getOrElse(objectTopic)).head
-    logger.info(s"Produced: ${topic.getOrElse(objectTopic)}, offset: ${ret.offset()}")
+    kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
   }
 
-  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): Unit = {
+  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): RecordMetadata = {
     val record = kafkaSerializer.serialize(obj, null)
-    val ret = kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
-    kafkaClient.createConsumer(groupId = UUID.randomUUID().toString).consume(topic).head
-    logger.info(s"Produced: $topic, offset: ${ret.offset()}")
+    kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
   }
 
   protected def consumeMessages(topic: String, count: Int): List[Any] = {
-    val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
-    consumer.consume(topic, 50).map { record =>
+    val consumer = kafkaClient.createConsumer()
+    consumer.consume(topic, 20).map { record =>
       valueDeserializer.deserialize(topic, record.message())
     }.take(count).toList
   }
 
   protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
-    val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
-    consumer.consumeWithConsumerRecord(topic, 50).map { record =>
+    val consumer = kafkaClient.createConsumer()
+    consumer.consumeWithConsumerRecord(topic, 20).map { record =>
       kafkaDeserializer.deserialize(record)
     }.take(count).toList
   }

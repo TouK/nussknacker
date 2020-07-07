@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.avro
 
-import java.util.UUID
-
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
@@ -42,20 +40,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   override def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
-
-
-  test("first test to start") {
-    val topicConfig = createAndRegisterTopicConfig("firsttopic", PaymentV1.schema)
-    val sourceParam = SourceAvroParam(topicConfig, Some(1))
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
-    val process = createAvroProcess(sourceParam, sinkParam)
-
-    pushMessage(PaymentV1.record, topicConfig.input)
-    run(process) {
-      Thread.sleep(1000)
-      logger.info("Finishing initialization")
-    }
-  }
 
   test("should read event in the same version as source requires and save it in the same version") {
     val topicConfig = createAndRegisterTopicConfig("simple", PaymentV1.schema)
@@ -160,7 +144,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
       )
-      .processor("logging", "logging", "message" -> s"'invoked'")
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
       "timestampToSet" -> (timeToSetInProcess.toString + "L"))
       .emptySink(
@@ -173,10 +156,9 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
     pushMessage(LongFieldV1.record, topicConfig.input)
     kafkaClient.createTopic(topicConfig.output)
-
     run(process) {
-      val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
-      val message = consumer.consumeWithConsumerRecord(topicConfig.output, 20).head
+      val consumer = kafkaClient.createConsumer()
+      val message = consumer.consumeWithConsumerRecord(topicConfig.output).head
       message.timestamp() shouldBe timeToSetInProcess
       message.timestampType() shouldBe TimestampType.CREATE_TIME
     }
@@ -189,9 +171,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       .id("avro-test-timestamp-kafka-flink").parallelism(1).exceptionHandler()
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> ""
-      )
-      .processor("logging", "logging", "message" -> s"'invoked'")
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
       "timestampToSet" -> "10000")
       .emptySink(
         "end",
@@ -288,7 +268,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
         TopicParamName -> s"'${source.topic}'",
         SchemaVersionParamName -> parseVersion(source.version)
       )
-      .processor("logging", "logging", "message" -> s"'invoked'")
 
     val filteredBuilder = filterExpression
       .map(filter => builder.filter("filter", filter))
@@ -313,15 +292,11 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     runAndVerifyResult(process, topic, events, List(expected))
 
   private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: List[GenericContainer]): Unit = {
-    kafkaClient.createTopic(topic.input, partitions = 1)
-    kafkaClient.createTopic(topic.output, partitions = 1)
-
     events.foreach(obj => pushMessage(obj, topic.input))
 
+    kafkaClient.createTopic(topic.output, partitions = 1)
     run(process) {
-      logger.info(s"Waiting for ${topic.output}")
       consumeAndVerifyMessages(topic.output, expected)
-      logger.info(s"Received for ${topic.output}")
     }
   }
 }

@@ -7,7 +7,6 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.execution.ExecutionState
-import org.apache.flink.runtime.executiongraph.ArchivedExecutionVertex
 import org.apache.flink.runtime.jobgraph.{JobGraph, JobStatus}
 import org.apache.flink.runtime.minicluster.MiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
