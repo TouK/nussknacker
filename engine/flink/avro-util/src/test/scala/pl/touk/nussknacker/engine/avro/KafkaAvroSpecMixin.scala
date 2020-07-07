@@ -86,7 +86,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
     val ret = kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
     kafkaClient.createConsumer(groupId = UUID.randomUUID().toString).consume(topic.getOrElse(objectTopic)).head
-    logger.info(s"Produced: $topic, offset: ${ret.offset()}")
+    logger.info(s"Produced: ${topic.getOrElse(objectTopic)}, offset: ${ret.offset()}")
   }
 
   protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): Unit = {
@@ -98,14 +98,14 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
 
   protected def consumeMessages(topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
-    consumer.consume(topic, 20).map { record =>
+    consumer.consume(topic, 50).map { record =>
       valueDeserializer.deserialize(topic, record.message())
     }.take(count).toList
   }
 
   protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
-    consumer.consumeWithConsumerRecord(topic, 20).map { record =>
+    consumer.consumeWithConsumerRecord(topic, 50).map { record =>
       kafkaDeserializer.deserialize(record)
     }.take(count).toList
   }
