@@ -89,7 +89,7 @@ trait KafkaAvroSpecMixin extends FunSuite
       formatKey = formatKey
     )
 
-  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: Long = 0): Unit = {
+  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): Unit = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
     val ret = kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
     kafkaClient.createConsumer(groupId = UUID.randomUUID().toString).consume(topic.getOrElse(objectTopic)).head

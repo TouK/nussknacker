@@ -30,7 +30,7 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
     adminClient.deleteTopic(name)
   }
 
-  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: Long = 0): Future[RecordMetadata] = {
+  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
     val record = partition.map(new ProducerRecord[Array[Byte], Array[Byte]](topic, _, timestamp, key, content))
       .getOrElse(new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestamp, key, content))
