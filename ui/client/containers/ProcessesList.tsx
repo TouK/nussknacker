@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import {isEqual} from "lodash"
 import React, {PropsWithChildren, useCallback, useEffect, useMemo, useState} from "react"
 import {useSelector} from "react-redux"

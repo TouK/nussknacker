@@ -1,9 +1,9 @@
-import cn from "classnames"
 import {isArray, isString} from "lodash"
 import React, {useCallback, useMemo} from "react"
-import {SortType, Table, TableComponentProperties} from "reactable"
+import {SortType, TableComponentProperties} from "reactable"
 import LoaderSpinner from "../../components/Spinner"
 import {useSearchQuery} from "../hooks/useSearchQuery"
+import {TableWithDynamicRows} from "./TableWithDynamicRows"
 
 type OwnProps = {
   isLoading?: boolean,
@@ -16,7 +16,7 @@ type Props = TableProps & OwnProps
 type QueryType = {page: number} & SortType
 
 export function ProcessesTable(props: Props) {
-  const {isLoading, sortable, columns, className, ...passProps} = props
+  const {isLoading, sortable, columns, ...passProps} = props
 
   const [query, setQuery] = useSearchQuery<QueryType>({parseNumbers: true})
 
@@ -36,22 +36,13 @@ export function ProcessesTable(props: Props) {
   return (
     <>
       <LoaderSpinner show={isLoading}/>
-      <Table
+      <TableWithDynamicRows
         {...passProps}
-        className={cn("esp-table", className)}
         noDataText={isLoading ? "Loading data..." : "No matching records found."}
-        previousPageLabel={"<"}
-        nextPageLabel={">"}
-        pageButtonLimit={5}
-        hideFilterInput={true}
-
-        itemsPerPage={5}
-
+        onPageChange={onPageChange}
+        currentPage={page}
         sortable={sortable}
         columns={columns}
-
-        currentPage={page}
-        onPageChange={onPageChange}
         sortBy={{column, direction}}
         onSort={onSort}
       />
