@@ -30,6 +30,9 @@
     <logger name="org.apache.kafka.producer" level="ERROR"/>
     <logger name="org.apache.kafka.clients.consumer" level="ERROR"/>
     <logger name="org.apache.kafka.clients.producer" level="ERROR"/>
+    <!-- in tests we frequently encounter "Error while fetching metadata" WARNings when auto-creating topics -->
+    <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
+
     <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR"/>
     <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
     <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>

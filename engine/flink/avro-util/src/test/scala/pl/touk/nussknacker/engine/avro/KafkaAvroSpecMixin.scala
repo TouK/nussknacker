@@ -80,7 +80,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
       formatKey = formatKey
     )
 
-  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: Long = 0): RecordMetadata = {
+  protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
     kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
   }
