@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.avro
 
-import org.apache.avro.generic.GenericRecord
+import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
@@ -22,7 +22,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   import org.apache.flink.api.scala._
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaRegistryProvider = createSchemaProvider[GenericRecord](processObjectDependencies)
+    val schemaRegistryProvider = createSchemaProvider[GenericData.Record](processObjectDependencies)
     val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 
     Map(

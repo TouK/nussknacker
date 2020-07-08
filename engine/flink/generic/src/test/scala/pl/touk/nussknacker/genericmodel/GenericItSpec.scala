@@ -10,6 +10,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
@@ -25,6 +26,7 @@ import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableE
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{ProcessSettingsPreparer, SerializationPreparer}
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
@@ -321,7 +323,14 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.chain(
+      ProcessSettingsPreparer(modelData, None),
+      // FIXME: why it is needed
+      new SerializationPreparer(enableObjectReuse = false), new ExecutionConfigPreparer {
+        override def prepareExecutionConfig(config: ExecutionConfig)(process: EspProcess, processVersion: ProcessVersion): Unit = {
+          org.apache.flink.api.java.typeutils.AvroUtils.getAvroUtils.addAvroSerializersIfRequired(config, classOf[GenericData.Record])
+        }
+      }))
   }
 
   override protected def afterAll(): Unit = {
