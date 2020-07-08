@@ -5,7 +5,12 @@ import styles from "./ProcessTabs.styl"
 
 export function TabLink({path, header}: { path: string, header: string }) {
   return (
-    <NavLink to={path} activeClassName={styles.active} className={styles.link}>
+    <NavLink
+      to={path}
+      activeClassName={styles.active}
+      className={styles.link}
+      exact
+    >
       <Tab title={header}/>
     </NavLink>
   )

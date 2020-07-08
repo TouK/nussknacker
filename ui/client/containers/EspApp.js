@@ -1,6 +1,6 @@
 import React from "react"
-import {Redirect} from "react-router"
-import {matchPath, Route, Switch, withRouter} from "react-router-dom"
+import {Route, Redirect} from "react-router"
+import {matchPath, withRouter} from "react-router-dom"
 import _ from "lodash"
 import {MenuBar} from "../components/MenuBar"
 import {ProcessesTabData} from "./Processes"
@@ -8,6 +8,7 @@ import {SubProcessesTabData} from "./SubProcesses"
 import {ArchiveTabData} from "./Archive"
 import NotFound from "./errors/NotFound"
 import {nkPath} from "../config"
+import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import Metrics from "./Metrics"
 import Search from "./Search"
 import Signals from "./Signals"
@@ -23,7 +24,6 @@ import "../stylesheets/main.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
 import {ProcessTabs} from "./ProcessTabs"
-import {FadeRoute} from "./FadeRoute"
 import {goToProcess} from "../actions/nk/showProcess"
 import {getFeatureSettings} from "../reducers/selectors/settings"
 
@@ -92,25 +92,20 @@ export class EspApp extends React.Component {
             <AllDialogs/>
             <div id="working-area" className={this.props.leftPanelIsOpened ? "is-opened" : null}>
               <ErrorHandler>
-                <Route
-                  path={EspApp.path}
-                  render={({location}) => (
-                    <Switch location={location}>
-                      <FadeRoute
-                        path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
-                        component={ProcessTabs}
-                        exact
-                      />
-                      <FadeRoute path={Visualization.path} component={Visualization} exact/>
-                      <FadeRoute path={Metrics.path} component={Metrics} exact/>
-                      <FadeRoute path={Search.path} component={Search} exact/>
-                      <FadeRoute path={Signals.path} component={Signals} exact/>
-                      <FadeRoute path={AdminPage.path} component={AdminPage} exact/>
-                      <Redirect from={EspApp.path} to={ProcessesTabData.path} exact/>
-                      <FadeRoute component={NotFound}/>
-                    </Switch>
-                  )}
-                />
+                <TransitionRouteSwitch>
+                  <Route
+                    path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
+                    component={ProcessTabs}
+                    exact
+                  />
+                  <Route path={Visualization.path} component={Visualization} exact/>
+                  <Route path={Metrics.path} component={Metrics} exact/>
+                  <Route path={Search.path} component={Search} exact/>
+                  <Route path={Signals.path} component={Signals} exact/>
+                  <Route path={AdminPage.path} component={AdminPage} exact/>
+                  <Redirect from={EspApp.path} to={ProcessesTabData.path} exact/>
+                  <Route component={NotFound}/>
+                </TransitionRouteSwitch>
               </ErrorHandler>
             </div>
           </DragArea>
