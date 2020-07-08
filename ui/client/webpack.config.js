@@ -168,6 +168,7 @@ module.exports = {
             options: {
               modules: {
                 mode: "global",
+                exportGlobals: true,
                 localIdentName: "[name]--[local]--[hash:base64:5]",
               },
               localsConvention: "camelCase",
