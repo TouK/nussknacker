@@ -128,7 +128,7 @@ lazy val commonSettings =
         "-unchecked",
         "-deprecation",
         "-encoding", "utf8",
-        "-Xfatal-warnings",
+        //"-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
@@ -178,9 +178,9 @@ val forkSettings = Seq(
 )
 
 val akkaV = "2.5.21" //same version as in Flink
-val flinkV = "1.10.1"
+val flinkV = "1.11.0"
 val avroV = "1.9.2" // for java time logical types conversions purpose
-val kafkaV = "2.2.0"
+val kafkaV = "2.4.1"
 val springV = "5.1.4.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"

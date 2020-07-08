@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.process
 
+import java.util.function.Consumer
+
 import org.apache.flink.api.common.functions.{RichFlatMapFunction, RichMapFunction}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
@@ -24,7 +26,10 @@ trait FlinkProcessRegistrar[Env] {
 
   protected def usingRightClassloader(env: Env)(action: => Unit): Unit = {
     if (!isRemoteEnv(env)) {
-      val flinkLoaderSimulation =  FlinkUserCodeClassLoaders.childFirst(Array.empty, Thread.currentThread().getContextClassLoader, Array.empty)
+      val flinkLoaderSimulation =  FlinkUserCodeClassLoaders.childFirst(Array.empty, Thread.currentThread().getContextClassLoader,
+        Array.empty, new Consumer[Throwable] {
+          override def accept(t: Throwable): Unit = throw t
+        })
       ThreadUtils.withThisAsContextClassLoader[Unit](flinkLoaderSimulation)(action)
     } else {
       action

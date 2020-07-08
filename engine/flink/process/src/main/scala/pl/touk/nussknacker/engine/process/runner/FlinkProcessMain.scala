@@ -5,7 +5,6 @@ import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.client.program.OptimizerPlanEnvironment.ProgramAbortException
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
@@ -30,8 +29,8 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       runProcess(env, modelData, process, processVersion, ExecutionConfigPreparer.defaultChain(modelData, buildInfo))
     } catch {
       // marker exception for graph optimalization
-      case ex: ProgramAbortException =>
-        throw ex
+      //case ex: ProgramAbortException =>
+      //  throw ex
       case NonFatal(ex) =>
         logger.error("Unhandled error", ex)
         throw ex
