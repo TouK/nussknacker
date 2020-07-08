@@ -38,7 +38,6 @@ const BranchParameters = (props) => {
                         <ExpressionField
                           fieldName={null}
                           fieldLabel={paramName}
-                          fieldType={null}
                           exprPath={expressionPath}
                           isEditMode={isEditMode}
                           editedNode={node}

@@ -1,5 +1,5 @@
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
-import {Editor} from "./Editor"
+import {Editor, SimpleEditor} from "./Editor"
 import i18next from "i18next"
 import React from "react"
 import Textarea from "../field/Textarea"
@@ -11,7 +11,7 @@ type Props = {
     formatter: Formatter,
 }
 
-const TextareaEditor: Editor<Props> = (props: Props) => {
+const TextareaEditor: SimpleEditor<Props> = (props: Props) => {
 
   const {expressionObj, onValueChange, className, formatter} = props
   const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter

@@ -1,17 +1,15 @@
 import React from "react"
 import Creatable from "react-select/creatable"
-import _ from "lodash"
 import {ExpressionObj} from "./types"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import {Validator} from "../Validators"
 
 type Props = {
-  values?: $TodoType,
+  editorConfig: $TodoType,
   expressionObj: $TodoType,
   onValueChange: Function,
   readOnly: boolean,
   className: string,
-  defaultValue?: $TodoType,
   param?: $TodoType,
   showValidation: boolean,
   validators: Array<Validator>,
@@ -26,7 +24,7 @@ const getOptions = (values) => {
 
 export default class FixedValuesEditor extends React.Component<Props> {
 
-  public static switchableTo = (expressionObj: ExpressionObj, values) => values.map(v => v.expression).includes(expressionObj.expression)
+  public static switchableTo = (expressionObj: ExpressionObj, editorConfig) => editorConfig.possibleValues.map(v => v.expression).includes(expressionObj.expression)
   public static switchableToHint = () => "Switch to basic mode"
   public static notSwitchableToHint = () => "Expression must be one of the expression possible values to switch basic mode"
 
@@ -38,9 +36,9 @@ export default class FixedValuesEditor extends React.Component<Props> {
 
   render() {
     const {
-      expressionObj, readOnly, onValueChange, className, showValidation, validators, values,
+      expressionObj, readOnly, onValueChange, className, showValidation, validators, editorConfig,
     } = this.props
-    const options = getOptions(values)
+    const options = getOptions(editorConfig.possibleValues)
     const currentOption = this.currentOption(expressionObj, options)
 
     return (
@@ -49,7 +47,7 @@ export default class FixedValuesEditor extends React.Component<Props> {
           classNamePrefix="node-value-select"
           value={currentOption}
           onChange={(newValue) => onValueChange(newValue.value)}
-          options={getOptions(values)}
+          options={options}
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
         />

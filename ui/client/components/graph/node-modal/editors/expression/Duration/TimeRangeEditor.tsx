@@ -1,13 +1,13 @@
 import React, {useEffect, useState} from "react"
 import TimeRangeSection from "./TimeRangeSection"
 import {Validator} from "../../Validators"
-import {TimeRangeComponentType} from "./TimeRangeComponent"
+import {TimeRange} from "./TimeRangeComponent"
 
 type Props = {
   encode: Function,
   decode: Function,
   onValueChange: Function,
-  components: Array<TimeRangeComponentType>,
+  editorConfig: $TodoType,
   readOnly: boolean,
   showValidation: boolean,
   validators: Array<Validator>,
@@ -17,8 +17,9 @@ type Props = {
 
 export default function TimeRangeEditor(props: Props) {
 
-  const {encode, decode, onValueChange, components, readOnly, showValidation, validators, expression, isMarked} = props
+  const {encode, decode, onValueChange, editorConfig, readOnly, showValidation, validators, expression, isMarked} = props
 
+  const components = editorConfig.timeRangeComponents as Array<TimeRange>
   const [value, setValue] = useState(decode(expression))
 
   const onComponentChange = (fieldName: string, fieldValue: number) => {
