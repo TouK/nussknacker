@@ -34,7 +34,7 @@ object sources {
     def create(@ParamName("topic") topic: String, @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
       val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
       val deserializationSchema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
-      val preparedTopics = List(KafkaUtils.prepareTopicName(topic, processObjectDependencies))
+      val preparedTopics = List(KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies))
       new KafkaSource(preparedTopics, kafkaConfig, deserializationSchema, None, None, TestParsingUtils.newLineSplit, processObjectDependencies) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }

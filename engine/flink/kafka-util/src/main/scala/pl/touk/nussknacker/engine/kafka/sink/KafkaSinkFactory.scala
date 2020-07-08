@@ -38,7 +38,7 @@ abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializati
 
   protected def createSink(topic: String, processMetaData: MetaData): KafkaSink = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-    val preparedTopic = KafkaUtils.prepareTopicName(topic, processObjectDependencies)
+    val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
     new KafkaSink(topic, kafkaConfig, serializationSchema, clientId)

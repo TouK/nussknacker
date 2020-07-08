@@ -20,8 +20,6 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
-  protected final val KafkaNamingContext = new NamingContext(KafkaUsageKey)
-
   def schemaRegistryProvider: SchemaRegistryProvider[Y]
 
   def processObjectDependencies: ProcessObjectDependencies
@@ -41,7 +39,7 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
     }).map { topics =>
       Parameter[String](KafkaAvroFactory.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
         topics
-          .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaNamingContext))
+          .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
           .sorted
           .map(v => FixedExpressionValue(s"'$v'", v))
       )))
@@ -73,7 +71,7 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
     params(KafkaAvroFactory.SchemaVersionParamName).asInstanceOf[Integer]
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
-    KafkaUtils.prepareTopicName(topic, processObjectDependencies)
+    KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
 
   protected def createSchemaRegistryProvider(params: Map[String, Any]): SchemaRegistryKafkaAvroProvider[Y] = {
     val preparedTopic = extractPreparedTopic(params)

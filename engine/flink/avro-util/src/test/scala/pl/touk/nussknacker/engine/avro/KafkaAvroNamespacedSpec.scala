@@ -42,7 +42,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-
+    stoppableEnv.start()
     registrar = FlinkStreamingProcessRegistrar(
       new FlinkProcessCompiler(LocalModelData(config, creator, objectNaming = objectNaming)), config
     )

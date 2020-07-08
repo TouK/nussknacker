@@ -29,6 +29,8 @@ class KafkaSource[T: TypeInformation](preparedTopics: List[PreparedKafkaTopic],
     with TestDataParserProvider[T]
     with TestDataGenerator with ExplicitUidInOperatorsSupport {
 
+  private lazy val topics: List[String] = preparedTopics.map(_.prepared)
+
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
     env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
@@ -45,8 +47,6 @@ class KafkaSource[T: TypeInformation](preparedTopics: List[PreparedKafkaTopic],
         newStart.assignTimestampsAndWatermarks(punctuated)
     }.getOrElse(newStart)
   }
-
-  def topics: List[String] = preparedTopics.map(_.prepared)
 
   protected val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 

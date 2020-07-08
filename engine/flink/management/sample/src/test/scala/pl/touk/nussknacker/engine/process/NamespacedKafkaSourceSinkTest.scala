@@ -65,7 +65,7 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-
+    stoppableEnv.start()
     registrar = FlinkStreamingProcessRegistrar(
       new FlinkProcessCompiler(LocalModelData(config, configCreator, objectNaming = new TestObjectNaming)), config
     )
