@@ -16,18 +16,19 @@ import pl.touk.nussknacker.engine.kafka._
 
 import scala.collection.JavaConverters._
 
-class KafkaSource[T: TypeInformation](topics: List[String],
-                     kafkaConfig: KafkaConfig,
-                     deserializationSchema: KafkaDeserializationSchema[T],
-                     timestampAssigner: Option[TimestampAssigner[T]],
-                     recordFormatterOpt: Option[RecordFormatter],
-                     testPrepareInfo: TestDataSplit,
-                     processObjectDependencies: ProcessObjectDependencies,
-                     overriddenConsumerGroup: Option[String] = None)
+class KafkaSource[T: TypeInformation](preparedTopics: List[PreparedKafkaTopic],
+                                      kafkaConfig: KafkaConfig,
+                                      deserializationSchema: KafkaDeserializationSchema[T],
+                                      timestampAssigner: Option[TimestampAssigner[T]],
+                                      recordFormatterOpt: Option[RecordFormatter],
+                                      testPrepareInfo: TestDataSplit,
+                                      overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource[T]
     with Serializable
     with TestDataParserProvider[T]
     with TestDataGenerator with ExplicitUidInOperatorsSupport {
+
+  private lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
@@ -46,21 +47,19 @@ class KafkaSource[T: TypeInformation](topics: List[String],
     }.getOrElse(newStart)
   }
 
-  def preparedTopics: List[String] = topics.map(KafkaUtils.prepareTopicName(_, processObjectDependencies))
-
   protected val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
   protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {
-    preparedTopics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
+    topics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
     createFlinkSource(consumerGroupId)
   }
 
   protected def createFlinkSource(consumerGroupId: String): FlinkKafkaConsumer[T] = {
-    new FlinkKafkaConsumer[T](preparedTopics.asJava, deserializationSchema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
+    new FlinkKafkaConsumer[T](topics.asJava, deserializationSchema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
   }
 
   override def generateTestData(size: Int): Array[Byte] = {
-    val listsFromAllTopics = preparedTopics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
+    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
     val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
     val formatted = recordFormatterOpt.map(formatter => merged.map(formatter.formatRecord)).getOrElse {
       merged.map(_.value())
@@ -71,7 +70,7 @@ class KafkaSource[T: TypeInformation](topics: List[String],
   override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
     override def parseTestData(merged: Array[Byte]): List[T] =
       testPrepareInfo.splitData(merged).map { formatted =>
-        val topic = preparedTopics.head
+        val topic = topics.head
         val record = recordFormatterOpt
           .map(formatter => formatter.parseRecord(formatted))
           .getOrElse(new ProducerRecord(topic, formatted))

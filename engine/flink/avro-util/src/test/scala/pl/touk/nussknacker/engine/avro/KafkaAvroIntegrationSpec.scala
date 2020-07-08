@@ -2,11 +2,9 @@ package pl.touk.nussknacker.engine.avro
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericContainer
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.BeforeAndAfterEach
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
@@ -16,7 +14,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaZookeeperUtils}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
@@ -26,20 +24,31 @@ import pl.touk.nussknacker.engine.util.cache.DefaultCache
 class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
-  import spel.Implicits._
   import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
+  import spel.Implicits._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
       ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
   }
+
   protected val paymentSchemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema)
   protected val payment2Schemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema, PaymentNotCompatible.schema)
-
 
   override def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
+
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    stoppableEnv.start()
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+  }
+
+  override protected def afterAll(): Unit = {
+    stoppableEnv.stop()
+    super.afterAll()
+  }
 
   test("should read event in the same version as source requires and save it in the same version") {
     val topicConfig = createAndRegisterTopicConfig("simple", PaymentV1.schema)
@@ -237,81 +246,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     run(process) {
       consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
     }
-
   }
-
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    stoppableEnv.start()
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
-  }
-
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
-  }
-
-  private def run(process: EspProcess)(action: => Unit): Unit = {
-    registrar.register(env, process, ProcessVersion.empty)
-    stoppableEnv.withJobRunning(process.id)(action)
-  }
-
-  private def createAvroProcess(source: SourceAvroParam, sink: SinkAvroParam, filterExpression: Option[String] = None) = {
-    val builder = EspProcessBuilder
-      .id(s"avro-test-${source.topic}")
-      .parallelism(1)
-      .exceptionHandler()
-      .source(
-        "start",
-        "kafka-avro",
-        TopicParamName -> s"'${source.topic}'",
-        SchemaVersionParamName -> parseVersion(source.version)
-      )
-
-    val filteredBuilder = filterExpression
-      .map(filter => builder.filter("filter", filter))
-      .getOrElse(builder)
-
-    filteredBuilder.emptySink(
-      "end",
-      "kafka-avro",
-      TopicParamName -> s"'${sink.topic}'",
-      SchemaVersionParamName -> parseVersion(sink.version),
-      SinkOutputParamName -> s"${sink.output}"
-    )
-  }
-
-  private def parseVersion(version: Option[Int]) =
-    version.map(v => s"$v").getOrElse("")
-
-  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, event: Any, expected: GenericContainer): Unit =
-    runAndVerifyResult(process, topic, List(event), List(expected))
-
-  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: GenericContainer): Unit =
-    runAndVerifyResult(process, topic, events, List(expected))
-
-  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: List[GenericContainer]): Unit = {
-    events.foreach(obj => pushMessage(obj, topic.input))
-
-    kafkaClient.createTopic(topic.output, partitions = 1)
-    run(process) {
-      consumeAndVerifyMessages(topic.output, expected)
-    }
-  }
-}
-
-case class SourceAvroParam(topic: String, version: Option[Int])
-
-object SourceAvroParam {
-  def apply(topicConfig: TopicConfig, version: Option[Int]): SourceAvroParam =
-    new SourceAvroParam(topicConfig.input, version)
-}
-
-case class SinkAvroParam(topic: String, version: Option[Int], output: String)
-
-object SinkAvroParam {
-  def apply(topicConfig: TopicConfig, version: Option[Int], output: String): SinkAvroParam =
-    new SinkAvroParam(topicConfig.output, version, output)
 }
 
 object KafkaAvroIntegrationMockSchemaRegistry {

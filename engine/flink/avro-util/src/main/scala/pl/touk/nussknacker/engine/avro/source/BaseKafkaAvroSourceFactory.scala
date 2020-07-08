@@ -24,7 +24,7 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
 
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation
-  def createSource(topic: String,
+  def createSource(preparedTopic: PreparedKafkaTopic,
                    kafkaConfig: KafkaConfig,
                    kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
                    processMetaData: MetaData,
@@ -33,13 +33,12 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
     val returnTypeDefinition = kafkaAvroSchemaProvider.returnType(KafkaAvroFactory.handleSchemaRegistryError)
 
     new KafkaSource(
-      List(topic),
+      List(preparedTopic),
       kafkaConfig,
       kafkaAvroSchemaProvider.deserializationSchema,
       assignerToUse(kafkaConfig),
       kafkaAvroSchemaProvider.recordFormatter,
-      TestParsingUtils.newLineSplit,
-      processObjectDependencies
+      TestParsingUtils.newLineSplit
     ) with ReturningType {
       override def returnType: typing.TypingResult = returnTypeDefinition
     }

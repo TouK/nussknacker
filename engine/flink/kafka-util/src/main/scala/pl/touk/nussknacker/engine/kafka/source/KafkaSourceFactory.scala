@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source
 import pl.touk.nussknacker.engine.api.test.TestDataSplit
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaDeserializationSchemaFactory, KafkaDeserializationSchemaFactory}
 
@@ -97,7 +97,8 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](deserializationSchemaF
     createSource(topics, kafkaConfig)
 
   protected def createSource(topics: List[String], kafkaConfig: KafkaConfig): KafkaSource[T] = {
+    val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val serializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
-    new KafkaSource(topics = topics, kafkaConfig, serializationSchema, timestampAssigner, None, testPrepareInfo, processObjectDependencies)
+    new KafkaSource(preparedTopics, kafkaConfig, serializationSchema, timestampAssigner, None, testPrepareInfo)
   }
 }
