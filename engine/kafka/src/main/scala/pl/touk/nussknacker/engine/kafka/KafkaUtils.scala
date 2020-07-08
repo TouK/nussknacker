@@ -26,16 +26,19 @@ object KafkaUtils extends LazyLogging {
 
   val defaultTimeoutMillis = 10000
 
-  private val kafkaTopicUsageKey = new NamingContext(KafkaUsageKey)
+  private val KafkaTopicUsageKey = new NamingContext(KafkaUsageKey)
 
   def setClientId(props: Properties, id: String): Unit = {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def prepareTopicName(topic :String, processObjectDependencies: ProcessObjectDependencies): String =
-    processObjectDependencies
+  def prepareTopicName(topic :String, processObjectDependencies: ProcessObjectDependencies): PreparedKafkaTopic =
+    PreparedKafkaTopic(
+      topic,
+      processObjectDependencies
       .objectNaming
-      .prepareName(topic, processObjectDependencies.config, kafkaTopicUsageKey)
+      .prepareName(topic, processObjectDependencies.config, KafkaTopicUsageKey)
+    )
 
   def sanitizeClientId(originalId: String): String =
     //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
@@ -184,3 +187,5 @@ object KafkaUtils extends LazyLogging {
       }
     }
 }
+
+case class PreparedKafkaTopic(original: String, prepared: String)

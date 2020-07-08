@@ -26,14 +26,16 @@ class KafkaAvroSourceFactory[T:TypeInformation](val schemaRegistryProvider: Sche
       val initial = topicParam
       NextParameters(List(initial.value), initial.written)
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
-      val version = versionParam(topic)
+      val preparedTopic = prepareTopic(topic)
+      val version = versionParam(preparedTopic)
      NextParameters(List(version.value), version.written, None)
     case TransformationStep((TopicParamName, _) :: Nil, _) =>
       fallbackVersionParam
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
       //we do casting here and not in case, as version can be null...
-      val result = createSchemaRegistryProvider(topic, version.asInstanceOf[Integer]).typeDefinition
+      val preparedTopic = prepareTopic(topic)
+      val result = createSchemaRegistryProvider(preparedTopic, version.asInstanceOf[Integer]).typeDefinition
       val finalCtxValue = finalCtx(context, dependencies, result.getOrElse(Unknown))
       val finalErrors = result.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
       FinalResults(finalCtxValue, finalErrors)
@@ -58,7 +60,7 @@ class KafkaAvroSourceFactory[T:TypeInformation](val schemaRegistryProvider: Sche
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[T] = {
-    createSource(topic(params), kafkaConfig, createSchemaRegistryProvider(params),
+    createSource(extractPreparedTopic(params), kafkaConfig, createSchemaRegistryProvider(params),
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

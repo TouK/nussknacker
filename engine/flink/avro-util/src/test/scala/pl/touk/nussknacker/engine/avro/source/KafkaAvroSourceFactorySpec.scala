@@ -171,7 +171,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
       useSpecificAvroReader = false,
       formatKey = true
     )
-    new KafkaAvroSourceFactory(provider, processObjectDependencies, None)
+    new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)
   }
 
   private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema) = {
