@@ -4,6 +4,7 @@ import createProcessIcon from "../../assets/img/create-process.svg"
 import {useClashedNames} from "../../containers/hooks/useClashedNames"
 import {getLoggedUser} from "../../reducers/selectors/settings"
 import AddProcessDialog from "../AddProcessDialog"
+import {ButtonWithFocus} from "../withFocus"
 
 type Props = {onClick: () => void}
 
@@ -12,16 +13,16 @@ function AddButton(props: Props) {
   const loggedUser = useSelector(getLoggedUser)
 
   return loggedUser.isWriter() ? (
-    <button
+    <ButtonWithFocus
       type={"button"}
       id="process-add-button"
-      className="btn big-blue-button input-group "
+      className="btn btn-primary big-blue-button input-group "
       onClick={onClick}
       title={"CREATE NEW PROCESS"}
     >
       <span>CREATE NEW PROCESS</span>
       <img id="add-icon" src={createProcessIcon} alt={"add process icon"}/>
-    </button>
+    </ButtonWithFocus>
   ) : null
 
 }

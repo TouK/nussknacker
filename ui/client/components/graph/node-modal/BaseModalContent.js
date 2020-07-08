@@ -1,5 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
+import {InputWithFocus, SelectWithFocus} from "../../withFocus"
 import NodeErrors from "./NodeErrors"
 
 export default function BaseModalContent(props) {
@@ -12,17 +13,17 @@ export default function BaseModalContent(props) {
       <div className="node-table-body">
         <div className="node-row">
           <div className="node-label">From</div>
-          <div className="node-value"><input readOnly={true} type="text" className="node-input" value={edge.from}/>
+          <div className="node-value"><InputWithFocus readOnly={true} type="text" className="node-input" value={edge.from}/>
           </div>
         </div>
         <div className="node-row">
           <div className="node-label">To</div>
-          <div className="node-value"><input readOnly={true} type="text" className="node-input" value={edge.to}/></div>
+          <div className="node-value"><InputWithFocus readOnly={true} type="text" className="node-input" value={edge.to}/></div>
         </div>
         <div className="node-row">
           <div className="node-label">Type</div>
           <div className={`node-value${  isMarked("edgeType.type") ? " marked" : ""}`}>
-            <select
+            <SelectWithFocus
               id="processCategory"
               disabled={readOnly}
               className="node-input"
@@ -31,7 +32,7 @@ export default function BaseModalContent(props) {
             >
               <option value={"SwitchDefault"}>Default</option>
               <option value={"NextSwitch"}>Condition</option>
-            </select>
+            </SelectWithFocus>
           </div>
         </div>
         {props.children}

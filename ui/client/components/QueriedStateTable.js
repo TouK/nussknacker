@@ -7,6 +7,7 @@ import {Table} from "reactable"
 import ActionsUtils from "../actions/ActionsUtils"
 import {dateFormat} from "../config"
 import HttpService from "../http/HttpService"
+import {ButtonWithFocus, InputWithFocus, SelectWithFocus} from "./withFocus"
 
 class QueriedStateTable extends React.Component {
 
@@ -34,29 +35,31 @@ class QueriedStateTable extends React.Component {
         <div>
           <div className="esp-form-row">
             <p>Query name</p>
-            <select
+            <SelectWithFocus
               value={this.selectedQueryName()}
               onChange={(e) => this.setState({queryName: e.target.value, processId: this.processesForQueryName(e.target.value)[0]})}
             >
-              {_.keys(this.props.availableQueryableStates).map((queryName, index) => (<option key={index} value={queryName}>{queryName}</option>))}
-            </select>
+              {_.keys(this.props.availableQueryableStates).map((queryName, index) => (
+                <option key={index} value={queryName}>{queryName}</option>))}
+            </SelectWithFocus>
           </div>
           <div className="esp-form-row">
             <p>Process id</p>
-            <select value={this.selectedProcessId()} onChange={(e) => this.setState({processId: e.target.value})}>
-              {this.processesForQueryName(this.selectedQueryName()).map((processId, index) => (<option key={index} value={processId}>{processId}</option>))}
-            </select>
+            <SelectWithFocus value={this.selectedProcessId()} onChange={(e) => this.setState({processId: e.target.value})}>
+              {this.processesForQueryName(this.selectedQueryName()).map((processId, index) => (
+                <option key={index} value={processId}>{processId}</option>))}
+            </SelectWithFocus>
           </div>
           <div className="esp-form-row">
             <p>Key (optional)</p>
-            <input value={this.state.key} onChange={(e) => this.setState({key: e.target.value})}/>
-            <button
+            <InputWithFocus value={this.state.key} onChange={(e) => this.setState({key: e.target.value})}/>
+            <ButtonWithFocus
               type="button"
               className="modalButton"
               disabled={_.isEmpty(this.selectedQueryName()) || _.isEmpty(this.selectedProcessId())}
               title={queryButtonTooltip}
               onClick={this.queryState.bind(this, this.selectedProcessId(), this.selectedQueryName(), this.state.key)}
-            >Query</button>
+            >Query</ButtonWithFocus>
           </div>
         </div>
       )

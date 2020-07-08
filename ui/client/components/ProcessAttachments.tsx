@@ -6,9 +6,11 @@ import {WithTranslation} from "react-i18next/src"
 import {connect} from "react-redux"
 import {mapDispatchWithEspActions} from "../actions/ActionsUtils"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
+import {EspButton} from "./EspButton"
 import HttpService from "../http/HttpService"
 import {RootState} from "../reducers/index"
 import Date from "./common/Date"
+import {FocusOutline, InputWithFocus} from "./withFocus"
 
 type State = { pendingRequest: boolean }
 
@@ -38,8 +40,8 @@ export class ProcessAttachments extends React.Component<Props, State> {
           {attachments.map((attachment, idx) => (
             <div key={idx} className={"attachment-section"}>
               <div className="download-attachment">
-                <div
-                  className="espButton download-button"
+                <EspButton
+                  className="download-button"
                   dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
                   onClick={() => HttpService.downloadAttachment(attachment.processId, attachment.processVersionId, attachment.id)}
                 />
@@ -54,19 +56,22 @@ export class ProcessAttachments extends React.Component<Props, State> {
             </div>
           ))}
         </ul>
-        <div className="add-attachments">
+        <FocusOutline className="add-attachments">
           <Dropzone onDrop={this.addAttachment}>
             {({getRootProps, getInputProps}) => (
-              <div className="attachments-container" {...getRootProps()}>
-                <div className={"attachment-drop-zone attachment-button"} dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}}/>
+              <FocusOutline className="attachments-container" {...getRootProps()}>
+                <FocusOutline
+                  className={"attachment-drop-zone attachment-button"}
+                  dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}}
+                />
                 <div className="attachment-button-text">
                   <span>{t("attachments.buttonText", "drop or choose a file")}</span>
                 </div>
-                <input {...getInputProps()}/>
-              </div>
+                <InputWithFocus {...getInputProps()}/>
+              </FocusOutline>
             )}
           </Dropzone>
-        </div>
+        </FocusOutline>
       </div>
     )
   }

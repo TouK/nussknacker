@@ -2,6 +2,7 @@ import PropTypes from "prop-types"
 import React from "react"
 import {allValid} from "../Validators"
 import ValidationLabels from "../../../../modals/ValidationLabels"
+import {InputWithFocus} from "../../../../withFocus"
 import classNames from "classnames"
 
 export const Input = (props) => {
@@ -14,7 +15,7 @@ export const Input = (props) => {
     <div className={className}>
       <div className={isMarked ? " marked" : ""}>
         {
-          <input
+          <InputWithFocus
             autoFocus={autoFocus}
             type={type}
             readOnly={readOnly}
