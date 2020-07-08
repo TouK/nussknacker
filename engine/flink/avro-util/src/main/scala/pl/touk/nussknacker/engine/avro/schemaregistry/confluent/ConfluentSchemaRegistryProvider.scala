@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareDeserial
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 class ConfluentSchemaRegistryProvider[T: TypeInformation](val schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                          val serializationSchemaFactory: KafkaVersionAwareSerializationSchemaFactory[Any],
+                                                          val serializationSchemaFactory: KafkaVersionAwareSerializationSchemaFactory[AnyRef],
                                                           val deserializationSchemaFactory: KafkaVersionAwareDeserializationSchemaFactory[T],
                                                           val kafkaConfig: KafkaConfig,
                                                           val formatKey: Boolean) extends SchemaRegistryProvider[T] {
@@ -25,7 +25,7 @@ class ConfluentSchemaRegistryProvider[T: TypeInformation](val schemaRegistryClie
 object ConfluentSchemaRegistryProvider extends Serializable {
 
   def apply[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                serializationSchemaFactory: Option[KafkaVersionAwareSerializationSchemaFactory[Any]],
+                                serializationSchemaFactory: Option[KafkaVersionAwareSerializationSchemaFactory[AnyRef]],
                                 deserializationSchemaFactory: Option[KafkaVersionAwareDeserializationSchemaFactory[T]],
                                 kafkaConfig: KafkaConfig,
                                 useSpecificAvroReader: Boolean,

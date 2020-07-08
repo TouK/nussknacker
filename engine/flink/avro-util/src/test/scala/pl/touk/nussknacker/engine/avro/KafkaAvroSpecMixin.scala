@@ -87,7 +87,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
   }
 
-  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: Any, topic: String): RecordMetadata = {
+  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[AnyRef], obj: AnyRef, topic: String): RecordMetadata = {
     val record = kafkaSerializer.serialize(obj, null)
     kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
   }

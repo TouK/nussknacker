@@ -65,7 +65,7 @@ object aggregates {
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
 
-    override def result(finalAggregate: Aggregate): Any = new java.util.ArrayList[Any](finalAggregate.asJava)
+    override def result(finalAggregate: Aggregate): AnyRef = new java.util.ArrayList[Any](finalAggregate.asJava)
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(Typed.genericTypeClass[java.util.List[_]](List(input)))
@@ -84,7 +84,7 @@ object aggregates {
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
 
-    override def result(finalAggregate: Aggregate): Any = new java.util.HashSet(finalAggregate.asJava)
+    override def result(finalAggregate: Aggregate): AnyRef = new java.util.HashSet(finalAggregate.asJava)
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(Typed.genericTypeClass[java.util.Set[_]](List(input)))
@@ -105,7 +105,7 @@ object aggregates {
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1
 
-    override def result(finalAggregate: Aggregate): Any = if (finalAggregate == zero) null else finalAggregate
+    override def result(finalAggregate: Aggregate): AnyRef = if (finalAggregate == zero) null else finalAggregate
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(input)
@@ -124,7 +124,7 @@ object aggregates {
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg2
 
-    override def result(finalAggregate: Aggregate): Any = finalAggregate
+    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(input)
@@ -161,7 +161,7 @@ object aggregates {
       case (field, value) => field -> scalaFields(field).merge(value, agg2(field))
     }
 
-    override def result(finalAggregate: Aggregate): Any = finalAggregate.map {
+    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate.map {
       case (field, value) => field -> scalaFields(field).getResult(value)
     }.asJava
 

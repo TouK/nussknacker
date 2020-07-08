@@ -4,6 +4,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.2.0 (not released yet)
 
+* [#1039](https://github.com/TouK/nussknacker/pull/1039) Generic parameter of `LazyParameter[T]` has upper bound AnyRef now to avoid problems with bad type extraction.
+It caused changes `Any` to `AnyRef` in a few places - mainly `FlinkLazyParameterFunctionHelper` and `FlinkCustomStreamTransformation`
 * [#1039](https://github.com/TouK/nussknacker/pull/1039) `FlinkStreamingProcessRegistrar.apply` has a new parameter of type `ExecutionConfigPreparer`.
 In production code you should pass `ExecutionConfigPreparer.defaultChain()` there and in test code you should pass `ExecutionConfigPreparer.unOptimizedChain()`. See scaladocs for more info.
 If you already have done some Flink's `ExecutionConfig` set up before you've registered process, you should consider create your own chain using `ExecutionConfigPreparer.chain()`.

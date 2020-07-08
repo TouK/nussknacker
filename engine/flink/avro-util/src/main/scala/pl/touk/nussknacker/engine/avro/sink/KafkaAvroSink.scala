@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaPr
   * @param kafkaAvroSchemaProvider
   * @param clientId
   */
-class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, output: LazyParameter[Any], kafkaConfig: KafkaConfig, kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[_], clientId: String)
+class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, output: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[_], clientId: String)
   extends FlinkSink with Serializable with LazyLogging {
 
   import org.apache.flink.streaming.api.scala._
@@ -54,6 +54,6 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, output: LazyParameter[Any
     */
   override def testDataOutput: Option[Any => String] = None
 
-  private def toFlinkFunction: SinkFunction[Any] =
+  private def toFlinkFunction: SinkFunction[AnyRef] =
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared, kafkaAvroSchemaProvider.serializationSchema, clientId)
 }

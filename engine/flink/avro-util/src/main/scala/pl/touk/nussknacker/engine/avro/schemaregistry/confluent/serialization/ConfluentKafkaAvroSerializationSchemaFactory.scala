@@ -32,10 +32,10 @@ trait ConfluentAvroSerializerFactory {
 }
 
 class ConfluentAvroSerializationSchemaFactory(schemaDeterminingStrategy: SchemaDeterminingStrategy, schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaVersionAwareValueSerializationSchemaFactory[Any] with ConfluentAvroSerializerFactory {
+  extends KafkaVersionAwareValueSerializationSchemaFactory[AnyRef] with ConfluentAvroSerializerFactory {
 
-  override protected def createValueSerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any] =
-    createSerializer[Any](schemaDeterminingStrategy, schemaRegistryClientFactory, topic, version, kafkaConfig, isKey = false)
+  override protected def createValueSerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[AnyRef] =
+    createSerializer[AnyRef](schemaDeterminingStrategy, schemaRegistryClientFactory, topic, version, kafkaConfig, isKey = false)
 }
 
 object ConfluentAvroSerializationSchemaFactory {
@@ -44,7 +44,7 @@ object ConfluentAvroSerializationSchemaFactory {
 }
 
 abstract class ConfluentAvroKeyValueSerializationSchemaFactory(schemaDeterminingStrategy: SchemaDeterminingStrategy, schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaVersionAwareKeyValueSerializationSchemaFactory[Any] with ConfluentAvroSerializerFactory {
+  extends KafkaVersionAwareKeyValueSerializationSchemaFactory[AnyRef] with ConfluentAvroSerializerFactory {
 
   override protected def createKeySerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[K] =
     createSerializer[K](schemaDeterminingStrategy, schemaRegistryClientFactory, topic, version, kafkaConfig, isKey = true)

@@ -41,30 +41,32 @@ abstract class CustomStreamTransformer {
   * Cannot be evaluated directly (no method like 'evaluate',
   * as evaluation may need e.g. lazy variables and we have to take care of lifecycle, to use it see LazyParameterInterpreter
   *
+  * @tparam T type of evaluated parameter. It has upper bound AnyRef because currently we don't support correctly extraction of
+  *          primitive types from generic parameters
   */
-trait LazyParameter[+T] {
+trait LazyParameter[+T <: AnyRef] {
 
   //type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
   def returnType: TypingResult
 
   //we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
   //we use product and not ap here, because it's more convenient to handle returnType computations
-  def product[B](fb: LazyParameter[B])(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[(T, B)] = {
+  def product[B <: AnyRef](fb: LazyParameter[B])(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[(T, B)] = {
     lazyParameterInterpreter.product(this, fb)
   }
 
   //unfortunatelly, we cannot assert that TypingResult represents A somehow...
-  def pure[A](value: A, valueTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A]
+  def pure[A <: AnyRef](value: A, valueTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A]
     = lazyParameterInterpreter.pure(value, valueTypingResult)
 
-  def pure[A:TypeTag](value: A)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A]
+  def pure[A <: AnyRef : TypeTag](value: A)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A]
     = pure(value, Typed.fromDetailedType[A])
 
-  def map[Y:TypeTag](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
+  def map[Y <: AnyRef :TypeTag](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
     map(fun, Typed.fromDetailedType[Y])
 
   //unfortunatelly, we cannot assert that TypingResult represents Y somehow...
-  def map[Y](fun: T => Y, outputTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
+  def map[Y <: AnyRef](fun: T => Y, outputTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
     lazyParameterInterpreter.map(this, fun, outputTypingResult)
 
 }
@@ -73,15 +75,15 @@ trait LazyParameter[+T] {
 
 trait LazyParameterInterpreter {
 
-  def createInterpreter[T](parameter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
+  def createInterpreter[T <: AnyRef](parameter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
 
-  def product[A, B](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)]
+  def product[A <: AnyRef, B <: AnyRef](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)]
 
-  def pure[T](value: T, valueTypingResult: TypingResult): LazyParameter[T]
+  def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T]
 
-  def map[T, Y](parameter: LazyParameter[T], fun: T => Y, outputTypingResult: TypingResult): LazyParameter[Y]
+  def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], fun: T => Y, outputTypingResult: TypingResult): LazyParameter[Y]
 
-  def syncInterpretationFunction[T](parameter: LazyParameter[T]) : Context => T
+  def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]) : Context => T
 
   def close(): Unit
 

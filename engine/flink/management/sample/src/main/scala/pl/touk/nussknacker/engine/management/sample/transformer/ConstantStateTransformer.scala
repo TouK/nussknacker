@@ -18,7 +18,7 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
   def execute(): FlinkCustomStreamTransformation = FlinkCustomStreamTransformation((start: DataStream[Context]) => {
     start
       .keyBy(_ => "1")
-      .map(new RichMapFunction[Context, ValueWithContext[Any]] {
+      .map(new RichMapFunction[Context, ValueWithContext[AnyRef]] {
 
         var constantState: ValueState[T] = _
 
@@ -29,9 +29,9 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
           constantState = getRuntimeContext.getState(descriptor)
         }
 
-        override def map(value: Context): ValueWithContext[Any] = {
+        override def map(value: Context): ValueWithContext[AnyRef] = {
           constantState.update(defaultValue)
-          ValueWithContext[Any]("", value)
+          ValueWithContext[AnyRef]("", value)
         }
       }).uid("customStateId")
   })

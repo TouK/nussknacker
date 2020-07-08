@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Service, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -808,9 +808,9 @@ object InterpreterSpec {
     override def languageId: String = "literal"
 
     override def parse(original: String, ctx: ValidationContext, expectedType: typing.TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
-      parseWithoutContextValidation(original).map(TypedExpression(_, Typed[String], LiteralExpressionTypingInfo))
+      parseWithoutContextValidation(original, expectedType).map(TypedExpression(_, Typed[String], LiteralExpressionTypingInfo))
 
-    override def parseWithoutContextValidation(original: String): Validated[NonEmptyList[ExpressionParseError],
+    override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError],
       pl.touk.nussknacker.engine.api.expression.Expression]
     = Valid(LiteralExpression(original))
   }

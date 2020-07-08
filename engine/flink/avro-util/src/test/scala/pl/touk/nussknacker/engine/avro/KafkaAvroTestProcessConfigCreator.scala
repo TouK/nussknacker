@@ -59,9 +59,9 @@ object ExtractAndTransformTimestmp extends CustomStreamTransformer {
   @MethodToInvoke(returnType = classOf[Long])
   def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation
     = FlinkCustomStreamTransformation(_.transform("collectTimestamp",
-      new AbstractStreamOperator[ValueWithContext[Any]] with OneInputStreamOperator[Context, ValueWithContext[Any]] {
+      new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
         override def processElement(element: StreamRecord[Context]): Unit = {
-          output.collect(new StreamRecord[ValueWithContext[Any]](ValueWithContext(element.getTimestamp, element.getValue), timestampToSet))
+          output.collect(new StreamRecord[ValueWithContext[AnyRef]](ValueWithContext(element.getTimestamp.underlying(), element.getValue), timestampToSet))
         }
       }))
 

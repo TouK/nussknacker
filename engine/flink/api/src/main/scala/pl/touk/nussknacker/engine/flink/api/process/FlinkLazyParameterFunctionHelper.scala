@@ -15,7 +15,7 @@ class FlinkLazyParameterFunctionHelper(val createInterpreter: RuntimeContext => 
         .keyBy(_.value)
         @see AggregateTransformer
    */
-  def lazyMapFunction[T](parameter: LazyParameter[T]): MapFunction[Context, ValueWithContext[T]]
+  def lazyMapFunction[T <: AnyRef](parameter: LazyParameter[T]): MapFunction[Context, ValueWithContext[T]]
     = new LazyParameterMapFunction[T](parameter, this)
 
   /*
@@ -23,13 +23,13 @@ class FlinkLazyParameterFunctionHelper(val createInterpreter: RuntimeContext => 
      stream.filter(ctx.nodeServices.lazyFilterFunction(expression))
      @see CustomFilter class
    */
-  def lazyFilterFunction(parameter: LazyParameter[Boolean]): FilterFunction[Context]
+  def lazyFilterFunction(parameter: LazyParameter[java.lang.Boolean]): FilterFunction[Context]
     = new LazyParameterFilterFunction(parameter, this)
 
 
 }
 
-class LazyParameterFilterFunction(parameter: LazyParameter[Boolean], lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+class LazyParameterFilterFunction(parameter: LazyParameter[java.lang.Boolean], lazyParameterHelper: FlinkLazyParameterFunctionHelper)
   extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper) with FilterFunction[Context] {
 
   override def filter(value: Context): Boolean = {
@@ -38,7 +38,7 @@ class LazyParameterFilterFunction(parameter: LazyParameter[Boolean], lazyParamet
 
 }
 
-class LazyParameterMapFunction[T](parameter: LazyParameter[T], lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+class LazyParameterMapFunction[T <: AnyRef](parameter: LazyParameter[T], lazyParameterHelper: FlinkLazyParameterFunctionHelper)
   extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper) with MapFunction[Context, ValueWithContext[T]] {
 
   override def map(value: Context): ValueWithContext[T] = {
@@ -47,8 +47,8 @@ class LazyParameterMapFunction[T](parameter: LazyParameter[T], lazyParameterHelp
 
 }
 
-abstract class AbstractOneParamLazyParameterFunction[T](val parameter: LazyParameter[T],
-                                                        val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+abstract class AbstractOneParamLazyParameterFunction[T <: AnyRef](val parameter: LazyParameter[T],
+                                                                  val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
   extends AbstractRichFunction with OneParamLazyParameterFunction[T]
 
 abstract class AbstractLazyParameterInterpreterFunction(val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
@@ -57,7 +57,7 @@ abstract class AbstractLazyParameterInterpreterFunction(val lazyParameterHelper:
 /*
   Helper trait for situation when you are using one lazy parameter.
  */
-trait OneParamLazyParameterFunction[T] extends LazyParameterInterpreterFunction { self: RichFunction =>
+trait OneParamLazyParameterFunction[T <: AnyRef] extends LazyParameterInterpreterFunction { self: RichFunction =>
 
   protected def parameter: LazyParameter[T]
 

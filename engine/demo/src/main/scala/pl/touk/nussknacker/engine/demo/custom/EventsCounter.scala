@@ -29,14 +29,14 @@ class EventsCounter() extends CustomStreamTransformer {
   }
 }
 
-class CounterFunction(lengthInMillis: Long) extends TimestampedEvictableStateFunction[ValueWithContext[String], ValueWithContext[Any], Int] {
+class CounterFunction(lengthInMillis: Long) extends TimestampedEvictableStateFunction[ValueWithContext[String], ValueWithContext[AnyRef], Int] {
 
   override def stateDescriptor =
     new ValueStateDescriptor[MultiMap[Long, Int]]("state", classOf[MultiMap[Long, Int]])
 
 
-  override def processElement(vwc: ValueWithContext[String], ctx: KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[Any]]#Context,
-                              out: Collector[ValueWithContext[Any]]): Unit = {
+  override def processElement(vwc: ValueWithContext[String], ctx: KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#Context,
+                              out: Collector[ValueWithContext[AnyRef]]): Unit = {
 
     moveEvictionTime(lengthInMillis, ctx)
 

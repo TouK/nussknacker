@@ -15,6 +15,6 @@ class StandaloneSinkFactory extends SinkFactory {
 trait StandaloneSinkWithParameters extends Sink {
 
   //TODO: enable using outputExpression?
-  def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Any]
+  def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef]
 
 }

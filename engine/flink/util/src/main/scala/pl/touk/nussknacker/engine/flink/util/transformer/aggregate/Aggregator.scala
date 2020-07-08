@@ -24,7 +24,7 @@ trait Aggregator extends AggregateFunction[Any, Any, Any] {
 
   def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate
 
-  def result(finalAggregate: Aggregate): Any
+  def result(finalAggregate: Aggregate): AnyRef
 
   def computeOutputType(input: TypingResult): Validated[String, TypingResult]
 
@@ -32,7 +32,7 @@ trait Aggregator extends AggregateFunction[Any, Any, Any] {
 
   override def add(value: Any, accumulator: Any): Any = addElement(value.asInstanceOf[Element], accumulator.asInstanceOf[Aggregate])
 
-  override def getResult(accumulator: Any): Any = result(accumulator.asInstanceOf[Aggregate])
+  override def getResult(accumulator: Any): AnyRef = result(accumulator.asInstanceOf[Aggregate])
 
   override def merge(a: Any, b: Any): Any = mergeAggregates(a.asInstanceOf[Aggregate], b.asInstanceOf[Aggregate])
 

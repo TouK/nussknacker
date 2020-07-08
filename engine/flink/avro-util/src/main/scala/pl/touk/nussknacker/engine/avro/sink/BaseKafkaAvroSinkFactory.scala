@@ -21,7 +21,7 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
 
   // We currently not using nodeId but it is here in case if someone want to use in their own concrete implementation
   protected def createSink(preparedTopic: PreparedKafkaTopic,
-                           output: LazyParameter[Any],
+                           output: LazyParameter[AnyRef],
                            kafkaConfig: KafkaConfig,
                            kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[_],
                            processMetaData: MetaData,

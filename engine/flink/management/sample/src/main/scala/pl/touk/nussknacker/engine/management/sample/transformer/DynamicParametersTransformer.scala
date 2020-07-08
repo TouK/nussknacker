@@ -9,7 +9,7 @@ object DynamicParametersTransformer extends CustomStreamTransformer with Dynamic
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
     //no-op 
-    FlinkCustomStreamTransformation(_.map(ctx => ValueWithContext[Any](null, ctx)))
+    FlinkCustomStreamTransformation(_.map(ctx => ValueWithContext[AnyRef](null, ctx)))
   }
 
 }

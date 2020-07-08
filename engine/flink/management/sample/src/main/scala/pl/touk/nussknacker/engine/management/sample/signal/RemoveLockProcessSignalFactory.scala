@@ -64,7 +64,7 @@ object SampleSignalHandlingTransformer {
           .keyBy(_ => QueryableState.defaultKey)
           .transform("queryableStateTransform", new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](lockQueryName, lockOutput => Json.fromFields(List(
             "lockEnabled" -> Json.fromBoolean(lockOutput.lockEnabled)
-          ))){}.asInstanceOf[OneInputStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]], ValueWithContext[Any]]])
+          ))){}.asInstanceOf[OneInputStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]], ValueWithContext[AnyRef]]])
       })
   }
 

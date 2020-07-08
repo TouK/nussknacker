@@ -31,7 +31,7 @@ class CardinalityAggregator(zeroCardinality: () => ICardinality, wrapper: ICardi
     wrapper(h1.wrapped.merge(h2.wrapped))
   }
 
-  override def result(r: CardinalityWrapper): Long = r.wrapped.cardinality()
+  override def result(r: CardinalityWrapper): java.lang.Long = r.wrapped.cardinality()
 
   override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed[Long])
 

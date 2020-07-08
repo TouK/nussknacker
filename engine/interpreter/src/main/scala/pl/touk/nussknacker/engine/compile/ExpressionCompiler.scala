@@ -149,7 +149,8 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   }
 
   def compileWithoutContextValidation(n: graph.expression.Expression,
-                                      fieldName: String)
+                                      fieldName: String,
+                                      expectedType: TypingResult)
                                      (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Expression] = {
     val validParser = expressionParsers
       .get(n.language)
@@ -157,7 +158,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       .getOrElse(invalid(NotSupportedExpressionLanguage(n.language))).toValidatedNel
 
     validParser andThen { parser =>
-      parser.parseWithoutContextValidation(n.expression)
+      parser.parseWithoutContextValidation(n.expression, expectedType)
         .leftMap(errs => errs.map(err => ProcessCompilationError.ExpressionParseError(err.message, Some(fieldName), n.expression)))
     }
   }

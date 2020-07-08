@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.scala._
 object AdditionalVariableTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Void])
-  def execute(@AdditionalVariables(Array(new AdditionalVariable(name = "additional", clazz = classOf[String]))) @ParamName("expression") expression: LazyParameter[Boolean]) =
-    FlinkCustomStreamTransformation((start: DataStream[Context]) => start.map(ValueWithContext[Any]("", _)))
+  def execute(@AdditionalVariables(Array(new AdditionalVariable(name = "additional", clazz = classOf[String]))) @ParamName("expression") expression: LazyParameter[java.lang.Boolean]) =
+    FlinkCustomStreamTransformation((start: DataStream[Context]) => start.map(ValueWithContext[AnyRef]("", _)))
 
 }

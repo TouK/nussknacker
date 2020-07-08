@@ -16,7 +16,7 @@ trait KafkaAvroSchemaProvider[T] extends Serializable {
 
   def deserializationSchema: KafkaDeserializationSchema[T]
 
-  def serializationSchema: KafkaSerializationSchema[Any]
+  def serializationSchema: KafkaSerializationSchema[AnyRef]
 
   def recordFormatter: Option[RecordFormatter]
 
