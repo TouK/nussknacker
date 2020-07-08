@@ -84,8 +84,6 @@ class SpelExpression(parsed: ParsedSpelExpression,
         classOf[Any]
     }
 
-  logger.info(s"Created spel epxression: ${parsed.original} with type: $expectedReturnType and epxected class: $expectedClass, hash code: ${this.hashCode()}")
-
   // TODO: better interoperability with scala type, mainly: scala.math.BigDecimal, scala.math.BigInt and collections
   override def evaluate[T](ctx: Context, globals: Map[String, Any],
                            lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T] = logOnException(ctx) {
@@ -96,7 +94,6 @@ class SpelExpression(parsed: ParsedSpelExpression,
     val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(ctx, globals, lazyValuesProvider)
 
     //TODO: async evaluation of lazy vals...
-    logger.info(s"Evaluating spel epxression: ${parsed.original} with type: $expectedReturnType and epxected class: $expectedClass, hash code: ${this.hashCode()}")
     val value = parsed.getValue[T](evaluationContext, expectedClass)
     val modifiedLazyContext = evaluationContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
     ValueWithLazyContext(value, modifiedLazyContext)
