@@ -164,6 +164,7 @@
     "lint-staged": "^10.0.8",
     "node-libs-browser": "^0.7.0",
     "postcss-loader": "^3.0.0",
+    "postcss-move-props-to-bg-image-query": "^4.0.0",
     "puppeteer": "^2.0.0",
     "raw-loader": "^0.5.1",
     "react-scrollbars-custom": "^4.0.21",
