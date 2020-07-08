@@ -13,14 +13,14 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName,
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSchemaProvider}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
-abstract class BaseKafkaAvroSinkFactory(processObjectDependencies: ProcessObjectDependencies) extends SinkFactory {
+abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
 
   override def requiresOutput: Boolean = false
 
   // We currently not using nodeId but it is here in case if someone want to use in their own concrete implementation
-  protected def createSink(topic: String,
+  protected def createSink(preparedTopic: PreparedKafkaTopic,
                            output: LazyParameter[Any],
                            kafkaConfig: KafkaConfig,
                            kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[_],
@@ -32,9 +32,8 @@ abstract class BaseKafkaAvroSinkFactory(processObjectDependencies: ProcessObject
       throw new CustomNodeValidationException(error.message, error.paramName, null)
     }
 
-    val preparedTopic = KafkaUtils.prepareTopicName(topic, processObjectDependencies)
-    val clientId = s"${processMetaData.id}-$preparedTopic"
-    new KafkaAvroSink(topic, output, kafkaConfig, kafkaAvroSchemaProvider, clientId)
+    val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
+    new KafkaAvroSink(preparedTopic, output, kafkaConfig, kafkaAvroSchemaProvider, clientId)
   }
 
   /**

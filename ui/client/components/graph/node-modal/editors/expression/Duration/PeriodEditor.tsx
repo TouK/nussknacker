@@ -21,7 +21,7 @@ type Props = {
   showValidation?: boolean,
   readOnly: boolean,
   isMarked: boolean,
-  components: Array<TimeRangeComponentType>,
+  editorConfig: $TodoType,
   formatter: Formatter,
 }
 
@@ -34,7 +34,7 @@ const NONE_PERIOD = {
 
 export default function PeriodEditor(props: Props) {
 
-  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components, formatter} = props
+  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter} = props
 
   const periodFormatter = formatter == null ? typeFormatters[FormatterType.Period] : formatter
 
@@ -61,7 +61,7 @@ export default function PeriodEditor(props: Props) {
       encode={encode}
       decode={decode}
       onValueChange={onValueChange}
-      components={components}
+      editorConfig={editorConfig}
       readOnly={readOnly}
       showValidation={showValidation}
       validators={validators}

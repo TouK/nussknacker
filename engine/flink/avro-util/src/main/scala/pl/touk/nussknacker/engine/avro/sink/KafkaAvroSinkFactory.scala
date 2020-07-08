@@ -12,9 +12,8 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[Any],
-                           val processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaAvroSinkFactory(processObjectDependencies) with KafkaAvroBaseTransformer[FlinkSink, Any]{
+class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[Any], val processObjectDependencies: ProcessObjectDependencies)
+  extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink, Any]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
@@ -23,7 +22,8 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
       NextParameters(initial.value, initial.written)
     case TransformationStep((KafkaAvroFactory.SinkOutputParamName, _) ::
       (KafkaAvroFactory.TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
-        val version = versionParam(topic)
+        val preparedTopic = prepareTopic(topic)
+        val version = versionParam(preparedTopic)
         NextParameters(List(version.value), version.written, None)
     case TransformationStep((KafkaAvroFactory.SinkOutputParamName, _) ::
       (KafkaAvroFactory.TopicParamName, _) :: Nil, _) => fallbackVersionParam
@@ -31,7 +31,8 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
       (KafkaAvroFactory.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (KafkaAvroFactory.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
         //we cast here, since null will not be matched in case...
-        val provider = createSchemaRegistryProvider(topic, version.asInstanceOf[java.lang.Integer])
+        val preparedTopic = prepareTopic(topic)
+        val provider = createSchemaRegistryProvider(preparedTopic, version.asInstanceOf[java.lang.Integer])
         val validationResult = validateOutput(output.returnType, provider).swap.toList
         FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
@@ -49,7 +50,9 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSink = {
     val output = params(KafkaAvroFactory.SinkOutputParamName).asInstanceOf[LazyParameter[Any]]
-    createSink(topic(params), output, kafkaConfig, createSchemaRegistryProvider(params),
+    val preparedTopic = extractPreparedTopic(params)
+
+    createSink(preparedTopic, output, kafkaConfig, createSchemaRegistryProvider(params),
       typedDependency[MetaData](dependencies),
       typedDependency[NodeId](dependencies))
   }

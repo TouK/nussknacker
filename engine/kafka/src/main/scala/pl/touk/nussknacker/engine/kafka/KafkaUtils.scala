@@ -26,24 +26,26 @@ object KafkaUtils extends LazyLogging {
 
   val defaultTimeoutMillis = 10000
 
-  private val kafkaTopicUsageKey = new NamingContext(KafkaUsageKey)
+  final val KafkaTopicUsageKey = new NamingContext(KafkaUsageKey)
 
   def setClientId(props: Properties, id: String): Unit = {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def prepareTopicName(topic :String, processObjectDependencies: ProcessObjectDependencies): String =
-    processObjectDependencies
+  def prepareKafkaTopic(topic :String, processObjectDependencies: ProcessObjectDependencies): PreparedKafkaTopic =
+    PreparedKafkaTopic(
+      topic,
+      processObjectDependencies
       .objectNaming
-      .prepareName(topic, processObjectDependencies.config, kafkaTopicUsageKey)
+      .prepareName(topic, processObjectDependencies.config, KafkaTopicUsageKey)
+    )
 
   def sanitizeClientId(originalId: String): String =
     //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
   def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: String, consumerGroupId: String): Unit = {
-    val setToLatestOffset =
-      config.kafkaEspProperties.flatMap(_.get("forceLatestRead")).exists(java.lang.Boolean.parseBoolean)
+    val setToLatestOffset = config.forceLatestRead.contains(true)
     if (setToLatestOffset) {
       KafkaUtils.setOffsetToLatest(topic, consumerGroupId, config)
     }
@@ -185,3 +187,5 @@ object KafkaUtils extends LazyLogging {
       }
     }
 }
+
+case class PreparedKafkaTopic(original: String, prepared: String)

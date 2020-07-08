@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.kafka
 
 import java.util.Properties
-import java.util.concurrent.TimeUnit
 
-import kafka.admin.AdminUtils
-import kafka.utils.ZkUtils
 import kafka.zk.{AdminZkClient, KafkaZkClient}
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.utils.Time
 
 import scala.concurrent.{Future, Promise}
@@ -33,10 +30,10 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
     adminClient.deleteTopic(name)
   }
 
-  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None): Future[RecordMetadata] = {
+  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
-    val record = partition.map(new ProducerRecord[Array[Byte], Array[Byte]](topic, _, key, content))
-      .getOrElse(new ProducerRecord[Array[Byte], Array[Byte]](topic, key, content))
+    val record = partition.map(new ProducerRecord[Array[Byte], Array[Byte]](topic, _, timestamp, key, content))
+      .getOrElse(new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestamp, key, content))
     rawProducer.send(record, producerCallback(promise))
     promise.future
   }
@@ -72,22 +69,27 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
     }
   }
 
-  def flush() = {
+  def flush(): Unit = {
     producer.flush()
   }
 
-  def shutdown() = {
-    consumers.foreach(_.close())
+  def shutdown(): Unit = {
+    closeConsumers()
     producer.close()
     rawProducer.close()
     zkClient.close()
   }
 
-  def createConsumer(consumerTimeout: Long = 10000): KafkaConsumer[Array[Byte], Array[Byte]] = {
-    val props = KafkaZookeeperUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout)
+  def createConsumer(consumerTimeout: Long = 10000, groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
+    val props = KafkaZookeeperUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer
+  }
+
+  def closeConsumers(): Unit = synchronized {
+    consumers.foreach(_.close())
+    consumers.clear()
   }
 
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.schema
 
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericRecord
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.specific.SpecificRecordBase
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
@@ -14,7 +14,8 @@ trait TestSchema {
 
 trait TestSchemaWithRecord extends TestSchema {
   final protected val avroEncoder = BestEffortAvroEncoder()
-  lazy val record: GenericRecord = avroEncoder.encodeRecordOrError(exampleData, schema)
+  def encode(data: Map[String, Any]): GenericData.Record = avroEncoder.encodeRecordOrError(data, schema)
+  lazy val record: GenericRecord = encode(exampleData)
   def exampleData: Map[String, Any]
 }
 

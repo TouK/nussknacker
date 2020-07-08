@@ -26,6 +26,10 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with
   import KafkaZookeeperUtils._
   import spel.Implicits._
 
+  override lazy val config = ConfigFactory.load()
+    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+    .withValue("namespace", fromAnyRef(namespaceName))
+
   private val namespaceName: String = "ns"
   private val inputTopic: String = "input"
   private val outputTopic: String = "output"
@@ -61,11 +65,10 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val config = ConfigFactory.load()
-      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
-      .withValue("namespace", fromAnyRef(namespaceName))
-    val modelData = LocalModelData(config, configCreator, objectNaming = new TestObjectNaming)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    stoppableEnv.start()
+    registrar = FlinkStreamingProcessRegistrar(
+      new FlinkProcessCompiler(LocalModelData(config, configCreator, objectNaming = new TestObjectNaming)), config
+    )
   }
 
   override protected def afterAll(): Unit = {
@@ -86,6 +89,8 @@ case class TestObjectNaming() extends ObjectNaming {
   }
 
   override def objectNamingParameters(originalName: String, config: Config, namingContext: NamingContext): Option[ObjectNamingParameters] = None
+
+  override def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String] = Some(preparedName)
 }
 
 class TestProcessConfig extends DevProcessConfigCreator {

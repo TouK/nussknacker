@@ -5,7 +5,7 @@ import "./timeRange.styl"
 import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash"
 import i18next from "i18next"
-import {TimeRangeComponentType} from "./TimeRangeComponent"
+import {TimeRange, TimeRangeComponentType} from "./TimeRangeComponent"
 import {Formatter, FormatterType, typeFormatters} from "../Formatter"
 import moment from "moment"
 
@@ -22,7 +22,7 @@ type Props = {
   showValidation?: boolean,
   readOnly: boolean,
   isMarked: boolean,
-  components: Array<TimeRangeComponentType>,
+  editorConfig: $TodoType,
   formatter: Formatter,
 }
 
@@ -35,7 +35,7 @@ const NONE_DURATION = {
 
 export default function DurationEditor(props: Props) {
 
-  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, components, formatter} = props
+  const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter} = props
 
   const durationFormatter = formatter == null ? typeFormatters[FormatterType.Duration] : formatter
 
@@ -62,7 +62,7 @@ export default function DurationEditor(props: Props) {
       encode={encode}
       decode={decode}
       onValueChange={onValueChange}
-      components={components}
+      editorConfig={editorConfig}
       readOnly={readOnly}
       showValidation={showValidation}
       validators={validators}
