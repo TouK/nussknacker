@@ -35,7 +35,7 @@ object sources {
       val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
       val deserializationSchema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
       val preparedTopics = List(KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies))
-      new KafkaSource(preparedTopics, kafkaConfig, deserializationSchema, None, None, TestParsingUtils.newLineSplit, processObjectDependencies) with ReturningType {
+      new KafkaSource(preparedTopics, kafkaConfig, deserializationSchema, None, None, TestParsingUtils.newLineSplit) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }
     }

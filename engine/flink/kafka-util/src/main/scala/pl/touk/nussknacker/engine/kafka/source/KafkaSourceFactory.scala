@@ -99,6 +99,6 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](deserializationSchemaF
   protected def createSource(topics: List[String], kafkaConfig: KafkaConfig): KafkaSource[T] = {
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val serializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
-    new KafkaSource(preparedTopics, kafkaConfig, serializationSchema, timestampAssigner, None, testPrepareInfo, processObjectDependencies)
+    new KafkaSource(preparedTopics, kafkaConfig, serializationSchema, timestampAssigner, None, testPrepareInfo)
   }
 }

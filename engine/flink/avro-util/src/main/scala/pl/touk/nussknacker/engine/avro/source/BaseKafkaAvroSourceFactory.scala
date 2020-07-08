@@ -38,8 +38,7 @@ abstract class BaseKafkaAvroSourceFactory[T: TypeInformation](processObjectDepen
       kafkaAvroSchemaProvider.deserializationSchema,
       assignerToUse(kafkaConfig),
       kafkaAvroSchemaProvider.recordFormatter,
-      TestParsingUtils.newLineSplit,
-      processObjectDependencies
+      TestParsingUtils.newLineSplit
     ) with ReturningType {
       override def returnType: typing.TypingResult = returnTypeDefinition
     }

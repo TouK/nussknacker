@@ -22,7 +22,6 @@ class KafkaSource[T: TypeInformation](preparedTopics: List[PreparedKafkaTopic],
                                       timestampAssigner: Option[TimestampAssigner[T]],
                                       recordFormatterOpt: Option[RecordFormatter],
                                       testPrepareInfo: TestDataSplit,
-                                      processObjectDependencies: ProcessObjectDependencies,
                                       overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource[T]
     with Serializable
@@ -71,7 +70,7 @@ class KafkaSource[T: TypeInformation](preparedTopics: List[PreparedKafkaTopic],
   override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
     override def parseTestData(merged: Array[Byte]): List[T] =
       testPrepareInfo.splitData(merged).map { formatted =>
-        val topic = preparedTopics.head.prepared
+        val topic = topics.head
         val record = recordFormatterOpt
           .map(formatter => formatter.parseRecord(formatted))
           .getOrElse(new ProducerRecord(topic, formatted))
