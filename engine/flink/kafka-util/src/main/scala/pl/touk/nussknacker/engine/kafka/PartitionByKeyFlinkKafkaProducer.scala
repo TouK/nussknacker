@@ -15,6 +15,8 @@ object PartitionByKeyFlinkKafkaProducer {
     val props = new Properties()
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("client.id", clientId)
+    //we set default to 10min, as FlinkKafkaProducer logs warn if not set
+    props.setProperty("transaction.timeout.ms", "600000")
     withPropertiesFromConfig(props, config)
     new FlinkKafkaProducer[T](topic, serializationSchema, props, semantic)
   }
