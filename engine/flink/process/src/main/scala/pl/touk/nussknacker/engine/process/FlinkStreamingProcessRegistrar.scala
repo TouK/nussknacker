@@ -70,8 +70,8 @@ class FlinkStreamingProcessRegistrar(compileProcess: (EspProcess, ProcessVersion
   override protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.getJavaEnv.isInstanceOf[RemoteStreamEnvironment]
 
   def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
-    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(process, processVersion)
     usingRightClassloader(env) {
+      executionConfigPreparer.prepareExecutionConfig(env.getConfig)(process, processVersion)
       register(env, compileProcess(process, processVersion), testRunId)
     }
     initializeStateDescriptors(env)

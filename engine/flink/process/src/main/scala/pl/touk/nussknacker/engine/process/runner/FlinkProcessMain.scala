@@ -27,7 +27,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val buildInfo = if (args.length > 3) Some(args(3)) else None
       val modelData = ModelData(config, List())
       val env = getExecutionEnvironment
-      runProcess(env, modelData, process, processVersion, ExecutionConfigPreparer.defautChain(modelData, buildInfo))
+      runProcess(env, modelData, process, processVersion, ExecutionConfigPreparer.defaultChain(modelData, buildInfo))
     } catch {
       // marker exception for graph optimalization
       case ex: ProgramAbortException =>

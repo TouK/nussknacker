@@ -37,7 +37,7 @@ case class FlinkTestMain(modelData: ModelData, process: EspProcess, testData: Te
         env.getConfig,
         modelData.objectNaming),
         modelData.processConfig,
-        ExecutionConfigPreparer.defautChain(modelData, None))
+        ExecutionConfigPreparer.defaultChain(modelData, None))
       registrar.register(env, process, processVersion, Option(collectingListener.runId))
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results

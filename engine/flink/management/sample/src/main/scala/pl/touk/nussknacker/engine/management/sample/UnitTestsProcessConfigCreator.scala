@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreato
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.util.Random
 
 /**
@@ -136,7 +137,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   }
 
-  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T] {
+  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T]()(ClassTag[T](implicitly[TypeInformation[T]].getTypeClass)) {
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {

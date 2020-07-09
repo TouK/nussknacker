@@ -135,11 +135,11 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
         encode(v, schema.getValueType).map(k -> _)
       case (k, v) =>
         error(s"Not expected type: ${k.getClass.getName} as a key of map for schema: $schema")
-    }.toList.sequence.map(_.toMap.asJava)
+    }.toList.sequence.map(m => new util.HashMap(m.toMap.asJava))
   }
 
   private def encodeCollection(collection: Traversable[_], schema: Schema): WithError[Any] = {
-    collection.map(el => encode(el, schema.getElementType)).toList.sequence.map(_.toBuffer.asJava)
+    collection.map(el => encode(el, schema.getElementType)).toList.sequence.map(l => new util.ArrayList(l.asJava))
   }
 
   private def encodeFixed(bytes: Array[Byte], schema: Schema): WithError[GenericData.Fixed] = {

@@ -47,7 +47,7 @@ class KafkaSource[T: TypeInformation](preparedTopics: List[PreparedKafkaTopic],
     }.getOrElse(newStart)
   }
 
-  protected val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
+  override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
   protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {
     topics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))

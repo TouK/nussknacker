@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.ModelConfigToLoad
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
@@ -30,13 +30,12 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfi
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     val originalSourceFactory = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]
-    implicit val typeInfo: TypeInformation[Object] = originalSourceFactory.typeInformation
     overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, returnType) => {
       val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional).asInstanceOf[FlinkSource[Object]]
       originalSource match {
         case testDataParserProvider: TestDataParserProvider[Object@unchecked] =>
           val testObjects = testDataParserProvider.testDataParser.parseTestData(testData.testData)
-          CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssignerForTest, returnType())
+          CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssignerForTest, returnType())(originalSource.typeInformation)
         case _ =>
           throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it does'n provide test data parser")
       }

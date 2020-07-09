@@ -26,7 +26,7 @@ object ExecutionConfigPreparer extends LazyLogging {
   /**
    * This is the default chain po ExecutionConfigPreparers that should be used in production code
    */
-  def defautChain(modelData: ModelData, buildInfo: Option[String]): ExecutionConfigPreparer =
+  def defaultChain(modelData: ModelData, buildInfo: Option[String]): ExecutionConfigPreparer =
     chain(ProcessSettingsPreparer(modelData, buildInfo), SerializationPreparer.fromConfig(modelData.processConfig))
 
   /**
