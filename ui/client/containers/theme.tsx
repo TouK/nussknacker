@@ -4,6 +4,8 @@ import vars from "../stylesheets/_variables.styl"
 
 const {
   borderRadius,
+  formControllHeight,
+  fontSize,
 
   primary,
   primary75,
@@ -13,8 +15,8 @@ const {
 
 export const defaultAppTheme = {
   borderRadius: parseFloat(borderRadius),
-  inputHeight: 45,
-  fontSize: 14,
+  inputHeight: parseFloat(formControllHeight),
+  fontSize: parseFloat(fontSize),
 
   colors: {
     primary,
@@ -40,5 +42,5 @@ const newTheme = {
   evenBackground: d3,
 
   selectedValue: d2,
-  accent: "hsl(90,30%,40%)",
+  accent: "#668547",
 }
