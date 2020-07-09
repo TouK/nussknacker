@@ -1,3 +1,4 @@
+import {isFunction} from "lodash"
 import React from "react"
 import {CSSTransition, SwitchTransition} from "react-transition-group"
 import {withTranslation} from "react-i18next"
@@ -22,10 +23,10 @@ type OwnProps = {
   processState?: ProcessStateType,
   isStateLoaded: boolean,
   process: ProcessType,
-  animation: boolean,
-  height: number,
-  width: number,
-  popover: boolean,
+  animation?: boolean,
+  height?: number,
+  width?: number,
+  popover?: boolean,
 }
 
 type Props = OwnProps & WithTranslation
@@ -43,7 +44,7 @@ class ProcessStateIcon extends React.Component<Props, State> {
   // eslint-disable-next-line i18next/no-literal-string
   static popoverConfigs = {placement: "bottom", triggers: ["click"]}
 
-  static unknownIcon =  "/assets/states/status-unknown.svg"
+  static unknownIcon = "/assets/states/status-unknown.svg"
 
   private animationTimeout = {
     enter: 500,
@@ -51,7 +52,9 @@ class ProcessStateIcon extends React.Component<Props, State> {
     exit: 500,
   }
 
-  animationListener = (node, done) => node.addEventListener("transitionend", done, false)
+  animationListener = (nodeOrDone: HTMLElement | (() => void), done?: () => void) => !isFunction(nodeOrDone) ?
+    nodeOrDone.addEventListener("transitionend", done, false) :
+    nodeOrDone()
 
   getTooltip = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string => {
     if (isStateLoaded === false) {

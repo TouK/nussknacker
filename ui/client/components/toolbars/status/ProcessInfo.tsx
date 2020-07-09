@@ -16,6 +16,7 @@ import SaveButton from "../process/buttons/SaveButton"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
+import {isFunction} from "lodash"
 
 type State = {}
 
@@ -41,7 +42,9 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     exit: 500,
   }
 
-  private animationListener = (node, done) => node.addEventListener("transitionend", done, false)
+  private animationListener = (node: HTMLElement | (() => void), done?: () => void) => !isFunction(node) ?
+    node.addEventListener("transitionend", done, false) :
+    node()
 
   private getDescription = (
     process: ProcessType,
