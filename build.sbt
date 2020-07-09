@@ -77,6 +77,9 @@ lazy val publishSettings = Seq(
   ).toSeq
 )
 
+/**
+  * TODO: figure how how to handle JDK modules
+  */
 def nussknackerMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.first //after confluent bump up to 5.5
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
