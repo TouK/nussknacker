@@ -26,7 +26,7 @@ import "../assets/fonts/fonts.less"
 import "../stylesheets/main.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
-import AdditionalNac from "./AdditionalNac"
+import DynamicTabs from "./DynamicTabs"
 
 export class EspApp extends React.Component {
 
@@ -107,7 +107,7 @@ export class EspApp extends React.Component {
                           <Route path={Search.path} component={Search} exact/>
                           <Route path={Signals.path} component={Signals} exact/>
                           <Route path={AdminPage.path} component={AdminPage} exact/>
-                          <Route path={`${AdditionalNac.path}/:id`} component={AdditionalNac} exact/>
+                          <Route path={`${DynamicTabs.path}/:id`} component={DynamicTabs} exact/>
                           <Redirect from={EspApp.path} to={Processes.path} exact/>
                           <Route component={NotFound}/>
                         </Switch>

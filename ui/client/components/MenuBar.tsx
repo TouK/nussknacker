@@ -11,7 +11,7 @@ import {Search} from "../containers/Search"
 import {Signals} from "../containers/Signals"
 import {SubProcesses} from "../containers/SubProcesses"
 import {Flex} from "./common/Flex"
-import {AdditionalNac} from "../containers/AdditionalNac"
+import {DynamicTabs} from "../containers/DynamicTabs"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -28,8 +28,8 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
-function mapAdditionalItems(title: string, index: number) {
-  return {show: true, path: `${AdditionalNac.path}/${index}`, title: title}
+function mapDynamicItems(title: string, index: number) {
+  return {show: true, path: `${DynamicTabs.path}/${index}`, title: title}
 }
 
 function createMenuItem(show: boolean, path: string, title: string) {
@@ -56,7 +56,7 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
   const showSearch = !_.isEmpty(featuresSettings.search)
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
-  const additionalNac = [...featuresSettings.additionalNac]
+  const dynamicTabs = [...featuresSettings.dynamicTabs]
 
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()
@@ -72,11 +72,11 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
       {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
     ]
 
-    const additionalMenuItems = additionalNac
-      .map((element, index) => mapAdditionalItems(element.label, index))
+    const dynamicMenuItems = dynamicTabs
+      .map((element, index) => mapDynamicItems(element.label, index))
 
     const menuItems = defaultMenuItems
-      .concat(additionalMenuItems)
+      .concat(dynamicMenuItems)
       .map(o => createMenuItem(o.show, o.path, o.title))
 
     return (

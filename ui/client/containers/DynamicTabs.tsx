@@ -2,7 +2,7 @@ import PropTypes, {Validator} from "prop-types"
 import React from "react"
 import {connect} from "react-redux"
 
-export class AdditionalNac extends React.Component {
+export class DynamicTabs extends React.Component {
 
   static path: string
   static header: string
@@ -38,18 +38,18 @@ export class AdditionalNac extends React.Component {
   }
 }
 
-AdditionalNac.propTypes = {
+DynamicTabs.propTypes = {
   settings: PropTypes.array.isRequired,
   match: PropTypes.object.isRequired,
 }
 
-AdditionalNac.path = "/additionalnac"
-AdditionalNac.header = "additionalnac"
+DynamicTabs.path = "/dynamictabs"
+DynamicTabs.header = "dynamictabs"
 
 function mapState(state) {
   return {
-    settings: state.settings.featuresSettings.additionalNac || [],
+    settings: state.settings.featuresSettings.dynamicTabs || [],
   }
 }
 
-export default connect(mapState)(AdditionalNac)
+export default connect(mapState)(DynamicTabs)
