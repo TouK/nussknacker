@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.genericmodel
 
-import org.apache.avro.generic.GenericRecord
+import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
@@ -30,7 +30,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaRegistryProvider = createSchemaProvider[GenericRecord](processObjectDependencies)
+    val schemaRegistryProvider = createSchemaProvider[GenericData.Record](processObjectDependencies)
     val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 
     Map(

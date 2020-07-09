@@ -69,21 +69,21 @@ object SampleNodes {
 
   }
 
-  class JoinExprBranchFunction(valueByBranchId: Map[String, LazyParameter[_]],
+  class JoinExprBranchFunction(valueByBranchId: Map[String, LazyParameter[AnyRef]],
                                val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-    extends RichCoMapFunction[Context, Context, ValueWithContext[Any]] with LazyParameterInterpreterFunction {
+    extends RichCoMapFunction[Context, Context, ValueWithContext[AnyRef]] with LazyParameterInterpreterFunction {
 
-    @transient lazy val end1Interpreter: Context => Any =
+    @transient lazy val end1Interpreter: Context => AnyRef =
       lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId("end1"))
 
-    @transient lazy val end2Interpreter: Context => Any =
+    @transient lazy val end2Interpreter: Context => AnyRef =
       lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId("end2"))
 
-    override def map1(ctx: Context): ValueWithContext[Any] = {
+    override def map1(ctx: Context): ValueWithContext[AnyRef] = {
       ValueWithContext(end1Interpreter(ctx), ctx)
     }
 
-    override def map2(ctx: Context): ValueWithContext[Any] = {
+    override def map2(ctx: Context): ValueWithContext[AnyRef] = {
       ValueWithContext(end2Interpreter(ctx), ctx)
     }
 
@@ -135,7 +135,7 @@ object SampleNodes {
         start
           .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
           .keyBy(_.value)
-          .mapWithState[ValueWithContext[Any], Long] {
+          .mapWithState[ValueWithContext[AnyRef], Long] {
             case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
               (ValueWithContext(
                 SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
@@ -161,7 +161,7 @@ object SampleNodes {
         .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
-        .map(ValueWithContext[Any](null, _))
+        .map(ValueWithContext[AnyRef](null, _))
     })
   }
 
@@ -177,7 +177,7 @@ object SampleNodes {
               .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
-              .map(ValueWithContext[Any](null, _))
+              .map(ValueWithContext[AnyRef](null, _))
           })
   }
 
@@ -191,7 +191,7 @@ object SampleNodes {
         start
           .map(context.lazyParameterHelper.lazyMapFunction(value))
           .keyBy(_.value)
-          .map(_ => ValueWithContext[Any](null, Context("new")))
+          .map(_ => ValueWithContext[AnyRef](null, Context("new")))
       })
 
   }
@@ -203,8 +203,8 @@ object SampleNodes {
     @MethodToInvoke
     def execute(): FlinkCustomJoinTransformation =
       new FlinkCustomJoinTransformation {
-        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
-          val inputFromIr = (ir: Context) => ValueWithContext(ir.variables("input"), ir)
+        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
+          val inputFromIr = (ir: Context) => ValueWithContext(ir.variables("input").asInstanceOf[AnyRef], ir)
           inputs("end1")
             .connect(inputs("end2"))
             .map(inputFromIr, inputFromIr)
@@ -216,7 +216,7 @@ object SampleNodes {
   object CustomJoinUsingBranchExpressions extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@BranchParamName("value") valueByBranchId: Map[String, LazyParameter[_]],
+    def execute(@BranchParamName("value") valueByBranchId: Map[String, LazyParameter[AnyRef]],
                 @OutputVariableName variableName: String): JoinContextTransformation =
       ContextTransformation
         .join.definedBy { contexts =>
@@ -226,7 +226,7 @@ object SampleNodes {
       }.implementedBy(
         new FlinkCustomJoinTransformation {
           override def transform(inputs: Map[String, DataStream[Context]],
-                                 flinkContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
+                                 flinkContext: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             inputs("end1")
               .connect(inputs("end2"))
               .map(new JoinExprBranchFunction(valueByBranchId, flinkContext.lazyParameterHelper))
@@ -294,7 +294,7 @@ object SampleNodes {
         context.signalSenderProvider.get[TestProcessSignalFactory]
           .connectWithSignals(start, context.metaData.id, context.nodeId, new EspDeserializationSchema(identity))
           .map((a:Context) => ValueWithContext("", a),
-                (_:Array[Byte]) => ValueWithContext[Any]("", Context("id")))
+                (_:Array[Byte]) => ValueWithContext[AnyRef]("", Context("id")))
     })
   }
 
@@ -303,13 +303,13 @@ object SampleNodes {
     override def clearsContext = true
 
     @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
-    @MethodToInvoke(returnType = classOf[Int])
+    @MethodToInvoke(returnType = classOf[java.lang.Integer])
     def execute(@ParamName("seconds") seconds: Int) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         start
           .map(_ => 1)
           .timeWindowAll(Time.seconds(seconds)).reduce(_ + _)
-          .map(ValueWithContext[Any](_, Context(UUID.randomUUID().toString)))
+          .map(i => ValueWithContext[AnyRef](i.underlying(), Context(UUID.randomUUID().toString)))
       })
   }
 
@@ -319,7 +319,7 @@ object SampleNodes {
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         start
-          .map(context.lazyParameterHelper.lazyMapFunction[Any](param))
+          .map(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
       })
 
   }
@@ -331,7 +331,7 @@ object SampleNodes {
     @MethodToInvoke
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-        val afterMap = start.map(context.lazyParameterHelper.lazyMapFunction[Any](param))
+        val afterMap = start.map(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
         afterMap.addSink(element => MockService.add(element.value))
         afterMap
       })
@@ -353,7 +353,7 @@ object SampleNodes {
     override def requiresOutput: Boolean = false
 
     @MethodToInvoke
-    def createSink(@ParamName("intParam") value: LazyParameter[Int]): Sink = new FlinkSink {
+    def createSink(@ParamName("intParam") value: LazyParameter[java.lang.Integer]): Sink = new FlinkSink {
 
       override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
         dataStream
@@ -466,16 +466,16 @@ object SampleNodes {
     }
 
     override def initialParameters: List[Parameter] = List(
-      Parameter[String]("par1"), Parameter[Boolean]("lazyPar1").copy(isLazyParameter = true)
+      Parameter[String]("par1"), Parameter[java.lang.Boolean]("lazyPar1").copy(isLazyParameter = true)
     )
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
       val map = params.filterNot(k => List("par1", "lazyPar1").contains(k._1))
-      val bool = params("lazyPar1").asInstanceOf[LazyParameter[Boolean]]
+      val bool = params("lazyPar1").asInstanceOf[LazyParameter[java.lang.Boolean]]
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
-          .map(ctx => ValueWithContext[Any](TypedMap(map), ctx))
+          .map(ctx => ValueWithContext[AnyRef](TypedMap(map), ctx))
       })
     }
 

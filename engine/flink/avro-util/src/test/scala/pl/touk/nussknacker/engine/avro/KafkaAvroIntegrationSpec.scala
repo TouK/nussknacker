@@ -13,10 +13,9 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
@@ -42,7 +41,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     stoppableEnv.start()
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+    val modelData = LocalModelData(config, creator)
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
   override protected def afterAll(): Unit = {

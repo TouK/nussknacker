@@ -49,7 +49,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkCustomStreamTransformation= {
     val value = params(valueParameterName).asInstanceOf[LazyParameter[AnyRef]]
-    val condition = params(conditionParameterName).asInstanceOf[LazyParameter[Boolean]]
+    val condition = params(conditionParameterName).asInstanceOf[LazyParameter[java.lang.Boolean]]
     val keyBy = params(keyByParameterName).asInstanceOf[LazyParameter[String]]
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
@@ -60,13 +60,13 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
     })
   }
 
-  class ConditionalUpdateFunction(override val parameter: LazyParameter[Boolean], override val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-    extends KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[Any]] with OneParamLazyParameterFunction[Boolean] {
+  class ConditionalUpdateFunction(override val parameter: LazyParameter[java.lang.Boolean], override val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+    extends KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[AnyRef]] with OneParamLazyParameterFunction[java.lang.Boolean] {
 
-    private lazy val state = getRuntimeContext.getState(new ValueStateDescriptor[Any]("state", classOf[Any]))
+    private lazy val state = getRuntimeContext.getState(new ValueStateDescriptor[AnyRef]("state", classOf[AnyRef]))
 
     override def processElement(valueWithCtx: ValueWithContext[(String, AnyRef)], ctx: KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)],
-      ValueWithContext[Any]]#Context, out: Collector[ValueWithContext[Any]]): Unit = {
+      ValueWithContext[AnyRef]]#Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
       val previous = state.value()
       val current = valueWithCtx.value
       val ctx = valueWithCtx.context.withVariable("current", current).withVariable("previous", previous)

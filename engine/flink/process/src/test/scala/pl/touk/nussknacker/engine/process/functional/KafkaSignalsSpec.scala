@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
@@ -48,7 +48,7 @@ class KafkaSignalsSpec extends FunSuite with Matchers with BeforeAndAfterAll wit
     ), config)
 
     val modelData = LocalModelData(config, creator)
-    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), modelData.processConfig)
+    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), modelData.processConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
     env.withJobRunning(process.id) {

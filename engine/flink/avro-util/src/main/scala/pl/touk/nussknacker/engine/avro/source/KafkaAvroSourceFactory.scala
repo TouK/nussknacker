@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.avro.source
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -15,9 +14,11 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName,
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 
-class KafkaAvroSourceFactory[T:TypeInformation](val schemaRegistryProvider: SchemaRegistryProvider[T],
-                                                val processObjectDependencies: ProcessObjectDependencies,
-                                                timestampAssigner: Option[TimestampAssigner[T]])
+import scala.reflect.ClassTag
+
+class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider[T],
+                                          val processObjectDependencies: ProcessObjectDependencies,
+                                          timestampAssigner: Option[TimestampAssigner[T]])
   extends BaseKafkaAvroSourceFactory(processObjectDependencies, timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T], T]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])

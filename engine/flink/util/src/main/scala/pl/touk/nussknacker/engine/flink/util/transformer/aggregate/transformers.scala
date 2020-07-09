@@ -73,7 +73,7 @@ object transformers {
             .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
             .aggregate(aggregator
               // this casting seems to be needed for Flink to infer TypeInformation correctly....
-              .asInstanceOf[org.apache.flink.api.common.functions.AggregateFunction[ValueWithContext[(String, AnyRef)], AnyRef, ValueWithContext[Any]]]))
+              .asInstanceOf[org.apache.flink.api.common.functions.AggregateFunction[ValueWithContext[(String, AnyRef)], AnyRef, ValueWithContext[AnyRef]]]))
 
         }))
 
@@ -97,14 +97,14 @@ class KeyWithValueMapper(val lazyParameterHelper: FlinkLazyParameterFunctionHelp
 //do reduce on each emit and store partial aggregations for each minute, instead of storing aggregates for each slide
 //TODO: figure out if it's more convenient/faster to just use SlidingWindow with 60s slide and appropriate trigger?
 class AggregatorFunction(aggregator: Aggregator, lengthInMillis: Long, nodeId: String)
-  extends LatelyEvictableStateFunction[ValueWithContext[(String, AnyRef)], ValueWithContext[Any], TreeMap[Long, AnyRef]] {
+  extends LatelyEvictableStateFunction[ValueWithContext[(String, AnyRef)], ValueWithContext[AnyRef], TreeMap[Long, AnyRef]] {
 
-  type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[Any]]#Context
+  type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[AnyRef]]#Context
 
   //TODO make it configurable
   private val minimalResolutionMs = 60000L
 
-  override def processElement(value: ValueWithContext[(String, AnyRef)], ctx: FlinkCtx, out: Collector[ValueWithContext[Any]]): Unit = {
+  override def processElement(value: ValueWithContext[(String, AnyRef)], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
 
     moveEvictionTime(lengthInMillis, ctx)
 
@@ -113,7 +113,7 @@ class AggregatorFunction(aggregator: Aggregator, lengthInMillis: Long, nodeId: S
 
     state.update(newState)
 
-    val finalVal: Any = computeFinalValue(newState)
+    val finalVal: AnyRef = computeFinalValue(newState)
     out.collect(ValueWithContext(finalVal, value.context))
   }
 

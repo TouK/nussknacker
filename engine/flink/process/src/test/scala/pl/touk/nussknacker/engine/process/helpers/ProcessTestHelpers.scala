@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.{FlinkStreamingProcessRegistrar, SimpleJavaEnum}
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar, SimpleJavaEnum}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 object ProcessTestHelpers {
@@ -39,7 +39,8 @@ object ProcessTestHelpers {
 
       val env = StoppableExecutionEnvironment(flinkConfiguration)
       try {
-        FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+        val modelData = LocalModelData(config, creator)
+        FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
           .register(new StreamExecutionEnvironment(env), process, processVersion)
 
         MockService.clear()
@@ -60,7 +61,8 @@ object ProcessTestHelpers {
                parallelism: Int, actionToInvokeWithJobRunning: => Unit): Unit = {
       val env = StoppableExecutionEnvironment(configuration)
       try {
-        FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+        val modelData = LocalModelData(config, creator)
+        FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
           .register(new StreamExecutionEnvironment(env), process, processVersion)
 
 

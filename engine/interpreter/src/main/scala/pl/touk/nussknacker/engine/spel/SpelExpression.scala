@@ -124,12 +124,12 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
 
   override final val languageId: String = flavour.languageId
 
-  override def parseWithoutContextValidation(original: String): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
+  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
     if (shouldUseNullExpression(original)) {
       Valid(NullExpression(original, flavour))
     } else {
       baseParse(original).map { parsed =>
-        expression(ParsedSpelExpression(original, () => baseParse(original), parsed), Unknown)
+        expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType)
       }
     }
   }

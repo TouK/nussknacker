@@ -12,7 +12,7 @@ trait SchemaRegistryProvider[T] extends Serializable {
 
   def deserializationSchemaFactory: KafkaVersionAwareDeserializationSchemaFactory[T]
 
-  def serializationSchemaFactory: KafkaVersionAwareSerializationSchemaFactory[Any]
+  def serializationSchemaFactory: KafkaVersionAwareSerializationSchemaFactory[AnyRef]
 
   def recordFormatter(topic: String): Option[RecordFormatter]
 }

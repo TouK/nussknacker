@@ -46,10 +46,10 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
   }
 
   private def initialParametersForNode(implicit nodeId: NodeId): WriterT[Id, List[ProcessCompilationError], List[Parameter]] =
-    topicParam.map(List(Parameter[Any](KafkaAvroFactory.SinkOutputParamName).copy(isLazyParameter = true), _))
+    topicParam.map(List(Parameter[AnyRef](KafkaAvroFactory.SinkOutputParamName).copy(isLazyParameter = true), _))
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSink = {
-    val output = params(KafkaAvroFactory.SinkOutputParamName).asInstanceOf[LazyParameter[Any]]
+    val output = params(KafkaAvroFactory.SinkOutputParamName).asInstanceOf[LazyParameter[AnyRef]]
     val preparedTopic = extractPreparedTopic(params)
 
     createSink(preparedTopic, output, kafkaConfig, createSchemaRegistryProvider(params),

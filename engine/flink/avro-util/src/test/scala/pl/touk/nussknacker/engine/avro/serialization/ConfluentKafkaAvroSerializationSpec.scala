@@ -28,7 +28,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     val schemas = List(PaymentV1.schema)
     val version = Some(1)
 
-    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[AnyRef], GenericRecord, GenericRecord, String](
       ("factory", "givenObj", "expectedObj", "topic"),
       (fromRecordFactory, PaymentV1.record, PaymentV1.record, "simple.from-record"),
       (fromSubjectVersionFactory, PaymentV1.record, PaymentV1.record, "simple.from-subject-version")
@@ -41,7 +41,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = Some(2)
 
-    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[AnyRef], GenericRecord, GenericRecord, String](
       ("factory", "givenObj", "expectedObj", "topic"),
       (fromRecordFactory, PaymentV1.record, PaymentV1.record, "forward.from-record"),
       (fromSubjectVersionFactory, PaymentV1.record, PaymentV2.record, "forward.from-subject-version")
@@ -54,7 +54,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = None
 
-    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[AnyRef], GenericRecord, GenericRecord, String](
       ("factory", "givenObj", "expectedObj", "topic"),
       (fromRecordFactory, PaymentV1.record, PaymentV1.record, "forward.latest.from-record"),
       (fromSubjectVersionFactory, PaymentV1.record, PaymentV2.record, "forward.latest.from-subject-version")
@@ -67,7 +67,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = Some(1)
 
-    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String](
+    val table = Table[KafkaVersionAwareValueSerializationSchemaFactory[AnyRef], GenericRecord, GenericRecord, String](
       ("factory", "givenObj", "expectedObj", "topic"),
       (fromRecordFactory, PaymentV2.record, PaymentV2.record, "backward.from-record"),
       (fromSubjectVersionFactory, PaymentV2.record, PaymentV1.record, "backward..from-subject-version")
@@ -110,8 +110,8 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     }
   }
 
-  private def runSerializationTest(table: TableFor4[KafkaVersionAwareValueSerializationSchemaFactory[Any], GenericRecord, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion =
-    forAll(table) { (factory: KafkaVersionAwareValueSerializationSchemaFactory[Any], givenObj: GenericRecord, expectedObj: GenericRecord, topic: String) =>
+  private def runSerializationTest(table: TableFor4[KafkaVersionAwareValueSerializationSchemaFactory[AnyRef], GenericRecord, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion =
+    forAll(table) { (factory: KafkaVersionAwareValueSerializationSchemaFactory[AnyRef], givenObj: GenericRecord, expectedObj: GenericRecord, topic: String) =>
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
       val serializer = factory.create(topicConfig.output, version, kafkaConfig)
 

@@ -16,7 +16,7 @@ class TransactionAmountAggregator extends CustomStreamTransformer {
       start
         .map(ctx.lazyParameterHelper.lazyMapFunction(clientId))
         .keyBy(_.value)
-        .mapWithState[ValueWithContext[Any], AggregatedAmount] {
+        .mapWithState[ValueWithContext[AnyRef], AggregatedAmount] {
         case (ValueWithContext(_, context), Some(aggregationSoFar)) =>
           val transaction = context.apply[Transaction]("input")
           val aggregationResult = aggregationSoFar.copy(amount = aggregationSoFar.amount + transaction.amount,

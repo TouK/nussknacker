@@ -14,6 +14,8 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaDeserializationSchemaFactory, KafkaDeserializationSchemaFactory}
 
+import scala.reflect.ClassTag
+
 /** <pre>
   * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer]]
   * Features:
@@ -89,7 +91,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](deserializationSchemaF
                                                           timestampAssigner: Option[TimestampAssigner[T]],
                                                           testPrepareInfo: TestDataSplit,
                                                           processObjectDependencies: ProcessObjectDependencies)
-  extends FlinkSourceFactory[T] with Serializable {
+  extends FlinkSourceFactory[T]()(ClassTag[T](implicitly[TypeInformation[T]].getTypeClass)) with Serializable {
 
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation

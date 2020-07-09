@@ -36,7 +36,7 @@ case object UnionTransformer extends UnionTransformer(None) {
  *                          for connected streams. In some cases, when you have some time-based aggregation after union,
  *                          you would like to redefine this logic.
  */
-class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedValue[ValueWithContext[Any]]]])
+class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedValue[ValueWithContext[AnyRef]]]])
   extends CustomStreamTransformer with LazyLogging {
 
   override def canHaveManyInputs: Boolean = true
@@ -60,7 +60,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedVa
 
   @MethodToInvoke
   def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[CharSequence]],
-              @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[Any]],
+              @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[AnyRef]],
               @OutputVariableName variableName: String)(implicit nodeId: NodeId): JoinContextTransformation =
     ContextTransformation
       .join.definedBy { contexts =>
@@ -73,7 +73,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedVa
       }
     }.implementedBy(
       new FlinkCustomJoinTransformation {
-        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
+        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
           val valuesWithContexts = inputs.map {
             case (branchId, stream) =>
               val keyParam = keyByBranchId(branchId)
@@ -83,7 +83,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedVa
           val connectedStream = valuesWithContexts.reduce(_.connect(_).map(identity, identity))
 
           timestampAssigner
-            .map(new TimestampAssignmentHelper[ValueWithContext[Any]](_).assignWatermarks(connectedStream))
+            .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_).assignWatermarks(connectedStream))
             .getOrElse(connectedStream)
         }
       }
@@ -92,14 +92,14 @@ class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedVa
 }
 
 class UnionMapFunction(valueField: String,
-                       keyParam: LazyParameter[CharSequence], valueParam: LazyParameter[Any],
+                       keyParam: LazyParameter[CharSequence], valueParam: LazyParameter[AnyRef],
                        lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-  extends AbstractLazyParameterInterpreterFunction(lazyParameterHelper) with MapFunction[Context, ValueWithContext[Any]] {
+  extends AbstractLazyParameterInterpreterFunction(lazyParameterHelper) with MapFunction[Context, ValueWithContext[AnyRef]] {
 
   private lazy val evaluateKey =  lazyParameterInterpreter.syncInterpretationFunction(keyParam)
   private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
 
-  override def map(context: Context): ValueWithContext[Any] = {
+  override def map(context: Context): ValueWithContext[AnyRef] = {
     import scala.collection.JavaConverters._
     ValueWithContext(Map(
       UnionTransformer.KeyField -> Option(evaluateKey(context)).map(_.toString).orNull,

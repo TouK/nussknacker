@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.api.process._
 
 case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
-  type Value = Any
+  type Value = AnyRef
 
   @MethodToInvoke(returnType = classOf[Value])
   def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
@@ -23,18 +23,18 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
         .map(new PreviousValueFunction(value, ctx.lazyParameterHelper))), value.returnType)
 
   class PreviousValueFunction(val parameter: LazyParameter[Value],
-                              val lazyParameterHelper: FlinkLazyParameterFunctionHelper) extends RichMapFunction[ValueWithContext[CharSequence], ValueWithContext[Any]]
-    with OneParamLazyParameterFunction[Any] {
+                              val lazyParameterHelper: FlinkLazyParameterFunctionHelper) extends RichMapFunction[ValueWithContext[CharSequence], ValueWithContext[AnyRef]]
+    with OneParamLazyParameterFunction[AnyRef] {
 
     private[this] var state: ValueState[Value] = _
 
     override def open(c: Configuration): Unit = {
       super.open(c)
-      val info = new ValueStateDescriptor[Value]("state", classOf[Any])
+      val info = new ValueStateDescriptor[Value]("state", classOf[AnyRef])
       state = getRuntimeContext.getState(info)
     }
 
-    override def map(valueWithContext: ValueWithContext[CharSequence]): ValueWithContext[Any] = {
+    override def map(valueWithContext: ValueWithContext[CharSequence]): ValueWithContext[AnyRef] = {
       val currentValue = evaluateParameter(valueWithContext.context)
       val toReturn = Option(state.value()).getOrElse(currentValue)
       state.update(currentValue)

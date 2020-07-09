@@ -4,5 +4,5 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, LazyParameter, M
 
 case object NoneReturnTypeTransformer extends CustomStreamTransformer {
   @MethodToInvoke(returnType = classOf[Void])
-  def execute(@ParamName("expression") expression: LazyParameter[Boolean]): Unit = {}
+  def execute(@ParamName("expression") expression: LazyParameter[java.lang.Boolean]): Unit = {}
 }

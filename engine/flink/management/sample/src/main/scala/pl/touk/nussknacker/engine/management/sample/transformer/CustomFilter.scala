@@ -8,10 +8,10 @@ import org.apache.flink.streaming.api.scala._
 case object CustomFilter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Void])
-  def execute(@ParamName("expression") expression: LazyParameter[Boolean]): FlinkCustomStreamTransformation
+  def execute(@ParamName("expression") expression: LazyParameter[java.lang.Boolean]): FlinkCustomStreamTransformation
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
     start
       .filter(ctx.lazyParameterHelper.lazyFilterFunction(expression))
-      .map(ValueWithContext[Any](null, _)))
+      .map(ValueWithContext[AnyRef](null, _)))
 
 }

@@ -24,7 +24,7 @@ trait ExpressionParser {
   def parse(original: String, ctx: ValidationContext, expectedType: TypingResult):
   ValidatedNel[ExpressionParseError, TypedExpression]
 
-  def parseWithoutContextValidation(original: String): ValidatedNel[ExpressionParseError, Expression]
+  def parseWithoutContextValidation(original: String, expectedType: TypingResult): ValidatedNel[ExpressionParseError, Expression]
 
 }
 

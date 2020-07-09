@@ -30,9 +30,9 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
 
   @MethodToInvoke(returnType = classOf[AnyRef])
   def invoke(@ParamName("key") key: LazyParameter[CharSequence],
-             @ParamName("transformWhen") transformWhen: LazyParameter[Boolean],
+             @ParamName("transformWhen") transformWhen: LazyParameter[java.lang.Boolean],
              @AdditionalVariables(Array(new AdditionalVariable(name = "previous", clazz = classOf[AnyRef])))
-             @ParamName("newValue") newValue: LazyParameter[Any],
+             @ParamName("newValue") newValue: LazyParameter[AnyRef],
              @ParamName("stateTimeoutSeconds") stateTimeoutSeconds: Long,
              @OutputVariableName variableName: String)
             (implicit nodeId: NodeId): ContextTransformation =
@@ -52,10 +52,10 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
 
 
 class TransformStateFunction(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-                             transformWhenParam: LazyParameter[Boolean],
-                             newValueParam: LazyParameter[Any],
+                             transformWhenParam: LazyParameter[java.lang.Boolean],
+                             newValueParam: LazyParameter[AnyRef],
                              stateTimeout: FiniteDuration)
-  extends LatelyEvictableStateFunction[ValueWithContext[CharSequence], ValueWithContext[Any], GenericState]
+  extends LatelyEvictableStateFunction[ValueWithContext[CharSequence], ValueWithContext[AnyRef], GenericState]
   with LazyParameterInterpreterFunction {
 
   override protected def stateDescriptor: ValueStateDescriptor[GenericState] =
@@ -66,8 +66,8 @@ class TransformStateFunction(protected val lazyParameterHelper: FlinkLazyParamet
   private lazy val evaluateNewValue = lazyParameterInterpreter.syncInterpretationFunction(newValueParam)
 
   override def processElement(keyWithContext: ValueWithContext[CharSequence],
-                              ctx: KeyedProcessFunction[String, ValueWithContext[CharSequence], ValueWithContext[Any]]#Context,
-                              out: Collector[ValueWithContext[Any]]): Unit = {
+                              ctx: KeyedProcessFunction[String, ValueWithContext[CharSequence], ValueWithContext[AnyRef]]#Context,
+                              out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val previousValue = Option(state.value()).map(_.value).orNull
     val newValue = if (evaluateTransformWhen(keyWithContext.context)) {
       val newValue = evaluateNewValue(keyWithContext.context.withVariable("previous", previousValue))
@@ -82,4 +82,4 @@ class TransformStateFunction(protected val lazyParameterHelper: FlinkLazyParamet
 
 }
 
-case class GenericState(value: Any)
+case class GenericState(value: AnyRef)

@@ -25,8 +25,8 @@ import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableE
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
-import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
@@ -320,7 +320,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+    val modelData = LocalModelData(config, creator)
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
   override protected def afterAll(): Unit = {

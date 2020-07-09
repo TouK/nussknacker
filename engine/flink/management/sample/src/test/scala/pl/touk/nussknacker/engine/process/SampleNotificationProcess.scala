@@ -29,7 +29,8 @@ class SampleNotificationProcess extends FlatSpec with Matchers with BeforeAndAft
 
     val config = ConfigFactory.load()
 
-    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(config, creator)), config)
+    val modelData = LocalModelData(config, creator)
+    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
 

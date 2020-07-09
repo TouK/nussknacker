@@ -14,7 +14,7 @@ case object StatefulTransformer extends CustomStreamTransformer with LazyLogging
     start
       .map(ctx.lazyParameterHelper.lazyMapFunction(keyBy))
       .keyBy(_.value)
-      .mapWithState[ValueWithContext[Any], List[String]] { case (StringFromIr(ir, sr), oldState) =>
+      .mapWithState[ValueWithContext[AnyRef], List[String]] { case (StringFromIr(ir, sr), oldState) =>
         logger.info(s"received: $sr, current state: $oldState")
         val nList = sr :: oldState.getOrElse(Nil)
         (ValueWithContext(nList, ir.context), Some(nList))

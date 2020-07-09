@@ -16,7 +16,7 @@ object JoinTransformerWithEditors extends CustomStreamTransformer with Serializa
   @MethodToInvoke
   def execute(@BranchParamName("branchType") branchTypeByBranchId: Map[String, JavaSampleEnum],
               @BranchParamName("key") keyByBranchId: Map[String, LazyParameter[CharSequence]],
-              @BranchParamName("value") @Nullable valueByBranchId: Map[String, LazyParameter[Any]],
+              @BranchParamName("value") @Nullable valueByBranchId: Map[String, LazyParameter[AnyRef]],
               @ParamName("window") window: Duration,
               @OutputVariableName variableName: String)(implicit nodeId: NodeId): JoinContextTransformation = {
     ContextTransformation

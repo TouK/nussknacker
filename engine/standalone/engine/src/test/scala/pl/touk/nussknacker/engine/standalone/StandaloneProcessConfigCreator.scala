@@ -121,7 +121,7 @@ class ProcessorService extends Service {
 object StandaloneCustomExtractor extends CustomStreamTransformer {
 
   @MethodToInvoke
-  def invoke(@ParamName("expression") expression: LazyParameter[Any],
+  def invoke(@ParamName("expression") expression: LazyParameter[AnyRef],
              @OutputVariableName outputVariableName: String)
             (implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
@@ -132,7 +132,7 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
 
 }
 
-class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[Any]) extends StandaloneCustomTransformer {
+class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends StandaloneCustomTransformer {
 
   override def createTransformation(outputVariable: String): StandaloneCustomTransformation =
     (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
@@ -156,7 +156,7 @@ object ParameterResponseSinkFactory extends SinkFactory {
 
   class ParameterResponseSink(computed: LazyParameter[String]) extends StandaloneSinkWithParameters {
     
-    override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Any] = {
+    override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
       computed.map(s => s + " withRandomString")
     }
 

@@ -51,7 +51,8 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
     }
     env = new StreamExecutionEnvironment(stoppableEnv)
     val testConfig = TestConfig(kafkaZookeeperServer)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(LocalModelData(testConfig, creator)), testConfig)
+    val modelData = LocalModelData(testConfig, creator)
+    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), testConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
   override protected def afterAll(): Unit = {
