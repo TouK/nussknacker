@@ -30,19 +30,19 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
 
   protected final val decoderFactory = DecoderFactory.get
 
-  override def alignRecordToSchema(container: GenericContainer, schema: Schema): GenericContainer = {
-    val writerSchema = container.getSchema
+  override def alignRecordToSchema[T <: GenericContainer](record: T, schema: Schema): T = {
+    val writerSchema = record.getSchema
     if (writerSchema.equals(schema)) {
-      container
+      record
     } else {
-      val serializedObject = serializeRecord(container)
-      val deserializedRecord = deserializePayloadToSchema(serializedObject, container, writerSchema, schema)
-      deserializedRecord.asInstanceOf[GenericContainer]
+      val serializedObject = serializeRecord(record)
+      val deserializedRecord = deserializePayloadToSchema(serializedObject, record, writerSchema, schema)
+      deserializedRecord.asInstanceOf[T]
     }
   }
 
-  override def canBeEvolved(container: GenericContainer, schema: Schema): Boolean =
-    Try(alignRecordToSchema(container, schema)).isSuccess
+  override def canBeEvolved(record: GenericContainer, schema: Schema): Boolean =
+    Try(alignRecordToSchema(record, schema)).isSuccess
   
   /**
     * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read with some modification.

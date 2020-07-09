@@ -146,6 +146,11 @@ lazy val commonSettings =
           case _             => silencerV
         }) % Provided cross CrossVersion.full,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
+      ),
+      //here we add dependencies that we want to have fixed across all modules
+      dependencyOverrides ++= Seq(
+        //currently Flink (1.9) uses 1.8.2 Avro version
+        "org.apache.avro" % "avro" % avroV
       )
     )
 
@@ -162,7 +167,7 @@ val forkSettings = Seq(
 
 val akkaV = "2.5.21" //same version as in Flink
 val flinkV = "1.9.1"
-val avroV = "1.8.2" // should be the same as avro version in flink-avro
+val avroV = "1.9.1" // should be the same as avro version in flink-avro
 val kafkaV = "2.2.0"
 val springV = "5.1.4.RELEASE"
 val scalaTestV = "3.0.8"
