@@ -1,8 +1,8 @@
 import {isArray, isString} from "lodash"
 import React, {useCallback, useMemo} from "react"
 import {SortType, Table, TableComponentProperties} from "reactable"
-import LoaderSpinner from "../components/Spinner"
-import {useSearchQuery} from "./hooks/useSearchQuery"
+import LoaderSpinner from "../../components/Spinner"
+import {useSearchQuery} from "../hooks/useSearchQuery"
 
 type OwnProps = {
   isLoading?: boolean,
@@ -14,7 +14,7 @@ type Props = TableProps & OwnProps
 
 type QueryType = {page: number} & SortType
 
-export function NkTable(props: Props) {
+export function ProcessesTable(props: Props) {
   const {isLoading, sortable, columns, className, ...passProps} = props
 
   const [query, setQuery] = useSearchQuery<QueryType>({parseNumbers: true})
@@ -37,7 +37,6 @@ export function NkTable(props: Props) {
       <LoaderSpinner show={isLoading}/>
       <Table
         {...passProps}
-
         className={"esp-table"}
         noDataText={isLoading ? "Loading data..." : "No matching records found."}
         previousPageLabel={"<"}

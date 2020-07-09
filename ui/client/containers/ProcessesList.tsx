@@ -10,7 +10,7 @@ import HttpService, {StatusesType} from "../http/HttpService"
 import {getBaseIntervalTime} from "../reducers/selectors/settings"
 import {useFetch} from "./hooks/useFetch"
 import {useInterval} from "./Interval"
-import {NkTable} from "./NkTable"
+import {ProcessesTable} from "./processesTable/ProcessesTable"
 import {ProcessTableTools} from "./ProcessTableTools"
 import {SearchQueryComponent} from "./SearchQuery"
 import {FiltersState, SearchItem} from "./TableFilters"
@@ -86,7 +86,7 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
         <SearchQueryComponent filters={searchItems} onChange={setFilters}/>
       </ProcessTableTools>
 
-      <NkTable
+      <ProcessesTable
         isLoading={isLoading}
         filterBy={search?.toString()}
 
@@ -95,7 +95,7 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
         columns={columns}
       >
         {elements}
-      </NkTable>
+      </ProcessesTable>
     </>
   )
 }
