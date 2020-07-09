@@ -11,6 +11,7 @@ import {Search} from "../containers/Search"
 import {Signals} from "../containers/Signals"
 import {SubProcesses} from "../containers/SubProcesses"
 import {Flex} from "./common/Flex"
+import {AdditionalNac} from "../containers/AdditionalNac"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -27,12 +28,12 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
-function mapAdditionalItems(title: string, url: string) {
-  return {show: true, path: url, title: title}
+function mapAdditionalItems(title: string, index: number) {
+  return {show: true, path: `${AdditionalNac.path}/${index}`, title: title}
 }
 
 function createMenuItem(show: boolean, path: string, title: string) {
-  return show && <MenuItem path={path} title={title}/>
+  return show && <MenuItem key={title} path={path} title={title}/>
 }
 
 function MenuItem({title, path}: { title: string, path: string }) {
@@ -70,8 +71,9 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
       {show: true, path: Archive.path, title: t("menu.archive", "Archive")},
       {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
     ]
+
     const additionalMenuItems = additionalNac
-      .map(o => mapAdditionalItems(o.label, o.url))
+      .map((element, index) => mapAdditionalItems(element.label, index))
 
     const menuItems = defaultMenuItems
       .concat(additionalMenuItems)
