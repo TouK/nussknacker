@@ -253,7 +253,12 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     val topicConfig = createAndRegisterTopicConfig("date-fields", List(PaymentDate.schema))
     val sourceParam = SourceAvroParam(topicConfig, None)
     val sinkParam = SinkAvroParam(topicConfig, None, "#input")
-    val process = createAvroProcess(sourceParam, sinkParam, Some(s"#input.date.toEpochMilli == ${PaymentDate.dateMillis}"))
+    val process = createAvroProcess(sourceParam, sinkParam, Some(
+      s"#input.dateTime.toEpochMilli == ${PaymentDate.instant.toEpochMilli}L AND " +
+        s"#input.date.year == ${PaymentDate.date.getYear} AND #input.date.monthValue == ${PaymentDate.date.getMonthValue} AND #input.date.dayOfMonth == ${PaymentDate.date.getDayOfMonth} AND " +
+        s"#input.time.hour == ${PaymentDate.date.getHour} AND #input.time.minute == ${PaymentDate.date.getMinute} AND #input.time.second == ${PaymentDate.date.getSecond} AND " +
+        s"#input.decimal == ${PaymentDate.decimal} AND " +
+        s"#input.uuid.mostSignificantBits == ${PaymentDate.uuid.getMostSignificantBits}L AND #input.uuid.leastSignificantBits == ${PaymentDate.uuid.getLeastSignificantBits}L"))
 
     runAndVerifyResult(process, topicConfig, PaymentDate.recordWithData, PaymentDate.record)
   }

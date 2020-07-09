@@ -1,12 +1,19 @@
 package pl.touk.nussknacker.engine.avro.schema
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.util.UUID
 
 import org.apache.avro.generic.GenericData
 
 object PaymentDate extends TestSchemaWithRecord {
 
-  val dateMillis = 123L
+  val date = LocalDateTime.of(2020, 1, 2, 3, 14, 15)
+
+  val instant = date.toInstant(ZoneOffset.UTC)
+
+  val decimal = 12.34
+
+  val uuid = UUID.randomUUID()
 
   val stringSchema: String =
     s"""
@@ -23,10 +30,40 @@ object PaymentDate extends TestSchemaWithRecord {
        |      "type": "double"
        |    },
        |    {
-       |      "name": "date",
+       |      "name": "dateTime",
        |      "type": {
        |        "type": "long",
        |        "logicalType": "timestamp-millis"
+       |      }
+       |    },
+       |    {
+       |      "name": "date",
+       |      "type": {
+       |        "type": "int",
+       |        "logicalType": "date"
+       |      }
+       |    },
+       |    {
+       |      "name": "time",
+       |      "type": {
+       |        "type": "int",
+       |        "logicalType": "time-millis"
+       |      }
+       |    },
+       |    {
+       |      "name": "decimal",
+       |      "type": {
+       |        "type": "bytes",
+       |        "logicalType": "decimal",
+       |        "precision": 4,
+       |        "scale": 2
+       |      }
+       |    },
+       |    {
+       |      "name": "uuid",
+       |      "type": {
+       |        "type": "string",
+       |        "logicalType": "uuid"
        |      }
        |    },
        |    {
@@ -55,7 +92,11 @@ object PaymentDate extends TestSchemaWithRecord {
   val exampleData: Map[String, Any] = Map(
     "id" -> "1",
     "amount" -> 100.00,
-    "date" -> Instant.ofEpochMilli(dateMillis),
+    "dateTime" -> instant,
+    "date" -> date.toLocalDate,
+    "time" -> date.toLocalTime,
+    "decimal" -> decimal,
+    "uuid" -> uuid,
     "currency" -> Currency.exampleData,
     "company" -> Company.exampleData,
     "products" -> List(
