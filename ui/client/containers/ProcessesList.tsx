@@ -44,26 +44,48 @@ export type RowRendererProps = {
 }
 export type RowsRenderer = (props: RowRendererProps) => JSX.Element[]
 
+function useIntervalRefresh(getProcesses: () => Promise<void>) {
+  const refreshTime = useSelector(getBaseIntervalTime)
+  useInterval(getProcesses, refreshTime)
+}
+
 function useFilteredProcesses(filters: FiltersState & Queries) {
-  const [params] = useDebounce(normalizeParams(filters), 200, {equalityFn: isEqual})
+  const normalizedFilters = useMemo(() => filters && normalizeParams(filters), [filters])
+  const [params] = useDebounce(normalizedFilters, 200, {equalityFn: isEqual})
 
   const fetchAction = useCallback(() => {
-    const {isCustom, ...rest} = params
-    return isCustom ? HttpService.fetchCustomProcesses() : HttpService.fetchProcesses(rest)
+    if (params) {
+      const {isCustom, ...rest} = params
+      return isCustom ? HttpService.fetchCustomProcesses() : HttpService.fetchProcesses(rest)
+    }
   }, [params])
 
   const [processes, getProcesses, isLoading] = useFetch(fetchAction, [])
-
-  const refreshTime = useSelector(getBaseIntervalTime)
-  useInterval(getProcesses, refreshTime)
   return {processes, getProcesses, isLoading}
+}
+
+function useFiltersState(defaultQuery: Queries) {
+  const [_filters, _setFilters] = useState<FiltersState>(null)
+  const setFilters = useCallback((value) => {
+    _setFilters({...value, ...defaultQuery})
+  }, [_setFilters, defaultQuery])
+
+  const [search, filters] = useMemo(() => {
+    if (_filters) {
+      const {search, ...filters} = _filters
+      return [search, filters]
+    }
+    return [null, null]
+  }, [_filters])
+  return {search, filters, setFilters}
 }
 
 export function ProcessesList(props: BaseProcessesOwnProps) {
   const {allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses} = props
 
-  const [{search, ...filters}, setFilters] = useState<FiltersState>({})
-  const {processes, getProcesses, isLoading} = useFilteredProcesses({...filters, ...defaultQuery})
+  const {search, filters, setFilters} = useFiltersState(defaultQuery)
+  const {processes, getProcesses, isLoading} = useFilteredProcesses(filters)
+  useIntervalRefresh(getProcesses)
 
   const [statuses, getStatuses] = useFetch(HttpService.fetchProcessesStates)
   useEffect(
