@@ -1,12 +1,11 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {Glyphicon} from "react-bootstrap"
 import {Td, Tr} from "reactable"
 import Date from "../components/common/Date"
-import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import {ShowItem} from "./editItem"
 import {Page} from "./Page"
+import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
 import {SearchItem} from "./TableFilters"
 
@@ -58,7 +57,7 @@ function Archive() {
 }
 
 export const ArchiveTabData = {
-  path: `${nkPath}/archivedProcesses`,
+  path: `${ProcessesTabData.path}/archived`,
   header: "Archive",
   Component: Archive,
 }

@@ -6,9 +6,9 @@ import {showProcess} from "../actions/nk"
 import Date from "../components/common/Date"
 import {ProcessType} from "../components/Process/types"
 import TableRowIcon from "../components/table/TableRowIcon"
-import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import {PageWithHealthCheck} from "./Page"
+import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
 import {SearchItem} from "./TableFilters"
 
@@ -62,7 +62,7 @@ function SubProcesses() {
 }
 
 export const SubProcessesTabData = {
-  path: `${nkPath}/subProcesses`,
+  path: `${ProcessesTabData.path}/subprocesses`,
   header: "Subprocesses",
   Component: SubProcesses,
 }
