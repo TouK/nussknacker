@@ -154,6 +154,11 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   }
 
   protected def createAvroProcess(source: SourceAvroParam, sink: SinkAvroParam, filterExpression: Option[String] = None): EspProcess = {
+    val sourceParams = List(TopicParamName -> asSpelExpression(s"'${source.topic}'")) ++ (source match {
+      case GenericSourceAvroParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(parseVersion(version)))
+      case SpecificSourceAvroParam(_) => List.empty
+    })
+
     val builder = EspProcessBuilder
       .id(s"avro-test")
       .parallelism(1)
@@ -161,8 +166,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
       .source(
         "start",
         source.sourceType,
-        TopicParamName -> s"'${source.topic}'",
-        SchemaVersionParamName -> parseVersion(source.version)
+        sourceParams: _*
       )
 
     val filteredBuilder = filterExpression
@@ -218,11 +222,27 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     }
   }
 
-  case class SourceAvroParam(topic: String, version: Option[Int], sourceType: String = "kafka-avro")
+  sealed trait SourceAvroParam {
+    def topic: String
+    def sourceType: String
+  }
+
+  case class GenericSourceAvroParam(topic: String, version: Option[Int]) extends SourceAvroParam {
+    override def sourceType: String = "kafka-avro"
+  }
+
+  case class SpecificSourceAvroParam(topic: String) extends SourceAvroParam {
+    override def sourceType: String = "kafka-avro-specific"
+  }
 
   object SourceAvroParam {
-    def apply(topicConfig: TopicConfig, version: Option[Int]): SourceAvroParam =
-      new SourceAvroParam(topicConfig.input, version)
+
+    def forGeneric(topicConfig: TopicConfig, version: Option[Int]): SourceAvroParam =
+      GenericSourceAvroParam(topicConfig.input, version)
+
+    def forSpecific(topicConfig: TopicConfig): SourceAvroParam =
+      SpecificSourceAvroParam(topicConfig.input)
+
   }
 
   case class SinkAvroParam(topic: String, version: Option[Int], output: String)

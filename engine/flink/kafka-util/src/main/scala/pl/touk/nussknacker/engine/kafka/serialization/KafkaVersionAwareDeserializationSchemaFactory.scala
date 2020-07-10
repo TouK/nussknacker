@@ -79,7 +79,7 @@ abstract class KafkaVersionAwareKeyValueDeserializationSchemaFactory[T]
   override def create(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] = {
     new KafkaDeserializationSchema[T] {
       @transient
-      private lazy val keyDeserializerWithTypeInfo = createKeyDeserializer(topics, version, kafkaConfig)
+      private lazy val keyDeserializerWithTypeInfo = createKeyDeserializer(topics, None, kafkaConfig) // We currently support only last version for keys
       @transient
       private lazy val valueDeserializerWithTypeInfo = createValueDeserializer(topics, version, kafkaConfig)
 

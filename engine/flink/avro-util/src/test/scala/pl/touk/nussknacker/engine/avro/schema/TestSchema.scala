@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 trait TestSchema {
   lazy val schema: Schema = AvroUtils.parseSchema(stringSchema)
   def stringSchema: String
-  def exampleData: Any
 }
 
 trait TestSchemaWithRecord extends TestSchema {
