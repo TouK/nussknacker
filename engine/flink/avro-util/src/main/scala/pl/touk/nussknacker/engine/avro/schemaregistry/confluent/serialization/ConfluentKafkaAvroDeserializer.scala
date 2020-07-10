@@ -14,16 +14,12 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.Confluent
   * @Important: there can be some delay between saved process schema and deploy schema, because
   *            fetching schema for deserializer has place at deploy moment. It can be happen when process has
   *            set latest version and deploy was run after new schema was added.
-  *
-  * @param confluentSchemaRegistryClient
-  * @param schema
-  * @param isKey
-  * @tparam T
   */
-class ConfluentKafkaAvroDeserializer[T](schema: Schema, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, var isKey: Boolean)
+class ConfluentKafkaAvroDeserializer[T](schema: Schema, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, var isKey: Boolean, _useSpecificAvroReader: Boolean)
   extends AbstractConfluentKafkaAvroDeserializer with Deserializer[T] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
+  useSpecificAvroReader = _useSpecificAvroReader
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
     val record = deserialize(topic, isKey, data, schema)
@@ -33,7 +29,6 @@ class ConfluentKafkaAvroDeserializer[T](schema: Schema, confluentSchemaRegistryC
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
     val deserializerConfig = new KafkaAvroDeserializerConfig(configs)
     configureClientProperties(deserializerConfig, ConfluentUtils.SchemaProvider)
-    useSpecificAvroReader = deserializerConfig.getBoolean("specific.avro.reader")
     this.isKey = isKey
   }
 

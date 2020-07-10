@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory;
 import scala.Option;
 import scala.collection.JavaConverters;
 import scala.reflect.ClassTag;
+import scala.reflect.ClassTag$;
 
 import java.io.IOException;
 import java.util.*;
@@ -81,7 +82,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
                 Option.apply(extractor),
                 TestParsingUtils.newLineSplit(),
                 processObjectDependencies,
-                ClassTag.apply(Transaction.class)
+                ClassTag$.MODULE$.apply(Transaction.class)
         );
     }
 

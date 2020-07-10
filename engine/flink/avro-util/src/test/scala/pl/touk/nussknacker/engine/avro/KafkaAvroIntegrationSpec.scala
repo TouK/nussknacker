@@ -250,7 +250,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   }
 
   test("should accept logical types in generic record") {
-    val topicConfig = createAndRegisterTopicConfig("date-fields", List(PaymentDate.schema))
+    val topicConfig = createAndRegisterTopicConfig("logical-fields-generic", List(PaymentDate.schema))
     val sourceParam = SourceAvroParam(topicConfig, None)
     val sinkParam = SinkAvroParam(topicConfig, None, "#input")
     val process = createAvroProcess(sourceParam, sinkParam, Some(
@@ -262,6 +262,28 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
     runAndVerifyResult(process, topicConfig, PaymentDate.recordWithData, PaymentDate.record)
   }
+
+  test("should accept logical types in specific record") {
+    val topicConfig = createAndRegisterTopicConfig("logical-fields-specific", List(GeneratedAvroClassWithLogicalTypes.SCHEMA$))
+    val sourceParam = SourceAvroParam(topicConfig.input, None, "kafka-avro-specific")
+    val sinkParam = SinkAvroParam(topicConfig.output, None, "#input")
+
+    val record = GeneratedAvroClassWithLogicalTypes.newBuilder()
+      .setDateTime(PaymentDate.instant)
+      .setDate(PaymentDate.date.toLocalDate)
+      .setTime(PaymentDate.date.toLocalTime)
+      .setDecimal(java.math.BigDecimal.valueOf(PaymentDate.decimal))
+      .build()
+
+    val process = createAvroProcess(sourceParam, sinkParam, Some(
+      s"#input.dateTime.toEpochMilli == ${PaymentDate.instant.toEpochMilli}L AND " +
+        s"#input.date.year == ${PaymentDate.date.getYear} AND #input.date.monthValue == ${PaymentDate.date.getMonthValue} AND #input.date.dayOfMonth == ${PaymentDate.date.getDayOfMonth} AND " +
+        s"#input.time.hour == ${PaymentDate.date.getHour} AND #input.time.minute == ${PaymentDate.date.getMinute} AND #input.time.second == ${PaymentDate.date.getSecond} AND " +
+        s"#input.decimal == ${PaymentDate.decimal}"))
+
+    runAndVerifyResult(process, topicConfig, record, record, useSpecificAvroReader = true)
+  }
+
 }
 
 object KafkaAvroIntegrationMockSchemaRegistry {

@@ -7,6 +7,7 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.avro.schema.GeneratedAvroClassWithLogicalTypes
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
@@ -21,11 +22,12 @@ import scala.reflect.ClassTag
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaRegistryProvider = createSchemaProvider[GenericData.Record](processObjectDependencies)
-    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+    val avroSourceFactory = new KafkaAvroSourceFactory(createSchemaProvider[GenericData.Record](processObjectDependencies), processObjectDependencies, None)
+    val avroSpecificSourceFactory = new KafkaAvroSourceFactory(createSchemaProvider[GeneratedAvroClassWithLogicalTypes](processObjectDependencies), processObjectDependencies, None)
 
     Map(
-      "kafka-avro" -> defaultCategory(avroSourceFactory)
+      "kafka-avro" -> defaultCategory(avroSourceFactory),
+      "kafka-avro-specific" -> defaultCategory(avroSpecificSourceFactory)
     )
   }
 

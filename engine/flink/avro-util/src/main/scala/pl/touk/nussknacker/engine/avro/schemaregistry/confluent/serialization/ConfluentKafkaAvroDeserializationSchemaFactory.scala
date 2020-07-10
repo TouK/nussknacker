@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 import io.confluent.kafka.serializers._
 import org.apache.avro.specific.{SpecificRecord, SpecificRecordBase}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.formats.avro.typeutils.{AvroTypeInfo, LogicalTypesGenericRecordAvroTypeInfo}
+import org.apache.flink.formats.avro.typeutils.{LogicalTypesAvroTypeInfo, LogicalTypesGenericRecordAvroTypeInfo}
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
@@ -24,11 +24,12 @@ trait ConfluentKafkaAvroDeserializerFactory extends ConfluentKafkaAvroSerializat
                                                 isKey: Boolean): (Deserializer[T], TypeInformation[T]) = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    val isSpecificRecord = classOf[SpecificRecord].isAssignableFrom(clazz)
 
     val (deserializer, typeInformation) = schemaDeterminingStrategy match {
       case SchemaDeterminingStrategy.FromSubjectVersion =>
         val schema = fetchSchema(schemaRegistryClient, topic, version, isKey = isKey)
-        val d = new ConfluentKafkaAvroDeserializer(schema, schemaRegistryClient, isKey = isKey)
+        val d = new ConfluentKafkaAvroDeserializer(schema, schemaRegistryClient, isKey = isKey, isSpecificRecord)
         val typeInfo = determineTypeInfo(clazz, new LogicalTypesGenericRecordAvroTypeInfo(schema).asInstanceOf[TypeInformation[T]])
         (d, typeInfo)
       case SchemaDeterminingStrategy.FromRecord =>
@@ -37,18 +38,14 @@ trait ConfluentKafkaAvroDeserializerFactory extends ConfluentKafkaAvroSerializat
         (new KafkaAvroDeserializer(schemaRegistryClient.client), typeInfo)
     }
 
-    val props = kafkaConfig.kafkaProperties.getOrElse(Map.empty) + (
-      KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG -> classOf[SpecificRecord].isAssignableFrom(clazz)
-    )
-
-    deserializer.configure(props.asJava, isKey)
+    deserializer.configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, isKey)
     (deserializer.asInstanceOf[Deserializer[T]], typeInformation)
   }
 
   // See Flink's AvroDeserializationSchema
   private def determineTypeInfo[T](clazz: Class[T], nonSpecificRecordTypeInfo: => TypeInformation[T]) = {
     if (classOf[SpecificRecord].isAssignableFrom(clazz))
-      new AvroTypeInfo(clazz.asInstanceOf[Class[_ <: SpecificRecordBase]]).asInstanceOf[TypeInformation[T]]
+      new LogicalTypesAvroTypeInfo(clazz.asInstanceOf[Class[_ <: SpecificRecordBase]]).asInstanceOf[TypeInformation[T]]
     else
       nonSpecificRecordTypeInfo
   }

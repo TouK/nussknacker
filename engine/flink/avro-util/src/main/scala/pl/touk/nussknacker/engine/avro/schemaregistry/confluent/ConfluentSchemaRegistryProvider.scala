@@ -29,7 +29,6 @@ object ConfluentSchemaRegistryProvider extends Serializable {
                          serializationSchemaFactory: Option[KafkaVersionAwareSerializationSchemaFactory[AnyRef]],
                          deserializationSchemaFactory: Option[KafkaVersionAwareDeserializationSchemaFactory[T]],
                          kafkaConfig: KafkaConfig,
-                         useSpecificAvroReader: Boolean,
                          formatKey: Boolean): ConfluentSchemaRegistryProvider[T] =
 
     new ConfluentSchemaRegistryProvider(
@@ -46,10 +45,9 @@ object ConfluentSchemaRegistryProvider extends Serializable {
 
   def apply[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                          processObjectDependencies: ProcessObjectDependencies,
-                         useSpecificAvroReader: Boolean,
                          formatKey: Boolean): ConfluentSchemaRegistryProvider[T] = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
-    ConfluentSchemaRegistryProvider(schemaRegistryClientFactory, None, None, kafkaConfig, useSpecificAvroReader, formatKey)
+    ConfluentSchemaRegistryProvider(schemaRegistryClientFactory, None, None, kafkaConfig, formatKey)
   }
 
   def apply[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
@@ -59,7 +57,6 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       processObjectDependencies,
-      useSpecificAvroReader = false,
       formatKey = false
     )
 
