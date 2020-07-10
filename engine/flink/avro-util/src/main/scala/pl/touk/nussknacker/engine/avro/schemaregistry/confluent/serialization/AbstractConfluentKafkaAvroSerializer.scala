@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 import java.io.{ByteArrayOutputStream, IOException}
 import java.nio.ByteBuffer
 
-import io.confluent.kafka.serializers.AbstractKafkaAvroSerializer
+import io.confluent.kafka.serializers.{AbstractKafkaAvroSerializer, AbstractKafkaSchemaSerDe}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.avro.io.EncoderFactory
@@ -29,8 +29,8 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
     else {
       try {
         val out = new ByteArrayOutputStream
-        out.write(ConfluentUtils.MagicByte)
-        out.write(ByteBuffer.allocate(ConfluentUtils.IdSize).putInt(schemaId).array)
+        out.write(AbstractKafkaSchemaSerDe.MAGIC_BYTE)
+        out.write(ByteBuffer.allocate(AbstractKafkaSchemaSerDe.idSize).putInt(schemaId).array)
 
         data match {
           case array: Array[Byte] => out.write(array)

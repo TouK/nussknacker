@@ -14,7 +14,6 @@ object ConfluentUtils {
 
   final val SchemaProvider = new AvroSchemaProvider()
   final val MagicByte = 0
-  final val IdSize = 4
 
   def topicSubject(topic: String, isKey: Boolean): String =
     if (isKey) keySubject(topic) else valueSubject(topic)
