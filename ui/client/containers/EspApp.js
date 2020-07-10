@@ -9,7 +9,6 @@ import NotFound from "./errors/NotFound"
 import {nkPath} from "../config"
 import {CSSTransition, TransitionGroup} from "react-transition-group"
 import Metrics from "./Metrics"
-import Search from "./Search"
 import Signals from "./Signals"
 import AdminPage from "./AdminPage"
 import DragArea from "../components/DragArea"
@@ -104,7 +103,6 @@ export class EspApp extends React.Component {
                           <Route path={Processes.path} component={Processes} exact/>
                           <Route path={Visualization.path} component={Visualization} exact/>
                           <Route path={Metrics.path} component={Metrics} exact/>
-                          <Route path={Search.path} component={Search} exact/>
                           <Route path={Signals.path} component={Signals} exact/>
                           <Route path={AdminPage.path} component={AdminPage} exact/>
                           <Route path={`${DynamicTabs.path}/:id`} component={DynamicTabs} exact/>

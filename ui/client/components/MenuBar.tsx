@@ -7,7 +7,6 @@ import {Archive} from "../containers/Archive"
 import {EspApp} from "../containers/EspApp"
 import {Metrics} from "../containers/Metrics"
 import {Processes} from "../containers/Processes"
-import {Search} from "../containers/Search"
 import {Signals} from "../containers/Signals"
 import {SubProcesses} from "../containers/SubProcesses"
 import {Flex} from "./common/Flex"
@@ -53,7 +52,6 @@ const Spacer = () => <Flex flex={1}/>
 export function MenuBar({rightElement = null, leftElement = null, ...props}: Props) {
   const {app: {path, header}, loggedUser, featuresSettings} = props
   const showMetrics = !_.isEmpty(featuresSettings.metrics)
-  const showSearch = !_.isEmpty(featuresSettings.search)
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
   const dynamicTabs = [...featuresSettings.dynamicTabs]
@@ -66,7 +64,6 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
       {show: true, path: Processes.path, title: t("menu.processes", "Processes")},
       {show: true, path: SubProcesses.path, title: t("menu.subProcesses", "Subprocesses")},
       {show: showMetrics, path: Metrics.basePath, title: t("menu.metrics", "Metrics")},
-      {show: showSearch, path: Search.path, title: t("menu.search", "Search")},
       {show: showSignals, path: Signals.path, title: t("menu.signals", "Signals")},
       {show: true, path: Archive.path, title: t("menu.archive", "Archive")},
       {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
