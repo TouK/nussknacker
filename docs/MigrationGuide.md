@@ -20,7 +20,8 @@ If you already have done some Flink's `ExecutionConfig` set up before you've reg
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics use variables by default, see [docs](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md)
   to enable old mode, suitable for graphite protocol. To use old way of sending:
     - put `globalParameters.useLegacyMetrics = true` in each model configuration (to configure metrics sending in Flink)
-    - put: ```
+    - put: 
+    ```
     countsSettings {
       user: ...
       password: ...
@@ -33,8 +34,18 @@ If you already have done some Flink's `ExecutionConfig` set up before you've reg
 
       }
     }
-  ```
-* Introduction to KafkaAvro API: [#871](https://github.com/TouK/nussknacker/pull/871), [#881](https://github.com/TouK/nussknacker/pull/881), [#903](https://github.com/TouK/nussknacker/pull/903), [#981](https://github.com/TouK/nussknacker/pull/981), [#989](https://github.com/TouK/nussknacker/pull/989), [#998](https://github.com/TouK/nussknacker/pull/998), [#1007](https://github.com/TouK/nussknacker/pull/1007), [#1014](https://github.com/TouK/nussknacker/pull/1014), [#1034](https://github.com/TouK/nussknacker/pull/1034)
+    ```
+* Introduction to KafkaAvro API: 
+    [#871](https://github.com/TouK/nussknacker/pull/871), 
+    [#881](https://github.com/TouK/nussknacker/pull/881), 
+    [#903](https://github.com/TouK/nussknacker/pull/903), 
+    [#981](https://github.com/TouK/nussknacker/pull/981), 
+    [#989](https://github.com/TouK/nussknacker/pull/989), 
+    [#998](https://github.com/TouK/nussknacker/pull/998), 
+    [#1007](https://github.com/TouK/nussknacker/pull/1007), 
+    [#1014](https://github.com/TouK/nussknacker/pull/1014),
+    [#1034](https://github.com/TouK/nussknacker/pull/1034),
+    [#1041](https://github.com/TouK/nussknacker/pull/1041)
 
 API for `KafkaAvroSourceFactory` was changed:
 
@@ -62,6 +73,7 @@ val kafkaAvroSinkFactory = new KafkaAvroSinkFactory(schemaRegistryProvider, proc
 ```
 
 Additional changes:
+- Bump up confluent package to 5.5.0
 - (Refactor Kafka API) Moved KafkaSourceFactory to pl.touk.nussknacker.engine.kafka.sink package 
 - (Refactor Kafka API) Changed BaseKafkaSourceFactory, now it requires `deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T]`
 - (Refactor Kafka API) Moved KafkaSinkFactory to pl.touk.nussknacker.engine.kafka.source package
