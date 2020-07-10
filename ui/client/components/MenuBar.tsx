@@ -28,8 +28,8 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
-function mapDynamicItems(title: string, index: number) {
-  return {show: true, path: `${DynamicTabs.path}/${index}`, title: title}
+function mapDynamicItems(title: string, id: string) {
+  return {show: true, path: `${DynamicTabs.path}/${id}`, title: title}
 }
 
 function createMenuItem(show: boolean, path: string, title: string) {
@@ -73,7 +73,7 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
     ]
 
     const dynamicMenuItems = dynamicTabs
-      .map((element, index) => mapDynamicItems(element.label, index))
+      .map((element) => mapDynamicItems(element.name, element.id))
 
     const menuItems = defaultMenuItems
       .concat(dynamicMenuItems)
