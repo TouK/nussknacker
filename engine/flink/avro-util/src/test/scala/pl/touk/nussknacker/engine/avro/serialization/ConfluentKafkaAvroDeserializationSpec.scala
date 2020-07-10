@@ -15,14 +15,13 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
 
   import MockSchemaRegistry._
   import SchemaDeterminingStrategy._
-  import org.apache.flink.api.scala._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  private val fromSubjectVersionFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromSubjectVersion, factory, false)
-  private val fromRecordFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromRecord, factory, false)
+  private val fromSubjectVersionFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromSubjectVersion, factory)
+  private val fromRecordFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromRecord, factory)
 
   test("should properly deserialize record to avro object with same schema version") {
     val schemas = List(PaymentV1.schema)

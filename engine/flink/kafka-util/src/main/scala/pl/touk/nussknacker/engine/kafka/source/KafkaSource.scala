@@ -16,13 +16,13 @@ import pl.touk.nussknacker.engine.kafka._
 
 import scala.collection.JavaConverters._
 
-class KafkaSource[T: TypeInformation](preparedTopics: List[PreparedKafkaTopic],
-                                      kafkaConfig: KafkaConfig,
-                                      deserializationSchema: KafkaDeserializationSchema[T],
-                                      timestampAssigner: Option[TimestampAssigner[T]],
-                                      recordFormatterOpt: Option[RecordFormatter],
-                                      testPrepareInfo: TestDataSplit,
-                                      overriddenConsumerGroup: Option[String] = None)
+class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
+                     kafkaConfig: KafkaConfig,
+                     deserializationSchema: KafkaDeserializationSchema[T],
+                     timestampAssigner: Option[TimestampAssigner[T]],
+                     recordFormatterOpt: Option[RecordFormatter],
+                     testPrepareInfo: TestDataSplit,
+                     overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource[T]
     with Serializable
     with TestDataParserProvider[T]
@@ -47,7 +47,7 @@ class KafkaSource[T: TypeInformation](preparedTopics: List[PreparedKafkaTopic],
     }.getOrElse(newStart)
   }
 
-  override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
+  override val typeInformation: TypeInformation[T] = deserializationSchema.getProducedType
 
   protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {
     topics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))

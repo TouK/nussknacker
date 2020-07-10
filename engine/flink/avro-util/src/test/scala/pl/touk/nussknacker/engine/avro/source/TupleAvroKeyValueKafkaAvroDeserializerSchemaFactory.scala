@@ -5,15 +5,22 @@ import org.apache.flink.api.scala.createTuple2TypeInformation
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKeyValueKafkaAvroDeserializationFactory, SchemaDeterminingStrategy}
 
-class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key, Value](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)(implicit keyTypInfo: TypeInformation[Key], valueTypInfo: TypeInformation[Value])
-  extends ConfluentKeyValueKafkaAvroDeserializationFactory[(Key, Value)](SchemaDeterminingStrategy.FromSubjectVersion, schemaRegistryClientFactory, useSpecificAvroReader = false)(
-    createTuple2TypeInformation(keyTypInfo, valueTypInfo)
-  ) {
+import scala.reflect._
+
+class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key: ClassTag, Value: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+  extends ConfluentKeyValueKafkaAvroDeserializationFactory[(Key, Value)](SchemaDeterminingStrategy.FromSubjectVersion, schemaRegistryClientFactory) {
 
   override protected type K = Key
   override protected type V = Value
 
+  override protected def keyClassTag: ClassTag[Key] = classTag[Key]
+  override protected def valueClassTag: ClassTag[Value] = classTag[Value]
+
   override protected def createObject(key: Key, value: Value, topic: String): (Key, Value) = {
     (key, value)
   }
+
+  override protected def createObjectTypeInformation(keyTypeInformation: TypeInformation[Key], valueTypeInformation: TypeInformation[Value]): TypeInformation[(Key, Value)] =
+    createTuple2TypeInformation(keyTypeInformation, valueTypeInformation)
+
 }

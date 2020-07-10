@@ -39,10 +39,3 @@ class ConfluentKafkaAvroDeserializer[T](schema: Schema, confluentSchemaRegistryC
 
   override def close(): Unit = {}
 }
-
-object ConfluentKafkaAvroDeserializer extends ConfluentKafkaAvroSerializationMixin {
-  def apply[T](confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, version: Option[Int], isKey: Boolean): ConfluentKafkaAvroDeserializer[T] = {
-    val schema = fetchSchema(confluentSchemaRegistryClient, topic, version, isKey = isKey)
-    new ConfluentKafkaAvroDeserializer(schema, confluentSchemaRegistryClient, isKey = isKey)
-  }
-}

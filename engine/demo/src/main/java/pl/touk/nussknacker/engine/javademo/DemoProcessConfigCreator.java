@@ -15,12 +15,13 @@ import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
 import pl.touk.nussknacker.engine.demo.LoggingExceptionHandlerFactory;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
-import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory;
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.schemas;
+import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory;
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory;
 import scala.Option;
 import scala.collection.JavaConverters;
+import scala.reflect.ClassTag;
 
 import java.io.IOException;
 import java.util.*;
@@ -80,7 +81,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
                 Option.apply(extractor),
                 TestParsingUtils.newLineSplit(),
                 processObjectDependencies,
-                TypeInformation.of(Transaction.class)
+                ClassTag.apply(Transaction.class)
         );
     }
 

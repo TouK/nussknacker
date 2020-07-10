@@ -2,14 +2,12 @@ package pl.touk.nussknacker.engine.avro
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericContainer, GenericData}
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
-import pl.touk.nussknacker.engine.avro.schema.{LongFieldV1, PaymentDate, PaymentNotCompatible, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
@@ -21,6 +19,8 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
 
+import scala.reflect.ClassTag
+
 class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
@@ -28,7 +28,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   import spel.Implicits._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
+    override protected def createSchemaProvider[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
       ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
   }
 

@@ -5,10 +5,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import io.confluent.kafka.serializers.{KafkaAvroSerializer}
+import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericContainer, GenericRecord}
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
@@ -32,10 +31,11 @@ import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
+import scala.reflect.ClassTag
+
 trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures {
 
   import KafkaZookeeperUtils._
-  import org.apache.flink.api.scala._
   import spel.Implicits._
 
   import collection.JavaConverters._
@@ -77,7 +77,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   protected lazy val valueDeserializer: SimpleKafkaAvroDeserializer = new SimpleKafkaAvroDeserializer(schemaRegistryClient)
   protected lazy val valueSerializer: SimpleKafkaAvroSerializer = new SimpleKafkaAvroSerializer(schemaRegistryClient)
 
-  protected def createSchemaRegistryProvider[T:TypeInformation](useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[T] =
+  protected def createSchemaRegistryProvider[T: ClassTag](useSpecificAvroReader: Boolean, formatKey: Boolean = false): ConfluentSchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider[T](
       confluentClientFactory,
       testProcessObjectDependencies,

@@ -10,7 +10,6 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -30,6 +29,8 @@ import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreami
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
+
+import scala.reflect.ClassTag
 
 class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
@@ -308,7 +309,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   }
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
-    override protected def createSchemaProvider[T:TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
+    override protected def createSchemaProvider[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
       ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
   }
 
