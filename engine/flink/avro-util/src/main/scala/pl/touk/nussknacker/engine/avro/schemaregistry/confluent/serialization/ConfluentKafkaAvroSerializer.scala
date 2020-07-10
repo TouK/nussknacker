@@ -4,9 +4,9 @@ import java.util
 
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig
 import org.apache.avro.Schema
-import org.apache.avro.io.EncoderFactory
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
 /**
@@ -29,7 +29,7 @@ class ConfluentKafkaAvroSerializer[T](confluentSchemaRegistryClient: ConfluentSc
   schemaRegistry = confluentSchemaRegistryClient.client
 
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
-    configureClientProperties(new KafkaAvroSerializerConfig(configs))
+    configureClientProperties(new KafkaAvroSerializerConfig(configs), ConfluentUtils.SchemaProvider)
     this.isKey = isKey
   }
 

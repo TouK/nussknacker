@@ -3,14 +3,17 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 import java.nio.ByteBuffer
 
 import cats.data.Validated
+import io.confluent.kafka.schemaregistry.ParsedSchema
+import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider}
+import org.apache.avro.Schema
 import org.apache.kafka.common.errors.SerializationException
 
 object ConfluentUtils {
-  //Copied from AbstractKafkaAvroSerDe
-  final val MagicByte = 0
-  final val IdSize = 4
 
-  private val valueSubjectPattern = "(.*)-value".r
+  private final val ValueSubjectPattern = "(.*)-value".r
+
+  final val SchemaProvider = new AvroSchemaProvider()
+  final val MagicByte = 0
 
   def topicSubject(topic: String, isKey: Boolean): String =
     if (isKey) keySubject(topic) else valueSubject(topic)
@@ -22,8 +25,14 @@ object ConfluentUtils {
     topic + "-value"
 
   def topicFromSubject: PartialFunction[String, String] = {
-    case valueSubjectPattern(value) => value
+    case ValueSubjectPattern(value) => value
   }
+
+  def convertToAvroSchema(schema: Schema, version: Option[Int] = None): ParsedSchema =
+    version.map(new AvroSchema(schema, _)).getOrElse(new AvroSchema(schema))
+
+  def extractSchema(parsedSchema: ParsedSchema): Schema =
+    parsedSchema.rawSchema().asInstanceOf[Schema]
 
   def parsePayloadToByteBuffer(payload: Array[Byte]): Validated[IllegalArgumentException, ByteBuffer] = {
     val buffer = ByteBuffer.wrap(payload)

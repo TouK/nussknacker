@@ -44,6 +44,4 @@ class SchemaRegistryCaches(maximumSize: Long, latestSchemaExpirationTime: Option
    val latestSchemaCache = new DefaultCache[Schema](maximumSize, Option.empty, latestSchemaExpirationTime)
    val versionsCache = new DefaultCache[List[Integer]](maximumSize, Option.empty, versionsCacheExpirationTime)
    val topicsCache = new SingleValueCache[List[String]](Option.empty, versionsCacheExpirationTime)
-
-
 }

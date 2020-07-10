@@ -77,12 +77,18 @@ lazy val publishSettings = Seq(
   ).toSeq
 )
 
+/**
+  * TODO: figure how how to handle JDK modules
+  */
 def nussknackerMergeStrategy: String => MergeStrategy = {
+  case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.first //after confluent bump up to 5.5
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
   case PathList(ps@_*) if ps.last == "libnetty_transport_native_kqueue_x86_64.jnilib" => MergeStrategy.first
   case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
   case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
+  case PathList("javax", "validation", xs @ _*) => MergeStrategy.first //after confluent bump up to 5.5
+  case PathList("javax", "el", xs @ _*) => MergeStrategy.first //after confluent bump up to 5.5
   case PathList("akka", xs @ _*) => MergeStrategy.last
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
@@ -197,7 +203,7 @@ val slickV = "3.3.2"
 val hsqldbV = "2.5.0"
 val postgresV = "42.2.12"
 val flywayV = "6.3.3"
-val confluentV = "5.4.1"
+val confluentV = "5.5.0"
 val jbcryptV = "0.4"
 val cronParserV = "3.1.1"
 val javaxValidationApiV = "2.0.1.Final"

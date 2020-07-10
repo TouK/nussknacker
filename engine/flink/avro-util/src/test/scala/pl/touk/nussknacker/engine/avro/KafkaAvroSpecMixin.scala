@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.avro
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import io.confluent.kafka.serializers.{AvroSchemaUtils, KafkaAvroSerializer}
+import io.confluent.kafka.serializers.{KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericContainer, GenericRecord}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -135,8 +136,9 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     schemas.foreach(schema => {
       val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
       val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
-      schemaRegistryClient.register(inputSubject, schema)
-      schemaRegistryClient.register(outputSubject, schema)
+      val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
+      schemaRegistryClient.register(inputSubject, parsedSchema)
+      schemaRegistryClient.register(outputSubject, parsedSchema)
     })
 
     topicConfig
@@ -250,9 +252,10 @@ class SimpleKafkaAvroSerializer(schemaRegistryClient: CSchemaRegistryClient) ext
   this.schemaRegistry = schemaRegistryClient
 
   def serialize(topic: String, obj: Any): Array[Byte] = {
-    val subject = getSubjectName(topic,false, obj, AvroSchemaUtils.getSchema(obj, useSchemaReflection))
-    val schema = AvroSchemaUtils.getSchema(obj)
-    val schemaId = schemaRegistry.getId(subject, schema)
+    val schema = AvroSchemaUtils.getSchema(obj, useSchemaReflection)
+    val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
+    val subject = getSubjectName(topic,false, obj, parsedSchema)
+    val schemaId = schemaRegistry.getId(subject, parsedSchema)
     serialize(schema, schemaId, obj)
   }
 

@@ -4,7 +4,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKafkaAvroSerDe}
+import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKafkaSchemaSerDe}
 import org.apache.avro.Schema
 import org.apache.avro.Schema.Type
 import org.apache.avro.io.DecoderFactory
@@ -29,11 +29,12 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
 
     try {
       schemaId = buffer.getInt
-      val writerSchema = schemaRegistry.getById(schemaId)
+      val parsedSchema = schemaRegistry.getSchemaById(schemaId)
+      val writerSchema = ConfluentUtils.extractSchema(parsedSchema)
       val readerSchema = if (expectedSchema == null) writerSchema else expectedSchema
       // HERE we create our DatumReader
       val reader = createDatumReader(writerSchema, readerSchema, useSchemaReflection, useSpecificAvroReader)
-      val length = buffer.limit() - 1 - AbstractKafkaAvroSerDe.idSize
+      val length = buffer.limit() - 1 - AbstractKafkaSchemaSerDe.idSize
       if (writerSchema.getType == Type.BYTES) {
         val bytes = new Array[Byte](length)
         buffer.get(bytes, 0, length)
