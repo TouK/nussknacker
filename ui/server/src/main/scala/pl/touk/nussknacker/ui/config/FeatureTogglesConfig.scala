@@ -7,7 +7,6 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
 case class FeatureTogglesConfig(development: Boolean,
-                                search: Option[KibanaSettings],
                                 metrics: Option[MetricsSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
                                 counts: Option[Config],
@@ -31,7 +30,6 @@ object FeatureTogglesConfig extends LazyLogging{
     val counts = parseOptionalConfig[Config](config, "countsSettings")
 
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
-    val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
     val dynamicTabs = parseOptionalConfig[List[DynamicTabs]](config, "dynamicTabs")
@@ -40,7 +38,6 @@ object FeatureTogglesConfig extends LazyLogging{
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
-      search = search,
       metrics = metrics,
       remoteEnvironment = remoteEnvironment,
       counts = counts,

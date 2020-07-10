@@ -23,7 +23,6 @@ class SettingsResources(config: FeatureTogglesConfig,
         complete {
           val toggleOptions = ToggleFeaturesOptions(
             counts = config.counts.isDefined,
-            search = config.search,
             metrics = config.metrics,
             remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
             environmentAlert = config.environmentAlert,
@@ -54,7 +53,6 @@ class SettingsResources(config: FeatureTogglesConfig,
 }
 
 @JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]])
-@JsonCodec case class KibanaSettings(url: String)
 @JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 @JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
 @JsonCodec case class CommentSettings(matchExpression: String, link: String)
@@ -63,7 +61,6 @@ class SettingsResources(config: FeatureTogglesConfig,
 @JsonCodec case class DynamicTabs(name: String, url: String, id: String)
 
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
-                                            search: Option[KibanaSettings],
                                             metrics: Option[MetricsSettings],
                                             remoteEnvironment: Option[RemoteEnvironmentConfig],
                                             environmentAlert: Option[EnvironmentAlert],
